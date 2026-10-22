@@ -3730,20 +3730,26 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
         self.assertTrue(err.startswith("brief refused: "), f"{label}: {err}")
 
     def _without_isolation(self, mod) -> str:
+        return self._without(mod, "When a mutant SURVIVES", "isolation re-test of a survivor")
+
+    def _without(self, mod, lead: str, name: str) -> str:
+        """The practices block less the one paragraph starting `lead`, which states `name`."""
         paras = mod._REVIEW_PRACTICES_BLOCK.split("\n\n")
-        kept = [p for p in paras if not p.startswith("When a mutant SURVIVES")]
+        kept = [p for p in paras if not p.startswith(lead)]
         self.assertEqual(len(kept), len(paras) - 1)
         block = "\n\n".join(kept)
         self.assertEqual(mod.missing_practices(mod._REVIEW_PRACTICES_BLOCK), [])
-        self.assertEqual(mod.missing_practices(block), ["isolation re-test of a survivor"])
+        self.assertEqual(mod.missing_practices(block), [name])
         return block
 
-    def _assert_names_practice(self, mod, err: str, label: str) -> None:
+    def _assert_names_practice(self, mod, err: str, label: str,
+                               name: str = "isolation re-test of a survivor",
+                               tier: str = "full") -> None:
         m = re.search(r"missing standing practice\(s\): (.*?) - each of (.*?) is a standing", err)
         self.assertIsNotNone(m, f"{label}: {err}")
-        self.assertEqual(m.group(1).split("; "), ["isolation re-test of a survivor"], label)
-        for name, _i, _r in mod._BRIEF_PRACTICES:          # the roll-call follows the list
-            self.assertIn(name, m.group(2), label)
+        self.assertEqual(m.group(1).split("; "), [name], label)
+        # the roll-call follows the tier's list
+        self.assertEqual(", ".join(mod.TIER_PRACTICES[tier]), m.group(2), label)
 
     def _assert_names_surface(self, mod, err: str, label: str) -> None:
         m = re.search(r"omits prose surface\(s\): (.*?) - all four \((.*?)\)", err)
@@ -3767,20 +3773,33 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
     def test_the_practice_check_binds_at_every_delivery_tier_and_on_a_rejoinder(self) -> None:
         """MUTANTS: gate the practices check on the full tier; leave the rejoinder branch
         unchecked; check the rejoinder after printing it; check the rejoinder's practices only
-        at full. The light rejoinder is the case only the last mutant fails, because at full the
-        fixture refuses whichever branch guards it."""
+        at full; demand every practice at light, which refuses a light brief for the mutation
+        practices its tier omits. The light rejoinder is the case only the fourth mutant fails,
+        because at full the fixture refuses whichever branch guards it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod, prior = self._fixture(root)
-            cases = (("--tier", "light"),
-                     ("--rejoinder", prior, "--tier", "light"),
-                     ("--rejoinder", prior, "--tier", "full"))
+            light = (("--tier", "light"), ("--rejoinder", prior, "--tier", "light"))
+            # A practice light carries: refused at light, first round and rejoinder alike.
+            name = "regression cover for a repair"
+            self.assertIn(name, mod.TIER_PRACTICES["light"])
             with unittest.mock.patch.object(mod, "_REVIEW_PRACTICES_BLOCK",
-                                            self._without_isolation(mod)):
-                for argv in cases:
+                                            self._without(mod, "A repair that changes", name)):
+                for argv in light:
                     rc, out, err = self._run(mod, root, *argv)
                     self._assert_refused(rc, out, err, " ".join(argv))
-                    self._assert_names_practice(mod, err, " ".join(argv))
+                    self._assert_names_practice(mod, err, " ".join(argv), name, "light")
+            with unittest.mock.patch.object(mod, "_REVIEW_PRACTICES_BLOCK",
+                                            self._without_isolation(mod)):
+                rc, out, err = self._run(mod, root, "--rejoinder", prior, "--tier", "full")
+                self._assert_refused(rc, out, err, "--rejoinder --tier full")
+                self._assert_names_practice(mod, err, "--rejoinder --tier full")
+                # A practice light does not carry is never demanded of it.
+                self.assertNotIn("isolation re-test of a survivor", mod.TIER_PRACTICES["light"])
+                for argv in light:
+                    rc, out, err = self._run(mod, root, *argv)
+                    self.assertEqual(0, rc, f"{' '.join(argv)}: {err}")
+                    self.assertTrue(out.startswith("You are the qa review seat."), argv)
 
     def test_a_brief_missing_a_surface_is_refused_by_the_cli(self) -> None:
         """MUTANTS: print the claim-pass refusal as a NOTE and return 0; name all four surfaces
@@ -3853,7 +3872,7 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
 
     def test_the_doctrine_states_where_each_check_binds(self) -> None:
         """MUTANT: scope the practices refusal to full-tier briefs in the doctrine sentence, so a
-        light brief reads as unchecked while the verb refuses it."""
+        light brief reads as unchecked while the verb refuses it for the practices it carries."""
         doc = _norm(REFERENCE_REVIEW.read_text(encoding="utf-8"))
         start = doc.index("`critic.py brief` refuses")
         para = doc[start:doc.index("by the author remembering it", start)]
@@ -3864,8 +3883,8 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
             self.assertEqual(len(hits), 1, f"{phrase!r} in {para!r}")
             return hits[0]
 
-        practices = one("missing any of these practices")
-        self.assertIn("delivery brief at every tier", practices)
+        practices = one("missing a practice its tier carries")
+        self.assertIn("delivery brief at either tier", practices)
         self.assertNotRegex(practices, r"(?i)full[- ]tier|light")
         claim = one("claim-inventory pass omits")
         self.assertIn("full-tier delivery brief", claim)

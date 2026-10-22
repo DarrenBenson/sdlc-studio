@@ -48,6 +48,24 @@ result of killed or survived, or survived with no answer. The row it writes to
 the commit it was taken at, so another unit's later commit to a shared file does not stale it.
 See [the author's self-check](../reference-review.md#author-self-check).
 
+## The review brief
+
+`critic.py brief --unit <id> --seat <seat>` prints the brief a reviewer is given. Beside the seat
+charter, the criteria and the return contract it carries:
+
+- VERIFY COMMAND: `python3 <skill>/scripts/verify_ac.py run --id <id> --dry-run`, the one command
+  that runs the unit's Verify lines. Run from the repo root, it writes nothing to the unit's file.
+- UNIT DIFF, when a run names the unit and it declares Affects: each changed Affects file's
+  `git diff <base> HEAD -- <file>` from the run's base, committed work only, held to
+  `review.brief_diff_lines` (400 lines at full, 150 at light). Past the cap, one line names each
+  file cut or left out, how many of its lines are not shown and the command that prints it. With
+  no run naming the unit, the brief says no base is recorded and carries no diff.
+- A tool-call budget, 40 at full and 15 at light, stated in the brief and not enforced.
+
+The light tier drops the files' history, the claim inventory and the two mutation practices,
+and is refused only for a practice it carries. See
+[the standing review practices](../reference-review.md#the-standing-review-practices).
+
 ---
 
 # /sdlc-studio review - Document Review

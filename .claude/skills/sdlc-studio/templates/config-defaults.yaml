@@ -82,6 +82,13 @@ review:
   #                      author self-check section printed so the author knows what to record
   # `report` is the default so a project upgrading is not refused on its first review.
   author_self_check: report
+  # The line cap, per review tier, on the unit's own diff that `critic.py brief` carries. Past
+  # it, one line names each file cut or left out and the command that prints it. Its only
+  # reader is critic.py, whose `BRIEF_DIFF_LINES` holds these defaults and a test holds the two
+  # equal; a value that is not a positive whole number falls back to the tier's default.
+  brief_diff_lines:
+    full: 400
+    light: 150
 
   # Requirements/spec documents (schema v3 only). A delivery diff that edits one of these
   # without a citing AC is an UNTRACED spec edit - the critic charter treats it as a blocking

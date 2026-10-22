@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import os
 import re
 import shlex
 import sys
@@ -60,6 +61,20 @@ BAND_TIER = {"trivial": "light", "low": "light",
 #: An unresolvable band tiers FULL. Unknown risk fails towards the deeper review, because the
 #: cost of a needless full pass is tokens and the cost of a needless light one is a defect.
 UNKNOWN_BAND_TIER = "full"
+#: The sections each tier's brief carries, named by the `--- NAME ---` heading it prints. The
+#: brief renders a section only when its tier lists it here; UNIT DIFF also needs a run naming
+#: the unit and declared Affects. Light drops the files' history and the claim inventory.
+TIER_SECTIONS = {
+    "full": ("VERIFY COMMAND", "UNIT DIFF", "FILE HISTORY", "CLAIM INVENTORY",
+             "STANDING REVIEW PRACTICES"),
+    "light": ("VERIFY COMMAND", "UNIT DIFF", "STANDING REVIEW PRACTICES"),
+}
+#: The tool calls each tier's brief states as its budget. Stated, not enforced: nothing counts a
+#: reviewer's calls yet.
+TIER_TOOL_BUDGET = {"full": 40, "light": 15}
+#: The line cap on the brief's UNIT DIFF per tier, when the project's `review.brief_diff_lines`
+#: sets none. Declared here once; config-defaults.yaml mirrors it and a test holds the two equal.
+BRIEF_DIFF_LINES = {"full": 400, "light": 150}
 #: The historical plan-review table's shape. Its eighth cell named the pre-code artefact a plan
 #: review judged; nothing writes a kind or reads one now, so the cell is kept only because the
 #: file on disk has it.
@@ -2497,6 +2512,14 @@ _BRIEF_PRACTICES = (
      r"tree-wide[^.]*silently reverts a concurrent reviewer'?s mutant"),
 )
 
+#: The standing practices each tier carries, by name. Light keeps the two repair practices and
+#: the isolated checkout, which protects the author's tree, and drops the two mutation practices.
+TIER_PRACTICES = {
+    "full": tuple(name for name, _i, _r in _BRIEF_PRACTICES),
+    "light": ("per-item repair verdict", "regression cover for a repair",
+              "isolated checkout for mutation"),
+}
+
 # The four prose surfaces the claim-inventory first pass must cover. A pass that omits one
 # exempts it, and a Resolution is the artefact no test can fail - the cheapest thing in the
 # diff to check and the likeliest to be wrong.
@@ -2527,21 +2550,33 @@ def missing_practices(brief_text: str) -> list[str]:
     return absent
 
 
-def assert_brief_practices(brief_text: str) -> None:
-    """Refuse a brief missing any standing practice, naming which. A brief that omits one leaves
-    it to whoever wrote the brief to remember, which is how each was improvised rather than
-    shipped - so it is refused, never issued.
+def assert_brief_practices(brief_text: str, tier: str = "full") -> None:
+    """Refuse a brief missing any standing practice its tier carries (`TIER_PRACTICES`), naming
+    which. A brief that omits one leaves it to whoever wrote the brief to remember, which is how
+    each was improvised rather than shipped - so it is refused, never issued. A practice the tier
+    does not carry is never demanded, so a light brief is not refused for the mutation practices.
 
-    The roll-call in the message is DERIVED from `_BRIEF_PRACTICES`, never written beside it: a
+    The roll-call in the message is DERIVED from `TIER_PRACTICES`, never written beside it: a
     hand-listed roll-call goes stale the first time a practice is added, and then the refusal
     describes a rule set the guard no longer enforces."""
-    absent = missing_practices(brief_text)
+    carried = TIER_PRACTICES[tier]
+    absent = [name for name in missing_practices(brief_text) if name in carried]
     if absent:
-        every = ", ".join(name for name, _i, _r in _BRIEF_PRACTICES)
         raise ValueError(
             "reviewer brief is missing standing practice(s): " + "; ".join(absent)
-            + f" - each of {every} is a standing instruction; a brief that omits one is "
-              "refused, not issued")
+            + f" - each of {', '.join(carried)} is a standing instruction at the {tier} tier; a "
+              "brief that omits one is refused, not issued")
+
+
+def _practices_block(tier: str) -> str:
+    """The standing-practices block as `tier` carries it: `_REVIEW_PRACTICES_BLOCK` less each
+    paragraph stating a practice the tier does not carry. Read at call time, so the block a
+    test patches is the block rendered; at full it is the block unchanged."""
+    dropped = [instruction for name, instruction, _r in _BRIEF_PRACTICES
+               if name not in TIER_PRACTICES[tier]]
+    paras = _REVIEW_PRACTICES_BLOCK.split("\n\n")
+    return "\n\n".join(p for p in paras
+                       if not any(re.search(i, _normalise_brief(p), re.I) for i in dropped))
 
 
 def missing_claim_surfaces(brief_text: str) -> list[str]:
@@ -3216,13 +3251,85 @@ def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
             f"scope. Re-brief the seat: {again}")
 
 
+def brief_diff_cap(repo_root: Path | str, tier: str) -> int:
+    """The line cap on the brief's UNIT DIFF at `tier`: the project's
+    `review.brief_diff_lines.<tier>`, else `BRIEF_DIFF_LINES[tier]`. A setting that is not a
+    positive whole number falls back to the default."""
+    raw = sdlc_md.project_override(repo_root, "review.brief_diff_lines", None)
+    value = raw.get(tier) if isinstance(raw, dict) else None
+    if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+        return value
+    return BRIEF_DIFF_LINES[tier]
+
+
+def _git_text(root: Path, *args: str) -> bytes:
+    """`git <args>`'s stdout, or ValueError carrying the first line git wrote on stderr."""
+    cp = _git(root, *args)
+    if cp is None:
+        raise ValueError("git could not be run")
+    if cp.returncode != 0:
+        said = cp.stderr.decode("utf-8", "replace").strip().splitlines()
+        raise ValueError(said[0] if said else f"git exited {cp.returncode}")
+    return cp.stdout
+
+
+def _unit_diff_section(root: Path, base: str, affects: list[str], tier: str) -> str:
+    """The UNIT DIFF section: each changed Affects file's `git diff <base> HEAD -- <file>`, in
+    git's order, held to the tier's line cap. Base to HEAD, never the working tree: a reviewer's
+    isolated checkout cannot see uncommitted work. Past the cap, one remainder line names each
+    file cut or left out, how many of its lines are not shown and the command that prints it."""
+    cap = brief_diff_cap(root, tier)
+    head = (f"--- UNIT DIFF (git diff {base} HEAD -- "
+            f"{' '.join(shlex.quote(a) for a in affects)}) ---")
+    lines: list[str] = []
+    left: list[tuple[str, int]] = []
+    try:
+        listed = _git_text(root, "diff", "--no-renames", "--name-only", "-z", base, "HEAD",
+                           "--", *affects)
+        for name in (os.fsdecode(n) for n in listed.split(b"\0") if n):
+            text = _git_text(root, "diff", "--no-color", "--no-ext-diff", base, "HEAD", "--",
+                             name).decode("utf-8", "replace")
+            own = text.split("\n")
+            if own[-1] == "":
+                own.pop()
+            room = max(cap - len(lines), 0)
+            lines.extend(own[:room])
+            if len(own) > room:
+                left.append((name, len(own) - room))
+    except ValueError as exc:
+        return f"{head}\n(git could not take this diff: {exc})"
+    if not lines:
+        return f"{head}\n(no committed change to these files since the base)"
+    body = "\n".join(lines)
+    if left:
+        named = "; ".join(f"{name}, {count} of its lines "
+                          f"(git diff {base} HEAD -- {shlex.quote(name)})" for name, count in left)
+        body += (f"\nDiff cut at the {cap}-line cap for the {tier} tier "
+                 f"(review.brief_diff_lines). Not shown: {named}")
+    return f"{head}\n{body}"
+
+
+def _verify_section(unit_id: str) -> str:
+    """The VERIFY COMMAND section: the one command that runs the unit's Verify lines, with
+    `--dry-run` so a reviewer's run writes nothing to the author's file."""
+    script = shlex.quote(str(Path(__file__).resolve().parent / "verify_ac.py"))
+    return ("--- VERIFY COMMAND (run it from the repo root; --dry-run writes nothing to the "
+            "unit's file) ---\n"
+            f"python3 {script} run --id {unit_id} --dry-run")
+
+
 def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> str:
     """The seat-review prompt, assembled deterministically.
 
     The judgement stays with the seat; this is only the scaffolding every review
-    needs - charter, unit ACs, diff scope, tier, and the exact return contract -
-    so no reviewer starts from a hand-typed, drift-prone brief. Refuses an
-    unknown unit or seat loudly."""
+    needs - charter, unit ACs, diff scope, tier, the command that runs the unit's
+    Verify lines, its diff since the run's base, and the exact return contract -
+    so no reviewer starts from a hand-typed, drift-prone brief. The optional
+    sections are the ones `TIER_SECTIONS[tier]` lists. Refuses an unknown unit,
+    seat or tier loudly."""
+    if tier not in TIERS:
+        raise ValueError(f"unknown review tier {tier!r} - one of {', '.join(TIERS)}")
+    sections = TIER_SECTIONS[tier]
     root = Path(repo_root)
     found = sdlc_md.find_by_id(root, unit)
     if not found:
@@ -3242,6 +3349,9 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
         files = " ".join(shlex.quote(a) for a in affects)
         scope += (f"\nDiff against the run's base commit: git diff {base}"
                   + (f" -- {files}" if files else ""))
+    else:
+        scope += ("\nNo run names this unit, so no base commit is recorded and this brief "
+                  "carries no diff of it.")
     full_tier = tier == "full"
     depth = ("Full adversarial pass: try to make each test FAIL (mutations), probe "
              "boundaries and silent-failure paths, verify claims by EXECUTION, not reading."
@@ -3255,16 +3365,28 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     # Derived from the SAME `tier` value as the depth line above, deliberately: a brief that
     # announced a lighter pass while carrying the full claim inventory would be two decisions
     # where there is one, and they would disagree the first time either moved.
-    inventory = f"{_CLAIM_INVENTORY_BLOCK}\n\n" if full_tier else ""
+    #
+    # Each optional section is rendered only when `TIER_SECTIONS[tier]` lists it, so the table
+    # is the one place a tier's contents are decided.
+    inventory = f"{_CLAIM_INVENTORY_BLOCK}\n\n" if "CLAIM INVENTORY" in sections else ""
+    practices = _practices_block(tier) if "STANDING REVIEW PRACTICES" in sections else ""
     shared = _shared_selector_block(path)
     unit_id = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or unit)
     title = sdlc_md.extract_h1_title(text) or unit_id
     # Printed in the file's spelling; `unit_id` stays the comparison key the reads below take.
     shown = sdlc_md.extract_record_id(path.stem) or unit
+    verify = f"{_verify_section(shown)}\n\n" if "VERIFY COMMAND" in sections else ""
+    # THE UNIT'S OWN DIFF, so the seat spends its turns judging the change rather than finding
+    # it. Bounded to the Affects: with none declared there is no bound, so no diff.
+    diff = (f"{_unit_diff_section(root, base, affects, tier)}\n\n"
+            if base and affects and "UNIT DIFF" in sections else "")
     # THE FILES' HISTORY: the delivered units that changed them and what their reviews caught,
-    # so the seat looks first for a repeat the record already holds.
-    import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
-    history = reconcile.file_history_section(root, unit_id, affects)
+    # so the seat looks first for a repeat the record already holds. Light skips the corpus walk.
+    history = ""
+    if "FILE HISTORY" in sections:
+        import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
+        history = (f"--- FILE HISTORY ---\n"
+                   f"{reconcile.file_history_section(root, unit_id, affects)}\n")
     return f"""You are the {seat} review seat. Read and adopt the charter at
 {card} (the review render). You did NOT author this diff; your job is
 independent judgement of it against the ACs below - they are law, your stance never
@@ -3281,10 +3403,11 @@ Diff scope (the unit's declared Affects - inspect with git diff/status on these 
 Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
 {shared}
-{history}
-Review depth: {depth}
+{history}Review depth: {depth}
+Tool-call budget: {TIER_TOOL_BUDGET[tier]} tool calls at the {tier} tier; spend them judging the
+change, not finding it.
 
-{inventory}{_REVIEW_PRACTICES_BLOCK}
+{verify}{diff}{inventory}{practices}
 
 {_lessons_block(root)}
 
@@ -3893,8 +4016,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier)
             # The re-review brief carries the same blocks as the first one, so it is refused on
             # the same terms and before anything reaches stdout.
-            assert_brief_practices(text)
-            if tier == "full":
+            assert_brief_practices(text, tier)
+            if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
                 assert_brief_claim_pass(text)
             notice = _self_check_gate(args.root, args.unit)
             print(text)
@@ -3922,12 +4045,13 @@ def cmd_brief(args: argparse.Namespace) -> int:
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
             # The checks run here, in the verb, and never inside `brief()`, which other readers
-            # also render through. The practices block reaches every delivery tier; the
-            # claim inventory only the full one, so a light brief is not asked for it. Refused
+            # also render through. Each tier is held to the practices and the claim inventory
+            # its tables say it carries, so a light brief is asked for neither the mutation
+            # practices nor the inventory. Refused
             # before printing, so a deficient brief never reaches a reviewer and never earns a
             # fingerprint.
-            assert_brief_practices(text)
-            if tier == "full":
+            assert_brief_practices(text, tier)
+            if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
                 assert_brief_claim_pass(text)
             # The author's recorded self-check, judged here so a refusal under `block` reaches
             # neither stdout nor the brief notes.
