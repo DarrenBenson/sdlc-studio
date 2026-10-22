@@ -2596,17 +2596,10 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
     (`CLAIM_SURFACES`) and each changelog fragment the unit's Affects declares - read from its
     Affects, never from its id, because a carried bug ships its story's fragment. The mutation
     targets are the test files its Affects declares."""
-    root = Path(repo_root)
-    found = sdlc_md.find_by_id(root, unit)
-    if not found:
-        raise ValueError(f"no artefact with id {unit!r} - the self-check needs a real unit")
-    import file_finding  # noqa: PLC0415 - sibling; its test-path convention is the family's
-    affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))
-    fragments = [a for a in affects if a.startswith("changelog.d/") and a.endswith(".md")]
-    tests = [a for a in affects if file_finding.is_test_path(a)]
+    _affects, fragments, tests = _self_check_scope(repo_root, unit)
     claims = " ".join("\n".join(_CLAIM_INVENTORY_BLOCK.splitlines()[1:]).split())
     mutate = _paragraph(_REVIEW_PRACTICES_BLOCK, _MUTATE_PRACTICE_LEAD)
-    surfaces = ["the commit message", *CLAIM_SURFACES, *fragments]
+    surfaces = [f"the {COMMIT_SURFACE}", *CLAIM_SURFACES, *fragments]
     lines = [AUTHOR_SELF_CHECK_HEADING,
              "The reviewer runs the two passes below on this unit. Run them first, so the review "
              "confirms the work rather than finding what your own pass would have found.",
@@ -2619,8 +2612,189 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
              (f"2. Mutation pass, over: {', '.join(tests)}." if tests else
               "2. Mutation pass: the unit's Affects declares no test file, so there is no test "
               "of its own to mutate."),
-             f"   {mutate}"]
+             f"   {mutate}",
+             "",
+             "3. Record both, bound to the content of the unit's Affects as it stands now:",
+             f"   critic.py self-check record --unit {sdlc_md.norm_id(unit)} --author <you> "
+             f"--claims CLAIMS.json --mutants MUTANTS.json",
+             "   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json lists "
+             "each mutant as {mutant, test, result, answer}, and is [] when the unit declares "
+             "no test file."]
     return "\n".join(lines)
+
+
+def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list[str], list[str]]:
+    """The unit's Affects paths, the changelog fragments among them and the test files among
+    them. Both are read from its Affects, never from its id, because a carried bug ships its
+    story's fragment."""
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        raise ValueError(f"no artefact with id {unit!r} - the self-check needs a real unit")
+    import file_finding  # noqa: PLC0415 - sibling; its test-path convention is the family's
+    affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))
+    fragments = [a for a in affects if a.startswith("changelog.d/") and a.endswith(".md")]
+    tests = [a for a in affects if file_finding.is_test_path(a)]
+    return affects, fragments, tests
+
+
+# --- The author's self-check, recorded ------------------------------------------------------
+# What the section above tells the author to run, stored once it has run. The record is
+# self-reported, so what it checks is its CONTENT: every claim ruled and none FALSE, the
+# required surfaces each carrying a claim, each mutant run against a test the unit declares,
+# and every survivor answered. It is bound to the content of the unit's Affects, so a record
+# of an earlier diff reads as one. The log is committed, never under `.local`.
+SELF_CHECK_FILE = "author-self-checks.md"
+#: The surface every unit's claim inventory must cover; each declared fragment is the other.
+COMMIT_SURFACE = "commit message"
+MUTANT_RESULTS = ("killed", "survived")
+NO_TEST_DECLARED = "none - no test declared"
+_SELF_CHECK_COLS = ("unit", "author", "date", "claims", "mutants", "digest")
+_SELF_CHECK_HEADER = (
+    "# Author Self-Checks\n\n"
+    "> Append-only. The author's own claim inventory and mutation pass per unit, recorded by\n"
+    "> `critic.py self-check record` before a reviewer is briefed. The digest is over the\n"
+    "> content of the unit's Affects files when the row was written, so a row whose digest no\n"
+    "> longer matches is a self-check of an earlier diff.\n\n"
+    "| Unit | Author | Date | Claims | Mutants | Digest |\n"
+    "| --- | --- | --- | --- | --- | --- |\n")
+_DIGEST_SKIP = (".git", "__pycache__")
+
+
+def self_checks_path(repo_root: Path | str) -> Path:
+    return Path(repo_root) / "sdlc-studio" / "reviews" / SELF_CHECK_FILE
+
+
+def affects_digest(repo_root: Path | str, unit: str) -> str:
+    """A digest of the CONTENT of the unit's Affects files, as they stand: each path with its
+    bytes, a declared directory's files beneath it, and an absent path marked absent, so an edit
+    to any of them, or the creation of one, moves it. Sorted, so reordering Affects does not."""
+    import hashlib  # noqa: PLC0415 - local; only the digest needs it
+    root = Path(repo_root)
+    h = hashlib.sha256()
+    for rel in sorted(set(_self_check_scope(root, unit)[0])):
+        path = root / rel
+        if path.is_dir():
+            members = sorted(p for p in path.rglob("*") if p.is_file() and not any(
+                part in _DIGEST_SKIP for part in p.relative_to(path).parts))
+        else:
+            members = [path] if path.is_file() else []
+        h.update(f"{rel}\0{len(members) if members else 'absent'}\0".encode("utf-8"))
+        for member in members:
+            data = member.read_bytes()
+            h.update(f"{member.relative_to(root).as_posix()}\0{len(data)}\0".encode("utf-8"))
+            h.update(data)
+    return h.hexdigest()[:16]
+
+
+def _surface_key(label: str) -> str:
+    """A claim's surface label compared as written by hand: case, spacing and a leading "the"
+    do not matter, so "The commit message" is the commit message."""
+    key = " ".join(str(label or "").split()).lower()
+    return key[4:] if key.startswith("the ") else key
+
+
+def _entries(path: str, key: str) -> list:
+    """The list a claims or mutants file holds: a JSON list, or an object holding it under
+    `key`. Anything else is refused naming the file."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"cannot read {path} as JSON: {exc}") from None
+    if isinstance(data, dict):
+        data = data.get(key)
+    if not isinstance(data, list) or not all(isinstance(e, dict) for e in data):
+        raise ValueError(f"{path} is not a JSON list of {key} (or an object holding one under "
+                         f"{key!r}), each an object")
+    return data
+
+
+def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
+                     mutants: list[dict]) -> dict:
+    """The self-check judged on its content, raising ValueError naming the first cause it
+    refuses; otherwise the counts its row records.
+
+    Claims: each names a surface the author self-check section names, every one is ruled
+    through `validate_claim_inventory`, none is FALSE (the author corrects it before review),
+    at least one was checked (`summarise_claim_pass`: an all-UNVERIFIABLE inventory checked
+    nothing), and the commit message and each changelog fragment the unit's Affects declares
+    carry a claim. Docstrings, comments, Resolutions and CHANGELOG are named and optional, since
+    no command can tell which claims a diff's docstrings make.
+
+    Mutants: each names a test in a test file the unit's Affects declares and a result of
+    killed or survived, and a survivor carries an answer. A unit declaring no test file records
+    an empty list; one that declares a test file and lists no mutant is refused."""
+    _affects, fragments, tests = _self_check_scope(repo_root, unit)
+    required = [COMMIT_SURFACE, *fragments]
+    named = {_surface_key(s): s for s in (*required, *CLAIM_SURFACES)}
+    keys, rulings, covered = [], {}, set()
+    for n, entry in enumerate(claims, 1):
+        surface, text = _surface_key(entry.get("surface")), str(entry.get("claim") or "").strip()
+        if surface not in named:
+            raise ValueError(f"claim {n} names the surface {entry.get('surface')!r}, which the "
+                             f"self-check does not name - use one of: {'; '.join(named.values())}")
+        if not text:
+            raise ValueError(f"claim {n} ({named[surface]}) states no claim")
+        key = f"{n} ({named[surface]}): {text}"
+        keys.append(key)
+        if (ruling := str(entry.get("ruling") or "").strip()):
+            rulings[key] = ruling
+        covered.add(surface)
+    validate_claim_inventory(keys, rulings)
+    if false := [k for k in keys if rulings[k].upper() == "FALSE"]:
+        raise ValueError(f"claim {false[0]!r} is ruled FALSE - correct the prose that makes it, "
+                         f"then rule it again; a FALSE claim is fixed before review, not recorded")
+    summary = summarise_claim_pass(rulings)
+    if not summary["verified"]:
+        raise ValueError(f"every one of the {summary['total']} claim(s) is ruled UNVERIFIABLE, "
+                         f"so the inventory checked nothing; settle at least one TRUE against "
+                         f"the code")
+    if skipped := [s for s in required if _surface_key(s) not in covered]:
+        raise ValueError(f"no claim from the {skipped[0]}, a surface this unit's self-check "
+                         f"requires (the commit message and each changelog fragment its "
+                         f"Affects declares: {', '.join(required)})")
+    counts = {r: 0 for r in MUTANT_RESULTS}
+    if tests and not mutants:
+        raise ValueError(f"the mutants file lists no mutant, and the unit declares "
+                         f"{', '.join(tests)} - mutate its own tests and list each result")
+    for n, entry in enumerate(mutants, 1):
+        name = str(entry.get("mutant") or "").strip()
+        label = f"mutant {n} ({name!r})" if name else f"mutant {n}"
+        test = str(entry.get("test") or "").strip()
+        result = str(entry.get("result") or "").strip().lower()
+        if not name:
+            raise ValueError(f"{label} names no production change")
+        test_file = test.split("::", 1)[0].removeprefix("./")
+        if test_file not in tests:
+            declared = ", ".join(tests) if tests else "no test file"
+            raise ValueError(f"{label} is checked against {test or 'no test'!r}, not a test file "
+                             f"the unit's Affects declares ({declared})")
+        if result not in MUTANT_RESULTS:
+            raise ValueError(f"{label} has result {result or 'none'!r} - expected one of "
+                             f"{', '.join(MUTANT_RESULTS)}")
+        if result == "survived" and not str(entry.get("answer") or "").strip():
+            raise ValueError(f"{label} survived and carries no answer - say why the test "
+                             f"cannot see it, or the test or bug that will")
+        counts[result] += 1
+    return {"claims": f"TRUE {summary['true']}, FALSE {summary['false']}, "
+                      f"UNVERIFIABLE {summary['unverifiable']}",
+            "mutants": (", ".join(f"{r} {counts[r]}" for r in MUTANT_RESULTS) if tests or mutants
+                        else NO_TEST_DECLARED)}
+
+
+def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
+                      mutants: list[dict], author: str = "") -> Path:
+    """Append the author's self-check for a unit to the committed log, once `check_self_check`
+    admits it, with the digest of its Affects content as it stands. Nothing is written on a
+    refusal."""
+    counts = check_self_check(repo_root, unit, claims, mutants)
+    cells = (sdlc_md.norm_id(unit), _clean(author) or "-", sdlc_md.now_date(),
+             counts["claims"], counts["mutants"], affects_digest(repo_root, unit))
+    return _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
+
+
+def read_self_checks(repo_root: Path | str) -> list[dict]:
+    """Every recorded self-check row, oldest first."""
+    return _read_rows(self_checks_path(repo_root), _SELF_CHECK_COLS)
 
 
 def tier_for(repo_root: Path | str, unit: str) -> str:
@@ -3783,6 +3957,20 @@ def _superseded_suffix(verdict: dict) -> str:
             f"(authorised by {verdict.get('superseded_by', '')})")
 
 
+def cmd_self_check_record(args: argparse.Namespace) -> int:
+    try:
+        claims = _entries(args.claims, "claims")
+        mutants = _entries(args.mutants, "mutants")
+        path = record_self_check(args.root, args.unit, claims, mutants, author=args.author)
+    except (OSError, ValueError) as exc:
+        print(f"self-check record refused: {exc}. Nothing was written.", file=sys.stderr)
+        return 2
+    row = read_self_checks(args.root)[-1]
+    print(f"recorded the self-check for {row['unit']}: claims {row['claims']}; mutants "
+          f"{row['mutants']}; Affects digest {row['digest']} -> {path}")
+    return 0
+
+
 def cmd_supersede(args: argparse.Namespace) -> int:
     import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as elsewhere
     try:
@@ -3900,6 +4088,31 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--verdict", default=None, help="narrow the match by the row's verdict")
     sp.add_argument("--root", default=".")
     sp.set_defaults(func=cmd_supersede)
+    sc = sub.add_parser("self-check",
+                        help="The author's own claim inventory and mutation pass, recorded "
+                             "before a reviewer is briefed.")
+    scs = sc.add_subparsers(dest="self_check_cmd", required=True)
+    scr = scs.add_parser("record",
+                         help="Record the author's self-check of a unit, refused unless every "
+                              "claim is ruled, none FALSE and one TRUE, the required surfaces "
+                              "are covered and every mutant is run against a declared test, "
+                              "bound to a digest of the content of the unit's Affects.")
+    scr.add_argument("--unit", required=True)
+    scr.add_argument("--claims", required=True, metavar="CLAIMS.json",
+                     help="a JSON list of {surface, claim, ruling}: the surface is the commit "
+                          "message, a changelog fragment the unit's Affects declares, or one of "
+                          "the brief's claim surfaces; the ruling TRUE, FALSE or UNVERIFIABLE")
+    scr.add_argument("--mutants", required=True, metavar="MUTANTS.json",
+                     help="a JSON list of {mutant, test, result, answer}: the test a "
+                          "`path::name` in a test file the unit's Affects declares, the result "
+                          "killed or survived, and an answer for every survivor; [] for a unit "
+                          "that declares no test file")
+    scr.add_argument("--author", default="",
+                     help="the authoring seat or delegation id that ran the self-check")
+    # SUPPRESS here, not ".": `add_global_root` re-points one level of subcommands and this one
+    # is nested a level below, so a "." default would overwrite `--root X self-check record`.
+    scr.add_argument("--root", default=argparse.SUPPRESS)
+    scr.set_defaults(func=cmd_self_check_record)
     s = sub.add_parser("show", help="Show the latest verdict for a unit (or all).")
     s.add_argument("--unit", default=None)
     s.add_argument("--root", default=".")

@@ -891,7 +891,7 @@ NON_CEREMONY_VERBS = {
     # only ever read pending when the page is composed.
     "sprint": ("appetite", "close", "boundary", "report", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
-    "critic": ("brief", "caller-check", "correct", "show", "supersede"),
+    "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),

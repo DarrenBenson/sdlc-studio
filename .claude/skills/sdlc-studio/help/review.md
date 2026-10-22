@@ -30,6 +30,23 @@ The zero-setup pass over a repo that has never run sdlc-studio is
 `/sdlc-studio audit --profile repo` (architecture, code-quality, defensive-security,
 verified by the refute panel and filed as Bugs or CRs). See `help/audit.md`.
 
+## Before a unit review: the author's self-check
+
+A unit's independent review starts from `critic.py brief`, which prints on stderr the claim
+inventory and mutation pass for the author to run first. Record both once they have run:
+
+```bash
+python3 <skill>/scripts/critic.py self-check record --unit US0001 --author "<seat>" \
+  --claims claims.json --mutants mutants.json
+```
+
+It is refused, naming the cause and writing nothing, when a claim is unruled, FALSE, or every
+claim is UNVERIFIABLE; when the commit message or a changelog fragment the unit's Affects
+declares has no claim; or when a mutant names a test file the unit does not declare, has no
+result of killed or survived, or survived with no answer. The row it writes to
+`sdlc-studio/reviews/author-self-checks.md` carries a digest of the unit's Affects content.
+See [the author's self-check](../reference-review.md#author-self-check).
+
 ---
 
 # /sdlc-studio review - Document Review
