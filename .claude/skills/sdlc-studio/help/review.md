@@ -45,8 +45,9 @@ claim is UNVERIFIABLE; when the commit message or a changelog fragment the unit'
 declares has no claim; or when a mutant names a test file the unit does not declare, has no
 result of killed or survived, or survived with no answer. The row it writes to
 `sdlc-studio/reviews/author-self-checks.md` carries a digest of the unit's Affects content and
-the commit it was taken at, so another unit's later commit to a shared file does not stale it.
-See [the author's self-check](../reference-review.md#author-self-check).
+the commit it was taken at, so a record of committed work survives another unit's later commit
+to a shared file; a record of uncommitted work can still read as stale. See
+[the author's self-check](../reference-review.md#author-self-check).
 
 ## The review brief
 

@@ -1,12 +1,14 @@
 """BG1117: an author's self-check record is bound to the unit's own change, not to whole files.
 
 A record keeps the digest of the unit's Affects content and the commit it was taken at. The brief
-gate admits a row whose digest matches that content as it stands, or as it would stand had no
-other unit committed to those files since: a commit whose subject names a unit id that is not
-this unit's is set aside, and nothing else is, so the author's own further edit, committed or
-not, still reads as a record of an earlier diff. The review tooling's own writes (the self-check
-log, the verdict logs, the runtime notes under `sdlc-studio/.local`) are outside the digest, so
-recording a self-check or a verdict, or taking a brief, never stales a record.
+gate admits a row whose digest matches that content as it stands, or that content with each file
+lacking an uncommitted edit read at its newest commit since the record whose subject names this
+unit or no unit id. So a record of committed work survives another unit's later commit to a
+shared file, and the author's own further edit, uncommitted or committed under this unit's id or
+none, still reads as a record of an earlier diff. The landing orders this per-file view cannot
+see through are BG1121's, and an edit inside a merge commit is BG1120's. The review tooling's own
+writes (the self-check log, the verdict log, the runtime notes under `sdlc-studio/.local`) are
+outside the digest, so recording a self-check or a verdict, or taking a brief, does not move it.
 
 Every case drives `critic.py` through its entry point in a throwaway project.
 """
@@ -14,6 +16,8 @@ Every case drives `critic.py` through its entry point in a throwaway project.
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -72,10 +76,10 @@ def _commit(root: Path, subject: str, rel: str | None = None, body: str | None =
     gitutil.git(["commit", "-q", "--no-verify", "-m", subject], root)
 
 
-def _cli(root: Path, *args: str) -> subprocess.CompletedProcess:
+def _cli(root: Path, *args: str, env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run([sys.executable, "-B", str(CRITIC), *args, "--root", str(root)],
-                          capture_output=True, text=True, timeout=300, env=gitutil.git_env(),
-                          check=False)
+                          capture_output=True, text=True, timeout=300,
+                          env=env or gitutil.git_env(), check=False)
 
 
 def _record(root: Path, scratch: Path, unit: str = A) -> None:
@@ -93,8 +97,8 @@ def _record(root: Path, scratch: Path, unit: str = A) -> None:
     assert r.returncode == 0, r.stderr
 
 
-def _brief(root: Path, unit: str = A) -> subprocess.CompletedProcess:
-    return _cli(root, "brief", "--unit", unit, "--seat", "qa", "--tier", "full")
+def _brief(root: Path, unit: str = A, env: dict | None = None) -> subprocess.CompletedProcess:
+    return _cli(root, "brief", "--unit", unit, "--seat", "qa", "--tier", "full", env=env)
 
 
 class LaterUnitTests(unittest.TestCase):
@@ -234,6 +238,67 @@ class LaterUnitTests(unittest.TestCase):
         self._admitted(_brief(self.root), "a row without a commit matching the content")
         _commit(self.root, f"feat({B}): shared grows again", SHARED, "def s():\n    return 7\n")
         self._refused(_brief(self.root), "a row without a commit survived B's commit")
+
+    def test_a_declared_review_log_stays_out_of_the_commit_view(self) -> None:
+        """A declares the verdict log beside the shared file; a verdict is recorded and committed
+        under A's id, then B commits the shared file, so only the git view can admit A. Mutant:
+        the paths commits touched read without the review-tool exclusion, so the verdict log
+        enters the view from its own commit and stales the record."""
+        _project(self.root, f"{A_AFFECTS}, sdlc-studio/reviews/critic-verdicts.md")
+        _record(self.root, self.scratch)
+        r = _cli(self.root, "record", "--unit", B, "--verdict", "APPROVE", "--reviewer",
+                 "qa seat", "--author", "builder", "--issues", "none")
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertTrue((self.root / "sdlc-studio/reviews/critic-verdicts.md").is_file())
+        _commit(self.root, f"chore({A}): record the self-check and a verdict")
+        _commit(self.root, f"feat({B}): shared grows", SHARED,
+                "def s():\n    return 1\n\n\ndef t():\n    return 2\n")
+        self._moved()
+        self._admitted(_brief(self.root), "a committed verdict log staled the record")
+
+    def test_another_units_rename_in_a_declared_directory_does_not_stale_the_record(self) -> None:
+        """A declares `src/`; B renames a file under it. Mutant: the log read with rename
+        detection, so it names only the new path and the old one drops out of the view."""
+        _project(self.root, f"src/, tests/test_shared.py, changelog.d/{A}.md")
+        _record(self.root, self.scratch)
+        gitutil.git(["mv", "src/other.py", "src/moved.py"], self.root)
+        _commit(self.root, f"refactor({B}): rename a module")
+        self._moved()
+        self._admitted(_brief(self.root), "B's rename under A's directory staled A's record")
+
+    def test_an_earlier_row_is_read_through_the_commit_view(self) -> None:
+        """A records, edits the shared file and records again, then restores the first content;
+        B commits the shared file. Only the first row matches, through the git view. Mutant:
+        the view consulted for the last row alone."""
+        _project(self.root)
+        _record(self.root, self.scratch)
+        _write(self.root, SHARED, "def s():\n    return 8\n")
+        _record(self.root, self.scratch)
+        _write(self.root, SHARED, "def s():\n    return 1\n")
+        _commit(self.root, f"feat({B}): shared grows", SHARED,
+                "def s():\n    return 1\n\n\ndef t():\n    return 2\n")
+        self._moved()
+        self._admitted(_brief(self.root), "a restored diff was refused after B's commit")
+
+    def test_git_unable_to_show_a_file_falls_back_to_the_content_as_it_stands(self) -> None:
+        """A `git` that cannot show a file at a commit: the view gives up and the record is
+        judged on the content as it stands, so B's commit stales it, rather than the brief
+        crashing. Mutant: only OSError caught, so the git failure escapes. The control: the
+        same project with the real git is admitted."""
+        _project(self.root)
+        _record(self.root, self.scratch)
+        _commit(self.root, f"feat({B}): shared grows", SHARED,
+                "def s():\n    return 1\n\n\ndef t():\n    return 2\n")
+        bin_dir = self.scratch / "bin"
+        bin_dir.mkdir()
+        fake = bin_dir / "git"
+        fake.write_text('#!/bin/sh\nfor a in "$@"; do case "$a" in *:./*) '
+                        'echo "fatal: cannot show" >&2; exit 128;; esac; done\n'
+                        f'exec "{shutil.which("git")}" "$@"\n', encoding="utf-8")
+        fake.chmod(0o755)
+        env = gitutil.git_env(PATH=f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        self._refused(_brief(self.root, env=env), "a git failure did not fall back")
+        self._admitted(_brief(self.root), "the control: the real git did not admit")
 
 
 if __name__ == "__main__":

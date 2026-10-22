@@ -2685,10 +2685,10 @@ def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list
 # What the section above tells the author to run, stored once it has run. The record is
 # self-reported, so what it checks is its CONTENT: every claim ruled and none FALSE, the
 # required surfaces each carrying a claim, each mutant run against a test the unit declares,
-# and every survivor answered. It is bound to the unit's own change: a digest of its Affects
-# content and the commit it was taken at, so after a later edit by the author the record reads
-# as one of an earlier diff, while another unit's later commit to a shared file leaves it
-# current. The log is committed, never under `.local`.
+# and every survivor answered. It keeps a digest of the unit's Affects content and the commit
+# it was taken at, so a later edit by the author outside a merge commit reads as one of an
+# earlier diff, while a record of committed work survives another unit's later commit to a
+# shared file (`self_check_gap`). The log is committed, never under `.local`.
 SELF_CHECK_FILE = "author-self-checks.md"
 #: The surface every unit's claim inventory must cover; each declared fragment is the other.
 COMMIT_SURFACE = "commit message"
@@ -2699,9 +2699,12 @@ _SELF_CHECK_HEADER = (
     "# Author Self-Checks\n\n"
     "> Append-only. The author's own claim inventory and mutation pass per unit, recorded by\n"
     "> `critic.py self-check record` before a reviewer is briefed. The digest is over the\n"
-    "> content of the unit's Affects files when the row was written, followed by the commit it\n"
-    "> was taken at. A row whose digest matches neither that content now nor the content with\n"
-    "> other units' later commits set aside is a self-check of an earlier diff.\n\n"
+    "> content of the unit's Affects files, less the review tooling's own writes, when the row\n"
+    "> was written, followed by the commit it was taken at. A row is current when its digest\n"
+    "> matches that content now, or that content with each file that has no uncommitted edit\n"
+    "> read at its newest commit since the row's commit that is not another unit's (or at the\n"
+    "> row's commit when all are); a commit is another unit's when its subject names a unit id\n"
+    "> and none is this unit's. `critic.py brief` reads any other row as stale.\n\n"
     "| Unit | Author | Date | Claims | Mutants | Digest |\n"
     "| --- | --- | --- | --- | --- | --- |\n")
 _DIGEST_SKIP = (".git", "__pycache__")
@@ -2809,25 +2812,27 @@ def _rev_blob(root: Path, rev: str, rel: str) -> bytes | None:
 
 def _names_another_unit(subject: str, uid: str) -> bool:
     """True when a commit subject names a unit id and none of them is `uid`: the commit is
-    another unit's. A subject naming no id, or naming this unit, is not, so an edit committed
-    under this unit's id or under none is never set aside."""
+    another unit's. A subject naming no id, or naming this unit, is not, so a commit under this
+    unit's id or under none is never read as another unit's."""
     named = {sdlc_md.norm_id(m.group(0)) for m in sdlc_md.ID_SEARCH_RE.finditer(subject)}
     return bool(named) and uid not in named
 
 
 def _own_change_digest(repo_root: Path | str, unit: str, base: str) -> str | None:
-    """`affects_digest` of the unit's Affects as they would read had the commits ANOTHER unit
-    made since `base` (the commit the record was taken at) not landed on top: each file read at
-    the newest point no other unit produced. None when it cannot be judged: no repository, `base`
-    not an ancestor of HEAD, or git unable to answer, so the caller falls back to the content as
-    it stands.
+    """`affects_digest` of the unit's Affects with the commits ANOTHER unit made since `base`
+    (the commit the record was taken at) set aside where they top a file's history. Another
+    unit's commit beneath one that is not stays, so a record of uncommitted work is still staled
+    by another unit's commit to that file landing before the author's own. None when it cannot
+    be judged: no repository, `base` not an ancestor of HEAD (as after a rebase or cherry-pick),
+    or git unable to answer, so the caller falls back to the content as it stands.
 
     For each file, the commits since `base` that touched it are read newest first, and a commit
-    is another unit's when its subject names a unit id that is not this unit's
+    is another unit's when its subject names a unit id and none is this unit's
     (`_names_another_unit`). The file's own content is its working-tree content when no commit
     touched it, or when the newest that did is not another unit's, or when it differs from HEAD
     (an uncommitted edit, which nothing attributes to another unit). Otherwise it is the content
-    after the newest commit that is not another unit's, or at `base` when every one was."""
+    after the newest commit that is not another unit's, or at `base` when every one was. A merge
+    commit lists no file here, so an edit made in one can be missed."""
     root = Path(repo_root)
     uid = sdlc_md.norm_id(unit)
     affects = sorted(set(_self_check_scope(root, unit)[0]))
@@ -3018,10 +3023,10 @@ def author_self_check_mode(repo_root: Path | str) -> str:
 
 
 def self_check_gap(repo_root: Path | str, unit: str) -> str | None:
-    """Why the unit has no self-check of its diff as it stands, or None when one of its rows
-    carries the digest of its Affects content now, or of that content with other units' later
-    commits set aside (`_own_change_digest`, from the commit the row was taken at). Any matching
-    row counts, so a diff restored to one already checked needs no second record."""
+    """Why the unit has no current self-check, or None when one of its rows carries the digest
+    of its Affects content now, or of the own-change view from the commit the row was taken at
+    (`_own_change_digest`). Any matching row counts, so a diff restored to one already checked
+    needs no second record."""
     uid = sdlc_md.norm_id(unit)
     rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
     if not rows:

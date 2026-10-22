@@ -73,9 +73,12 @@ review:
   # equal. `critic.py record` refuses a delivery round past the cap, and a REJECT at the cap
   # carries the unit. A project sets it in its own .config.yaml.
   max_rounds: 2
-  # What `critic.py brief` does when the unit has no author self-check (`critic.py self-check
-  # record`) whose digest matches the content of its Affects as they stand, first round or
-  # `--rejoinder`, at either tier:
+  # What `critic.py brief` does when the unit has no current author self-check (`critic.py
+  # self-check record`), first round or `--rejoinder`, at either tier. A row is current when
+  # its digest matches the content of its Affects as they stand or, when HEAD descends from the
+  # row's commit, that content with each file lacking an uncommitted edit read at its newest
+  # commit since then whose subject names this unit or none, else at the row's commit (an edit
+  # made in a merge can be missed). The modes:
   #   off                say nothing of it
   #   report  (default)  print the brief and name the missing or stale record on stderr
   #   block              refuse: exit 2, no brief on stdout, no fingerprint noted, and the

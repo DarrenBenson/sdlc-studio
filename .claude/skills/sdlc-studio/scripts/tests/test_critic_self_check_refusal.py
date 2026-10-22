@@ -1,7 +1,8 @@
 """US1089: `critic.py brief` refuses a unit whose author has recorded no self-check of its diff.
 
-`review.author_self_check` decides what a brief does when the unit has no self-check row whose
-digest matches the content of its Affects as it stands: `block` refuses it, before anything
+`review.author_self_check` decides what a brief does when the unit has no current self-check row
+(its digest matching the content of its Affects as it stands, or the commit view BG1117 adds,
+pinned in test_self_check_survives_a_later_unit.py): `block` refuses it, before anything
 reaches stdout and before the brief's fingerprint is noted, and still prints the author
 self-check section so the author is told what to record; `report`, the shipped default, prints
 the brief and names the missing or stale record on stderr; `off` says nothing of it. The check
