@@ -877,9 +877,11 @@ def _clip_reason(text: str, limit: int = 300) -> str:
 def _full_suite(root: str) -> dict:
     """PUSH-BOUNDARY lane: every test module of both suites, run ONCE.
 
-    Per-commit selection follows direct edges and one level of fixture imports, so a hook, test
-    infrastructure or a library reached through another script selects nothing on a commit;
-    this lane is what catches those.
+    Per-commit selection follows a test module's imports and loads (its own, and those of one
+    fixture test module it imports), its name and its `test-census-subject` header, so a change
+    none of those reach selects nothing on a commit: a library reached only through another
+    script, a hook no module declares as its census subject, or test infrastructure such as
+    `conftest.py` or `pytest.ini`. This lane is what catches those.
     Run as the commit hook runs a selection (`run_tests_plan`): across every core under
     pytest-xdist, the `serial_only` tests after. A red run names each failing test and keeps the
     whole output in `sdlc-studio/.local/boundary-suite-last.log`, since the gate prints one line.
@@ -2231,13 +2233,16 @@ def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
 
 # --- test selection ---
 # What a commit runs: the test modules its change reaches, read from the test sources alone.
-# Three routes, each a fact a test module states about itself - the changed test module, the
-# `x.py` -> `test_x.py` naming convention the TSD states, and the modules that import or load
-# `x` by name. Edges are DIRECT: a hub such as `sdlc_md` is imported by nearly every script, so
-# following dependents transitively selects most of the suite on every commit.
-# Whatever these routes miss - a docs page a test reads, a hook, test infrastructure (conftest,
-# pytest.ini, a test helper, tools/skill-tests.sh), a library reached only through another
-# script - selects NOTHING per commit and is caught by the full suite at the push boundary.
+# Four routes, each a fact a test module states about itself - the changed test module, the
+# `x.py` -> `test_x.py` naming convention the TSD states, the modules that import or load `x` by
+# name, and the modules whose `test-census-subject` header names the changed file. Script edges
+# are DIRECT: a hub such as `sdlc_md` is imported by nearly every script, so following a
+# script's dependents transitively selects most of the suite on every commit. Between test
+# modules, one that imports a fixture test module inherits what that module imports or loads,
+# one level deep.
+# Whatever these routes miss - a library reached only through another script, a hook or a docs
+# page no module declares as its census subject, test infrastructure such as conftest.py or
+# pytest.ini - selects NOTHING per commit and is caught by the full suite at the push boundary.
 # That is the price of a commit that stays fast, and the skip reason says so.
 
 #: Where the suites live, as repo-relative directories.
@@ -2303,12 +2308,12 @@ def _imported_names(text: str) -> set[str]:
 
 def _selection_indexes(root: str) -> tuple[dict, dict]:
     """`(reach, census)` from ONE read of the test sources: `reach` is `{module stem: {test
-    modules that import or load it}}`, `census` is `{repo-relative path: {test modules whose
-    test-census-subject names it}}`.
+    modules that import or load it, or import a fixture test module that does}}`, `census` is
+    `{repo-relative path: {test modules whose test-census-subject names it}}`.
 
-    A test module that imports another test module inherits what that module reaches, one
-    level deep: a fixture module that loads a script carries the scripts its importers drive
-    (test_lean_close_shows_the_page reaches sprint.py only through test_lean_close).
+    A test module that imports another test module inherits what that module imports or loads,
+    one level deep: a module whose tests subclass a fixture module's base class drives the
+    scripts that fixture loads, though its own source names none of them.
     """
     base = Path(root)
     reach: dict[str, set[str]] = {}
@@ -2344,7 +2349,8 @@ def _selection_indexes(root: str) -> tuple[dict, dict]:
 
 
 def reach_index(root: str) -> dict:
-    """`{module stem: {test modules that import or load it}}`, read from the test sources.
+    """`{module stem: {test modules that import or load it, or import a fixture test module
+    that does}}`, read from the test sources.
 
     The import graph restricted to the edges selection needs, in one regex pass: building the
     whole repository's graph took four seconds, and the commit hook asks this on every commit.
@@ -2403,11 +2409,11 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
                             f"{result['excluded']} excluded, and the full suite runs at push")
     else:
         result["reason"] = ("no test module imports, loads, is named for or declares as its "
-                            "census subject a changed file - per-commit selection follows "
-                            "direct edges and one level of fixture imports, so artefacts, "
-                            "hooks, test infrastructure, a doc no test names and code reached "
-                            "only through another script run no unit suite here; the full "
-                            "suite at push catches them")
+                            "census subject a changed file (an import or load counts through "
+                            "one fixture test module too), so no unit suite runs here. "
+                            "Selection does not follow a script into the code it imports: a "
+                            "library tests drive only through another script waits for the "
+                            "full suite at push, which runs every module")
     return result
 
 
@@ -2786,7 +2792,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "those that import, load or are named for a changed code file, "
                         "directly or through one test module they import, and those whose "
                         "`test-census-subject` names a changed file. Skips when none is "
-                        "reached (an artefact change, or a doc no test names) or when the tracked "
+                        "reached (an artefact or doc no test module names as its census "
+                        "subject, say) or when the tracked "
                         "tree hashes identically to the last GREEN verdict's. A boundary runs "
                         "everything. Exits 0 when a run is needed")
     p.add_argument("--changed", nargs="+", metavar="PATH",

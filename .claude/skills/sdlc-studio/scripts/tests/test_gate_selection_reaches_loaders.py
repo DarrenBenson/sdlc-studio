@@ -68,9 +68,12 @@ class SelectionReachesLoadersTests(unittest.TestCase):
 
     def test_census_subject_and_fixture_imports_reach(self) -> None:
         """AC2. Mutants: the `test-census-subject` header ignored, so a doc's own test is not
-        selected for a change to the doc; a fixture test module's reach not inherited by the
-        module importing it; a reach inherited from a test module the importer never names;
-        inheritance followed past one level, which the changelog says it is not."""
+        selected for a change to the doc; the header read only for a changed file that is not
+        code (M7), so a module whose census subject is a script, and which neither imports nor
+        loads it, is not selected for a change to that script; a fixture test module's reach
+        not inherited by the module importing it; a reach inherited from a test module the
+        importer never names; inheritance followed past one level, which the changelog says it
+        is not."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _tree(root, {
@@ -78,6 +81,9 @@ class SelectionReachesLoadersTests(unittest.TestCase):
                 "docs/other.md": "# Other\n",
                 f"{SKILL}/widget.py": "X = 1\n",
                 f"{SKILL}/gadget.py": "Y = 1\n",
+                f"{SKILL}/gizmo.py": "Z = 1\n",
+                f"{TOOLS_TESTS}/test_gizmo_contract.py":
+                    f"# test-census-subject: {SKILL}/gizmo.py\nNAME = 'gizmo'\n",
                 f"{TOOLS_TESTS}/test_guide_claims.py":
                     "# test-census-subject: docs/guide.md\nGUIDE = 'docs/guide.md'\n",
                 f"{TOOLS_TESTS}/test_other_claims.py":
@@ -96,6 +102,10 @@ class SelectionReachesLoadersTests(unittest.TestCase):
             doc = _selected(root, "docs/guide.md")
             self.assertEqual({f"{TOOLS_TESTS}/test_guide_claims.py"}, doc,
                              "a doc's change must select exactly the module naming it as subject")
+            self.assertEqual({f"{TOOLS_TESTS}/test_gizmo_contract.py"},
+                             _selected(root, f"{SKILL}/gizmo.py"),
+                             "a script's change must select the module naming it as census "
+                             "subject, though that module neither imports nor loads it")
             self.assertEqual({f"{SKILL_TESTS}/test_close_fixture.py", f"{SKILL_TESTS}/test_close_page.py"},
                              _selected(root, f"{SKILL}/widget.py"),
                              "a change to widget must select its fixture module and the module "
