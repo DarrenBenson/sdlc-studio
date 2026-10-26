@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 152 |
+| Open | 153 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1133** |
+| **Total** | **1134** |
 
 ## All Bugs
 
@@ -209,6 +209,7 @@
 | [BG1131](BG1131-the-close-checklist-s-cost-row-never-reads.md) | The close checklist's cost row never reads a run holding only its legacy baseline, and its main-thread-only re-derivation note has no test | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1132](BG1132-bg0962-s-ac7-test-proves-only-the-reject.md) | BG0962's AC7 test proves only the REJECT half of 'the frozen verdict decides' when the per-unit ledger cannot be read | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1133](BG1133-three-velocity-priced-pt-behaviours-us1092-states-are.md) | Three VELOCITY Priced/pt behaviours US1092 states are pinned by no test: the Source guard, an earlier row keeping its recorded figure, and rows with no Source named in the rate's basis | Open | Low | 2026-10-26 | 2026-10-26 |
+| [BG1134](BG1134-us1095-s-cost-check-is-pinned-only-on.md) | US1095's cost check is pinned only on the older retro shape, cost-baseline add reports a row the median never uses, and its latest-five window has no test | Open | Low | 2026-10-26 | 2026-10-26 |
 
 ## Archived Releases
 
