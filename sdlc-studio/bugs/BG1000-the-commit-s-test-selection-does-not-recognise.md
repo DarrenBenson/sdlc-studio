@@ -26,10 +26,13 @@ Recognise `load_script("x")` in `_LOADER_NAME`; select a module whose `test-cens
 
 - [ ] **AC1** A test module that loads a script through `loader.load_script("x")` is selected by `gate.py --suite-decision --changed` for a change to x
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py -k load_script_is_a_load
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC2** A test module whose `test-census-subject` names a changed file, or that imports a fixture test module which reaches it, is selected for that change
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py -k census_subject_and_fixture_imports_reach
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC3** The reproduction holds: `gate.py --suite-decision --changed .claude/skills/sdlc-studio/scripts/sprint.py` lists `test_lean_close.py`, `test_lean_close_shows_the_page.py` and `test_lean_sign.py` among its selectors
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py -k the_reproduction_selects_the_close_modules
+  - **Verified:** yes (2026-10-26)
 
 ## Grooming note (2026-10-21)
 

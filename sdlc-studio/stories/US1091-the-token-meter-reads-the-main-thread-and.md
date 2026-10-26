@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture transcript directory holding a main-thread transcript and two subagent transcripts under `<session-id>/subagents/agent-*.jsonl` (one of them a depth-2 agent, which the harness writes into the same flat directory), each repeating one message's usage on three records, when `run_state.session_tokens` reads it, then the reading carries each component (input, output, cache write 5m from `cache_creation.ephemeral_5m_input_tokens`, cache write 1h from `ephemeral_1h_input_tokens`, cache read) summed once per `message.id`, split into main thread and subagents, and `tokens` is input + output + cache write over both
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterComponentsTests::test_main_and_subagent_components_are_counted_once_per_message
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given the same fixture, the reading's `priced` figure equals each component times its weight in `TOKEN_WEIGHTS` (input 1, cache write 5m 1.25, cache write 1h 2.0, cache read 0.1, output 5) and moves when a weight is changed in-process; the close's and the report's headline cost is `priced`, labelled as priced input-equivalent tokens, with the input + output + cache-write sum listed beside it as a component (D0390)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterPricedTests::test_priced_reads_the_weight_table_and_is_the_headline
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given an open run, when two meter stamps are taken either side of a subagent's completion, then `run_token_total` reports the priced delta and each component's delta beside `tokens`; given a run whose stamps were written before this change (no priced figure), `priced` is None with a reason naming the legacy stamps, never 0, and `tokens` is unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterStampsTests::test_the_run_total_carries_priced_deltas_and_names_legacy_stamps
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given a run whose stamps say the reading includes subagent transcripts and a builder total supplied with `sprint.py lane return --units <id> --tokens N`, when the run's actual is formed for the report (`sprint_report._run_tokens_actual`) and the retro (`retro.run_attributed_tokens`), then N is not added and the basis says the subagents are already in the reading; given a run whose stamps carry no such flag, as every run before this change, N is still added, so an earlier signed page re-derives unchanged
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::MeterDelegatedTests::test_a_supplied_total_is_not_added_over_a_reading_that_holds_subagents
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

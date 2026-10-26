@@ -21,6 +21,7 @@
 
 - **AC1:** Given a fixture repository with an open run whose stamps carry priced figures, when `retro.py accuracy --id <retro> --tokens-from-harness --write` runs, then the retro's accuracy block states each component and the priced total on its own line, the VELOCITY.md row carries a priced-per-point figure and a Source naming the new basis (main thread and subagents, once per message), every earlier row keeps its cells, and `sprint.tokens_per_point(root)['basis']` names the set of Source bases among the rows the rate pooled
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_velocity_priced_basis.py::VelocityPricedBasisTests::test_accuracy_writes_components_priced_per_point_and_the_basis
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

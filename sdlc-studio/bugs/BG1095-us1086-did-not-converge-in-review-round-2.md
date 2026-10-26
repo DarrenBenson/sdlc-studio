@@ -25,8 +25,10 @@ Fix each finding above, then deliver US1086 again in a later run.
 
 - [ ] **AC1** The TRD's and the TSD's push-gate sections each state, in a table, where the gate runs for each configuration the scripts read (a gate host set, none, `SDLC_GATE_LOCAL=1`) and what a transport failure does, and the test compares both tables' cells exactly with those configurations; the fall-back phrase scan is gone
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_the_push_stage_tables_each_gate_location
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC2** US1086 AC1 still passes: every `git config` key and environment variable the four scripts read to choose or report where the gate runs is named in the TRD and the TSD
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_every_gate_host_setting_is_named
+  - **Verified:** yes (2026-10-26)
 
 ## Grooming note (2026-10-20)
 

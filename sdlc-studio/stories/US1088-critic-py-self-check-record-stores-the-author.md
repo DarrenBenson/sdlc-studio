@@ -21,14 +21,19 @@
 
 - **AC1:** Given a claims file in which every claim is ruled TRUE or UNVERIFIABLE and at least one is TRUE, when `critic.py self-check record --unit <id> --claims <file> --mutants <file>` runs, then the record is written; given a claim with no ruling, a ruling outside TRUE, FALSE and UNVERIFIABLE, a claim ruled FALSE (the author corrects it before review), or an inventory ruled entirely UNVERIFIABLE (which `summarise_claim_pass` reads as checking nothing), then it is refused naming the cause and nothing is written
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_unruled_false_or_unchecked_inventory_is_refused
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given a unit whose Affects declares changelog fragments, when the claims file names no claim on the commit message, or none from one of those fragments, then the record is refused naming the surface it skipped
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_claims_file_skipping_a_surface_is_refused
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given a mutants file, when it lists no mutant, a mutant whose test is not in a test file the unit's Affects declares, a mutant with no result of killed or survived, or a survivor with no answer, then the record is refused naming the entry; given one listing each mutant against a declared test with its result, every survivor answered, then it is recorded; given a unit whose Affects declares no test file, an empty mutants list is recorded and the row says no test was declared
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_undeclared_test_or_unanswered_survivor_is_refused
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given a recorded self-check, when the committed log `sdlc-studio/reviews/author-self-checks.md` is read, then its row names the unit, the author, the date, the claim counts by ruling, the mutant counts by result, and a digest of the content of the unit's Affects files; after an edit to one Affects file, the digest the command computes differs
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_the_record_binds_the_affects_content
+  - **Verified:** yes (2026-10-26)
 - **AC5:** Given US1087's author self-check section, when the brief prints it, then it names the `critic.py self-check record` command for the unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_the_brief_names_the_record_command
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

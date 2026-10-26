@@ -26,6 +26,7 @@ Count each assistant message once, keyed on `message.id`, as a record with no id
 
 - [ ] **AC1** A transcript in which one message's usage is repeated on three records is counted once, and two distinct messages are counted twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_session_tokens_once_per_message.py::SessionTokensOncePerMessageTests::test_a_repeated_message_is_counted_once
+  - **Verified:** yes (2026-10-26)
 
 ## Impact
 

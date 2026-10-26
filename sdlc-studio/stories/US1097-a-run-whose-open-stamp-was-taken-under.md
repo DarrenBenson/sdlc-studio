@@ -20,6 +20,7 @@
 
 - **AC1:** Given a run whose open stamp was taken under an earlier counting basis (a stamp that names no basis, as every stamp before BG1111 and this story does), when the run's total is formed at the close or by the report, then the open reading is re-derived from the transcript records up to the stamp's time under the current basis, and the basis says so; where the transcript no longer holds those records, the total is reported not attributable naming the basis change. It is never the difference of two bases
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::OpenStampBasisTests::test_an_open_stamp_on_an_earlier_basis_is_re_derived_not_subtracted
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

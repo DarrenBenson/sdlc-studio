@@ -26,6 +26,7 @@ Take the run's opening reading as the earliest of baseline and open stamp and th
 
 - [ ] **AC1** Given a run whose baseline and open stamp are both readings of one session and no later stamp, when its total is read, then it reads not attributable with a reason, never a measured 0; given a later stamp, it reads the spend between the earliest opening reading and that stamp
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py::OpeningReadingTests::test_a_baseline_beside_the_open_stamp_never_reads_a_measured_zero
+  - **Verified:** yes (2026-10-26)
 
 ## Impact
 

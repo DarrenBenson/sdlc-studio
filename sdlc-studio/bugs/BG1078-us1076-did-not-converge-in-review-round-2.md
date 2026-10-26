@@ -25,14 +25,19 @@ Fix each finding above, then deliver US1076 again in a later run.
 
 - [ ] **AC1** The round 2 REJECT finding no longer holds: BLOCKING: [new] The repair's stub-gate child is left running for good whenever AC1, AC2 or the new interrupts test fails before it releases the gate. The child polls for the release file with no deadline (tools/tests/test\_remote\_gate\_runs.py:43-44), unlike the gate's own 180 s deadline (:51). `_RunsClone.cleanup` touches the release file and then removes the whole fixture directory straight away (:182-184), so the child misses the file. Once the gate times out, the child is orphaned and polls every 50 ms indefinitely. Only AC3's `finally` kills the recorded child pids. Executed: each of my seven runs that failed before the release (three AC1 timeouts, two AC2 failures and two interrupts-test failures) left one such child with its release directory gone, and a passing control left none. Re-run alone at c6f2239c (the reset removed, interrupts test), it behaved the same, and I killed every process of mine. Eight more children from runs made between 15:08 and 15:21 are still running on this machine: pids 1711354, 1717898, 1720453, 1720541, 1722079, 1722714, 1722780 and 1724793, with release paths under ~/.cache/sdlc-tmp/sdlc-tests-*. A `while True` feeder from a mutant run at 14:38 (pid 1694943) is also still running. I left all nine alone because they are not mine. This suite runs on the shared gate host for every push, so a red run there leaves processes running indefinitely, which is the condition this story exists to prevent. At f31862d8 the stub had no child, so the repair introduced this. Fix: give the child the gate's deadline, or have `_RunsClone.cleanup` kill the recorded gate and child pids as AC3's finally does
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_no_stub_outlives_its_fixture
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC2** The round 2 REJECT finding no longer holds: [new] low: the changelog's "The host's gate runs with SIGINT and SIGQUIT at their defaults" (changelog.d/US1076.md:11) is pinned for SIGINT only. The stub records only `sigint_ignored` (tools/tests/test\_remote\_gate\_runs.py:47), so a mutant that resets SIGINT alone (tools/remote-gate.sh:238) passes. test\_the\_hosts\_gate\_keeps\_interrupts\_at\_their\_default KILLS two mutants: removing the reset, and restoring the old launch. The SIGINT claim is TRUE by execution. Run as a background job of a non-interactive shell, test\_a\_ctrl\_c\_stops\_every\_lane\_with\_the\_hook fails in 3.4 s, and through the repair's reset it passes. That also bears out BG1077's Won't Fix correction
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_the_hosts_gate_keeps_interrupts_at_their_default
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC3** US1076 AC1 still passes: Given two runs of the same commit on one host through the stubbed transport, when both start, then each has its own directory and neither removes the other's tree
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_each_run_has_its_own_tree
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC4** US1076 AC2 still passes: Given a run in progress on the host, when a second run starts, then it waits on a host-side lock, says it is waiting and for which run, and starts when the first ends
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_a_second_run_waits_and_says_so
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC5** US1076 AC3 still passes: Given a hook stopped by INT or TERM, or a transport that drops mid-run, when the push ends, then it is refused and no tree or gate process for that run remains on the host
   - **Verify:** pytest tools/tests/test_remote_gate_runs.py::GateHostRunTests::test_an_abandoned_push_leaves_nothing_running
+  - **Verified:** yes (2026-10-26)
 
 ## Grooming note (2026-10-20)
 

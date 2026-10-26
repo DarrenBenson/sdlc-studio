@@ -20,6 +20,7 @@
 
 - **AC1:** Given AGENTS.md's `## Non-negotiable rules` section, when the bold sentence leading each paragraph is read, then `Run the full suite before a commit that touches shared surface.` is not one of them and `The push gate is the full-suite check.` is, and the paragraph it leads names `sdlc.gateHost` and `tools/run-suite.sh all`
   - **Verify:** pytest tools/tests/test_agents_md_full_suite_rule.py::FullSuiteRuleTests::test_the_rule_names_the_push_gate
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

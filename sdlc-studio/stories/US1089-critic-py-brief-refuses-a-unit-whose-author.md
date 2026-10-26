@@ -21,14 +21,19 @@
 
 - **AC1:** Given `review.author_self_check: block` and a unit with no self-check record, when `critic.py brief` runs at any tier, then it exits 2 naming `critic.py self-check record`, prints no brief on stdout, notes no brief fingerprint, and still prints US1087's author self-check section on stderr so the author is told what to record
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py::SelfCheckRefusalTests::test_no_record_is_refused_with_the_steps
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given `block` and a record whose Affects digest no longer matches the unit's Affects content, when the brief runs, first-round or `--rejoinder`, at any tier, then it is refused the same way and names the record as stale
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py::SelfCheckRefusalTests::test_a_stale_record_is_refused
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given `block` and a record whose digest matches, when the brief runs, then it prints the brief and its fingerprint as it does without the setting
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py::SelfCheckRefusalTests::test_a_current_record_admits_the_brief
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given a project with `review.author_self_check` unset, when the brief runs with no current record, then it prints the brief and stderr names the missing or stale record; given `off`, then stderr says nothing of it; and `templates/config-defaults.yaml` and `reference-config.md` give the key with default `report`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py::SelfCheckRefusalTests::test_the_setting_decides_refuse_report_or_silence
+  - **Verified:** yes (2026-10-26)
 - **AC5:** Given this repository, when its `sdlc-studio/.config.yaml` and AGENTS.md are read, then the config sets `review.author_self_check: block`, and the AGENTS.md paragraph led by `Exercise every claim through the shipped entry point before asking for review.` names `critic.py self-check record` and `review.author_self_check` and names neither `CR0520` nor `lane-check`
   - **Verify:** pytest tools/tests/test_author_self_check_repo.py::AuthorSelfCheckRepoTests::test_this_repository_blocks_and_says_so
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

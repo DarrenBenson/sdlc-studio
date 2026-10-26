@@ -21,16 +21,22 @@
 
 - **AC1:** Given VELOCITY.md with five rows carrying a priced-per-point figure (median M) and an open run whose priced cost per gate-cleared point is 1.6 x M, when `sprint.py close --retro <id> --goal-verdict achieved --note <text>` runs, then the run state's close known issues hold one `cost` issue naming the run's figure, M, the ratio and the retros M was taken from, with each batch unit's priced span cost (NOT MEASURED where it has none) and the run's unattributed remainder, and the close files the report as it does with any other known issue
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::CloseCostRegressionTests::test_a_run_over_one_and_a_half_times_the_median_is_a_known_issue
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given a run at exactly 1.5 x M, no cost issue is recorded; a VELOCITY row whose priced cell is absent is not counted towards the median and is never read as 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::CloseCostRegressionTests::test_the_boundary_and_an_absent_cell_record_no_issue
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given a run carrying the cost issue, `retro.py validate --id <retro>` refuses a retro with no `## Cost` section holding at least one bullet that is not a template placeholder, naming the section, and accepts it once it holds one; a retro for a run with no cost issue is not asked for the section
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::RetroCostCauseTests::test_the_retro_must_name_the_cause_of_a_flagged_run
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given the same history, when `sprint.py plan <batch> --sprint-goal <goal>` previews the run, then it prints the batch's cost budget, its points x 1.5 x M priced tokens, with M and the retros it came from, beside the token forecast; with fewer than three priced runs it prints the budget from the configured baseline and names it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::PlanBudgetTests::test_the_plan_prints_the_budget_and_its_basis
+  - **Verified:** yes (2026-10-26)
 - **AC5:** Given fewer than three priced runs (VELOCITY rows and baseline rows together), when the close runs, then it compares against `cost.baseline_per_point` from the project config, whose shipped default in `templates/config-defaults.yaml` is this repository's measured figure, and the comparison names the configured baseline as its basis; with the key set to `off` it prints UNMEASURED, naming how many priced runs it has and that three are needed, and records no cost issue
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::CloseCostBaselineTests::test_fewer_than_three_runs_use_the_configured_baseline
+  - **Verified:** yes (2026-10-26)
 - **AC6:** Given transcripts covering a past run's window, when `retro.py cost-baseline add --retro <id> --since <iso> --until <iso>` runs, then it derives the window's priced cost with US1091's reader and appends one row to `sdlc-studio/retros/COST-BASELINE.md` naming the retro, the window, the points, the priced cost per point and the weights used; VELOCITY.md is byte-for-byte unchanged; the trailing median reads baseline rows beside VELOCITY's priced rows; a window holding no transcript record is refused and nothing is written
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py::CostBaselineSeedTests::test_a_seeded_run_joins_the_median_and_velocity_is_untouched
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

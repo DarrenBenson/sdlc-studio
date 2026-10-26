@@ -20,10 +20,13 @@
 
 - **AC1:** Given a unit, when `critic.py brief --unit <id> --seat <seat>` runs, then stderr carries an author self-check section and stdout carries none of its lines, and the brief's fingerprint is the one `critic.brief()` gives for the same unit and seat
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_go_to_stderr_and_the_brief_is_unchanged
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given a unit, when the brief runs, then the section names as claim-inventory surfaces the commit message, each prose surface the brief's own claim inventory names (`CLAIM_SURFACES`), and each changelog fragment the unit's Affects declares (read from its Affects, never from its id), and names each test file its Affects declares as a mutation-pass target; given Affects declaring no test file or no fragment, it says so
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_name_the_units_surfaces_and_tests
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given the brief's claim-inventory text and its practice to mutate the author's tests, when either text is changed in-process, then the section's instruction changes with it, because it is derived from those texts and not restated
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_author_self_check.py::AuthorStepsTests::test_the_steps_derive_from_the_briefs_practices
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

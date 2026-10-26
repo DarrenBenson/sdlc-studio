@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture repository with an open run naming the unit and its base commit, and commits since that base changing two Affects files and one undeclared file, when `critic.py brief --unit <id> --seat qa` runs, then stdout carries a unit-diff section equal to the output of `git diff <base> HEAD -- <Affects>`, the undeclared file's hunks are absent, and the fingerprint printed on stderr is the one `critic.brief_fingerprint(critic.brief(...))` gives
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py::ReviewBriefDiffTests::test_the_brief_carries_the_units_own_diff_bounded_to_affects
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given a diff longer than the tier's cap (`review.brief_diff_lines`, its full and light defaults declared once), then the section holds the diff up to the cap and one remainder line naming each file cut or left out, its omitted line count and the `git diff <base> HEAD -- <file>` that prints it; a diff within the cap carries no remainder line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py::ReviewBriefDiffTests::test_a_diff_over_the_cap_names_what_it_left_out
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given a unit, then the brief carries the one command that runs that unit's Verify lines without writing its story file (`verify_ac.py run --id <id> --dry-run`, with the skill's script path); given no run naming the unit, the brief says no base is recorded, carries no diff section, and still carries the command
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py::ReviewBriefDiffTests::test_the_brief_names_the_command_that_runs_the_units_verify_lines
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given one unit briefed at each tier through `critic.py brief --tier full|light`, then the set of section headings in each brief equals `TIER_SECTIONS[tier]` and the practices `missing_practices` finds present equal `TIER_PRACTICES[tier]` (light omits the claim inventory, the files' history and the two mutation practices, and keeps the isolated-checkout and repair practices), the light diff cap is below full's, each brief states its tier's tool-call budget from `TIER_TOOL_BUDGET`, and the light brief is not refused for the practices its tier omits
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_brief_diff.py::ReviewTierTests::test_each_tier_carries_its_declared_sections_practices_and_budget
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

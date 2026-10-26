@@ -21,12 +21,16 @@
 
 - **AC1:** Given an open run whose batch holds a groomed story, when `sprint.py lane brief --units <id>` runs, then stdout carries the unit's Affects, one path per line, equal to `sdlc_md.affects_files` of the unit, and a commit step that stages exactly those paths (`git add -- <path> ...`) and names the unit id for the commit subject
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_affects_and_stages_only_them
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given the same unit, then stdout carries `critic.author_self_check(root, <id>)` verbatim, then the self-check record command (`critic.py self-check record --unit <id>`) and the command that runs the unit's criteria (`verify_ac.py run --id <id>`); when `author_self_check` is replaced in-process the brief changes with it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_carries_the_self_check_and_the_commands_for_this_unit
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given a project seat card declaring `role: engineering` beside the shipped default, then the brief names the card that `persona_resolve.resolve_card(root, "engineering", render="build")` returns, as the work render to adopt; with no project card it names the shipped default
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_names_the_engineering_seats_work_render
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given `reference-sprint-toolchain.md`'s `## 3. Deliver a unit` table, when its rows are read from the source as (Do, Command, Instead of) cells, then it holds the three rows the test declares, compared cell for cell: build a unit (`sprint.py lane brief --units <id>`, handed to a fresh agent; instead of building it in the orchestrating context), wait for the builder (its completion notification; instead of polling its output or sleeping), and accept its return (`sprint.py lane return --units <id>`; instead of reading the builder's diff or transcript into the orchestrating context); the build row's Command cell also names the fallback for a harness without subagents: a fresh session per unit, started from the same brief
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderRunbookTests::test_the_deliver_table_builds_each_unit_in_a_fresh_agent
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

@@ -28,8 +28,10 @@ Bind the record to the unit's own change rather than the whole files: digest the
 
 - [ ] **AC1** Given unit A's recorded self-check and a later commit by unit B to a file both declare, when A is briefed under block, then the brief is admitted; given an edit by A's own author to that file after the record, the brief is refused as stale
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py::LaterUnitTests::test_a_later_units_commit_does_not_stale_the_record
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC2** Given a unit whose Affects declares the review tooling's own logs (sdlc-studio/reviews/author-self-checks.md, sdlc-studio/reviews/critic-verdicts.md, or the directory holding them), when its self-check is recorded and then another unit's verdict is recorded, then its brief under block is admitted: the record's own append and a `critic.py record` do not move the digest
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_self_check_survives_a_later_unit.py::LaterUnitTests::test_the_review_tools_own_writes_do_not_stale_the_record
+  - **Verified:** yes (2026-10-26)
 
 ## Impact
 

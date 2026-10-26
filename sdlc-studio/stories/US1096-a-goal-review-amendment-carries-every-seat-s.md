@@ -20,12 +20,16 @@
 
 - **AC1:** Given a round with engineering, product and qa verdicts on goal G, when `sprint.py goal-review record --goal G2 --amend-from G --requesting-seat qa` runs with no `--seat`, then the new round carries all three verdicts from G, `goal_review_status(root, G2)` reads reviewed with `needs_reconsult` empty, and `sprint.py plan --sprint-goal G2` prints no seat as owing a verdict
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OneRoundTests::test_an_amendment_carries_every_verdict_forward
+  - **Verified:** yes (2026-10-26)
 - **AC2:** Given qa's verdict on G recorded with `rereview: yes` (a `--fields-file` seat key, and a sixth field of the `--seat` form), when the amendment is recorded, then engineering's and product's verdicts carry forward and qa's does not, `needs_reconsult` is exactly `["qa"]`, and the plan prints qa as owing a verdict on G2; a `--material` change carries none and lists every seat
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OneRoundTests::test_only_a_seat_that_asked_is_re_consulted
+  - **Verified:** yes (2026-10-26)
 - **AC3:** Given an open run whose recorded goal is G, when `sprint.py goal-review record --goal G2 --amend-from G --requested-by operator` runs, then it is accepted with no prior operator verdict, every seat's verdict carries forward and no seat's objection is discharged, the run state's `sprint_goal` reads G2 with G recorded as the wording it amended, and `close_goal_judgement` judges G2; an amendment whose `--amend-from` is not the open run's goal, or one recorded with no run open, leaves the run state unchanged; an amendment recorded after the run's goal verdict is refused naming that verdict, and the plan snapshot keeps the goal as planned
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OpenRunGoalAmendTests::test_an_operator_amendment_moves_the_goal_the_close_judges
+  - **Verified:** yes (2026-10-26)
 - **AC4:** Given the same open run and a G2 of 21 words, when the amendment is recorded, then it exits 2 naming the 20-word limit (`GOAL_WORD_LIMIT`), and neither the goal-review record nor the run state changes
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_one_round.py::OpenRunGoalAmendTests::test_an_amended_goal_over_twenty_words_is_refused_and_nothing_is_written
+  - **Verified:** yes (2026-10-26)
 
 ## Notes
 

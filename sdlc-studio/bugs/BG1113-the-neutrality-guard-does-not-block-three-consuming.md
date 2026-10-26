@@ -26,8 +26,10 @@ Add the three hashes to `_BLOCKED`. Generalise each occurrence to 'a consuming p
 
 - [ ] **AC1** `_BLOCKED` holds the SHA-256 of each of the three ruled names
   - **Verify:** shell python3 -c "import sys; sys.path.insert(0, 'tools'); import check_neutrality as c; missing = {'8be0b5445fca6eb16d14c6f4eaff1cf1d1a3362ef660bfb2b66e74bf309b7e61', '6aa3f655fe010c45b7461e423846938f9610c967417eeec7523933c9e0b0da5b', '1bb23da303e7033344c38c0b3e13cc9bc8fcbe000a06d330faa92f68fbceb02b'} - c._BLOCKED; assert not missing, missing"
+  - **Verified:** yes (2026-10-26)
 - [ ] **AC2** No tracked file names any of them: `tools/check_neutrality.py` exits 0 over the tree
   - **Verify:** shell python3 tools/check_neutrality.py
+  - **Verified:** yes (2026-10-26)
 
 ## Impact
 
