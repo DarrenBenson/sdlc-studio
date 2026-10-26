@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 150 |
+| Open | 151 |
 | In Progress | 0 |
 | Fixed | 809 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 38 |
-| **Total** | **1131** |
+| **Total** | **1132** |
 
 ## All Bugs
 
@@ -207,6 +207,7 @@
 | [BG1129](BG1129-test-lean-gate-host-docs-py-s-table.md) | test_lean_gate_host_docs.py's table test says a hook honouring a value other than 1 fails it, but an edit outside the lines `_hook_code` cuts passes it | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1130](BG1130-the-builder-brief-s-commit-step-quotes-each.md) | The builder brief's commit step quotes each Affects path with shlex.quote, but no test has a path with a space, so dropping the quoting stages the wrong paths with every test green | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1131](BG1131-the-close-checklist-s-cost-row-never-reads.md) | The close checklist's cost row never reads a run holding only its legacy baseline, and its main-thread-only re-derivation note has no test | Open | Low | 2026-10-26 | 2026-10-26 |
+| [BG1132](BG1132-bg0962-s-ac7-test-proves-only-the-reject.md) | BG0962's AC7 test proves only the REJECT half of 'the frozen verdict decides' when the per-unit ledger cannot be read | Open | Low | 2026-10-26 | 2026-10-26 |
 
 ## Archived Releases
 
