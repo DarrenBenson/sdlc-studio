@@ -123,6 +123,10 @@ TOKEN_BASELINE = "session_token_baseline"
 # delta and is NAMED as uncovered rather than guessed at, so an unqualified total can never
 # stand for a partially stamped run.
 TOKEN_STAMPS = "session_token_stamps"
+#: The KIND of the stamp `open_run` takes as the run opens. It and the legacy baseline taken
+#: beside it are the run's OPENING readings: one moment read twice, which spans no spend, so a
+#: session holding only those has no closing reading.
+OPEN_STAMP = "open"
 
 # The delegated agents' token totals, one record per agent, SUPPLIED rather than measured.
 #
@@ -1320,6 +1324,14 @@ def rebased_note(total: dict) -> str:
             f"transcript, up to the moment each was taken, under the current one" if n else "")
 
 
+def _opening(row: dict, opening: set) -> bool:
+    """Is `row` one of its session's OPENING readings: the open stamp, the legacy baseline
+    folded beside it, or the re-derivation of either (`opening` holds their times)?"""
+    if row.get("kind") == REDERIVED:
+        return row.get(REDERIVES) in opening
+    return row.get("kind") in (OPEN_STAMP, TOKEN_BASELINE)
+
+
 def _total_basis(includes: bool, rebased: int) -> str:
     text = TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
     note = rebased_note({"rebased": rebased})
@@ -1376,7 +1388,8 @@ def run_token_total(state: dict, current: dict | None = None,
                   and str(legacy.get("source") or "") in by_session)
         if folded:
             by_session[str(legacy["source"])].append({**legacy, "tokens": int(legacy["tokens"]),
-                                                      "source": str(legacy["source"])})
+                                                      "source": str(legacy["source"]),
+                                                      "kind": TOKEN_BASELINE})
         models = sorted({s["model"] for s in stamps if s.get("model")})
         model = models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models else None)
         shape = ("stamps" if not folded else
@@ -1384,6 +1397,7 @@ def run_token_total(state: dict, current: dict | None = None,
                  f"this run predates the open stamp")
         total, covered, uncovered, spans, rebased = 0, [], [], [], 0
         for src, rows in by_session.items():
+            opening = {r.get("at") for r in rows if r.get("kind") in (OPEN_STAMP, TOKEN_BASELINE)}
             rows, redone, why = _one_basis(src, rows, failed, rebase)
             if why:
                 return {"tokens": None, "priced": None, "components": None,
@@ -1392,8 +1406,10 @@ def run_token_total(state: dict, current: dict | None = None,
                         "model": model, "basis": TOKEN_TOTAL_BASIS,
                         "reason": f"not attributable: {why}"}
             rebased += redone
-            if len(rows) < 2:
-                # ONE reading covers no delta. Named, never guessed at and never dropped
+            if len(rows) < 2 or all(_opening(r, opening) for r in rows):
+                # ONE reading covers no delta, and nor do the run's opening readings alone: the
+                # plan-time baseline and the open stamp are one moment read twice, and their
+                # difference, 0, is not a spend. Named, never guessed at and never dropped
                 # silently: an unqualified total over a partially stamped run is a partial one.
                 uncovered.append(src)
                 continue
@@ -1401,14 +1417,14 @@ def run_token_total(state: dict, current: dict | None = None,
             covered.append(src)
             spans.append(rows)
         if not covered:
-            # EVERY session carries one reading, so no delta is measurable anywhere. `total` is
+            # NO session carries a closing reading, so no delta is measurable anywhere. `total` is
             # still at its 0 initialiser here, and returning it would publish a cost of zero and
             # a rate of zero per point for the shape EVERY run carries between `open_run`'s
             # stamp and the next one - which is the outcome AC1's own mutant describes and the
             # output AC3 forbids by name. Zero tokens and no reading are different facts.
-            why = (f"{len(uncovered)} session(s) carry a single meter reading and "
-                   f"no closing one, so no delta can be measured: "
-                   f"{', '.join(sorted(uncovered))}")
+            why = (f"{len(uncovered)} session(s) carry no closing meter reading - a single "
+                   f"reading, or only the run's opening ones, its open stamp and the baseline "
+                   f"beside it - so no delta can be measured: {', '.join(sorted(uncovered))}")
             return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
                     "includes_subagents": False, "rebased": 0, "sessions": [],
                     "session_count": 0, "uncovered": sorted(uncovered), "shape": shape,
@@ -1569,7 +1585,7 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
                      # The FIRST stamp, appended by the same read. The legacy baseline is kept
                      # beside it: every consumer of the old field goes on working, and a run
                      # opened before the stamp list existed still reports (US0844 AC4).
-                     TOKEN_STAMPS: [s for s in [_stamp(repo_root, "open")] if s]}
+                     TOKEN_STAMPS: [s for s in [_stamp(repo_root, OPEN_STAMP)] if s]}
         elif _disjoint(state, batch):
             # The run is OPEN (not spent) and this batch shares no unit with it: a second sprint
             # the one run slot cannot hold. Refused here, ahead of every write - inside the lock,

@@ -20,7 +20,9 @@ Pinned here, one class per criterion's Verify line:
 * a supplied builder total is not added over a reading that holds the subagents, and is still
   added over one that does not (AC4);
 * a reading taken on an earlier counting basis is re-derived from the transcript up to its own
-  time, never subtracted from, or summed with, one on the current basis (US1097 AC1).
+  time, never subtracted from, or summed with, one on the current basis (US1097 AC1);
+* a run's opening readings, its baseline and open stamp, span no spend, so a run holding only
+  those reads not attributable, never a measured 0 (BG1127).
 
 Every fixture is a throwaway transcript directory in the harness's layout. Run from the repo
 root:
@@ -876,6 +878,88 @@ class OpenStampBasisTests(_Case):
         total = self.rs.run_token_total(timeless.state(), self.rs.session_tokens(timeless.root))
         self.assertIsNone(total["tokens"], f"never a measured 0: {total}")
         self.assertIn("records no time", total["reason"])
+
+
+class OpeningReadingTests(_Case):
+    """BG1127: a run's opening readings, the plan-time baseline and the open stamp beside it,
+    are one moment read twice. They span no spend, so a run holding only those reads not
+    attributable, and once a later stamp lands it reads the spend from the earliest of them."""
+
+    def test_a_baseline_beside_the_open_stamp_never_reads_a_measured_zero(self) -> None:
+        """AC1. MUTANTS: the baseline and the open stamp read as a span (the run reads a
+        measured 0: its page's cost appendix states a total of 0 tokens, and the close's COST
+        section 0 priced input-equivalent tokens); the opening read
+        from the open stamp alone, the baseline beside it not folded in (the run then reads
+        2,975 from the open stamp, where it spent 6,195 from the earlier baseline)."""
+        ws = self.workspace()
+        ws.open()
+        state = ws.state()
+        self.assertEqual(
+            [self.rs.OPEN_STAMP], [s["kind"] for s in state[self.rs.TOKEN_STAMPS]],
+            "premise: the run holds its open stamp alone")
+        self.assertEqual(state[self.rs.TOKEN_BASELINE]["tokens"],
+                         state[self.rs.TOKEN_STAMPS][0]["tokens"],
+                         "premise: the baseline beside it is the same moment read twice")
+        total = self.rs.run_token_total(state)
+        self.assertIsNone(total["tokens"], f"never a measured 0: {total}")
+        self.assertIsNone(total["priced"], total)
+        self.assertIn("only the run's opening ones", total["reason"])
+        page = ws.page()
+        self.assertEqual("NOT MEASURED", ws.row(page, "Tokens")["est_actual"]["value"])
+        cost = next(s for s in page["sections"] if s["key"] == "cost")
+        self.assertNotIn("tokens_total", cost.get("figures") or {}, "no total of 0 tokens")
+        self.assertIn("only the run's opening ones", cost["not_measured"]["reason"])
+        self.assertIn("not attributable", ws.close_cost())
+
+        # The plan-time baseline taken before the conversation's last message, the open stamp
+        # after it; then the builder runs and the close takes its reading.
+        early = _Workspace(self.tmp / "early", agents=False)
+        env = unittest.mock.patch.dict(os.environ, {self.rs.TRANSCRIPTS_ENV: str(early.tx.dir)})
+        env.start()
+        self.addCleanup(env.stop)
+        baseline = self.rs._session_baseline(early.root)
+        early.tx.agent_says("a1", "msg_agent_a", AGENT_A)
+        early.open()
+        self.rs.update(early.root, **{self.rs.TOKEN_BASELINE: baseline})
+        early.tx.main_says("msg_main_2", MAIN_2)
+        early.tx.agent_says("b2", "msg_agent_b", AGENT_B, depth=2)
+        self.rs.stamp_tokens(early.root, "report")
+        spent = _sum(AGENT_A, MAIN_2, AGENT_B)
+        total = self.rs.run_token_total(early.state())
+        self.assertEqual((6_195, _tokens(spent), _priced(spent)),
+                         (total["tokens"], total["tokens"], total["priced"]), total)
+        self.assertEqual(_tokens(spent), early.row(early.page(), "Tokens")["est_actual"]["value"])
+
+    def test_a_session_holding_only_re_derived_opening_readings_has_no_closing_one(
+            self) -> None:
+        """MUTANT: a re-derivation of an opening reading counted as a closing one - a run
+        opened before the meter's change, whose first current-basis reading lands in a later
+        session, reads its first session as measured at 0 (two sessions covered) where that
+        session holds no closing reading (one covered, the first named uncovered)."""
+        ws = self._timed("resumed")
+        ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
+        ws.open()
+        src, legacy = str(ws.tx.main), 3 * _tokens(_parts(MAIN_1))
+        self.rs.update(ws.root, **{
+            self.rs.TOKEN_BASELINE: {"tokens": legacy, "source": src,
+                                     "at": _iso(T0 + timedelta(minutes=4))},
+            self.rs.TOKEN_STAMPS: [{"tokens": legacy, "source": src, "model": MODEL,
+                                    "at": _iso(T0 + timedelta(minutes=5)),
+                                    "kind": self.rs.OPEN_STAMP}]})
+        # The run resumes in a second session, whose transcript is now the newest.
+        later = ws.tx.dir / "5e5510n-0000-4000-8000-000000000002.jsonl"
+        _Transcripts._append(later, _Transcripts._records(
+            "msg_later_1", MAIN_2, T0 + timedelta(minutes=30), "/work/repo"))
+        self.rs.stamp_tokens(ws.root, "resume")
+        _Transcripts._append(later, _Transcripts._records(
+            "msg_later_2", AGENT_B, T0 + timedelta(minutes=40), "/work/repo"))
+        self.rs.stamp_tokens(ws.root, "report")
+        redone = [s for s in ws.state()[self.rs.TOKEN_STAMPS]
+                  if s["kind"] == self.rs.REDERIVED and s["source"] == src]
+        self.assertEqual(2, len(redone), "premise: both opening readings were re-derived")
+        total = self.rs.run_token_total(ws.state())
+        self.assertEqual((_tokens(_parts(AGENT_B)), 1, [src]),
+                         (total["tokens"], total["session_count"], total["uncovered"]), total)
 
 if __name__ == "__main__":
     unittest.main()
