@@ -34,3 +34,6 @@
 | US1093 | builder-US1093 | 2026-10-22 | TRUE 19, FALSE 0, UNVERIFIABLE 0 | killed 19, survived 0 | a90822bde2b86b56 at 92c3fcab206f |
 | US1096 | builder-US1096; repair round 1 c3182209, rebased by the orchestrator | 2026-10-26 | TRUE 39, FALSE 0, UNVERIFIABLE 0 | killed 28, survived 1 | 97888e63ac136570 at d65ef2709fa5 |
 | BG1078 | builder-BG1078 | 2026-10-26 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 1 | 21d10aa2bce18555 at d65ef2709fa5 |
+| US1097 | builder of US1091's repair; US1097 repair round 1 979c2d83, rebased by the orchestrator | 2026-10-26 | TRUE 36, FALSE 0, UNVERIFIABLE 0 | killed 32, survived 0 | 3b6ac5b59c69498c at 979c2d835a7e |
+| BG1127 | builder of US1091's repair; landed by the orchestrator | 2026-10-26 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | 457d084209d57134 at 07fe889d4a57 |
+| BG0962 | builder-BG0962 | 2026-10-26 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 15, survived 0 | f9227114d0097134 at 07fe889d4a57 |
