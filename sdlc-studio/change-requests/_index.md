@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-22
+**Last Updated:** 2026-10-26
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 29 |
 | Complete | 520 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **653** |
+| **Total** | **654** |
 
 ## All Changes
 
@@ -65,6 +65,7 @@
 | [CR-0651](CR0651-a-sprint-costs-what-its-work-costs-the.md) | A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close | In Progress | High | Enhancement | 2026-10-22 | EP0292 |
 | [CR-0652](CR0652-critic-py-self-check-record-has-no-surface.md) | critic.py self-check record has no surface for a documentation unit's own prose, so the claims a doc unit makes in the file it changes cannot be recorded under that file | Proposed | Low | Feature | 2026-10-22 | -- |
 | [CR-0653](CR0653-a-delegated-token-total-supplied-for-an-agent.md) | A delegated token total supplied for an agent outside this session is dropped whenever the session ran any subagent, because the reading's 'subagents included' flag is per session, not per agent | Proposed | Low | Feature | 2026-10-22 | -- |
+| [CR-0654](CR0654-the-builder-brief-tells-the-builder-to-write.md) | The builder brief tells the builder to write its story file and the self-check log, then commit only its Affects, without saying who commits those two | Proposed | Low | Feature | 2026-10-26 | -- |
 
 ## Archived Releases
 

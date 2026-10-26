@@ -14,6 +14,8 @@
 
 US1091's QA review (round 1, 2026-10-22). Since US1091 the meter reads the main transcript and every `<session>/subagents/agent-*.jsonl` once per message on every reading. On this session one reading takes about 36 s, against 22 s before; `sprint.py lane brief`, `lane return`, `transition.py set` and the report each take one, and US1097's first current-basis stamp reads the transcripts twice (about 346 s observed while suites ran). The process this epic makes cheaper in tokens gets slower in wall time with every unit.
 
+Further evidence (US1091's round-2 review, 2026-10-26): one reading of this live session took 228 s at fcb7f071 and 190 s at bd362d90, at a load average of 40 to 50, so a stamp-taking command costs minutes on a long session under load.
+
 ## Steps to Reproduce
 
 `time python3 -c` a `run_state.session_tokens` reading on a session with ~90 subagent transcripts.
