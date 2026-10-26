@@ -143,6 +143,11 @@ class OneRoundTests(_Copies):
                     _ok(_record(root, "--fields-file", str(fields)))
                 first = sprint.goal_review_rounds(sprint.goal_review(root))[-1]["seats"]
                 self.assertEqual("yes", next(s for s in first if s["seat"] == "qa")["rereview"])
+                if form == "seat":
+                    # MUTANT (M3b): the answer kept in the note as well as read from it.
+                    notes = {s["seat"]: s.get("note") for s in first}
+                    self.assertEqual({"engineering": "fine", "product": None,
+                                      "qa": "show me the test plan"}, notes)
                 _ok(_record(root, "--goal", G2, "--amend-from", G,
                             "--requesting-seat", "engineering"))
                 latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
@@ -169,25 +174,76 @@ class OneRoundTests(_Copies):
             self.assertIn(seat, owing[0])
 
     def test_a_rereview_answer_outside_yes_and_no_is_refused(self) -> None:
-        """MUTANT: an unreadable `rereview` stored, or dropped, rather than refused - a seat that
-        asked to re-review would then have its verdict carried as though it had not."""
+        """MUTANT: an unreadable `--fields-file` `rereview` stored, or dropped, rather than
+        refused - a seat that asked to re-review would then have its verdict carried as though
+        it had not."""
         root = self._copy("base")
         fields = root / "fields.json"
         fields.write_text(json.dumps({"goal": G, "seats": [
             {"seat": "qa", "achievable": "yes", "done_means": "done", "one_increment": "yes",
              "rereview": "maybe"}]}), encoding="utf-8")
-        for argv in (("--fields-file", str(fields)),
-                     ("--goal", G, "--seat", "qa|yes|done|yes|a note|maybe")):
-            with self.subTest(argv[0]):
-                r = _record(root, *argv)
-                self.assertEqual(2, r.returncode, r.stdout + r.stderr)
-                self.assertIn("rereview", r.stderr)
-                self.assertIsNone(_bytes(_local(root, "goal-review.json")))
+        r = _record(root, "--fields-file", str(fields))
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("rereview", r.stderr)
+        self.assertIsNone(_bytes(_local(root, "goal-review.json")))
         # the positive control: a five-field --seat keeps its note and asks for nothing
         _ok(_record(root, "--goal", G, "--seat", "qa|yes|done|yes|a note"))
         seat = sprint.goal_review_rounds(sprint.goal_review(root))[-1]["seats"][0]
         self.assertEqual("a note", seat["note"])
         self.assertNotIn("rereview", seat)
+
+    def test_a_seat_note_keeps_its_pipes_unless_it_ends_in_yes_or_no(self) -> None:
+        """The sixth `--seat` field is the answer only when it is exactly yes or no; otherwise
+        the note keeps its pipes, as it did before. MUTANTS: (1) any sixth field read as the
+        answer - `a|b` refused and `a note|maybe` refused; (2) the answer never read - `risky|no`
+        and `Yes` stored in the note. The third shape is the one ambiguity left: a note that
+        itself ends in `|no` reads as the answer, which `--fields-file` avoids."""
+        root = self._copy("base")
+        shapes = {"qa|yes|done|yes|a|b": ("a|b", None),
+                  "qa|yes|done|yes|a note|maybe": ("a note|maybe", None),
+                  "qa|yes|done|yes|risky|no": ("risky", "no"),
+                  "qa|yes|done|yes|show me|Yes": ("show me", "yes")}
+        for spec, (note, rereview) in shapes.items():
+            with self.subTest(spec):
+                _ok(_record(root, "--goal", G, "--seat", spec))
+                seat = sprint.goal_review_rounds(sprint.goal_review(root))[-1]["seats"][0]
+                self.assertEqual((note, rereview), (seat.get("note"), seat.get("rereview")))
+
+    def test_a_seat_owing_a_verdict_records_it_alone(self) -> None:
+        """The rounds on one wording are read together, back to the amendment that introduced
+        it, so the plan's owing advice is followed in one round. MUTANTS: (1) the latest round
+        read alone - qa's round leaves engineering and product owing; (2) the requester read
+        from the latest round - engineering's answered objection returns as advice; (3) the read
+        not stopped at an amendment - a material change of the same wording keeps the verdicts
+        it declared void."""
+        root = self._copy("base")
+        self._seed(root, "engineering|no|done|yes|reword it", "product|yes|done|yes",
+                   "qa|yes|done|yes|show me the test plan|yes")
+        _ok(_record(root, "--goal", G2, "--amend-from", G, "--requesting-seat", "engineering"))
+        owing = _owing(_plan(root, G2))
+        self.assertEqual(1, len(owing), owing)
+        self.assertIn("owing a verdict on this wording: qa - ", owing[0])
+        _ok(_record(root, "--goal", G2, "--seat", "qa|yes|done|yes"))
+        latest = sprint.goal_review_rounds(sprint.goal_review(root))[-1]
+        self.assertEqual(["qa"], [s["seat"] for s in latest["seats"]])   # the round holds qa
+        status = sprint.goal_review_status(root, G2)
+        self.assertEqual(sorted(SEATS), sorted(s["seat"] for s in status["seats"]))
+        self.assertEqual([], status["needs_reconsult"])
+        self.assertEqual(["engineering"], status["discharged"])
+        self.assertEqual([], status["objections"])
+        out = _plan(root, G2)
+        self.assertEqual([], _owing(out))
+        self.assertNotIn("judged the goal NOT achievable", out)
+        # a seat's fresh verdict on the same wording replaces its own, and only its own
+        _ok(_record(root, "--goal", G2, "--seat", "product|no|done|yes|not now"))
+        status = sprint.goal_review_status(root, G2)
+        self.assertEqual(["product"], [o["seat"] for o in status["objections"]])
+        self.assertEqual(3, len(status["seats"]))
+        # an amendment starts the wording's read afresh, even an amendment of the same wording
+        _ok(_record(root, "--goal", G2, "--amend-from", G2, "--material"))
+        status = sprint.goal_review_status(root, G2)
+        self.assertFalse(status["reviewed"])
+        self.assertEqual(sorted(SEATS), status["needs_reconsult"])
 
 
 class OpenRunGoalAmendTests(_Copies):
@@ -224,6 +280,28 @@ class OpenRunGoalAmendTests(_Copies):
         judged = "\n".join(sprint.close_goal_judgement(root, {**state, "author": "builder"}))
         self.assertIn(G2, judged)
         self.assertNotIn(G, judged)
+        # A second amendment keeps the first in the ledger. MUTANT: the earlier entries dropped.
+        g3 = "ship the renderer and its docs"
+        _ok(self._amend(root, g3, frm=G2))
+        ledger = sprint.run_state.read(root)["sprint_goal_amendments"]
+        self.assertEqual([(G, G2), (G2, g3)], [(a["from"], a["to"]) for a in ledger])
+
+        # A CLOSED run is not open: its state is left byte-identical. MUTANTS: the open-run
+        # guard deleted, or its `ended_at` half dropped. Its outcome half alone is not pinned:
+        # `close_run`, the one writer of a closed outcome, sets `ended_at` with it.
+        for case in ("closed by close_run", "ended_at set, outcome still running"):
+            with self.subTest(case):
+                root = self._copy("run")
+                if case == "closed by close_run":
+                    sprint.run_state.close_run(root, sprint.run_state.STOPPED)
+                else:
+                    sprint.run_state.update(root, ended_at="2026-10-22T12:00:00Z")
+                run_before = _bytes(_local(root, "run-state.json"))
+                self.assertEqual(G, json.loads(run_before)["sprint_goal"])
+                r = self._amend(root, G2)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertIn(f"no open run's goal is \"{G}\", so no run's goal moved", r.stdout)
+                self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
 
         # An --amend-from that is not the open run's goal leaves the run state unchanged.
         root = self._copy("run")
@@ -251,6 +329,28 @@ class OpenRunGoalAmendTests(_Copies):
         self.assertIn("partial", r.stderr)
         self.assertEqual(review_before, _bytes(_local(root, "goal-review.json")))
         self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
+
+    def test_the_operator_without_an_amendment_or_beside_a_seat_is_refused(self) -> None:
+        """`--requested-by operator` names who asked for an amendment, so it is refused with no
+        `--amend-from`, with `--material`, and beside `--requesting-seat`. MUTANT: the refusal
+        deleted - each of the three is recorded, and the third also moves the run's goal."""
+        root = self._copy("run")
+        review_before = _bytes(_local(root, "goal-review.json"))
+        run_before = _bytes(_local(root, "run-state.json"))
+        for label, argv in (("no --amend-from", ()), ("--material", ("--amend-from", G,
+                                                                        "--material")),
+                            ("--requesting-seat", ("--amend-from", G,
+                                                   "--requesting-seat", "qa"))):
+            with self.subTest(label):
+                r = _record(root, "--goal", G2, "--seat", "qa|yes|done|yes", *argv,
+                            "--requested-by", "operator")
+                self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+                self.assertIn("one requester per round", r.stderr)
+                self.assertEqual(review_before, _bytes(_local(root, "goal-review.json")))
+                self.assertEqual(run_before, _bytes(_local(root, "run-state.json")))
+        # the positive control: the same amendment with the operator alone is recorded
+        _ok(self._amend(root, G2))
+        self.assertEqual(G2, sprint.run_state.read(root)["sprint_goal"])
 
     def test_an_amended_goal_over_twenty_words_is_refused_and_nothing_is_written(self) -> None:
         """AC4. MUTANTS: (1) the length check skipped on the amendment path; (2) the round

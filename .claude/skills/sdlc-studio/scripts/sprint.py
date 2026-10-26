@@ -3131,8 +3131,23 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
     rounds = goal_review_rounds(rec)
     base["rounds"] = len(rounds)
     latest = rounds[-1] if rounds else {}
-    seats = [s for s in (latest.get("seats") or []) if isinstance(s, dict)
-             and all(str(s.get(f) or "").strip() for f in GOAL_REVIEW_FIELDS)]
+    # The rounds on the latest wording are read TOGETHER, newest verdict per seat, back to the
+    # amendment that introduced the wording (it already carried what carries): read alone, the
+    # latest round re-opened every seat it left out, so a seat owing a verdict cost a round of
+    # every seat. Each verdict keeps the round it came from, whose requester it answers to.
+    seats: list[dict] = []
+    source: dict[str, dict] = {}
+    for rnd in reversed(rounds):
+        if _norm_goal(rnd.get("goal")) != _norm_goal(latest.get("goal")):
+            break
+        for s in rnd.get("seats") or []:
+            role = str(s.get("seat") or "").strip() if isinstance(s, dict) else ""
+            if role and role not in source and all(str(s.get(f) or "").strip()
+                                                   for f in GOAL_REVIEW_FIELDS):
+                source[role] = rnd
+                seats.append(s)
+        if rnd.get("amended_from"):
+            break
     if seats and _norm_goal(latest.get("goal")) == _norm_goal(sprint_goal):
         # TWO DIFFERENT ANSWERS, never one predicate. `achievable = no` is an OBJECTION: advice
         # the operator reads before approving the plan. `one_increment = no` is
@@ -3143,11 +3158,10 @@ def goal_review_status(repo_root: Path | str, sprint_goal: str | None,
         # A verdict carried forward from the requesting seat was given on the wording it asked
         # to change, so the amendment it requested answers its objection: it is DISCHARGED, not
         # read as advice against the new wording.
-        requester = str(latest.get("requesting_seat") or "").strip()
-
         def discharged(s: dict) -> bool:
-            return bool(requester and s.get("carried_from")
-                        and str(s.get("seat") or "").strip() == requester)
+            role = str(s.get("seat") or "").strip()
+            requester = str(source[role].get("requesting_seat") or "").strip()
+            return bool(requester and s.get("carried_from") and role == requester)
 
         objections = [{"seat": s.get("seat"), "achievable": s.get("achievable"),
                        "one_increment": s.get("one_increment"), "note": s.get("note", "")}
@@ -3766,11 +3780,13 @@ def _render_goal_review(data: dict) -> None:
 
 def _render_owing(review: dict) -> None:
     """The seats with no verdict on this wording, named so nobody runs a second round of every
-    seat to find them. Advice, like the rest of the read."""
+    seat to find them. Advice, like the rest of the read. The rounds on one wording are read
+    together, so each owing seat records its own verdict alone."""
     owing = review.get("needs_reconsult") or []
     if owing:
-        print(f"    owing a verdict on this wording: {', '.join(owing)} - record it with "
-              f"`sprint.py goal-review record` (advice; the plan is not refused)")
+        print(f"    owing a verdict on this wording: {', '.join(owing)} - each records its own "
+              f"alone (`sprint.py goal-review record --goal` with this wording); the verdicts "
+              f"already given on it stand (advice; the plan is not refused)")
 
 
 def _render_seat_provenance(data: dict) -> None:
@@ -11323,8 +11339,12 @@ def _parse_seat_verdict(spec: str) -> dict:
 
     Every one of the three answers is required. A verdict that says a goal is achievable
     without saying what done means for it is an opinion about an unstated target, and the
-    close would then judge the increment against a definition nobody wrote down. A sixth
-    field is the seat's `rereview` answer, read from the last field so a note keeps its pipes."""
+    close would then judge the increment against a definition nobody wrote down.
+
+    A last field (the sixth or later) of exactly yes or no, in any case, is the seat's
+    `rereview` answer; any other last field stays in the note, which keeps its pipes as it did
+    before the answer existed. The one ambiguity: a note that itself ends in `|yes` or `|no`
+    reads as the answer, so such a note goes through `--fields-file`."""
     parts = [p.strip() for p in (spec or "").split("|")]
     if len(parts) < 4 or not all(parts[:4]):
         raise ValueError(
@@ -11332,13 +11352,12 @@ def _parse_seat_verdict(spec: str) -> dict:
             f"got {spec!r}")
     out = {"seat": parts[0], "achievable": parts[1], "done_means": parts[2],
            "one_increment": parts[3]}
-    note = parts[4:]
-    if len(parts) > 5:
-        if rereview := _rereview_answer(parts[-1], parts[0]):
-            out["rereview"] = rereview
-        note = parts[4:-1]
-    if "|".join(note):
-        out["note"] = "|".join(note)
+    tail = parts[4:]
+    if len(parts) > 5 and parts[-1].lower() in ("yes", "no"):
+        out["rereview"] = parts[-1].lower()
+        tail = parts[4:-1]
+    if tail and tail[0]:
+        out["note"] = "|".join(tail)
     return out
 
 
@@ -11502,9 +11521,11 @@ def cmd_goal_review(args) -> int:
     # Report each answer as the answer it actually is. Saying "judged it NOT achievable" over a
     # seat that judged it achievable is a false statement about a recorded verdict, and it is the
     # sentence the operator reads when deciding whether to override. Only the requesting seat's
-    # carried objection is answered by the amendment; any other carried objection stands.
+    # carried objection is answered by the amendment; any other carried objection stands. The
+    # predicate is `goal_review_status`'s, so the two agree on every verdict this round holds.
+    requester = rnd.get("requesting_seat") or ""
     objected = [s["seat"] for s in seats if verdict_polarity(s.get("achievable")) == "no"
-                and not (s in carried and s["seat"] == req)]
+                and not (requester and s.get("carried_from") and s["seat"] == requester)]
     themed_seats = [s["seat"] for s in seats
                     if verdict_polarity(s.get("one_increment")) == "no"]
     tail = (f" - {len(objected)} seat(s) judged it NOT achievable ({', '.join(objected)}); "
@@ -12056,7 +12077,10 @@ def build_parser() -> argparse.ArgumentParser:
     gr.add_argument("--seat", action="append", metavar="SPEC",
                     help="repeatable: 'role|achievable|what done means|one increment"
                          "[|note[|rereview]]' - rereview yes asks to read an amended goal again "
-                         "rather than have this verdict carried to it")
+                         "rather than have this verdict carried to it. A last field of exactly "
+                         "yes or no is that answer, so a note that itself ends in |yes or |no "
+                         "goes through --fields-file. The rounds on one wording are read "
+                         "together, so a seat owing a verdict records it alone")
     gr.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
                     help="read the goal, seat verdicts and brief from a JSON object "
                          "({\"goal\": ..., \"seats\": [{...}], \"brief\": ...}) instead of the "
