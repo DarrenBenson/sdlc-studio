@@ -4,7 +4,7 @@
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, changelog.d/US1097.md, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_model.py, .claude/skills/sdlc-studio/scripts/sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, changelog.d/US1097.md, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_velocity_row_model.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Epic:** EP0292
 > **Points:** 3
 > **Depends on:** US1091
@@ -35,3 +35,4 @@
 | 2026-10-22 | sdlc | Affects gains retro.py, its test module and help/sprint.md: US1091's held AC5 patch re-derives the retro's baseline and documents the rule there |
 | 2026-10-22 | sdlc | Affects gains three test modules whose fixtures hand-write a basis-less baseline or stamp beside a current-basis reading, the case AC1 forbids; each is marked current-basis, which is what it means (builder's finding) |
 | 2026-10-26 | sdlc | Affects gains `sprint_report.py`: round-1 blocking 1 needs the re-derivation stated on the report's Tokens and Priced cost rows, the cost section, the checklist and the close line |
+| 2026-10-26 | sdlc | Affects gains sprint.py: the close COST line is built by `sprint._close_cost`, which must carry the re-derivation count (round-1 repair) |
