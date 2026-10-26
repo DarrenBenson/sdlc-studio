@@ -8,8 +8,9 @@ date. US0593 still holds: a REJECT later than an APPROVE is terminal, whichever 
 and a same-day tie between the ledgers fails closed.
 
 The per-unit rows are written by `critic.record_verdict`, the product's own writer; a test that
-needs an earlier date rewrites only the date cell of the row it wrote. The frozen ledger has no
-writer any more, so its rows are written in the layout the committed ledger carries.
+needs an earlier date, or the per-round seat name a row carried before the same-reviewer rule,
+rewrites only that cell of the row it wrote. The frozen ledger has no writer any more, so its rows
+are written in the layout the committed ledger carries.
 """
 from __future__ import annotations
 
@@ -80,16 +81,19 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         critic.sprint_review_path(self.root).write_text(
             "# Sprint-level Reviews\n\n" + "\n".join(body) + "\n", encoding="utf-8")
 
-    def _per_unit(self, verdict: str, date: str | None = None) -> None:
+    def _per_unit(self, verdict: str, date: str | None = None, seat: str | None = None) -> None:
         critic.record_verdict(self.root, UNIT, verdict, reviewer=REVIEWER, author=AUTHOR)
-        if date is None:
+        if date is None and seat is None:
             return
         path = critic.verdicts_path(self.root)
         lines = path.read_text(encoding="utf-8").splitlines()
         row = max(i for i, ln in enumerate(lines) if f"| {UNIT} |" in ln and verdict in ln)
         cells = lines[row].split(" | ")
-        idx = next(i for i, c in enumerate(cells) if _ISO_DAY.fullmatch(c))
-        cells[idx] = date
+        if date is not None:
+            idx = next(i for i, c in enumerate(cells) if _ISO_DAY.fullmatch(c))
+            cells[idx] = date
+        if seat is not None:
+            cells[cells.index(REVIEWER)] = seat
         lines[row] = " | ".join(cells)
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -180,6 +184,34 @@ class ClosingReviewSpansBothLedgersTests(unittest.TestCase):
         verdict and the held unit is labelled unreviewed, although it was reviewed and rejected."""
         self._frozen("APPROVE")
         self._per_unit("REJECT", date=FROZEN_DAY)
+        row = self._closing()
+        self.assertEqual(sr.NOT_RUN, row["state"], row)
+        self.assertIn("unresolved", str(row.get("value")))
+
+    def test_a_unit_with_no_per_unit_verdict_is_judged_on_the_frozen_one(self) -> None:
+        """A unit the per-unit ledger has never seen adds no entry to the fold, so its frozen
+        batch APPROVE alone still clears it. Mutant: the empty `verdict_for` answer not skipped -
+        the fold reads a field of None, the row raises, and a unit the batch review cleared is
+        held."""
+        self._frozen("APPROVE")
+        self.assertIsNone(critic.verdict_for(self.root, UNIT))
+        row = self._closing()
+        self.assertEqual(sr.RAN, row["state"], row)
+        self.assertEqual("1 unit(s) approved", row.get("value"))
+
+    def test_a_reject_no_later_round_answers_reads_unresolved(self) -> None:
+        """Pins the comment that each unit contributes `critic.verdict_for`'s answer, which keeps
+        the rule for what answers a REJECT. Before the same-reviewer rule (`ROUND_RULE_SHIPPED`)
+        seats were named per round, so a ledger can hold a REJECT followed by another seat's
+        APPROVE whose brief does not pair with it: that APPROVE answers nothing and the REJECT
+        stands. Mutant: the fold taking the unit's latest live row instead of `verdict_for` - the
+        APPROVE then reads as the latest verdict, and the held unit is labelled unreviewed
+        although its REJECT stands unanswered."""
+        self.assertLess("2026-09-20", critic.ROUND_RULE_SHIPPED)
+        self._frozen("APPROVE")
+        self._per_unit("REJECT", date="2026-09-18")
+        self._per_unit("APPROVE", date="2026-09-20", seat="qa-seat-close-r2")
+        self.assertEqual("REJECT", critic.verdict_for(self.root, UNIT)["verdict"].upper())
         row = self._closing()
         self.assertEqual(sr.NOT_RUN, row["state"], row)
         self.assertIn("unresolved", str(row.get("value")))

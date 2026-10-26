@@ -1076,12 +1076,14 @@ _APPROVE = "APPROVE"
 
 
 def _verdict_entries(ctx: dict) -> list[tuple]:
-    """Every recorded sprint-review verdict as `(sort_key, verdict, units)`, in order.
+    """Every batch verdict in `ctx['sprint_reviews']` and each unit's per-unit verdict in
+    `ctx['unit_verdicts']`, as `(sort_key, verdict, units)`, in order.
 
-    Ordered by the recorded stamp with a stable tiebreak on append order. NOT by date alone:
-    `record_verdict` writes a date with no time, so two verdicts recorded in one sitting tie,
-    and a date-keyed `max()` would pick either - which turns "the later verdict wins" into a
-    coin toss on exactly the case AC3 is about.
+    Ordered by the recorded stamp with a stable tiebreak: append order between batch rows, and
+    the verdict for a per-unit row (below). NOT by date alone: `record_verdict` writes a date
+    with no time, so two verdicts recorded in one sitting tie, and a date-keyed `max()` would
+    pick either, which turns "the later verdict wins" into a coin toss on exactly the case
+    US0593's AC3 is about.
     """
     entries: list[tuple] = []
     for i, row in enumerate(ctx.get("sprint_reviews") or []):
@@ -2154,7 +2156,7 @@ def checklist(root: Path | str, retro_id: str, *, unit_ids: list[str] | None = N
     for uid in units:
         try:
             unit_verdicts[uid] = critic.verdict_for(root, uid)
-        except Exception as exc:  # noqa: BLE001 - an unreadable ledger is no verdict, not a REJECT
+        except Exception as exc:  # noqa: BLE001 - verdict_for raising leaves no per-unit verdict
             sdlc_md.debug("sprint_report.checklist.unit_verdicts", exc)
     filed, still_open = _open_findings(root, run)
     if still_open is not None:
