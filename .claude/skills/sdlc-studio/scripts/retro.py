@@ -77,6 +77,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import statistics
 import sys
@@ -708,7 +709,8 @@ def validate(root, retro_id: str) -> dict:
 
     text = path.read_text(encoding="utf-8")
     if is_three_line(text):
-        errors = three_line_errors(text) + class_errors(root, lessons_in(text))
+        errors = (three_line_errors(text) + class_errors(root, lessons_in(text))
+                  + cost_cause_errors(root, retro_id, text))
         return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
                 "demonstration": [], "lessons": lessons_in(text), "carried": [],
                 "findings": [], "filed": [], "fixed": [], "declined": []}
@@ -742,6 +744,8 @@ def validate(root, retro_id: str) -> dict:
             f"finding not dispositioned: {r['finding'][:60]!r} - file it (BG/CR id), record it "
             f"fixed in-sprint ('fixed-in: <sha or unit>'), or decline it with a reason "
             f"('declined: <why>')")
+    # Demanded only of a run the close found over its cost baseline, read from the run's record.
+    errors.extend(cost_cause_errors(root, retro_id, text))
 
     return {
         "ok": not errors,
@@ -2510,6 +2514,189 @@ def minutes_per_point(root, model: str | None = None) -> dict:
     return {"value": round(value, 2), "source": source}
 
 
+# ---------------------------------------------------------------------------
+# The cost-regression baseline: a run's priced cost per point against recent runs'.
+# ---------------------------------------------------------------------------
+
+#: Past runs priced once from the harness transcripts by `cost-baseline add`, kept apart from
+#: VELOCITY.md, whose rows are never recomputed.
+COST_BASELINE_FILE = "sdlc-studio/retros/COST-BASELINE.md"
+#: A run whose priced cost per point is over this multiple of its baseline is a close known
+#: issue, and its retro must name the cause. Over, not at: a run at exactly 1.5 x is not flagged.
+COST_REGRESSION_RATIO = 1.5
+#: Below this many priced runs no median is formed, and the configured baseline stands in.
+COST_MIN_RUNS = 3
+#: The most recent priced runs the median is taken over.
+COST_WINDOW = RATE_WINDOW
+#: The key of that configured baseline. Its shipped value lives in config-defaults.yaml alone.
+COST_BASELINE_KEY = "cost.baseline_per_point"
+#: The retro section a flagged run's cause is named in, and the close known issue's source.
+COST_SECTION = "Cost"
+COST_ISSUE = "cost"
+COST_BASELINE_HEADER = (
+    "# Cost baseline\n\n"
+    "<!-- Written by `retro.py cost-baseline add`: one row per past run, priced once from the\n"
+    "harness transcripts over its window. Kept apart from VELOCITY.md, whose rows are never\n"
+    "recomputed. The close's trailing median reads them beside VELOCITY.md's Priced/pt. -->\n\n"
+    "| Retro | Window | Points | Priced | Priced/pt | Weights | Recorded |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n")
+
+
+def cost_baseline_path(root) -> Path:
+    return Path(root) / COST_BASELINE_FILE
+
+
+def cost_baseline_rows(root) -> list[dict]:
+    """COST-BASELINE.md's rows in file order: `{id, window, points, priced, per_point}`."""
+    path = cost_baseline_path(root)
+    if not path.is_file():
+        return []
+    out = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in sdlc_md.table_cells(line) or []]
+        if len(cells) < 5 or not re.fullmatch(r"RETRO-?\d{4}", cells[0], re.IGNORECASE):
+            continue
+        out.append({"id": sdlc_md.norm_id(cells[0]).upper(), "window": cells[1],
+                    "points": _velocity_num(cells[2]), "priced": _velocity_num(cells[3]),
+                    "per_point": _velocity_num(cells[4])})
+    return out
+
+
+def priced_runs(root, exclude: str | None = None) -> list[dict]:
+    """Every run with a priced cost per point, oldest first: `{id, per_point, from}`.
+
+    VELOCITY.md's rows carrying a Priced/pt figure and COST-BASELINE.md's rows, one per retro (a
+    VELOCITY row wins over a baseline row for the same retro), less `exclude`: the run being
+    judged is never its own baseline. A row with no priced figure is not counted, never read as 0.
+    """
+    runs: dict[str, dict] = {}
+    for row in cost_baseline_rows(root):
+        if isinstance(row["per_point"], (int, float)) and row["per_point"] > 0:
+            runs[row["id"]] = {"id": row["id"], "per_point": row["per_point"],
+                               "from": Path(COST_BASELINE_FILE).name}
+    for row in velocity_history(root):
+        value = row.get("priced_per_point")
+        if isinstance(value, (int, float)) and value > 0:
+            runs[row["id"]] = {"id": row["id"], "per_point": value,
+                               "from": Path(VELOCITY_FILE).name}
+    skip = sdlc_md.norm_id(exclude).upper() if exclude else None
+    return sorted((r for rid, r in runs.items() if rid != skip),
+                  key=lambda r: _retro_index(r["id"]))
+
+
+def _configured_baseline(root) -> tuple[int | None, str]:
+    """`cost.baseline_per_point` as a whole number, or None and why it is not one."""
+    import config  # noqa: PLC0415 - deferred sibling: only the cost check reads the config
+    raw = config.get(root, COST_BASELINE_KEY)
+    # YAML reads a bare `off` as False, and a quoted one stays text: both mean off.
+    if raw is False or (isinstance(raw, str) and raw.strip().lower() == "off"):
+        return None, f"`{COST_BASELINE_KEY}` is off"
+    if raw is None:
+        return None, f"no `{COST_BASELINE_KEY}` is configured"
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1:
+        return None, (f"`{COST_BASELINE_KEY}` is {raw!r}, not a whole number of priced tokens per "
+                      f"point, so it is ignored")
+    return raw, ""
+
+
+def cost_baseline(root, exclude: str | None = None) -> dict:
+    """THE BASELINE the close, `validate`'s demand and the plan's budget all read.
+
+    `{per_point, kind, retros, runs, basis}`. With COST_MIN_RUNS or more priced runs
+    (`priced_runs`), the median of the COST_WINDOW most recent, `kind` "median", and `retros`
+    the runs it was taken over. With fewer, the configured `cost.baseline_per_point`, `kind`
+    "configured", named in `basis`. With that off, unset or unreadable, `per_point` None and
+    `kind` "unmeasured", and `basis` says how many priced runs there are and that COST_MIN_RUNS
+    are needed."""
+    runs = priced_runs(root, exclude)
+    if len(runs) >= COST_MIN_RUNS:
+        pick = runs[-COST_WINDOW:]
+        ids = [r["id"] for r in pick]
+        return {"per_point": statistics.median(r["per_point"] for r in pick), "kind": "median",
+                "retros": ids, "runs": len(runs),
+                "basis": f"the median of the {len(pick)} most recent priced runs "
+                         f"({', '.join(ids)})"}
+    value, why = _configured_baseline(root)
+    count = f"{len(runs)} priced run(s), and {COST_MIN_RUNS} are needed for a median"
+    if value is None:
+        return {"per_point": None, "kind": "unmeasured", "retros": [], "runs": len(runs),
+                "basis": f"{count}; {why}"}
+    return {"per_point": value, "kind": "configured", "retros": [], "runs": len(runs),
+            "basis": f"the configured baseline `{COST_BASELINE_KEY}` ({count})"}
+
+
+def cost_issue(root, retro_id: str) -> dict | None:
+    """The cost known issue the run's close recorded for `retro_id`, or None. Read from the run
+    state, never from the retro: whether the cause is owed is the close's finding."""
+    try:
+        state = run_state.read(root) or {}
+    except run_state.RunStateError:
+        return None
+    rid = sdlc_md.norm_id(retro_id or "").upper()
+    return next((g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+                 if isinstance(g, dict) and g.get("source") == COST_ISSUE
+                 and sdlc_md.norm_id(str(g.get("retro") or "")).upper() == rid), None)
+
+
+def cost_cause_errors(root, retro_id: str, text: str) -> list[str]:
+    """The `## Cost` demand: one error when the run carries a cost issue and the retro's
+    section holds no bullet of its own, nothing otherwise."""
+    issue = cost_issue(root, retro_id)
+    if not issue or _real_bullets(sections(text).get(COST_SECTION, [])):
+        return []
+    return [f"missing cause - the close recorded this run's cost as a known issue "
+            f"({issue.get('ratio')} x its baseline per point), so '## {COST_SECTION}' must name "
+            f"the cause in at least one bullet that is not a {{{{placeholder}}}}"]
+
+
+def _iso_z(at) -> str:
+    return at.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _weights_cell() -> str:
+    return ", ".join(f"{run_state.COMPONENT_NAMES[c]} {run_state.TOKEN_WEIGHTS[c]}"
+                     for c in run_state.TOKEN_COMPONENTS)
+
+
+def window_priced(root, since, until) -> dict:
+    """The priced cost of the harness transcripts between `since` and `until` (datetimes),
+    read by the meter's own reader: each session's components at `until` less those at `since`,
+    once per message, its subagents included, priced from the one weight table.
+
+    `{priced, components, sessions}`. RAISES ValueError naming why when the window holds no
+    transcript record, or when a transcript cannot be read: an empty window is not a cost of 0.
+    """
+    d = Path(os.environ.get(run_state.TRANSCRIPTS_ENV)
+             or run_state._harness_transcript_dir(root))  # noqa: SLF001 - the meter's own dir
+    if not d.is_dir():
+        raise ValueError(f"no harness transcript directory at {d}")
+    spans = []
+    for path in sorted(d.glob("*.jsonl")):
+        try:
+            # The meter's reader and aggregation (noqa SLF001): one reading rule, not a copy.
+            collected = run_state._collect(path)  # noqa: SLF001
+            moments = [sdlc_md.parse_iso8601(rec[2]) if rec[2] else None
+                       for rec in collected["records"]]
+            if not any(m and since < m <= until for m in moments):
+                continue
+            closing = run_state._aggregate(collected, until)  # noqa: SLF001
+            opening = (run_state._aggregate(collected, since)  # noqa: SLF001
+                       if any(m and m <= since for m in moments) else None)
+        except run_state._MeterError as exc:  # noqa: SLF001
+            raise ValueError(str(exc)) from exc
+        ends = [{"tokens": agg["tokens"], "components": agg["components"],
+                 "subagents": agg["includes_subagents"]} for agg in (opening, closing) if agg]
+        if opening is None:
+            ends.insert(0, {"tokens": 0, "components": dict.fromkeys(run_state.TOKEN_COMPONENTS, 0),
+                            "subagents": closing["includes_subagents"]})
+        spans.append(ends)
+    if not spans:
+        raise ValueError(f"no transcript record in {d} falls between {_iso_z(since)} and "
+                         f"{_iso_z(until)}, so the window has no cost to record")
+    got = run_state._priced_delta(spans)  # noqa: SLF001 - one pricing rule
+    return {"priced": got["priced"], "components": got["components"], "sessions": len(spans)}
+
+
 #: Below this many qualifying whole-sprint rows the fixed per-sprint term is UNMEASURED: a fit
 #: to one point cannot separate a fixed cost from a marginal one at all, and there is nothing to
 #: fit. The APPLICATION threshold - how many rows before the fit may enter a forecast total - is
@@ -3617,6 +3804,50 @@ def cmd_validate(args) -> int:
     return 0 if res["ok"] else 1
 
 
+def cmd_cost_baseline(args) -> int:
+    """`cost-baseline add`: price a past run's window from the transcripts, once, and append its
+    row to COST-BASELINE.md. Nothing here writes VELOCITY.md."""
+    root, rid = args.root, sdlc_md.norm_id(args.retro).upper()
+    since, until = sdlc_md.parse_iso8601(args.since), sdlc_md.parse_iso8601(args.until)
+    if since is None or until is None or until <= since:
+        print(f"cost-baseline refused: --since {args.since} and --until {args.until} must be "
+              f"ISO-8601 stamps with an offset, the first before the second", file=sys.stderr)
+        return 2
+    if find_retro(root, rid) is None:
+        print(f"cost-baseline refused: no retro {rid} in {RETRO_DIR}/", file=sys.stderr)
+        return 2
+    if any(r["id"] == rid for r in cost_baseline_rows(root)):
+        print(f"cost-baseline refused: {rid} already has a row in {COST_BASELINE_FILE}, and a "
+              f"run is priced once; nothing was written", file=sys.stderr)
+        return 1
+    points = _delivered_points(root, retro_units(root, rid))
+    if not points:
+        print(f"cost-baseline refused: {rid}'s units carry no delivered points, so no cost per "
+              f"point can be formed; nothing was written", file=sys.stderr)
+        return 1
+    try:
+        got = window_priced(root, since, until)
+    except ValueError as exc:
+        print(f"cost-baseline refused: {exc}; nothing was written", file=sys.stderr)
+        return 1
+    if not isinstance(got["priced"], int):
+        print("cost-baseline refused: the window's readings carry no priced components; "
+              "nothing was written", file=sys.stderr)
+        return 1
+    per_point = round(got["priced"] / points)
+    window = f"{_iso_z(since)} to {_iso_z(until)}"
+    path = cost_baseline_path(root)
+    body = path.read_text(encoding="utf-8") if path.is_file() else COST_BASELINE_HEADER
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body.rstrip("\n") + "\n" + f"| {rid} | {window} | {points} | "
+                    f"{got['priced']:,} | {per_point:,} | {_weights_cell()} | "
+                    f"{sdlc_md.now_date()} |\n", encoding="utf-8")
+    print(f"cost-baseline: {rid} recorded in {COST_BASELINE_FILE} - {got['priced']:,} "
+          f"{run_state.PRICED_LABEL} over {window} from {got['sessions']} session(s), "
+          f"{points} point(s), {per_point:,} per point")
+    return 0
+
+
 def cmd_dispose(args) -> int:
     """Read-only: what has been decided, and what still needs deciding."""
     res = validate(args.root, args.id)
@@ -3899,6 +4130,18 @@ def build_parser() -> argparse.ArgumentParser:
                                 "sprint whose run-state has no clean elapsed; descriptive, never a "
                                 "target")
         p.set_defaults(func=fn)
+
+    cost = sub.add_parser("cost-baseline", help="the past runs the close's cost check is "
+                                                "measured against, kept in COST-BASELINE.md")
+    cost_sub = cost.add_subparsers(dest="action", required=True)
+    add = cost_sub.add_parser("add", help="price a past run's window from the harness "
+                                          "transcripts and append its row; VELOCITY.md is "
+                                          "untouched")
+    add.add_argument("--retro", required=True, help="the retro whose run the window covers")
+    add.add_argument("--since", required=True, metavar="ISO",
+                     help="the window's start, e.g. 2026-10-01T09:00:00Z")
+    add.add_argument("--until", required=True, metavar="ISO", help="the window's end")
+    add.set_defaults(func=cmd_cost_baseline)
 
     return ap
 

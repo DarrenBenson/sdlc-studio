@@ -895,7 +895,7 @@ NON_CEREMONY_VERBS = {
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
                 "recall", "repeats", "revalidate", "violated"),
-    "retro": ("accuracy", "collate", "dispose", "estimator", "extract", "velocity"),
+    "retro": ("accuracy", "collate", "cost-baseline", "dispose", "estimator", "extract", "velocity"),
 }
 
 #: The compulsory set. `resolver` is resolved through `globals()` at call time, like the close

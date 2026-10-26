@@ -359,6 +359,14 @@ gate_budget:
   baseline_seconds: null
   baseline_date: null
 
+# The close's cost check. A run over 1.5 times its baseline priced cost per point is a known
+# issue, whose cause the retro names. The baseline is the median of the latest priced runs once
+# three exist; until then, this. Shipped as SDLC Studio's own measure: two of its runs, priced
+# from their transcripts, cost about 2.0M and 3.0M per point. Set your own; `off` records no
+# issue until three priced runs exist.
+cost:
+  baseline_per_point: 2500000  # priced input-equivalent tokens per point
+
 # Flow-metrics ageing flags (US-level, advisory). Unset = the status ageing advisory is OFF
 # (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When
 # set, `status` names each In Progress unit older than this many days and every Blocked

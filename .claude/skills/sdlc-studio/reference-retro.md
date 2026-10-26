@@ -53,6 +53,16 @@ every Source it pooled, so a rate taken across two bases is never read as one fi
    sprint taught us nothing" is a legitimate answer, but it must be *stated*, because it is
    a claim and not a default.
 3. **Every finding dispositioned** - filed, or declined with a reason.
+4. **A flagged run names its cost's cause** - only when the run's close recorded a `cost` known
+   issue for this retro (the run is over 1.5 x its baseline per point,
+   [reference-sprint.md#cost-regression](reference-sprint.md#cost-regression)): a `## Cost`
+   section with at least one bullet that is not a `{{placeholder}}`. Read from the run's record,
+   so no other retro is asked for it.
+
+`retro.py cost-baseline add --retro RETROxxxx --since <iso> --until <iso>` records a past run
+in `sdlc-studio/retros/COST-BASELINE.md`, once: the window's priced cost from the harness
+transcripts by the meter's own reader, its points, cost per point and weights. It never writes
+VELOCITY.md, and a window holding no transcript record is refused with nothing written.
 
 A gate that checks a file exists is satisfied by `touch`, and the one gate worth having is
 the one an agent cannot satisfy without doing the work. Existence is not evidence.

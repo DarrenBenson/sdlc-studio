@@ -3360,6 +3360,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "reachable_end_state": reachable_end_state(root, batch, rung=goal),
         # A token cost FORECAST for the batch (estimate, never a gate - see _token_forecast).
         "token_forecast": forecast,
+        # The batch's cost budget beside it: its points x the regression limit x the baseline.
+        "cost_budget": plan_cost_budget(root, forecast),
         # Does the batch FIT? Sized against the sprint capacity at PLAN time - and carrying the
         # run appetite resolved from that same capacity, so the two cannot disagree.
         "capacity": capacity_report(root, batch, forecast, appetite),
@@ -4322,6 +4324,34 @@ def rejected_line(tf: dict) -> str | None:
             f"{', '.join(rejected)}")
 
 
+def plan_cost_budget(root, forecast: dict | None) -> dict | None:
+    """The batch's cost budget: its points x `retro.COST_REGRESSION_RATIO` x the baseline the
+    close will judge the run against (`retro.cost_baseline`), in priced tokens, never the token
+    forecast's rate. `budget` None when the baseline or the points are not there."""
+    if not forecast:
+        return None
+    import retro  # noqa: PLC0415 - deferred, like the planner's retro import
+    base = retro.cost_baseline(root)
+    points = (forecast.get("points") or 0) + (forecast.get("built_points") or 0)
+    budget = (round(points * retro.COST_REGRESSION_RATIO * base["per_point"])
+              if base["per_point"] and points else None)
+    return {**base, "points": points, "budget": budget, "ratio": retro.COST_REGRESSION_RATIO}
+
+
+def _render_cost_budget(data: dict) -> None:
+    """The budget the close holds the run to, with the baseline and the runs it came from."""
+    b = data.get("cost_budget")
+    if not b:
+        return
+    if b["budget"] is None:
+        why = b["basis"] if b["per_point"] is None else "the batch carries no Points"
+        print(f"  cost budget: UNMEASURED - {why}")
+        return
+    print(f"  cost budget: {b['budget']:,} {run_state.PRICED_LABEL} = {b['points']} point(s) x "
+          f"{b['ratio']} x {round(b['per_point']):,} per point")
+    print(f"    baseline: {b['basis']}; the close records a run over it as a known issue")
+
+
 def _render_token_forecast(data: dict) -> None:
     """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and it STATES
     ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
@@ -4542,6 +4572,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_decompose(data)
     _render_downgrades(data)
     _render_token_forecast(data)
+    _render_cost_budget(data)
     _render_capacity(data)
     _render_gate_briefing(data)
     _render_phase_lessons(data)
@@ -7789,6 +7820,151 @@ def close_known_issues_from(step: str, detail: str) -> list[dict]:
     return [{"source": step, "detail": ln} for ln in lines or ["failed with no detail"]]
 
 
+#: The stamp kinds `run_state` writes where a unit's span opens and where it closes.
+_SPAN_START, _SPAN_END = "unit-start", "unit-end"
+
+
+def _unit_priced_spans(state: dict) -> dict:
+    """Each batch unit's priced span cost, or None where it cannot be read back: no span, a
+    span still open, ends read on two meters, or recorded totals no opening and closing stamp
+    reproduce (a unit that entered In Progress twice records the sum of its spans).
+
+    A span records the run's token total at each end, not a priced figure, so its priced cost
+    is read back by the meter's own rule: `run_token_total` over the stamps up to the span's
+    closing reading, less the same up to its opening one. Each end is the stamp at which that
+    total equals the one the span recorded, so a reading is never matched by its time alone."""
+    stamps = [s for s in state.get(run_state.TOKEN_STAMPS) or [] if isinstance(s, dict)]
+    totals: dict[int, dict] = {}
+
+    def upto(k: int) -> dict:
+        if k not in totals:
+            totals[k] = run_state.run_token_total({**state,
+                                                   run_state.TOKEN_STAMPS: stamps[:k + 1]})
+        return totals[k]
+
+    def ends(src: str, kind: str, after: int = -1):
+        return (k for k in range(after + 1, len(stamps)) if stamps[k].get("kind") == kind
+                and str(stamps[k].get("source") or "") == src)
+
+    actuals = {sdlc_md.norm_id(u): e for u, e in (state.get(run_state.UNIT_ACTUALS) or {}).items()
+               if isinstance(e, dict)}
+    out: dict = {}
+    for unit in state.get("batch") or []:
+        uid = sdlc_md.norm_id(unit)
+        entry = actuals.get(uid) or {}
+        src, start, spent = (str(entry.get("start_source") or ""), entry.get("start_tokens"),
+                             entry.get("tokens"))
+        out[uid] = None
+        if entry.get("open") or not src or not isinstance(start, int) \
+                or not isinstance(spent, int):
+            continue
+        for i in ends(src, _SPAN_START):
+            if upto(i)["tokens"] != start:
+                continue
+            j = next((k for k in ends(src, _SPAN_END, i)
+                      if isinstance(upto(k)["tokens"], int) and upto(k)["tokens"] - start == spent),
+                     None)
+            if j is None:
+                continue
+            a, b = upto(i)["priced"], upto(j)["priced"]
+            out[uid] = b - a if isinstance(a, int) and isinstance(b, int) else None
+            break
+    return out
+
+
+def _close_priced_total(root, state: dict) -> dict:
+    """The run's total as the page this close files will state it: over the window the first
+    filed page ended at on a re-close, as `_file_the_report` reads it; on a first close, over
+    every stamp and a reading taken now, as that report stamp will be, held and not written."""
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    end = state.get(REPORT_WINDOW_END)
+    if end:
+        return run_state.run_token_total(sprint_report._metered(state, sprint_report._at(end)))
+    probe = dict(state)
+    # The meter's own reading and re-derivations, so the probe holds the stamp list
+    # `stamp_tokens` would leave behind, without writing it.
+    stamp = run_state._stamp(root, "report")  # noqa: SLF001
+    if stamp:
+        run_state._append_stamp(probe, stamp,  # noqa: SLF001
+                                run_state._rederivations(state, stamp))  # noqa: SLF001
+    return run_state.run_token_total(probe)
+
+
+def close_cost_regression(root, state: dict, retro_id: str) -> dict:
+    """The close's cost check: `{"line", "issue"}`, `issue` None unless the run is over.
+
+    The run's priced cost per gate-cleared point against `retro.cost_baseline`, the run's own
+    retro excluded. No unit is terminal until `sign`, so the points are those whose terminal gate
+    clears, which the report states as delivered. Over `COST_REGRESSION_RATIO` x the baseline,
+    `issue` is the close known issue: the run's figure, the baseline and the runs it came from,
+    the ratio, each batch unit's priced span cost (NOT MEASURED where it has none) and the
+    unattributed remainder. Never a refusal: what cannot be formed is an UNMEASURED line."""
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    head = "close: cost per point:"
+    total = _close_priced_total(root, state)
+    priced = total.get("priced")
+    if not isinstance(priced, int):
+        return {"issue": None, "line": f"{head} UNMEASURED - the run's priced cost cannot be "
+                f"formed ({total.get('priced_reason') or total.get('reason') or 'no reading'})"}
+    points, unsized = 0, []
+    for uid, why in sorted(_report_gate_verdicts(root, state).items()):
+        if why:
+            continue
+        found = sdlc_md.find_by_id(root, uid)
+        pts = sdlc_md.read_points(sdlc_md.read_text_safe(found[0])) if found else None
+        if isinstance(pts, int) and pts > 0:
+            points += pts
+        else:
+            unsized.append(uid)
+    if unsized or not points:
+        why = (f"{', '.join(unsized)} cleared the gate with no Points" if unsized else
+               "no unit cleared its terminal gate")
+        return {"issue": None, "line": f"{head} UNMEASURED - {why}, so the run has no per-point "
+                                       f"figure"}
+    rid = sdlc_md.norm_id(retro_id).upper()
+    base = retro.cost_baseline(root, exclude=rid)
+    per_point = round(priced / points)
+    figure = (f"{per_point:,} {run_state.PRICED_LABEL} per gate-cleared point ({priced:,} over "
+              f"{points} point(s))")
+    limit = retro.COST_REGRESSION_RATIO
+    if base["per_point"] is None:
+        return {"issue": None, "line": f"{head} {figure}; against its baseline UNMEASURED - "
+                                       f"{base['basis']}, so no cost issue is recorded"}
+    ratio = priced / points / base["per_point"]
+    against = (f"{ratio:.2f} x the baseline {round(base['per_point']):,} per point, "
+               f"{base['basis']}")
+    if not priced > limit * base["per_point"] * points:
+        return {"issue": None, "line": f"{head} {figure}, {against}: within {limit} x"}
+    units = _unit_priced_spans(state)
+    rest = priced - sum(c for c in units.values() if isinstance(c, int))
+    remainder = (f"unattributed remainder 0, clamped from {rest:,}: the unit spans overlap, so "
+                 f"their costs sum past the run's total" if rest < 0 else
+                 f"unattributed remainder {rest:,}")
+    per_unit = "; ".join(f"{u} {c:,}" if isinstance(c, int) else f"{u} NOT MEASURED"
+                         for u, c in units.items())
+    detail = (f"{rid}: {figure} is {against}, over {limit} x. Per unit (priced span): "
+              f"{per_unit}; {remainder}. The retro names the cause under `## "
+              f"{retro.COST_SECTION}`")
+    return {"line": f"{head} {figure}, {against}: OVER {limit} x - a known issue, and the "
+                    f"retro names its cause under `## {retro.COST_SECTION}`",
+            "issue": {"source": retro.COST_ISSUE, "retro": rid, "detail": detail,
+                      "per_point": per_point, "baseline": base["per_point"],
+                      "baseline_kind": base["kind"], "retros": base["retros"],
+                      "ratio": round(ratio, 2), "units": units, "remainder": max(rest, 0),
+                      "remainder_clamped": rest < 0}}
+
+
+def _cost_cause_named(root, gap) -> bool:
+    """Is `gap` a cost known issue whose retro names its cause? Then it is handed over on the
+    report, as the close hands it over, and does not stop a rolling boundary."""
+    import retro  # noqa: PLC0415 - deferred, like the chain's other retro imports
+    if not (isinstance(gap, dict) and gap.get("source") == retro.COST_ISSUE and gap.get("retro")):
+        return False
+    path = retro.find_retro(root, gap["retro"])
+    return bool(path) and not retro.cost_cause_errors(root, gap["retro"],
+                                                      path.read_text(encoding="utf-8"))
+
+
 def _print_close_strategy(root, state: dict) -> dict:
     """State the strategy the close is judging against, and its execution policy.
 
@@ -9350,9 +9526,22 @@ def cmd_close(args: argparse.Namespace) -> int:
         if ((state.get(run_state.UNIT_ACTUALS) or {}).get(uid) or {}).get("open"):
             print(f"close: {uid}'s lane was briefed and never returned - its span is left "
                   f"open and reads NOT MEASURED")
+    # THE COST CHECK, before the chain: its retro-validate step reads the run's cost issue to
+    # decide whether the retro owes a `## Cost` cause, so the record holds this close's finding,
+    # never the last one's. A known issue, never a refusal: the close completes either way.
+    try:
+        cost = close_cost_regression(root, state, args.retro)
+    except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own cost check
+        cost = {"issue": None, "line": f"close: cost per point: UNMEASURED - the check could not "
+                                       f"run ({type(exc).__name__}: {exc})"}
+    print(cost["line"])
     # ONE PASS. A step that fails is recorded as a known issue for the report and the chain runs
     # on; the report is the page that hands those issues over, so a gap no longer stops it.
-    known: list[dict] = []
+    known: list[dict] = [cost["issue"]] if cost["issue"] else []
+    run_state.update(root, **{run_state.CLOSE_KNOWN_ISSUES: [
+        g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+        if not (isinstance(g, dict) and g.get("source") == "cost")] + known})
+    state = run_state.read(root) or state
     module = sys.modules[__name__]
     for i, name in enumerate(_CLOSE_CHAIN, start=1):
         step = getattr(module, "_close_" + name.replace("-", "_"))
@@ -10702,6 +10891,7 @@ def _render_preview(data: dict, index: int) -> None:
     print(f"  batch ({data['count']} unit(s), order={data['order']}): "
           f"{', '.join(ids) if ids else '(empty)'}")
     _render_token_forecast(data)
+    _render_cost_budget(data)
     _render_capacity(data)
 
 
@@ -10776,7 +10966,8 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     # A close that FINISHED with known issues is a finished close, not a clean one. A hand-run
     # close hands those issues to a signer; a rolling boundary has no signer before the next
     # cycle opens, so it halts rather than rolling on over them unread.
-    gaps = (run_state.read(root) or {}).get(run_state.CLOSE_KNOWN_ISSUES) or []
+    gaps = [g for g in (run_state.read(root) or {}).get(run_state.CLOSE_KNOWN_ISSUES) or []
+            if not _cost_cause_named(root, g)]
     if gaps:
         return _boundary_stop(
             root, "close-gate",
