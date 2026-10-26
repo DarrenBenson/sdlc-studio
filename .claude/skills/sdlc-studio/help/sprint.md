@@ -78,9 +78,11 @@ delegated total that the `Tokens` row adds is outside the priced figure, and bot
 session whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread
 alone and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
 earlier meter took for it, in any session, is re-derived from its transcript up to the moment
-it was taken, and the total's basis says so. Where the transcript no longer holds those
-records, the total reads not attributable: never a difference, or a sum, across two counting
-rules. A run whose stamps all predate the priced meter keeps the page it had.
+it was taken. The report's `Tokens` and `Priced cost` rows, its cost appendix, the close
+checklist and the close report's COST section each say how many were. Where the transcript no
+longer holds those records, the total reads not attributable: never a difference, or a sum,
+across two counting rules. A run whose stamps all predate the priced meter keeps the page it
+had.
 
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run

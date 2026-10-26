@@ -1311,19 +1311,27 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
                 bool(max(rows, key=lambda r: r["tokens"]).get("subagents")) for rows in spans)}
 
 
+def rebased_note(total: dict) -> str:
+    """What a reader is told of a run total whose earlier-basis readings were re-derived: how
+    many, and on what rule (`total["rebased"]`); "" when it re-derived none. Said once, so the
+    total's basis and every surface that states the total say the same."""
+    n = int(total.get("rebased") or 0)
+    return (f"{n} reading(s) taken on an earlier counting basis were re-derived from the "
+            f"transcript, up to the moment each was taken, under the current one" if n else "")
+
+
 def _total_basis(includes: bool, rebased: int) -> str:
     text = TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
-    if rebased:
-        text += (f"; {rebased} reading(s) taken on an earlier counting basis were re-derived "
-                 f"from the transcript, up to the moment each was taken, under the current one")
-    return text
+    note = rebased_note({"rebased": rebased})
+    return f"{text}; {note}" if note else text
 
 
-def run_token_total(state: dict, current: dict | None = None) -> dict:
+def run_token_total(state: dict, current: dict | None = None,
+                    current_path: str | None = None) -> dict:
     """What the run spent, from its stamps: the SUM of the per-session deltas.
 
-    `{"tokens", "priced", "components", "priced_reason", "includes_subagents", "sessions",
-    "session_count", "uncovered", "model", "shape", "basis", "reason"}`. `tokens` is None only
+    `{"tokens", "priced", "components", "priced_reason", "includes_subagents", "rebased",
+    "sessions", "session_count", "uncovered", "model", "shape", "basis", "reason"}`. `tokens` is None only
     when no reading can be had at all, and the `reason` then says why - it is never 0, because a
     run whose meter could not be read did not cost nothing. `priced` and `components` are the
     priced delta and each component's delta (`_priced_delta`); `includes_subagents` says every
@@ -1340,6 +1348,9 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
     - so an older run is reported rather than refused, and the reader can tell which it got. For
     the legacy shape a `current` reading (a `session_tokens` result) supplies the closing end of
     the one delta available; without it the baseline alone is reported as the opening reading.
+    An opening reading on an earlier basis is then re-derived from `current_path`, the file
+    `current` was read from, when the caller passes `current` with its source made `portable`
+    (a digest no file is named by). `rebased` counts the readings re-derived (`rebased_note`).
     """
     every = [s for s in (state.get(TOKEN_STAMPS) or []) if isinstance(s, dict)]
     failed = {(str(s.get("source") or ""), s.get(REDERIVES)): s.get("reason") for s in every
@@ -1376,9 +1387,10 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
             rows, redone, why = _one_basis(src, rows, failed, rebase)
             if why:
                 return {"tokens": None, "priced": None, "components": None,
-                        "priced_reason": why, "includes_subagents": False, "sessions": [],
-                        "session_count": 0, "uncovered": [], "shape": shape, "model": model,
-                        "basis": TOKEN_TOTAL_BASIS, "reason": f"not attributable: {why}"}
+                        "priced_reason": why, "includes_subagents": False, "rebased": 0,
+                        "sessions": [], "session_count": 0, "uncovered": [], "shape": shape,
+                        "model": model, "basis": TOKEN_TOTAL_BASIS,
+                        "reason": f"not attributable: {why}"}
             rebased += redone
             if len(rows) < 2:
                 # ONE reading covers no delta. Named, never guessed at and never dropped
@@ -1398,11 +1410,11 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
                    f"no closing one, so no delta can be measured: "
                    f"{', '.join(sorted(uncovered))}")
             return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
-                    "includes_subagents": False, "sessions": [], "session_count": 0,
-                    "uncovered": sorted(uncovered), "shape": shape, "model": model,
-                    "basis": TOKEN_TOTAL_BASIS, "reason": why}
+                    "includes_subagents": False, "rebased": 0, "sessions": [],
+                    "session_count": 0, "uncovered": sorted(uncovered), "shape": shape,
+                    "model": model, "basis": TOKEN_TOTAL_BASIS, "reason": why}
         priced = _priced_delta(spans)
-        return {"tokens": total, **priced, "sessions": sorted(covered),
+        return {"tokens": total, **priced, "rebased": rebased, "sessions": sorted(covered),
                 "session_count": len(covered), "uncovered": sorted(uncovered), "shape": shape,
                 "reason": None, "model": model,
                 "basis": _total_basis(priced["includes_subagents"], rebased)}
@@ -1414,35 +1426,42 @@ def run_token_total(state: dict, current: dict | None = None) -> dict:
             rebased = 0
             if current.get(METER) == METER_BASIS and base.get(METER) != METER_BASIS:
                 # The closing reading is on the current basis and the opening one is not: the
-                # opening one is re-derived, never subtracted across bases.
-                base = rederive(str(base.get("source")), [base.get("at")])[base.get("at")]
-                if not isinstance(base.get("tokens"), int):
+                # opening one is re-derived, never subtracted across bases. It is read from the
+                # file `current` was read from, the same meter, since a source made portable
+                # names no file, and it keeps the source as the record holds it.
+                src, at = str(base.get("source")), base.get("at")
+                redone = rederive(str(current_path or src), [at])[at]
+                if not isinstance(redone.get("tokens"), int):
                     why = (f"the opening reading was taken on an earlier counting basis and "
-                           f"cannot be re-derived under the current one ({base.get('reason')})")
+                           f"cannot be re-derived under the current one ({redone.get('reason')})")
                     return {"tokens": None, "priced": None, "components": None,
-                            "priced_reason": why, "includes_subagents": False,
+                            "priced_reason": why, "includes_subagents": False, "rebased": 0,
                             "sessions": [str(current.get("source") or "")], "session_count": 0,
                             "uncovered": [], "shape": shape, "model": None,
                             "basis": TOKEN_TOTAL_BASIS, "reason": f"not attributable: {why}"}
+                base = {**redone, "source": src}
                 rebased = 1
             ends = [{**base, "tokens": int(base["tokens"])}, {**current, "subagents": bool(
                 current.get("includes_subagents", current.get("subagents")))}]
             priced = _priced_delta([ends])
             return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])), **priced,
-                    "sessions": [str(base["source"])], "session_count": 1, "uncovered": [],
+                    "rebased": rebased, "sessions": [str(base["source"])], "session_count": 1,
+                    "uncovered": [],
                     "shape": shape, "model": current.get("model"), "reason": None,
                     "basis": _total_basis(priced["includes_subagents"], rebased)}
         why = (f"only an opening reading of {base['tokens']} is recorded, from "
                f"{base.get('source')}, and no closing reading of that same meter "
                f"is available - the difference of two meters is not a spend")
         return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
-                "includes_subagents": False, "sessions": [str(base.get("source") or "")],
+                "includes_subagents": False, "rebased": 0,
+                "sessions": [str(base.get("source") or "")],
                 "session_count": 0, "uncovered": [str(base.get("source") or "")],
                 "shape": shape, "model": None, "basis": TOKEN_TOTAL_BASIS, "reason": why}
     why = "the run carries no meter stamp and no session token baseline"
     return {"tokens": None, "priced": None, "components": None, "priced_reason": why,
-            "includes_subagents": False, "sessions": [], "session_count": 0, "uncovered": [],
-            "shape": "none", "model": None, "basis": TOKEN_TOTAL_BASIS, "reason": why}
+            "includes_subagents": False, "rebased": 0, "sessions": [], "session_count": 0,
+            "uncovered": [], "shape": "none", "model": None, "basis": TOKEN_TOTAL_BASIS,
+            "reason": why}
 
 
 def cost_components(total: dict) -> str:

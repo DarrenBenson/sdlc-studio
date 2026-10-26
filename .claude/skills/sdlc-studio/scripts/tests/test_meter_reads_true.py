@@ -198,6 +198,13 @@ class _Workspace:
                                          "--format", "json"])
         return next(r for r in json.loads(out.getvalue())["items"] if r["id"] == "cost")
 
+    def close_cost(self) -> str:
+        """The close report's COST section, as the close's own emitter prints it."""
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            _live("sprint")._tell_the_operator(self.root)
+        return out.getvalue().split("  COST\n", 1)[1].split("\n\n", 1)[0]
+
     @staticmethod
     def estimates(page: dict) -> list[dict]:
         return next(s for s in page["sections"] if s["key"] == "estimates")["rows"]
@@ -666,37 +673,71 @@ class OpenStampBasisTests(_Case):
         return ws
 
     def test_an_open_stamp_on_an_earlier_basis_is_re_derived_not_subtracted(self) -> None:
+        """AC1, over every shape an earlier-basis reading takes: an open stamp before the
+        close's reading, its records gone, a session wholly on the earlier basis, the legacy
+        baseline alone, and a span or a window that ends before the change. Each shape's
+        helper names the mutants it kills."""
+        for shape, check in (("an open stamp, then the close's reading", self._open_stamp),
+                             ("the records gone", self._records_gone),
+                             ("a session wholly on the earlier basis", self._earlier_session),
+                             ("the legacy baseline alone", self._legacy_baseline_alone),
+                             ("a span or a window before the change", self._span_and_window)):
+            with self.subTest(shape=shape):
+                check()
+
+    def _open_stamp(self) -> None:
         """MUTANTS: the earlier-basis open stamp subtracted from a current-basis reading (3,975,
         where the run spent 2,975: RUN-01M5EM9N's open stamp is 48,420,326 per record and
         19,227,104 once per message on the main thread); the re-derivation reading past the
-        stamp's time (the open moment re-derived as the whole transcript, 7,305, not 4,330); a
-        re-derivation that cannot be had read as none owed (the gone records' run then reads one
-        uncovered reading, and its reason names no basis change)."""
+        stamp's time (the open moment re-derived as the whole transcript, 7,305, not 4,330); the
+        retro's own re-derivation, before any current-basis stamp holds one, read as not
+        attributable; a surface a reader sees left silent on the re-derivation (the Tokens and
+        Priced cost rows, the cost appendix's shape line, the close checklist, the close
+        report's COST section)."""
         ws = self._opened_before_the_change("held")
-        report = self.rs.stamp_tokens(ws.root, "report")          # the close's reading
+        retro, note = _live("retro"), self.rs.rebased_note({"rebased": 1})
         spent = _sum(MAIN_2, AGENT_B)
+        early = retro.run_attributed_tokens(ws.root, RETRO)
+        self.assertEqual(_tokens(spent), early["tokens"],
+                         f"the retro re-derives the opening reading itself: {early}")
+        self.assertIn(f"re-derived from the transcript up to {_iso(T0 + timedelta(minutes=5))} "
+                      f"as {_tokens(_sum(MAIN_1, AGENT_A)):,}", early["basis"])
+
+        report = self.rs.stamp_tokens(ws.root, "report")          # the close's reading
         redone = [s for s in ws.state()[self.rs.TOKEN_STAMPS] if s["kind"] == self.rs.REDERIVED]
         self.assertEqual(
             [(_iso(T0 + timedelta(minutes=5)), report["at"], _tokens(_sum(MAIN_1, AGENT_A)))],
             [(s[self.rs.REDERIVES], s["at"], s["tokens"]) for s in redone],
             "the open moment re-derived once, main thread and subagents, by the reading that "
             "took it")
-
         total = self.rs.run_token_total(ws.state())
-        self.assertEqual(2_975, total["tokens"])
-        self.assertEqual(_tokens(spent), total["tokens"])
-        self.assertEqual(_priced(spent), total["priced"])
-        self.assertIn("1 reading(s) taken on an earlier counting basis were re-derived",
-                      total["basis"])
-        self.assertEqual(_tokens(spent), ws.row(ws.page(), "Tokens")["est_actual"]["value"],
-                         "the report forms the same total")
-        cap = _live("retro").run_attributed_tokens(ws.root, RETRO)
-        self.assertEqual(_tokens(spent), cap["tokens"], cap)
-        self.assertIn(f"re-derived from the transcript up to {_iso(T0 + timedelta(minutes=5))} "
-                      f"as {_tokens(_sum(MAIN_1, AGENT_A)):,}", cap["basis"])
+        self.assertEqual((2_975, _tokens(spent), _priced(spent), 1),
+                         (total["tokens"], total["tokens"], total["priced"], total["rebased"]))
+        self.assertEqual("1 reading(s) taken on an earlier counting basis were re-derived from "
+                         "the transcript, up to the moment each was taken, under the current "
+                         "one", note)
+        self.assertIn(note, total["basis"])
 
-        # The transcript no longer holds the records up to the open stamp when the first
-        # current-basis reading lands: not attributable, naming the basis change.
+        # Every surface a reader sees states the figure and says it was re-derived.
+        page = ws.page()
+        tokens = ws.row(page, "Tokens")
+        self.assertEqual(_tokens(spent), tokens["est_actual"]["value"])
+        self.assertIn(note, tokens["est_basis"]["value"])
+        priced = ws.row(page, "Priced cost")
+        self.assertEqual(_priced(spent), priced["est_actual"]["value"])
+        self.assertIn(note, priced["est_basis"]["value"])
+        shape = next(s for s in page["sections"] if s["key"] == "cost")["figures"]
+        self.assertIn(note, shape["token_shape"]["value"])
+        checked = ws.checklist_cost()
+        self.assertEqual(f"{_tokens(spent):,} tokens, measured", checked["value"])
+        self.assertIn(note, checked["detail"])
+        self.assertIn(f"re-derived: {note}", ws.close_cost())
+        cap = retro.run_attributed_tokens(ws.root, RETRO)
+        self.assertEqual(_tokens(spent), cap["tokens"], cap)
+
+    def _records_gone(self) -> None:
+        """MUTANT: a re-derivation that cannot be had read as none owed (the gone records' run
+        then reads one uncovered reading, and its reason names no basis change)."""
         gone = self._opened_before_the_change("gone")
         lines = gone.tx.main.read_text(encoding="utf-8").splitlines()
         gone.tx.main.write_text("\n".join(lines[3:]) + "\n", encoding="utf-8")
@@ -707,16 +748,20 @@ class OpenStampBasisTests(_Case):
         self.assertIn("taken on an earlier counting basis and cannot be re-derived",
                       total["reason"])
         self.assertIn("no longer holds a usage record up to the stamp's time", total["reason"])
-        self.assertEqual("NOT MEASURED", gone.row(gone.page(), "Tokens")["est_actual"]["value"])
+        tokens = gone.row(gone.page(), "Tokens")["est_actual"]
+        self.assertEqual("NOT MEASURED", tokens["value"])
+        self.assertIn("taken on an earlier counting basis and cannot be re-derived",
+                      tokens["reason"])
         cap = _live("retro").run_attributed_tokens(gone.root, RETRO)
         self.assertIsNone(cap["tokens"], cap)
         self.assertIn("was taken on an earlier counting basis and cannot be re-derived",
                       cap["reason"])
 
-    def test_a_session_wholly_on_an_earlier_basis_is_re_derived_with_the_run(self) -> None:
-        """MUTANT: the rule applied per session, not per run - the session whose readings were
+    def _earlier_session(self) -> None:
+        """MUTANTS: the rule applied per session, not per run - the session whose readings were
         all taken on the earlier basis keeps its per-record delta (6,990, where it spent 2,330)
-        and is summed with the other session's current-basis one."""
+        and is summed with the other session's current-basis one; re-derivations owed only by
+        the new stamp's own session."""
         ws = self._timed("sessions")
         ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
         ws.open()
@@ -735,34 +780,55 @@ class OpenStampBasisTests(_Case):
         total = self.rs.run_token_total(ws.state())
         self.assertEqual(_tokens(_sum(MAIN_2)) + _tokens(_sum(AGENT_B)), total["tokens"], total)
         self.assertEqual(2, total["session_count"])
-        self.assertIn("2 reading(s) taken on an earlier counting basis were re-derived",
-                      total["basis"])
+        self.assertIn(self.rs.rebased_note({"rebased": 2}), total["basis"])
+        self.assertIn(self.rs.rebased_note({"rebased": 2}),
+                      ws.row(ws.page(), "Tokens")["est_basis"]["value"])
 
-    def test_a_run_holding_only_its_legacy_baseline_is_re_derived(self) -> None:
+    def _legacy_baseline_alone(self) -> None:
         """MUTANTS: the re-derivation owed only by the sessions the earlier stamps name (a run
         whose one earlier-basis reading is its legacy baseline reads not attributable at its
         first current-basis stamp, where it spent 2,975); the baseline subtracted from a
-        current-basis closing reading (3,975)."""
+        current-basis closing reading (3,975); the report re-deriving from the record's source
+        as `portable` leaves it, a digest no file is named by, so its page reads NOT MEASURED
+        where the retro reads 2,975."""
         ws = self._opened_before_the_change("baseline")
         self.rs.update(ws.root, **{self.rs.TOKEN_STAMPS: []})
+        self.assertNotIn(self.rs.METER, ws.state()[self.rs.TOKEN_BASELINE],
+                         "premise: the baseline names no basis, as one before stamping")
         spent = _tokens(_sum(MAIN_2, AGENT_B))
-        closing = self.rs.run_token_total(ws.state(), self.rs.session_tokens(ws.root))
-        self.assertEqual(spent, closing["tokens"], closing)
-        self.assertIn("1 reading(s) taken on an earlier counting basis were re-derived",
-                      closing["basis"])
+        current = self.rs.session_tokens(ws.root)
+        closing = self.rs.run_token_total(ws.state(), current)
+        self.assertEqual((spent, 1), (closing["tokens"], closing["rebased"]), closing)
+        # Read as the report reads it: the record and the reading made portable, the file the
+        # reading came from passed beside them. The source stays as the record holds it.
+        record = self.rs.portable(ws.state(), ws.root)
+        named = self.rs.run_token_total(record, self.rs.portable(current, ws.root),
+                                        current["source"])
+        self.assertEqual((spent, [record[self.rs.TOKEN_BASELINE]["source"]]),
+                         (named["tokens"], named["sessions"]), named)
+        self.assertTrue(named["sessions"][0].startswith("sha256:"), "premise: a digest")
+        page = ws.page()
+        self.assertEqual(spent, ws.row(page, "Tokens")["est_actual"]["value"],
+                         "the report reads the run as the retro does")
+        self.assertEqual(_priced(_sum(MAIN_2, AGENT_B)),
+                         ws.row(page, "Priced cost")["est_actual"]["value"])
+        shape = next(s for s in page["sections"]
+                     if s["key"] == "cost")["figures"]["token_shape"]["value"]
+        self.assertIn(f"the legacy single {self.rs.TOKEN_BASELINE}", shape)
+        self.assertIn(self.rs.rebased_note({"rebased": 1}), shape)
+        self.assertEqual(spent, _live("retro").run_attributed_tokens(ws.root, RETRO)["tokens"])
         self.rs.stamp_tokens(ws.root, "report")
         total = self.rs.run_token_total(ws.state())
         self.assertEqual(spent, total["tokens"], total)
         self.assertIn(f"the legacy {self.rs.TOKEN_BASELINE}", total["shape"])
-        self.assertEqual(spent, _live("retro").run_attributed_tokens(ws.root, RETRO)["tokens"])
 
-    def test_a_span_or_a_window_ending_before_the_change_is_never_measured_across_it(
-            self) -> None:
+    def _span_and_window(self) -> None:
         """MUTANTS: a unit span opened on the earlier basis measured to a current-basis end
         (its tokens read 0, a difference across two bases, where they are not measured); the
         re-derivations stamped with the earlier reading's own time, so a page measured to a
         moment before the first current-basis reading is rebased (2,330, where it was filed at
-        the per-record 6,990)."""
+        the per-record 6,990); `record_unit_actual`'s stamp appended with no re-derivation (the
+        run's earlier-basis readings are then owed one, and its total reads not attributable)."""
         ws = self._timed("span")
         ws.tx.main_says("msg_main_1", MAIN_1, at=T0)
         ws.open()
@@ -786,6 +852,30 @@ class OpenStampBasisTests(_Case):
         self.assertEqual(_tokens(_sum(MAIN_2, AGENT_B)),
                          self.rs.run_token_total(ws.state())["tokens"])
 
+    def test_a_record_or_a_reading_that_cannot_be_placed_in_time_is_refused(self) -> None:
+        """MUTANTS: a usage record with no timestamp dropped from the re-derivation rather than
+        refusing it (the opening reading then omits the main thread's first message, and the
+        run reads 4,085 where it spent 2,975); a reading that records no time re-derived as the
+        whole transcript (a legacy baseline with no `at` then reads a measured 0, where nothing
+        can be measured)."""
+        ws = self._timed("untimed")
+        ws.tx.main_says("msg_main_1", MAIN_1)                     # written with no timestamp
+        ws.tx.agent_says("a1", "msg_agent_a", AGENT_A, at=T0 + timedelta(minutes=1))
+        ws.open()
+        self._legacy(ws, ("open", T0 + timedelta(minutes=5), (MAIN_1,)))
+        ws.tx.main_says("msg_main_2", MAIN_2, at=T0 + timedelta(minutes=10))
+        ws.tx.agent_says("b2", "msg_agent_b", AGENT_B, at=T0 + timedelta(minutes=12), depth=2)
+        self.rs.stamp_tokens(ws.root, "report")
+        total = self.rs.run_token_total(ws.state())
+        self.assertIsNone(total["tokens"], total)
+        self.assertIn("carries no timestamp", total["reason"])
+
+        timeless = self._opened_before_the_change("timeless")
+        base = {k: v for k, v in timeless.state()[self.rs.TOKEN_BASELINE].items() if k != "at"}
+        self.rs.update(timeless.root, **{self.rs.TOKEN_STAMPS: [], self.rs.TOKEN_BASELINE: base})
+        total = self.rs.run_token_total(timeless.state(), self.rs.session_tokens(timeless.root))
+        self.assertIsNone(total["tokens"], f"never a measured 0: {total}")
+        self.assertIn("records no time", total["reason"])
 
 if __name__ == "__main__":
     unittest.main()

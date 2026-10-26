@@ -3833,21 +3833,33 @@ class CostRowTests(ReportOfRecordBase):
     """US0844 AC4: the legacy single baseline is still read, and named."""
 
     def test_a_legacy_single_baseline_is_read_and_named(self) -> None:
-        """AC4. MUTANT: require the stamp list.
+        """AC4. MUTANTS: require the stamp list; re-derive the opening reading from the record's
+        source as `portable` leaves it, a digest no file is named by (US1097: the page then
+        reads NOT MEASURED); subtract the baseline across counting bases (0, where the run
+        spent `FIX_RUN_TOKENS`).
 
         Every run opened before this story lands then reports NOT MEASURED, including the run
         that delivers it, which is the fixture-green-is-not-target-green scar this project
-        already carries."""
+        already carries. The baseline is one written before stamping: it names no counting
+        basis, and it counted the opening message once per record, three times over, so it is
+        re-derived from the transcript up to its own time, never subtracted."""
         fixture_run(self.root, stamps=False, legacy_baseline=True)
         transcripts = Path(tempfile.mkdtemp(dir=self.tmp.name))
         src = transcripts / "s1.jsonl"
-        src.write_text(json.dumps({"message": {"model": FIX_MODEL, "usage": {
-            "input_tokens": FIX_REPORT_READING, "output_tokens": 0,
-            "cache_creation_input_tokens": 0}}}) + "\n", encoding="utf-8")
+        lines = []
+        for msg, tokens, at in (("m1", FIX_OPEN_READING, "2026-09-15T04:00:00.000Z"),
+                                ("m2", FIX_RUN_TOKENS, "2026-09-15T06:00:00.000Z")):
+            for block in ("thinking", "text", "tool_use"):
+                lines.append(json.dumps({"type": "assistant", "timestamp": at, "message": {
+                    "id": msg, "model": FIX_MODEL, "content": [{"type": block}],
+                    "usage": {"input_tokens": tokens, "output_tokens": 0,
+                              "cache_creation_input_tokens": 0}}}))
+        src.write_text("\n".join(lines) + "\n", encoding="utf-8")
         state = json.loads((self.root / "sdlc-studio" / ".local"
                             / "run-state.json").read_text(encoding="utf-8"))
-        state["session_token_baseline"]["source"] = str(src)
-        state["session_token_baseline"][run_state.METER] = run_state.METER_BASIS
+        baseline = state["session_token_baseline"]
+        baseline.update(source=str(src), tokens=3 * FIX_OPEN_READING)
+        self.assertNotIn(run_state.METER, baseline, "premise: a baseline from before stamping")
         (self.root / "sdlc-studio" / ".local" / "run-state.json").write_text(
             json.dumps(state), encoding="utf-8")
         with mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts)}):
@@ -3860,6 +3872,7 @@ class CostRowTests(ReportOfRecordBase):
         self.assertIn("legacy", shape.lower(),
                       f"the cost row does not name the shape it read: {shape!r}")
         self.assertIn("session_token_baseline", shape)
+        self.assertIn(run_state.rebased_note({"rebased": 1}), shape)
 
 
 class TheSealDoesNotMoveTheWindowTests(ReportOfRecordBase):

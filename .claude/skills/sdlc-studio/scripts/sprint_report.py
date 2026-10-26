@@ -1545,6 +1545,8 @@ def close_report(summary: dict) -> str:
             cost_line += (f"; the {cost['supplied']:,} tokens supplied by {cost.get('agents')} "
                           f"delegated agent(s) are not in it")
         cost_line += f"\n    components: {run_state.cost_components(cost)}"
+        if run_state.rebased_note(cost):
+            cost_line += f"\n    re-derived: {run_state.rebased_note(cost)}"
         if not cost.get("includes_subagents"):
             cost_line += ("\n    main thread only: no subagent transcript was read, so this is "
                           "a lower bound")
@@ -1908,6 +1910,7 @@ def _ck_cost(ctx: dict) -> tuple:
     metered = _metered(run, _at(run.get(sprint.REPORT_WINDOW_END)))
     total = run_state.run_token_total(metered) if run else {}
     measured, agents = _run_tokens_actual(run, total) if run else (None, 0)
+    rebased = (f"; {run_state.rebased_note(total)}" if run_state.rebased_note(total) else "")
     priced = (f"; priced, the report's headline"
               + (", which the supplied totals are outside" if agents else "")
               + f": {total['priced']:,} {run_state.PRICED_LABEL} "
@@ -1924,11 +1927,12 @@ def _ck_cost(ctx: dict) -> tuple:
             return (ANSWERED, f"{measured:,} tokens, measured",
                     "the run's meter, which reads the main thread and every subagent "
                     "transcript, so the subagents are already in it, as the report's "
-                    "Estimates section states it" + priced)
+                    "Estimates section states it" + rebased + priced)
         return (ANSWERED, f"{measured:,} tokens, measured",
                 "the run's meter" + (f" plus {agents} delegated agent(s)' reported totals"
                                      if agents else "")
-                + ", as the report's Estimates section states it - a lower bound" + priced)
+                + ", as the report's Estimates section states it - a lower bound" + rebased
+                + priced)
     if not spend.get("measured_units"):
         return (UNMEASURABLE, "unattributed",
                 "no per-unit telemetry, no measured run total and no supplied sprint total, "
@@ -3695,7 +3699,9 @@ def _priced_row(run_tokens: dict, state_rel: str, supplied: int = 0,
                           + (f"the Tokens row adds the {supplied:,} supplied by {agents} "
                              f"delegated agent(s) to that sum, outside this priced figure"
                              if agents else "the sum is the Tokens row")
-                          + f"; read from {reach}")
+                          + f"; read from {reach}"
+                          + (f"; {run_state.rebased_note(run_tokens)}"
+                             if run_state.rebased_note(run_tokens) else ""))
                          if _num(priced) else
                          f"{run_state.PRICED_LABEL}, the run's headline cost", state_rel)}
 
@@ -3781,6 +3787,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     elif agents:
         basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
+    if rebased := run_state.rebased_note(run_tokens):
+        basis += f"; {rebased}"
     head = (_priced_row(run_tokens, state_rel, (tokens or 0) - (run_tokens.get("tokens") or 0),
                         agents) if priced_rule else None)
     if head:
@@ -4049,7 +4057,9 @@ def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
         "tokens_total": fig("tokens_total", total["tokens"] + (
             0 if total.get("includes_subagents") else delegated), state_rel),
         "token_coverage": fig("token_coverage", coverage, state_rel),
-        "token_shape": fig("token_shape", f"read from {total['shape']}", state_rel)})
+        "token_shape": fig("token_shape", f"read from {total['shape']}" + (
+            f"; {run_state.rebased_note(total)}" if run_state.rebased_note(total) else ""),
+            state_rel)})
     return _section("cost", "Tokens by model", figures, rows)
 
 
@@ -4246,15 +4256,18 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                             or "not recorded", state_rel),
     }
 
-    current = None
+    current, current_path = None, None
     if not (state.get(run_state.TOKEN_STAMPS) or []) and state.get(run_state.TOKEN_BASELINE):
         # The LEGACY single baseline needs a closing reading of the same meter, so the
-        # transcript is read here and nowhere else.
+        # transcript is read here and nowhere else. An opening reading on an earlier basis is
+        # re-derived from the file that reading came from: the record's source, made portable,
+        # names none.
         current = run_state.session_tokens(root)
+        current_path = current.get("source")
         if portable:
             current = run_state.portable(current, root)
     metered = _metered(state, end)
-    tokens = run_state.run_token_total(metered, current)
+    tokens = run_state.run_token_total(metered, current, current_path)
     readings = _page_readings(filed)
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,

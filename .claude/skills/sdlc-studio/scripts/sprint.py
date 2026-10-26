@@ -6673,7 +6673,8 @@ def _close_cost(root, state: dict, shipped: list) -> dict:
         actual, agents = sprint_report._run_tokens_actual(metered, total)
         cost.update(priced=total["priced"], components=total["components"],
                     includes_subagents=total["includes_subagents"],
-                    supplied=(actual - total["tokens"]) if agents else 0, agents=agents)
+                    supplied=(actual - total["tokens"]) if agents else 0, agents=agents,
+                    rebased=total.get("rebased") or 0)
     points = 0
     for entry in shipped:
         found = sdlc_md.find_by_id(root, entry.split()[0])
