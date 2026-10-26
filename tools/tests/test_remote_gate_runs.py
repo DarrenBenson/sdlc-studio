@@ -9,7 +9,9 @@ claims:
   file STUB_SSH_DROP names appears, it closes the host's stdin and exits 255: a dropped connection.
 * the GATE starts a CHILD, as the real gate starts its suite's workers, records both pids and its
   checkout, then blocks until the file STUB_RELEASE names exists. Killing the gate's pid alone would
-  leave the child running, so a test that sees only the leader cannot tell the two apart.
+  leave the child running, so a test that sees only the leader cannot tell the two apart. The gate
+  and the child each give up after STUB_DEADLINE seconds, so a stub whose release is lost still
+  ends; a test that waits for the host to stop a stub sets a deadline its waits cannot reach.
 
 Every wait synchronises on an event (a record written, a directory made, a line printed) under a
 ceiling, never on a sleep: these tests run on a gate host shared with a CI runner, where a
@@ -185,9 +187,10 @@ class _RunsClone(_HostClone):
         return f.read_text(encoding="utf-8", errors="replace") if f.exists() else ""
 
     def cleanup(self) -> None:
-        """Never leave a stub behind: a test that fails before it releases the gate would
-        otherwise remove the release file's directory under a gate and child still polling it.
-        Every recorded gate and child is killed before the tree goes."""
+        """Leave no stub behind: a test that fails before it releases the gate would otherwise
+        remove the release file's directory under a gate and child still polling it. Every
+        recorded gate and child is killed before the tree goes; one not yet recorded gives up at
+        its deadline."""
         if not self.tmp.exists():
             return
         for gate in self.gate_runs():
@@ -240,7 +243,8 @@ class GateHostRunTests(unittest.TestCase):
         """The host launches its gate as a background job, which a non-interactive shell starts
         with SIGINT ignored; a suite test that interrupts a hook it runs then cannot (the first
         host run of this unit failed test_a_ctrl_c_stops_every_lane_with_the_hook exactly so).
-        Mutant: the gate launched without restoring SIGINT's default disposition."""
+        Mutants: the gate launched with neither SIGINT nor SIGQUIT restored to its default
+        disposition, or with SIGINT's alone."""
         fx = self.fx
         run = fx.start_run(fx.commit("interrupts reach the suite"), "first")
         gate = _until("the gate to start", lambda: fx.gate_runs())[0]
@@ -268,11 +272,14 @@ class GateHostRunTests(unittest.TestCase):
                          "the waiting run did not start when the first ended")
 
     def test_an_abandoned_push_leaves_nothing_running(self) -> None:
-        """AC3. Mutants: the host's gate left running, or its tree left behind, after the pusher
-        goes - interrupted, terminated, or its connection dropped mid-run."""
+        """AC3. Mutants: the host's gate left running, or killed by its pid alone so its child runs
+        on, or its tree left behind, after the pusher goes - interrupted, terminated, or its
+        connection dropped mid-run. The stubs' deadline outlasts the waits here: the default's
+        180 s ended an orphaned child inside its 240 s wait, so the pid-alone kill passed."""
         for how in ("SIGINT", "SIGTERM", "drop"):
             with self.subTest(how=how):
                 fx = _RunsClone()
+                fx.deadline = 4 * CEILING     # only the host's kill can stop a stub in time
                 push = None
                 try:
                     fx.commit(f"abandon by {how}")
@@ -292,11 +299,7 @@ class GateHostRunTests(unittest.TestCase):
                 finally:
                     if push is not None and push.poll() is None:
                         os.killpg(push.pid, signal.SIGKILL)
-                    for gate in fx.gate_runs():
-                        for pid in (gate["pid"], gate.get("child")):
-                            if pid and _alive(pid):
-                                os.kill(pid, signal.SIGKILL)
-                    fx.cleanup()
+                    fx.cleanup()                  # kills any gate and child the push left
 
     def test_no_stub_outlives_its_fixture(self) -> None:
         """Round 2 of the review: a failing test removed the release file's directory under a
@@ -326,6 +329,7 @@ class GateHostRunTests(unittest.TestCase):
                 run.wait(CEILING)
             finally:
                 fx.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
