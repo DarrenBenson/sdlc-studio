@@ -33,6 +33,14 @@ tokens-per-point over the delivered points - the token count is deterministic, s
 not-yet-captured until you supply it, never as if it were unknowable. It stays descriptive,
 never a target.
 
+The close captures it itself with `--tokens-from-harness`, and the accuracy block then states the
+run's priced cost below its unit table: the priced total and its cost per delivered point on one
+line, then each component on its own line. The VELOCITY.md row carries that figure as `Priced/pt`, under a
+Source naming the meter's counting basis, such as
+`harness (main thread and subagents, once per message)`. A bare `harness` row was counted on an
+earlier basis, and earlier rows are never recomputed. The planner's tokens-per-point basis names
+every Source it pooled, so a rate taken across two bases is never read as one figure.
+
 ## What the close gate checks
 
 `gate --require-retro RETROxxxx` delegates to `retro.py validate`, which reads the

@@ -1926,9 +1926,11 @@ class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
         self.assertIn("1,200,000", out)
         cells = self._cells()
         self.assertEqual(cells["actual_tokens"], "1,200,000")
-        self.assertEqual(cells["source"], retro.SOURCE_HARNESS_SUPPLIED)
-        self.assertEqual(retro.velocity_history(str(self.root))[0]["source"],
-                         retro.SOURCE_HARNESS_SUPPLIED)
+        # The meter read this session's main thread alone, once per message, and the Source
+        # names that basis after its kind.
+        supplied = f"{retro.SOURCE_HARNESS_SUPPLIED} ({retro.SOURCE_BASIS_MAIN_THREAD})"
+        self.assertEqual(cells["source"], supplied)
+        self.assertEqual(retro.velocity_history(str(self.root))[0]["source"], supplied)
 
     def test_a_wholly_main_thread_capture_keeps_the_plain_harness_source(self) -> None:
         """The positive control: a run that delegated nothing must not be marked as carrying a
@@ -1937,7 +1939,8 @@ class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
         self._open_run()
         self._append("s1.jsonl", {"input_tokens": 400_000})
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
-        self.assertEqual(self._cells()["source"], retro.SOURCE_HARNESS)
+        self.assertEqual(self._cells()["source"],
+                         f"{retro.SOURCE_HARNESS} ({retro.SOURCE_BASIS_MAIN_THREAD})")
 
     def test_the_meter_reader_says_it_sees_only_the_main_thread(self) -> None:
         """At the source. `session_tokens` is where the sidechain records are absent, so its own
@@ -2135,6 +2138,8 @@ class TheActualCellSaysWhereItsFigureCameFrom(InteractiveSprintFixture):
     claim-versus-measurement mark the mutation ledger carries."""
 
     _cells = AnUnratedSprintRecordsNoTokenActual._cells
+    #: A capture of this session's main thread, which has no subagent transcript.
+    HARNESS = f"{retro.SOURCE_HARNESS} ({retro.SOURCE_BASIS_MAIN_THREAD})"
 
     def test_a_typed_total_is_recorded_as_supplied(self) -> None:
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens", "800000")
@@ -2147,7 +2152,7 @@ class TheActualCellSaysWhereItsFigureCameFrom(InteractiveSprintFixture):
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
         cells = self._cells()
         self.assertEqual(cells["actual_tokens"], "800,000")
-        self.assertEqual(cells["source"], retro.SOURCE_HARNESS)
+        self.assertEqual(cells["source"], self.HARNESS)
 
     def test_a_reused_capture_keeps_the_source_it_was_recorded_under(self) -> None:
         """The close re-runs against a row it already filled. Reusing the figure while
@@ -2157,7 +2162,7 @@ class TheActualCellSaysWhereItsFigureCameFrom(InteractiveSprintFixture):
         self._append("s1.jsonl", {"input_tokens": 800_000})
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
         self._capture("accuracy", "--id", "RETRO9002", "--write", "--tokens-from-harness")
-        self.assertEqual(self._cells()["source"], retro.SOURCE_HARNESS)
+        self.assertEqual(self._cells()["source"], self.HARNESS)
 
     def test_a_row_written_before_the_column_existed_records_no_source(self) -> None:
         """Unrecorded is its own answer. Back-filling one would invent provenance for every

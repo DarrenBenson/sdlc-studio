@@ -888,6 +888,18 @@ figure an operator TYPED, which is a claim about what a sprint cost, not a measu
 An empty Source is unrecorded - the rows written before the column existed - and unrecorded is
 what it stays, because back-filling provenance would invent the very thing the column records.
 
+A harness Source names its counting basis in parentheses once the meter counts each message
+once: `harness (main thread and subagents, once per message)`, or `(main thread, once per
+message)` for a session with no subagent transcript. A bare `harness` was counted on an earlier
+basis, per record or the main thread alone, and does not say which. A rate pooled across a bare
+and a named basis is pooled across two counts, so the planner's rate names every Source it pooled.
+
+Read the PRICED/PT column beside Tokens/pt. It is the run's priced cost per delivered point, in
+whole priced input-equivalent tokens: each component the meter read (input, output, cache write
+and cache read) times its weight from one table, over the row's Points. Only a harness capture
+whose readings carry their components writes one, and only under the Source of that capture. A
+row recorded before the column existed carries none, and none is computed for it.
+
 Read the Overhead bound column before comparing two Overhead ratios. The ratio is overhead time
 against delivery time, and delivery is DERIVED by taking the measured overhead out of the run's
 measured span - so every minute the instruments failed to attribute is credited to delivery, and
@@ -901,8 +913,8 @@ an unmeasured component always moves it. They are left as written rather than ba
 because this file publishes what was measured at the time and a figure computed today under a
 row dated two months ago is a different claim wearing that row's date.
 
-A `harness` figure is a LOWER BOUND, never an equality. The meter is the session transcript,
-and the transcript records no subagent usage at all: measured on one live session, 6,624,813
+A bare `harness` figure is a LOWER BOUND, never an equality. Its meter was the session
+transcript alone, which records no subagent usage at all: measured on one live session, 6,624,813
 tokens of usage carried ZERO sidechain records. So a sprint that delegated work to agents cost
 MORE than its harness row says - one published 439,982 while its cluster agents had reported
 787,834 between them. Their totals reach a row only when somebody supplies them, which is what
@@ -911,8 +923,8 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 -->
 # Velocity history
 
-| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Oversized | Wall (s) | Overhead | Overhead bound | Constants | Sample | Model | Note | Source |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Retro | Date | Units | Measured | Forecast | Points | Written | Estimate (tokens, plan-time) | Actual (tokens) | Ratio (est/actual) | Tokens/pt | Priced/pt | Oversized | Wall (s) | Overhead | Overhead bound | Constants | Sample | Model | Note | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 """
 
 # The history is parsed by COLUMN NAME, not position, so a row written before the plan-time
@@ -955,6 +967,10 @@ VELOCITY_COLUMNS = (
     ("overhead bound", "overhead_bound"), ("overhead", "overhead_ratio"),
     ("constants", "constants"), ("sample", "sample"),
     ("model", "model"), ("note", "note"), ("source", "source"),
+    # PARSED, unlike Tokens/pt: no priced total sits beside it to derive it from, so the cell is
+    # the record. A whole number of priced input-equivalent tokens per delivered point, `-` when
+    # absent; a row written before the column existed reads None.
+    ("priced", "priced_per_point"),
 )
 #: A sprint whose rated units were delivered by more than one model. Its ratio is not recorded.
 MODEL_MIXED = "mixed"
@@ -1306,7 +1322,8 @@ def render_review_cost(split: dict) -> list:
 
 
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
-             elapsed_hours: float | None = None, sprint_model: str | None = None) -> dict:
+             elapsed_hours: float | None = None, sprint_model: str | None = None,
+             priced: dict | None = None) -> dict:
     """Estimate vs actual for every unit in the retro's batch - IN POINTS, and in tokens.
 
     `sprint_tokens` is the SPRINT-level actual token spend: the harness tracks the token
@@ -1316,6 +1333,8 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     tokens-per-point - `sprint_tokens / points delivered` - instead of nothing. It does NOT invent
     per-unit actuals (those honestly stay unmeasured); it records the batch-level figure the
     velocity loop needs. A batch-level count, so it is not attributed to any single unit.
+    `priced` is the harness capture that total came from (`run_attributed_tokens`), whose priced
+    cost and components the batch states (`_priced_batch`).
 
     The estimate is the forecast the planner RECORDED when it planned the sprint
     (`telemetry.forecasts`), read back verbatim. It is never re-derived from the constants in
@@ -1584,6 +1603,8 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "rung": rung,
             "sprint_tokens_per_point": (_rate(sprint_tokens, delivered_points)
                                         if sprint_tokens and rung == "done" else None),
+            # The run's priced cost and its components, per point by the same rule.
+            "priced": _priced_batch(priced, delivered_points, rung),
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
             # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
             # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).
@@ -1604,6 +1625,49 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
         },
         "errors": [],
     }
+
+
+def _priced_batch(cap: dict | None, points: int, rung: str) -> dict | None:
+    """The priced cost a harness capture `cap` states, per delivered point when the run was a
+    build run with points, or None when no capture was made. `reason` says why a capture states
+    no priced figure."""
+    if not cap:
+        return None
+    priced = cap.get("priced")
+    priced = priced if isinstance(priced, int) and not isinstance(priced, bool) else None
+    return {"priced": priced, "components": cap.get("components") if priced is not None else None,
+            "per_point": _rate(priced, points) if priced and rung == "done" else None,
+            "points": points, "rung": rung, "reads_subagents": bool(cap.get("reads_subagents")),
+            "supplied": int(cap.get("delegated_tokens") or 0),
+            "reason": None if priced is not None else (cap.get("priced_reason")
+                                                       or cap.get("reason"))}
+
+
+def _priced_lines(p: dict | None) -> list[str]:
+    """The priced total on one line, then each component on its own line, or one line naming
+    why no priced figure is stated. Nothing when no harness capture was made."""
+    if not p:
+        return []
+    if p["priced"] is None:
+        return [f"**Priced cost: not stated.** {p['reason'] or 'no priced reading'}"]
+    if p["per_point"]:
+        per = f", {p['per_point']:,} per point over {p['points']} delivered points."
+    elif not p["points"]:
+        per = ". No per-point figure: no delivered unit carries Points."
+    else:
+        per = (f". No per-point figure: the run was driven to the `{p['rung']}` rung, and only "
+               f"a build run earns one.")
+    reach = ("Read once per message from the main thread and every subagent transcript."
+             if p["reads_subagents"] else
+             "Read once per message from the main thread only, a lower bound, since no "
+             "subagent transcript was read.")
+    outside = (f" The {p['supplied']:,} tokens supplied by delegated agents are outside it."
+               if p["supplied"] else "")
+    comps = p["components"] or {}
+    return [f"**Priced cost: {p['priced']:,} {run_state.PRICED_LABEL}**{per} {reach} Each "
+            f"component is its count times its weight.{outside}",
+            "\n".join(f"- {run_state.COMPONENT_NAMES[c]}: {int(comps.get(c) or 0):,} "
+                      f"x{run_state.TOKEN_WEIGHTS[c]:g}" for c in run_state.TOKEN_COMPONENTS)]
 
 
 def _by_model(rated: list[dict]) -> dict:
@@ -1691,7 +1755,8 @@ def _points_lines(res: dict) -> list[str]:
     estimate of how big the work was survived contact with the work.
     """
     b = res["batch"]
-    out: list[str] = []
+    # The headline: the run's priced cost, then each of its components.
+    out: list[str] = _priced_lines(b.get("priced"))
     # CR0278: the SPRINT-level tokens-per-point (harness-tracked actual over the delivered points).
     # Printed first and unconditionally when supplied, so an INTERACTIVE sprint - which has no
     # per-unit actuals and would otherwise fall into the "no velocity" branch below - still gets a
@@ -1932,6 +1997,14 @@ TRANSCRIPTS_ENV = run_state.TRANSCRIPTS_ENV
 harness_tokens = run_state.session_tokens
 
 
+def _priced_window(opening: dict, closing: dict) -> dict:
+    """The priced half of the window `run_attributed_tokens` measures: each component's delta
+    from the `opening` reading to the `closing` one, priced by the run total's own rule, or
+    `priced` None with `priced_reason` when a reading predates the priced meter."""
+    got = run_state._priced_delta([[opening, closing]])  # noqa: SLF001 - one pricing rule
+    return {k: got[k] for k in ("priced", "components", "priced_reason")}
+
+
 def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     """The tokens the open run is known to have spent, for the retro that is being recorded -
     or a stated reason there is no such number. Over a reading of the main thread alone the run
@@ -2090,7 +2163,11 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
             # capture so the interactive close can book the row in the (project, model) cell
             # rather than the unrecorded-model one. `mixed` when the session spanned two.
             "model": cap.get("model"),
-            "source": cap["source"], "basis": basis}
+            "source": cap["source"], "basis": basis,
+            # The counting basis the Source cell names (`harness_source`), and the priced half
+            # of the same window, which no supplied total enters.
+            run_state.METER: cap.get(run_state.METER), "reads_subagents": reads_agents,
+            **_priced_window(redone if rebased else base, cap)}
 
 
 def _tokens_cover_points(row: dict) -> bool:
@@ -2236,7 +2313,8 @@ def velocity_history(root) -> list[dict]:
                     "note": note if note and note != "-" else None,
                     # Absent on every row written before the column existed, and absent is what
                     # it stays. None reads as UNRECORDED downstream, never as a measurement.
-                    "source": cell("source").strip() or None})
+                    "source": cell("source").strip() or None,
+                    "priced_per_point": _velocity_num(cell("priced_per_point"))})
     return sorted(out, key=lambda r: r["id"])
 
 
@@ -2406,6 +2484,10 @@ def measured_rate(root, model: str | None = None) -> dict:
         "tokens_per_point": round(rate) if rate else None,
         "source": source or "none: no VELOCITY row records points and tokens for one model",
         "sprints": [r["id"] for r in used],
+        # Every Source the rate pooled, a counting basis among them: rows on two bases pooled
+        # into one median are not one figure, and the reader is told so.
+        "sources": sorted({r["source"] if r.get("source") not in (None, "-")
+                           else SOURCE_UNRECORDED for r in used}),
         "points": sum(r["points"] for r in used),
         "actual_tokens": sum(r["actual_tokens"] for r in used),
         "oversized": sum(int(r.get("oversized") or 0) for r in used),
@@ -2664,6 +2746,28 @@ SOURCE_HARNESS_SUPPLIED = "harness+supplied"
 #: Not a recorded value: cmd_accuracy's signal that it re-used the figure already on the row,
 #: so whatever provenance that row holds is the provenance of the figure it still holds.
 SOURCE_UNCHANGED = "unchanged"
+#: The counting basis a harness Source names in parentheses after its kind, once the meter
+#: counts each message once. A bare `harness` was counted on an earlier basis and says not which.
+SOURCE_BASIS_SUBAGENTS = "main thread and subagents, once per message"
+SOURCE_BASIS_MAIN_THREAD = "main thread, once per message"
+#: How a row with no Source is named where the Sources a rate pooled are listed.
+SOURCE_UNRECORDED = "unrecorded"
+
+
+def harness_source(kind: str | None, cap: dict) -> str | None:
+    """A harness `kind` naming the counting basis of the capture `cap` it came from:
+    `harness (main thread and subagents, once per message)`. Any other kind, and a capture not
+    on the current meter's basis, is returned as it is."""
+    if kind not in (SOURCE_HARNESS, SOURCE_HARNESS_SUPPLIED) or (
+            cap.get(run_state.METER) != run_state.METER_BASIS):
+        return kind
+    basis = SOURCE_BASIS_SUBAGENTS if cap.get("reads_subagents") else SOURCE_BASIS_MAIN_THREAD
+    return f"{kind} ({basis})"
+
+
+def source_kind(cell: str | None) -> str | None:
+    """A Source cell's kind with its basis dropped: `harness (...)` reads `harness`."""
+    return cell.split(" (", 1)[0].strip() if cell else None
 
 
 def _actual_source(res: dict, actual, existing=None) -> str | None:
@@ -2678,7 +2782,7 @@ def _actual_source(res: dict, actual, existing=None) -> str | None:
     declared = (res.get("token_source") or "").strip()
     if declared == SOURCE_UNCHANGED:
         return existing or None
-    if declared in (SOURCE_HARNESS, SOURCE_SUPPLIED, SOURCE_HARNESS_SUPPLIED):
+    if source_kind(declared) in (SOURCE_HARNESS, SOURCE_SUPPLIED, SOURCE_HARNESS_SUPPLIED):
         return declared
     if (res.get("batch") or {}).get("sprint_tokens_supplied"):
         return SOURCE_SUPPLIED
@@ -2825,6 +2929,15 @@ def record_velocity(root, res: dict) -> Path:
         row["actual_tokens"] = None
     row["note"] = _actual_note(res, row["actual_tokens"], (existing or {}).get("note"))
     row["source"] = _actual_source(res, row["actual_tokens"], (existing or {}).get("source"))
+    # The priced cost per point travels with the capture that formed it: written under that
+    # capture's Source, kept while the row's figure and Source are the ones it was recorded
+    # beside, and dropped once either changes. Never computed for a row that carries none.
+    priced = b.get("priced") or {}
+    if row["source"] and row["source"] == res.get("token_source") and priced.get("per_point"):
+        row["priced_per_point"] = priced["per_point"]
+    elif existing and (row["source"], row["actual_tokens"]) == (
+            existing.get("source"), existing.get("actual_tokens")):
+        row["priced_per_point"] = existing.get("priced_per_point")
     rows = [r for r in history if r["id"] != row["id"]] + [row]
     rows.sort(key=lambda r: r["id"])
 
@@ -2849,6 +2962,7 @@ def record_velocity(root, res: dict) -> Path:
                      f"{_fmt(r.get('written_points'))} | "
                      f"{_fmt(r['estimate'])} | "
                      f"{_fmt(r['actual_tokens'])} | {ratio} | {_fmt(rate)} | "
+                     f"{_fmt(r.get('priced_per_point'))} | "
                      f"{_fmt(r.get('oversized'))} | {_fmt(r['wall_time_s'])} | "
                      f"{_fmt(r.get('overhead_ratio'))} | "
                      f"{r.get('overhead_bound') or '-'} | "
@@ -3216,6 +3330,9 @@ def cmd_accuracy(args) -> int:
     # The model the harness capture attributes the spend to, for the interactive close. Set only
     # by the capture branch below; None otherwise, so a runner sprint's per-unit models stand.
     sprint_model = None
+    # The harness capture the figure came from, when this run makes one: its priced half and
+    # the counting basis its Source names.
+    cap: dict = {}
     if tokens is None and getattr(args, "tokens_from_harness", False):
         # The close's path: capture the harness-tracked total itself. An actual already on
         # the sprint's row is NEVER re-stamped from a (possibly different) session - the
@@ -3261,11 +3378,15 @@ def cmd_accuracy(args) -> int:
                                 f"token cost is left unrecorded rather than filled with a "
                                 f"session-wide total; supply a real figure with "
                                 f"`accuracy --tokens N` if you have one")
+    if token_source == SOURCE_UNCHANGED:
+        cap = {"priced": None, "priced_reason": (
+            "the token actual already recorded was reused, not re-captured, so no component "
+            "was read again; the row keeps the Priced/pt it was recorded with")}
     res = accuracy(args.root, args.id, sprint_tokens=tokens,
                    elapsed_hours=getattr(args, "elapsed_hours", None),
-                   sprint_model=sprint_model)
+                   sprint_model=sprint_model, priced=cap or None)
     if token_source:
-        res["token_source"] = token_source
+        res["token_source"] = harness_source(token_source, cap)
     if capture_note:
         res["token_capture"] = capture_note
         if args.format != "json":

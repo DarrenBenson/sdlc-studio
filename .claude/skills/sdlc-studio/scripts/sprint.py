@@ -249,11 +249,20 @@ def _measured_tokens_per_point(repo_root: Path | str | None = None) -> dict:
         sdlc_md.debug("sprint.tokens_per_point", exc)
         vel = {}
     if vel.get("tokens_per_point"):
+        # Every Source the rate pooled is named, a row's counting basis among them, so a median
+        # taken across two bases is never read as one figure.
+        sources = vel.get("sources") or []
+        pooled = ("" if not sources else
+                  f"Every row it pooled has the Source `{sources[0]}`. " if len(sources) == 1 else
+                  f"It pooled rows under {len(sources)} Sources ("
+                  + "; ".join(f"`{s}`" for s in sources)
+                  + "), so it is a rate across them, not one figure. ")
         return {"rate": vel["tokens_per_point"], "source": RATE_VELOCITY, "units": 0,
                 "points": vel["points"], "tokens": vel["actual_tokens"], "ids": vel["sprints"],
                 "min_units": RATE_MIN_UNITS, "refused": None, "model": vel["model"],
+                "sources": sources,
                 "basis": (f"measured from this project's VELOCITY.md, {vel['source']}. "
-                          f"Re-measured every plan")}
+                          f"{pooled}Re-measured every plan")}
     try:
         forecasts = telemetry.forecasts(repo_root)
         actuals = telemetry.actuals(repo_root)
