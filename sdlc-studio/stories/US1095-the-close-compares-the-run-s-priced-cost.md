@@ -5,7 +5,7 @@
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, changelog.d/US1095.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, changelog.d/US1095.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/reference-scripts-surface.md
 > **Epic:** EP0292
 > **Points:** 5
 > **Depends on:** US1091, US1092
@@ -55,3 +55,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-10-26 | sdlc | Affects gains `sprint_report.py` (`NON_CEREMONY_VERBS` declares retro cost-baseline as mechanics) and reference-scripts-surface.md (regenerated for the new verb); AC6's new verb needs both, as US1088's did |
