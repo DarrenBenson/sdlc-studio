@@ -1,16 +1,21 @@
 # Lessons Summary
 
-Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`.local/lessons.md`); regenerate this with `lessons summary`.
+Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
-- **L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do.**
-- **L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped...**
-- **L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_*` scrub broke...**
-- **L-0439: Settle every permission rule and eval harness at plan time, and run the evals each sprint for any guidance that changed.**
-- **L-0438: Give the review cap a recorded per-unit exception (BG0841), so an operator-granted round lands without a forced transition.**
-- **L-0437: Ship the loop as one command with automatic token capture (CR0602), so a run needs no orchestrator scripts and its report measures tokens.**
-- **L-0436: Open a unit when its lane starts, not at plan time, so per-unit time and tokens measure the work.**
-- **L-0435: Hand lane agents their shared contracts as code stubs, not prose: the one integration break and the orchestrator's token-sum error both...**
-- **L-0434: Sprint 2 deletes the gate lanes that cost the most and caught nothing here: the spec-claims timing claim, evidence-drift with the mutation...**
+- **L-0447: Write a documentation unit's criteria against structured content a test can compare exactly, such as a table cell's set read from the…**
+- **L-0446: Before every brief, mutate my own tests as the QA seat does, with paraphrases, swapped clauses and a negation elsewhere in the sentence…**
+- **L-0445: Date a fixture from today whenever the code under test reads the real clock, and pin the boundary day as BG1047's reviewer did**
+- **L-0444: Before a review, put each changelog claim through the shipped entry point against its strongest negative, and name every mutant a message…**
+- **L-0443: Re-derive the review tier at every brief and record, and name an under-depth APPROVE the moment it exists (BG1052)**
+- **L-0442: Run each user-facing sentence in a changelog fragment through the CLI before asking for review, as the paperwork reviews already do**
+- **L-0441: Probe a premise with an input whose result differs under each hypothesis, such as a key whose code fallback differs from its shipped…**
+- **L-0440: A builder that adds a widened env scrub to satisfy a guard test should reuse the pinned list it already has: US0971's `GIT_*` scrub broke…**
+- **L-0439: Settle every permission rule and eval harness at plan time, and run the evals each sprint for any guidance that changed**
+- **L-0438: Give the review cap a recorded per-unit exception (BG0841), so an operator-granted round lands without a forced transition**
+- **L-0437: Ship the loop as one command with automatic token capture (CR0602), so a run needs no orchestrator scripts and its report measures tokens**
+- **L-0436: Open a unit when its lane starts, not at plan time, so per-unit time and tokens measure the work**
+- **L-0435: Hand lane agents their shared contracts as code stubs, not prose: the one integration break and the orchestrator's token-sum error both…**
+- **L-0434: Sprint 2 deletes the gate lanes that cost the most and caught nothing here: the spec-claims timing claim, evidence-drift with the mutation…**
 - **L-0433: **A test moved to accommodate a defect is worse than the defect.** It converts a caught error into a permanent blind spot, and only an**
 - **L-0432: **When a corpus-coupled ceiling breaches, fix what it measures, not the number.** The census ceiling broke because this run filed seven**
 - **L-0431: **Assert that a mutation applied before trusting its verdict.** A mutant that silently fails to apply reports as killed and is evidence of**
