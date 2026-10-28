@@ -6,6 +6,33 @@
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
 
+## L-0450: Land units whose Affects do not overlap as one proven tree, so one host run covers several landings
+
+- **Added:** 2026-10-27
+- **Review-by:** 2027-01-25
+
+Land units whose Affects do not overlap as one proven tree, so one host run covers several landings.
+
+Recorded from retro RETRO0136.
+
+## L-0449: Clear each carried unit's standing review rows at plan time, so the close never meets one
+
+- **Added:** 2026-10-27
+- **Review-by:** 2027-01-25
+
+Clear each carried unit's standing review rows at plan time, so the close never meets one.
+
+Recorded from retro RETRO0136.
+
+## L-0448: Hold the batch at plan: new work joins the next run unless the operator rules an amendment, and the amendment is priced against…
+
+- **Added:** 2026-10-27
+- **Review-by:** 2027-01-25
+
+Hold the batch at plan: new work joins the next run unless the operator rules an amendment, and the amendment is priced against COST-BASELINE.md before it is accepted.
+
+Recorded from retro RETRO0136.
+
 ## L-0447: Write a documentation unit's criteria against structured content a test can compare exactly, such as a table cell's set read from the…
 
 - **Added:** 2026-10-27

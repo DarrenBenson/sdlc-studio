@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0450: Land units whose Affects do not overlap as one proven tree, so one host run covers several landings**
+- **L-0449: Clear each carried unit's standing review rows at plan time, so the close never meets one**
+- **L-0448: Hold the batch at plan: new work joins the next run unless the operator rules an amendment, and the amendment is priced against…**
 - **L-0447: Write a documentation unit's criteria against structured content a test can compare exactly, such as a table cell's set read from the…**
 - **L-0446: Before every brief, mutate my own tests as the QA seat does, with paraphrases, swapped clauses and a negation elsewhere in the sentence…**
 - **L-0445: Date a fixture from today whenever the code under test reads the real clock, and pin the boundary day as BG1047's reviewer did**

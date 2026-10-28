@@ -1,0 +1,770 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M5EM9N",
+  "started_at": "2026-10-21T07:13:22Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": "done",
+  "batch": [
+    "BG1000",
+    "US1087",
+    "US1088",
+    "US1089",
+    "US1090",
+    "BG1078",
+    "BG1095",
+    "BG1111",
+    "US1091",
+    "US1092",
+    "US1093",
+    "US1094",
+    "US1095",
+    "US1096",
+    "BG1113",
+    "BG1117",
+    "US1097",
+    "BG1127",
+    "BG0962"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 48420326,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-10-21T07:13:25Z"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 48420326,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-21T07:13:28Z",
+      "kind": "open",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "kind": "rederived",
+      "source": "sha256:7dc733d4cecb",
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "of": "2026-10-21T07:13:28Z",
+      "tokens": 49698781,
+      "priced": 305453249,
+      "components": {
+        "input": 16182,
+        "output": 3403093,
+        "cache_write_5m": 30180781,
+        "cache_write_1h": 16098725,
+        "cache_read": 2184981753
+      },
+      "subagents": true,
+      "at": "2026-10-28T00:09:44Z"
+    },
+    {
+      "kind": "rederived",
+      "source": "sha256:7dc733d4cecb",
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "of": "2026-10-21T07:13:25Z",
+      "tokens": 49698781,
+      "priced": 305453249,
+      "components": {
+        "input": 16182,
+        "output": 3403093,
+        "cache_write_5m": 30180781,
+        "cache_write_1h": 16098725,
+        "cache_read": 2184981753
+      },
+      "subagents": true,
+      "at": "2026-10-28T00:09:44Z"
+    },
+    {
+      "tokens": 86713497,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-28T00:09:44Z",
+      "kind": "report",
+      "model": "mixed",
+      "priced": 461864595,
+      "components": {
+        "input": 26728,
+        "output": 4502160,
+        "cache_write_5m": 63935026,
+        "cache_write_1h": 18249583,
+        "cache_read": 3229091183
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "drop",
+      "id": "US1080",
+      "reason": "D0389: moved to run four with CR0645-CR0647 and CR0649, to make room for the process-efficiency epic (CR0651) in 6.2",
+      "at": "2026-10-22T05:16:57Z"
+    },
+    {
+      "action": "drop",
+      "id": "US1081",
+      "reason": "D0389: moved to run four with CR0645-CR0647 and CR0649, to make room for the process-efficiency epic (CR0651) in 6.2",
+      "at": "2026-10-22T05:16:58Z"
+    },
+    {
+      "action": "drop",
+      "id": "US1082",
+      "reason": "D0389: moved to run four with CR0645-CR0647 and CR0649, to make room for the process-efficiency epic (CR0651) in 6.2",
+      "at": "2026-10-22T05:16:58Z"
+    },
+    {
+      "action": "drop",
+      "id": "US1083",
+      "reason": "D0389: moved to run four with CR0645-CR0647 and CR0649, to make room for the process-efficiency epic (CR0651) in 6.2",
+      "at": "2026-10-22T05:16:58Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1111",
+      "at": "2026-10-22T05:16:59Z"
+    },
+    {
+      "action": "add",
+      "id": "US1091",
+      "at": "2026-10-22T05:39:58Z"
+    },
+    {
+      "action": "add",
+      "id": "US1092",
+      "at": "2026-10-22T05:39:58Z"
+    },
+    {
+      "action": "add",
+      "id": "US1093",
+      "at": "2026-10-22T05:39:58Z"
+    },
+    {
+      "action": "add",
+      "id": "US1094",
+      "at": "2026-10-22T05:39:59Z"
+    },
+    {
+      "action": "add",
+      "id": "US1095",
+      "at": "2026-10-22T05:39:59Z"
+    },
+    {
+      "action": "add",
+      "id": "US1096",
+      "at": "2026-10-22T05:39:59Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1113",
+      "at": "2026-10-22T05:42:41Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1117",
+      "at": "2026-10-22T08:09:22Z"
+    },
+    {
+      "action": "add",
+      "id": "US1097",
+      "at": "2026-10-22T10:06:45Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1127",
+      "at": "2026-10-22T15:14:21Z"
+    },
+    {
+      "action": "drop",
+      "id": "BG0962",
+      "reason": "Carried to run four: its repair (07fe889d) was approved by qa-seat-BG0962-r3run on 2026-10-26, but its two round-1 REJECT rows of 2026-10-07 still stand, and the operator-authorised supersession under D0349 cannot be recorded because the two rows share unit, date, reviewer and verdict (BG1135). It stays Open, as D0349 says.",
+      "at": "2026-10-27T22:52:47Z"
+    },
+    {
+      "action": "add",
+      "id": "BG0962",
+      "at": "2026-10-27T23:24:41Z"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0385",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0386",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0387",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0388",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0389",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0390",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0391",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "e877a6b9bf2448137755adff9cd58d5c3a3a6d88",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-21T07:13:55Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "Reviewers see only self-checked work, a run's real cost is measured and held to budget, and 6.2's blockers are fixed",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "engineering",
+        "achievable": "partial",
+        "done_means": "Clause 1 (in this repository): sdlc-studio/.config.yaml sets review.author_self_check: block. Once US1089 is committed, critic.py brief refuses at every tier, first round and --rejoinder, when a unit has no current author-self-checks.md row: it exits 2, prints the self-check steps on stderr and notes no fingerprint. Every unit in this batch, BG1000, US1087 and US1088 included, is briefed only after US1089 is committed, from a row whose claims are ruled (not all UNVERIFIABLE), whose mutants are run against the unit's declared tests with every survivor answered, and whose Affects digest matches at the brief. One exception is stated (US1089:42): a verdict recorded against a hand-written brief, which AGENTS.md forbids but no gate stops. Clause 2: the release blockers that D0378 and D0382 name, BG0962 and BG1000, reach Fixed through transition.py. BG0962's seven selectors are green and its REJECT is answered by an APPROVE recorded as qa-seat-BG0962-r1. BG1000's three selectors are green, AC3 being the sprint.py reproduction. Clause 3: US1081-US1083 are Done, supported by US1080. Maya's End goals 1-4 match 7f3e91a9 and End goal 5 is added. Her Scenario's code spans name a sprint run before sprint.py sign. Her Boundaries section links Rowan's card and cites D0379. Trevor's card names D0213 and links both Primaries. O5 cites Maya End goal 5, an outcome cites Jonah End goal 4, and no pair is cited twice. The index history is ordered and complete, with a Last updated line and links to the seat cards in force. personas.md's Role fields use no word from the index's role headings. US1090, BG1078 and BG1095 stand on their own criteria.",
+        "one_increment": "no",
+        "note": "(1) CLOSED: US1090:21 no longer pins --boundary. (2) MOVED: BG1095 retires the scan, but the scan's test is US1086 AC2's stamped selector (US1086:26-27), so renaming or deleting it trips stamps-staged, and US1086 is not in BG1095's Affects (BG1095:6). (3) CLOSED for the reviewer id and for BG1078 (BG1078:39; BG1108 filed). OVER-CLAIMED for BG0962: BG0962:81 says the repair's commits are this run's diff, but 922b9d6c predates the base and nothing since touches its Affects, so its diff is empty. Name `git diff aacd6afa -- <Affects>` as BG1078 names its own. (4) CLOSED (US1088:8, US1089:8). (5) CLOSED (US1089:22-28); the hand-written-brief bypass is now a stated limit (:42). (6) CLOSED (US1087:23, US1088:24). (7) CLOSED (US1081:21, US1082 AC3, 7f3e91a9). (8) CLOSED (D0384). (9) CLOSED for US1081 (:23-25). CLOSED for US1083 AC4 (:27), with one gap left: a paraphrase such as 'principal user' still passes. New: clause 1's 'only' fails for BG1000, US1087 and US1088 if any is briefed before US1089 is committed; the record verb does not exist until US1088, and no criterion or plan line defers their briefs. US1088 AC3 (:26) refuses a mutants file that lists no mutant or names an undeclared test, so under block a unit whose Affects declares no test, which US1087:23 allows, can never be briefed; run four's document refreshes are at risk. US1089 AC4's repository clause and AC5 (:28-30) pin this repository's .config.yaml and AGENTS.md from a test module that ships and installs into every copy (~/.claude/skills/sdlc-studio/scripts/tests); they belong in tools/tests."
+      },
+      {
+        "seat": "qa",
+        "achievable": "yes",
+        "done_means": "Clause 1: US1087-US1089 are Done on their own selectors, and sdlc-studio/.config.yaml sets review.author_self_check: block. From US1089's commit on, `critic.py brief` here exits 2 for a unit with no record or a stale one, at any tier and on --rejoinder. Every unit briefed after it (US1090 to US1083) has a row in sdlc-studio/reviews/author-self-checks.md whose digest matches the content reviewed, and its verdict row quotes a fingerprint that note_brief recorded. 'Only' covers briefs that critic.py issues. A hand-written brief is outside it (US1089:42), and BG1000, US1087 and US1088 are first reviewed before the gate exists. Clause 2: BG0962 and BG1000 (D0378, D0382) reach Fixed through transition.py, with BG0962's seven selectors and BG1000's three green. BG1000 AC3 lists the three close modules for a sprint.py change. BG0962's REJECT (critic-verdicts.md:1579) is answered under qa-seat-BG0962-r1. With 'two' dropped, BG1078 and BG1095, which D0381 said are settled before the tag, also read as part of this clause: each reaches Fixed with its selectors green. Clause 3: US1080-US1083 are Done. Maya's End goals 1-4 match 7f3e91a9 and End goal 5 exists. O5 cites End goal 5, an outcome cites Jonah's End goal 4, and no pair is cited twice. Her Scenario's spans name a sprint run before `sprint.py sign`. Trevor's card names D0213 and links each Primary. The index history is in date order and complete, with Last updated and the seat links. No legacy Role field names an index role. A dry-run mint under .githooks/ gives Rowan, and one under .claude/skills/sdlc-studio/ gives Maya.",
+        "one_increment": "no",
+        "note": "(1) MOVED. BG0962's reviewer-id exit is CLOSED (BG0962:81). BG1078's named diff over-claims: `git diff c6f2239c` (BG1078:39) carries all 131 changed lines of tools/remote-gate.sh, which come from US1077 and US1078 (e849ccc4, 692c6d8f, 82af17f5). 940cdda5 touched only the test file, so its diff is `git show 940cdda5`. BG0962:81 names no base, and 922b9d6c predates the run, so use `git diff aacd6afa`. While BG1108 is open, both reviews read every finding as pre-existing and cannot block. (2) CLOSED (BG1095:26-34). Residual: AC1's expected cells are typed in the test, so they match the test's own expectation, not the hook's behaviour. (3) CLOSED (US1081:21, US1082:26). (4) CLOSED in US1087:23. OVER-CLAIMED in US1088:24: it refuses only a skipped commit message or fragment, so the CLAIM_SURFACES are named but never required, and the author labels each claim's surface. (5) CLOSED (US1088:22, :26). New: a record holding FALSE rulings is accepted, so a claim the author knows is false reaches the brief. (6) CLOSED (US1089:22, :24; limit stated at :42). (7) CLOSED for US1081 AC2 and US1083 AC4. MOVED for US1081 AC3 (:25): a link plus a D0379 citation passes with the mixed-unit rule reversed. D0379 (decisions.md:393) does not state that rule; US1080:35 does. The title's mixed-unit claim has no criterion. (8) CLOSED (US1080:21, :29). (9) CLOSED (BG1000 AC3; mutant notes on all four bugs). New: US1089 AC5 (:30) cannot fail on its named mutant (:41), because AGENTS.md:128-129 can keep 'Ungated until CR0520' beside both names [LC-018]. US1081 AC1 (:21) says End goal 5 is 'the one D0383 approves', but D0383 gives only the gist, so the test must type the words and will agree with the author. If End goal 5 wraps, BG1107 truncates it in the goal trace (sprint.py:9988). Clause 1's 'only' over-claims (see done_means). US1090 serves no clause, and three unrelated outcomes joined by 'and' are not one increment."
+      },
+      {
+        "seat": "product",
+        "achievable": "partial",
+        "done_means": "Clause 1 (Maya End goal 3, as US1087-US1089 cite it): `critic.py brief` prints the author's claim-inventory and mutation steps on stderr only. `critic.py self-check record` refuses an unruled claim, a claims file that skips the fragment, and an unanswered survivor. Under `block`, the brief refuses a unit with no record or with a stale Affects digest, on the first round and on `--rejoinder`. This repo sets `block`; the shipped default is `report`. The evidence that the reviewer now 'confirms' is the run's first-round approval rate on the units briefed after US1089, set against RETRO0135's 1 of 10. No criterion measures it. Clause 2 (Maya End goal 3 / O3 for BG0962; End goal 1 / O1 for BG1000; Rowan End goal 3 is only the release framing): BG0962's fix, already shipped under D0349, gets a fresh independent APPROVE and moves to Fixed, so a run whose units are all approved can close. `gate.py --suite-decision --changed sprint.py` selects test_lean_close, test_lean_close_shows_the_page and test_lean_sign. Clause 3 (Maya End goal 4, as the units cite it): Maya's card carries End goal 5 in D0383's words, with goals 1-4 unchanged. It names `sprint.py sign`, drops `autosprint` and gains a Boundaries section. Trevor's card names D0213. PRD O5 cites Maya End goal 5, and an outcome cites Jonah End goal 4. The index history is ordered and complete, carries a Last updated date and links the seat cards. `artifact.py new` mints the Primary of the interface the Affects touch. BG1078, BG1095 and US1090 serve no clause.",
+        "one_increment": "no",
+        "note": "(1) The goal claims an outcome Maya does not get. Under the shipped `report` default (US1089:28, decisions.md:397), her reviewer is still briefed on unchecked work; only this repo blocks. Either reword clause 1 to 'this repository's reviewer is briefed only on self-checked work', or accept 'partial'. The So that at US1087:17 ('fewer rounds') does not follow from any criterion; name the close's first-round approval rate as its measure. (2) End goal 5 is approved but no criterion requires it. US1081:21 says 'End goal 5, if any', and its note at :34 still calls the question undecided. Only US1082:24 fails without it. (3) The batch assigns Primaries against its own rule. Under US1080:33, workspace paths do not decide, so US1081, US1082 and US1083, whose only declared-interface path is `tools/tests/`, would mint Rowan. They cite Maya End goal 4 for this repo's own registry and PRD, which Maya never reads (maya card:41, index.md:5). (4) Riders: BG1078 and BG1095 (Rowan's tooling, no Persona or Serves line) and US1090 (Rowan End goal 1, but it rewords a pre-commit rule, not the push) serve no goal clause. US1090 also retires the full-suite rule four units before BG1000 fixes the selection gap that rule backstops. (5) The self-check misses the carried units' real claims. US1087:23 and US1088:24 key on changelog.d/<id>.md, but BG1078's fragment is changelog.d/US1076.md (BG1078:6), the very file its AC2 (:28) finds over-claimed. (6) EP0291 adds a per-diff ledger and a refusal, while the new End goal 5 asks for a small process; nothing measures whether the check pays for itself. (7) Tool defect: the brief cuts Rowan's wrapped End goals short (product.txt:27-30), and its trace names only Maya (:32).",
+        "carried_from": "Maya's reviewer confirms self-checked work, 6.2's two release blockers are fixed, and the persona registry describes the product as run"
+      }
+    ],
+    "goal": "Reviewers here see only self-checked work, 6.2's release blockers are fixed, and the persona registry matches the product",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 6,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-21T07:09:50Z",
+    "change_type": "amendment",
+    "amended_from": "Maya's reviewer confirms self-checked work, 6.2's two release blockers are fixed, and the persona registry describes the product as run",
+    "requesting_seat": "product",
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "engineering",
+        "one_increment": "no",
+        "note": "(1) CLOSED: US1090:21 no longer pins --boundary. (2) MOVED: BG1095 retires the scan, but the scan's test is US1086 AC2's stamped selector (US1086:26-27), so renaming or deleting it trips stamps-staged, and US1086 is not in BG1095's Affects (BG1095:6). (3) CLOSED for the reviewer id and for BG1078 (BG1078:39; BG1108 filed). OVER-CLAIMED for BG0962: BG0962:81 says the repair's commits are this run's diff, but 922b9d6c predates the base and nothing since touches its Affects, so its diff is empty. Name `git diff aacd6afa -- <Affects>` as BG1078 names its own. (4) CLOSED (US1088:8, US1089:8). (5) CLOSED (US1089:22-28); the hand-written-brief bypass is now a stated limit (:42). (6) CLOSED (US1087:23, US1088:24). (7) CLOSED (US1081:21, US1082 AC3, 7f3e91a9). (8) CLOSED (D0384). (9) CLOSED for US1081 (:23-25). CLOSED for US1083 AC4 (:27), with one gap left: a paraphrase such as 'principal user' still passes. New: clause 1's 'only' fails for BG1000, US1087 and US1088 if any is briefed before US1089 is committed; the record verb does not exist until US1088, and no criterion or plan line defers their briefs. US1088 AC3 (:26) refuses a mutants file that lists no mutant or names an undeclared test, so under block a unit whose Affects declares no test, which US1087:23 allows, can never be briefed; run four's document refreshes are at risk. US1089 AC4's repository clause and AC5 (:28-30) pin this repository's .config.yaml and AGENTS.md from a test module that ships and installs into every copy (~/.claude/skills/sdlc-studio/scripts/tests); they belong in tools/tests."
+      },
+      {
+        "seat": "qa",
+        "one_increment": "no",
+        "note": "(1) MOVED. BG0962's reviewer-id exit is CLOSED (BG0962:81). BG1078's named diff over-claims: `git diff c6f2239c` (BG1078:39) carries all 131 changed lines of tools/remote-gate.sh, which come from US1077 and US1078 (e849ccc4, 692c6d8f, 82af17f5). 940cdda5 touched only the test file, so its diff is `git show 940cdda5`. BG0962:81 names no base, and 922b9d6c predates the run, so use `git diff aacd6afa`. While BG1108 is open, both reviews read every finding as pre-existing and cannot block. (2) CLOSED (BG1095:26-34). Residual: AC1's expected cells are typed in the test, so they match the test's own expectation, not the hook's behaviour. (3) CLOSED (US1081:21, US1082:26). (4) CLOSED in US1087:23. OVER-CLAIMED in US1088:24: it refuses only a skipped commit message or fragment, so the CLAIM_SURFACES are named but never required, and the author labels each claim's surface. (5) CLOSED (US1088:22, :26). New: a record holding FALSE rulings is accepted, so a claim the author knows is false reaches the brief. (6) CLOSED (US1089:22, :24; limit stated at :42). (7) CLOSED for US1081 AC2 and US1083 AC4. MOVED for US1081 AC3 (:25): a link plus a D0379 citation passes with the mixed-unit rule reversed. D0379 (decisions.md:393) does not state that rule; US1080:35 does. The title's mixed-unit claim has no criterion. (8) CLOSED (US1080:21, :29). (9) CLOSED (BG1000 AC3; mutant notes on all four bugs). New: US1089 AC5 (:30) cannot fail on its named mutant (:41), because AGENTS.md:128-129 can keep 'Ungated until CR0520' beside both names [LC-018]. US1081 AC1 (:21) says End goal 5 is 'the one D0383 approves', but D0383 gives only the gist, so the test must type the words and will agree with the author. If End goal 5 wraps, BG1107 truncates it in the goal trace (sprint.py:9988). Clause 1's 'only' over-claims (see done_means). US1090 serves no clause, and three unrelated outcomes joined by 'and' are not one increment."
+      },
+      {
+        "seat": "product",
+        "one_increment": "no",
+        "note": "(1) The goal claims an outcome Maya does not get. Under the shipped `report` default (US1089:28, decisions.md:397), her reviewer is still briefed on unchecked work; only this repo blocks. Either reword clause 1 to 'this repository's reviewer is briefed only on self-checked work', or accept 'partial'. The So that at US1087:17 ('fewer rounds') does not follow from any criterion; name the close's first-round approval rate as its measure. (2) End goal 5 is approved but no criterion requires it. US1081:21 says 'End goal 5, if any', and its note at :34 still calls the question undecided. Only US1082:24 fails without it. (3) The batch assigns Primaries against its own rule. Under US1080:33, workspace paths do not decide, so US1081, US1082 and US1083, whose only declared-interface path is `tools/tests/`, would mint Rowan. They cite Maya End goal 4 for this repo's own registry and PRD, which Maya never reads (maya card:41, index.md:5). (4) Riders: BG1078 and BG1095 (Rowan's tooling, no Persona or Serves line) and US1090 (Rowan End goal 1, but it rewords a pre-commit rule, not the push) serve no goal clause. US1090 also retires the full-suite rule four units before BG1000 fixes the selection gap that rule backstops. (5) The self-check misses the carried units' real claims. US1087:23 and US1088:24 key on changelog.d/<id>.md, but BG1078's fragment is changelog.d/US1076.md (BG1078:6), the very file its AC2 (:28) finds over-claimed. (6) EP0291 adds a per-diff ledger and a refusal, while the new End goal 5 asks for a small process; nothing measures whether the check pays for itself. (7) Tool defect: the brief cuts Rowan's wrapped End goals short (product.txt:27-30), and its trace names only Maya (:32)."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG1000": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1087": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1088": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1089": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1090": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1078": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1095": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG0962": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1080": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1081": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1082": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "US1083": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1111": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "US1091": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": true
+      },
+      "US1092": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "US1093": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": true
+      },
+      "US1094": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "US1095": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": true
+      },
+      "US1096": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1113": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1117": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "US1097": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1127": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 186252,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 4842552,
+  "goal_content_review": [
+    {
+      "phase": "plan",
+      "goal": "Reviewers here see only self-checked work, 6.2's release blockers are fixed, and the persona registry matches the product",
+      "answer": "partial",
+      "missing": "No criterion measures whether reviewers now confirm rather than discover: the run's first-round approval rate on the units briefed after US1089 is read at the close against RETRO0135's 1 of 10. 'Only' covers briefs critic.py issues; a hand-written brief is outside the gate (US1089's stated limit). BG1078's and BG0962's reviews rest on a hand-named diff while BG1108 is open.",
+      "shortfall": {},
+      "recorded_at": "2026-10-21T07:15:11Z"
+    }
+  ],
+  "review_base": {
+    "US1090": 0,
+    "US1089": 0,
+    "US1088": 0,
+    "BG1111": 0,
+    "US1087": 0,
+    "BG1000": 0,
+    "BG1117": 0,
+    "BG1113": 0,
+    "US1091": 0,
+    "US1094": 0,
+    "US1096": 0,
+    "US1097": 0,
+    "BG1095": 0,
+    "US1093": 0,
+    "BG1078": 0,
+    "BG0962": 2,
+    "BG1127": 0,
+    "US1092": 0,
+    "US1095": 0
+  },
+  "sprint_goal_amendments": [
+    {
+      "from": "Reviewers here see only self-checked work, 6.2's release blockers are fixed, and the persona registry matches the product",
+      "to": "Reviewers see only self-checked work, a run's real cost is measured and held to budget, and 6.2's blockers are fixed",
+      "requested_by": "operator",
+      "at": "2026-10-26T15:50:26Z"
+    }
+  ],
+  "sprint_goal_verdict": {
+    "verdict": "partial",
+    "note": "The self-check gate, the priced cost meter and the regression flag shipped and hold on main; 6.2's blockers (BG0963 and the rest) moved to run four, and the run's own cost per point did not improve."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-10-27T23:54:53Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_known_issues": [],
+  "close_not_measured": [
+    {
+      "id": "cost",
+      "title": "Cost, velocity and estimate accuracy",
+      "detail": "no per-unit telemetry, no measured run total and no supplied sprint total, so what this sprint cost is not attributable - which is not zero"
+    }
+  ],
+  "close_tree": "4cb55fd3b76a71d3831c58ffc6cfbdf7e154dfc3",
+  "report_gate_clear": [
+    "BG0962",
+    "BG1000",
+    "BG1078",
+    "BG1095",
+    "BG1111",
+    "BG1113",
+    "BG1117",
+    "BG1127",
+    "US1087",
+    "US1088",
+    "US1089",
+    "US1090",
+    "US1091",
+    "US1092",
+    "US1093",
+    "US1094",
+    "US1095",
+    "US1096",
+    "US1097"
+  ],
+  "verified_sha": "8e7430f4b1b14edb9c2c061be3912b33abecdef6",
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-26T15:52:17Z",
+        "databaseId": 40353565261,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "0db36637312c8754190e1160f506aa9c42e4f81b",
+        "updatedAt": "2026-10-26T16:54:08Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-26T14:55:17Z",
+        "databaseId": 40344190434,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "a8b9020150cd9b660a706da337265d2afd4718ba",
+        "updatedAt": "2026-10-26T15:50:03Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-26T12:51:23Z",
+        "databaseId": 40325755244,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "27f1acea3c57088d427cb76c5e4d4735d908c4a0",
+        "updatedAt": "2026-10-26T13:53:44Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-10-26T10:06:48Z",
+        "databaseId": 40304828327,
+        "event": "schedule",
+        "headBranch": "main",
+        "headSha": "ed8cf5e90d0c6161a6c800e6292d7925808c9dd2",
+        "updatedAt": "2026-10-26T10:56:07Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T16:30:52Z",
+        "databaseId": 39814704911,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "ed8cf5e90d0c6161a6c800e6292d7925808c9dd2",
+        "updatedAt": "2026-10-22T17:05:26Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T14:52:15Z",
+        "databaseId": 39799503097,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "7f1134292bb94e74fc1db3ad129c47a26987f9c0",
+        "updatedAt": "2026-10-22T15:31:39Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T13:04:23Z",
+        "databaseId": 39783660435,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "794338800b2ac9edeae086b0b5b205134528f4a2",
+        "updatedAt": "2026-10-22T14:08:01Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T10:35:50Z",
+        "databaseId": 39764286151,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "aa43a89e21b6b0e2d0781c143680e967e54c12dd",
+        "updatedAt": "2026-10-22T11:37:39Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T07:39:09Z",
+        "databaseId": 39741973489,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "69951ff0f2784089c229b06d10b37ba7314ea055",
+        "updatedAt": "2026-10-22T08:37:44Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-21T12:06:01Z",
+        "databaseId": 39596925931,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "f551f22cdc93fb4fd4d20f60a63cfdef7c2c9ddf",
+        "updatedAt": "2026-10-21T13:06:12Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-21T11:23:29Z",
+        "databaseId": 39591599543,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "672df76ab12d43faf63bcf6cf685f0a9cfcd76b0",
+        "updatedAt": "2026-10-21T12:07:30Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-21T09:35:51Z",
+        "databaseId": 39578192250,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "0106122ee43ef18b2b66c7dd8a0fc04d1119472d",
+        "updatedAt": "2026-10-21T10:35:39Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-21T07:26:53Z",
+        "databaseId": 39562032268,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "a715f1e21d270d592d863dd09432d4b23d10747f",
+        "updatedAt": "2026-10-21T08:18:02Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG1000": [
+      "0ea998c8944954c7",
+      "de73e4f0c02f4793"
+    ],
+    "US1087": [
+      "9cba691d98b637b9",
+      "6a6ad67fb5ffa54d"
+    ],
+    "US1088": [
+      "2ee16545c77352a3",
+      "77f1a0585e7a720a"
+    ],
+    "US1089": [
+      "3f4f010b18b69730"
+    ],
+    "US1090": [
+      "0367d1ad905cf6cb"
+    ],
+    "BG1078": [
+      "74adc43bab1c393f"
+    ],
+    "BG1095": [
+      "d578b6e797a35600"
+    ],
+    "BG0962": [
+      "de7cfda8c72db0ce",
+      "966f2b6ab13ce7c7"
+    ],
+    "US1080": [],
+    "US1081": [],
+    "US1082": [],
+    "US1083": [],
+    "BG1111": [
+      "69e01c808b5745a0"
+    ],
+    "US1091": [
+      "f8e2fbc669257cfb",
+      "eb97924a1b16a126"
+    ],
+    "US1092": [
+      "03ea2307bd3792aa"
+    ],
+    "US1093": [
+      "3b8c50f48606f6db"
+    ],
+    "US1094": [
+      "6f8526bdfb661459"
+    ],
+    "US1095": [
+      "cb518b1441622b68"
+    ],
+    "US1096": [
+      "8b3ad1ee751d51d4",
+      "af057a169342a441"
+    ],
+    "BG1113": [
+      "607df7ca11287aa5"
+    ],
+    "BG1117": [
+      "3c0157b45b97635f",
+      "696e438537b17f6a"
+    ],
+    "US1097": [
+      "f154258d51238314",
+      "a82ccc165149d8e7"
+    ],
+    "BG1127": [
+      "f5db5b2da4eee061"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0022",
+  "report_fingerprint": "ebea81ff8c27f180",
+  "report_window_end": "2026-10-28T00:09:55Z"
+}
