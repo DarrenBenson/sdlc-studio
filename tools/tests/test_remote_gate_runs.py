@@ -58,6 +58,17 @@ BLOCKING_GATE = textwrap.dedent('''
         time.sleep(0.05)
 ''')
 
+#: The stub suite: a bash script, so what it reports is what the host's launch handed on - a
+#: Python stub would show its own start-up ignores instead. It prints its ignored-signal mask and
+#: the exit of a pipeline whose reader leaves first (141 when SIGPIPE is at its default).
+STUB_SUITE = textwrap.dedent('''\
+    #!/usr/bin/env bash
+    set -o pipefail
+    yes 2>/dev/null | head -1 >/dev/null
+    pipe=$?
+    echo "stub-suite $(grep SigIgn /proc/self/status) pipe=$pipe"
+''')
+
 RELAY_SSH = textwrap.dedent('''
     #!/usr/bin/env python3
     import os, subprocess, sys, threading, time
@@ -154,10 +165,10 @@ class _RunsClone(_HostClone):
                      "STUB_DEADLINE": str(self.deadline)})
         return base
 
-    def start_run(self, commit: str, name: str) -> subprocess.Popen:
+    def start_run(self, commit: str, name: str, *extra: str) -> subprocess.Popen:
         """remote-gate.sh's local side, as the hook calls it, in the background."""
         out = (self.tmp / f"{name}.err").open("w")
-        return subprocess.Popen(["bash", "tools/remote-gate.sh", "push", "--commit", commit],
+        return subprocess.Popen(["bash", "tools/remote-gate.sh", "push", "--commit", commit, *extra],
                                 cwd=self.clone, env=self.env(), stdout=out, stderr=subprocess.STDOUT)
 
     def start_push(self) -> subprocess.Popen:
@@ -240,7 +251,7 @@ class GateHostRunTests(unittest.TestCase):
                          "the host's judging line does not state its load")
 
     def test_the_hosts_gate_keeps_interrupts_at_their_default(self) -> None:
-        """The host launches its gate as a background job, which a non-interactive shell starts
+        """The host launches its gate as a background job, which a shell without job control starts
         with SIGINT ignored; a suite test that interrupts a hook it runs then cannot (the first
         host run of this unit failed test_a_ctrl_c_stops_every_lane_with_the_hook exactly so).
         Mutants: the gate launched with neither SIGINT nor SIGQUIT restored to its default
@@ -252,6 +263,22 @@ class GateHostRunTests(unittest.TestCase):
         self.assertFalse(gate["sigquit_ignored"], "the host's gate runs with SIGQUIT ignored")
         fx.release.touch()
         self.assertEqual(run.wait(CEILING), 0, fx.text("first"))
+
+    def test_the_hosts_launch_leaves_no_signal_ignored(self) -> None:
+        """The Python that resets SIGINT and SIGQUIT ignores SIGPIPE and SIGXFSZ at its own start,
+        and an ignored signal survives exec, so the job it starts inherits both unless they are
+        reset too. The suite path runs a bash script, which shows what the launch handed on.
+        Mutant: the launch resets SIGINT and SIGQUIT alone."""
+        fx = self.fx
+        commit = fx.commit("signals reach the suite", **{"tools/run-suite.sh": STUB_SUITE})
+        run = fx.start_run(commit, "first", "--suite", "tools")
+        self.assertEqual(run.wait(CEILING), 0, fx.text("first"))
+        line = next((ln for ln in fx.text("first").splitlines() if "stub-suite" in ln), "")
+        self.assertRegex(line, r"SigIgn:\s*[0-9a-f]+ pipe=\d+", f"the stub suite did not report: {fx.text('first')}")
+        mask = int(line.split("SigIgn:")[1].split()[0], 16)
+        for sig in (signal.SIGINT, signal.SIGQUIT, signal.SIGPIPE, signal.SIGXFSZ):
+            self.assertFalse(mask & (1 << (sig - 1)), f"the host's launch hands on {sig.name} ignored: {line}")
+        self.assertIn("pipe=141", line, f"a pipeline in the job did not end on SIGPIPE: {line}")
 
     def test_a_second_run_waits_and_says_so(self) -> None:
         """AC2. Mutant: no lock, so both suites run at once and nothing says a run is waiting."""
@@ -273,7 +300,7 @@ class GateHostRunTests(unittest.TestCase):
 
     def test_an_abandoned_push_leaves_nothing_running(self) -> None:
         """AC3. Mutants: the host's gate left running, or killed by its pid alone so its child runs
-        on, or its tree left behind, after the pusher goes - interrupted, terminated, or its
+        on, or its tree or its ref left behind, after the pusher goes - interrupted, terminated, or its
         connection dropped mid-run. The stubs' deadline outlasts the waits here: the default's
         180 s ended an orphaned child inside its 240 s wait, so the pid-alone kill passed."""
         for how in ("SIGINT", "SIGTERM", "drop"):
@@ -294,6 +321,7 @@ class GateHostRunTests(unittest.TestCase):
                     _until(f"the gate's child process to stop after {how}", lambda: not _alive(run["child"]))
                     _until(f"the host's run directory to go after {how}", lambda: fx.run_dirs() == [])
                     self.assertFalse(Path(run["cwd"]).exists(), f"the run's tree survived {how}")
+                    _until(f"the run's ref to go after {how}", lambda: fx.run_refs() == [])
                     self.assertEqual(_git(fx.remote, "rev-parse", "-q", "--verify", "refs/heads/main",
                                           check=False).stdout.strip(), "", "an abandoned push reached origin")
                 finally:
