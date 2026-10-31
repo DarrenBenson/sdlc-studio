@@ -1,6 +1,6 @@
 # EP0288: The push gate and the full suite run on a configured gate host
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0635
 > **Created:** 2026-10-12
@@ -15,7 +15,7 @@ Decomposed from CR0635. Delivers the work CR0635 requested.
 ## Story Breakdown
 
 - [x] [US1075: A push is judged on the gate host this clone configures](../stories/US1075-a-push-is-judged-on-the-gate-host.md)
-- [ ] [US1076: Runs on a gate host are serialised, and an abandoned push stops its run](../stories/US1076-runs-on-a-gate-host-are-serialised-and.md)
+- [x] [US1076: Runs on a gate host are serialised, and an abandoned push stops its run](../stories/US1076-runs-on-a-gate-host-are-serialised-and.md)
 - [x] [US1077: One command says whether a gate host can judge a push](../stories/US1077-one-command-says-whether-a-gate-host-can.md)
 - [x] [US1078: run-suite.sh runs the full suite on the gate host and records a verdict its check can read](../stories/US1078-run-suite-sh-runs-the-full-suite-on.md)
 
