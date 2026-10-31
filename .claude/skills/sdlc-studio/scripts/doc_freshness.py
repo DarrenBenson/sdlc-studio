@@ -4,10 +4,11 @@
 `sdlc-studio/reviews/LATEST.md` is the project's state anchor - read first after every reset. It
 drifts silently: it once claimed 606 tests (was 622), ~66 disclosure advisories (was 0), and a
 workstream "deferred" (was shipped), and nothing caught it. This check compares the facts LATEST.md
-*claims* against reality and flags the mismatches. The same treatment is given to the TRD's census
-counts, which rotted the same way. Advisory (never blocks) and skill-only (no-op where there is no
-SKILL.md). It only checks a fact a document actually states - it never demands one, and it reports
-the claims it could not find as UNCHECKED rather than counting them as green.
+*claims* against reality and flags the mismatches. The same treatment is given to the census counts
+and release baseline of the TRD, PRD and TSD, which rotted the same way. Advisory (never blocks) and
+skill-only (no-op where there is no SKILL.md). It only checks a fact a document actually states - it
+never demands one, and it reports the claims it could not find as UNCHECKED rather than counting
+them as green.
 """
 from __future__ import annotations
 
@@ -114,14 +115,25 @@ _CENSUS_MEASURES = {
     "reference files": lambda sd: len(list(sd.glob("reference-*.md"))),
     "help files": lambda sd: len(list((sd / "help").glob("*.md"))),
 }
+# A count preceded by one of these words ("about 50 scripts", "~50 scripts") is a band around the
+# number, not a pin on it, so it is judged as one rather than as an exact count.
+_APPROX = r"(?P<approx>\b(?:about|around|roughly|approximately)\s+|~\s*)?"
 _CENSUS_CLAIMS = {
-    "scripts": re.compile(r"(\d+)(\+?)\s+scripts\b", re.I),
-    "reference files": re.compile(r"(\d+)(\+?)\s+reference\s+files?\b", re.I),
-    "help files": re.compile(r"(\d+)(\+?)\s+help\s+files?\b", re.I),
+    "scripts": re.compile(_APPROX + r"(?P<n>\d+)(?P<floor>\+?)\s+scripts\b", re.I),
+    "reference files": re.compile(_APPROX + r"(?P<n>\d+)(?P<floor>\+?)\s+reference\s+files?\b",
+                                  re.I),
+    "help files": re.compile(_APPROX + r"(?P<n>\d+)(?P<floor>\+?)\s+help\s+files?\b", re.I),
 }
+# The release a document names as its baseline ("Coverage: v6.1.0 as cut, plus ..."). SKILL.md's
+# version is set by each release cut and names the last one between cuts, so a baseline naming
+# any other release is stale.
+_BASELINE_CLAIM = re.compile(r"\bCoverage:\**\s*v(?P<version>\d+(?:\.\d+)+)", re.I)
+# The documents the census reads. Each is judged on the claims it makes itself.
+CENSUS_DOCUMENTS = ("sdlc-studio/trd.md", "sdlc-studio/prd.md", "sdlc-studio/tsd.md")
 # A floor claim ("60+") is honest while reality sits above it, but a floor left far enough behind
 # is as stale as a wrong exact number - it was the floor reading that let "58 scripts" pass at 67.
-# The band is stated here rather than left implicit so the finding can name the rule it applied.
+# An approximate claim ("about 50") is held to the same ratio either side of its number. The band
+# is stated here rather than left implicit so the finding can name the rule it applied.
 _FLOOR_STALE_RATIO = 1.25
 
 # A document's revision history NARRATES the claims it used to make, usually quoting the stale
@@ -142,12 +154,13 @@ def _claim_quote(text: str, m: re.Match) -> str:
 
 
 def census_claims(repo_root: Path | str = ".", doc: str = "sdlc-studio/trd.md") -> dict:
-    """Check every census count `doc` currently claims against the measured workspace.
+    """Check every census count and release baseline `doc` currently states against the tree.
 
     Returns {checked, unchecked, findings, applicable, document}. `checked` carries one record per
     occurrence, each holding the measured `actual` alongside the `claimed` value - the verdict is
     derived from that number, which is what makes 'the counts match' distinguishable from 'nobody
-    looked'. `unchecked` names the claims the document does not make.
+    looked'. `unchecked` names the claims the document does not make, and the baseline when
+    SKILL.md states no version to judge it by.
     """
     root = Path(repo_root)
     skill_dir = _skill_dir(root)
@@ -166,39 +179,66 @@ def census_claims(repo_root: Path | str = ".", doc: str = "sdlc-studio/trd.md") 
             continue
         actual = _CENSUS_MEASURES[name](skill_dir)
         for m in matches:
-            claimed, is_floor = int(m.group(1)), m.group(2) == "+"
+            claimed, is_floor = int(m.group("n")), m.group("floor") == "+"
             if is_floor:
+                form = "floor"
                 ok = claimed <= actual < claimed * _FLOOR_STALE_RATIO
                 why = (f"a floor claim holds while the count sits in [{claimed}, "
                        f"{claimed * _FLOOR_STALE_RATIO:g})")
+            elif m.group("approx"):
+                form = "approximate"
+                low, high = claimed / _FLOOR_STALE_RATIO, claimed * _FLOOR_STALE_RATIO
+                ok = low <= actual < high
+                why = f"an approximate claim holds while the count sits in [{low:g}, {high:g})"
             else:
-                ok = claimed == actual
+                form, ok = "exact", claimed == actual
                 why = "an exact claim holds only on the exact count"
-            record = {"claim": name, "claimed": claimed, "actual": actual,
-                      "form": "floor" if is_floor else "exact", "ok": ok,
+            record = {"claim": name, "claimed": claimed, "actual": actual, "form": form, "ok": ok,
                       "quote": _claim_quote(body, m)}
             checked.append(record)
             if not ok:
+                stated = " ".join(f"{m.group('approx') or ''}{m.group('n')}{m.group('floor')}"
+                                  .split())
                 findings.append({
                     "kind": "census-drift",
-                    "detail": (f"{doc} claims {claimed}{'+' if is_floor else ''} {name}; "
-                               f"{actual} counted in the workspace ({why}) - stale claim: "
-                               f"\"{record['quote']}\""),
+                    "detail": (f"{doc} claims {stated} {name}; {actual} counted in the "
+                               f"workspace ({why}) - stale claim: \"{record['quote']}\""),
                 })
+    baselines = list(_BASELINE_CLAIM.finditer(body))
+    version = _true_version(skill_dir)
+    if not baselines or version is None:
+        unchecked.append("baseline")
+        baselines = []
+    for m in baselines:
+        claimed_version = m.group("version")
+        record = {"claim": "baseline", "claimed": claimed_version, "actual": version,
+                  "form": "exact", "ok": claimed_version == version,
+                  "quote": _claim_quote(body, m)}
+        checked.append(record)
+        if not record["ok"]:
+            findings.append({
+                "kind": "census-drift",
+                "detail": (f"{doc} names v{claimed_version} as its baseline; SKILL.md is "
+                           f"{version} (a baseline holds only on the release SKILL.md's version "
+                           f"names) - stale claim: \"{record['quote']}\""),
+            })
     return {"checked": checked, "unchecked": unchecked, "findings": findings,
             "applicable": True, "document": doc}
 
 
 def check(repo_root: Path | str = ".") -> dict:
-    """Findings (all advisory). {findings, ok, applicable, census}. Applicable only on the skill
-    repo with a LATEST.md or a TRD present; only facts those documents state are checked."""
+    """Findings (all advisory). {findings, ok, applicable, census}, where `census` holds one
+    `census_claims` result per document in CENSUS_DOCUMENTS. Applicable only on the skill repo
+    with a LATEST.md or one of those documents present; only facts the documents state are
+    checked."""
     root = Path(repo_root)
     skill_dir = _skill_dir(root)
     latest = root / "sdlc-studio" / "reviews" / "LATEST.md"
-    census = census_claims(root)
-    if not (skill_dir / "SKILL.md").exists() or not (latest.exists() or census["applicable"]):
+    census = [census_claims(root, doc) for doc in CENSUS_DOCUMENTS]
+    if not (skill_dir / "SKILL.md").exists() or not (
+            latest.exists() or any(c["applicable"] for c in census)):
         return {"findings": [], "ok": True, "applicable": False, "census": census}
-    findings: list[dict] = list(census["findings"])
+    findings: list[dict] = [f for c in census for f in c["findings"]]
     text = _read(latest) if latest.exists() else ""
 
     def claim(pattern: str):
@@ -327,11 +367,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  [{f['kind']}] {f['detail']}")
     # Say what was actually verified. A silent green cannot tell a document whose counts were
     # measured and matched from one that states no count at all, and the two are different facts.
-    census = r.get("census") or {}
-    if census.get("applicable"):
+    for census in r.get("census") or []:
+        if not census.get("applicable"):
+            continue
         passed = sum(1 for c in census["checked"] if c["ok"])
         print(f"  census: {passed}/{len(census['checked'])} claim(s) in "
-              f"{census['document']} verified against the measured count"
+              f"{census['document']} verified against the tree"
               + (f"; not stated (unchecked): {', '.join(census['unchecked'])}"
                  if census["unchecked"] else ""))
     return 0  # advisory: report, never fail

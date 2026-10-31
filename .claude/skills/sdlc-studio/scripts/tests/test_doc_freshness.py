@@ -1,7 +1,10 @@
 """Unit tests for doc_freshness.py - the advisory LATEST.md staleness check (CR0073)."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import json
 import sys
 import tempfile
 import unittest
@@ -274,7 +277,7 @@ class ClaimAnchoredTests(unittest.TestCase):
             self._trd(root, "# TRD\n\n67 scripts, 53 reference files, 44 help files.\n")
             r = df.census_claims(root)
             self.assertEqual(r["findings"], [])
-            self.assertEqual(r["unchecked"], [])
+            self.assertEqual(r["unchecked"], ["baseline"])
             self.assertEqual(len(r["checked"]), 3)
             # the verdict carries the MEASURED number, so the pass is attributable
             self.assertEqual({c["claim"]: c["actual"] for c in r["checked"]},
@@ -300,7 +303,7 @@ class ClaimAnchoredTests(unittest.TestCase):
             self.assertEqual(r["findings"], [])
             self.assertEqual(r["checked"], [])
             self.assertEqual(sorted(r["unchecked"]),
-                             ["help files", "reference files", "scripts"])
+                             ["baseline", "help files", "reference files", "scripts"])
 
     def test_every_occurrence_is_checked_not_the_first(self):
         # the first-match defect: a correct claim early in the file must not shelter a stale
@@ -341,6 +344,147 @@ class ClaimAnchoredTests(unittest.TestCase):
             root = Path(d)
             self._repo(root, n_scripts=3, n_reference=1, n_help=1)
             self.assertFalse(df.census_claims(root)["applicable"])
+
+
+def _census_tree(root: Path, n_scripts: int, n_reference: int, n_help: int) -> Path:
+    """A skill tree for the census to measure. A test reads its figures back through the
+    census's own derivations rather than restating them."""
+    sd = root / ".claude" / "skills" / "sdlc-studio"
+    (sd / "scripts").mkdir(parents=True, exist_ok=True)
+    (sd / "help").mkdir(parents=True, exist_ok=True)
+    (sd / "SKILL.md").write_text('---\nmetadata:\n  version: "3.2.1"\n---\n', encoding="utf-8")
+    for i in range(n_scripts):
+        (sd / "scripts" / f"s{i}.py").write_text("", encoding="utf-8")
+    for i in range(n_reference):
+        (sd / f"reference-{i}.md").write_text("", encoding="utf-8")
+    for i in range(n_help):
+        (sd / "help" / f"h{i}.md").write_text("", encoding="utf-8")
+    return sd
+
+
+def _spec(root: Path, name: str, text: str) -> None:
+    (root / "sdlc-studio").mkdir(parents=True, exist_ok=True)
+    (root / "sdlc-studio" / name).write_text(text, encoding="utf-8")
+
+
+def _run(root: Path, *extra: str) -> str:
+    """doc_freshness.py as the operator runs it, its stdout captured."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = df.main(["--root", str(root), *extra])
+    assert rc == 0, "the check is advisory and must exit 0"
+    return out.getvalue()
+
+
+class PrdTsdFreshnessTests(unittest.TestCase):
+    """The census reads the PRD and TSD as it reads the TRD: a count or baseline either one states
+    is judged against the tree, and a band is judged as a band."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        sd = _census_tree(self.root, n_scripts=67, n_reference=53, n_help=44)
+        self.measured = {name: measure(sd) for name, measure in df._CENSUS_MEASURES.items()}
+        self.version = df._true_version(sd)
+        # a TRD whose claims hold, so any finding below is the PRD's or the TSD's own
+        _spec(self.root, "trd.md", (
+            f"# TRD\n\nCoverage: v{self.version} as cut.\n\n{self.measured['scripts']} scripts.\n"))
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _findings(self) -> list[dict]:
+        return json.loads(_run(self.root, "--format", "json"))["findings"]
+
+    def test_a_stale_prd_count_is_reported(self):
+        """AC1. MUTANT: leave the PRD out of the census's document set - nothing then reads it and
+        the stale count goes unreported."""
+        stale = self.measured["scripts"] - 9
+        _spec(self.root, "prd.md", (
+            "# PRD\n\n### Tech Stack\n\n"
+            f"- **Python 3.10+** - {stale} scripts under `scripts/`, sharing `lib/`.\n"))
+        findings = self._findings()
+        self.assertEqual([f["kind"] for f in findings], ["census-drift"], findings)
+        detail = findings[0]["detail"]
+        self.assertIn("sdlc-studio/prd.md", detail)
+        self.assertIn(f"claims {stale} scripts", detail)                  # the stated figure
+        self.assertIn(f"{self.measured['scripts']} counted", detail)       # the derived one
+        self.assertIn(f"{stale} scripts under `scripts/`", detail)         # the line, quoted
+        # the text report names the PRD's census beside the TRD's
+        text = _run(self.root)
+        self.assertIn("[census-drift] sdlc-studio/prd.md claims", text)
+        self.assertIn("claim(s) in sdlc-studio/prd.md verified", text)
+
+    def test_a_stale_tsd_figure_is_reported(self):
+        """AC2. MUTANT: leave the TSD out of the census's document set. A baseline naming a release
+        other than SKILL.md's version, and a count the tree no longer holds, are each reported."""
+        major, rest = self.version.split(".", 1)
+        older = f"{int(major) - 1}.{rest}"
+        stale = self.measured["help files"] + 5
+        _spec(self.root, "tsd.md", (
+            "# Test Strategy Document\n\n"
+            f"> **Coverage:** v{older} as cut, plus the work on `main` since.\n\n"
+            f"The skill ships {stale} help files.\n"))
+        findings = self._findings()
+        self.assertEqual([f["kind"] for f in findings], ["census-drift"] * 2, findings)
+        self.assertTrue(all("sdlc-studio/tsd.md" in f["detail"] for f in findings), findings)
+        baseline = next(f["detail"] for f in findings if "as its baseline" in f["detail"])
+        self.assertIn(f"names v{older} as its baseline", baseline)
+        self.assertIn(f"SKILL.md is {self.version}", baseline)
+        self.assertIn(f"v{older} as cut", baseline)
+        count = next(f["detail"] for f in findings if f"claims {stale} help files" in f["detail"])
+        self.assertIn(f"{self.measured['help files']} counted", count)
+
+    def test_matching_prd_and_tsd_are_clean(self):
+        """AC3, the positive control. MUTANT: read a band ("about 50", "40+") as a pinned count -
+        each band below sits off the measured figure, so an exact reading reports it."""
+        m = self.measured
+        _spec(self.root, "prd.md", (
+            f"# PRD\n\n> **Coverage:** v{self.version} as cut, plus the work on `main` since.\n\n"
+            f"{m['scripts']} scripts, about {m['reference files'] - 4} reference files and "
+            f"{m['help files'] - 3}+ help files.\n"))
+        _spec(self.root, "tsd.md", (
+            f"# TSD\n\n> **Coverage:** v{self.version} as cut.\n\n"
+            f"Roughly {m['scripts'] + 6} scripts and ~{m['help files'] - 2} help files.\n"))
+        r = json.loads(_run(self.root, "--format", "json"))
+        self.assertEqual(r["findings"], [])
+        census = {c["document"]: c for c in r["census"]}
+        # read, not skipped: each claim the two documents make was checked, and held
+        forms = {doc: sorted(c["form"] for c in census[doc]["checked"])
+                 for doc in ("sdlc-studio/prd.md", "sdlc-studio/tsd.md")}
+        self.assertEqual(forms["sdlc-studio/prd.md"], ["approximate", "exact", "exact", "floor"])
+        self.assertEqual(forms["sdlc-studio/tsd.md"], ["approximate", "approximate", "exact"])
+        for doc in forms:
+            self.assertTrue(all(c["ok"] for c in census[doc]["checked"]), census[doc])
+        text = _run(self.root)
+        self.assertIn("doc-freshness: state documents are fresh", text)
+        self.assertIn("4/4 claim(s) in sdlc-studio/prd.md verified", text)
+        self.assertIn("3/3 claim(s) in sdlc-studio/tsd.md verified", text)
+
+    def test_a_band_left_far_behind_is_still_reported(self):
+        """MUTANT: never report an approximate claim, drop either end of its band, or drop one of
+        its spellings. "about N" holds near N, not at any count."""
+        actual = self.measured["scripts"]
+        for word, far in [(w, n) for w in ("About ", "around ", "roughly ", "approximately ", "~")
+                          for n in (actual // 2, actual * 2)]:
+            with self.subTest(word=word, far=far):
+                _spec(self.root, "prd.md", f"# PRD\n\n{word}{far} scripts.\n")
+                findings = self._findings()
+                self.assertEqual(len(findings), 1, findings)
+                self.assertIn(f"claims {word}{far} scripts", findings[0]["detail"])
+                self.assertIn("an approximate claim holds while the count sits in",
+                              findings[0]["detail"])
+
+    def test_a_baseline_is_unchecked_when_skill_md_names_no_version(self):
+        """MUTANT: judge a stated baseline against a missing version - it is then reported as
+        stale, though nothing measured contradicts it."""
+        skill = self.root / ".claude" / "skills" / "sdlc-studio" / "SKILL.md"
+        skill.write_text("---\nname: sdlc-studio\n---\n", encoding="utf-8")
+        _spec(self.root, "prd.md", "# PRD\n\n> **Coverage:** v1.0.0 as cut.\n")
+        r = json.loads(_run(self.root, "--format", "json"))
+        self.assertEqual(r["findings"], [])
+        prd = next(c for c in r["census"] if c["document"] == "sdlc-studio/prd.md")
+        self.assertIn("baseline", prd["unchecked"])
 
 
 if __name__ == "__main__":
