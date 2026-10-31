@@ -1,6 +1,7 @@
 # CR-0655: Re-validate every open project lesson against the current tree, closing those no longer true
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0294
 > **Priority:** Medium
 > **Type:** Process
 > **Affects:** sdlc-studio/retros/LESSONS.md, sdlc-studio/retros/LESSONS-SUMMARY.md

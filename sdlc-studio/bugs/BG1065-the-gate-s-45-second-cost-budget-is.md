@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 1
+> **Depends on:** BG0963
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, changelog.d/BG1065.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** RV0028 finding TSD-12; sdlc-studio/.local/gate-cost.json 127.45 s; CI run 38886029272; gate.py:1825-1833.
 > **Created:** 2026-10-19
@@ -42,3 +43,4 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-20 | Claude Opus 5.5 | Further evidence: a profile of the conformance and engagement-floor lanes on a clean tree |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on BG0963, which shares a file this unit declares |

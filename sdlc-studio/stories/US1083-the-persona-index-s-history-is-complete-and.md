@@ -8,6 +8,7 @@
 > **Affects:** sdlc-studio/personas/index.md, sdlc-studio/personas.md, tools/tests/test_persona_coherence.py, changelog.d/US1083.md
 > **Epic:** EP0289
 > **Points:** 1
+> **Depends on:** US1081
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -44,3 +45,4 @@
 | --- | --- | --- |
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
+| 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on US1081, which shares a file this unit declares |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 148 |
+| Open | 150 |
 | In Progress | 0 |
 | Fixed | 817 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1138** |
+| **Total** | **1140** |
 
 ## All Bugs
 
@@ -214,6 +214,8 @@
 | [BG1136](BG1136-bg0962-s-ac7-test-pins-only-the-frozen.md) | BG0962's AC7 test pins only the frozen-REJECT half of 'an unreadable per-unit ledger is read as no verdict' | Superseded | Low | 2026-10-31 | 2026-10-31 |
 | [BG1137](BG1137-the-closing-review-fold-s-append-order-tiebreak.md) | The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1138](BG1138-the-gate-host-s-prerequisite-check-reports-gh.md) | The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran | Open | Low | 2026-10-31 | 2026-10-31 |
+| [BG1139](BG1139-lessons-py-revalidate-extend-accepts-reason-and-discards.md) | lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one | Open | Medium | 2026-10-31 | 2026-10-31 |
+| [BG1140](BG1140-readiness-py-tells-a-carried-unit-whose-verifiers.md) | readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves | Open | Low | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases
 

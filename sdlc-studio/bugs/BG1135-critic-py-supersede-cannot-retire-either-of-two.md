@@ -3,6 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
+> **Depends on:** BG1109
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_supersede_by_brief.py, .claude/skills/sdlc-studio/help/review.md, changelog.d/BG1135.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md rows for BG0962 dated 2026-10-07; the refusal above, on 2026-10-27 at 135dc388.
 > **Created:** 2026-10-27
@@ -36,3 +37,4 @@ A standing REJECT recorded twice in one round can never be retired, so its unit 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-27 | sdlc-studio | Filed |
+| 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on BG1109, which shares a file this unit declares |

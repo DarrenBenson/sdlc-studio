@@ -1,6 +1,7 @@
 # CR-0645: Refresh the TRD to 6.2: delivery units that execute Verify lines, committed evidence and run records, the type registry, network paths and the stale ADRs
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0293
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

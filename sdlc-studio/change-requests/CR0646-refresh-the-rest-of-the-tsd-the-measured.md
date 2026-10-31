@@ -1,6 +1,7 @@
 # CR-0646: Refresh the rest of the TSD: the measured coverage, per-unit line coverage, the test-tree conventions, NFR rows and the header
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0293
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

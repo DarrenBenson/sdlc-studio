@@ -1,6 +1,7 @@
 # CR-0647: Refresh the PRD to v6.1.0 plus 6.2: release markers, the features shipped since July, the business rules and NFRs that moved, and counts as bands
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0293
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
