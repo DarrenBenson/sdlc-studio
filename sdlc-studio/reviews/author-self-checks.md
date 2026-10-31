@@ -40,3 +40,4 @@
 | US1092 | builder-US1092; rebased by the orchestrator | 2026-10-26 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 22, survived 0 | 9c771fae1ce72e72 at 877c377187f4 |
 | US1095 | builder-US1095; the two Affects additions by the orchestrator | 2026-10-26 | TRUE 30, FALSE 0, UNVERIFIABLE 0 | killed 26, survived 0 | 3975a9d8bd665aff at cada3e159b67 |
 | US1086 | Claude Opus 5.5 | 2026-10-31 | TRUE 48, FALSE 0, UNVERIFIABLE 0 | killed 29, survived 5 | 405fd68d7fbd69ed at 772509ec2911 |
+| US1076 | Claude Opus 5.5 | 2026-10-31 | TRUE 63, FALSE 0, UNVERIFIABLE 5 | killed 22, survived 5 | 0e2b37b96c4794b6 at cf46669d26f6 |
