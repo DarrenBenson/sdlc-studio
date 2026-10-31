@@ -33,6 +33,7 @@
 - AC1 must fail on: the PRD naming a type outside `sdlc_md.EXECUTES_VERIFIERS` as executing, or omitting one inside it; each fact is read from code.
 - AC2 must fail on: a pinned derived count (a bare integer where the rule asks for a band).
 - AC3 must fail on: the floor reading Complete while BG0959 is open; BG0959's status is read from its file.
+- The doc_freshness census (US1098) does not read the PRD's counts in their current shapes ("58 deterministic helper scripts", "52 `reference-*.md`"), so it cannot be relied on to catch them; AC2's own test must cover each count the PRD states, read from the tree.
 - Overlap: US1103. US1102 maps these NFRs, so deliver this before US1102. Covers CR0647 AC3-AC5.
 
 ## Revision History
@@ -41,3 +42,4 @@
 | --- | --- | --- |
 | 2026-10-31 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-31 | Claude Opus 5.5 | Groomed for run four (D0392): criteria with Verify lines, each criterion's mutant, overlaps and sequence |
+| 2026-10-31 | Claude Opus 5.5 | Note from US1098's delivery: the census does not read the PRD's count shapes, so AC2's test covers them |

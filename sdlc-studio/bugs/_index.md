@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 151 |
+| Open | 152 |
 | In Progress | 0 |
 | Fixed | 817 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1141** |
+| **Total** | **1142** |
 
 ## All Bugs
 
@@ -217,6 +217,7 @@
 | [BG1139](BG1139-lessons-py-revalidate-extend-accepts-reason-and-discards.md) | lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one | Open | Medium | 2026-10-31 | 2026-10-31 |
 | [BG1140](BG1140-readiness-py-tells-a-carried-unit-whose-verifiers.md) | readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1141](BG1141-the-gate-host-docs-test-s-docstrings-claim.md) | The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config` | Open | Low | 2026-10-31 | 2026-10-31 |
+| [BG1142](BG1142-doc-freshness-is-described-as-a-latest-md.md) | doc-freshness is described as a LATEST.md check everywhere, though it now censuses the TRD, PRD and TSD; one hook comment lists it as a per-commit lane | Open | Low | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases
 
