@@ -3,8 +3,10 @@ fallback and the local override.
 
 The settings are read from the four scripts that choose or report where the gate runs (the
 pre-push hook, tools/remote-gate.sh, tools/run-suite.sh and tools/enable-hooks.sh), never typed
-here (LL0043): every `git config` key in the `sdlc.` namespace they read, and every
-`SDLC_GATE_*` variable. Each derived set first asserts a member known to be in it.
+here (LL0043): every `sdlc.` key spelt literally on a line that runs `git config`, in git's own
+key grammar, and every `SDLC_GATE_*` variable named in them. A key a script reads through a shell
+variable (`git config --get "$key"`) is out of reach. Each derived set first asserts a member
+known to be in it.
 
 Where the gate runs is a table in each document's push-gate section, compared cell for cell with
 TABLE below. TABLE is pinned to the hook by running the hook's own code under each row's cases.
@@ -95,13 +97,32 @@ def _tables(text: str) -> list[list[tuple[str, ...]]]:
     return tables
 
 
-def _settings() -> set[str]:
-    """Every `sdlc.` key on a line that runs `git config`, however it is spelt (quoted, after any
-    flags, or git's `git config get` form), and every SDLC_GATE_ variable."""
-    text = "\n".join(_read(p) for p in READERS)
+#: A `sdlc.` key in git's key grammar: the key starts with a letter, then letters, digits or `-`.
+KEY = r"(?<![\w.-])(sdlc\.[A-Za-z][A-Za-z0-9-]*)"
+#: A key spelt in a fixture the way the scripts might read one, and the set _settings derives.
+KEY_FIXTURE = (('x="$(git config --get sdlc.gate-port)"\n'
+                'git config --type=int --get "sdlc.gate2Host"\n'
+                ': "$(git config get sdlc.gate)"\n'
+                'key=sdlc.gateHidden\n: "$(git config --get "$key")"\n'
+                ': "${SDLC_GATE_V2:-}"\n'),
+               {"sdlc.gate-port", "sdlc.gate2Host", "sdlc.gate", "SDLC_GATE_V2"})
+
+
+def _settings(text: str | None = None) -> set[str]:
+    """Every `sdlc.` key spelt literally on a line that runs `git config` (quoted, after any
+    flags, or git's `git config get` form), whole in git's key grammar, and every SDLC_GATE_
+    variable, read from the four scripts or from `text`. A key held in a shell variable and read
+    as `git config --get "$key"` is not spelt on that line, so it is out of reach."""
+    if text is None:
+        text = "\n".join(_read(p) for p in READERS)
     keys = {k for line in text.splitlines() if re.search(r"\bgit\s+config\b", line)
-            for k in re.findall(r"(?<![\w.])(sdlc\.[A-Za-z]+)", line)}
-    return keys | set(re.findall(r"\b(SDLC_GATE_[A-Z_]+)\b", text))
+            for k in re.findall(KEY, line)}
+    return keys | set(re.findall(r"\b(SDLC_GATE_[A-Z0-9_]+)\b", text))
+
+
+def _names(section: str, name: str) -> bool:
+    """Whether the section names the setting whole: `sdlc.gate` is not named by `sdlc.gateHost`."""
+    return re.search(rf"(?<![\w.-]){re.escape(name)}(?![\w-])", section) is not None
 
 
 def _hook_code() -> str:
@@ -151,16 +172,21 @@ def _where(code: str, host: str | None, local: str | None, rc: int) -> str:
 class GateHostDocsTests(unittest.TestCase):
 
     def test_every_gate_host_setting_is_named(self) -> None:
-        """US1086 AC1, kept by BG1095 AC2. Mutant: a setting a script reads to choose or report
-        where the gate runs left unnamed in either document's push-gate section. A mention
-        elsewhere in the document, such as its revision history, does not count."""
+        """US1086 AC1, kept by BG1095 AC2. Mutants: a setting a script reads to choose or report
+        where the gate runs left unnamed in either document's push-gate section; a key read short
+        of git's key grammar (`sdlc.gate-port` as `sdlc.gate`), or counted as named because a
+        longer key contains it. A mention elsewhere in the document, such as its revision history,
+        does not count."""
+        fixture, derived = KEY_FIXTURE
+        self.assertEqual(_settings(fixture), derived, "the key pattern against git's key grammar")
+        self.assertFalse(_names("`sdlc.gateHost`", "sdlc.gate"), "a longer key counted as naming a shorter one")
         settings = _settings()
         self.assertTrue({"sdlc.gateHost", "SDLC_GATE_LOCAL"} <= settings, settings)
         for doc in (TRD, TSD):
             section = _push_gate(doc)
             for name in sorted(settings):
                 with self.subTest(doc=doc.name, setting=name):
-                    self.assertIn(name, section)
+                    self.assertTrue(_names(section, name), f"{name} is not named in {doc.name}'s push-gate section")
 
     def test_the_push_stage_tables_each_gate_location(self) -> None:
         """BG1095 AC1, and US1086 AC2. Each document's push-gate section holds one table, and its
