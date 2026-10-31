@@ -36,6 +36,10 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 
 - 2026-10-20, cProfile of `gate.py --root .` on a clean tree at fd16f28a (workstation, quiet): gate cost 330.0 s, conformance 280.2 s over the whole workspace (1086 units). Within conformance, `critic.read_verdicts` is called once per unit (812 times) and re-parses the verdict ledger each time, for 125 s, of which `sdlc_md.table_cells` is 51 s. `verify_ac._collect_nodes` spawns 257 collection subprocesses, for 130 s. In engagement-floor (31.7 s), `decisions.list_decisions` is called 2229 times through `waiver_for`, for 27.6 s. Those three account for about 283 s of the 330 s.
 
+## Notes
+
+- Pre-run baseline, 2026-10-31 at 62fc405a: a standard `gate.py` run took 38.6s against the 45s budget (engagement-floor 26.3s), so the run is no longer over budget on every run. The AC still holds: the budget is recorded beside a measurement, so the OVER line means something again.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -44,3 +48,4 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 | 2026-10-20 | Claude Opus 5.5 | Further evidence: a profile of the conformance and engagement-floor lanes on a clean tree |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 | 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on BG0963, which shares a file this unit declares |
+| 2026-10-31 | Claude Opus 5.5 | Pre-run gate baseline recorded for the run-four goal review (D0393) |

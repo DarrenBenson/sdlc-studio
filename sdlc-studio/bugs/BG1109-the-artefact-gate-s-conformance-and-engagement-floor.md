@@ -31,8 +31,13 @@ Read each ledger once per gate run and pass it to the per-unit readers, or memoi
 
 The gate costs 330 s on a whole-workspace run, against a 45 s budget, and that cost runs on every clean-tree gate and every message-only amend (BG1104). It is most of why BG1065's budget line carries no signal.
 
+## Notes
+
+- Pre-run baseline, 2026-10-31 at 62fc405a: a standard `gate.py` run took 38.6s; engagement-floor 26.3s, validate 6.8s, conformance 0.9s. The conformance re-read cost has already gone; the saving left to make is in engagement-floor. The run's close judges "gates cost less" against these figures (D0393, the goal review's done-means).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-10-31 | Claude Opus 5.5 | Pre-run gate baseline recorded for the run-four goal review (D0393) |
