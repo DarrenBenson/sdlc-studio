@@ -1,6 +1,6 @@
 # US1086: The TRD and TSD describe the gate host a clone can configure, the fallback and the local override
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0644
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -29,7 +29,7 @@
 
 - Serves: Rowan Achterberg, End goal 1 (D0380 repoint; the card is sdlc-studio/personas/rowan-achterberg-skill-maintainer.md).
 - AC1 must fail on: a setting the hook or remote-gate.sh reads left unnamed in either document; the set is read from the scripts, never typed into the test.
-- AC2 must fail on: the TSD saying a transport failure falls back to the local gate, or one of the three locations unnamed.
+- AC2 must fail on: the TSD saying a transport failure falls back to the local gate, or one of the three locations unnamed. Since BG1095 (90b8e780) this holds for the push-stage table row; contradicting prose beside the table is not judged, by design (qa-seat-US1086-r1, round 3).
 - Every derived set asserts a known member first (LL0043): `sdlc.gateHost` and `SDLC_GATE_LOCAL`.
 - Depends on US1075, which ships the configuration, and on US1084, which writes the stage this extends.
 - Covers CR0644 AC5. Persona to be repointed to the skill-maintainer card once US1079 lands.
@@ -44,3 +44,4 @@
 | 2026-10-19 | Claude Opus 5.5 | Repointed at Rowan Achterberg, Primary for the repository-tooling interface, before review (D0379, D0380) |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387): cleared Depends on; every dependency it named is terminal |
 | 2026-10-22 | Claude Opus 5.5 | BG1095: AC2's Verify re-pointed at the table test that replaces the fall-back phrase scan |
+| 2026-10-31 | Claude Opus 5.5 | Cleared at run-four plan time (D0393): repaired in 772509ec, approved at round 3 by qa-seat-US1086-r1; the AC2 must-fail note narrowed to the table, as the reviewer asked |

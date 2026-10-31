@@ -1,6 +1,6 @@
 # EP0290: The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 7
 > **Parent:** CR0644
 > **Created:** 2026-10-19
@@ -16,7 +16,7 @@ Decomposed from CR0644. Delivers the work CR0644 requested.
 
 - [x] [US1084: The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves](../stories/US1084-the-trd-and-tsd-name-each-hook-what.md)
 - [x] [US1085: The TRD's stack and the TSD's framework rows name every dependency the clone installs, and the TSD names each CI job and its trigger](../stories/US1085-the-trd-s-stack-and-the-tsd-s.md)
-- [ ] [US1086: The TRD and TSD describe the gate host a clone can configure, the fallback and the local override](../stories/US1086-the-trd-and-tsd-describe-the-gate-host.md)
+- [x] [US1086: The TRD and TSD describe the gate host a clone can configure, the fallback and the local override](../stories/US1086-the-trd-and-tsd-describe-the-gate-host.md)
 
 ## Acceptance Criteria (Epic Level)
 

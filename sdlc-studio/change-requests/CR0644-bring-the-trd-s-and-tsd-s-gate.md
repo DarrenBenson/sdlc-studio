@@ -1,6 +1,6 @@
 # CR-0644: Bring the TRD's and TSD's gate architecture current: the three hooks, the boundary gates, the test stack, CI and its scheduled jobs, and the manual pre-tag steps
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0290
 > **Priority:** High
 > **Type:** Improvement

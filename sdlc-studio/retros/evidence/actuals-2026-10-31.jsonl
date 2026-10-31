@@ -22,3 +22,6 @@
 {"id": "CR0650", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0651", "type": "cr", "project": "sdlc-studio"}
 {"id": "BG1136", "type": "bug", "project": "sdlc-studio"}
+{"id": "US1086", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0290", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0644", "type": "cr", "project": "sdlc-studio"}

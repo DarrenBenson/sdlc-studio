@@ -10,9 +10,9 @@
 | Draft | 85 |
 | Ready | 16 |
 | Planned | 0 |
-| In Progress | 2 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 823 |
+| Done | 824 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -123,7 +123,7 @@
 | [US1083](US1083-the-persona-index-s-history-is-complete-and.md) | The persona index's history is complete and ordered, it links the seat cards, and the legacy personas.md agrees with its banner | Ready | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1084](US1084-the-trd-and-tsd-name-each-hook-what.md) | The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves | Done | EP0290 | 2026-10-19 | 2026-10-19 |
 | [US1085](US1085-the-trd-s-stack-and-the-tsd-s.md) | The TRD's stack and the TSD's framework rows name every dependency the clone installs, and the TSD names each CI job and its trigger | Done | EP0290 | 2026-10-19 | 2026-10-19 |
-| [US1086](US1086-the-trd-and-tsd-describe-the-gate-host.md) | The TRD and TSD describe the gate host a clone can configure, the fallback and the local override | In Progress | EP0290 | 2026-10-19 | 2026-10-19 |
+| [US1086](US1086-the-trd-and-tsd-describe-the-gate-host.md) | The TRD and TSD describe the gate host a clone can configure, the fallback and the local override | Done | EP0290 | 2026-10-19 | 2026-10-19 |
 | [US1087](US1087-critic-py-brief-tells-the-author-before-the.md) | critic.py brief tells the author, before the brief, to run a claim inventory of the commit message and changelog fragment and a mutation pass over the unit's own tests | Done | EP0291 | 2026-10-20 | 2026-10-20 |
 | [US1088](US1088-critic-py-self-check-record-stores-the-author.md) | critic.py self-check record stores the author's claim inventory, every claim ruled, and the mutation run the unit's tests were checked against, bound to the unit's diff | Done | EP0291 | 2026-10-20 | 2026-10-20 |
 | [US1089](US1089-critic-py-brief-refuses-a-unit-whose-author.md) | critic.py brief refuses a unit whose author has recorded no self-check for its current diff | Done | EP0291 | 2026-10-20 | 2026-10-20 |
