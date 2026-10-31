@@ -1,6 +1,6 @@
 # BG1000: The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, changelog.d/BG1000.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .githooks/pre-commit, .claude/skills/sdlc-studio/help/gate.md, AGENTS.md, sdlc-studio/tsd.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py

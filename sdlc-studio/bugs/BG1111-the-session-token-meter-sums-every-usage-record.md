@@ -1,6 +1,6 @@
 # BG1111: The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_session_tokens_once_per_message.py, changelog.d/BG1111.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py

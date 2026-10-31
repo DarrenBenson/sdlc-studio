@@ -1,6 +1,6 @@
 # US1096: A goal-review amendment carries every seat's verdict forward unless a seat asked to re-review, and an amendment of an open run's goal moves the goal the close judges
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new

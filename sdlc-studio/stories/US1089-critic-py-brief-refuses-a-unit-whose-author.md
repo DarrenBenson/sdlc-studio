@@ -1,6 +1,6 @@
 # US1089: critic.py brief refuses a unit whose author has recorded no self-check for its current diff
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0650
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio new

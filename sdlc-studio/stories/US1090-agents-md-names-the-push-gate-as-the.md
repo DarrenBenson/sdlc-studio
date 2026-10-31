@@ -1,6 +1,6 @@
 # US1090: AGENTS.md names the push gate as the full-suite check, retiring the separate full-suite run before a commit
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0650
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio new

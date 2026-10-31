@@ -1,6 +1,6 @@
 # US1087: critic.py brief tells the author, before the brief, to run a claim inventory of the commit message and changelog fragment and a mutation pass over the unit's own tests
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0650
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio new

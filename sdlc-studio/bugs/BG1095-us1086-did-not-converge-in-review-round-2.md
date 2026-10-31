@@ -1,6 +1,6 @@
 # BG1095: US1086 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_gate_host_docs.py, changelog.d/US1086.md, sdlc-studio/stories/US1086-the-trd-and-tsd-describe-the-gate-host.md

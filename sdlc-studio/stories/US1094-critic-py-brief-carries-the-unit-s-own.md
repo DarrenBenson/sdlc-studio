@@ -1,6 +1,6 @@
 # US1094: critic.py brief carries the unit's own capped diff and the command that runs its Verify lines, and each review tier states the sections it carries and its tool-call budget
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new

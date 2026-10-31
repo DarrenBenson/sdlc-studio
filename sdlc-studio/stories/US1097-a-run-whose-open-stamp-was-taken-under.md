@@ -1,6 +1,6 @@
 # US1097: A run whose open stamp was taken under an earlier counting basis has that reading re-derived from the transcript, never subtracted from a reading on the current basis
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1

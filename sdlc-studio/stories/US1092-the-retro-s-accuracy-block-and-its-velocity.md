@@ -1,6 +1,6 @@
 # US1092: The retro's accuracy block and its VELOCITY row carry the priced cost per point under a named basis, and the forecast names every basis it pooled
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-27
+**Last Updated:** 2026-10-31
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 154 |
+| Open | 147 |
 | In Progress | 0 |
-| Fixed | 809 |
+| Fixed | 817 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
-| Superseded | 38 |
-| **Total** | **1135** |
+| Superseded | 39 |
+| **Total** | **1137** |
 
 ## All Bugs
 
@@ -37,7 +37,7 @@
 | [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Open | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Open | High | 2026-10-07 | 2026-10-07 |
+| [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Open | High | 2026-10-07 | 2026-10-07 |
 | [BG0964](BG0964-help-refine-md-never-mentions-into-so-a.md) | help/refine.md never mentions `--into`, so a story added to an already-refined epic is made with `artifact.py new` and carries no Delivers link | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Open | Medium | 2026-10-07 | 2026-10-07 |
@@ -75,7 +75,7 @@
 | [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
-| [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Open | High | 2026-10-08 | 2026-10-08 |
+| [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Fixed | Medium | 2026-10-08 | 2026-10-08 |
@@ -153,7 +153,7 @@
 | [BG1075](BG1075-tools-remote-gate-sh-s-local-side-needs.md) | tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1076](BG1076-the-rejoinder-brief-asks-a-reviewer-to-rule.md) | The rejoinder brief asks a reviewer to rule each earlier finding, but the return contract has no place for the rulings, so a round-2 verdict that writes them untagged is refused by critic.py record | Superseded | Low | 2026-10-19 | 2026-10-19 |
 | [BG1077](BG1077-test-a-ctrl-c-stops-every-lane-with.md) | test_a_ctrl_c_stops_every_lane_with_the_hook can see every lane finish before its interrupt lands on a loaded host, and reads the hook's clean exit as a failure | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
-| [BG1078](BG1078-us1076-did-not-converge-in-review-round-2.md) | US1076 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1078](BG1078-us1076-did-not-converge-in-review-round-2.md) | US1076 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1079](BG1079-a-unit-carried-at-the-review-cap-gets.md) | A unit carried at the review cap gets a criterion for every ISSUES item, including info rulings and pre-existing findings already filed | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1080](BG1080-remote-gate-doctor-calls-a-host-ready-without.md) | remote-gate doctor calls a host ready without checking flock and setsid, which every push run on it needs | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1081](BG1081-remote-gate-doctor-sources-gate-env-sh-from.md) | remote-gate doctor sources gate-env.sh from its temporary directory, where the gate sources it from the host's home | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -170,7 +170,7 @@
 | [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1094](BG1094-a-lesson-that-is-only-punctuation-gets-an.md) | A lesson that is only punctuation gets an empty heading title since BG1061 | Open | Low | 2026-10-19 | 2026-10-19 |
-| [BG1095](BG1095-us1086-did-not-converge-in-review-round-2.md) | US1086 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1095](BG1095-us1086-did-not-converge-in-review-round-2.md) | US1086 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1096](BG1096-the-trd-says-verify-ac-run-coverage-refuses.md) | The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1097](BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md) | US1085's toolchain-doc tests leave coverage unpinned, still pass three counted phrasings, and fail at collection without PyYAML | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -186,13 +186,13 @@
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
-| [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Open | Medium | 2026-10-21 | 2026-10-21 |
-| [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Open | High | 2026-10-22 | 2026-10-22 |
+| [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
-| [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1118](BG1118-six-behaviours-the-self-check-record-its-brief.md) | Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews) | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Open | Medium | 2026-10-22 | 2026-10-22 |
@@ -202,7 +202,7 @@
 | [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
-| [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Open | High | 2026-10-22 | 2026-10-22 |
+| [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1128](BG1128-the-close-s-goal-panel-and-the-next.md) | The close's goal panel and the next amendment's carry read only the latest goal-review round, while the plan reads every round on the latest wording, so after an owing seat records alone they disagree on which verdicts stand | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1129](BG1129-test-lean-gate-host-docs-py-s-table.md) | test_lean_gate_host_docs.py's table test says a hook honouring a value other than 1 fails it, but an edit outside the lines `_hook_code` cuts passes it | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1130](BG1130-the-builder-brief-s-commit-step-quotes-each.md) | The builder brief's commit step quotes each Affects path with shlex.quote, but no test has a path with a space, so dropping the quoting stages the wrong paths with every test green | Open | Low | 2026-10-26 | 2026-10-26 |
@@ -211,6 +211,8 @@
 | [BG1133](BG1133-three-velocity-priced-pt-behaviours-us1092-states-are.md) | Three VELOCITY Priced/pt behaviours US1092 states are pinned by no test: the Source guard, an earlier row keeping its recorded figure, and rows with no Source named in the rate's basis | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1134](BG1134-us1095-s-cost-check-is-pinned-only-on.md) | US1095's cost check is pinned only on the older retro shape, cost-baseline add reports a row the median never uses, and its latest-five window has no test | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1135](BG1135-critic-py-supersede-cannot-retire-either-of-two.md) | critic.py supersede cannot retire either of two delivery rows that share a unit, date, reviewer and verdict | Open | Medium | 2026-10-27 | 2026-10-27 |
+| [BG1136](BG1136-bg0962-s-ac7-test-pins-only-the-frozen.md) | BG0962's AC7 test pins only the frozen-REJECT half of 'an unreadable per-unit ledger is read as no verdict' | Superseded | Low | 2026-10-31 | 2026-10-31 |
+| [BG1137](BG1137-the-closing-review-fold-s-append-order-tiebreak.md) | The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test | Open | Low | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US1088: critic.py self-check record stores the author's claim inventory, every claim ruled, and the mutation run the unit's tests were checked against, bound to the unit's diff
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0650
 > **Created:** 2026-10-20
 > **Created-by:** sdlc-studio new

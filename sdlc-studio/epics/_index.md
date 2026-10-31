@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 18 |
+| Draft | 16 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 241 |
+| Done | 243 |
 | Superseded | 33 |
 | **Total** | **292** |
 
@@ -41,8 +41,8 @@
 | [EP0288](EP0288-the-push-gate-and-the-full-suite-run.md) | The push gate and the full suite run on a configured gate host | Draft | 4 | -- | 2026-10-12 | 2026-10-12 |
 | [EP0289](EP0289-the-persona-registry-matches-the-work-it-serves.md) | The persona registry matches the work it serves: a maintainer Primary for the repository tooling, and cards that state current goals | Draft | 5 | -- | 2026-10-19 | 2026-10-19 |
 | [EP0290](EP0290-the-trd-and-tsd-describe-the-gate-as.md) | The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host | Draft | 3 | -- | 2026-10-19 | 2026-10-19 |
-| [EP0291](EP0291-the-author-s-self-check-is-run-and.md) | The author's self-check is run and recorded before a reviewer is briefed | Draft | 4 | -- | 2026-10-20 | 2026-10-20 |
-| [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Draft | 7 | -- | 2026-10-22 | 2026-10-22 |
+| [EP0291](EP0291-the-author-s-self-check-is-run-and.md) | The author's self-check is run and recorded before a reviewer is briefed | Done | 4 | -- | 2026-10-20 | 2026-10-20 |
+| [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Done | 7 | -- | 2026-10-22 | 2026-10-22 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG1078: US1076 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_runs.py, changelog.d/US1076.md

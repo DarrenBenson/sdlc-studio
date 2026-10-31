@@ -1,6 +1,6 @@
 # US1095: The close compares the run's priced cost per point with the median of recent runs, or a configured baseline until three exist, and carries a run over 1.5 times it as a known issue with a per-unit breakdown, whose cause the retro must name
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new

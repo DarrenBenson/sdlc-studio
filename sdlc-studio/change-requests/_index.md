@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 15 |
 | Approved | 0 |
-| In Progress | 29 |
-| Complete | 520 |
+| In Progress | 27 |
+| Complete | 522 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -61,8 +61,8 @@
 | [CR-0647](CR0647-refresh-the-prd-to-v6-1-0-plus.md) | Refresh the PRD to v6.1.0 plus 6.2: release markers, the features shipped since July, the business rules and NFRs that moved, and counts as bands | Proposed | Medium | Improvement | 2026-10-19 | -- |
 | [CR-0648](CR0648-refresh-the-persona-registry-a-skill-maintainer-card.md) | Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index | In Progress | Medium | Improvement | 2026-10-19 | EP0289 |
 | [CR-0649](CR0649-extend-the-doc-freshness-census-from-the-trd.md) | Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts | Proposed | Medium | Improvement | 2026-10-19 | -- |
-| [CR-0650](CR0650-the-author-s-self-check-is-a-step.md) | The author's self-check is a step the tools run and require, not a rule an agent remembers | In Progress | High | Process | 2026-10-19 | EP0291 |
-| [CR-0651](CR0651-a-sprint-costs-what-its-work-costs-the.md) | A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close | In Progress | High | Enhancement | 2026-10-22 | EP0292 |
+| [CR-0650](CR0650-the-author-s-self-check-is-a-step.md) | The author's self-check is a step the tools run and require, not a rule an agent remembers | Complete | High | Process | 2026-10-19 | EP0291 |
+| [CR-0651](CR0651-a-sprint-costs-what-its-work-costs-the.md) | A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close | Complete | High | Enhancement | 2026-10-22 | EP0292 |
 | [CR-0652](CR0652-critic-py-self-check-record-has-no-surface.md) | critic.py self-check record has no surface for a documentation unit's own prose, so the claims a doc unit makes in the file it changes cannot be recorded under that file | Proposed | Low | Feature | 2026-10-22 | -- |
 | [CR-0653](CR0653-a-delegated-token-total-supplied-for-an-agent.md) | A delegated token total supplied for an agent outside this session is dropped whenever the session ran any subagent, because the reading's 'subagents included' flag is per session, not per agent | Proposed | Low | Feature | 2026-10-22 | -- |
 | [CR-0654](CR0654-the-builder-brief-tells-the-builder-to-write.md) | The builder brief tells the builder to write its story file and the self-check log, then commit only its Affects, without saying who commits those two | Proposed | Low | Feature | 2026-10-26 | -- |

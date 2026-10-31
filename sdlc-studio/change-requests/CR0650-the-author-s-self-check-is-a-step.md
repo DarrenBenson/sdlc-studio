@@ -1,6 +1,6 @@
 # CR-0650: The author's self-check is a step the tools run and require, not a rule an agent remembers
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-20)
 > **Decomposed-into:** EP0291
 > **Priority:** High

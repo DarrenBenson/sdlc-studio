@@ -1,6 +1,6 @@
 # US1091: The token meter reads the main thread and every subagent transcript once per message, prices each component from one weight table, and the close and the report state that priced cost as their headline
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new

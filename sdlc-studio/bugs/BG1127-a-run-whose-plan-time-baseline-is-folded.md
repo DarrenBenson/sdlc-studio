@@ -1,6 +1,6 @@
 # BG1127: A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_reads_true.py, changelog.d/BG1127.md

@@ -1,6 +1,6 @@
 # US1093: sprint.py lane brief hands a fresh builder agent everything it needs to build one unit (its Affects, criteria, author self-check, seat card and the commit and Verify commands), and the runbook builds each unit that way
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0651
 > **Created:** 2026-10-22
 > **Created-by:** sdlc-studio new
