@@ -594,6 +594,111 @@ class AlreadySatisfiedTests(unittest.TestCase):
             self.assertNotIn("already-satisfied", r["issues"])
 
 
+class CarriedUnitTests(unittest.TestCase):
+    """BG1140: a unit carried on an unanswered delivery REJECT is re-reviewed in the batch, not
+    told to close. The ledger is written by the shipped `critic.py record`, and every case asks
+    `transition.py set --status Done --dry-run` too, so readiness is held to the Done guard's
+    own answer rather than to a fixture of what that answer should be."""
+
+    def _unit(self, root: Path) -> None:
+        _epic(root, 1, status="In Progress")
+        d = root / "sdlc-studio" / "stories"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "US0001-x.md").write_text(
+            "# US0001: s\n\n> **Status:** In Progress\n> **Epic:** [EP0001](../epics/EP0001-x.md)"
+            "\n\n## Acceptance Criteria\n\n### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+        rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+        rp.parent.mkdir(parents=True, exist_ok=True)
+        rp.write_text(json.dumps({"stories": {"US0001-x": {
+            "ac_count": 1, "verified": 1, "failed": 0, "stale": 0}}}), encoding="utf-8")
+
+    def _record(self, root: Path, verdict: str, reviewer: str) -> None:
+        cmd = [sys.executable, "-B", str(SCRIPT.parent / "critic.py"), "record", "--root",
+               str(root), "--unit", "US0001", "--verdict", verdict, "--reviewer", reviewer,
+               "--author", "builder-US0001"]
+        if verdict == "reject":
+            cmd += ["--issues", "[new] AC1 is untested"]
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    def _done_refused_on_reject(self, root: Path) -> bool:
+        proc = subprocess.run(
+            [sys.executable, "-B", str(SCRIPT.parent / "transition.py"), "set", "--root",
+             str(root), "--id", "US0001", "--status", "Done", "--dry-run"],
+            capture_output=True, text=True)
+        return "unanswered delivery REJECT" in proc.stdout + proc.stderr
+
+    def _check(self, root: Path) -> tuple[int, str]:
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = _load().main(["check", "--id", "US0001", "--root", str(root)])
+        return rc, out.getvalue()
+
+    def test_a_reject_carried_at_the_cap_is_a_note_naming_the_reviewer_not_an_issue(self) -> None:
+        """AC1. Fails on a readiness that flags already-satisfied without asking for a standing
+        REJECT, on one that drops the carry note or names no reviewer, and on one that names the
+        reviewer once per REJECT row rather than once."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._record(root, "reject", "qa-seat-US0001-r1")
+            self._record(root, "reject", "qa-seat-US0001-r1")  # round 2: carried at the cap
+            self.assertTrue(self._done_refused_on_reject(root))
+            r = _load().audit_unit(root, "US0001")
+            self.assertNotIn("already-satisfied", r["issues"])
+            self.assertTrue(r["ready"], r)
+            carried = [n for n in r["info"] if n.startswith("carried:")]
+            self.assertEqual(len(carried), 1, r["info"])
+            self.assertIn("re-review by qa-seat-US0001-r1 ", carried[0])
+            self.assertEqual(carried[0].count("qa-seat-US0001-r1"), 1, carried[0])
+            rc, out = self._check(root)
+            self.assertEqual(rc, 0, out)
+            self.assertNotIn("NOT READY", out)
+            self.assertIn("note      US0001: carried: re-review by qa-seat-US0001-r1 ", out)
+            self.assertIn("`critic.py brief --unit US0001 --seat <seat> --rejoinder <prior "
+                          "verdict file>`", out)
+
+    def test_the_reviewer_is_named_as_recorded_not_as_the_ledger_escapes_it(self) -> None:
+        """AC1, the reviewer id. The ledger stores `qa_r1` as `qa\\_r1`; fails on a note that
+        names the cell rather than the id `critic.py record --reviewer` was given."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._record(root, "reject", "qa_r1")
+            self.assertTrue(self._done_refused_on_reject(root))
+            ledger = root / "sdlc-studio" / "reviews" / "critic-verdicts.md"
+            self.assertIn("qa\\_r1", ledger.read_text(encoding="utf-8"))
+            notes = _load().audit_unit(root, "US0001")["info"]
+            self.assertIn("carried: re-review by qa_r1 ", " ".join(notes))
+
+    def test_a_reject_its_reviewer_answered_is_still_already_satisfied(self) -> None:
+        """AC2. Fails on a second copy of the rule that reads `critic.standing_rejects` alone,
+        which still names the answered REJECT, so the unit would be called carried while
+        transition lets it close."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self._record(root, "reject", "qa-seat-US0001-r1")
+            self._record(root, "approve", "qa-seat-US0001-r1")
+            self.assertFalse(self._done_refused_on_reject(root))
+            r = _load().audit_unit(root, "US0001")
+            self.assertIn("already-satisfied", r["issues"])
+            self.assertFalse([n for n in r["info"] if n.startswith("carried:")])
+
+    def test_no_reject_at_all_is_still_already_satisfied(self) -> None:
+        """AC2, the positive control. Fails on a readiness that reads every passing unit as
+        carried, or that stops flagging already-satisfied."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._unit(root)
+            self.assertFalse(self._done_refused_on_reject(root))
+            r = _load().audit_unit(root, "US0001")
+            self.assertEqual(r["issues"], ["already-satisfied"])
+            self.assertFalse([n for n in r["info"] if n.startswith("carried:")])
+            rc, out = self._check(root)
+            self.assertEqual(rc, 1)
+            self.assertIn("NOT READY US0001 (In Progress): already-satisfied", out)
+
+
 class CR0109AuditChecks(unittest.TestCase):
     """The tranche audit flags non-executable Verify lines + cross-epic AC leakage."""
 

@@ -74,7 +74,7 @@ The token lever: a doc with no load-trigger and no index entry gets pulled in wi
 
 ### `readiness.py`
 
-Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
+Tranche pre-flight readiness (deterministic). `check` grooms a batch for readiness - weak-AC, unmet-deps, already-terminal, link-integrity, **already-satisfied** (a Ready unit whose executable ACs all pass in the verify-report - a close-candidate, not work to build, unless it is carried on an unanswered delivery REJECT: `transition` refuses that close, so it stays ready for the batch with a `carried: re-review by <reviewer id>` note, to be re-reviewed by the reviewer who rejected it), **weak-verify** (a non-executable Verify line, reusing `verify_ac lint`) and **cross-epic-ac** (an AC owned by another epic, reusing `ac_scope`) - before the triage STOP, so work never starts on a unit that would pass the gates vacuously or be reverse-engineered at implement time.
 
 `profile --name <name>` resolves an adversarial lens profile: the packs under
 `templates/audit-profiles/` (`skill`, `repo`, `code`) plus the reference-declared

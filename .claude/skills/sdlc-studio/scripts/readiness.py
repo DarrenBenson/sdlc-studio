@@ -960,6 +960,33 @@ def _already_satisfied(root: Path, rid: str) -> bool:
     return False
 
 
+def _carried(root: Path, rid: str) -> str | None:
+    """The carry note for a unit whose delivered close transition refuses on an unanswered
+    delivery REJECT, or None when it would not refuse.
+
+    A unit carried at the review cap can have its follow-up fixed elsewhere, so its verifiers
+    pass while its REJECT stands. Told to close, it is refused Done (or Fixed, for a bug); kept
+    out of the batch, no run delivers it again for the APPROVE that discharges it. The rule is
+    transition's own `_unanswered_delivery_reject`, called rather than restated, so this and the
+    Done guard cannot disagree on what a carry is. The reviewers are those
+    `critic.standing_rejects` names, the rows transition's refusal names, each once and with the
+    ledger's `\\_` escaping undone, so `qa_r1` reads as given (a `|`, which `record` writes as
+    `/`, stays `/`).
+    """
+    import critic  # noqa: PLC0415 - deferred sibling; reached only for a passing, unclosed unit
+    import transition  # noqa: PLC0415 - as above
+    uid = sdlc_md.norm_id(rid)
+    if transition._unanswered_delivery_reject(root, uid) is None:
+        return None
+    who = ", ".join(dict.fromkeys(critic._unescape(r.get("reviewer") or "-")
+                                  for r in critic.standing_rejects(root, uid, "delivery")))
+    return (f"carried: re-review by {who} - the verifiers pass, but transition refuses its close "
+            f"without --force on an {transition.UNANSWERED_REJECT} until the reviewer who "
+            "rejected it approves, so batch it rather than close it: after `critic.py self-check "
+            f"record`, brief that reviewer with `critic.py brief --unit {rid} --seat <seat> "
+            "--rejoinder <prior verdict file>`")
+
+
 def _weak_verify(text: str) -> bool:
     """True if a story has a non-executable / mis-written Verify line: reuses
     verify_ac.lint_verifier, so the breakdown flags prose-curl verifiers at design time instead
@@ -1047,7 +1074,11 @@ def audit_unit(root: Path | str, rec_id: str, integrity_errors: set[str] | None 
     if integrity_errors and rid in integrity_errors:
         issues.append("link-integrity")
     if status not in integrity.TERMINAL and _already_satisfied(root, rid):
-        issues.append("already-satisfied")  # verifiers pass -> close-candidate, don't build
+        carry = _carried(root, rid)
+        if carry:  # transition refuses its close: it is re-reviewed in the batch, not closed
+            info.append(carry)
+        else:
+            issues.append("already-satisfied")  # verifiers pass -> close-candidate, don't build
     return {"id": rid, "type": type_, "status": status, "issues": issues,
             "info": info, "ready": not issues}
 
