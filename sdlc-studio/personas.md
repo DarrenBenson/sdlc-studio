@@ -43,7 +43,7 @@ the registry's personas and no longer points here.
 
 > Confidence: HIGH
 
-**Role:** Delivery lead driving the pipeline; primary user
+**Role:** Delivery lead driving the pipeline
 **Technical Proficiency:** Expert
 **Primary Goal:** Run a delivery tranche end to end and trust that the paperwork
 matches the code at the close
@@ -201,6 +201,10 @@ reset it re-reads `reviews/LATEST.md` to anchor on current state, and recalls
 **Technical Proficiency:** Expert
 **Primary Goal:** Evolve the skill safely - land fixes in this repo, mirror them out
 to the installed copy, keep scripts deterministic and tested, and tag clean releases
+
+> The registry's card for this maintainer is
+> [Rowan Achterberg](./personas/rowan-achterberg-skill-maintainer.md) (D0379): design against
+> that card, not this section.
 
 ### Background
 

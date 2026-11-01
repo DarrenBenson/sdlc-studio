@@ -2,6 +2,8 @@
 US1079: with two Primaries, one per interface (D0379), each states which interface it serves.
 US1080: a story minted with no persona follows the paths those Interface rows declare.
 US1081: the shipped skill's Primary and the Negative state the run as it now runs.
+US1083: the index's history, Last updated line and seat links; the legacy file's Role fields and
+maintainer link.
 
 Two failures this guards:
 
@@ -520,6 +522,137 @@ class CardsStateTheRunTests(unittest.TestCase):
             links = links_from(card, text)
             self.assertEqual([n for n, c in primary_cards() if c.resolve() not in links], [],
                              f"{name}'s card does not link each Primary's card")
+
+
+#: The seats `persona_resolve.py resolve --seat` takes, each named by US1083 AC3.
+SEATS = ("engineering", "product", "qa")
+#: A `Last updated` line, bold or plain: `**Last updated:** 2026-11-01`.
+LAST_UPDATED = re.compile(r"^(?:\*\*)?Last updated:(?:\*\*)?\s*(\S+)\s*$", re.M | re.I)
+#: A legacy persona section's `**Role:**` field.
+ROLE_FIELD = re.compile(r"^\*\*Role:\*\*\s*(.+)$", re.M)
+ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def persona_registry(root: Path):
+    """What the shipped registry reader, `sdlc_md.persona_registry`, reads under `root`."""
+    lib = str(SCRIPTS / "lib")
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+    import sdlc_md  # noqa: PLC0415 - deferred: only the tests that read the registry import it
+    return sdlc_md.persona_registry(root)
+
+
+def headings(text: str) -> list[str]:
+    """Each `## ` heading's text, in order."""
+    return re.findall(r"^##\s+(.+?)\s*$", text, re.M)
+
+
+def history_dates(text: str) -> list[str]:
+    """The Date cell of each Revision History row, in the order written."""
+    return [row[0] for row in table_rows(card_section(text, "Revision History"))]
+
+
+def role_vocabulary() -> set[str]:
+    """The roles the shipped reader takes from the index's role headings, lower-cased."""
+    return {entry.role for entry in persona_registry(REPO).entries}
+
+
+def registry_entries(root: Path) -> list[tuple]:
+    """Each persona the reader returns under `root`, as (name, role, card file name)."""
+    return [(e.name, e.role, e.card and Path(e.card).name) for e in persona_registry(root).entries]
+
+
+def names_a_role(text: str, roles: set[str]) -> bool:
+    """Does the text name a role as a word, in any case?"""
+    return any(re.search(rf"\b{re.escape(role)}\b", text, re.I) for role in roles)
+
+
+def is_role_heading(heading: str, roles: set[str]) -> bool:
+    """Does a heading open with a role word, as the reader's role headings do?"""
+    return any(re.match(rf"{re.escape(role)}\b", heading, re.I) for role in roles)
+
+
+class RegistryRecordTests(unittest.TestCase):
+    """US1083: the index's history is complete and ordered, it links the seat cards in force, and
+    the legacy personas.md agrees with its banner."""
+
+    def setUp(self) -> None:
+        self.text = REGISTRY.read_text(encoding="utf-8")
+
+    def test_the_index_history_is_ordered_and_complete(self) -> None:
+        """AC1. Mutants: a history row moved out of date order; the 2026-07-29 row (cec10acc,
+        BG0307) dropped, or the row for any other date a commit to the index carries."""
+        dates = history_dates(self.text)
+        self.assertTrue(dates, "the index has no Revision History rows")
+        self.assertEqual([d for d in dates if not ISO_DATE.fullmatch(d)], [],
+                         "a history date is not YYYY-MM-DD, so string order is not date order")
+        self.assertEqual(dates, sorted(dates), "the index's Revision History is not in date order")
+        log = subprocess.run(["git", "log", "--date=short", "--format=%ad", "--",
+                              REGISTRY.relative_to(REPO).as_posix()],
+                             cwd=str(REPO), capture_output=True, text=True, check=True)
+        committed = set(log.stdout.split())
+        self.assertTrue(committed, "git log names no commit to the index: is this a shallow clone?")
+        self.assertEqual(sorted(committed - set(dates)), [],
+                         "a commit to the index carries a date its Revision History has no row for")
+
+    def test_the_index_carries_its_last_updated_date(self) -> None:
+        """AC2. Mutants: the Last updated line dropped, doubled, or left behind the latest row."""
+        dates = history_dates(self.text)
+        self.assertTrue(dates, "the index has no Revision History rows")
+        stated = LAST_UPDATED.findall(self.text)
+        self.assertEqual(len(stated), 1, f"the index carries {len(stated)} Last updated lines")
+        self.assertEqual(stated[0], max(dates), "Last updated is not the latest history date")
+
+    def test_the_index_links_the_seat_cards_in_force(self) -> None:
+        """AC3, the paths asked of the shipped CLI. Mutants: a seat card linked under a role
+        heading, which the reader registers as a persona; a seat left unlinked, or linked to the
+        shipped template its override replaces."""
+        in_force = set()
+        for seat in SEATS:
+            run = subprocess.run([sys.executable, str(SCRIPTS / "persona_resolve.py"), "resolve",
+                                  "--seat", seat, "--path-only", "--root", str(REPO)],
+                                 capture_output=True, text=True, cwd=str(REPO))
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            in_force.add(Path(run.stdout.strip()).resolve())
+        holding = [h for h in headings(self.text)
+                   if links_from(REGISTRY, card_section(self.text, re.escape(h))) & in_force]
+        self.assertEqual(len(holding), 1, f"the seat cards are linked under {holding}, not one "
+                                          f"heading")
+        self.assertFalse(is_role_heading(holding[0], role_vocabulary()),
+                         f"the seat cards are linked under a role heading: {holding[0]}")
+        self.assertEqual(links_from(REGISTRY, card_section(self.text, re.escape(holding[0]))),
+                         in_force, "the seat heading's links are not exactly the cards in force")
+        home = Path(tempfile.mkdtemp(prefix="us1083-"))
+        try:
+            unlinked = home / "sdlc-studio" / "personas" / "index.md"
+            unlinked.parent.mkdir(parents=True)
+            unlinked.write_text("\n".join(line for line in self.text.splitlines()
+                                          if not links_from(REGISTRY, line) & in_force),
+                                encoding="utf-8")
+            self.assertTrue(registry_entries(REPO), "the registry reader returns nobody")
+            self.assertEqual(registry_entries(REPO), registry_entries(home),
+                             "the seat links change the personas the registry reader returns")
+        finally:
+            shutil.rmtree(home, ignore_errors=True)
+
+    def test_the_legacy_file_agrees_with_its_banner(self) -> None:
+        """AC4. Mutants: line 46's Role field left calling the operator the primary user; the
+        skill-maintainer section left without the tooling Primary's card, or linking another."""
+        text = LEGACY.read_text(encoding="utf-8")
+        roles = role_vocabulary()
+        self.assertTrue(roles, "the index declares no role the reader reads")
+        sections = {h: card_section(text, re.escape(h)) for h in headings(text)}
+        fields = {h: ROLE_FIELD.findall(body) for h, body in sections.items()}
+        self.assertEqual([h for h, found in fields.items() if len(found) != 1], [],
+                         "a legacy persona section does not carry exactly one Role field")
+        self.assertEqual({h: f[0] for h, f in fields.items() if names_a_role(f[0], roles)}, {},
+                         f"a legacy Role field names a registry role ({sorted(roles)})")
+        _, tooling = shipped_and_tooling()
+        self.assertEqual(len(tooling), 1, "not exactly one tooling Primary to link")
+        maintainer = [h for h in sections if re.search(r"\bmaintainer\b", h, re.I)]
+        self.assertEqual(len(maintainer), 1, f"not one skill-maintainer section: {maintainer}")
+        self.assertIn(tooling[0][1].resolve(), links_from(LEGACY, sections[maintainer[0]]),
+                      f"the {maintainer[0]} section does not link {tooling[0][0]}'s card")
 
 
 def tracked_markdown() -> list[Path]:
