@@ -2,8 +2,8 @@
 
 > **Project:** SDLC Studio
 > **Version:** 6.1.0
-> **Last Updated:** 2026-10-22
-> **Status:** Generated (brownfield - awaiting validation)
+> **Last Updated:** 2026-11-01
+> **Status:** In Progress
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
 > setup (`package.json` scripts, `.claude/skills/sdlc-studio/scripts/tests/`,
@@ -14,7 +14,7 @@
 > Consistent with PRD section 5 (Non-Functional Requirements) and section 10
 > (Quality Assessment), and with the TRD component and script inventory.
 >
-> **Coverage:** v6.0.0 as cut, plus the 6.1 work on `main` since. The
+> **Coverage:** v6.1.0 as cut, plus the 6.2 work on `main` since. The
 > document version tracks the product version; it is not itself a release artefact.
 
 ---
@@ -171,27 +171,27 @@ overstating coverage.
 
 | Level | Target | Rationale |
 | --- | --- | --- |
-| Unit (scripts) | 80% statement (blocking CI gate); ~90% aspiration | Core deterministic logic; the part that can and must be tested as code. The 80% floor is the hard gate, enforced by `coverage report --fail-under=80` in CI; the ~90% figure is the density aspiration, not the gate. [HIGH] |
-| Static / lint (markdown) | 100% of `*.md` pass all checkers | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
+| Unit (scripts) | 80% statement, the blocking CI floor | Core deterministic logic; the part that can and must be tested as code. The floor is the hard gate, enforced by `coverage report --fail-under=80` in CI; the measured figure is the one that step prints on each CI run, not a number written here. [HIGH] |
+| Static / lint (markdown) | Every `*.md` passes every checker | House style and structural invariants are binary - any violation fails the gate. [HIGH] |
 | Integration (scripts vs fixtures) | Every script with side effects has at least one fixture-workspace test; write-confinement asserted by a snapshot before/after; a create-then-validate round trip covers every creator, artefact type and schema era | Confirms the write boundary, and that content supplied to a creator actually reaches the artefact. [HIGH] |
 | Mutation (assertion integrity) | Survived mutants are findings, triaged; an un-mutatable surface is reported un-checked, never passed | A passing suite over dead code is the failure this level exists to expose. Run on demand; no gate lane reads it. [HIGH] |
 | Eval scenarios (flow conformance) | Every blocking behaviour in every scenario graded; an ungraded blocking behaviour fails the gate - `report` enumerates the scenarios on disk, so a scenario nobody touched fails rather than vanishing | The nearest thing the markdown tier has to a behaviour test. Covers named surfaces, not the whole corpus. [HIGH] |
 | End-to-end | Not applicable | No running application or service to drive. [HIGH] |
 
 > Coverage IS wired into CI as a **blocking** gate at an **80% floor** (`coverage
-> report --omit='*/tests/*' --fail-under=80`; actual is roughly 82%). The ~90% figure
-> is the aspiration the per-script test density aims at, not the hard gate. See
-> Coverage Measurement below. [HIGH]
+> report --omit='*/tests/*' --fail-under=80`). This document states the floor and points at
+> the CI step for the measured figure, and per-unit added-line coverage is a separate, opt-in
+> measure. See Coverage Measurement below. [HIGH]
 
 ### Unit Testing
 
 | Attribute | Value |
 | --- | --- |
-| Coverage Target | 80% statement, blocking CI gate (`coverage report --fail-under=80`); ~90% aspiration [HIGH] |
+| Coverage Target | 80% statement, the blocking CI floor (`coverage report --fail-under=80`) [HIGH] |
 | Framework | Python `unittest` (stdlib) |
 | Execution | `python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests` (shipped scripts); the repo-only checkers under `tools/tests` run under pytest through the push's plan, `gate.py --boundary push --run-tests tools/tests/test_*.py`, in CI as at the push; `npm test` runs both |
 | Suite size | MINUTES rather than seconds for both suites. Run the discover command for the live count and `tools/gate_timing.py estimate` for the live duration rather than trusting a pinned number: both drift every sprint, and the cost is why the hook skips the suites for a commit that cannot reach them |
-| Location | `.claude/skills/sdlc-studio/scripts/tests/test_<script>.py`; `tools/tests/` for the repo-only checkers |
+| Location | `.claude/skills/sdlc-studio/scripts/tests/` for the shipped scripts and `tools/tests/` for the repo-only checkers, each holding per-script and per-unit lean modules (see Test Organisation) |
 
 The suite operates on small temporary fixture trees, which is what keeps a
 full run cheap enough to sit in a pre-commit hook.
@@ -342,19 +342,26 @@ untested area described under Test Strategy and Philosophy.
 
 ### Performance Testing
 
-Not gated as a runtime metric. The performance budget is context tokens, addressed
+Mostly not gated as a runtime metric. The performance budget is context tokens, addressed
 structurally by progressive disclosure (always-loaded `SKILL.md` held under 500
-lines by `check_budgets.py`), not by a latency assertion. Script runtime is
-observed (the recorded suite runs, minutes not seconds) but not asserted against a threshold. See the
-quality-gate table for the NFR mapping.
+lines by `check_budgets.py`), not by a latency assertion. One read path is bounded:
+`test_status.py::GatherPerformanceTests` and `test_status.py::HintPerformanceTests` hold
+`status` and `status hint` to a wall-clock bound over a corpus-shaped fixture. Both bounded
+tests are marked `boundary_only`, so a commit's pytest selection leaves them out and the push
+and CI run them.
+Other script runtime is observed but not asserted against a threshold. See the quality-gate
+table for the NFR mapping.
 
-The gate's cost has a declared budget of 45 s (`GATE_BUDGET_S` in `gate.py`, set against a
-measured 33 s for the standard lane set, and overridden per project by `gate.budget_seconds`).
-It is not a timeout: every run measures its cost against it and reports an overrun without
-refusing, keeping the last cost in `.local/gate-cost.json`. Every run in this repository now
-exceeds it (BG1065), so the 33 s is where the budget came from, not what the gate costs. A commit's selected suites are timed
-against the commit-msg hook's advisory 90-second budget, and a boundary run's measured cost
-comes from `python3 tools/gate_timing.py estimate`.
+The gate's cost has a declared budget of 45 s (`GATE_BUDGET_S` in `gate.py`, overridden per
+project by `gate.budget_seconds`). It is not a timeout: every run measures its cost against it
+and reports an overrun without refusing, and the CLI keeps an unscoped, non-boundary run's cost
+in `.local/gate-cost.json` as the baseline the next is compared with. The budget is derived
+from a measured standard-lane run recorded beside it as data (`GATE_BUDGET_MEASURED`, with that
+run's seconds, date and commit), and `test_gate_budget.py::GateBudgetTests` holds it not below
+that measurement. At a push or release boundary only the standard lanes are judged against it;
+the boundary lanes, the full suite among them, are named with their seconds outside the budget
+(BG1065). A commit's selected suites are timed against the commit-msg hook's advisory 90-second
+budget, and a boundary run's measured cost comes from `python3 tools/gate_timing.py estimate`.
 
 The **token forecast is not a test-strategy instrument and must not be read as one.**
 `sprint plan` estimates a batch's token cost, `retro accuracy` compares that against
@@ -387,18 +394,28 @@ quality-gate tables for the NFR mapping and the remaining gaps.
 ## Quality Gates (PRD section 5 NFR mapping)
 
 Every PRD Non-Functional Requirement is mapped to a concrete gate or an explicit
-not-gated rationale. This closes the PRD-to-TSD traceability gap.
+not-gated rationale. Each row quotes words from each PRD section 5 clause it maps, as the PRD
+writes them. `tools/tests/test_lean_tsd_refresh.py` splits that section into clauses at each
+`.` or `;` that a space or the end follows, outside a code span or a parenthesis, with each list
+item a block of its own. It holds each clause to a row, each quote to a clause, and each test a
+row's gate cell names in a code span as `test_<module>.py[::Class[::test]]` to the test trees.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
-| **Performance** - read path sub-second, writes bounded | Indirect: a regression that made scripts slow shows in the gate's own recorded cost, measured on every run against its declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, overridden by `gate.budget_seconds`) and reported per lane, never refused. Every run in this repository now exceeds it (BG1065). No explicit per-script latency threshold is asserted. Treated as observed, not gated. A mutation run is not a gate lane (minutes per run). | No | [MEDIUM] |
-| **Performance** - always-loaded context minimal | `check_budgets.py`: `SKILL.md` must be < 500 lines, each `reference-*.md` within its declared ceiling. Hard gate via `lint:budgets`. | Yes | [HIGH] |
-| **Security** - no network calls except `gh` and project Verify tools | Enforced by the script contract and the test design: `github_sync.py` tested with `gh` mocked; pure-stdlib (no third-party clients). Not gated by a network-egress scanner, but the script tier is scanned by bandit (below). | Partial (by test design, plus the bandit scan) | [HIGH] |
-| **Security** - static analysis of the shipped script tier | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q` runs as a CI step; a medium-or-high severity finding fails the build. Covers the shipped scripts only. | Yes | [HIGH] |
-| **Security** - no secrets handled by the skill | Not gated by a dedicated secret scanner. Enforced by design (no token handling; `gh` owns auth) and by code review; bandit would also flag common hardcoded-secret patterns in the script tier. N/A as a dedicated gate. | No (design control) | [MEDIUM] |
-| **Scalability** - progressive disclosure keeps always-loaded context constant | `check_budgets.py` line budgets (as above); new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
-| **Scalability** - agentic waves bound concurrency | Not gated. Concurrency bounds are an instruction-level behaviour in `reference-agentic-lessons.md`; no executable test asserts wave sizing. N/A as an automated gate. | No | [MEDIUM] |
-| **Availability** - offline-capable; sync aborts cleanly when `gh`/remotes absent | Offline capability comes from the core pipeline scripts, which make no network calls (verified by the no-network contract and stdlib-only design). `github_sync.py` does not soft no-op: with `gh` absent it aborts with a clear error (exit 127), asserted by `test_github_sync.py`. So the NFR is met for the offline pipeline, but `github_sync` does not degrade gracefully - callers must handle the non-zero exit. | Partial (unit) | [MEDIUM] |
+| **Performance** - "each run in under a minute"; "minutes, not seconds" | Observed on most of the read path, with one part bounded: `test_status.py::GatherPerformanceTests` and `test_status.py::HintPerformanceTests` hold `status` and `status hint` to a wall-clock bound over a corpus-shaped fixture, and `reconcile detect` has no such bound. A slowdown also shows in the gate's own cost, measured on every run against its declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, overridden by `gate.budget_seconds`) and reported, never refused; at a push or release boundary only the standard lanes are judged against it. A mutation run is not a gate lane. | Partial (the `status` bounds run at the push and in CI) | [MEDIUM] |
+| **Performance** - "write nothing in the workspace"; "keeps its cache in the skill's own"; "write within a tested, bounded surface" | `test_lean_prd_refresh.py::PrdRulesTests` runs each script the PRD names as writing nothing on a fixture workspace and names any file it creates, changes or removes; it also refuses a write primitive in such a script's source, and a script named as writing whose source has none. Where the release check keeps its cache, and that each writer stays within its surface, is not held by this test. | Partial (the read-only set) | [MEDIUM] |
+| **Performance** - "Scripts are pure stdlib" | Not gated as such. `test_lean_gate_toolchain_docs.py::GateToolchainDocsTests` reads the third-party modules the shipped scripts import inside a `try` that catches the import's failure, and holds the framework rows to them; it does not read an import outside such a `try`. | No | [MEDIUM] |
+| **Security** - "outbound, optional paths only"; "the `gh` CLI, from `github_sync.py`" | `test_lean_prd_refresh.py::PrdRulesTests` scans each shipped script's source for a `gh` argv, a `fetch origin` argument pair and an HTTP client, and refuses a PRD list that names a script with none or omits one with one. Each `gh` caller is tested with no real `gh`: `test_github_sync.py` with it mocked, `test_lean_frozen_report_inputs.py::FrozenCiRunsTests` with a stub on `PATH`, and `test_release_cut.py::ForgeCiTests` against a scripted forge. | Yes (the suite) | [HIGH] |
+| **Security** - "a direct HTTPS GET to `api.github.com`" | `test_version_check.py::CheckTests`: a disabled check makes no network call, and an offline or raising fetch reads as offline. | Yes (the suite) | [HIGH] |
+| **Security** - "`git fetch origin` from `sprint.py`" | `test_sprint_rolling.py::BoundaryOriginFetchTests`: the boundary fetches each cycle, and `--no-fetch` suppresses the fetch and still compares. `test_sprint_rolling.py::UnreachableOriginIsNotCleanTests`: a failed fetch is reported unverified, which `--strict` turns into a refusal at the plan and a stop at the boundary. | Yes (the suite) | [HIGH] |
+| **Security** - "the tools a project's Verify lines invoke" | `test_verify_ac.py::RestrictedHttpTests`: with `SDLC_VERIFY_HTTP_HOSTS` set, the `http` verb refuses a host off the list and allows one on it. The list bounds the `http` verb only; `verify_ac.py run --no-shell` blocks the shell-backed verbs outright. | Partial (the `http` verb) | [MEDIUM] |
+| **Security** - "Id allocation reads `origin/main` with `git ls-tree` and never fetches" | `test_lean_prd_refresh.py::PrdRulesTests` refuses this sentence when `next_id.py`'s source makes a network call. | Yes (the suite) | [HIGH] |
+| **Security** - "No secrets handled by the skill"; "secret handling is the consuming project's concern" | Not gated: no secret scanner runs. Enforced by design (no token handling; `gh` owns auth) and by code review. | No (design control) | [MEDIUM] |
+| **Scalability** - "Progressive disclosure keeps always-loaded context minimal" | `check_budgets.py`: `SKILL.md` must be under 500 lines, and a long `reference-*.md` within the ceiling `check_budgets.py` records for it. Hard gate via `lint:budgets`; new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
+| **Scalability** - "Agentic waves bound concurrency" | Not gated. `sprint.py` computes the waves as dependency levels (`_topo_waves`, held by `test_sprint.py::WaveTests`), and `_topo_waves` caps no wave's size: the bound on concurrency is the instruction in `reference-agentic-lessons.md`. | No | [MEDIUM] |
+| **Scalability** - "the appetite breaker bounds an unattended run" | `test_loop_guard.py::BudgetVerdictTests` trips the breaker when the appetite's minutes or units are spent, `test_loop_guard.py::BudgetExitCodeTests` gives it an exit code distinct from quarantine's, and `test_loop_guard.py::BudgetCliTests` drives `loop_guard.py budget` from a recorded run state. | Yes (the suite) | [HIGH] |
+| **Scalability** - "Schema-v3 ULID identity" | `test_sdlc_md.py::UlidIdentityTests`: a new ULID sorts by time and carries randomness, and the id pattern, the cell search and `norm_id` read both eras; `test_lean_next_id_v3.py::NextIdV3Tests`: a schema-v3 project is allocated no sequential id. No test runs uncoordinated writers on separate machines. | Partial (unit) | [MEDIUM] |
+| **Availability** - "the core pipeline needs no network"; "Sync FAILS LOUD rather than degrading"; "Callers must handle that non-zero exit"; "Graceful degradation is deliberately NOT implemented" | `test_lean_prd_refresh.py::PrdRulesTests` holds each shipped script whose source makes a `gh`, `fetch origin` or HTTP call to the PRD's Security list, so a call outside the core pipeline's named paths fails the suite. `github_sync.py` does not degrade gracefully: with `gh` absent it aborts with a clear error (exit 127), asserted by `test_github_sync.py`, so callers must handle the non-zero exit (D0071). | Partial (unit) | [MEDIUM] |
 
 Additional gates that back the NFRs but sit outside the four PRD headings:
 
@@ -412,7 +429,7 @@ Additional gates that back the NFRs but sit outside the four PRD headings:
 | Release tag guard | `release_cut.py tag-check --commit <sha>` refuses unless the release gate was recorded green on that commit and the forge reports CI passed on it. It does not ask whether a close is owed: `sprint sign` seals each run, and an owed close is reported by the `status`/`hint` advisory. | Yes (tag) |
 | Release version lane | `gate.py --release` binds a blocking `versions` lane that runs `check_versions --strict`, so the pre-tag obligation is ONE command with ONE exit code rather than a gate plus a separate check whose exit code can be dropped. Invoked as a subprocess: `check_versions.py` is a repo-only development tool, so a consuming project reports the lane N/A rather than failing on a tool it never had. A manual pre-tag step (D0375). | Yes (release) |
 | Neutrality | `check_neutrality.py`: no private consuming-project name in a tracked file | Yes |
-| Coverage floor | `coverage report --omit='*/tests/*' --fail-under=80`: statement coverage of the script tier at or above the 80% floor (the ~90% figure is an aspiration, not this gate) | Yes |
+| Coverage floor | `coverage report --omit='*/tests/*' --fail-under=80`: statement coverage of the script tier at or above the 80% floor | Yes |
 | Security scan | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding in the shipped script tier | Yes |
 | Instruction hygiene | `validate.py instructions` passes | Manual (recommended; not yet CI-wired - no npm script or workflow invokes it) |
 
@@ -468,29 +485,37 @@ route by which `--skip retro` once silently voided the retro gate:
 
 ## Coverage Measurement
 
-Statement coverage for the script tier IS collected in CI and gated. The CI job runs
-the suite under `coverage.py` scoped to the shipped scripts and fails the build below
-an **80% floor**:
+Statement coverage for the script tier IS collected in CI and gated. In the `ci` job of
+`.github/workflows/lint.yml`, the suite step runs the skill suite once under `coverage run`,
+through `tools/skill-tests.sh` with `SKILL_TESTS_COVERAGE` set, and the
+`Coverage gate (runtime scripts, >= 80%)` step reads the data it wrote and fails the build
+below an **80% floor**:
 
 ```bash
-coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
 coverage report --omit='*/tests/*' --fail-under=80
 ```
 
-The 80% floor is the **hard gate**; the ~90% figure quoted under Coverage Targets is
-an **aspiration** the per-script test density aims at (a dedicated test module for every
-script and shared-library module, bar the named exceptions the Unit coverage map lists),
-not the threshold the build enforces. Measured coverage currently sits at roughly 82%, above the floor and below
-the aspiration. [HIGH] To reproduce the report locally with per-line detail:
+The floor is the **hard gate**. This document does not pin the measured figure, which moves
+with every change: it is the `TOTAL` line that step prints, and the latest CI run's is the
+current one. [HIGH] To reproduce the report locally with per-line detail:
 
 ```bash
 python3 -m coverage run --source=.claude/skills/sdlc-studio/scripts -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
 python3 -m coverage report -m --omit='*/tests/*'
 ```
 
+**Per-unit added-line coverage** is a second measure, opt-in per project.
+`verify_ac.py run --coverage` measures which of each unit's own added lines its own verifiers
+executed, following child interpreters, against the base ref of the run whose approved batch
+names the unit (or `--base`), and exits 1 on any uncovered line. `review.line_coverage` decides
+what a terminal transition does with that measure: `off` collects nothing, `report` prints each
+uncovered added line and proceeds, and `block` refuses, naming each one by file and line.
+In this repository `review.line_coverage` is `off`, the shipped default, which
+`sdlc-studio/.config.yaml` leaves unset.
+
 Statement coverage is the weaker of the two questions, and it is worth saying which is
 which. Coverage asks *was this line executed*; a mutation run asks *would a test
-have noticed if the line were wrong*. A tier can sit at 90% coverage with surviving
+have noticed if the line were wrong*. A tier can sit at high coverage with surviving
 mutants, and that combination is the one worth hunting.
 
 Markdown "coverage" is binary rather than percentage-based: the corpus either
@@ -655,7 +680,7 @@ the same commit.
 | Dead flags (`lint:dead-flags`) | No flag whose parsed destination no line acts on | Yes |
 | Action pins (`lint:action-pins`) | Every GitHub Action pinned to a full commit SHA | Yes |
 | Disclosure (`lint:disclosure`) | Reference and help files carry a `Load when:` trigger and an index entry | No (advisory: it exits 0 unless run with `--strict`) |
-| Coverage floor | `coverage report --fail-under=80`: script-tier statement coverage at or above the 80% floor (~90% is the aspiration, not the gate) | Yes |
+| Coverage floor | `coverage report --fail-under=80`: script-tier statement coverage at or above the 80% floor | Yes |
 | Security scan (bandit) | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding | Yes |
 | Artefact gate (`gate.py`) | Every blocking lane PASSes | Yes |
 | Release gate (`gate.py --release`) | Every story `Verify:` expression executes green; no unspecified AC; no unexamined AC layer | Yes, as a manual pre-tag step (D0375): no hook or workflow runs it |
@@ -716,7 +741,15 @@ holds only when someone remembers it.
   <script>.py               # the shipped helpers (census: tools/test_census.py)
   lib/                      # the shared modules; sdlc_md.py is the parsing core
   tests/
-    test_<script>.py        # one module per script (live count: the discover command)
+    test_<script>.py        # per-script: named after the script or lib/ module it tests
+    test_lean_<topic>.py    # per-unit lean: named for what a delivered unit's criteria hold
+    loader.py               # the one authority for importing a script under test
+    gitutil.py              # hermetic git, with a fixed identity, for the tests that run git
+    quiet.py                # captures the diagnostics a tool writes in a test not about them
+    workspace.py            # whether a test runs inside this artefact-bearing dev repo
+    boundary.py             # boundary_only for unittest, keyed on SDLC_STUDIO_BOUNDARY_SUITE
+    retired_surface.py      # the retired v5 surface the shipped-doc tests scan for
+    fixtures/               # static inputs the tests read
 tools/
   check_links.py            # repo-only CI checkers, themselves unit-tested
   validate_skill.py
@@ -727,11 +760,35 @@ tools/
   lint-style.sh
   style-allowlist.txt
   eval_run.py               # eval-scenario runner
-  enable-hooks.sh           # installs the pre-commit gate
+  enable-hooks.sh           # installs the tracked hooks
   tests/                    # the checkers' own suite (not shipped in the skill)
+    test_<script>.py        # per-script
+    test_lean_<topic>.py    # per-unit lean
+    conftest.py             # puts this directory on sys.path under pytest
+    hookutil.py             # the one reader of what the commit hooks invoke
+.githooks/
+  pre-commit                # the cheap guards; decides whether the suites are needed
+  commit-msg                # the message rules, then the test modules the change selects
+  pre-push                  # gate.py --boundary push: both suites in full
+conftest.py                 # confines a pytest session's temporary files to one directory
+pytest.ini                  # importlib mode and the serial_only and boundary_only markers
 .markdownlint.json          # markdownlint config
 package.json                # lint and test entry points
 ```
+
+Both test trees hold modules of each convention. A **per-script** module, `test_<script>.py`, is
+named after the script or `lib/` module it tests, as the script contract asks. A **per-unit
+lean** module, `test_lean_<topic>.py`, is named for what a delivered unit's criteria hold,
+which can span several scripts or a document; it can name the module it covers with a
+`# test-census-subject: <path>` line, which `tools/test_census.py` reads before any derived
+attribution.
+
+The two markers in `pytest.ini` shape a pytest run: a `serial_only` test runs in a serial
+phase after the parallel one, and a `boundary_only` test is left out of a commit's selected run
+and runs at the push and in CI. `boundary.py` gives the unittest runner the same deferral. The
+hooks run the suites: `commit-msg` runs the modules a commit's change selects through
+`gate.py --run-tests`, and `pre-push` runs `gate.py --boundary push` (on the gate host when one
+is set; see Pipeline Stages), whose `full-suite` lane runs both suites once.
 
 ---
 
@@ -746,16 +803,17 @@ package.json                # lint and test entry points
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-20 | Generate mode (brownfield extraction) | Initial TSD reverse-engineered from the skill's actual test setup |
-| 2026-07-29 | 5.0.0 | Scope §1 pinned the script tier at 58 scripts and a six-module `lib/` against a tree carrying 70 and 5 - about a fifth short, in the only inventory bounding the unit-test scope. Restated as the SET, with the census named. `tools/tests/test_spec_counts_are_not_pinned.py` now holds both specs to it, comparing against the census rather than against a second number written in the guard. |
 | 2026-07-14 | Generate mode (v4 refresh) | Added the mutation gate (assertion integrity), the eval scenarios (flow conformance), the artefact and release gates with their bound lanes, the story-only rule for executable verifiers, verification depth on a terminal bug status, and the enforced pre-commit hook. Corrected the lint chain (six checks was stale; it is eight), the suite size (181 was stale; it is 2151), the script count (10 was stale; it is 58), and the link-check scope |
 | 2026-07-17 | Spec-truth alignment | Recorded the blocking 80% CI coverage gate (`coverage report --fail-under=80`) and reconciled it with the ~90% aspiration - correcting the stale "coverage is not wired into CI" claim in Coverage Targets and Coverage Measurement. Recorded the blocking bandit security scan (`bandit -r ... -ll -x '*/tests/*' -q`) in Security Testing, the NFR mapping, the tools table, and both quality-gate tables - correcting the stale "no dedicated security scanner is wired" claim |
 | 2026-07-24 | Spec-truth reconcile (mutation) | Reconciled the mutation entries against `mutation.py` and `gate.py`: the Output row now names the per-target ledger beside the report, the Gate row and the gate-lane table carry the per-file covered / STALE / uncovered verdict in place of the superseded whole-blob rev-or-edit rule, and the test-tier map names the ledger's bound and provenance. Corrected the pre-commit blockquote's "executably enforced" over an advisory lane. The findings table, including the claims checked and left unchanged, is recorded in US0385 |
+| 2026-07-29 | 5.0.0 | Scope §1 pinned the script tier at 58 scripts and a six-module `lib/` against a tree carrying 70 and 5 - about a fifth short, in the only inventory bounding the unit-test scope. Restated as the SET, with the census named. `tools/tests/test_spec_counts_are_not_pinned.py` now holds both specs to it, comparing against the census rather than against a second number written in the guard. |
 | 2026-09-25 | Restatements cut (US0933, D0266) | In `## Test Levels`, the Unit Testing suite-size row and the paragraph under its table state no test or module count, and the row drops its two `measured:` markers, whose only reader US0879 deleted. The level headings and backticked paths the runner reads are unchanged. |
 | 2026-10-03 | Spec truth for 6.1 (US0984) | The TSD described machinery v6 retired. The mutation gate, its lane and its `.local/mutation-runs.json` ledger are gone, so the Mutation Testing level describes `mutation.py run` as the on-demand instrument it is (its report and per-run series, read by no gate lane); the artefact-gate lane table names the lanes `gate.py` registers, adding `window`, `changelog-fragments`, the on-demand lanes and the push and release boundary lanes; the verification-depth gate gives way to the Fixed gate on a green recorded run; `carry_forward`, deleted in 6.1, leaves the coverage map. |
 | 2026-10-19 | US1084 | The pipeline stages follow the three hooks in git's order, naming each hook's `--list`, the push stage's prerequisite check and red-main acknowledgement (D0181), and the commit's advisory 90-second budget. The release steps are named manual pre-tag steps (D0375), and the performance NFR states the gate's declared budget. The push stage follows the hook's own steps, the artefact gate's write claim is corrected, the noise ratchet's place is stated, the delivery gates are tabulated, and version consistency blocks on every commit |
 | 2026-10-19 | US1085 | The framework rows name every declared package. A CI jobs table names each job with its triggers and what it runs, and the corpus baseline with what it compares. Every lint check in the chain is named, and no count of them is stated |
 | 2026-10-19 | US1086 | The push stage says where the gate runs with a host configured, with none, and with `SDLC_GATE_LOCAL=1`, that an unreachable host refuses the push, when the host's preflight runs, and how a host's cost is estimated |
 | 2026-10-22 | BG1095 | The push stage gives where the gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
+| 2026-11-01 | US1102 | Coverage is stated by the CI step that gates it, with the measured figure left to that step's output, and the ~90% aspiration is gone; per-unit added-line coverage (`verify_ac.py run --coverage`, `review.line_coverage`) is described with this repository's setting. Test Organisation names the per-script and per-unit lean conventions, the shared helpers, the pytest markers and the hooks. The NFR table quotes each PRD section 5 clause it maps, adding rows for the network paths, the appetite breaker and ULID identity, and states the `status` wall-clock bounds. The gate budget is described as BG1065 left it. The header names the 6.2 baseline and a defined status, and this history runs in date order |
 
 ---
 
