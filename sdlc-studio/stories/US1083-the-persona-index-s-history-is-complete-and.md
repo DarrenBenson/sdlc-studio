@@ -1,6 +1,6 @@
 # US1083: The persona index's history is complete and ordered, it links the seat cards, and the legacy personas.md agrees with its banner
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given the persona index's Revision History, when its dates are read, then they are in ascending order, and every date `git log --date=short` gives for a commit that changed `sdlc-studio/personas/index.md` is one of them
   - **Verify:** pytest tools/tests/test_persona_coherence.py::RegistryRecordTests::test_the_index_history_is_ordered_and_complete
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the persona index, when it is read, then it carries a `Last updated` line equal to its latest Revision History date
   - **Verify:** pytest tools/tests/test_persona_coherence.py::RegistryRecordTests::test_the_index_carries_its_last_updated_date
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given the persona index, when its links under a non-role heading are read, then their targets are exactly the paths `persona_resolve.py resolve --seat <seat> --path-only` prints for engineering, product and qa, and the registry reader returns the same personas it returns without the links
   - **Verify:** pytest tools/tests/test_persona_coherence.py::RegistryRecordTests::test_the_index_links_the_seat_cards_in_force
+  - **Verified:** yes (2026-11-01)
 - **AC4:** Given the legacy `sdlc-studio/personas.md`, when each persona section's `**Role:**` field below its banner is read, then none names a role from the index's role vocabulary (read from the index's role headings), and its skill-maintainer section links the card of the tooling Primary `primary_cards()` returns
   - **Verify:** pytest tools/tests/test_persona_coherence.py::RegistryRecordTests::test_the_legacy_file_agrees_with_its_banner
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

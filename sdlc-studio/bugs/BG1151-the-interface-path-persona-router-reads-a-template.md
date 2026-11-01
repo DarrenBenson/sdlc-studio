@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, tools/tests/test_persona_coherence.py, changelog.d/BG1151.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, tools/tests/test_persona_coherence.py, changelog.d/BG1151.md, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, sdlc-studio/personas/index.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1080 APPROVE by qa-seat-US1080-r1 (brief 7c3f6bee8af2): mutants M14 and M15 survive; the placeholder, escaped-pipe and overlap probes as described.
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file
@@ -39,6 +39,10 @@ Treat a row still carrying `{{...}}` as undeclared (or take the example out of c
 ## Impact
 
 In a multi-Primary cast, stories can be minted against the wrong Primary without a warning.
+
+## Notes
+
+- From US1083's review (2026-11-01): personas/index.md:16-18 and changelog.d/US1083.md:9-11 say an unnamed mint names Rowan when its Affects, paperwork set aside, 'lie wholly under' tools/, .githooks/ and .github/. A unit whose only path is a test module under tools/ leaves nothing after the set-aside and mints Maya (artifact.py `_interface_primary`). Add 'and at least one path remains' to the sentence.
 
 ## Revision History
 
