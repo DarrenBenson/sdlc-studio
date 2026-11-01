@@ -247,9 +247,14 @@ and the skill's own cross-project `lessons/` registry.
 - `recall`: skill-tier lessons matching `--tags`/`--query` (case-insensitive
   substring); `--all` searches both tiers
 - `revalidate`: list open lessons with their horizon, or act on them - `--close
-  L-NNNN` (no longer true), `--extend L-NNNN` (still true; the horizon moves out
-  by the validity window), `--stamp` (give every horizon-less open lesson one:
-  the backfill for a log written before horizons existed)
+  L-NNNN` (no longer true), `--extend L-NNNN --reason R` (still true; the horizon
+  moves out by the validity window and `Revalidated: <date> - R` replaces any earlier
+  record; no reason is refused), `--stamp` (give every horizon-less open lesson one:
+  the backfill for a log written before horizons existed), `--unjudged-since DATE
+  [--range L-NNNN:L-NNNN]` (exit 1 listing each open lesson with no Revalidated date
+  on or after DATE, 0 when none, 2 on a malformed date or range or a scope holding no
+  lesson); the `--format json` listing carries `revalidated` and `revalidated_reason`
+  on each open row
 - `summary`: regenerate the committed `retros/LESSONS-SUMMARY.md` from the
   still-valid lessons - deterministic for a given log (no date in the output), so
   it is reproducible and the close gate can recompute it and compare

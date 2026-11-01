@@ -31,7 +31,8 @@ Subcommands:
   prune       Drop project-tier entries tied to old epics.
   recall      Surface skill-tier lessons matching tags or a query; --all searches
               both tiers.
-  revalidate  List open lessons with their horizon; --close / --extend / --stamp them.
+  revalidate  List open lessons with their horizon; --close / --extend / --stamp them;
+              --unjudged-since lists the open ones no pass has judged since a date.
   summary     Regenerate the committed LESSONS-SUMMARY.md, the digest read at sprint start.
 
 The close loop is a mechanism, not doctrine: `summary` is DERIVED output of the lessons log,
@@ -91,6 +92,12 @@ FIELD_BULLET_RE = re.compile(r"^-\s+\*\*([^*]+):\*\*\s*(.*)$")
 # The bold delimiters make the split unambiguous even when the gist itself contains " - ".
 SUMMARY_LINE_RE = re.compile(r"^-\s+\*\*(L-\d{4}):\s*(.+?)\*\*\s*(?:-\s*(.*))?$")
 ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+#: The bullet `revalidate --extend` writes: `- **Revalidated:** <date> - <reason>`, the latest
+#: judgement that the lesson still holds. Without it an extension made after a check against the
+#: tree reads exactly like a horizon moved with no judgement at all.
+REVALIDATED_FIELD = "Revalidated"
+#: `--range L-NNNN:L-NNNN`, both ends inclusive.
+LESSON_RANGE_RE = re.compile(r"^(L-\d{4}):(L-\d{4})$")
 INDEX_ROW_RE = re.compile(
     r"^\|\s*\[(LL\d{4})\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$"
 )
@@ -718,6 +725,26 @@ def upsert_field(entry: dict, name: str, value: str) -> None:
 
 def _is_iso_date(value: str) -> bool:
     return bool(ISO_DATE_RE.match(value.strip()))
+
+
+def _real_date(value: str) -> bool:
+    """A YYYY-MM-DD string naming a day the calendar has (`2026-13-01` matches the shape only)."""
+    if not _is_iso_date(value):
+        return False
+    try:
+        date.fromisoformat(value.strip())
+    except ValueError:
+        return False
+    return True
+
+
+def revalidated_of(entry: dict) -> tuple[str | None, str | None]:
+    """The entry's `Revalidated:` record as (date, reason); (None, None) when it carries none, or
+    when the value is not a real date, alone or followed by ` - <reason>`."""
+    stamp, _, reason = entry["fields"].get("revalidated", "").strip().partition(" - ")
+    if not _real_date(stamp):
+        return None, None
+    return stamp, reason.strip() or None
 
 
 def add_days(iso: str, days: int) -> str:
@@ -1692,13 +1719,25 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
     """List open project lessons with their validity horizon, or act on them: `--close` the
     ones no longer true, `--extend` the ones still true past their horizon, `--stamp` the ones
     carrying no horizon at all. Deterministic; the judgement stays the operator's, the record
-    is mechanical - and the close gate reads that record."""
+    is mechanical - and the close gate reads that record.
+
+    `--extend` requires a reason and writes it, dated, as the lesson's `Revalidated:` bullet;
+    `--unjudged-since DATE` reads those bullets back, so a re-validation pass is checked by one
+    command rather than by trusting that the dates moved for a reason."""
     try:
-        resolve_prose(args, ("reason",))
-    except ValueError as exc:                             # pragma: no cover - nothing required
-        print(f"error: {exc}", file=sys.stderr)
+        resolve_prose(args, ("reason",),
+                      required=("reason",) if getattr(args, "extend", None) else ())
+    except ValueError as exc:
+        print(f"error: --extend records why the lesson still holds: {exc}", file=sys.stderr)
+        return 2
+    since = getattr(args, "unjudged_since", None)
+    if getattr(args, "range", None) is not None and since is None:
+        print("error: --range scopes --unjudged-since; pass --unjudged-since DATE with it",
+              file=sys.stderr)
         return 2
     path = _project_file(args)
+    if since is not None:
+        return _report_unjudged(args, path, since)
     if not path.is_file():
         if args.format == "json":
             print(json.dumps({"open": [], "closed": []}, indent=2))
@@ -1727,9 +1766,11 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
                   file=sys.stderr)
             return 2
         extended = []
+        record = f"{today} - {' '.join(args.reason.split())}"   # one line, so it parses back
         for e in entries:
             if e["id"] in wanted:
                 upsert_field(e, "Review-by", add_days(today, days))
+                upsert_field(e, REVALIDATED_FIELD, record)
                 extended.append(e["id"])
         return _revalidate_write(args, path, text, entries, extended, "extended")
     if getattr(args, "stamp", False):
@@ -1742,7 +1783,8 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
             upsert_field(e, "Review-by", add_days(today, days))
             stamped.append(e["id"])
         return _revalidate_write(args, path, text, entries, stamped, "stamped")
-    open_entries = [{"id": e["id"], "title": e["title"], "horizon": horizon_of(e, days)}
+    open_entries = [{"id": e["id"], "title": e["title"], "horizon": horizon_of(e, days),
+                     **_revalidated_row(e)}
                     for e in entries if not is_closed(e)]
     if args.format == "json":
         print(json.dumps({"open": open_entries, "count": len(open_entries),
@@ -1758,8 +1800,60 @@ def cmd_revalidate(args: argparse.Namespace) -> int:
         print(f"{e['id']}  {e['title']}  [{mark}]")
     print(f"{len(open_entries)} open lesson(s) - close the stale ones with "
           "`lessons revalidate --close L-NNNN`, keep the still-true ones with `--extend "
-          "L-NNNN`, give the undated ones a horizon with `--stamp`")
+          "L-NNNN --reason R`, give the undated ones a horizon with `--stamp`")
     return 0
+
+
+def _revalidated_row(entry: dict) -> dict:
+    """The latest revalidation as the JSON rows carry it."""
+    stamp, reason = revalidated_of(entry)
+    return {"revalidated": stamp, "revalidated_reason": reason}
+
+
+def _report_unjudged(args: argparse.Namespace, path: Path, since: str) -> int:
+    """`revalidate --unjudged-since DATE [--range A:B]`: exit 1 listing each open lesson in scope
+    with no `Revalidated:` date on or after DATE, 0 when there is none, 2 on a malformed date or
+    range, or a scope holding no lesson at all (a typo'd range must not pass as judged)."""
+    if not _real_date(since):
+        print(f"error: --unjudged-since takes a date as YYYY-MM-DD, not {since!r}",
+              file=sys.stderr)
+        return 2
+    span = getattr(args, "range", None)
+    lo, hi = 0, 9999
+    if span is not None:
+        m = LESSON_RANGE_RE.match(span.strip())
+        if not m:
+            print(f"error: --range takes L-NNNN:L-NNNN, not {span!r}", file=sys.stderr)
+            return 2
+        lo, hi = sdlc_md.id_number(m.group(1)), sdlc_md.id_number(m.group(2))
+        if lo > hi:
+            print(f"error: --range {span} runs backwards; name the lower id first",
+                  file=sys.stderr)
+            return 2
+    scope_name = span.strip() if span is not None else "the log"
+    entries = (parse_project_lessons(path.read_text(encoding="utf-8"))
+               if path.is_file() else [])
+    scope = [e for e in entries if lo <= (sdlc_md.id_number(e["id"]) or 0) <= hi]
+    if not scope:
+        where = f"{scope_name} in {path}" if span is not None else str(path)
+        print(f"error: no lesson in {where} - a scope holding nothing proves nothing judged",
+              file=sys.stderr)
+        return 2
+    open_ = [e for e in scope if not is_closed(e)]
+    unjudged = [e for e in open_ if (revalidated_of(e)[0] or "") < since]
+    rows = [{"id": e["id"], "title": e["title"], **_revalidated_row(e)} for e in unjudged]
+    if args.format == "json":
+        print(json.dumps({"unjudged": rows, "count": len(rows), "open": len(open_),
+                          "since": since, "range": span}, indent=2))
+    else:
+        for r in rows:
+            last = (f"last revalidated {r['revalidated']}" if r["revalidated"]
+                    else "never revalidated")
+            print(f"{r['id']}  {r['title']}  [{last}]")
+        print(f"{len(rows)} of {len(open_)} open lesson(s) in {scope_name} unjudged since "
+              f"{since}" + (" - close each with `--close L-NNNN --reason R` or keep it with "
+                            "`--extend L-NNNN --reason R`" if rows else ""))
+    return 1 if rows else 0
 
 
 # -----------------------------------------------------------------------------
@@ -2380,7 +2474,13 @@ def build_parser() -> argparse.ArgumentParser:
     act.add_argument("--stamp", action="store_true",
                      help="Give every open lesson that has no validity horizon one (the "
                           "backfill for a log written before horizons existed)")
-    rv.add_argument("--reason", help="Reason recorded on the closed lesson(s)")
+    act.add_argument("--unjudged-since", dest="unjudged_since", metavar="YYYY-MM-DD",
+                     help="Exit 1 listing each open lesson with no Revalidated date on or after "
+                          "this date; exit 0 when there is none")
+    rv.add_argument("--range", metavar="L-NNNN:L-NNNN",
+                    help="Scope --unjudged-since to these lesson ids, both ends inclusive")
+    rv.add_argument("--reason", help="Why: recorded on each closed lesson's Status, or on each "
+                                     "extended lesson's Revalidated line (required by --extend)")
     _add_fields_file_arg(rv, "{\"reason\": \"...\"}")
     rv.add_argument("--days", type=int,
                     help=f"Validity window in days for --extend/--stamp (default: "

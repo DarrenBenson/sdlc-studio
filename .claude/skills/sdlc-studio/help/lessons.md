@@ -61,7 +61,7 @@ SDLC Studio is model-invoked - say it in plain language:
 # The sprint close loop (gated - see below)
 /sdlc-studio lessons revalidate                # List open lessons with their validity horizon
 /sdlc-studio lessons revalidate --close L-0003 --reason "fixed upstream"   # unknown id: refused, not a no-op
-/sdlc-studio lessons revalidate --extend L-0004  # Still true: push the horizon out
+/sdlc-studio lessons revalidate --extend L-0004 --reason "hook still refuses it"  # Still true: recorded, horizon out
 /sdlc-studio lessons revalidate --stamp        # Give horizon-less lessons a horizon (backfill)
 /sdlc-studio lessons summary                   # Regenerate retros/LESSONS-SUMMARY.md
 
@@ -161,15 +161,21 @@ are noise).
 
 List the open lessons with their validity horizon, or act on one. Unlike `prune`
 (which deletes by epic age), `revalidate` records the judgement in the log: a closed
-lesson stays readable, with its reason, and drops out of the summary digest.
+lesson stays readable, with its reason, and drops out of the summary digest. An extended
+lesson carries `Revalidated: <date> - <reason>`, the latest replacing an earlier one, and
+`--extend` with no `--reason` is refused. `--unjudged-since DATE` checks a pass: it exits 1
+listing each open lesson in `--range` (default: the whole log) with no Revalidated date on or
+after DATE, 0 when there is none, and 2 on a malformed date or range or one naming no lesson.
+The `--format json` listing gives each open lesson `revalidated` and `revalidated_reason`.
 
 **Usage:**
 
 ```text
 /sdlc-studio lessons revalidate                          # List open lessons + horizons
 /sdlc-studio lessons revalidate --close L-0003 --reason "schema now enforced in CI"
-/sdlc-studio lessons revalidate --extend L-0004          # Still true: horizon moves out
-/sdlc-studio lessons revalidate --extend L-0004 --days 30
+/sdlc-studio lessons revalidate --extend L-0004 --reason "the hook still refuses it"
+/sdlc-studio lessons revalidate --extend L-0004 --reason "rechecked" --days 30
+/sdlc-studio lessons revalidate --unjudged-since 2026-10-31 --range L-0001:L-0090
 /sdlc-studio lessons revalidate --stamp                  # Backfill missing horizons
 ```
 

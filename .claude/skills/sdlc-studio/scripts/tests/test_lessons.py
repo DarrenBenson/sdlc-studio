@@ -1268,7 +1268,8 @@ class ValidityHorizonTests(unittest.TestCase):
             p = self._seed(root, LESSONS_FIXTURE.replace(
                 "- **Epic:** EP0005", "- **Epic:** EP0005\n- **Review-by:** 2026-01-01"))
             with contextlib.redirect_stdout(io.StringIO()):
-                lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0002"])
+                lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0002",
+                              "--reason", "still true"])
             entry = {e["id"]: e for e in
                      lessons.parse_project_lessons(p.read_text(encoding="utf-8"))}["L-0002"]
             self.assertEqual(entry["fields"]["review-by"], "2026-08-30")  # +90 days
@@ -1314,7 +1315,8 @@ class ValidityHorizonTests(unittest.TestCase):
             self.assertEqual(rc, 2)
             self.assertIn("L-9999", err.getvalue())
             with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
-                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-9999"])
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-9999",
+                                   "--reason", "still true"])
             self.assertEqual(rc, 2)
 
     def test_extending_a_closed_lesson_is_refused(self) -> None:
@@ -1324,7 +1326,8 @@ class ValidityHorizonTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 lessons.main(["revalidate", "--project-file", str(p), "--close", "L-0001"])
             with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
-                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0001"])
+                rc = lessons.main(["revalidate", "--project-file", str(p), "--extend", "L-0001",
+                                   "--reason", "still true"])
             self.assertEqual(rc, 2)
 
     def test_closing_an_already_closed_lesson_stays_idempotent(self) -> None:

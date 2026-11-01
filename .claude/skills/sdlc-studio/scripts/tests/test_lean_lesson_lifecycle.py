@@ -7,9 +7,15 @@ because quiet was judged only on runs the archive knows to be old.
 
 Each test writes a throwaway workspace, runs `lessons.close_pass` with the run state the close
 passes it, and reads the result back through the shipped `lessons.py classes`.
+
+BG1139, the project log's end of the same lifecycle: `revalidate --extend` dropped its reason, so a
+judged extension read exactly like an unjudged one. `RevalidationRecordTests` drives
+`lessons.main` with the date pinned, and runs the script itself where the exit code is the claim.
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import subprocess
 import sys
@@ -186,6 +192,148 @@ class LessonLifecycleTests(unittest.TestCase):
         res = self._close("RUN-7")
         self.assertEqual({"LC-001": "retired", "LC-002": "active"}, self._classes())
         self.assertEqual(["LC-001"], res["retired"])
+
+
+def _log(*ids: int) -> str:
+    """A committed project log holding open lessons with these numbers, newest first."""
+    head = "# Project Lessons\n\n**Last Updated:** 2026-01-01\n"
+    return head + "".join(
+        f"\n## L-{n:04d}: Lesson {n}\n\n- **Added:** 2026-01-01\n- **Review-by:** 2026-04-01\n\n"
+        f"Body of lesson {n}.\n" for n in sorted(ids, reverse=True))
+
+
+class RevalidationRecordTests(unittest.TestCase):
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.log = self.root / lessons.DEFAULT_PROJECT_FILE
+        self.log.parent.mkdir(parents=True)
+        self.log.write_text(_log(1, 2, 3, 4, 5, 6, 7), encoding="utf-8")
+
+    def _main(self, today: str, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(lessons.sdlc_md, "now_date", return_value=today), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = lessons.main(["revalidate", "--root", str(self.root), *argv])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _script(self, *argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "lessons.py"), "revalidate", "--root",
+             str(self.root), *argv], capture_output=True, text=True, check=False, timeout=120)
+
+    def _entry(self, lid: str) -> dict:
+        return {e["id"]: e for e in
+                lessons.parse_project_lessons(self.log.read_text(encoding="utf-8"))}[lid]
+
+    def _open_rows(self) -> dict:
+        rc, out, err = self._main("2026-06-02", "--format", "json")
+        self.assertEqual(0, rc, err)
+        return {r["id"]: r for r in json.loads(out)["open"]}
+
+    def test_an_extension_records_its_date_and_reason(self) -> None:
+        """AC1. MUTANT: HEAD, which moves Review-by and drops the reason - no Revalidated line.
+        MUTANT: append the bullet rather than replace it - the second extension leaves two.
+        MUTANT: stop moving Review-by - the horizon stays 2026-04-01. MUTANT: stamp every open
+        lesson - L-0001, never extended, gains a record. MUTANT: leave the record out of the
+        `--format json` rows - the read-back misses it."""
+        rc, _, err = self._main("2026-06-01", "--extend", "L-0002", "L-0003", "--reason",
+                                "still true: the hook refuses it")
+        self.assertEqual(0, rc, err)
+        self.assertIn("- **Revalidated:** 2026-06-01 - still true: the hook refuses it",
+                      self._entry("L-0002")["body"])
+        self.assertEqual("2026-08-30", self._entry("L-0002")["fields"]["review-by"])  # +90 days
+        rc, _, err = self._main("2026-07-01", "--extend", "L-0002", "--reason", "rechecked")
+        self.assertEqual(0, rc, err)
+        body = self._entry("L-0002")["body"]
+        self.assertEqual(1, body.count("**Revalidated:**"), body)
+        self.assertIn("- **Revalidated:** 2026-07-01 - rechecked", body)
+        self.assertEqual("2026-09-29", self._entry("L-0002")["fields"]["review-by"])
+        self.assertNotIn("Revalidated", self._entry("L-0001")["body"])
+        rows = self._open_rows()
+        self.assertEqual(("2026-07-01", "rechecked"),
+                         (rows["L-0002"]["revalidated"], rows["L-0002"]["revalidated_reason"]))
+        self.assertEqual(("2026-06-01", "still true: the hook refuses it"),
+                         (rows["L-0003"]["revalidated"], rows["L-0003"]["revalidated_reason"]))
+        self.assertEqual((None, None),
+                         (rows["L-0001"]["revalidated"], rows["L-0001"]["revalidated_reason"]))
+
+    def test_a_multi_line_reason_is_recorded_on_one_line(self) -> None:
+        """A --fields-file reason may carry newlines; a bullet cut by one parses back as its first
+        line. MUTANT: write the reason verbatim - the read-back reason loses its second line."""
+        doc = self.root / "fields.json"
+        doc.write_text(json.dumps({"reason": "checked `gate.py`\nand the hook"}),
+                       encoding="utf-8")
+        rc, _, err = self._main("2026-06-01", "--extend", "L-0004", "--fields-file", str(doc))
+        self.assertEqual(0, rc, err)
+        self.assertEqual("checked `gate.py` and the hook",
+                         self._open_rows()["L-0004"]["revalidated_reason"])
+
+    def test_an_extension_with_no_reason_is_refused_by_name(self) -> None:
+        """AC2. MUTANT: HEAD, which exits 0 and moves Review-by with no reason. MUTANT: refuse
+        only a missing flag - `--reason "   "` passes and writes a blank record. Positive
+        control: the same call with a reason writes."""
+        before = self.log.read_bytes()
+        for extra in ([], ["--reason", "   "]):
+            rc, _, err = self._main("2026-06-01", "--extend", "L-0002", *extra)
+            self.assertEqual(2, rc, f"{extra}: {err}")
+            self.assertIn("--reason", err)
+            self.assertEqual(before, self.log.read_bytes(), f"{extra} wrote the log")
+        rc, _, err = self._main("2026-06-01", "--extend", "L-0002", "--reason", "holds")
+        self.assertEqual(0, rc, err)
+        self.assertNotEqual(before, self.log.read_bytes())
+
+    def test_unjudged_since_lists_each_unjudged_open_lesson_in_the_range(self) -> None:
+        """AC3, through the script. In L-0002:L-0006, L-0002 and L-0006 are the bounds and never
+        judged, L-0003 is closed, L-0004 was extended on the date and L-0005 the day before.
+        MUTANT: `>` for `>=` - L-0004 is listed. MUTANT: ignore the close - L-0003 is listed.
+        MUTANT: ignore the range - L-0001 and L-0007 are listed. MUTANT: an exclusive bound -
+        L-0002 or L-0006 is missed. MUTANT: exit 0 with rows listed. Positive control: once
+        the three are extended on the date, it exits 0."""
+        self._main("2026-06-01", "--close", "L-0003", "--reason", "fixed in the tool")
+        self._main("2026-07-01", "--extend", "L-0004", "--reason", "rechecked")
+        self._main("2026-06-30", "--extend", "L-0005", "--reason", "an earlier pass")
+        proc = self._script("--unjudged-since", "2026-07-01", "--range", "L-0002:L-0006")
+        self.assertEqual(1, proc.returncode, proc.stdout + proc.stderr)
+        listed = [ln.split()[0] for ln in proc.stdout.splitlines() if ln.startswith("L-")]
+        self.assertEqual(["L-0006", "L-0005", "L-0002"], listed)
+        self.assertIn("L-0005  Lesson 5  [last revalidated 2026-06-30]", proc.stdout)
+        self.assertIn("L-0002  Lesson 2  [never revalidated]", proc.stdout)
+        self.assertIn("3 of 4 open lesson(s) in L-0002:L-0006 unjudged since 2026-07-01",
+                      proc.stdout)
+        proc = self._script("--unjudged-since", "2026-07-01", "--range", "L-0002:L-0006",
+                            "--format", "json")
+        self.assertEqual(1, proc.returncode, proc.stderr)
+        data = json.loads(proc.stdout)
+        self.assertEqual((["L-0006", "L-0005", "L-0002"], 3, 4),
+                         ([r["id"] for r in data["unjudged"]], data["count"], data["open"]))
+        self.assertEqual("an earlier pass", data["unjudged"][1]["revalidated_reason"])
+        self._main("2026-07-01", "--extend", "L-0002", "L-0005", "L-0006", "--reason", "holds")
+        proc = self._script("--unjudged-since", "2026-07-01", "--range", "L-0002:L-0006")
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertIn("0 of 4 open lesson(s) in L-0002:L-0006 unjudged since 2026-07-01",
+                      proc.stdout)
+
+    def test_a_check_that_could_pass_vacuously_is_refused(self) -> None:
+        """A malformed date or range, a range naming no lesson, or --range on its own would
+        otherwise judge nothing and could exit 0. MUTANT: drop the empty-scope refusal -
+        L-0100:L-0200 exits 0. MUTANT: drop the date check - `2026-7-1` is compared as text and
+        answers 1 rather than refusing. Positive control: the well-formed call exits 1."""
+        for argv, needle in ((["--unjudged-since", "2026-7-1"], "YYYY-MM-DD"),
+                             (["--unjudged-since", "2026-13-01"], "YYYY-MM-DD"),
+                             (["--unjudged-since", "2026-07-01", "--range", "L-1:L-9"],
+                              "L-NNNN:L-NNNN"),
+                             (["--unjudged-since", "2026-07-01", "--range", "L-0006:L-0002"],
+                              "backwards"),
+                             (["--unjudged-since", "2026-07-01", "--range", "L-0100:L-0200"],
+                              "no lesson in L-0100:L-0200"),
+                             (["--range", "L-0001:L-0002"], "--unjudged-since")):
+            proc = self._script(*argv)
+            self.assertEqual(2, proc.returncode, f"{argv}: {proc.stdout}{proc.stderr}")
+            self.assertIn(needle, proc.stderr, argv)
+        proc = self._script("--unjudged-since", "2026-07-01", "--range", "L-0001:L-0002")
+        self.assertEqual(1, proc.returncode, proc.stdout + proc.stderr)
 
 
 if __name__ == "__main__":
