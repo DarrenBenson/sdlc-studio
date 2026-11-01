@@ -2443,6 +2443,8 @@ Recorded from retro RETRO0064.
 
 Recorded from retro RETRO0064.
 
+- **Status:** Closed - Its subject is gone: the ledger the removed `if not refused` guard sat behind no longer exists (`mutation.py:22` keeps no per-target ledger; `gate.py:382-383` removed the mutation lane).
+
 ## L-0179: **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then
 
 - **Added:** 2026-07-21
@@ -2451,6 +2453,8 @@ Recorded from retro RETRO0064.
 **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then overlaid the raw report on top of it, so the careful rule was bypassed by the surface that reads it. When you write a rule about what counts as evidence, go and check every reader of that evidence, not just the writer.
 
 Recorded from retro RETRO0064.
+
+- **Status:** Closed - Its subject is gone: `gate.py:382-383` records the mutation lane has left the gate and `mutation.py:22` states no per-target ledger is kept, so the producer/consumer overlay it describes no longer exists.
 
 ## L-0178: **The harness token capture (5,672,289 -> 472,691/pt) is NOT this sprint's cost and was blanked from the VELOCITY row as
 
@@ -2461,10 +2465,13 @@ Recorded from retro RETRO0064.
 
 Recorded from retro RETRO0063.
 
+- **Status:** Closed - Fixed by BG0236 (Status Fixed): `retro.py:2054-2059` refuses to attribute tokens to a run with no session-token baseline and `retro.py:2112` records the delta, so a long session no longer publishes the false per-point rate.
+
 ## L-0177: **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tools/skill-tests.sh:53` scrubs the variables and `.githooks/commit-msg:265-268` and `.githooks/pre-push:332-338` scrub them for the other lanes, so the protection reaches the neighbouring suites.
 
 **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the index-wipe incident, and `test_skill_tests_env.py` pins the list. The hook's tool-tests lane, invoked on the very next line, ran unscrubbed - so the first `tools/` test to build a git fixture could write ITS tree into the real repo's pending commit under `git commit -a`. Reproduced on three victim repos. A fix recorded as a lesson is not a fix applied everywhere it holds.
 
@@ -2473,7 +2480,8 @@ Recorded from retro RETRO0063.
 ## L-0176: **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `scripts/tests/test_gate.py:178-182` states the one-real-run guard is deliberately NOT torn down and records the 59-module doubling that taught it.
 
 **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not fail with this file's message. It handed back the one-real-run guard: 59 of this suite's 98 test modules sort after `test_gate` (2 import it today), and a full run in any of them took the suite 7.9s -> 14.8s, green - the exact doubling the story removed. When a guard's value IS its process-wide scope, the fix for a confusing message is a better message, not a narrower guard.
 
@@ -2482,7 +2490,8 @@ Recorded from retro RETRO0063.
 ## L-0175: **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md:131` now carries the corrected D6 row (120s against a 99s baseline, the 93.1 sum recorded as reference only), so the correction did reach the decision of record; the propagation rule still stands.
 
 **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in `.config.yaml` left RFC0048's D6 row asserting it, so the resolved decision was literally false about the file it pointed at - and US0287's AC4 ("Resolved with the chosen number AND the baseline it was measured against") silently became untrue. Spec rot created by accepting a finding halfway.
 
@@ -2491,7 +2500,8 @@ Recorded from retro RETRO0063.
 ## L-0174: **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tools/tests/test_precommit_window_guard.py:78` asserts on the hook's own branch marker, `:354` and `:435` carry positive controls, as `best-practices/testing.md:113` requires.
 
 **A test can look behavioural and still never enter the branch it names.** Round 2 killed the two hook tests written to close round 1's MAJOR: their fixture carried only the hook, so every cheap guard died on a missing file, `fail` was already 1, and both cases took the BLOCKED branch instead of the docs-only one they were named for. A mutant restoring the live bug for docs-only commits alone kept them green. Running the real thing is necessary and not sufficient - assert the branch marker, and carry a positive control, or "we ran it for real" becomes its own kind of vacuity.
 
@@ -2500,7 +2510,8 @@ Recorded from retro RETRO0063.
 ## L-0173: **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2527-2534` claim inventory covers comments and docstrings first in every brief; the lesson recurs, so it is held by the brief rather than closed.
 
 **Prose written to justify code is code that has not been reviewed - for the third sprint running.** Two of this review's three MAJORs were comments asserting a property the code did not have ("same answer as before"; "the expensive lanes ran either way"). Both read as reassuring and both were false.
 
@@ -2509,7 +2520,8 @@ Recorded from retro RETRO0063.
 ## L-0172: **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sdlc-studio/.config.yaml:192-195` records that 93.1 was a hand sum and the baseline is the hook's own measurement, and `gate.py:1856` reads the baseline the gate recorded itself.
 
 **A baseline the check cannot itself reproduce is not a baseline.** 93.1s was a hand-sum of three separately timed runs; the hook's own measurements of the same work were 99s and 83s. Measure the thing with the instrument that will do the measuring.
 
@@ -2518,7 +2530,8 @@ Recorded from retro RETRO0063.
 ## L-0171: **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:66-90` (name the entry point) and `critic.py:2461-2463` require testing the mechanism; the structural-check-versus-runtime-refusal choice is still the reviewer's call.
 
 **A guard must be tested for the MECHANISM, not the spelling that prompted it.** The structural check matched one literal call form; the regression it existed to prevent used another, and walked straight back in. Where a guard can be a runtime refusal on the path everything shares, prefer that to a source-text match.
 
@@ -2527,7 +2540,8 @@ Recorded from retro RETRO0063.
 ## L-0170: **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError`
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: No lint flags a narrowed `except`; `critic.py:2468-2470` demands regression cover for behaviour-changing repairs, which covers it.
 
 **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError` let `UnicodeDecodeError` - a `ValueError` - escape a function documented as never raising. The refactor looked like it only changed cost.
 
@@ -2536,7 +2550,8 @@ Recorded from retro RETRO0063.
 ## L-0169: **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `gate.py:1905-1912` reports the run against a dated recorded baseline (`level with the ... baseline`) rather than a bare pass or fail, and `sdlc-studio/.config.yaml:218-219` holds `baseline_seconds` and `baseline_date`.
 
 **A trend against a dated baseline catches what a ceiling cannot.** `test_gate.py` grew 28% in two days while under every threshold in force. A budget that reports only pass or fail would have stayed green throughout.
 
@@ -2545,7 +2560,8 @@ Recorded from retro RETRO0063.
 ## L-0168: **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `gate.py:1856` `read_gate_cost_baseline` and `gate.py:1905-1912` compare a run to the baseline recorded by the same gate, so the check sits where its data lives.
 
 **Ask where the data lives before deciding where the check lives.** A check placed away from the data it reads is not wrong so much as inert: it degrades to permanent silence, which reads identical to permanent success.
 
@@ -2554,7 +2570,8 @@ Recorded from retro RETRO0063.
 ## L-0167: **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:108` lists a fixture shape the product cannot produce as a vacuity mechanism and `scripts/tests/loader.py:25-35` keeps one module identity per name, so patching a captured default is still ineffective.
 
 **Read the binding rules of the thing you intend to inject before designing a test around injecting it.** A default argument binds at definition time, so patching the module constant it was defaulted from changes nothing - and the resulting test passes whether or not the behaviour is present. Making a test cheaper is exactly when vacuity is easiest to introduce, because the change looks like a simplification.
 
@@ -2563,7 +2580,8 @@ Recorded from retro RETRO0063.
 ## L-0166: **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests"
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `gate.py:943-945` and `tools/run-suite.sh:214` record per-module wall-clock findings (the slowest module sets the total), measured rather than assumed from a file-level table.
 
 **Profile inside the file before optimising it.** The file-level table said "attack test_gate.py"; the profile said "two tests". The same table said "three lanes re-walk the corpus"; the profile said "842 git subprocesses and 4,495 YAML parses". A cost attributed to the wrong cause produces a plausible plan that fixes nothing.
 
@@ -2572,7 +2590,8 @@ Recorded from retro RETRO0063.
 ## L-0165: **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:538-546` marks pytest exit codes 4 and 5 as vacuous (attributed, not failure) and sets `ok` false for a clean exit that ran nothing.
 
 **Vacuity is not gated on exit 0.** A runner that ran nothing proves nothing whatever its exit code; pytest signals it with codes 4 and 5, and those must be attributed, not read as code failure.
 
@@ -2581,7 +2600,8 @@ Recorded from retro RETRO0062.
 ## L-0164: **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: No gate detects it: `readiness.py:866-875` `_weak_ac` judges tautology and placeholders only; the groomer's reading of the Given clause is still the only guard.
 
 **A point-in-time acceptance criterion is manual by nature.** An executable check that re-asserts a snapshot state ('zero advisories at HEAD') is a category error - it re-runs forever and un-Dones the story on unrelated drift. The Given clause naming a snapshot is the tell.
 
@@ -2590,7 +2610,8 @@ Recorded from retro RETRO0062.
 ## L-0163: **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:92-126` and `critic.py:2461-2463` require mutating even tests written against right code, and `verify_ac.py:3842` revert-check proves a unit's verifiers reach the change.
 
 **A characterisation test still needs mutation to earn its keep.** BG0232's 15 tests all passed on first write because the code was already right; only mutating the fingerprint proved they pin it rather than decorate it.
 
@@ -2599,7 +2620,8 @@ Recorded from retro RETRO0062.
 ## L-0162: **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:878` and `verify_ac.py:1161-1162` separate an unresolvable verifier from a stale one, so a deleted test is reported rather than left reading `Verified: yes`.
 
 **An AC's freshness must cover whether its verifier still exists.** US0097 read `Verified: yes` for weeks after the test it named was deleted by an unrelated change; the AC text never changed, so nothing looked stale.
 
@@ -2608,7 +2630,8 @@ Recorded from retro RETRO0061.
 ## L-0161: **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:538-539` marks a pytest run with exit code 4 or 5 vacuous, and `mutation.py:1770-1773` warns when a selection excludes a referencing test file.
 
 **A test-selection filter is part of the test harness and can silently exclude the tests you are relying on.** A `-k` pattern that matches one of three new tests reports survivors that are artefacts of the filter.
 
@@ -2617,7 +2640,8 @@ Recorded from retro RETRO0061.
 ## L-0160: **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:1288-1289` records the test command with the result and `reference-review.md:534-543` has mutation run in an isolated checkout, never the author's tree.
 
 **Scope a mutation run to product code with a scoped test command.** Mutating test files produces expected-vacuous survivors, and a full-suite command multiplies every mutant by the slowest lane. Same technique, 5x the cost, none of the extra yield.
 
@@ -2626,7 +2650,8 @@ Recorded from retro RETRO0061.
 ## L-0159: **A guard unreachable through the public path cannot be tested through it.** It still reads as coverage
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:66-90` (name the entry point) and `verify_ac.py:3842` revert-check keep tests on the reachable surface; an unreachable guard is still untestable through the public path.
 
 **A guard unreachable through the public path cannot be tested through it.** It still reads as coverage. Drive the mechanism directly or delete the guard.
 
@@ -2635,7 +2660,8 @@ Recorded from retro RETRO0061.
 ## L-0158: **A bug about environment pollution must never be reproduced next to a live repo.** The filed reproduction was followed literally and
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tools/skill-tests.sh:20-32` documents the index-wipe incident and scrubs the variables, and `tools/tests/test_precommit_window_guard.py:82` carries the outer-index hazard into its fixtures.
 
 **A bug about environment pollution must never be reproduced next to a live repo.** The filed reproduction was followed literally and emptied the index. Reproduce in a throwaway clone, and assert the parent's index hash is unchanged afterwards - that assertion is the evidence, not the test count.
 
@@ -2644,7 +2670,8 @@ Recorded from retro RETRO0061.
 ## L-0157: A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:1650` and `mutation.py:1770-1773` separate test files from targets and warn when survivors are read against a selection that misses them, so test-file survivors are not read as product findings.
 
 A mutant that lands in a test file and survives is expected, not a finding: stubbing a test's body makes the suite pass vacuously by construction - scope the evidence run's survivor reading to product files
 
@@ -2653,7 +2680,8 @@ Recorded from retro RETRO0060.
 ## L-0156: An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `lessons.py:1781-1783` writes `Added` only when it is not already a valid date, reusing the existing value rather than omitting it, and `lessons.py:697-712` `upsert_field` replaces in place.
 
 An upsert that rewrites the whole record can erase the very field it was told not to overwrite: "do not overwrite" must be implemented as "reuse the existing value", never as "omit it"
 
@@ -2662,7 +2690,8 @@ Recorded from retro RETRO0060.
 ## L-0155: The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tools/skill-tests.sh:53` unsets `GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE` and `.githooks/commit-msg:265-268` scrubs the same variables for its lanes.
 
 The hook environment is part of the test environment: a suite green in a shell can fail under `git commit -a` because the hook inherits GIT_INDEX_FILE, and every git call inside a test's temp fixture then acts on the outer repo - sanitise the lane's env, or the failure reads as flaky tests
 
@@ -2671,7 +2700,8 @@ Recorded from retro RETRO0060.
 ## L-0154: A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/test_lessons.py:1426-1432` runs from a cwd that is not the root to catch root-relative defects, and `tests/test_confinement.py:444` sweeps every writer on disk.
 
 A root-relative defect found in one writer must be swept across every sibling writer before the run closes: BG0219 (`lessons.py`) had an identical twin in `verify_ac.py`, caught only because the sweep was actually done and filed as BG0220
 
@@ -2680,7 +2710,8 @@ Recorded from retro RETRO0059.
 ## L-0153: A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tools/gate_prereqs.py:59-75` checks gate prerequisites before the first attempt (named in `AGENTS.md` via `tools/enable-hooks.sh`), so serial discovery of a missing tool is avoided.
 
 A pre-flight is worth building where a gate is a chain: the information is nearly always available before the first attempt, and serial discovery reads as the tool moving the goalposts.
 
@@ -2689,7 +2720,8 @@ Recorded from retro RETRO-0058.
 ## L-0152: A fixture missing a config key can silently disable the whole branch under test
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:92-97` requires naming the mutant before writing the test, which is how a fixture missing a config key is found; `critic.py:2461-2463` repeats it for reviewers.
 
 A fixture missing a config key can silently disable the whole branch under test. If a test passes, mutate the code it names and confirm it fails for the reason claimed.
 
@@ -2698,7 +2730,8 @@ Recorded from retro RETRO-0058.
 ## L-0151: When a defect is fixed, the tests that were passing because of it will fail
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2468-2470` demands regression cover for a repair, and `lessons/LL0051-apply-the-fix-as-a-mutant-if-tests-fail-they-were-pinning-the-defect.md:1` states the practice: tests that fail when a defect is fixed were pinning it.
 
 When a defect is fixed, the tests that were passing because of it will fail. Those failures are the fix working, not a regression - read each one before changing it, and correct the fixture rather than the assertion.
 
@@ -2707,7 +2740,8 @@ Recorded from retro RETRO-0058.
 ## L-0150: A plan's premises decay
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:2203-2214` `probable_duplicates` was added because a plan sized on an unexamined backlog inherits expired premises; the order-determining constraint is still unchecked by any gate.
 
 A plan's premises decay. Re-verify the constraint that determines the ORDER of a plan before following it, because a stale premise silently costs the whole sequence.
 
@@ -2716,7 +2750,8 @@ Recorded from retro RETRO-0058.
 ## L-0149: Check whether the work is already done before building it
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `readiness.py:1081` flags `already-satisfied` when verifiers pass, and `sprint.py:4367` tells the operator it is a close, not a build, when executable ACs already pass.
 
 Check whether the work is already done before building it. A request left open is not evidence that it is outstanding, and the cheapest delivery is discovering the thing already shipped.
 
@@ -2725,7 +2760,8 @@ Recorded from retro RETRO-0058.
 ## L-0148: **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the operator round a loop with no exit
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `reconcile.py:2337-2344` and `reconcile.py:2397-2412` give the spawned-column drift kind an `apply_spawned_column` writer and a remedy that names which direction it can act in.
 
 **A drift kind whose advertised remedy cannot clear it is worse than no hint** - it sends the operator round a loop with no exit. Where a later gate refuses, name that gate.
 
@@ -2734,7 +2770,8 @@ Recorded from retro RETRO-0057.
 ## L-0147: **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:107-108` lists asserting text the code supplies and a fixture shape the product cannot produce as mechanisms, and `critic.py:2461-2463` has reviewers mutate the author's tests.
 
 **Fixture noise hides vacuous assertions.** The shared story fixture wrote an unrewritable placeholder status, so every apply in the class emitted a spurious unapplied row - which meant the exit-code test would have passed on fixture noise rather than on the refusal it names. It was changed for tidiness and bought correctness by accident.
 
@@ -2743,7 +2780,8 @@ Recorded from retro RETRO-0057.
 ## L-0146: **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2527-2534` makes the claim inventory over comments, docstrings, Resolutions and CHANGELOG the first pass of every brief and author self-check (`critic.py:2608-2615`).
 
 **Prose written to justify code is code that has not been reviewed.** Three sessions running, the surviving defect has been in a comment or a claim rather than in behaviour. A wrong reason attached to right behaviour is more dangerous than no reason: it is what the next person acts on.
 
@@ -2752,7 +2790,8 @@ Recorded from retro RETRO-0057.
 ## L-0145: **A test-runner error is not a test failure.** `FAILED (errors=1)` from a mis-named test class looks exactly like a kill
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:1255` keeps an `error` verdict distinct from `killed` and `mutation.py:1155-1160` records a killer only when the runner output names a test.
 
 **A test-runner error is not a test failure.** `FAILED (errors=1)` from a mis-named test class looks exactly like a kill. Any mutation result that does not name the specific test it killed is unverified.
 
@@ -2761,7 +2800,8 @@ Recorded from retro RETRO-0057.
 ## L-0144: **Establish the baseline before the mutant, and restore from a source the mutant cannot have touched.** A timed-out mutation harness leaves
 
 - **Added:** 2026-07-20
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:1228-1233` runs the unmutated baseline first and refuses on red, and `mutation.py:313-343` restores from a recorded copy taken before the first mutation, not a copy mutants can touch.
 
 **Establish the baseline before the mutant, and restore from a source the mutant cannot have touched.** A timed-out mutation harness leaves the mutant on disk; a `cp` restore then captures it, and every subsequent run measures the mutant while reporting on the code. Restore from git or a copy taken before the first mutation, and re-run the unmutated baseline first - a baseline that does not come back green means the harness is lying, not the code.
 
@@ -2770,7 +2810,8 @@ Recorded from retro RETRO-0057.
 ## L-0143: **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `gate.py:943-945` still records that the suite wall-clock is the slowest module (`test_gate`) rather than the serial sum, so cost stays concentrated in few files.
 
 **The gate cost is concentrated, not diffuse.** Three test files are 62 per cent of the suite runtime and 14 per cent of the tests. Optimising "the tests" in general would have addressed the cheap 38 per cent.
 
@@ -2779,7 +2820,8 @@ Recorded from retro RETRO0056.
 ## L-0142: **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `transition.py:1704-1709` passes the resolved child TYPE through from `_breakdown_units` instead of re-deriving it from the id prefix, which is this lesson applied.
 
 **Rebuild structure from data, never from prose.** `requirements` re-parsed a sentence the ladder had just built from a list. Passing the list removed the whole defect class; a better regex would only have moved it.
 
@@ -2788,7 +2830,8 @@ Recorded from retro RETRO0056.
 ## L-0141: **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:106-113` lists a fixture shape the product cannot produce and a positive control already passing as vacuity mechanisms, and `critic.py:2461-2463` mutates the author's tests.
 
 **A fixture can satisfy an assertion for a reason unrelated to the property under test.** The round-1 test asserted "two items" against a fixture where one block carried the suffix, so the wrong delimiter still produced two. Choose the fixture that discriminates, not the one to hand.
 
@@ -2797,7 +2840,8 @@ Recorded from retro RETRO0056.
 ## L-0140: **A test that cannot fail is worse than no test, because it reads as coverage.** The round-2 test named the exact defect in its docstring
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:92-97` states the test's mutant first, and `verify_ac.py:3842` revert-check flags a unit whose verifiers do not reach its change.
 
 **A test that cannot fail is worse than no test, because it reads as coverage.** The round-2 test named the exact defect in its docstring and could not reach it. Before trusting a new test, re-introduce the defect it claims to pin and watch it go red - if it stays green, the test is decoration.
 
@@ -2806,7 +2850,8 @@ Recorded from retro RETRO0056.
 ## L-0139: **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2456-2458` and `critic.py:2468-2470` make a repair a unit of new review with per-item verdicts and regression cover; the pattern recurs, so the practice is still carried in every brief.
 
 **Round 2's findings are made by round 1's repair, and this is now three runs in a row.** Every new finding this round was created by the previous round's fix, twice inside the very lines written to fix the previous finding. Treat a repair as new code needing its own adversarial pass, never as the closing of a loop.
 
@@ -2815,7 +2860,8 @@ Recorded from retro RETRO0055.
 ## L-0138: **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:92-97` requires the production change a test must fail on to be named first, and `critic.py:2461-2463` has the reviewer mutate the author's tests.
 
 **A new guard needs a test of its MECHANISM, not just of the case that prompted it.** The line that closed this review's MAJOR could be deleted with 3,205 tests still green. A guard is code, it rots like code, and "the suite is green" says nothing about a guard nothing exercises. Write the fixture that makes it fire.
 
@@ -2824,7 +2870,8 @@ Recorded from retro RETRO0055.
 ## L-0137: **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `close_owed.py:634-641` reports dead ids only for epics whose coverage depended on forgiving them, which is this lesson's scoping.
 
 **Forgiving an unsatisfiable demand must surface its cause.** Dropping a dead id silently would trade a false debt for a hidden defect; reporting it unconditionally would restore the noise the forgiveness existed to remove. Scope the report to the cases where the forgiveness changed the answer.
 
@@ -2833,7 +2880,8 @@ Recorded from retro RETRO0055.
 ## L-0136: **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `reference-bug.md:71` and `reference-bug.md:148-161` keep reproduction steps as a required part of a bug, the check that corrects a wrong finding; no gate refuses an unreproduced one.
 
 **A finding is a hypothesis, not a fact.** Two of six bugs in this batch were wrong in their specifics and both were worth more once investigated. Reproduce before fixing, and correct the record when the premise falls.
 
@@ -2842,7 +2890,8 @@ Recorded from retro RETRO0055.
 ## L-0135: **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/loader.py:25-35` registers modules in `sys.modules` and refuses a foreign holder of the name, and `tests/test_affects_resolvable.py:405` documents the shared-state hazard; per-case isolation is still the rule.
 
 **A sweep that checks many things in one process can be satisfied by the first one.** Shared interpreter state - `sys.path`, `sys.modules`, caches - makes later cases pass on the back of earlier ones. Isolate per case, or the sweep proves nothing about all but the first.
 
@@ -2851,7 +2900,8 @@ Recorded from retro RETRO0055.
 ## L-0134: **A narrow test command over-reports absence.** A mutation run scoped below its target's real coverage manufactures survivors, which then
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:1288-1289` records the selected test command and `mutation.py:1770-1773` `_selection_warnings` warns on a referencing test file outside the selection, so a narrow command cannot stay silent.
 
 **A narrow test command over-reports absence.** A mutation run scoped below its target's real coverage manufactures survivors, which then get filed as bugs. Widen the command to the module's actual tests before believing a survivor, and record the test command beside the result.
 
@@ -2860,7 +2910,8 @@ Recorded from retro RETRO0055.
 ## L-0133: **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `lib/sdlc_md.py:1013-1019` and `reconcile.py:951-956` each hold one authority for a rule two callers need, rather than two readers that agree today.
 
 **When two checks answer the same question, the stricter one silently wins.** A presence check looser than the mutation regex meant a field could be seen but not updated. Extract one authority rather than keeping two that agree today.
 
@@ -2869,7 +2920,8 @@ Recorded from retro RETRO0054.
 ## L-0132: **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:9390` `cmd_close` runs the close as one chain and `close_owed.py:407-418` counts a run closed only from its recorded start and end, so a ceremony without its record still reads as owed.
 
 **A close that performs every step except the record still leaves no record.** CR0322's close ran a two-role review, a repair round, a re-verification and an operator sign-off, and produced no retro - so none of that reached the lessons digest, and `close_owed` counted the units as unclosed for two days. Completeness of ceremony is not the same as the output the ceremony exists to produce.
 
@@ -2878,7 +2930,8 @@ Recorded from retro RETRO0054.
 ## L-0131: **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass)
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `validate.py:1353-1358` routes the flat personas file through `_check_legacy_personas_md`, which emits a `persona-layout` warning (`validate.py:1368`) rather than a silent pass.
 
 **A checker that passes on input it cannot parse reports coverage it does not have** (US0179's `personas.md`-only vacuous pass). Prefer an explicit advisory over a silent green.
 
@@ -2887,7 +2940,8 @@ Recorded from retro RETRO0053.
 ## L-0130: **A detector firing on a real gap is only worth what the response to it is worth.** The close-owed detector correctly reported this sprint
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `status.py:487` and `status.py:655` surface the close-owed advisory via `close_owed_advisory` (`status.py:687`) in `status`, which `AGENTS.md` makes step 2 of every session, and `sprint.py:8084` lists it as a closing condition.
 
 **A detector firing on a real gap is only worth what the response to it is worth.** The close-owed detector correctly reported this sprint as unclosed on the day it shipped. The debt then sat for three days across four subsequent sprints. Building the instrument is the cheap half.
 
@@ -2896,7 +2950,8 @@ Recorded from retro RETRO0053.
 ## L-0129: **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:6602-6613` skips re-stamping an already stamped outcome and restores the original `ended_at` after `close_run`, so the correction never moves when the run ended.
 
 **A fix's own argument constrains its implementation.** BG0208's case is that the archive is the permanent record - so re-stamping `ended_at` while correcting `outcome` corrupted the thing the fix existed to protect. Read the justification back against the diff.
 
@@ -2905,7 +2960,8 @@ Recorded from retro RETRO0052.
 ## L-0128: **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `lib/sdlc_md.py:1011-1019` `heading_title` is stated to be the ONE definition shared by every heading generator, and `reconcile.py:951-956` shares the breakdown reader between two subsystems.
 
 **When two code paths answer the same question, extract before the second answer drifts.** The H1-strip rule had three private copies and the child-resolution rule had two. Both drifted, and both were found by someone else asking whether the "one definition" claim was true.
 
@@ -2914,7 +2970,8 @@ Recorded from retro RETRO0052.
 ## L-0127: **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it
 
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `best-practices/testing.md:92-126` names the mutant before the test and lists eight vacuity mechanisms, and `verify_ac.py:3842` revert-check detects verifiers that miss the change.
 
 **A test that passes for an incidental reason is not coverage.** Twice this sprint a guard looked covered because the path around it happened to be green: `_ac_heading`'s strip (every test used a long criterion, where truncation removes the punctuation anyway) and `close_owed`'s type guard (every test used childless non-epics). Mutating the guard is the only way to find this; reading the test cannot.
 
@@ -2924,7 +2981,8 @@ Recorded from retro RETRO0052.
 
 - **Tags:** review, gate, fail-safe, test-coverage, mutation
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `transition.py:362-372` `_rfc_open_decisions_unstructured` drops every structural signal in the fallback and records the earlier fail-open version.
 
 A fallback written to fail closed was built by copying the main scan and disabling ONE of its two structural rules. The rule it kept (a heading ends the decisions section) was the very rule an earlier round had already found to be unsafe inside a fence, so the fallback re-introduced that bypass in the path meant to prevent it, and the gate advertised fail-closed while failing open. Two lessons. First: a fail-safe path is not a copy of the primary path with one line removed; decide what the safe answer IS when the input is untrustworthy, and compute that directly. Here every structural signal is suspect at once, so the safe reading drops them all and over-reports. Second: a fallback that blocks makes every block-asserting test on the primary path pass, so the primary guard silently loses its coverage the moment the fallback lands. Reverting the CommonMark matcher to a naive toggle left all 107 tests green. A guard shadowed by a safety net needs a test whose correct answer is PASS, because that is the only answer the net cannot produce.
 
@@ -2932,7 +2990,8 @@ A fallback written to fail closed was built by copying the main scan and disabli
 
 - **Tags:** review, repairs, mutation
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2456-2458` makes a repair review rule each prior finding CLOSED, OVER-CLAIMED or MOVED and `critic.py:2468-2470` demands regression cover for a repair.
 
 Two adversarial rounds this sprint, REJECT both times, and both of round 2's MAJORs were introduced by round 1's fixes - matching the previous sprint exactly. Widening the RFC heading match to close four bypasses created a fifth (a shell comment in a fenced block ended the section). A test written to defend an untested branch re-implemented the branch in its own body and passed with the production code deleted. When repairing a review finding, attack the repair with the same energy as the original defect, and never describe a repair as tested without mutating the production code to prove it.
 
@@ -2940,7 +2999,8 @@ Two adversarial rounds this sprint, REJECT both times, and both of round 2's MAJ
 
 - **Tags:** dogfooding, friction, filing
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `AGENTS.md:118` tells agents to file findings with `file_finding.py`; no gate forces the filing of friction, so it stays a known-weak rule.
 
 Across this run I filed defects that BLOCKED me promptly (a readiness gate certifying templates, a mutation gate reporting unrun mutants) but silently worked around friction that merely cost time: a scaffolder mis-distributing criteria, four wrong Affects lines, a collision analysis built on them, a lint lane that hides latent failures, an appetite flag that erases the over-commitment it records, a token actual nobody supplies. Six items, none of which would have been captured without being asked. A blocker files itself because you cannot proceed; friction has to be filed deliberately, and it is the half that tells you what the product is like to USE.
 
@@ -2951,12 +3011,16 @@ Across this run I filed defects that BLOCKED me promptly (a readiness gate certi
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0113, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0122: **L-0112** The author cannot close the loop: build-to-Done needs the reviewer of record
 
 - **Added:** 2026-07-19
 - **Review-by:** 2027-01-25
 
 Recorded from retro RETRO-0051.
+
+- **Status:** Closed - Duplicate of L-0112, a bodiless copy of that entry; the original carries the judgement and stays.
 
 ## L-0121: **L-0111** Story points size the diff, not the discovery
 
@@ -2965,12 +3029,16 @@ Recorded from retro RETRO-0051.
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0111, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0120: **L-0110** A new writer must join the atomicity and confinement rosters, not just work
 
 - **Added:** 2026-07-19
 - **Review-by:** 2027-01-25
 
 Recorded from retro RETRO-0051.
+
+- **Status:** Closed - Duplicate of L-0110, a bodiless copy of that entry; the original carries the judgement and stays.
 
 ## L-0119: **L-0109** Delegating by `Affects` reproduces whatever is wrong with the `Affects`
 
@@ -2979,12 +3047,16 @@ Recorded from retro RETRO-0051.
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0109, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0118: **L-0108** Build the gate first, then let it tell you the size of the backlog it guards
 
 - **Added:** 2026-07-19
 - **Review-by:** 2027-01-25
 
 Recorded from retro RETRO-0051.
+
+- **Status:** Closed - Duplicate of L-0108, a bodiless copy of that entry; the original carries the judgement and stays.
 
 ## L-0117: **L-0107** An AC that runs the repo's standing guards is green before the work starts
 
@@ -2993,12 +3065,16 @@ Recorded from retro RETRO-0051.
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0107, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0116: **L-0106** A same-length mutant is the mutation check's own blind spot
 
 - **Added:** 2026-07-19
 - **Review-by:** 2027-01-25
 
 Recorded from retro RETRO-0051.
+
+- **Status:** Closed - Duplicate of L-0106, a bodiless copy of that entry; the original carries the judgement and stays.
 
 ## L-0115: **L-0105** Suppressing a cache write does not stop a cache read
 
@@ -3007,6 +3083,8 @@ Recorded from retro RETRO-0051.
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0105, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0114: **L-0104** A readiness gate that recognises one hardcoded placeholder recognises none
 
 - **Added:** 2026-07-19
@@ -3014,11 +3092,14 @@ Recorded from retro RETRO-0051.
 
 Recorded from retro RETRO-0051.
 
+- **Status:** Closed - Duplicate of L-0104, a bodiless copy of that entry; the original carries the judgement and stays.
+
 ## L-0113: An AC asserting the committed state cannot be green in the working tree
 
 - **Tags:** acceptance-criteria, grooming, git
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: Still true and ungated: `readiness.py:866-875` `_weak_ac` tests only for missing, tautology or placeholder criteria, nothing flags a working-tree-versus-HEAD criterion, so grooming judgement remains the only guard.
 
 US0251 AC2 runs 'command_audit --write' followed by 'git diff --exit-code' over the report. The story's own job is to regenerate that report, so before the commit the diff is non-empty BY CONSTRUCTION and the AC is red; after the commit it is green. It is a post-commit invariant wearing a pre-commit criterion's clothes. The delegated agent correctly refused to stage the file to force it green - that manufactures the evidence instead of producing it. When grooming, an AC that compares working tree to HEAD should either be stated as a post-commit guard or replaced by the property it is really after: here, that repeated regeneration is byte-identical, which IS checkable before committing and was proven (three identical runs).
 
@@ -3030,11 +3111,14 @@ US0251 AC2 runs 'command_audit --write' followed by 'git diff --exit-code' over 
 
 This run built 19 units; 4 reached Done. The 13 stories sit at Review because two_role_after is set and critic.record_signoff refuses a principal equal to the author OR matching any reviewer already recorded on the unit - explicitly including the authoring session's own subagents. That is the gate working, not an obstruction: an autonomous run can drive a batch to BUILT and verified, and the terminal transition is deliberately outside its reach. Plan and report in those terms - a sprint goal of 'all units Done' is unreachable by the agent alone by design, so state the reachable end state (built, ACs green, at Review) and name the sign-off as the remaining step.
 
+- **Status:** Closed - Its premise changed: `reference-config.md:240` retires `review.two_role_after`, one independent APPROVE now decides a unit and the operator signs once at `sprint sign`; the advice that Done is out of an agent run's reach is wrong, and independence is held by `sprint.py:9951-9979`.
+
 ## L-0111: Story points size the diff, not the discovery
 
 - **Tags:** estimation, points, discovery
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:21` defines the forecast as points times a measured rate and the surrounding text says decompose rather than trust an estimate; points still price the edit, not discovery.
 
 Across this run every epic cost more than its points implied, and the overrun was never typing - it was measurement contradicting a written claim. US0256 (3pts) needed a detector, an applier, two CLI paths, a refine integration and three roster registrations. US0244 (3pts) found its own gate had a false negative on real data and that the parent CR undercounted its tranche by three. US0253 (5pts) found the gate it was wiring had never run and its detector matched 0 of 68 real leaks. Points estimated from a written decomposition price the edit; they cannot price finding out that the decomposition was wrong. Treat a points figure over unverified specs as a lower bound with wide error bars, and say so at plan time rather than at the close.
 
@@ -3042,7 +3126,8 @@ Across this run every epic cost more than its points implied, and the overrun wa
 
 - **Tags:** invariants, writers, rosters
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/test_confinement.py:444` reads the writer roster off disk and `tests/test_reconcile.py:2398-2404` pins `DRIFT_KINDS` to the true emission vocabulary, so a new writer joins the rosters.
 
 apply_linked_epics passed all seven of its own tests while writing an index with write_text instead of atomic_write, and while emitting a drift kind absent from DRIFT_KINDS. Neither was visible from the story's own ACs; both were caught by standing cross-cutting suites (write-confinement, drift-kind vocabulary) that a sibling story happened to be extending at the same moment. When adding a writer or a detector, check the project's roster-style invariants explicitly - the unit tests of a new feature systematically cannot see them.
 
@@ -3050,7 +3135,8 @@ apply_linked_epics passed all seven of its own tests while writing an index with
 
 - **Tags:** parallelism, affects, collisions
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:2432-2434` still states that lane disjointness is only as good as the declared `Affects`, and an undeclared file can collide; the file sets of test files remain undeclared.
 
 US0252 and US0256 were flagged by the planner as colliding on reconcile.py. Measuring showed US0252's real surface was elsewhere, so the Affects was corrected and the recorded collision dissolved - but both units still wrote tests/test_reconcile.py, which nobody had recorded. A concurrent agent and the author then edited one file and the suite failed with an import error belonging to neither piece of work. Collision analysis inherits the accuracy of the Affects lines, and those had already been proven unreliable three times in the same run. Before parallelising, diff the ACTUAL file sets, including test files, not the declared ones.
 
@@ -3058,7 +3144,8 @@ US0252 and US0256 were flagged by the planner as colliding on reconcile.py. Meas
 
 - **Tags:** gates, enumeration, census
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `reference-sprint-toolchain.md:72` names `status.py points` for the backlog census and `reference-sprint.md:716` the read-only `sprint.py breakdown` census, so counts are derived rather than enumerated.
 
 CR0295 enumerated 5 RFCs needing decision rows closed. Implementing the standing check and running it found 8. The CR was written by reading; the gate was written by measuring. Where a remediation story carries a list of affected files, treat the list as a hypothesis and re-derive it from the check once the check exists - and prefer a census-based AC (scan the workspace) over an enumerated one, because only the census stays true as the workspace changes.
 
@@ -3066,7 +3153,8 @@ CR0295 enumerated 5 RFCs needing decision rows closed. Implementing the standing
 
 - **Tags:** acceptance-criteria, vacuous-green, grooming
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:3842` revert-check asks whether a unit's verifiers reach its production change, and `readiness.py:1081` flags `already-satisfied` when verifiers pass before the work.
 
 Two groomed stories were verified by 'validate_skill && lint-style' and 'check_links && validate_skill && doc_coverage'. Those are pre-commit lanes that pass on a clean tree, so both ACs were green before a line was written, and one had already been machine-annotated Verified: yes on an unimplemented story. Sweep a freshly groomed batch with verify_ac BEFORE implementation and require every AC to be RED: a criterion that passes on the unbuilt code is measuring the repo, not the story.
 
@@ -3074,7 +3162,8 @@ Two groomed stories were verified by 'validate_skill && lint-style' and 'check_l
 
 - **Tags:** mutation, test-fixtures, fixture-validity
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/test_mutation.py:744-763` pins both mtime (`os.utime`) and size and asserts the fixture invalid if the lengths differ, which is this lesson's rule.
 
 CPython invalidates a .pyc on (source mtime, source size). A mutation-check fixture that changes the file LENGTH invalidates the cache by accident and therefore cannot detect a staleness bug - the first version of the pre-existing-cache test passed against unfixed code for exactly this reason. When testing anything keyed on (mtime, size), pin both, and assert in the fixture that you did.
 
@@ -3082,7 +3171,8 @@ CPython invalidates a .pyc on (source mtime, source size). A mutation-check fixt
 
 - **Tags:** mutation, caching, test-fixtures
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/test_mutation.py:770-811` starts from a pre-existing cache and asserts the purge, and `mutation.py:396` sets `PYTHONDONTWRITEBYTECODE`; both halves of the defence remain tested.
 
 The mutation gate's stale-bytecode fix needed two guards, not one. PYTHONDONTWRITEBYTECODE stops the runner adding to **pycache**; it does nothing about a **pycache** already on disk from an ordinary test run before the gate started - which is the normal order of work. The first mutation-check of the fix showed the purge half SURVIVING, because the only test covering it started from a clean tempdir. A defence against stale state needs a test that starts from the stale state.
 
@@ -3090,14 +3180,16 @@ The mutation gate's stale-bytecode fix needed two guards, not one. PYTHONDONTWRI
 
 - **Tags:** gates, vacuous-green, audit
 - **Added:** 2026-07-19
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `readiness.py:866-875` `_weak_ac` now judges the whole AC section for an unexpanded `{{...}}` span (`readiness.py:42-44`), which the scaffolder actually emits, and is called at `readiness.py:1040`.
 
 audit._weak_ac claimed to flag 'the tautology placeholder' but matched exactly one literal phrase, so the {{...}} spans the scaffolder actually emits passed it. The gate certified 28 pure-template stories as ready for implementation. When a check names a CLASS of defect in its docstring, it must detect the class, not one instance of it - and the instance it detects should be the one the local toolchain actually produces. Test a gate against the output of the generator it is meant to police.
 
 ## L-0103: A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:300-309` explains that only `go` and `jest` report per unit and so need a counter-signature, while `unittest` and `pytest` print one exclusive summary.
 
 A no-result signal from a per-unit runner (`go` per package, `jest` per project) means "the whole run was empty" only when every unit says so; a single-summary runner needs no such reconciliation.
 
@@ -3106,7 +3198,8 @@ Recorded from retro RETRO0050.
 ## L-0102: A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `ac_scope.py:120-121` skips the owning epic's own stories when counting spread (`if own_eid == owner_eid: continue`), which is this lesson applied.
 
 A frequency threshold over "how widely is this shared" must exclude the owner, or the owner's own correct usage suppresses detection of everything that borrows from it.
 
@@ -3115,7 +3208,8 @@ Recorded from retro RETRO0050.
 ## L-0101: A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `critic.py:2527-2534` runs a claim inventory over comments and docstrings first in every brief, and `ac_scope.py:36-43` now documents with evidence why the frequency suppression was removed.
 
 A comment justifying a mechanism is a claim, and it needs the same evidence as the code: two false claims about frequency suppression survived into review, and one was the stated reason to accept a repair.
 
@@ -3124,7 +3218,8 @@ Recorded from retro RETRO0050.
 ## L-0100: Stale bytecode silently invalidates a mutation check when the mutant is the same byte length: purge `__pycache__` and run `python3 -B`, or
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `mutation.py:355-364` purges the target's cached bytecode and `mutation.py:386-396` runs suites with `PYTHONDONTWRITEBYTECODE`; `verify_ac.py:4029-4035` reuses the purge for its revert-check.
 
 Stale bytecode silently invalidates a mutation check when the mutant is the same byte length: purge `__pycache__` and run `python3 -B`, or the kill/survive verdict is about the cache.
 
@@ -3133,7 +3228,8 @@ Recorded from retro RETRO0050.
 ## L-0099: A guard that unrelated output can switch off is worse than the false alarm it replaced: prefer a narrow false positive to a silent false
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `lib/sdlc_md.py:268-273` exempts a process only by the inherited `MUTATION_RUN_ENV` marker set at `mutation.py:396`, so unrelated output cannot switch the guard off.
 
 A guard that unrelated output can switch off is worse than the false alarm it replaced: prefer a narrow false positive to a silent false negative, and never let a foreign process speak for the one under test.
 
@@ -3142,7 +3238,8 @@ Recorded from retro RETRO0050.
 ## L-0098: A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:538-539` treats pytest exit codes 4 and 5 (a filter matching nothing) as vacuous, so a renamed class no longer yields a green no-op.
 
 A `-k` test filter that matches nothing exits 0 having run zero tests, so a renamed class silently converts an executable AC into a green no-op (filed BG0193).
 
@@ -3151,7 +3248,8 @@ Recorded from retro RETRO0049.
 ## L-0097: Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `tests/test_close_owed.py:1371` registers the `sys.modules` undo with `addCleanup` beside the patch, and `tests/loader.py:25-30` shows the registry is shared, so the leak risk is live.
 
 Monkeypatching a module reached through `sys.modules` leaks across the whole test process; patch and register the undo together (`addCleanup`) so the two cannot drift apart.
 
@@ -3160,7 +3258,8 @@ Recorded from retro RETRO0049.
 ## L-0096: A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:6402` applies the scope filter unconditionally (`declared & wanted`, an empty scope derives nothing), and a grep of `scripts/` for `if wanted and` finds no truthiness guard left.
 
 A truthiness guard on a scope filter (`if wanted and ...`) fails open: an empty scope silently becomes an unbounded one. Scope filters should be unconditional, with emptiness handled explicitly.
 
@@ -3169,7 +3268,8 @@ Recorded from retro RETRO0049.
 ## L-0095: Deriving a terminal status is an assertion about work, so it must be scoped to what the run actually touched and must refuse on incomplete
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:6402` skips an epic whose breakdown does not intersect the run's wanted ids, and `sprint.py:6405-6408` refuses on unreadable children, so derivation is scoped and refuses on incomplete evidence.
 
 Deriving a terminal status is an assertion about work, so it must be scoped to what the run actually touched and must refuse on incomplete evidence. "No children" and "no readable children" are both different from "all children complete".
 
@@ -3178,7 +3278,8 @@ Recorded from retro RETRO0049.
 ## L-0094: A helper that SKIPS what it cannot resolve is safe for detection and unsafe for derivation: `_breakdown_units` silently drops an
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `reconcile.py:951-956` keeps a separate all-ids reader because `_breakdown_units` skips unresolvable children, and `sprint.py:6405-6408` refuses to derive an epic when a child is unreadable.
 
 A helper that SKIPS what it cannot resolve is safe for detection and unsafe for derivation: `_breakdown_units` silently drops an unresolvable child, and reusing it to decide completion turned "the only child I could read is done" into "all children are done". Before reusing a census helper to make a CLAIM, check what it drops.
 
@@ -3187,7 +3288,8 @@ Recorded from retro RETRO0049.
 ## L-0093: Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `sprint.py:9390` `cmd_close` is documented as one deterministic, resumable chain over the existing primitives and `sprint.py:6365` derives epic status through them; no parallel close path exists.
 
 Build a close-ceremony feature by orchestrating the existing tested primitives (sign-off, close, transition, velocity), not a parallel path - the feature inherits their gates (AC-verify, independence, idempotent re-close) for free.
 
@@ -3196,7 +3298,8 @@ Recorded from retro RETRO0048.
 ## L-0092: Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: No gate holds it (a design heuristic); `critic.py:2468-2470` makes the reviewer report a repair that lacks a test asserting the re-derived comparison, which is where a newly live guard would be caught.
 
 Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong. When a `max(x, CONST)` or `x < CONST` guard exists only to be a no-op, fixing CONST turns it live - re-derive what the guard should actually compare against, do not just change the number.
 
@@ -3205,7 +3308,8 @@ Recorded from retro RETRO0048.
 ## L-0091: Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep`
 
 - **Added:** 2026-07-18
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py:20` says an unrecognised expression is an invalid verifier (exit 2) and `verify_ac.py:564` lists the DSL verbs, so a non-DSL Verify line still fails every run.
 
 Verify lines must use the DSL verbs (`grep`/`shell`/`pytest`/`file`/`http`/`eval`), never a backtick-wrapped raw `python3 ...`; the `grep` verb takes `pattern file` with NO flags, and a shell command needs an explicit `shell` prefix. A groomed AC with a non-DSL Verify line passes grooming but fails every verify_ac run.
 
