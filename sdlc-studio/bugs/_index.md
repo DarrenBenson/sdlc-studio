@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 162 |
+| Open | 164 |
 | In Progress | 0 |
 | Fixed | 824 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1159** |
+| **Total** | **1161** |
 
 ## All Bugs
 
@@ -235,6 +235,8 @@
 | [BG1157](BG1157-no-test-pins-that-a-host-prerequisite-check.md) | No test pins that a --host prerequisite check still names a missing markdownlint, so widening PUSHER_ONLY to it stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1158](BG1158-the-trd-verifier-authority-scan-misses-some-story.md) | The TRD verifier-authority scan misses some story-only rewordings and fails true sentences about a story-only run | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1159](BG1159-supersede-s-reference-omits-brief-and-row-brief.md) | supersede's reference omits --brief and row-brief, two of its new guarantees are unpinned, and a no-match refusal contradicts itself | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1160](BG1160-gate-py-run-tests-prints-no-tests-ran.md) | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1161](BG1161-a-clean-checkout-gate-py-run-judges-conformance.md) | A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

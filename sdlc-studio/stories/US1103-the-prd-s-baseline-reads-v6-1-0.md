@@ -1,6 +1,6 @@
 # US1103: The PRD's baseline reads v6.1.0 plus 6.2, no shipped feature row carries [Unreleased], and the inventory has a row for each capability shipped since July
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0647
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given the PRD, when it is read, then its baseline names v6.1.0 plus 6.2 on main and no feature row for a shipped capability carries [Unreleased]
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdBaselineTests::test_no_shipped_row_is_unreleased
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the capabilities RV0028 PRD-10 names as shipped since July 2026, when the feature inventory is read, then each has a row
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdBaselineTests::test_every_capability_since_july_has_a_row
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

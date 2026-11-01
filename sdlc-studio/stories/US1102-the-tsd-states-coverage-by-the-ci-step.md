@@ -30,6 +30,7 @@
 
 ## Notes
 
+- From BG1065 (2026-11-01): tsd.md:354 still says 'Every run in this repository now exceeds it (BG1065)'. Since BG1065, the budget is recorded beside a measured standard run (gate.py GATE_BUDGET_MEASURED) and a push judges only the standard lanes against it. Correct that sentence in this unit, which owns tsd.md.
 - Serves: Rowan Achterberg, End goal 3.
 - Source: sdlc-studio/reviews/RV0028-unified-review-before-the-second-6-2-run.md, the TSD leg, and CR0646.
 - AC1 must fail on: a pinned coverage percentage, or the line-coverage setting stated as anything but the config's value (read from .config.yaml).

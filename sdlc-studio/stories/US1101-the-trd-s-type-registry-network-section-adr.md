@@ -28,6 +28,7 @@
 
 ## Notes
 
+- From BG1065 (2026-11-01): trd.md:675 still says 'Every run in this repository now exceeds it (BG1065)'. Since BG1065, the budget is recorded beside a measured standard run (gate.py GATE_BUDGET_MEASURED, 39.8s against 45s) and a push judges only the standard lanes against it. Correct that sentence in this unit, which owns trd.md.
 - Serves: Rowan Achterberg, End goal 3.
 - Source: sdlc-studio/reviews/RV0028-unified-review-before-the-second-6-2-run.md, findings TRD-7 and TRD-8 and the ADR rows.
 - AC1 must fail on: a type in the code registry or in `META_TYPES` missing from the TRD; both sets are read from the code.

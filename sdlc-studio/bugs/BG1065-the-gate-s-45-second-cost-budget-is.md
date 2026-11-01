@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 1
 > **Depends on:** BG0963
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, changelog.d/BG1065.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/boundary.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, changelog.d/BG1065.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/boundary.py, pytest.ini
 > **Evidence:** RV0028 finding TSD-12; sdlc-studio/.local/gate-cost.json 127.45 s; CI run 38886029272; gate.py:1825-1833.
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio file
@@ -52,3 +52,4 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 | 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on BG0963, which shares a file this unit declares |
 | 2026-10-31 | Claude Opus 5.5 | Pre-run gate baseline recorded for the run-four goal review (D0393) |
 | 2026-11-01 | Claude Opus 5.5 | In flight: Affects widened to boundary.py - its boundary_only rule says a test is marked only when it costs seconds; BG0963 also marks wall-clock upper bounds, some taking 0.1-0.3 s, found by BG0963's builder |
+| 2026-11-01 | Claude Opus 5.5 | In flight: the boundary.py Affects path corrected to scripts/tests/boundary.py (the orchestrator had written a path that does not exist); pytest.ini added for its boundary_only marker text |
