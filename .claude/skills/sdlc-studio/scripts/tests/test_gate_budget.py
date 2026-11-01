@@ -13,7 +13,6 @@ Run from the repo root:
 from __future__ import annotations
 
 import contextlib
-import subprocess
 import sys
 import tempfile
 import types
@@ -23,6 +22,7 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402 - confined git, which the unconfined-call sweep requires
 import loader  # noqa: E402
 import workspace  # noqa: E402 - the shared "am I in the dev repo?" check
 
@@ -52,8 +52,7 @@ class GateBudgetTests(unittest.TestCase):
         """Fails when the record names a commit this repository does not hold, so the figure
         cannot cite a run nobody can check out."""
         commit = gate.GATE_BUDGET_MEASURED["commit"]
-        cp = subprocess.run(["git", "-C", str(workspace.REPO), "cat-file", "-e",
-                             f"{commit}^{{commit}}"], capture_output=True, check=False)
+        cp = gitutil.git(["cat-file", "-e", f"{commit}^{{commit}}"], workspace.REPO, check=False)
         self.assertEqual(cp.returncode, 0, f"{commit} is not a commit in this repository")
 
 

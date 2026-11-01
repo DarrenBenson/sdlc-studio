@@ -29,6 +29,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 SCRIPTS = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts"
@@ -37,9 +38,11 @@ FILE_FINDING = SCRIPTS / "file_finding.py"
 ARTIFACT = SCRIPTS / "artifact.py"
 
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SCRIPTS / "tests"))
 import critic  # noqa: E402
 import doc_freshness  # noqa: E402
 import file_finding  # noqa: E402
+import gitutil  # noqa: E402 - confined git for the scratch and fixture repositories
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
 import reconcile  # noqa: E402
@@ -274,9 +277,28 @@ def _tracked(*pathspec: str) -> list[str]:
     return [f for f in out.stdout.split("\0") if f]
 
 
-def _ignored(path: str) -> bool:
-    """Whether git ignores `path`, read from the ignore rules alone."""
-    return _git("check-ignore", "-q", "--no-index", path).returncode == 0
+def _ignore_files(root: Path) -> list[str]:
+    """The `.gitignore` files git tracks in `root`, root-relative."""
+    out = gitutil.git(["ls-files", "-z", "--", ":(glob)**/.gitignore"], root, text=True)
+    return [f for f in out.stdout.split("\0") if f]
+
+
+def _ignored(path: str, root: Path = REPO) -> bool:
+    """Whether the `.gitignore` files `root` tracks ignore `path`, read from those rules alone.
+
+    Asked in `root` itself, git refuses a path beyond a symbolic link with rc 128, which read as
+    "not ignored"; the gate host makes `sdlc-studio/.local` one (`tools/remote-gate.sh`, BG1166).
+    So the question goes to a scratch repository holding only those files, copied from `root`'s
+    working tree, with no `info/exclude` and no excludes file, so nothing at `path` and no host
+    rule has a say."""
+    with tempfile.TemporaryDirectory() as d:
+        scratch = Path(d)
+        gitutil.git(["init", "-q", "--template="], scratch)
+        for rel in _ignore_files(root):
+            (scratch / rel).parent.mkdir(parents=True, exist_ok=True)
+            (scratch / rel).write_bytes((root / rel).read_bytes())
+        return gitutil.git(["-c", "core.excludesFile=/dev/null", "check-ignore", "-q",
+                            "--no-index", "--", path], scratch, check=False).returncode == 0
 
 
 def _one_table(section: str, first: str) -> list[list[str]]:
@@ -400,6 +422,51 @@ class TrdStorageTests(unittest.TestCase):
         self.assertLessEqual(filers, set().union(*verbs))
         self.assertTrue(verbs[0] & openers and live in life[1][says], life[1])
         self.assertTrue(verbs[-1] & filers, life[-1])
+
+    def test_the_tier_does_not_depend_on_what_local_is(self) -> None:
+        """BG1166. Each Run state path gets the same tier from `_ignored` whether `.local` is a
+        symlink, as the gate host makes it, a directory or absent: ignored inside `.local`, not
+        ignored outside it. Mutants: `_ignored` asks git in the checkout, where the symlink draws
+        rc 128 and its two `.local` paths read as not ignored; or it lets the host's excludes
+        file speak, which here ignores every `.json`. Each fixture tracks this repository's
+        `.gitignore` files, and its symlink is shown to draw that refusal, so the case is the
+        gate host's."""
+        paths = (run_state.REL.as_posix(), run_state.archive_path("", "*").as_posix(),
+                 run_state.tracked_path("", "*").as_posix())
+        with tempfile.TemporaryDirectory() as host, \
+                mock.patch.dict("os.environ", {"XDG_CONFIG_HOME": host}):
+            (Path(host) / "git").mkdir()
+            (Path(host) / "git" / "ignore").write_text("*.json\n", encoding="utf-8")
+            for shape in ("symlink", "directory", "absent"):
+                with tempfile.TemporaryDirectory() as d:
+                    root = self._checkout(Path(d), shape)
+                    for p in paths:
+                        with self.subTest(local=shape, path=p):
+                            self.assertEqual(".local" in Path(p).parts, _ignored(p, root))
+
+    def _checkout(self, d: Path, shape: str) -> Path:
+        """A repository under `d` tracking this one's `.gitignore` files, its `.local` given
+        `shape` and, unless absent, holding a run state file."""
+        root, state, local = d / "clone", d / "state", run_state.REL.parent
+        rules = _ignore_files(REPO)
+        self.assertIn(f"{local.parent.as_posix()}/.gitignore", rules)
+        gitutil.git(["init", "-q", str(root)], d)
+        for rel in rules:
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_bytes((REPO / rel).read_bytes())
+        gitutil.git(["add", "--", *rules], root)
+        if shape == "symlink":
+            state.mkdir()
+            (root / local).symlink_to(state, target_is_directory=True)
+            refused = gitutil.git(["check-ignore", "-q", "--no-index", "--",
+                                   run_state.REL.as_posix()], root, check=False, text=True)
+            self.assertEqual(128, refused.returncode)
+            self.assertIn("beyond a symbolic link", refused.stderr)
+        elif shape == "directory":
+            (root / local).mkdir()
+        if shape != "absent":
+            (root / run_state.REL).write_text("{}\n", encoding="utf-8")
+        return root
 
 
 #: The release the TRD's coverage line names and the work on `main` beside it (US1101 AC3),
