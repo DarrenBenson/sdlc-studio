@@ -51,12 +51,13 @@ TYPES = {
 
 # --- The pseudo-Verify refusal (one authority, both creation paths) -------------------------
 #
-# Only a STORY carries an executable check: its canonical `- **Verify:**` line is parsed and RUN
-# by verify_ac.py, and gates the story to Done. A CR or bug carries PROSE acceptance criteria -
-# a checklist a human reads. Writing a command-shaped `Verify: <cmd>` into that prose mints a
-# check that LOOKS executable and is run by nothing, so a wrong command is a permanent false red
-# and a vacuous one (a grep that matches unrelated prose) is a false green on an unbuilt feature.
-# The creators refuse to write one; the validator warns about the ones already on disk.
+# The types whose canonical `- **Verify:**` lines are parsed and RUN by verify_ac.py are
+# `sdlc_md.EXECUTES_VERIFIERS`, the delivery units, and a red run of them refuses the move to
+# Done or Fixed. A CR or RFC carries PROSE acceptance criteria - a checklist a human reads.
+# Writing a command-shaped `Verify: <cmd>` into that prose mints a check that LOOKS executable
+# and is run by nothing, so a wrong command is a permanent false red and a vacuous one (a grep
+# that matches unrelated prose) is a false green on an unbuilt feature. The creators refuse to
+# write one; the validator warns about one already on disk in an open CR or RFC.
 #
 # MATCHED (refused): a `Verify:` / `**Verify:**` lead-in whose tail, once its wrapping backticks,
 # quotes and bold markers are stripped, is command-shaped - it opens with a shell/tool verb
@@ -139,8 +140,9 @@ def check_prose_acs(type_: str, fields: dict) -> None:
         raise ValueError(
             f"{type_} acceptance criterion {i} carries a command-shaped `Verify:` check "
             f"({cmd!r}) - refused.\n"
-            f"  Why: nothing runs it. verify_ac only executes the canonical `- **Verify:**` line "
-            f"of a STORY. A command written into {type_.upper()} acceptance-criteria prose is "
+            f"  Why: nothing runs it. verify_ac executes the canonical `- **Verify:**` lines of "
+            f"the types in `sdlc_md.EXECUTES_VERIFIERS` ({', '.join(sdlc_md.EXECUTES_VERIFIERS)}) "
+            f"alone. A command written into {type_.upper()} acceptance-criteria prose is "
             f"never executed, so a wrong one is a permanent false red and a loose one is a false "
             f"green - it 'passes' on unrelated prose while the feature does not exist.\n"
             f"  Instead: state the OBSERVABLE outcome - what would have to be true for this "

@@ -438,17 +438,29 @@ by `VERIFY_RE` / `VERIFIED_RE`. `verify_ac.py` rewrites the `Verified:` line in
 place. The parser is fenced-block aware, so an illustrative `Verify:` line inside a
 code block in a document is never executed.
 
-**Only a story carries an executable verifier.** CR and bug acceptance criteria are
-**prose**, and `file_finding.py` / `artifact.py` refuse a command-shaped `Verify:`
-in one at creation, from a single shared authority so the two paths cannot disagree.
-The reason is structural rather than stylistic: nothing executes a CR or bug AC, so
+**Which types execute their Verify lines is `sdlc_md.EXECUTES_VERIFIERS`**, the one
+authority: the creators' refusal and the validator's warning read it, and a test holds
+`verify_ac.py`'s runner to it. A story and a bug are delivery units, built to a
+terminal status, so a criterion on either has something to gate. A CR or RFC is a
+request, decomposed rather than delivered, so its acceptance criteria are **prose**,
+and `file_finding.py` / `artifact.py` refuse a command-shaped `Verify:` in one at
+creation, from a single shared authority so the two paths cannot disagree.
+
+| Type | Its `Verify:` lines | Held by |
+| --- | --- | --- |
+| `story` | executed | `verify_ac.py` runs them; the move to Done refuses a red or never-run one |
+| `bug` | executed | `verify_ac.py` runs them; the move to Fixed refuses a red recorded run |
+| `cr` | refused when command-shaped | `file_finding.py` and `artifact.py` at creation; `validate.py` warns on one in an open CR |
+| `rfc` | refused when command-shaped | as for `cr`, in an open RFC |
+
+The reason is structural rather than stylistic: nothing executes a CR or RFC AC, so
 a command written into one is a claim with no runner - a wrong one is a permanent
 false RED that nobody sees fail, and a loose one is a false GREEN. Both had already
 happened in this workspace: one verifier grepped for an env var under the wrong
 name, and one passed against unrelated prose while the feature it claimed to check
-did not exist. `validate.py` warns on the ones already in a tree. The corollary for
-the pipeline is that an un-decomposed CR reaches Done on prose alone, which is why
-`sprint plan` flags a Large or wide-footprint CR that no story cites (ADR-011).
+did not exist. The corollary for the pipeline is that an un-decomposed CR reaches
+Done on prose alone, which is why `sprint plan` flags a Large or wide-footprint CR
+that no story cites (ADR-011).
 
 #### Two backlogs (dual-track: discovery feeds delivery)
 
@@ -1198,6 +1210,7 @@ touches the component. The constraints below span components.
 | 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' soft dependencies (PyYAML, lizard, coverage); which runner runs which suite |
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 | 2026-10-22 | 6.1.0 | BG1095: §3 gives where the push gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
+| 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier) |
 
 ---
 

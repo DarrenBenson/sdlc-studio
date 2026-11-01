@@ -1134,9 +1134,10 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # worse than no artefact. One guard, every field, at the top of the one create path.
     sdlc_md.check_creator_fields({**f, "title": title})
     check_user_story_fields(f)
-    # A CR/bug criterion is prose: refuse a command-shaped `Verify:` written into it, from the
+    # A CR or RFC criterion is prose: refuse a command-shaped `Verify:` written into it, from the
     # SAME authority the filer uses, so the two creation paths cannot disagree about what a
-    # CR/bug acceptance criterion means (nothing executes it - only a story's Verify line runs).
+    # request's acceptance criterion means. Nothing executes it: verify_ac runs the Verify lines
+    # of the types in `sdlc_md.EXECUTES_VERIFIERS` alone, and the shared check lets those through.
     file_finding.check_prose_acs(type_, f)
     # A declared `Affects` that resolves to nothing is refused HERE, from the ONE seam every
     # writer shares - so a story minted through `new` cannot carry a fictional footprint any more
