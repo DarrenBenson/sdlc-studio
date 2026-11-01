@@ -30,6 +30,7 @@
 
 ## Notes
 
+- From US1101 (2026-11-01): tools/tests/test_lean_trd_refresh.py's ADR-012 test fails if a path named in the TRD's ADR-012 'Not yet built' paragraph comes to exist. When this unit lands its script, edit sdlc-studio/trd.md's ADR-012 in the same commit; add trd.md to this unit's Affects when it is planned.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: a rule added to validate.py or persona_review.py with no line on the page, or a page line naming a rule nothing prints (LL0043: a list checked one way is a lower bound)
 - AC2 must fail on: every finding read as blocking, so a card missing only its Evidence exits 1, or none is; or validate keeping its own idea of which rules block (LL0042)

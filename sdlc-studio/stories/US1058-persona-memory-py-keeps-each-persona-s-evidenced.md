@@ -31,6 +31,7 @@
 
 ## Notes
 
+- From US1101 (2026-11-01): tools/tests/test_lean_trd_refresh.py's ADR-012 test fails if a path named in the TRD's ADR-012 'Not yet built' paragraph comes to exist. When this unit lands its script, edit sdlc-studio/trd.md's ADR-012 in the same commit; add trd.md to this unit's Affects when it is planned.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: ids numbered per file, so two personas' first learnings are both M-0001 and an approval or a strike naming one is ambiguous, or no Review-by stamped
 - AC2 must fail on: evidence optional or never resolved, or the role checked before the stem, so an ambiguous key silently writes one persona's memory
