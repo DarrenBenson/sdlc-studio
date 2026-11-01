@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py, changelog.d/BG1140.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py, changelog.d/BG1140.md, .claude/skills/sdlc-studio/reference-scripts-review.md
 > **Evidence:** 2026-10-31: `readiness.py check` over the run-four worklist, 24/25 ready, NOT READY US1076 (In Progress): already-satisfied; `transition.py set --id US1076 --status Done --dry-run` blocked on qa-seat-US1076-r1's REJECTs of 2026-10-19.
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio file
@@ -40,3 +40,4 @@ Every carried unit whose follow-up bug was fixed elsewhere is stranded: told to 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-31 | claude | Filed |
+| 2026-11-01 | Claude Opus 5.5 | In flight: Affects widened to reference-scripts-review.md - its readiness row (:77) still calls already-satisfied a close-candidate with no carry exception, found by the builder |
