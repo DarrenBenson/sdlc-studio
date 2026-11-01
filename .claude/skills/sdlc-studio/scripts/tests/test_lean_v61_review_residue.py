@@ -18,6 +18,8 @@ Each is driven through what the user meets: `sprint.py goal-review record`, the 
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
+import ast
+import functools
 import json
 import os
 import re
@@ -55,6 +57,336 @@ def _local_rows(text: str) -> list[tuple[str, str]]:
             if first:
                 rows.append((first.group(1), cells[2]))
     return rows
+
+
+# US1100: the pin reads whether a writer WRITES the file, not whether its source spells the name.
+# A script writes it when one of its calls `_is_write` passes a path expression for the file
+# (`_Writes._path`), or calls a function that does, in its own module or, as `module.func` or an
+# imported name, in a module it imports that also spells the file. A path expression starts from
+# a seed: a string constant whose last `/` segment is the file name. A page
+# writes it when one of its lines names the file beside a word `_PAGE_WRITE_RE` matches.
+#: Path methods that write the path they are called on.
+_PATH_WRITE_METHODS = ("write_text", "write_bytes")
+#: `src.replace(dst)` and `src.rename(dst)` write their one argument; `os.replace(src, dst)` and
+#: these `shutil` calls write their second.
+_MOVE_METHODS = ("replace", "rename")
+_MOVE_CALLS = {"os": ("replace", "rename"), "shutil": ("move", "copy", "copy2", "copyfile")}
+#: An `open` mode that writes.
+_WRITE_MODE_RE = re.compile(r"[wax+]")
+#: A helper whose name joins one of these to another word (`atomic_write`, `append_history`,
+#: `write_report`) writes each path it is passed; a bare `append` or `write` is a list or a handle.
+_WRITE_WORDS = frozenset({"write", "append", "save"})
+#: Calls whose result is still read as the path they are given, the sibling `with_name` or
+#: `with_suffix` returns included.
+_PATH_CALLS = frozenset({"Path", "PurePath", "PurePosixPath", "str", "fspath", "under_root",
+                         "with_name", "with_suffix", "resolve", "absolute", "expanduser"})
+#: A word that, on a page line naming the file, tells the agent to write it.
+_PAGE_WRITE_RE = re.compile(r"\b(?:writes?|written|updates?|saves?|appends?|records?)\b", re.I)
+
+
+def _imports(nodes: list[ast.AST]) -> tuple[dict[str, str], dict[str, tuple[str, str]]]:
+    """({alias: module file}, {imported name: (module file, name)}) from a module's import nodes,
+    deferred ones included; `from lib import run_state as rs` maps `rs` to `run_state.py`."""
+    mods, names = {}, {}
+    for n in nodes:
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                mods[a.asname or a.name.split(".")[0]] = a.name.rsplit(".", 1)[-1] + ".py"
+        elif n.module:
+            for a in n.names:
+                if n.module.split(".")[-1] == "lib":
+                    mods[a.asname or a.name] = a.name + ".py"
+                else:
+                    names[a.asname or a.name] = (n.module.rsplit(".", 1)[-1] + ".py", a.name)
+    return mods, names
+
+
+#: The nodes `_Writes._pass` reads; every other node is only walked through.
+_READ = (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr, ast.Return, ast.Call)
+_DEFS = (ast.FunctionDef, ast.AsyncFunctionDef)
+#: The callees `_Writes._is_write` or the `add_argument` read can match on their name alone.
+_CALLEES = frozenset({"open", "add_argument", *_PATH_WRITE_METHODS, *_MOVE_METHODS,
+                      *(c for calls in _MOVE_CALLS.values() for c in calls)})
+
+
+@functools.lru_cache(maxsize=None)
+def _compound_write(callee: str) -> bool:
+    """Whether `callee` joins a `_WRITE_WORDS` word to another (`atomic_write`, not `write`)."""
+    words = callee.strip("_").split("_")
+    return len(words) > 1 and bool(_WRITE_WORDS.intersection(words))
+
+
+@functools.lru_cache(maxsize=None)
+def _index(source: str) -> tuple:
+    """(scopes, imports) for a module's source, read in one walk. A scope, the
+    module first and then each def, is [node, its `_READ` nodes, the names and attributes it
+    uses, its string constants]; a def's body is its own scope, and the nodes a lambda or a class
+    holds outside a def belong to none."""
+    tree = ast.parse(source)
+    scopes, imports = {id(tree): [tree, [], set(), []]}, []
+    stack = [(tree, scopes[id(tree)])]
+    while stack:
+        node, scope = stack.pop()
+        for child in ast.iter_child_nodes(node):
+            if scope is not None:
+                if isinstance(child, _READ):
+                    scope[1].append(child)
+                if isinstance(child, ast.Name):
+                    scope[2].add(child.id)
+                elif isinstance(child, ast.Attribute):
+                    scope[2].add(child.attr)
+                elif isinstance(child, ast.Constant) and isinstance(child.value, str):
+                    scope[3].append(child)
+            if isinstance(child, (ast.Import, ast.ImportFrom)):
+                imports.append(child)
+            if isinstance(child, _DEFS):
+                inner = scopes[id(child)] = [child, [], set(), []]
+            elif isinstance(child, (ast.Lambda, ast.ClassDef)):
+                inner = None
+            else:
+                inner = scope
+            stack.append((child, inner))
+    return list(scopes.values()), _imports(imports)
+
+
+class _Writes:
+    """Which of `sources` ({file name: text}) write the file `name`; see the comment above. A scope
+    using none of the names the analysis has bound, and holding no seed, is skipped: nothing in it
+    can be a path expression or a call to a writer."""
+
+    def __init__(self, sources: dict[str, str], name: str) -> None:
+        self.sources, self.name = sources, name
+        self.mods: dict[str, dict] = {}
+
+    def _modules(self, start: str) -> list[str]:
+        """`start` and, transitively, each module it imports that `sources` holds and that spells
+        the file name."""
+        out, todo = [], [start]
+        while todo:
+            m = todo.pop()
+            if m in out or m not in self.sources:
+                continue
+            out.append(m)
+            mods, names = _index(self.sources[m])[1]
+            todo += [f for f in [*mods.values(), *(f for f, _ in names.values())]
+                     if self.name in self.sources.get(f, "")]
+        return out
+
+    def _setup(self, m: str) -> None:
+        scopes, imports = _index(self.sources[m])
+        seeds = {id(n) for _s, _r, _u, strings in scopes for n in strings
+                 if n.value.rsplit("/", 1)[-1] == self.name}
+        self.mods[m] = {
+            "seeds": seeds, "imports": imports, "glob": set(), "dests": set(), "paths": set(),
+            "writers": set(), "calls": [],
+            "scopes": [(s, read, used, set(), any(id(n) in seeds for n in strings))
+                       for s, read, used, strings in scopes]}
+
+    def _bound(self, m: str) -> set[str]:
+        """The names whose use can make a scope of `m` hold a path expression or a write."""
+        st = self.mods[m]
+        mods, imported = st["imports"]
+        out = st["glob"] | st["dests"] | st["paths"] | st["writers"]
+        for f in set(mods.values()):
+            out |= self._of(f, "paths") | self._of(f, "writers")
+        return out | {a for a, (f, n) in imported.items()
+                      if n in self._of(f, "paths") | self._of(f, "writers")}
+
+    def _of(self, alias_file: str | None, key: str) -> set[str]:
+        """`key` of an imported module, read only when it spells the file name, as `_modules`
+        reaches; a cited writer analysed earlier must not answer for one that does not."""
+        if alias_file in self.mods and self.name in self.sources[alias_file]:
+            return self.mods[alias_file][key]
+        return set()
+
+    def _path(self, m: str, e: ast.AST, names: set[str]) -> bool:
+        """Whether `e` is a path expression for the file in module `m`, with `names` bound to one:
+        a seed string; a name an assignment in the same function, or at module level, binds to
+        one; `x.<dest>` of an `add_argument` whose default is one; a call to a function returning
+        one; or a `/` join, an attribute or a `_PATH_CALLS` call taken on one."""
+        st = self.mods[m]
+        mods, imported = st["imports"]
+        if isinstance(e, ast.Constant):
+            return id(e) in st["seeds"]
+        if isinstance(e, ast.Name):
+            return e.id in names or e.id in st["glob"]
+        if isinstance(e, ast.Attribute):
+            return ((e.attr in st["dests"] and isinstance(e.value, ast.Name))
+                    or self._path(m, e.value, names))
+        if isinstance(e, ast.BinOp) and isinstance(e.op, ast.Div):
+            return self._path(m, e.left, names) or self._path(m, e.right, names)
+        if not isinstance(e, ast.Call):
+            return False
+        f = e.func
+        if isinstance(f, ast.Name):
+            f_file, f_name = imported.get(f.id, (None, None))
+            if f.id in st["paths"] or f_name in self._of(f_file, "paths"):
+                return True
+            callee = f.id
+        elif isinstance(f, ast.Attribute):
+            if isinstance(f.value, ast.Name) and f.attr in self._of(mods.get(f.value.id), "paths"):
+                return True
+            if f.attr in _PATH_CALLS and self._path(m, f.value, names):
+                return True
+            callee = f.attr
+        else:
+            return False
+        return callee in _PATH_CALLS and any(self._path(m, a, names) for a in e.args)
+
+    def _is_write(self, m: str, c: ast.Call, names: set[str]) -> bool:
+        """Whether call `c` writes the file: `_PATH_WRITE_METHODS` or a writing `open` on a path
+        expression, a move or copy onto one, a `_WRITE_WORDS` helper passed one, or a call to a
+        function that writes it."""
+        st = self.mods[m]
+        mods, imported = st["imports"]
+        f = c.func
+
+        def path(e: ast.AST) -> bool:
+            return self._path(m, e, names)
+
+        def writes_mode(i: int) -> bool:
+            mode = next((k.value for k in c.keywords if k.arg == "mode"),
+                        c.args[i] if len(c.args) > i else None)
+            return (isinstance(mode, ast.Constant) and isinstance(mode.value, str)
+                    and bool(_WRITE_MODE_RE.search(mode.value)))
+
+        if isinstance(f, ast.Name):
+            if f.id == "open":
+                return bool(c.args) and path(c.args[0]) and writes_mode(1)
+            f_file, f_name = imported.get(f.id, (None, None))
+            if f.id in st["writers"] or f_name in self._of(f_file, "writers"):
+                return True
+            callee = f.id
+        elif isinstance(f, ast.Attribute):
+            if f.attr in _PATH_WRITE_METHODS:
+                return path(f.value)
+            if f.attr == "open" and path(f.value):
+                return writes_mode(0)
+            if isinstance(f.value, ast.Name) and f.attr in _MOVE_CALLS.get(f.value.id, ()):
+                return len(c.args) == 2 and path(c.args[1])
+            if f.attr in _MOVE_METHODS:
+                return len(c.args) == 1 and not c.keywords and path(c.args[0])
+            if isinstance(f.value, ast.Name) and f.attr in self._of(mods.get(f.value.id), "writers"):
+                return True
+            callee = f.attr
+        else:
+            return False
+        return _compound_write(callee) and any(path(a) for a in [*c.args,
+                                                                  *(k.value for k in c.keywords)])
+
+    def _pass(self, m: str) -> bool:
+        """One pass over module `m`; whether it bound anything new."""
+        st = self.mods[m]
+
+        def size() -> tuple:
+            return (len(st["glob"]), len(st["dests"]), len(st["paths"]), len(st["writers"]),
+                    sum(len(s[3]) for s in st["scopes"]))
+
+        before, bound, calls = size(), self._bound(m), []
+        for scope, nodes, used, local, seeded in st["scopes"]:
+            names = st["glob"] if isinstance(scope, ast.Module) else local
+            if not (seeded or names or used & bound):
+                continue
+            for n in nodes:
+                if isinstance(n, ast.Call):
+                    f = n.func
+                    callee = (f.id if isinstance(f, ast.Name)
+                              else f.attr if isinstance(f, ast.Attribute) else "")
+                    if not (callee in _CALLEES or callee in bound or _compound_write(callee)):
+                        continue
+                    if (callee == "add_argument"
+                            and any(k.arg == "default" and self._path(m, k.value, names)
+                                    for k in n.keywords)):
+                        dest = next((k.value.value for k in n.keywords if k.arg == "dest"), None)
+                        flag = next((a.value for a in n.args if isinstance(a, ast.Constant)
+                                     and str(a.value).startswith("--")), "")
+                        st["dests"].add(dest or flag.lstrip("-").replace("-", "_"))
+                    if self._is_write(m, n, names):
+                        calls.append(n)
+                        if not isinstance(scope, ast.Module):
+                            st["writers"].add(scope.name)
+                    continue
+                value, targets = getattr(n, "value", None), []
+                if isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+                    targets = n.targets if isinstance(n, ast.Assign) else [n.target]
+                if value is not None and targets and self._path(m, value, names):
+                    names.update(t.id for tgt in targets for t in ast.walk(tgt)
+                                 if isinstance(t, ast.Name))
+                if (isinstance(n, ast.Return) and n.value is not None
+                        and not isinstance(scope, ast.Module) and self._path(m, n.value, names)):
+                    st["paths"].add(scope.name)
+        st["calls"] = calls
+        return before != size()
+
+    def write_calls(self, module: str) -> list[ast.Call]:
+        """The calls in `module` that write the file, once every module it reaches has settled."""
+        mods = self._modules(module)
+        for m in mods:
+            if m not in self.mods:
+                self._setup(m)
+        while any([self._pass(m) for m in mods]):
+            pass
+        return self.mods[module]["calls"] if module in self.mods else []
+
+
+def _page_writes(text: str, name: str) -> bool:
+    """Whether a line of the page names `name` beside a word `_PAGE_WRITE_RE` matches."""
+    return any(name in line and _PAGE_WRITE_RE.search(line) for line in text.splitlines())
+
+
+def _shipped_sources() -> dict[str, str]:
+    """{file name: text} for each shipped script (tests excluded) and reference or help page."""
+    files = [p for p in (SKILL / "scripts").rglob("*.py") if "tests" not in p.parts]
+    files += list(SKILL.glob("reference-*.md")) + list((SKILL / "help").glob("*.md"))
+    return {p.name: p.read_text(encoding="utf-8") for p in files}
+
+
+def _cited(writer: str) -> list[str]:
+    """The script and page file names a writer cell backticks."""
+    return [Path(c).name for c in re.findall(r"`([\w/.-]+\.(?:py|md))`", writer)]
+
+
+def _pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[str]:
+    """One line per `.local` row whose writer cell names no shipped script or page, names one
+    `sources` lacks, or names one that does not write the row's file. Every cited writer must
+    write it, so a row naming a caller beside the library holds the caller too."""
+    out = []
+    for name, writer in rows:
+        cited, writes = _cited(writer), _Writes(sources, name)
+        if not cited:
+            out.append(f"{name}: the writer cell {writer.strip()!r} names no script or page")
+        for c in cited:
+            if c not in sources:
+                out.append(f"{name}: `{c}` is no shipped script or workflow page")
+            elif c.endswith(".md") and not _page_writes(sources[c], name):
+                out.append(f"{name}: `{c}` has no line telling the agent to write it")
+            elif c.endswith(".py") and not writes.write_calls(c):
+                out.append(f"{name}: `{c}` does not write it")
+    return out
+
+
+def _stopped(writes: _Writes, writer: str) -> str:
+    """`writer`'s text edited so it no longer writes the file `writes` reads: the source of each
+    outermost call `writes` reads as writing it replaced by `None`, or, for a page, each line
+    `_page_writes` reads dropped."""
+    text, name = writes.sources[writer], writes.name
+    if writer.endswith(".md"):
+        return "\n".join(line for line in text.splitlines() if not _page_writes(line, name))
+    starts = [0]
+    for line in text.splitlines(keepends=True):
+        starts.append(starts[-1] + len(line))
+
+    def at(line: int, col: int) -> int:
+        """A character offset, from the 1-based line and the UTF-8 byte column `ast` gives."""
+        return starts[line - 1] + len(text[starts[line - 1]:starts[line]].encode()[:col].decode())
+
+    spans = sorted({(at(c.lineno, c.col_offset), at(c.end_lineno, c.end_col_offset))
+                    for c in writes.write_calls(writer)})
+    outer = [s for i, s in enumerate(spans) if not any(o[0] <= s[0] and s[1] <= o[1]
+                                                       for o in spans[:i])]
+    for start, end in reversed(outer):
+        text = text[:start] + "None" + text[end:]
+    return text
 
 
 class V61ReviewResidueTests(unittest.TestCase):
@@ -162,24 +494,101 @@ class V61ReviewResidueTests(unittest.TestCase):
     def test_every_local_row_has_a_writer(self) -> None:
         """AC4. MUTANTS: HEAD's rows for project-state.json and review-queue.json, whose writer
         cells (`project orchestration`, `review workflow`) name nothing that writes them; a
-        writer cell naming a script or workflow page that never mentions the file. A row's
-        writer is a backticked shipped script whose source names the file, or the backticked
-        reference page whose workflow the agent runs and which names the file."""
+        writer cell naming a script or workflow page that does not write the file. US1100 made
+        the check `_pin_failures`: each backticked writer must write the file, not merely name it."""
         rows = _local_rows(TRD.read_text(encoding="utf-8"))
         self.assertGreaterEqual(len(rows), 10, "premise: the TRD's .local table moved")
-        scripts = {p.name: p for p in (SKILL / "scripts").rglob("*.py")
-                   if "tests" not in p.parts}
-        pages = {p.name: p for p in list(SKILL.glob("reference-*.md"))
-                 + list((SKILL / "help").glob("*.md"))}
+        self.assertEqual([], _pin_failures(rows, _shipped_sources()))
+
+
+#: The file the fixtures below write, read or only mention.
+PROBE = "probe-state.json"
+#: (case, {file name: source}, the writer read, whether it writes `PROBE`). Each near miss names
+#: the file in code or prose and does not write it; each control writes it one way a shipped
+#: writer does.
+_PROBES = (
+    ("docstring", {"w.py": f'"""Writes {PROBE}."""\ndef f(root):\n    """Writes .local/{PROBE}."""\n'},
+     "w.py", False),
+    ("comment", {"w.py": f"# writes .local/{PROBE}\nx = 1\n"}, "w.py", False),
+    ("read", {"w.py": f"def f(root):\n    p = root / '.local' / '{PROBE}'\n"
+                      f"    return json.loads(p.read_text())\n"}, "w.py", False),
+    ("open to read", {"w.py": f"def f(root):\n    with open(root / '{PROBE}', 'r') as fh:\n"
+                              f"        return fh.read()\n"}, "w.py", False),
+    ("legacy moved away", {"w.py": f"LEGACY = Path('.local') / '{PROBE}'\n"
+                                   f"def migrate(root, dst):\n    src = root / LEGACY\n"
+                                   f"    src.replace(dst)\n"}, "w.py", False),
+    ("str.replace", {"w.py": f"def f(text):\n    return text.replace('{PROBE}', 'x.json')\n"},
+     "w.py", False),
+    ("a list append", {"w.py": f"def f(root):\n    rows = []\n    rows.append(root / '{PROBE}')\n"
+                               f"    return rows\n"}, "w.py", False),
+    ("another file written", {"w.py": f"def f(root):\n    p = root / '{PROBE}'\n"
+                                      f"    q = root / 'other.json'\n"
+                                      f"    q.write_text(p.read_text())\n"}, "w.py", False),
+    ("path in a message", {"w.py": f"def f(root, out):\n"
+                                   f"    out.write_text(f'see {{root}}/{PROBE}')\n"}, "w.py", False),
+    ("write_text", {"w.py": f"def f(root):\n    (root / '.local' / '{PROBE}').write_text('x')\n"},
+     "w.py", True),
+    ("open to append", {"w.py": f"def f(root):\n    with open(root / '{PROBE}', 'a') as fh:\n"
+                                f"        fh.write('x')\n"}, "w.py", True),
+    ("os.replace onto it", {"w.py": f"def f(root, tmp):\n    os.replace(tmp, root / '{PROBE}')\n"},
+     "w.py", True),
+    ("an argparse default", {"w.py": f"def main(argv):\n    ap = argparse.ArgumentParser()\n"
+                                     f"    ap.add_argument('--out', default='.local/{PROBE}')\n"
+                                     f"    args = ap.parse_args(argv)\n"
+                                     f"    Path(args.out).write_text('x')\n"}, "w.py", True),
+    ("a returned path, atomically", {"lib_w.py": f"REL = Path('.local') / '{PROBE}'\n"
+                                                 f"def path(root):\n    return root / REL\n"
+                                                 f"def save(root, s):\n    p = path(root)\n"
+                                                 f"    sdlc_md.atomic_write(p, s)\n"},
+     "lib_w.py", True),
+)
+#: Callers of `lib_w.py` above: one writes the file only by calling its `save`, one only reads.
+_CALLERS = (("calls save", "import lib_w\ndef go(root):\n    lib_w.save(root, 'x')\n", True),
+            ("reads the path", "import lib_w\ndef go(root):\n    return lib_w.path(root).read_text()\n",
+             False))
+
+
+class LocalWriterPinTests(unittest.TestCase):
+    """US1100: the `.local` pin fails when a documented writer stops writing its file."""
+
+    def test_a_writer_that_stops_writing_fails_the_pin(self) -> None:
+        """AC3. MUTANTS: the pin reverted to BG0936's, which passes a writer whose source only
+        names the file (the legacy `telemetry.jsonl` beside `telemetry.py`); `_Writes` reading a
+        path in a docstring, a read, a rename away, a list append or a message as a write, or
+        missing a shape a shipped writer uses. The control: every row of the TRD passes. Then each writer of each
+        row is edited by `_stopped` so it no longer writes the file, alone, and the pin, read
+        over a row naming that writer, names it."""
+        sources = _shipped_sources()
+        rows = _local_rows(TRD.read_text(encoding="utf-8"))
+        self.assertIn("run-state.json", dict(rows), "premise: the TRD documents the run state")
+        self.assertEqual([], _pin_failures(rows, sources))
+        self.assertTrue(_pin_failures([("telemetry.jsonl", "`telemetry.py`")], sources),
+                        "the pin passes the legacy name, which telemetry.py only reads")
         for name, writer in rows:
-            with self.subTest(file=name):
-                cited = re.findall(r"`([\w/.-]+\.(?:py|md))`", writer)
-                sources = [scripts.get(Path(c).name) or pages.get(Path(c).name) for c in cited]
-                self.assertTrue(cited and all(sources),
-                                f"{name}: the writer cell {writer.strip()!r} names no shipped "
-                                f"script or workflow page")
-                self.assertTrue(any(name in s.read_text(encoding="utf-8") for s in sources),
-                                f"{name}: nothing the writer cell names mentions the file")
+            writes = _Writes(sources, name)
+            for cited in dict.fromkeys(_cited(writer)):
+                with self.subTest(file=name, writer=cited):
+                    stopped = {**sources, cited: _stopped(writes, cited)}
+                    self.assertNotEqual(sources[cited], stopped[cited])
+                    failures = _pin_failures([(name, f"`{cited}`")], stopped)
+                    self.assertTrue(any(f"`{cited}`" in f for f in failures), failures)
+        lib = dict(_PROBES[-1][1])
+        for case, files, module, expected in (
+                *_PROBES, *((c, {**lib, "c.py": src}, "c.py", w) for c, src, w in _CALLERS)):
+            with self.subTest(case=case):
+                self.assertEqual(expected, bool(_Writes(files, PROBE).write_calls(module)))
+        # `x.py` writes only through `y.py`, which does not spell the file, so it is not read as a
+        # writer; the verdict on it must not change when `y.py` is read before it.
+        chain = {**lib, "y.py": "import lib_w\ndef go(root):\n    lib_w.save(root, 'x')\n",
+                 "x.py": "import y\ndef run(root):\n    y.go(root)\n"}
+        self.assertEqual([f"{PROBE}: `x.py` does not write it"],
+                         _pin_failures([(PROBE, "`y.py`, `x.py`")], chain))
+        self.assertEqual(_pin_failures([(PROBE, "`x.py`")], chain),
+                         _pin_failures([(PROBE, "`y.py`, `x.py`")], chain))
+        for line, expected in ((f"Read `{PROBE}` to resume.", False),
+                               (f"Update `{PROBE}` with the step.", True)):
+            with self.subTest(page=line):
+                self.assertEqual(expected, _page_writes(line, PROBE))
 
 
 if __name__ == "__main__":

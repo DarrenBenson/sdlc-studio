@@ -298,7 +298,7 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    Shared-file writes go through `sdlc_md.atomic_write` (temp-then-replace) and id
    allocation is serialised by `sdlc_md.allocation_lock`, so a crash or a concurrent
    writer never corrupts a shared file. The one deliberate exception to atomic-write is
-   the append-only ledgers - `critic`'s verdict log, `telemetry.jsonl`
+   the append-only ledgers - `critic`'s verdict log, the actuals and forecast shards
    and `verify-history.jsonl` - each grown by a single `O_APPEND` row write rather than a
    rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
    reports rather than silently drops), never the file. The scripts are NOT read-only
@@ -496,27 +496,77 @@ a half-written decomposition never certifies clean.
 | --- | --- | --- |
 | Specs, epics, stories, plans, bugs, CRs, RFCs, test specs | Markdown files under `sdlc-studio/`, committed | Files are truth; reviewable in PRs; survive context resets. |
 | Index registries (`_index.md` per type) | Markdown tables, committed | Derived view; reconciled from the file census, never authoritative. |
-| Runtime / cache state | JSON under `sdlc-studio/.local/`, gitignored | Machine-generated, per-user, regenerable; must not pollute history. |
+| Measured evidence, lessons, verdict logs, run reports and run records | Files under `sdlc-studio/`, committed (listed below) | Observations of runs that already happened, which no tool can regenerate, so every clone carries them. |
+| Runtime / cache state | JSON under `sdlc-studio/.local/`, gitignored | Machine-generated and per-clone; must not pollute history. |
 | Current-state anchor | `sdlc-studio/reviews/LATEST.md`, committed | Re-read after a context compaction to re-orient in one read. |
+
+#### Committed evidence and records
+
+`tools/tests/test_lean_trd_refresh.py` reads each path below from its writer's code, and checks
+every tracked file under `sdlc-studio/retros/evidence/` and `sdlc-studio/reports/` against it.
+
+| Record | Path | Writer | Purpose |
+| --- | --- | --- | --- |
+| Unit actuals | `sdlc-studio/retros/evidence/actuals-*.jsonl` | `telemetry.py` | What each unit cost, one record per unit close, sharded by UTC day. `latest_actuals()` takes the last **non-null** context value per field, so a bare close record after an instrumented one cannot erase the measurement. |
+| Forecasts | `sdlc-studio/retros/evidence/forecasts-*.jsonl` | `telemetry.py` | What the planner predicted a unit would cost, recorded when it predicted it, so `retro accuracy` judges that number (§10). |
+| Audit cost | `sdlc-studio/retros/evidence/audit-cost-*.jsonl` | `audit_cost.py` | Each finished audit run's scope, estimate and measured actuals, appended by `audit_cost.py record`; `audit_cost.py run` seeds its estimate from them. |
+| Claim-drift study | `sdlc-studio/retros/evidence/claim-drift-*.json` | none: last written by US0577 and US0597 | The claim-drift lane's yield count and a premise replay over 40 commits, kept as that study's evidence. |
+| Lessons class store | `sdlc-studio/lessons.jsonl` | `lessons.py` | One row per failure class, fed by the retro's classed Try items. |
+| Delivery verdicts | `sdlc-studio/reviews/critic-verdicts.md` | `critic.py record` | The verdict ledger: whether a unit was reviewed is read from it. |
+| Plan-review verdicts | `sdlc-studio/reviews/plan-review-verdicts.md` | none: plan review is retired | The historical plan ledger, kept readable. |
+| Author self-checks | `sdlc-studio/reviews/author-self-checks.md` | `critic.py self-check record` | The author's claims and mutants for a unit's diff, which `critic.py brief` requires under `review.author_self_check: block`. |
+| Run reports | `sdlc-studio/reports/RPT*.json` | `sprint_report.py`, through `sprint.py close` and `sprint.py sign` | The report of record for a run, which the sign writes its signature onto. |
+| Report twins | `sdlc-studio/reports/RPT*-*.md` | `sprint_report.py` | The Markdown rendering of each report, re-rendered whenever the JSON is written. |
+| Run records | `sdlc-studio/reports/runs/*.json` | `run_state.py`, through `sprint.py close` and `sprint.py sign` | The tracked run state below. |
+
+#### Run state
+
+A run is kept in three places. The live record and its archive are under `.local/`, so they exist
+only in the clone that wrote them. The tracked record is what tells every other clone that a run
+is closed and awaits its signature, and what lets any full clone re-derive the signed page.
+
+| Run state | Path | Kept in | Written by |
+| --- | --- | --- | --- |
+| Live record | `sdlc-studio/.local/run-state.json` | `.local`, this clone only | `sprint.py plan --write` opens it; the scripts its `.local` row names record fields on it |
+| Archive | `sdlc-studio/.local/run-archive/*.json` | `.local`, this clone only | A copy of each run's record keyed by run id, taken when it closes, so a closed run stays readable after the next one opens |
+| Tracked record | `sdlc-studio/reports/runs/*.json` | tracked | `sprint.py close` files it still running and `sprint.py sign` files it sealed, each with its absolute paths made portable |
+
+#### The run lifecycle
+
+| Step | Command | Run state |
+| --- | --- | --- |
+| plan | `sprint.py plan --write` | Opens the live record, `sdlc-studio/.local/run-state.json`, with the run id and the approved batch. It refuses while a tracked record awaits its signature for a run this clone does not hold open. |
+| deliver | `critic.py record`, `transition.py` | Record each unit's review base and actuals on the live record. |
+| close | `sprint.py close` | Files the run report and the tracked record, `sdlc-studio/reports/runs/*.json`, still running: a clone that pulls it sees the run awaits its signature, and `sign` takes it up from there. |
+| sign | `sprint.py sign` | One principal seals the run: the live record closes with its outcome and is archived, the signature is written onto the report, and the tracked record, `sdlc-studio/reports/runs/*.json`, is filed again, sealed. |
+
+A rolling run (`sprint.py plan --write --cycles N`) also passes `sprint.py boundary` between
+cycles, which closes one cycle's live record and opens the next.
 
 #### JSON state files (under `.local/`)
 
 | File | Writer | Purpose |
 | --- | --- | --- |
 | `project-state.json` | the agent running `project implement` (`reference-project.md`) | Tracks `project plan` / `project implement` progress and dependency order. [MEDIUM] |
-| `run-state.json` | `sprint.py`, with `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` recording fields on it | A run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
+| `run-state.json` | `lib/run_state.py`, called by `sprint.py`, `critic.py`, `sprint_report.py`, `decisions.py`, `retro.py` and `transition.py` | The live run record (Run state, above): the run's identity, batch, resolved appetite and outcome, written under a lock. The breaker reads back the ceiling the plan stamped, so plan and run cannot disagree. [HIGH] |
+| `sprint-plan.json` | `sprint.py` | The plan `sprint.py plan` derived, its batch and recorded test strategy, which `handoff.py` reads. [HIGH] |
+| `goal-review.json` | `sprint.py` | The review seats' verdicts on the run's goal, written by `sprint.py goal-review record`. [HIGH] |
+| `briefs.jsonl` | `critic.py` | A note of each brief `critic.py brief` prints, so `critic.py record` can tell a verdict taken against a scope the unit has since outgrown. [HIGH] |
 | `review-state.json` | `review_prep.py` (`close`), and the agent running `epic review` (`reference-epic.md`) | Review cadence and verdict state. [MEDIUM] |
 | `review-queue.json` | the agent running `epic review` (`reference-epic.md`), which removes it when the queue empties | Pending review inputs, so a paused review resumes. [MEDIUM] |
 | `wsjf-inputs.json` | the review seats (via the plan-rung consult, `reference-sprint.md`) | Per-unit value / time-criticality / risk-reduction / size scores feeding the WSJF order. [HIGH] |
-| `telemetry.jsonl` | `telemetry.py` (via `artifact close`) | Append-only run/close events feeding the estimate-vs-actual report. `latest_actuals()` reads the last **non-null** value per field, so a bare close record after an instrumented one cannot erase the measurement. [HIGH] |
 | `verify-history.jsonl` | `verify_ac.py` | Append-only per-AC verification history. [HIGH] |
 | `verify-report.json` | `verify_ac.py` | Machine-readable AC verification report (per-AC pass/fail/manual). [HIGH] |
 | `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; no gate lane reads it. [HIGH] |
 | `mutation-series.jsonl` | `mutation.py` | One row appended per run: what it cost and what it found, read back by `mutation.py yield --run <id>`. No per-target ledger is kept. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 
-One measurement artefact is deliberately **committed** rather than `.local/`:
-`sdlc-studio/retros/VELOCITY.md`, one row per sprint (forecast, actual, ratio,
+Each writer a row names writes its file, which `test_lean_v61_review_residue.py` checks by reading
+each script's code and each page's instructions. The gate's own `.local/` files are listed under the gate tier (§3). A
+`.local/telemetry.jsonl` or `.local/forecasts.jsonl` an older release wrote is read before the
+committed shards until `telemetry.py migrate` moves it into them.
+
+`sdlc-studio/retros/VELOCITY.md` is committed too: one row per sprint (forecast, actual, ratio,
 coverage). It is a history a human reads to decide whether the forecast constants
 have earned a change - not a cache, and explicitly not an auto-recalibration input
 (ADR-010's honesty rule: the report stops at reporting).
@@ -1211,6 +1261,7 @@ touches the component. The constraints below span components.
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 | 2026-10-22 | 6.1.0 | BG1095: §3 gives where the push gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
 | 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier); §3 says `--release` executes no bug's `Verify:` expression |
+| 2026-11-01 | 6.1.0 | US1100: §6 Storage Strategy lists the committed evidence and records with their paths, adds the Run state and run lifecycle sections (live and archived in `.local`, tracked under `sdlc-studio/reports/runs/`, from plan through close to sign), drops `telemetry.jsonl` from the `.local` table and adds `sprint-plan.json`, `goal-review.json` and `briefs.jsonl` |
 
 ---
 

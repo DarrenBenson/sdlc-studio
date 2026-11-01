@@ -14,9 +14,13 @@ Run from the repo root:
 # test-census-subject: sdlc-studio/trd.md
 from __future__ import annotations
 
+import argparse
+import ast
 import contextlib
+import fnmatch
 import io
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -29,8 +33,13 @@ FILE_FINDING = SCRIPTS / "file_finding.py"
 ARTIFACT = SCRIPTS / "artifact.py"
 
 sys.path.insert(0, str(SCRIPTS))
+import critic  # noqa: E402
 import file_finding  # noqa: E402
-from lib import sdlc_md  # noqa: E402
+import lessons  # noqa: E402
+import sprint  # noqa: E402
+import sprint_report  # noqa: E402
+import telemetry  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 
 #: The authority's name. Each test first checks `sdlc_md` defines it, so a rename fails here
 #: rather than leaving the documents naming a set that no longer exists.
@@ -244,6 +253,146 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
                 for member in self.executes:
                     self.assertRegex(why, rf"\b{re.escape(member)}\b")
                 self.assertEqual([], _narrower_than(why, self.executes))
+
+
+def _git(*argv: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(REPO), *argv], capture_output=True, text=True)
+
+
+def _tracked(*pathspec: str) -> list[str]:
+    """The files git tracks under `pathspec`, repo-relative."""
+    out = _git("ls-files", "-z", "--", *pathspec)
+    if out.returncode:
+        raise AssertionError(f"git ls-files failed: {out.stderr}")
+    return [f for f in out.stdout.split("\0") if f]
+
+
+def _ignored(path: str) -> bool:
+    """Whether git ignores `path`, read from the ignore rules alone."""
+    return _git("check-ignore", "-q", "--no-index", path).returncode == 0
+
+
+def _one_table(section: str, first: str) -> list[list[str]]:
+    """The one table in `section` whose header's first cell is `first`."""
+    tables = [t for t in _tables(section) if t[0][0] == first]
+    if len(tables) != 1:
+        raise AssertionError(f"{len(tables)} tables headed {first!r}, expected one")
+    return tables[0]
+
+
+def _spans(cell: str) -> set[str]:
+    return set(re.findall(r"`([^`]+)`", cell))
+
+
+def _sprint_verbs_reaching(target: str) -> set[str]:
+    """The `sprint.py` verbs whose handler calls `run_state.<target>`, in its own body or in a
+    function of `sprint.py` that it, or one such function, calls by name."""
+    tree = ast.parse(_read(SCRIPTS / "sprint.py"))
+    funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+
+    def reaches(name: str, seen: set[str]) -> bool:
+        if name in seen or name not in funcs:
+            return False
+        seen.add(name)
+        for c in ast.walk(funcs[name]):
+            f = getattr(c, "func", None)
+            if (isinstance(f, ast.Attribute) and f.attr == target
+                    and isinstance(f.value, ast.Name) and f.value.id == "run_state"):
+                return True
+            if isinstance(f, ast.Name) and reaches(f.id, seen):
+                return True
+        return False
+
+    return {verb for verb, p in _sprint_verbs().items()
+            if (fn := p.get_default("func")) is not None and reaches(fn.__name__, set())}
+
+
+def _sprint_verbs() -> dict[str, argparse.ArgumentParser]:
+    parser = sprint.build_parser()
+    return next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
+
+
+class TrdStorageTests(unittest.TestCase):
+    """US1100: the storage sections list the committed records and the run's state and lifecycle,
+    each read from the code that writes it."""
+
+    def test_every_committed_record_is_listed(self) -> None:
+        """Mutants: a record the code writes and git tracks dropped from the table, or listed at
+        another path; a tracked file under the evidence or report directories that no listed path
+        matches; a listed path that tracks no file. The set is read from the writers' code: the
+        actuals and forecast shards, the lessons store, the verdict log of each `critic.PHASES`
+        phase, the self-check log, the reports and the run records."""
+        section = _section(_trd_body(), "Committed evidence and records")
+        table = _one_table(section, "Record")
+        col = table[0].index("Path")
+        listed = set().union(*(_spans(row[col]) for row in table[1:]))
+        report_dir = sprint_report.report_dir("")
+        expected = {p.as_posix() for p in (
+            telemetry.actuals_path("", "*"), telemetry.forecasts_path("", "*"),
+            lessons.store_path(""), critic.self_checks_path(""),
+            *(critic.verdicts_path("", phase) for phase in critic.PHASES),
+            report_dir / f"{sdlc_md.META_TYPES['report'][1]}*.json",
+            run_state.tracked_path("", "*"))}
+        self.assertIn("sdlc-studio/lessons.jsonl", expected)
+        self.assertEqual(sdlc_md.META_TYPES["report"][0], report_dir.as_posix())
+        tracked = _tracked("sdlc-studio")
+        for pattern in sorted(expected):
+            with self.subTest(record=pattern):
+                self.assertTrue(fnmatch.filter(tracked, pattern), f"git tracks no {pattern}")
+                self.assertIn(pattern, listed)
+        # The reports directory's `_index.md` is an index registry, which the Storage Strategy
+        # table gives its own row.
+        self.assertIn("`_index.md`", _section(_trd_body(), "Storage Strategy"))
+        swept = [f for f in _tracked(telemetry.EVIDENCE.as_posix(), report_dir.as_posix())
+                 if Path(f).name != "_index.md"]
+        self.assertTrue(fnmatch.filter(swept, telemetry.actuals_path("", "*").as_posix()))
+        for f in swept:
+            with self.subTest(tracked=f):
+                self.assertTrue(any(fnmatch.fnmatchcase(f, p) for p in listed),
+                                f"{f} is committed and no listed path matches it")
+        for p in sorted(listed):
+            with self.subTest(listed=p):
+                self.assertTrue(fnmatch.filter(tracked, p), f"the TRD lists {p}, which tracks nothing")
+
+    def test_the_run_lifecycle_reaches_sign(self) -> None:
+        """Mutants: the run state shown as `.local` only (the tracked record dropped, or kept in
+        `.local`); a path the TRD gives that `run_state` does not keep; the sign step left out or
+        not last, or close not before it; a step naming the tracked record whose `sprint.py` verb
+        does not file it, or a verb that files it on a step that does not say so. The paths are
+        `run_state`'s, the tiers are git's, and which verbs open the run or file the tracked
+        record is read from `sprint.py`'s handlers."""
+        body, live = _trd_body(), run_state.REL.as_posix()
+        tracked_record = run_state.tracked_path("", "*").as_posix()
+        self.assertIn(".local", run_state.REL.parts)
+        self.assertNotIn(".local", run_state.TRACKED_REL.parts)
+        state = _one_table(_section(body, "Run state"), "Run state")
+        path, kept = state[0].index("Path"), state[0].index("Kept in")
+        rows = {next(iter(_spans(r[path]))): r[kept] for r in state[1:]}
+        self.assertEqual({live, run_state.archive_path("", "*").as_posix(), tracked_record},
+                         set(rows))
+        for p, where in rows.items():
+            with self.subTest(path=p):
+                self.assertEqual(where.startswith("`.local`"), _ignored(p), where)
+                if not _ignored(p):
+                    self.assertEqual("tracked", where)
+                    self.assertTrue(_tracked(p), f"git tracks no {p}")
+
+        life = _one_table(_section(body, "The run lifecycle"), "Step")
+        cmd, says = life[0].index("Command"), life[0].index("Run state")
+        steps = [r[0] for r in life[1:]]
+        self.assertEqual(("plan", "sign"), (steps[0], steps[-1]))
+        self.assertLess(steps.index("close"), steps.index("sign"))
+        verbs = [set(re.findall(r"`sprint\.py ([\w-]+)", r[cmd])) for r in life[1:]]
+        openers, filers = _sprint_verbs_reaching("open_run"), _sprint_verbs_reaching("file_tracked")
+        self.assertIn("plan", openers)
+        self.assertIn("sign", filers)
+        for row, named in zip(life[1:], verbs):
+            with self.subTest(step=row[0]):
+                self.assertLessEqual(named, set(_sprint_verbs()))
+                self.assertEqual(bool(named & filers), tracked_record in row[says], row)
+        self.assertLessEqual(filers, set().union(*verbs))
+        self.assertTrue(verbs[0] & openers and live in life[1][says], life[1])
+        self.assertTrue(verbs[-1] & filers, life[-1])
 
 
 if __name__ == "__main__":
