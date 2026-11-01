@@ -34,6 +34,7 @@
 - AC2 must fail on: a pinned derived count (a bare integer where the rule asks for a band).
 - AC3 must fail on: the floor reading Complete while BG0959 is open; BG0959's status is read from its file.
 - The doc_freshness census (US1098) does not read the PRD's counts in their current shapes ("58 deterministic helper scripts", "52 `reference-*.md`"), so it cannot be relied on to catch them; AC2's own test must cover each count the PRD states, read from the tree.
+- State each derived count as a band in a shape the census reads (`about N <thing>` or `N+ <thing>`, per doc_freshness's measures), so CR0649's criterion, that the census reports a stale PRD count, holds on the live PRD once this lands (qa-seat-US1098-r1, round 2).
 - Overlap: US1103. US1102 maps these NFRs, so deliver this before US1102. Covers CR0647 AC3-AC5.
 
 ## Revision History

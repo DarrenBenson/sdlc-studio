@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-10-31
+**Last Updated:** 2026-11-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 152 |
+| Open | 153 |
 | In Progress | 0 |
 | Fixed | 817 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1142** |
+| **Total** | **1143** |
 
 ## All Bugs
 
@@ -218,6 +218,7 @@
 | [BG1140](BG1140-readiness-py-tells-a-carried-unit-whose-verifiers.md) | readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1141](BG1141-the-gate-host-docs-test-s-docstrings-claim.md) | The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config` | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1142](BG1142-doc-freshness-is-described-as-a-latest-md.md) | doc-freshness is described as a LATEST.md check everywhere, though it now censuses the TRD, PRD and TSD; one hook comment lists it as a per-commit lane | Open | Low | 2026-10-31 | 2026-10-31 |
+| [BG1143](BG1143-doc-freshness-s-baseline-leg-has-no-pin.md) | doc_freshness's baseline leg has no pin for checking every Coverage line, nor for skipping the revision history | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

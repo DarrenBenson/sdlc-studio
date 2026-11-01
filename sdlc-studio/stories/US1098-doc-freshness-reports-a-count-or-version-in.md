@@ -1,6 +1,6 @@
 # US1098: doc_freshness reports a count or version in the PRD or TSD that no longer matches the tree, as it does for the TRD
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0649
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given a PRD stating a count the tree no longer holds, when `doc_freshness.py` runs, then it reports that PRD line with the stated and the derived figure
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::PrdTsdFreshnessTests::test_a_stale_prd_count_is_reported
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given a TSD stating a baseline version or count the tree no longer holds, when it runs, then it reports that TSD line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::PrdTsdFreshnessTests::test_a_stale_tsd_figure_is_reported
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given a PRD and TSD whose figures match the tree or are stated as bands, when it runs, then neither document is reported (the positive control)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py::PrdTsdFreshnessTests::test_matching_prd_and_tsd_are_clean
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 
