@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-10-31
+**Last Updated:** 2026-11-01
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 11 |
+| Proposed | 12 |
 | Approved | 0 |
 | In Progress | 30 |
 | Complete | 524 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **656** |
+| **Total** | **657** |
 
 ## All Changes
 
@@ -68,6 +68,7 @@
 | [CR-0654](CR0654-the-builder-brief-tells-the-builder-to-write.md) | The builder brief tells the builder to write its story file and the self-check log, then commit only its Affects, without saying who commits those two | Proposed | Low | Feature | 2026-10-26 | -- |
 | [CR-0655](CR0655-re-validate-every-open-project-lesson-against-the.md) | Re-validate every open project lesson against the current tree, closing those no longer true | In Progress | Medium | Process | 2026-10-27 | EP0294 |
 | [CR-0656](CR0656-a-command-to-amend-a-planned-unit-s.md) | A command to amend a planned unit's Affects or a criterion in flight, recording why, so a builder's scope finding is not a hand edit | Proposed | Medium | Enhancement | 2026-10-31 | -- |
+| [CR-0657](CR0657-lesson-revalidated-reasons-cite-file-line-evidence-that.md) | Lesson Revalidated reasons cite file:line evidence that drifts as code lands; check and re-anchor it | Proposed | Medium | Enhancement | 2026-11-01 | -- |
 
 ## Archived Releases
 
