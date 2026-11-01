@@ -1830,11 +1830,19 @@ BOUND_LANE_SUBJECT = {
 #: but a number every run is measured against and reports exceeding, so "the gate got slower"
 #: is a verdict it states rather than something an operator absorbs one commit at a time.
 #:
-#: Set to 45 against a MEASURED 33s for the standard lane set over this workspace. Not 30: a
-#: threshold a normal run exceeds is a constant, and a warning that always fires is already
-#: switched off. Re-derive it from a measured run when the lane set changes, never carry it
-#: forward silently. A project overrides it with `gate.budget_seconds` in `.config.yaml`.
+#: Derived from `GATE_BUDGET_MEASURED` below and never set apart from it: first set against a
+#: measured 33s, it stays 45, 13% above the 39.8s run recorded there. Not the measurement
+#: itself: a threshold a normal run exceeds is a constant, and a warning that always fires is
+#: already switched off. Re-measure when the lane set changes and replace the record, never
+#: carry it forward silently. A project overrides it with `gate.budget_seconds` in `.config.yaml`.
 GATE_BUDGET_S = 45
+
+#: The run `GATE_BUDGET_S` is derived from, as data a test holds it to: `gate.py --root .` over
+#: this workspace on a tree with a staged change that touches no story, as the commit hook runs
+#: it, with the one-minute load average at its start. A clean tree is not this run: with nothing
+#: changed, conformance judges the whole workspace.
+GATE_BUDGET_MEASURED = {"seconds": 39.8, "date": "2026-11-01", "commit": "1ccb8795",
+                        "load_average_1m": 7.96, "cores": 8}
 
 #: Where the last run's cost is kept, so the next one can state a direction of travel.
 GATE_COST_REL = "sdlc-studio/.local/gate-cost.json"
@@ -1878,31 +1886,51 @@ def record_gate_cost(root: str, seconds: float) -> None:
 
 
 def _cost_report(root: str, results: list[dict], elapsed: float,
-                 record: bool = False, scoped: bool = False) -> dict:
+                 record: bool = False, scoped: bool = False,
+                 boundary: str | None = None, boundary_lanes: set | None = None) -> dict:
     """This run's cost, its budget, the lane that dominated it and the direction of travel.
 
     The DOMINANT lane is what makes this actionable: a total over budget with no lane named
     sends a reader to bisect the gate by hand, which is the same as not reporting it. A lane
     that RAISED is timed too - an error lane that dominated the run is exactly the one that
-    needs naming."""
+    needs naming.
+
+    At a push or release boundary the budget judges the standard lanes alone. It was measured
+    on the standard lane set, and a push's full suite runs far past it, so every push read OVER
+    and the line carried no signal there. The boundary lanes are named with their seconds,
+    outside the budget and the choice of dominant lane. The run is neither compared with the
+    baseline nor recorded as it, as a scoped run is not, since it measures a different lane
+    set."""
     budget = gate_budget(root)
+    at_boundary = boundary in ("push", "release")
+    outside = boundary_lanes or set()
     timed = [r for r in results if isinstance(r.get("seconds"), (int, float))]
-    dominant = max(timed, key=lambda r: r["seconds"]) if timed else None
+    unjudged = [r for r in timed if r["check"] in outside]
+    judged_lanes = [r for r in timed if r["check"] not in outside]
+    dominant = max(judged_lanes, key=lambda r: r["seconds"]) if judged_lanes else None
     baseline = read_gate_cost_baseline(root)
-    over = elapsed > budget
+    judged = max(0.0, elapsed - sum(r["seconds"] for r in unjudged))
+    over = judged > budget
+    lead = (f"{elapsed:.1f}s at the {boundary} boundary; its standard lanes {judged:.1f}s"
+            if at_boundary else f"{elapsed:.1f}s")
     if over:
-        detail = (f"{elapsed:.1f}s - OVER the {budget:g}s budget by "
-                  f"{elapsed - budget:.1f}s")
+        detail = f"{lead} - OVER the {budget:g}s budget by {judged - budget:.1f}s"
     else:
-        detail = f"{elapsed:.1f}s of a {budget:g}s budget"
+        detail = f"{lead} of a {budget:g}s budget"
     if dominant is not None:
         detail += f"; dominant lane: {dominant['check']} at {dominant['seconds']:.1f}s"
+    if unjudged:
+        detail += "; outside the budget: " + ", ".join(
+            f"{r['check']} at {r['seconds']:.1f}s" for r in unjudged)
     if scoped:
         # No comparison either. A fraction of the lanes measured against a full-run baseline
         # reports a saving nobody made - the same defect as recording it, read from the other
         # side, and the more misleading of the two because it looks like good news.
         detail += ("; SCOPED run - not compared with the baseline and not recorded as it "
                    "(it measures fewer lanes)")
+    elif at_boundary:
+        detail += ("; BOUNDARY run - not compared with the baseline and not recorded as it "
+                   "(it measures a different lane set)")
     elif baseline is None:
         detail += "; no baseline recorded yet, so this run becomes it"
     else:
@@ -1918,10 +1946,12 @@ def _cost_report(root: str, results: list[dict], elapsed: float,
     # then reads as a regression against a figure that never measured the same thing. Stated in
     # the detail rather than silently skipped, or a reader cannot tell a scoped run from a
     # cheap one.
-    if record and not scoped:
+    recorded = bool(record and not scoped and not at_boundary)
+    if recorded:
         record_gate_cost(root, elapsed)
     return {"seconds": round(elapsed, 3), "budget": budget, "over": over,
-            "scoped": scoped, "recorded": bool(record and not scoped),
+            "scoped": scoped, "recorded": recorded, "judged_seconds": round(judged, 3),
+            "outside_budget": {r["check"]: round(r["seconds"], 3) for r in unjudged},
             "dominant": dominant["check"] if dominant is not None else None,
             "dominant_seconds": (round(dominant["seconds"], 3)
                                  if dominant is not None else None),
@@ -2026,11 +2056,14 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     # stays a caller deliberately narrowing. Keyed on the BOUNDARY, not the `--release` mode flag,
     # which is the pre-tag lane set: binding lanes to the mode refused every `--release --only`.
     # A push pays the full suite ONCE; the lanes that cost minutes each stay at the tag.
+    pre_boundary = dict(registry)
     if boundary in ("push", "release"):
         registry["full-suite"] = _full_suite
     if boundary == "release":
         registry["release-rehearsal"] = _release_rehearsal
         registry["module-alone"] = _module_alone
+    # The lanes the boundary added, which the cost report keeps outside the budget.
+    boundary_lanes = {n for n, f in registry.items() if pre_boundary.get(n) is not f}
     # The sprint close scopes conformance to the BATCH it owns. On a clean tree the diff scope is
     # empty, so the default lane judges the whole workspace and blocks an in-batch close on another
     # author's out-of-batch debt. Applied AFTER the release swap - a TAG still judges
@@ -2110,7 +2143,8 @@ def run_gate(root: str = ".", only: list[str] | None = None,
     ok = all(r["status"] == "pass" for r in results if r["blocking"])
     return {"ok": ok, "checks": results,
             "cost": _cost_report(root, results, time.monotonic() - run_started,
-                                 record=record_cost, scoped=bool(only or skip))}
+                                 record=record_cost, scoped=bool(only or skip),
+                                 boundary=boundary, boundary_lanes=boundary_lanes)}
 
 
 def _split(v: str | None) -> list[str] | None:
@@ -2448,8 +2482,9 @@ def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".", *,
     """The pytest command lines that run `selectors`, in order.
 
     With pytest-xdist, the selection runs across every core and the tests marked `serial_only`
-    (they assert on global tree state, so a concurrent worker makes them wrong) follow on their
-    own, over only the modules that carry the marker. Without it, one serial run.
+    (they assert on global tree state, so a concurrent worker makes them wrong, or bound a
+    wall-clock duration from above) follow on their own, over only the modules that carry the
+    marker. Without it, one serial run.
 
     The parallel phase hands tests out one at a time (`--maxschedchunk=1`), though xdist still
     keeps two queued per worker. Its default first hand-out is a block of consecutive tests per
@@ -2458,8 +2493,9 @@ def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".", *,
     the option, so it gets the default hand-out rather than a refused run.
 
     `commit` is a commit's selected run: every phase leaves out the tests marked
-    `boundary_only`, which run the real gate or a boundary lane for 10-37s each (measured). The
-    push's full-suite lane calls this without it, so it runs them."""
+    `boundary_only`, which run the real gate or a boundary lane for 10-37s each (measured), or
+    bound a wall-clock duration from above. The push's full-suite lane calls this without it, so
+    it runs them."""
     base = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
     deferred = " and not boundary_only" if commit else ""
     if not parallel:
