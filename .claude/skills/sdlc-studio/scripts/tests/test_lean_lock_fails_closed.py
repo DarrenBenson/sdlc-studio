@@ -150,8 +150,8 @@ class LockFailsClosedTests(unittest.TestCase):
         # test would pass on a lock that still proceeds unserialised once the timeout expires.
         self.assertGreater(timeouts, 0, "no writer ever timed out, so the fail path went unrun")
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_killed_holder_does_not_wedge_the_next_writer(self) -> None:

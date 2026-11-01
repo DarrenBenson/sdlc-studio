@@ -1228,11 +1228,12 @@ def _bounds(measured: _Measured, func, local: set[str]):
                 yield site
 
 
-def _module_bounds(src: str, label: str) -> list[str]:
-    """`<label>::<Class>::<function>:<line>` for each upper bound in a function a commit can run:
-    one that does not carry both `serial_only`, which keeps it out of the parallel pass, and
-    `boundary_only`, which keeps it out of the per-commit run a busy machine's load still
-    reaches. Either may sit on the function, its class, or the module's `pytestmark`."""
+def _module_sites(src: str, label: str) -> list[tuple[str, bool]]:
+    """`(<label>::<Class>::<function>:<line>, marked)` for each upper bound of a measured
+    duration, `marked` when its function carries both `serial_only`, which keeps it out of the
+    parallel pass, and `boundary_only`, which keeps it out of a commit's pytest run (not the
+    commit hook's unittest fallback: BG1144). Either may sit on the function, its class, or the
+    module's `pytestmark`."""
     tree = ast.parse(src)
     measured = _Measured(tree)
     if not (measured.modules or measured.bare):
@@ -1261,22 +1262,27 @@ def _module_bounds(src: str, label: str) -> list[str]:
             measured.summarise(func, local)
     out = []
     for cls, func in scopes:
-        if serial(cls, func) and boundary(cls, func):
-            continue
+        marked = serial(cls, func) and boundary(cls, func)
         local = measured.taint(func, attrs.get(cls.name, set()) if cls else set())
         where = "::".join(x for x in (label, cls.name if cls else None, func.name) if x)
-        out += [f"{where}:{site.lineno}" for site in _bounds(measured, func, local)]
+        out += [(f"{where}:{site.lineno}", marked) for site in _bounds(measured, func, local)]
     return out
 
 
-def wall_clock_bounds(repo: Path) -> list[str]:
-    """Every parallel-partition upper bound of a measured duration in both suite directories."""
+def _module_bounds(src: str, label: str) -> list[str]:
+    """The sites `_module_sites` finds that a commit's pytest run reaches: those not `marked`."""
+    return [site for site, marked in _module_sites(src, label) if not marked]
+
+
+def wall_clock_sites(repo: Path) -> list[tuple[str, bool]]:
+    """`_module_sites` over each `test_*.py` in both suite directories that `_IMPORTS_TIME`
+    passes, marked and unmarked, so one read gives AC1 both its reach and its finding."""
     out = []
     for rel in _WALL_CLOCK_DIRS:
         for path in sorted((repo / rel).glob("test_*.py")):
             src = path.read_text(encoding="utf-8")
             if _IMPORTS_TIME.search(src):
-                out += _module_bounds(src, f"{rel}/{path.name}")
+                out += _module_sites(src, f"{rel}/{path.name}")
     return out
 
 
@@ -1284,16 +1290,18 @@ SKILL_TESTS = ".claude/skills/sdlc-studio/scripts/tests"
 
 try:
     import pytest
-    #: Running the bounds slowed costs about 40 s, so a commit's selected run defers it and the
-    #: push runs it, beside the bounds it judges.
+    #: Running the bounds slowed cost 67 s at a load average of 20, so a commit's pytest run
+    #: defers it and the push runs it, beside the bounds it judges (the hook's unittest fallback
+    #: does not: BG1144).
     boundary = pytest.mark.boundary_only
 except ImportError:     # the unittest runner deselects nothing, so there is no marker to set
     def boundary(test):
         return test
 
-#: The wall-clock bounds in the modules BG0963 names, each kept with its constant and run at
-#: push only, in the serial phase after the parallel pass. HAND-MAINTAINED ON PURPOSE: the list
-#: is the assertion that every one of them still runs and still bounds.
+#: The wall-clock bounds in the modules BG0963 names, each kept with its constant, left out of a
+#: commit's pytest run and run at push in the serial phase after the parallel pass (the commit
+#: hook's unittest fallback still runs them: BG1144). HAND-MAINTAINED ON PURPOSE: the list is
+#: the assertion that every one of them still runs and still bounds.
 _SERIAL_BOUNDS = (
     f"{SKILL_TESTS}/test_status.py::GatherPerformanceTests::"
     "test_the_shipped_command_answers_a_corpus_shaped_fixture_with_the_headline_first",
@@ -1314,8 +1322,8 @@ _SERIAL_BOUNDS = (
     "tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::"
     "test_a_lane_that_ignores_terminate_is_killed_rather_than_hanging_the_hook",
 )
-#: The upper bounds the census found outside those modules, judged by collection alone: most
-#: time work done in the test's own process, which `_SLOW_CLOCK` does not slow.
+#: The upper bounds the census found outside those modules, judged by collection and by the
+#: census's reach alone: AC3 does not run them under `_SLOW_CLOCK`.
 _SERIAL_IN_PROCESS = (
     "tools/tests/test_lean_refusal_log.py::RefusalLogTests::"
     "test_a_refused_commit_logs_its_lane_and_a_clean_one_logs_nothing",
@@ -1333,7 +1341,7 @@ _SERIAL_IN_PROCESS = (
     "test_the_note_parser_is_linear",
 )
 #: Bounded by the release gate's own per-verifier ceiling rather than by a clock it reads, so it
-#: stays in the parallel pass, at push only.
+#: stays in the parallel pass, and out of a commit's pytest run.
 _BOUNDARY_CEILING = ("tools/tests/test_lean_release_verify.py::ReleaseVerifyTests::"
                      "test_the_measured_red_criteria_pass_or_are_retired")
 
@@ -1426,9 +1434,19 @@ class WallClockCensusTests(unittest.TestCase):
         return _module_bounds("import time\nimport unittest\nimport pytest\n\n" + body, "m.py")
 
     def test_no_parallel_test_bounds_a_measured_duration_by_a_constant(self) -> None:
-        """AC1. MUTANT: remove `serial_only` or `boundary_only` from any test in `_SERIAL_BOUNDS`
-        or `_SERIAL_IN_PROCESS`."""
-        found = wall_clock_bounds(REPO)
+        """AC1. Read with the markers' exemption off, the census must name every bound listed
+        below, or a census that reads nothing would pass. MUTANTS: remove `serial_only` or
+        `boundary_only` from any test in `_SERIAL_BOUNDS` or `_SERIAL_IN_PROCESS`; empty
+        `_WALL_CLOCK_DIRS`; glob a name no module has; make `_IMPORTS_TIME` pass no module."""
+        sites = wall_clock_sites(REPO)
+        reach = {site.rsplit(":", 1)[0] for site, _ in sites}
+        self.assertIn(_SERIAL_BOUNDS[0], reach,
+                      "the census does not name the `status` headline bound even with the "
+                      "markers' exemption off, so it read no module")
+        self.assertEqual([], [n for n in (*_SERIAL_BOUNDS, *_SERIAL_IN_PROCESS) if n not in reach],
+                         "the census no longer reaches these bounds, so it cannot see one lose "
+                         "its markers")
+        found = [site for site, marked in sites if not marked]
         self.assertEqual([], found,
                          "a commit runs these tests, which bound a duration their own process "
                          "measured, so they fail on a busy machine and pass alone; mark each "
@@ -1500,6 +1518,11 @@ class WallClockCensusTests(unittest.TestCase):
                 self.assertEqual(expected, self._plant(body))
         self.assertEqual([], _module_bounds("import unittest\n\nclass T(unittest.TestCase):\n"
                                             + bound, "m.py"), "no clock is imported")
+        for spelt in ("import time", "import time as t", "    import subprocess, time  # x",
+                      "from time import monotonic"):
+            with self.subTest(prefilter=spelt):
+                self.assertTrue(_IMPORTS_TIME.search(f"import os\n{spelt}\n"),
+                                "the pre-filter skips a module the census can read")
 
     def test_compared_output_is_insensitive_to_measured_seconds(self) -> None:
         """AC2. Each comparison runs with the k-th gate run its closes record 7k s longer than
@@ -1540,8 +1563,9 @@ class WallClockCensusTests(unittest.TestCase):
     @boundary
     def test_the_timing_assertions_still_run_at_the_boundary(self) -> None:
         """AC3. Each bound is collected under `serial_only and boundary_only`, so it runs at
-        push, in the serial phase, and no commit runs it; each in `_SERIAL_BOUNDS` fails on its
-        own assertion when the code under test is slowed (`_SLOW_CLOCK`). The release verifier
+        push, in the serial phase, and a commit's pytest run leaves it out (the commit hook's
+        unittest fallback does not: BG1144); each in `_SERIAL_BOUNDS` fails on its own
+        assertion when the code under test is slowed (`_SLOW_CLOCK`). The release verifier
         is collected `boundary_only` outside the serial phase and fails when its ceiling is a
         second. A lower bound, `test_a_timed_out_writer_writes_nothing`, stays in the parallel
         partition. MUTANTS: delete or skip a bound; take its `serial_only` or `boundary_only`

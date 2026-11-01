@@ -2460,8 +2460,8 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          mut._killing_test(mut._LAST_RUN_OUTPUT[0]),
                          "the runner's output did not reach the attribution")
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_backgrounded_child_does_not_hang_the_run(self) -> None:
@@ -2798,8 +2798,8 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
         self.mut = _load()
         self.mut._RUN_TIMEOUT = 5
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_backgrounded_child_is_reaped_on_the_normal_exit_path(self) -> None:
@@ -2837,8 +2837,8 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
             self.assertEqual(before_fds, len(os.listdir("/proc/self/fd")),
                              "a failed run leaked its sink descriptor")
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_the_timeout_still_bounds_a_genuinely_hanging_command(self) -> None:

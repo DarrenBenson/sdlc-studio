@@ -79,8 +79,8 @@ class LockBusyEaccesTests(unittest.TestCase):
             return real(fd, op)
         return flock, calls
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_busy_lock_reported_as_eacces_is_waited_on(self) -> None:

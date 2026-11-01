@@ -240,8 +240,8 @@ class SelectionTests(unittest.TestCase):
         self.assertIn("no_such_module_us0880", proc.stdout + proc.stderr)
         self.assertNotEqual(0, proc.returncode, f"a collection error passed:\n{proc.stdout}")
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_selection_is_fast_on_this_repository(self) -> None:

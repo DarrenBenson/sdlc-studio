@@ -205,7 +205,8 @@ export SDLC_STUDIO_BOUNDARY_SUITE=1
 # working tree, the whole repository - so a concurrent worker doing legitimate work makes it
 # wrong; it is neither flaky nor slow, it is global. It also marks a test that bounds a
 # wall-clock duration from above, which beside the parallel pass measures the load; such a
-# test is `boundary_only` too, so it runs here and never on a commit (BG0963).
+# test is `boundary_only` too, so it runs here and a commit's pytest run leaves it out
+# (BG0963; the commit hook's unittest fallback ignores both marks, BG1144).
 #
 # Phase 1 runs everything else across all cores. Phase 2 runs the marked tests alone. Nothing is
 # skipped in either phase: `-m "not serial_only"` and `-m serial_only` partition the suite, so a

@@ -316,8 +316,8 @@ class ParallelLaneTests(unittest.TestCase):
 
     # -- the criteria ---------------------------------------------------------------------
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_the_lanes_run_concurrently(self) -> None:
@@ -467,8 +467,8 @@ class ParallelLaneTests(unittest.TestCase):
         self.assertEqual(rc, 130, out)
         self._assert_every_lane_stopped_with_the_hook(exited, out)
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_hangup_or_terminate_stops_every_lane_with_the_hook(self) -> None:
@@ -489,8 +489,8 @@ class ParallelLaneTests(unittest.TestCase):
                 self.assertLess(exited - sent, 3, "the hook took too long to stop")
                 self._assert_every_lane_stopped_with_the_hook(exited, out)
 
-    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
-    # serial phase on the gate host (BG0963).
+    # A wall-clock bound measures the load beside other work, so a commit's pytest run leaves it
+    # out and the push runs it, serially (BG0963); the hook's unittest fallback runs it (BG1144).
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_a_lane_that_ignores_terminate_is_killed_rather_than_hanging_the_hook(self) -> None:
