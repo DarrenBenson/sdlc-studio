@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.1.0
 **Status:** Draft
-**Last Updated:** 2026-10-22
+**Last Updated:** 2026-11-01
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -34,9 +34,8 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v5.1.0 as cut, plus the `[Unreleased]` work on `main` (the release
-workflow and the verified install path). The document version tracks the product
-version; it is not itself a release artefact.
+Coverage: v6.1.0 as cut, plus the 6.2 work on `main` since. The document version
+tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
 files and are the artifact behaviours, not the technical design); the content of
@@ -52,8 +51,8 @@ each project's TRD).
   reasons over JSON, not raw markdown. (ADR-002)
 - Files are the source of truth; indexes and statuses are derived and reconciled
   from a disk census. (ADR-003)
-- GitHub integration through the `gh` CLI only - no PyGitHub or token handling.
-  (ADR-004)
+- GitHub integration through the `gh` CLI, the release check's GET the one exception -
+  no PyGitHub or token handling. (ADR-004)
 - `AGENTS.md` is the tool-neutral instruction standard; tool-specific files point
   at it rather than duplicate it. (ADR-005)
 - A gate's fire/skip decision is computed from artefact fields and config, never
@@ -249,7 +248,8 @@ Python and Node the gate runs, which `~/sdlc-gate/gate-env.sh` on the host may p
 
 | Service | Provider | Purpose |
 | --- | --- | --- |
-| GitHub Issues | GitHub | Two-way sync of CR/Story/Epic artifacts, via the `gh` CLI only. |
+| GitHub Issues and Actions | GitHub | Two-way sync of CR/Story/Epic artifacts, and the CI runs a tag check and a run report read, via the `gh` CLI. |
+| GitHub Releases | GitHub | The release check's read of the latest release, a direct HTTPS GET (§5 Network paths). |
 
 No databases, no servers, no container runtime at the skill level. The consuming
 project supplies whatever Verify-line tools its acceptance criteria reference.
@@ -290,8 +290,8 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    files; `archive.py` relocates a type's terminal index rows into its `archive/`
    sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends to the
    decisions ledger; `retro.py` writes the batch retro artefact and the committed
-   `VELOCITY.md` history row; `persona_gen.py` writes the generated seat and stakeholder cards with their
-   provenance stamp (ADR-009); `critic record` appends to the committed verdict log (the
+   `VELOCITY.md` history row; `persona_gen.py stamp` and `accept` rewrite the provenance
+   stamp on a card the generation flow wrote (ADR-009); `critic record` appends to the committed verdict log (the
    evidence and per-unit sign-off logs are frozen history nothing writes). This list names
    the load-bearing writers, not all of them -
    `reference-scripts.md` is the authoritative catalogue of the script write surface.
@@ -303,12 +303,9 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
    reports rather than silently drops), never the file. The scripts are NOT read-only
    over the workspace; the guarantee is that every write is tested and bounded.
-6. Network access is limited to three outbound paths, each best-effort and degrading
-   silently when offline: the `gh` CLI wrapper in `github_sync.py` (no token handling;
-   `gh` owns auth), a direct stdlib HTTPS GET to `api.github.com` in `version_check.py`
-   for the release check (`version_check.enabled` opt-out, 5s timeout), and
-   `git fetch origin` in `sprint.py`'s origin-drift preflight and remote-aware id
-   allocation. No other script opens a socket.
+6. Network access is limited to the outbound paths [Network paths](#network-paths) lists.
+   No other shipped script calls `gh`, opens a connection through `urllib` or runs
+   `git fetch`.
 7. Plain text to stdout by default; `--format json` where machine-parseable output
    matters.
 8. Unit tests under `scripts/tests/test_<script>.py`.
@@ -318,6 +315,23 @@ root. `$CLAUDE_SKILL_DIR` is set by the harness at every install level; when uns
 (another tool, or a bare shell) the agent substitutes the directory containing
 `SKILL.md`. The quoted variable fails loudly when unset rather than guessing
 between installed copies.
+
+### Network paths
+
+Every GitHub call but the release check goes through the `gh` CLI, which owns auth; the
+release check's GET is the exception ADR-004 records. `tools/tests/test_lean_trd_refresh.py`
+finds the `gh` callers by scanning the shipped scripts and holds this table to them.
+
+| Path | Script | Function | Command or endpoint | Under ADR-004 | When it gets no answer |
+| --- | --- | --- | --- | --- | --- |
+| Issue sync | `github_sync.py` | `gh` | `gh issue`, `gh pr list`, `gh repo view` | via `gh` | Fails loud: with `gh` absent it exits 127, naming the CLI (D0071) |
+| The tag's CI check | `release_cut.py` | `forge_ci_state` | `gh run list --commit` | via `gh` | Answers `unknown`, and `tag_check` refuses the tag |
+| A run report's CI runs | `sprint_report.py` | `fetch_ci_runs` | `gh run list` | via `gh` | Returns no runs, with a source naming why |
+| The release check | `version_check.py` | `latest_release` | HTTPS GET to `api.github.com`, 5 s timeout | exception | Reads as offline and says nothing; `version_check.enabled: false` turns it off |
+| Origin drift | `sprint.py` | `origin_drift` | `git fetch origin` | not GitHub | Marks the comparison unverified, naming why |
+
+The consuming project's own Verify-line tools reach the network too, bounded to the hosts
+`SDLC_VERIFY_HTTP_HOSTS` names.
 
 ### Error / report format
 
@@ -364,14 +378,28 @@ divergence from the PRD's data-architecture wording. [HIGH]
 | issue | `sdlc-studio/issues` | `IS` |
 | test-spec | `sdlc-studio/test-specs` | `TS` |
 | workflow | `sdlc-studio/workflows` | `WF` |
+| charter | `sdlc-studio/charters` | `SC` |
 
-Retro (`RETRO`), review (`RV`) and handoff (`HO`) artefacts sit outside this
-registry - they are sequential-only meta artefacts with their own index files and a
-reconcile `meta` lane. Retros and reviews are created through `artifact.py`'s
-`meta_new` path; handoffs are no longer created (US0978), and the existing `HO` files
-stay readable and indexed. They carry
-no status/count block, which is why they need a separate lane rather than the
-pipeline census.
+A charter is a sprint planned but not yet opened: it sits on neither backlog, carries no
+acceptance criteria and delivers nothing. It is read against the backlog as it stands when a run
+opens from it, not as it stood when the charter was written.
+
+#### Meta artefacts (`META_TYPES` in `lib/sdlc_md.py`)
+
+| Type | Directory | ID prefix |
+| --- | --- | --- |
+| review | `sdlc-studio/reviews` | `RV` |
+| retro | `sdlc-studio/retros` | `RETRO` |
+| handoff | `sdlc-studio/handoffs` | `HO` |
+| report | `sdlc-studio/reports` | `RPT` |
+
+A run records these rather than delivers them, so they sit outside `ARTIFACT_TYPES`: they
+carry no acceptance criteria, sit on no backlog and are not sized. `next_id` and `reconcile`
+import this one map rather than copy it. Retros and reviews are created through
+`artifact.py`'s `meta_new` path; a report is the sprint report of record (§6 Committed evidence
+and records); handoffs are no longer created (US0978), and the existing `HO` files stay
+readable and indexed. They carry no status/count block, which is why they need reconcile's
+`meta` lane rather than the pipeline census.
 
 #### Two id eras (schema v2 and v3)
 
@@ -406,7 +434,7 @@ vocabulary token by longest-prefix match.
 
 | Type | Allowed statuses |
 | --- | --- |
-| epic | Draft, Ready, Approved, In Progress, Done |
+| epic | Draft, Ready, Approved, In Progress, Done, Superseded |
 | story | Proposed, Draft, Ready, Planned, In Progress, Review, Blocked, Done, Won't Implement, Deferred, Superseded |
 | plan | Draft, In Progress, Complete, Superseded |
 | bug | Open, In Progress, Fixed, Verified, Closed, Won't Fix, Superseded |
@@ -415,6 +443,7 @@ vocabulary token by longest-prefix match.
 | issue | Open, Triaging, Triaged, Resolved, Closed, Won't Fix, Superseded |
 | test-spec | Draft, Ready, In Progress, Complete, Superseded |
 | workflow | Created, Planning, Testing, Implementing, Verifying, Reviewing, Checking, Done, Paused, Superseded |
+| charter | Queued, Spent, Withdrawn, Superseded |
 
 `Blocked` (story, cr) and `Deferred`, `Planned`, `Paused` are re-activatable, not
 absorbing, so `TERMINAL_STATUS` excludes them from the archive-candidate set.
@@ -601,11 +630,14 @@ migration. [HIGH]
 | Service | Purpose | Protocol | Auth |
 | --- | --- | --- | --- |
 | GitHub Issues | Two-way sync of CR/Story/Epic artifacts | `gh` CLI subprocess | Inherited from `gh auth`; the skill handles no tokens |
+| GitHub Actions | Whether CI passed on the commit a tag names; the CI runs a run report freezes | `gh run list` subprocess | Inherited from `gh auth` |
+| GitHub Releases | The release check | Stdlib HTTPS GET | None: a public endpoint, and no token is sent |
 
 `github_sync.py` subcommands: `pull` (fetch `sdlc:*`-labelled issues into local
 files), `push` (create/update issues from local files), `cascade` (walk merged PRs
-and trigger Story Completion Cascades), `state` (print sync state). All GitHub calls
-route through `gh`; the logic is idempotent and unit-tested. See ADR-004.
+and trigger Story Completion Cascades), `state` (print sync state). Every GitHub call
+but the release check routes through `gh` (§5 Network paths); the sync logic is
+idempotent and unit-tested. See ADR-004.
 
 ### Event Architecture
 
@@ -698,10 +730,10 @@ cross-machine clash is caught at merge (ADR-008).
 | Threat | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
 | Script mutating files outside its remit | L | M | Contract rule 5: read-only helpers never mutate the workspace, and every writer is confined to the tested boundary §5 rule 5 names for it. The write surface is a bounded, enumerated SET, not a single exception. Unit-tested, with a write-confinement snapshot suite. |
-| Token leakage via GitHub integration | L | M | No token handling; all GitHub access via `gh`, which owns auth (ADR-004). |
+| Token leakage via GitHub integration | L | M | No token handling: every GitHub call but the release check goes through `gh`, which owns auth, and the release check sends none (ADR-004). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
 | Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |
-| Network exfiltration | L | H | Three outbound paths only, each degrading silently offline: `gh` (GitHub sync, owns auth), a public HTTPS GET to `api.github.com` for the release check (`version_check.enabled` opt-out), and `git fetch origin` (drift preflight, ambient git creds) - plus the consuming project's own Verify-line tools (host-bounded by `SDLC_VERIFY_HTTP_HOSTS`). See §5 rule 6. |
+| Network exfiltration | L | H | Only the outbound paths §5 Network paths lists, each with what it does when it gets no answer, plus the consuming project's own Verify-line tools (host-bounded by `SDLC_VERIFY_HTTP_HOSTS`). See §5 rule 6. |
 
 ### Security Controls
 
@@ -710,7 +742,7 @@ cross-machine clash is caught at merge (ADR-008).
 | Authentication | None at skill level; GitHub sync inherits `gh auth`. |
 | Authorisation | Filesystem permissions of the host; script writes are bounded and tested (see §5 rule 5), not read-only. |
 | Encryption at rest | Not applicable (plain files in the consuming repo). |
-| Encryption in transit | HTTPS on all three network paths: `gh` (GitHub sync), the `api.github.com` release check, and `git fetch origin` over the remote's transport. |
+| Encryption in transit | HTTPS for `gh` and the `api.github.com` release check; `git fetch origin` uses the remote's own transport. |
 | Secret handling | The skill handles no secrets; secret management is the consuming project's concern, documented in its `AGENTS.md`. |
 
 ---
@@ -722,7 +754,7 @@ cross-machine clash is caught at merge (ADR-008).
 | Always-loaded context | `SKILL.md` under its hard ceiling of 500 lines | Line count of the router, gated by `check_budgets.py` - the ceiling is the claim, not a snapshot of the current count |
 | Script run time | Sub-second on a typical project | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
 | Reconcile / status | Sub-second | Read-only census over the artifact tree |
-| Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, set against a measured 33 s for the standard lane set; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. Every run in this repository now exceeds it (BG1065), so the 33 s is the budget's origin, not the gate's cost. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
+| Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, derived from the standard run recorded beside it as `GATE_BUDGET_MEASURED`; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. A push or release run judges only its standard lanes against the budget and names the lanes the boundary added, with their seconds, outside it. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
 
@@ -809,6 +841,13 @@ of the kinds in `reconcile.DRIFT_KINDS`; the agent applies fixes and the judgeme
 transitions. Doctrine adds
 "ship the paperwork in the same commit as the code".
 
+Drift with one mechanical remedy is fixed at commit rather than refused. When a commit stages a
+file under `sdlc-studio/`, the pre-commit hook runs `reconcile.py settle` before its other
+lanes: it regenerates each pipeline index whose drift is of a kind in
+`reconcile.SETTLED_INDEX_KINDS`, closes each epic whose children are all terminal (to its
+derived status, through `transition`), and restages only the files it wrote that held no unstaged edits.
+It never refuses; the gate reports the drift it leaves.
+
 **Consequences:**
 
 - Positive: a single reconcile pass restores consistency after any agentic run; no
@@ -826,7 +865,13 @@ transitions. Doctrine adds
 tokens.
 
 **Decision:** Route every GitHub call through the `gh` CLI as a subprocess
-(`github_sync.py`). No third-party client, no token handling - `gh` owns auth.
+(`github_sync.py`, `release_cut.py` and `sprint_report.py`, §5 Network paths). No
+third-party client, no token handling - `gh` owns auth.
+
+**Exception:** the release check. `version_check.py` reads the latest release with a stdlib
+HTTPS GET to `api.github.com` rather than through `gh`. It sends no token, reads a public
+endpoint, treats any failure as offline and says nothing, and `version_check.enabled: false`
+turns it off.
 
 **Consequences:**
 
@@ -1013,10 +1058,17 @@ multi-choice questions only where the signals are genuinely ambiguous, and write
 named individuals into `personas/seats/`: 3 core roles plus up to 2 signal-earned
 extras, cast capped at 5. `--stakeholders` generates the other side of the table with
 veto lines and a Cooper arbitration rule on every card (a buyer's goal never overrides
-the Primary user's interface). Model judgement inside a deterministic frame:
-`persona_gen.py` is a §5 rule 5 writer - it writes the cards and owns the provenance
-stamp and content hash - and `validate.py seats` is the error-level floor (declared
-role, review render, demographic denylist, one card per role, valid stamps).
+the Primary user's interface). Model judgement inside a deterministic frame: the flow in
+`reference-persona-generate.md` writes each card, and `persona_gen.py` writes none. Its
+`stamp` marks a card the flow wrote as generated and provisional, with a content hash;
+`classify` reports whether a card is authored, generated or generated then edited; `accept`
+clears the provisional label. `validate.py seats` is the error-level floor (declared role,
+review render, demographic denylist, one card per role, valid stamps).
+
+The skill still ships a default card for each amigo seat, in `templates/personas/amigos/`
+(`engineering.md`, `product.md`, `qa.md`), as the zero-setup fallback rather than a cast.
+`persona_resolve.py` resolves a seat most-specific-first: a project seat whose declared role
+matches, then a legacy `personas/amigos/` card, then the shipped default, then no card.
 
 **Consequences:**
 
@@ -1136,7 +1188,7 @@ name that appears somewhere in the prose:
 
 ### ADR-012: Personas are accountable team members with their own memory and a review standard
 
-**Status:** Accepted (RFC0061, 2026-10-09)
+**Status:** Accepted (RFC0061, 2026-10-09); not yet built
 
 **Context:** Personas were used as static cards. A review seat was rendered into each brief and
 forgot everything when the brief ended; a user persona was read at planning and then sat still.
@@ -1153,19 +1205,26 @@ reviewers". Nothing held a card to a standard of evidence, currency or consisten
   project's learnings with one persona's judgement and gives a persona no identity standard.
 - *A memory file beside each card, under its own review, reusing the lessons mechanics.*
 
-**Decision:** The third. Each persona keeps a committed memory file beside its card
-(`sdlc-studio/personas/memory/<persona>.md`), owned by a tool, with validity horizons and
-revalidation as project lessons have (LL0029: never `.local`). At the retro each seat is scored
+**Decision:** The third. Each persona is to keep a committed memory file beside its card,
+under `sdlc-studio/personas/memory/`, owned by a tool, with validity horizons and revalidation
+as project lessons have (LL0029: never `.local`). At the retro each seat is to be scored
 mechanically from the verdict ledger against what followed (approvals later found defective,
 findings overturned, defects found only in a later round, rounds to converge, operator rulings,
-closing-review and consuming-project findings); a context framed as that persona writes its
-learning in its own words; a different seat approves it against the evidence; the learnings are
-listed on the retro the operator signs, where any can be struck. A persona's brief carries its
-own top approved learnings, capped and ranked. A persona review holds every card to a written
-standard and blocks a failing card from being resolved into a brief; memory problems are
-reported. Seats learn first, user personas follow from usage evidence; a generalisable learning
-reaches the shipped amigos only by deliberate promotion. Workstreams: CR0631 (review), CR0632
-(memory), CR0633 (the learning loop), CR0634 (user personas and promotion).
+closing-review and consuming-project findings); a context framed as that persona will write its
+learning in its own words; a different seat will approve it against the evidence; the learnings
+will be listed on the retro the operator signs, where any can be struck. A persona's brief will
+carry its own top approved learnings, capped and ranked. A persona review will hold every card
+to a written standard and block a failing card from being resolved into a brief, and will
+report memory problems. Seats learn first, user personas follow from usage evidence; a
+generalisable learning reaches the shipped amigos only by deliberate promotion. Workstreams:
+CR0631 (review), CR0632 (memory), CR0633 (the learning loop), CR0634 (user personas and
+promotion).
+
+**Built so far:** none of it. The four workstreams are open requests decomposed into EP0287,
+whose stories are open, and the persona code that exists (`persona_gen.py`,
+`persona_resolve.py`) reads no memory file and holds a card to no review standard.
+**Not yet built:** `sdlc-studio/personas/memory/`, `persona_memory.py` (US1058) and
+`persona_review.py` (US1052).
 
 **Consequences:**
 
@@ -1216,7 +1275,8 @@ A constraint that governs one component sits in that component's Constraints cel
 touches the component. The constraints below span components.
 
 - `gate.py --release` passes before a release is tagged.
-- GitHub access only via `gh`; no token handling, no third-party client.
+- GitHub access via `gh`, the release check's GET the one exception (ADR-004); no token
+  handling, no third-party client.
 - `AGENTS.md` canonical; tool-specific files point at it.
 - Every new gate obeys ADR-006: the fire/skip decision is computable from artefact
   fields, config and deterministic signals. A judgement-gated trigger in a design is a
@@ -1256,12 +1316,14 @@ touches the component. The constraints below span components.
 | 2026-09-25 | 5.1.0 | Restatements cut (US0933, D0266). §3 and §5 name `gate.DEFAULT_CHECKS`, the `SKILL.md` Type Reference table and `reconcile.DRIFT_KINDS` rather than copying them, ADR-003 keeps its decision without the drift-kind copy, and the Component Overview and Scaling Strategy drop their counts except the `60+ scripts` claim that `doc_freshness`'s census checks; ADR-001's sizes stay as the decision's record. The three tests that pinned the copies are deleted. |
 | 2026-09-25 | 5.1.0 | The Component Overview gains a Constraints column, which a lane brief reads for the components its unit touches. The Must Have constraints that govern one component (the router, the script layer, `lib/sdlc_md.py`) move into their cells; the ones that span components stay in §13. |
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984). The `.local/` state table drops `mutation-runs.json`, the per-target ledger nothing writes since v6, and names `mutation-series.jsonl`, the per-run series `mutation.py` appends; the mutation report and the scaling note no longer say a gate lane reads either; `critic`'s writing verbs are `record`, `correct` and `supersede`, `evidence` and `signoff` being retired, and §5's write surface says `critic record` appends to the verdict log alone. |
+| 2026-10-09 | 6.1.0 | ADR-012 added, accepted with RFC0061 (D0362): personas as accountable team members with their own memory and a review standard. Committed without a row of its own; recorded here by US1101 |
 | 2026-10-19 | 6.1.0 | US1084: §3 names the three hooks, the push and release boundaries, and the four files the gate writes under `.local/` (it had said the gate wrote none). §10's gate row states the declared 45 s budget and its source, where it had called the gate sub-second |
 | 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' soft dependencies (PyYAML, lizard, coverage); which runner runs which suite |
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 | 2026-10-22 | 6.1.0 | BG1095: §3 gives where the push gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
 | 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier); §3 says `--release` executes no bug's `Verify:` expression |
 | 2026-11-01 | 6.1.0 | US1100: §6 Storage Strategy lists the committed evidence and records with their paths, adds the Run state and run lifecycle sections (live and archived in `.local`, tracked under `sdlc-studio/reports/runs/`, from plan through close to sign), drops `telemetry.jsonl` from the `.local` table and adds `sprint-plan.json`, `goal-review.json` and `briefs.jsonl` |
+| 2026-11-01 | 6.1.0 | US1101: §6's type registry gains `charter` and its vocabulary, the epic's `Superseded` and a `META_TYPES` table; §5 gives the network paths as a table holding all three `gh` callers, the version check's GET and `git fetch`, and ADR-004 records the GET as its exception; ADR-003 adds `reconcile.py settle` at commit; ADR-009 says `persona_gen.py` writes no card and the default seats ship; ADR-012 says it is not yet built; §10's gate row cites `GATE_BUDGET_MEASURED`; the coverage line reads v6.1.0 plus 6.2 on `main` |
 
 ---
 

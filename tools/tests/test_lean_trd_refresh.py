@@ -8,6 +8,10 @@ the creators refuse a command-shaped `Verify:` on as refused; both sets are comp
 code. The two code comments that said only a story executes its verifier, and the refusal the
 filer prints, name the set instead.
 
+US1101: the TRD's type tables are `sdlc_md`'s maps, its network table is what a scan of the
+shipped scripts finds calling `gh`, opening a connection or fetching from origin, and ADR-003,
+ADR-004, ADR-009, ADR-012 and the coverage line are held to the code and tree they describe.
+
 Run from the repo root:
     python3 -m pytest tools/tests/test_lean_trd_refresh.py
 """
@@ -34,8 +38,11 @@ ARTIFACT = SCRIPTS / "artifact.py"
 
 sys.path.insert(0, str(SCRIPTS))
 import critic  # noqa: E402
+import doc_freshness  # noqa: E402
 import file_finding  # noqa: E402
 import lessons  # noqa: E402
+import persona_gen  # noqa: E402
+import reconcile  # noqa: E402
 import sprint  # noqa: E402
 import sprint_report  # noqa: E402
 import telemetry  # noqa: E402
@@ -393,6 +400,239 @@ class TrdStorageTests(unittest.TestCase):
         self.assertLessEqual(filers, set().union(*verbs))
         self.assertTrue(verbs[0] & openers and live in life[1][says], life[1])
         self.assertTrue(verbs[-1] & filers, life[-1])
+
+
+#: The release the TRD's coverage line names and the work on `main` beside it (US1101 AC3),
+#: pinned as the criterion names them, as `test_lean_prd_refresh` pins the PRD's: a TRD that
+#: moves its baseline moves these with it.
+BASELINE, ON_MAIN = "6.1.0", "6.2"
+_VERSION_RE = re.compile(r"(?<![\d.])\d+\.\d+\.\d+(?!\.?\d)")
+#: The three verdicts the network table's `Under ADR-004` column may give a path.
+VIA_GH, EXCEPTION, NOT_GITHUB = "via `gh`", "exception", "not GitHub"
+#: The calls a scan reads as opening a connection: by attribute or by bare name.
+_CONNECTS = {"urlopen", "HTTPConnection", "HTTPSConnection", "create_connection"}
+
+
+def _registry(heading: str) -> dict[str, tuple[str, str]]:
+    """The one table headed `Type` under `heading`, as {type: (directory, ID prefix)}."""
+    table = _one_table(_section(_trd_body(), heading), "Type")
+    return {r[0]: (r[1].strip("`"), r[2].strip("`")) for r in table[1:]}
+
+
+def _adr(text: str, number: str) -> str:
+    """The body of the one ADR whose heading opens `ADR-<number>:`."""
+    titles = re.findall(rf"^###\s+(ADR-{number}:.*?)\s*$", text, re.M)
+    if len(titles) != 1:
+        raise AssertionError(f"{len(titles)} ADR-{number} headings, expected one")
+    return _section(text, titles[0])
+
+
+def _shipped_scripts() -> list[Path]:
+    """Every `.py` file under the skill's `scripts/`, outside `tests/` and `__pycache__/`."""
+    return sorted(p for p in SCRIPTS.rglob("*.py")
+                  if not {"tests", "__pycache__"} & set(p.relative_to(SCRIPTS).parts))
+
+
+def _owners(source: str, hit) -> set[str]:
+    """The innermost function holding each node of `source` that `hit` accepts, or `<module>`
+    for one outside every function."""
+    out: set[str] = set()
+
+    def visit(node: ast.AST, owner: str) -> None:
+        for child in ast.iter_child_nodes(node):
+            if hit(child):
+                out.add(owner)
+            inner = (child.name if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                     else owner)
+            visit(child, inner)
+
+    visit(ast.parse(source), "<module>")
+    return out
+
+
+def _str(node: ast.AST) -> str | None:
+    return node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) else None
+
+
+def _runs_gh(node: ast.AST) -> bool:
+    """A list or tuple display whose first element is the string `gh`, wherever it stands, or a
+    call given `shell=True` and a positional string opening `gh` and whitespace."""
+    if isinstance(node, (ast.List, ast.Tuple)):
+        return bool(node.elts) and _str(node.elts[0]) == "gh"
+    if isinstance(node, ast.Call) and any(k.arg == "shell" and getattr(k.value, "value", None)
+                                          is True for k in node.keywords):
+        return any(re.match(r"gh\s", _str(a) or "") for a in node.args)
+    return False
+
+
+def _runs_git_fetch(node: ast.AST) -> bool:
+    """A call given the string `fetch` as a positional argument, or a list or tuple display
+    whose first two elements are the strings `git` and `fetch`."""
+    if isinstance(node, ast.Call):
+        return any(_str(a) == "fetch" for a in node.args)
+    if isinstance(node, (ast.List, ast.Tuple)):
+        return [_str(e) for e in node.elts[:2]] == ["git", "fetch"]
+    return False
+
+
+def _connects(node: ast.AST) -> bool:
+    """A call of a `_CONNECTS` name, as an attribute (`urllib.request.urlopen`) or bare."""
+    if not isinstance(node, ast.Call):
+        return False
+    f = node.func
+    return (f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)) in _CONNECTS
+
+
+#: A source text no `hit` can match in, read before parsing it: each hit's strings and names
+#: stand in the text as written, quoted for a string. A string spelt with escapes is not read.
+_PREFILTER = {_runs_gh: re.compile(r"[\"']gh[\s\"']"),
+              _runs_git_fetch: re.compile(r"[\"']fetch[\"']"),
+              _connects: re.compile(r"\b(?:" + "|".join(sorted(_CONNECTS)) + r")\b")}
+
+
+def _scan(hit) -> set[tuple[str, str]]:
+    """Each (script relative to `scripts/`, function) that `_owners` finds `hit` in, over the
+    shipped scripts whose text `_PREFILTER` passes."""
+    return {(p.relative_to(SCRIPTS).as_posix(), fn) for p in _shipped_scripts()
+            if _PREFILTER[hit].search(src := _read(p)) for fn in _owners(src, hit)}
+
+
+def _verbs(parser: argparse.ArgumentParser) -> set[str]:
+    return set(next(a for a in parser._actions
+                    if isinstance(a, argparse._SubParsersAction)).choices)
+
+
+def _in_tree(span: str) -> bool:
+    """Whether a path the TRD names exists: one opening `sdlc-studio/` from the repo root, up to
+    any `<placeholder>`, and any other from the skill's `scripts/`."""
+    if span.startswith("sdlc-studio/"):
+        return (REPO / span.split("<", 1)[0]).exists()
+    return (SCRIPTS / span).exists()
+
+
+class TrdRegistryNetworkTests(unittest.TestCase):
+    """US1101: the type registry, the network paths, ADR-003, ADR-004, ADR-009, ADR-012 and the
+    coverage line match what 6.2 builds."""
+
+    def test_the_type_registry_matches_the_code(self) -> None:
+        """AC1. Mutants: a type of `sdlc_md.ARTIFACT_TYPES` or `META_TYPES` missing from its
+        table, or given another directory or prefix; a status of `STATUS_VOCAB` missing from its
+        type's row, or out of order; the `META_TYPES` table, or the `charter` row, dropped."""
+        self.assertIn("charter", sdlc_md.ARTIFACT_TYPES)
+        self.assertIn("report", sdlc_md.META_TYPES)
+        self.assertIn("Superseded", sdlc_md.STATUS_VOCAB["epic"])
+        self.assertEqual(dict(sdlc_md.ARTIFACT_TYPES),
+                         _registry("Artifact type registry (`ARTIFACT_TYPES` in `lib/sdlc_md.py`)"))
+        self.assertEqual(dict(sdlc_md.META_TYPES),
+                         _registry("Meta artefacts (`META_TYPES` in `lib/sdlc_md.py`)"))
+        vocab = _one_table(_section(_trd_body(), "Status vocabulary (`STATUS_VOCAB`)"), "Type")
+        self.assertEqual({t: list(v) for t, v in sdlc_md.STATUS_VOCAB.items()},
+                         {r[0]: [s.strip() for s in r[1].split(",")] for r in vocab[1:]})
+
+    def test_every_gh_caller_is_listed(self) -> None:
+        """AC2. Mutants: a function of a shipped script that calls `gh`, opens a connection or
+        fetches from origin and has no row, or a row for a function that no longer does; a
+        `gh` row whose command names something else; the version check's row given as anything
+        but the ADR-004 exception, or ADR-004's Exception paragraph not naming its script; a
+        row naming a function its script does not define. The scanners are checked first on a
+        sample: an argv display, a `shell=True` string, and the near misses they must pass."""
+        sample = ("import shutil, subprocess\n"
+                  "def a(): subprocess.run(['gh', 'run', 'list'])\n"
+                  "def b(): cmd = ('gh',)\n"
+                  "def c(): subprocess.run('gh api x', shell=True)\n"
+                  "def d(): shutil.which('gh')\n"
+                  "def e(): subprocess.run('gh api x')\n"
+                  "def f():\n    def g(): subprocess.run(['git', 'fetch'])\n"
+                  "def h(): run(root, 'fetch', 'origin')\n"
+                  "def i(): steps = ('close-down', 'fetch')\n"
+                  "def j(): urllib.request.urlopen(r)\n")
+        self.assertEqual({"a", "b", "c"}, _owners(sample, _runs_gh))
+        self.assertEqual({"g", "h"}, _owners(sample, _runs_git_fetch))
+        self.assertEqual({"j"}, _owners(sample, _connects))
+        gh, fetch, get = _scan(_runs_gh), _scan(_runs_git_fetch), _scan(_connects)
+        self.assertIn(("github_sync.py", "gh"), gh)
+        self.assertIn(("sprint.py", "origin_drift"), fetch)
+        self.assertIn(("version_check.py", "latest_release"), get)
+
+        table = _one_table(_section(_trd_body(), "Network paths"), "Path")
+        script, fn, cmd, adr = (table[0].index(c) for c in
+                                ("Script", "Function", "Command or endpoint", "Under ADR-004"))
+        rows = {(r[script].strip("`"), r[fn].strip("`")): r for r in table[1:]}
+        self.assertEqual(len(table) - 1, len(rows), "a script and function listed twice")
+        for verdict, found in ((VIA_GH, gh), (EXCEPTION, get), (NOT_GITHUB, fetch)):
+            with self.subTest(verdict=verdict):
+                self.assertEqual(found, {k for k, r in rows.items() if r[adr] == verdict})
+        self.assertEqual(set(rows), gh | get | fetch)
+        for (path, name), row in rows.items():
+            with self.subTest(script=path, function=name):
+                defs = {n.name for n in ast.walk(ast.parse(_read(SCRIPTS / path)))
+                        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+                self.assertIn(name, defs)
+                if row[adr] == VIA_GH:
+                    self.assertTrue(_spans(row[cmd]))
+                    self.assertTrue(all(s.split()[0] == "gh" for s in _spans(row[cmd])), row)
+        exception = _adr(_trd_body(), "004").split("**Exception:**", 1)
+        self.assertEqual(2, len(exception), "ADR-004 has no Exception paragraph")
+        self.assertLessEqual({p for p, _ in get}, _spans(exception[1].split("\n\n", 1)[0]))
+
+    def test_the_adrs_and_header_match_6_2(self) -> None:
+        """AC3. Mutants: ADR-012 with no Revision History row dated on or after its acceptance;
+        a coverage line naming an older baseline, no 6.2 work on main, or a second baseline; a
+        header or coverage line naming another release; ADR-012 naming a path that does not
+        exist outside its Not yet built paragraph, or listing one there that now exists;
+        ADR-003 not naming `reconcile.py settle`, or the hook not running it; ADR-009 not
+        naming a `persona_gen.py` verb or a shipped default seat; a `persona_gen.py` verb
+        creating a card that was not there."""
+        text, body = _read(TRD), _trd_body()
+        self.assertIn(f"## [{BASELINE}]", _read(REPO / "CHANGELOG.md"))
+        claims = list(doc_freshness._BASELINE_CLAIM.finditer(body))
+        self.assertEqual([BASELINE], [m.group("version") for m in claims])
+        coverage = next(u for u in _units(_section(body, "Scope")) if u.startswith("Coverage:"))
+        self.assertRegex(coverage, rf"\bv{re.escape(BASELINE)}\b.*?\bplus\b.*?"
+                                   rf"\b{re.escape(ON_MAIN)}\b.*?\bmain\b")
+        header = text.split("\n---\n", 1)[0]
+        self.assertEqual({BASELINE}, set(_VERSION_RE.findall(header + "\n" + coverage)))
+
+        adr12 = _adr(body, "012")
+        status = re.search(r"^\*\*Status:\*\*.*$", adr12, re.M).group(0)
+        accepted = re.search(r"\d{4}-\d{2}-\d{2}", status).group(0)
+        history = _one_table(_section(text, "Revision History"), "Date")
+        self.assertTrue([r for r in history[1:] if "ADR-012" in r[2] and r[0] >= accepted],
+                        f"no Revision History row names ADR-012 on or after {accepted}")
+        pathlike = {s for s in _spans(adr12) if s.startswith("sdlc-studio/") or s.endswith(".py")}
+        self.assertIn("persona_gen.py", pathlike)
+        parts = adr12.split("**Not yet built:**", 1)
+        self.assertEqual(2, len(parts), "ADR-012 has no Not yet built paragraph")
+        not_built = _spans(parts[1].split("\n\n", 1)[0])
+        for span in sorted(pathlike | not_built):
+            with self.subTest(path=span):
+                self.assertNotEqual(_in_tree(span), span in not_built)
+
+        adr3 = _adr(body, "003")
+        self.assertIn("settle", _verbs(reconcile.build_parser()))
+        self.assertIn("`reconcile.py settle`", adr3)
+        # A line of the hook that is not a comment runs it.
+        self.assertRegex(_read(REPO / ".githooks" / "pre-commit"),
+                         re.compile(r'^(?![ \t]*#).*reconcile\.py"? settle\b', re.M))
+        named = re.findall(r"`reconcile\.([A-Z_]+)`", adr3)
+        self.assertIn("SETTLED_INDEX_KINDS", named)
+        for name in named:
+            self.assertTrue(hasattr(reconcile, name), name)
+
+        adr9, verbs = _adr(body, "009"), _verbs(persona_gen.build_parser())
+        seats = SCRIPTS.parent / "templates" / "personas" / "amigos"
+        shipped = {p.name for p in seats.glob("*.md")}
+        self.assertIn("stamp", verbs)
+        self.assertIn("qa.md", shipped)
+        self.assertLessEqual(verbs | shipped | {"templates/personas/amigos/"}, _spans(adr9))
+        with tempfile.TemporaryDirectory() as d:
+            card = Path(d) / "new.md"
+            for verb in sorted(verbs):
+                with self.subTest(verb=verb), contextlib.redirect_stdout(io.StringIO()), \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    with contextlib.suppress(OSError, SystemExit):
+                        persona_gen.main([verb, "--file", str(card)])
+                    self.assertFalse(card.exists(), f"persona_gen.py {verb} wrote a card")
 
 
 if __name__ == "__main__":
