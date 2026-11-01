@@ -1649,7 +1649,7 @@ Recorded from retro RETRO0087.
 
 - **Added:** 2026-08-01
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true and held for the budget case: the budget lane and the planner now read the one `gate_budget` config key (`gate.py:1843`, `sprint.py:12827`, `sprint.py:12884`). Any other pair measuring the same thing is unguarded.
+- **Revalidated:** 2026-11-01 - Still true and held for the budget case: the planner's `execution_cost` (`sprint.py:12814`) prefers `measured_gate_seconds` (`sprint.py:12756`, called at `sprint.py:12833`), the measured series the budget lane also reads, and falls back to the declared `gate_budget.baseline_seconds` only when nothing is measured, so the two components now read one source; the general rule still binds any new pair that measures the same thing, and no gate checks for such a pair.
 
 **Two components that measure the same thing will disagree, and both will look green.** BG0415: the budget lane and the planner differed by 44% about one gate, each correct within itself. One source, or they drift.
 
@@ -2243,7 +2243,7 @@ Recorded from retro RETRO0066.
 
 - **Added:** 2026-07-22
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: a pointer lesson. Its target exists: `retro.py:826` (`ACCURACY_SECTION`, the Estimate vs actual section) and `retro.py:3354` computes the estimate-versus-actual fit across sprints, per estimator. No gate stops a two-point extrapolation being believed; the across-sprint view is the held check.
+- **Revalidated:** 2026-11-01 - Still true: a pointer lesson whose target exists. Its pointer resolves to `## Estimate vs actual` at `RETRO0066-every-number-names-what-it-covers-and-the.md:81`, and `RETRO0066-every-number-names-what-it-covers-and-the.md:162-163` give the caveat itself: a two-point fit always fits a line exactly, so its figures carry no confidence and only its falsifiable prediction is usable. No gate stops a two-point fit being read as evidence.
 
 Recorded from retro RETRO0066.
 
