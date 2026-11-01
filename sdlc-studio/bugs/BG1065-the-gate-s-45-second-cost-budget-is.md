@@ -38,6 +38,7 @@ The performance NFR's only proxy is permanently red, so a real slowdown is indis
 
 ## Notes
 
+- From BG0963 (2026-11-01): gate.py's serial_only description still says only global tree state; also name wall-clock upper bounds, which BG0963 marks serial_only and boundary_only. A docstring change to gate.py selects a very wide module set at commit (1072 s measured), so make it in this unit's own gate.py commit.
 - Pre-run baseline, 2026-10-31 at 62fc405a: a standard `gate.py` run took 38.6s against the 45s budget (engagement-floor 26.3s), so the run is no longer over budget on every run. The AC still holds: the budget is recorded beside a measurement, so the OVER line means something again.
 
 ## Revision History
