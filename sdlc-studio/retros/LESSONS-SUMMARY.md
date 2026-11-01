@@ -411,7 +411,6 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them**
 - **L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed**
 - **L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate**
-- **L-0040: The migration story for a breaking model change is part of the change, not an afterthought**
 - **L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment**
 - **L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture**
 - **L-0037: A worked-around symptom is a bug you have not found yet**
@@ -430,7 +429,6 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0024: The tool that measures a sprint cannot be built by that sprint**
 - **L-0023: A record kept in a gitignored working directory is not a record**
 - **L-0022: Verify a fix by ATTACKING it, not by re-reading it**
-- **L-0021: RETRACTED - A calibration fitted to work delivered under one standard does not survive a change in the standard**
 - **L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is**
 - **L-0019: A gate belongs in the command people actually run, not in a step they are told to run**
 - **L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation**
@@ -449,5 +447,4 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0005: Editing a shared template obliges you to run its renderer's tests**
 - **L-0004: Add a closing full-diff pass when units share a file**
 - **L-0003: Read every creation path, not the one the design note names**
-- **L-0002: Forward-port via install.sh, not per-file cp** - Sync with `install.sh --local` (whole-tree, deterministic), then `diff -rq` to verify
 - **L-0001: Amend the AC in the same unit when the implementation deviates** - When deviating, reword the AC + add a revision-history note in the same commit; the critic checks AC-vs-delivered-behaviour

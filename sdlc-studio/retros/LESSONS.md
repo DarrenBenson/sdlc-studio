@@ -1,6 +1,6 @@
 # Project Lessons
 
-**Last Updated:** 2026-10-27
+**Last Updated:** 2026-11-01
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
@@ -3214,7 +3214,8 @@ Recorded from retro RETRO0048.
 ## L-0090: **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: artifact.py:1095 and :1276 refuse an Affects that resolves to nothing, and sprint.py:2432 says disjointness is only as good as declared Affects; a create-only Affects still gives the collision check no anchor.
 
 **A create-only `Affects` is a real grooming gap, not a gate bug.** Name at least one existing file the unit also touches (here `CHANGELOG.md`, which the changelog AC writes) so the collision check has an anchor.
 
@@ -3223,7 +3224,8 @@ Recorded from retro RETRO0047.
 ## L-0089: **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and guarded: tests/test_schema_contract.py:185 test_added_status_is_the_code_inbox_status and :192 test_inbox_applies_to_exactly_the_finding_types machine-guard the inbox lane against sdlc_md.INBOX_STATUS.
 
 **Machine-guard every vocabulary a self-describing contract claims to cover.** The v3 `inbox` lane shipped as prose the guard did not check - latent rot under a doc that promises the guard covers "the vocabularies below". Encode it as data and guard it, or do not claim coverage.
 
@@ -3232,7 +3234,8 @@ Recorded from retro RETRO0047.
 ## L-0088: **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and guarded: tests/test_schema_contract.py:210 test_masthead_matches_new_project_seed and :220 test_fallback_default_does_not_lead_current anchor the masthead to the new-project seed, not the fallback.
 
 **A public contract's version stamp must anchor to what new consumers actually meet.** Tying the masthead to the fallback file made the guard cement the wrong invariant while staying green. Anchor a drift guard to the source that governs the real artefact (the new-project seed), not a lookalike.
 
@@ -3241,7 +3244,8 @@ Recorded from retro RETRO0047.
 ## L-0087: **Verify which file a "default" actually comes from before documenting it as the default.** New projects are seeded from
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: templates/config.yaml seeds new projects with schema_version 3 (line 9) while templates/config-defaults.yaml:12 still holds the fallback schema_version 2, and its comment (lines 6-7) says so; tracing the copied path remains necessary.
 
 **Verify which file a "default" actually comes from before documenting it as the default.** New projects are seeded from `templates/config.yaml` (3), not the `config-defaults.yaml` fallback (2); reading the copy site (`init.py`) without checking the copied path produced a confident, wrong contract. Trace the value to the file the running code reads.
 
@@ -3250,7 +3254,8 @@ Recorded from retro RETRO0047.
 ## L-0086: A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff -
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: critic.py enumerates claims and refuses an inventory with unruled claims (critic.py:2596, :3651), and a bounded mutation sample on a large file still samples early lines unless line-targeted; recording N/M enumerated stays the rule.
 
 A bounded mutation run with a low ceiling on a large multi-function file samples early-file lines (peripheral helpers), not the diff - uninformative unless line-targeted. Record the sample honestly (`N/M enumerated`), never as clean coverage.
 
@@ -3259,7 +3264,8 @@ Recorded from retro RETRO0045.
 ## L-0085: A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: worktree subagents still branch from a base SHA (this run is in such a worktree), so git diff main..branch misleads as stated; git show <commit> --name-only remains the scope check.
 
 A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is still clean when the groups are file-disjoint. Verify scope with `git show <commit> --name-only`, not the full-tree diff.
 
@@ -3268,7 +3274,8 @@ Recorded from retro RETRO0045.
 ## L-0084: The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: doc_coverage.py:150 emits a blocking command-uncatalogued finding for any SKILL.md Type Reference command lacking a help/help.md entry, and conformance.py:547 runs it as a repo-global stage.
 
 The `documented` conformance stage is a GLOBAL floor: one uncatalogued command fails it for every unit. A command added to the Type Reference must also land in the help catalogue, or the whole gate reads as 100+ non-conformant units.
 
@@ -3277,7 +3284,8 @@ Recorded from retro RETRO0045.
 ## L-0083: A fix's test must exercise the failure mode the fix could *introduce*, not only the one it removes: BG0181's fix passed its
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: best-practices/testing.md#name-the-mutant-first (named under AGENTS.md 'Before you write') requires stating the production change a test must fail on, which covers the failure a fix could introduce.
 
 A fix's test must exercise the failure mode the fix could *introduce*, not only the one it removes: BG0181's fix passed its trailing-parenthetical test while silently dropping units after a mid-line one - trading harmless over-reporting for worse silent under-reporting. See [[review-model-two-roles]].
 
@@ -3286,7 +3294,8 @@ Recorded from retro RETRO0045.
 ## L-0082: A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: critic.py:3651 refuses a claim inventory unless every enumerated claim carries a ruling, and the verify report carries its own failure state; laundering a failed report into a neutral lane remains the hazard.
 
 A composed evidence line must carry its source report's failure state (baseline/errors/truncation), not only its successes - otherwise the ceremony launders a worthless report into a neutral-looking lane. (Validity: 2026-10-17)
 
@@ -3295,7 +3304,8 @@ Recorded from retro RETRO0044.
 ## L-0081: When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: critic.py:2596 requires all four CLAIM_SURFACES enumerated rather than an all-on or all-off check, the same independently-composed design; the partial-tag matrix remains the right test for a gate with downgradable halves.
 
 When a gate's requirement has independently-downgradable halves, compose them independently and test the partial-tag matrix, not just all-on/all-off - the two-role disarm hid in the untested middle row. (Validity: 2026-10-17)
 
@@ -3304,7 +3314,8 @@ Recorded from retro RETRO0044.
 ## L-0080: Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a
 
 - **Added:** 2026-07-17
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sprint.py near :405 documents that a concurrent process left staged mutants and `git add -A` committed them, and critic.py mutation runs own the working tree; single-writer for tree-mutating verifiers stands.
 
 Never run two tree-mutating verifiers concurrently: a mutation harness owns the working tree while it runs, a kill mid-mutant strands a live mutant, and every other verifier then measures a lie - single writer, and re-verify the tree after any kill. (Validity: 2026-10-17)
 
@@ -3314,14 +3325,16 @@ Recorded from retro RETRO0044.
 
 - **Tags:** tooling, shell, filing
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true, partly mitigated: artifact.py:1720 --fields-file ARTEFACT.json (and lessons.py revalidate --fields-file, used in this pass) keeps prose out of the shell, but inline double-quoted backticks are still command substitutions, so the rule stands.
 
 Filing CR0328/CR0329 through a bash heredoc-free inline call executed the backtick spans in their summaries as commands, silently punching holes in the filed text (caught because stderr printed 'sprint: command not found'). House rule: pass artifact bodies to the creators via single-quoted heredocs or files, never double-quoted inline strings with backticks; the creators could also grow a --summary-file input (fold into CR0316/CR0328 territory if it recurs).
 
 ## L-0078: A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md 'Exercise every claim through the shipped entry point' says a library test cannot see a missing lane, the wiring being the part it does not exercise; this lesson at project-rule level.
 
 A CLI flag is only shipped when a test exercises the CLI path: API-level tests stayed green while `--parent` was silently dropped at the argparse mapping - every new flag needs one main()-path test.
 
@@ -3330,7 +3343,8 @@ Recorded from retro RETRO0043.
 ## L-0077: Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: artifact.py:422 and :2199 use callable replacements in re.sub (lambda mm: mm.group(1) + new_title), so text is never expanded as a template; the house rule is in the code.
 
 Text that flows into `re.sub` is data, never a template: the same replacement-expansion class surfaced twice in one sprint (AC seeding, and historically the -G fix) - callable replacement is the house rule now.
 
@@ -3339,7 +3353,8 @@ Recorded from retro RETRO0043.
 ## L-0076: A reviewer must execute the mutant, not admire the test: two "killing tests" in one unit were proven vacuous by running the actual mutants
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: critic.py self-check requires mutants recorded against the unit's current diff and AGENTS.md 'Before you write' (testing.md#name-the-mutant-first) requires naming the mutant first; the vacuous-test class is what these target.
 
 A reviewer must execute the mutant, not admire the test: two "killing tests" in one unit were proven vacuous by running the actual mutants (wrong section targeted, wrong sort order) - a test that cannot fail its mutant is the false-assurance class with a green badge.
 
@@ -3349,14 +3364,16 @@ Recorded from retro RETRO0043.
 
 - **Tags:** review, sign-off, ceremony, honesty
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: sprint.py:4735 and :6735 compose the sign-off decision brief from committed records, and sprint sign refuses a principal who authored or reviewed a unit (AGENTS.md gate table); the request carries its evidence.
 
 The RUN-01KXGPBN close asked the operator to sign off a retro written moments earlier and not yet shown: the prompt carried counts (6/6, gates green) but none of the content - the reviewer of record was structurally unable to review, converting the independent-principal gate into approval theatre. Any ceremony that requests a human decision must embed the decision brief (what shipped, what the critics rejected and how it was repaired, gate and cost evidence) in the request itself, and offer hold and delegate paths. Counts are not evidence; the operator caught it (CR0318, RFC0044 D2/D3).
 
 ## L-0074: A shared measurement helper (`flow.terminal_date`) grown for one status class (terminal) needs its assumptions re-checked per caller: the
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: flow.py:114-125 terminal_date takes allow_revision_fallback, and its docstring says the fallback is wrong for a transient status like Blocked, so those callers opt out.
 
 A shared measurement helper (`flow.terminal_date`) grown for one status class (terminal) needs its assumptions re-checked per caller: the revision-row fallback that is sound for Done is a guess for Blocked - the fallback became opt-out per call site.
 
@@ -3365,7 +3382,8 @@ Recorded from retro RETRO0042.
 ## L-0073: A reporting cap is a refusal in disguise: any bounded simulation/measurement that can hit its bound must refuse or flag at the bound, never
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and enforced: flow.py:285 MC_WEEK_CAP states a percentile AT the cap is refused, never reported; the cap is a refusal in code.
 
 A reporting cap is a refusal in disguise: any bounded simulation/measurement that can hit its bound must refuse or flag at the bound, never present the capped value as measured (the MC_WEEK_CAP catch - same class as the RFC0041 reporting-honesty MAJORs).
 
@@ -3374,7 +3392,8 @@ Recorded from retro RETRO0042.
 ## L-0072: Calibrate an instrument's units to the measured process, not the literature's default: the MC forecast shipped with ISO-week buckets from
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: flow.py:286-295 defaults the forecast to a day bucket because an agent-speed project's median cycle time is 0 days, keeping the ISO-week bucket as an option; reference-sprint.md:572 states it.
 
 Calibrate an instrument's units to the measured process, not the literature's default: the MC forecast shipped with ISO-week buckets from human-team Kanban canon while this repo's own measured cycle time is 0 days and sprints are hour-scale sessions - the operator caught it at the close (CR0314: sprint-session and day buckets).
 
@@ -3383,7 +3402,8 @@ Recorded from retro RETRO0042.
 ## L-0071: Dogfooding a measurement feature on real project data finds confounders a fixture never will: the stale-run-state elapsed (43h from an
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: this repo dogfoods every measurement on its own sdlc-studio tree (AGENTS.md 'This repo dogfoods the skill') and the pre-push gate runs against real history, which is where confounders surface.
 
 Dogfooding a measurement feature on real project data finds confounders a fixture never will: the stale-run-state elapsed (43h from an unrelated open run) only showed because the live repo HAD an old open run-state. Run a new measurement against the real repo before trusting it.
 
@@ -3392,7 +3412,8 @@ Recorded from retro RETRO0041.
 ## L-0070: A configured number is an input, not a fact: a price from config must be range-checked (a negative price subtracts, a zero is
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and enforced: telemetry.py:481 refuses a non-positive configured price (returns None, UNPRICED) instead of honouring it; the configured-number-is-an-input rule is in code.
 
 A configured number is an input, not a fact: a price from config must be range-checked (a negative price subtracts, a zero is indistinguishable from unpriced) exactly as a user-supplied size is. The estimator's whole discipline is refusing to let an unchecked number wear the authority of a measurement - pricing is no exception.
 
@@ -3401,7 +3422,8 @@ Recorded from retro RETRO0041.
 ## L-0069: When two subsystems each claim to be the honest one (here: the estimate-vs-actual ratio and the spend report), they must read the SAME
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: retro.py:1385-1389 falls back to the summed attempts via telemetry.attempts_of so the ratio reader sees the new shape, and the spend report reads the same telemetry; the same-source rule is held.
 
 When two subsystems each claim to be the honest one (here: the estimate-vs-actual ratio and the spend report), they must read the SAME source for the same quantity, or they will contradict on exactly the interesting case (an escalation). A new richer schema (`attempts`) is a fork in the data until EVERY reader is taught to read it; reconcile them in the same change, and test a record in the new shape through BOTH readers.
 
@@ -3410,7 +3432,8 @@ Recorded from retro RETRO0041.
 ## L-0068: A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary)
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: reconcile.py:1984 computes today = date.today() with the comment that a future deadline is not a last-touched date, which is this lesson's clamp in code.
 
 A "last-touched" date read as `max(every date in the file)` is defeated by any future or prose date (a deadline in the summary). Anchor a staleness date on the metadata fields and the revision-history region only, and clamp to today - a date in the future is not a date the artefact was touched.
 
@@ -3419,7 +3442,8 @@ Recorded from retro RETRO0040.
 ## L-0067: A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: reconcile.py and sdlc_md.py resolve ids per artefact type through sdlc_md.artifact_files and status_vocab (status.py:198), keeping terminal distinct from absent; the whole-namespace-then-classify rule is the design.
 
 A grandfather/coherence check that resolves ids against a PARTIAL set (only the triage-type, non-terminal backlog) will false-flag anything outside that set. An orphaned-dependency lens must resolve against ALL artefact types and distinguish terminal (resolved) from absent (mistyped), or it calls a live dependency broken and gives wrong advice. Resolve against the whole namespace, then classify.
 
@@ -3428,7 +3452,8 @@ Recorded from retro RETRO0040.
 ## L-0066: But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls)
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:2020 guards the enumerator but sibling readers such as reconcile.py:120 file_census remain separate code paths, so the end-to-end front-door verification advice stays necessary.
 
 But fixing ONE enumerator is not fixing the invariant: sibling code paths (`reconcile.file_census` and a dozen direct `read_text` calls) bypass the enumerator entirely, so the crash relocated past the write and left a partial write - strictly worse. A robustness invariant ("one bad file never crashes a scanner") must be verified END-TO-END on the real public entry point, not on the helper in isolation: a test that exercises only the guarded function passes while the unguarded sibling on the same call path still crashes. When you claim "every scanner is now safe", grep every `read_text` on that path and drive the invariant through the front door.
 
@@ -3437,7 +3462,8 @@ Recorded from retro RETRO0040.
 ## L-0065: A crash inside a shared file-walk (`iter_artifact_files`) is not a local bug in the feature that tripped it - it is a latent fault in every
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and applied: sdlc_md.py:176 and :2020 catch (OSError, UnicodeDecodeError) in the shared walker and keep the bad file visible for a checker to name; the library-level hardening is in place.
 
 A crash inside a shared file-walk (`iter_artifact_files`) is not a local bug in the feature that tripped it - it is a latent fault in every consumer. When a review finds "feature X breaks on a bad file", check whether the shared enumerator, not X, is the thing that should tolerate it: fixing it once at the library hardens every scanner rather than patching one call site and leaving the rest exposed. A `read_text` in a shared walker must catch `UnicodeDecodeError` as well as `OSError`.
 
@@ -3446,7 +3472,8 @@ Recorded from retro RETRO0040.
 ## L-0064: When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md records the pre-push hook reads an unreadable forge answer as not green yet does not block an offline push, an intersection-of-readings fail-safe; the ambiguous-contract rule stands for the Stop hook.
 
 When an external contract is ambiguous (the Stop hook's `stop_hook_active` / exit codes), write to the intersection of the plausible readings and fail safe, rather than picking one and hoping. A hook that blocks a turn on its own uncertainty is worse than one that misses a reminder.
 
@@ -3455,7 +3482,8 @@ Recorded from retro RETRO0039.
 ## L-0063: A test suite that passes is evidence only about the cases it runs
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: best-practices/testing.md and AGENTS.md 'Exercise every claim' require the boundary-crossing case; a passing suite remains evidence only about the cases it runs.
 
 A test suite that passes is evidence only about the cases it runs. This sprint's detector passed its own tests while carrying a BLOCKER, because every test exercised the *higher-id-closed-later* path and none the *lower-id-in-flight* one - the blind spot and the defect coincided. When a feature grandfathers on a boundary, test an item on **both** sides AND one that crosses it.
 
@@ -3464,7 +3492,8 @@ Recorded from retro RETRO0039.
 ## L-0062: A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff
 
 - **Added:** 2026-07-16
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: close_owed.py:14 and :67 and conformance.py:459 grandfather by dated or recorded baseline, with conformance.adopt_after as the remedy cutoff (conformance.py:782); the set-versus-cutoff boundary hazard is real for any new grandfather lane.
 
 A grandfather baseline for "work done before adoption" must be the **set** of ids that existed, not a highest-id/date cutoff. A cutoff assumes id (or time) order tracks the state being grandfathered; whenever items can cross the boundary in a different order than they were created (a low-id unit still in flight at adoption), the cutoff silently forgives real debt. It also couples the mechanism to numeric ids, breaking on ULID/opaque id schemes. Set membership has neither hole and costs a list.
 
@@ -3473,7 +3502,8 @@ Recorded from retro RETRO0039.
 ## L-0061: A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: sprint.py:10751 BOUNDARY_STEPS includes close-down and sprint.py:10963 stops the run when the close-down chain does not complete (close-gate); the ceremony is mechanically enforced.
 
 A mandated ceremony with no mechanical enforcement is a silent control - it fires only when someone remembers, which under delivery pressure is never. The close-down needs the same un-skippable treatment the quality gate got (RFC0042); the machine version of this bug was a whole sprint in a consuming project.
 
@@ -3482,7 +3512,8 @@ Recorded from retro RETRO0038.
 ## L-0060: A silence in one measurement path is not proof the quantity is unmeasurable
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: retro.py:44 states UNMEASURED means not-yet-captured, not unmeasurable, which is this lesson held in the reporting text.
 
 A silence in one measurement path is not proof the quantity is unmeasurable. "Interactive = UNMEASURED" hardened a telemetry-capture gap into a false claim of unknowability, blocking the velocity loop for the exact sprints being run. Name the gap (not-yet-captured), then close it.
 
@@ -3491,7 +3522,8 @@ Recorded from retro RETRO0038.
 ## L-0059: A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:1177 extract_field handles standalone, plain and inline-run field shapes precisely because real projects carry legacy conventions; fixturing both conventions remains the rule for any reader of a convention.
 
 A false negative in a test suite is a fixture-coverage gap, not proof of correctness: BG0151 shipped because every fixture used the NEW link style, so no test exercised the old-flow linking a real consuming project uses. When a feature reads a convention, fixture BOTH conventions - the new one you are building and the legacy one real projects still carry.
 
@@ -3500,7 +3532,8 @@ Recorded from retro RETRO0038.
 ## L-0058: Orchestrate existing, tested primitives before building new ones
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: scripts/migrate.py is glue over project_upgrade, migrate_v3 and reconcile, and AGENTS.md 'always look for a tool before doing anything by hand' states the same orchestration preference.
 
 Orchestrate existing, tested primitives before building new ones. `migrate` is almost entirely glue over `project_upgrade` + `migrate_v3` + reconcile; the value was the aggregation and the honest deterministic-vs-needs-human split, not new migration logic. The reused pieces carried their own tests, so the new surface to test was thin.
 
@@ -3509,7 +3542,8 @@ Recorded from retro RETRO0037.
 ## L-0057: Monkeypatch through the module under test, not a re-import
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: scripts/tests/loader.py loads scripts by importlib, creating distinct module instances, so patching the module under test remains the safe form; the push gate runs the whole suite where isolation-green can fail.
 
 Monkeypatch through the module under test, not a re-import. A test that patches `import version_check` can miss when the code under test holds a different instance of that module (the full suite's importlib loads create distinct instances). Patch `<module_under_test>.dependency`, which is the exact object the code will look up. A green run in isolation is not proof under the suite.
 
@@ -3518,7 +3552,8 @@ Recorded from retro RETRO0037.
 ## L-0056: Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: status.py:544 takes the dashboard's awaiting value when passed in (awaiting if awaiting is not None else discovery_awaiting) so the hint does not rescan; compute-once-and-thread is applied.
 
 Compute-once, read-many on a hot path: the hint recomputed a full-repo scan the dashboard had already done. When two callers in one command both need an expensive value, compute it once and thread it, or the most-run command pays double.
 
@@ -3527,7 +3562,8 @@ Recorded from retro RETRO0036.
 ## L-0055: A generated artefact must only assert what it verified
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a generated artefact asserting an unverified claim is still possible for any new audit output; AGENTS.md 'Exercise every claim' and the blocking findings in doc_coverage.py:150 keep claims tied to what was checked.
 
 A generated artefact must only assert what it verified. The audit doc claimed "every tool runs" while the tool check was off by default; a persisted, unverified certification is a lie with a long half-life. Thread a `checked` flag and phrase the claim from it.
 
@@ -3536,7 +3572,8 @@ Recorded from retro RETRO0036.
 ## L-0054: A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: status.py:187 discovery_awaiting keeps its own exemption set (intake counted, parked skipped) distinct from reconcile.py:1819 which exempts the intake state and inbox lane; the two predicates still differ on purpose.
 
 A predicate that looks like an existing one may need DIFFERENT exemptions - do not copy the exemption set. `discovery_awaiting` and reconcile's `undecomposed` both find "childless discovery items", but the first must count intake (it awaits refinement) and skip parked, while the second skips intake. Name the exemption from the predicate's own purpose, not from the neighbour's.
 
@@ -3545,7 +3582,8 @@ Recorded from retro RETRO0036.
 ## L-0053: Wiring dormant machinery is a real deliverable
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: persona_resolve.py:236 resolve_consult and frame (:239, :288) are now called, and triage.py:183 calls persona_resolve.consult; wiring existing primitives remains the pattern.
 
 Wiring dormant machinery is a real deliverable. `resolve_consult`/`frame` existed and were correct but callerless since the seats convergence; the value was latent until a ceremony ran it. Prefer wiring an existing, tested primitive to building a parallel one - the sprint was small precisely because the primitive was already sound.
 
@@ -3554,7 +3592,8 @@ Recorded from retro RETRO0035.
 ## L-0052: Text written into a structurally-delimited section must be sanitised against the delimiter
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: user text written into a ## delimited section can still forge a heading; triage.py:204-206 writes the consult audit onto the Issue from persona_resolve.consult output, so single-line collapsing of free text remains necessary there.
 
 Text written into a structurally-delimited section must be sanitised against the delimiter. The consult audit section is bounded by `^##`; a question carrying `\n## ...` forged a heading inside it, breaking the in-place idempotent update. Collapsing user text to a single line before rendering closes it. Any "write user input into a markdown section" path has this shape.
 
@@ -3563,7 +3602,8 @@ Recorded from retro RETRO0035.
 ## L-0051: Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md`
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:3156 insert_after_status and :3181 write_decomposed are the shared link writers that refine and triage both call; no copy of either has reappeared.
 
 Extract a shared definition before the second caller: the `Parent:`/`Decomposed-into:` link writers moved to `lib.sdlc_md` (`insert_after_status`/`write_decomposed`) the moment triage became refine's second caller, rather than copied - LL0016 applied prospectively for once, not after the drift.
 
@@ -3572,7 +3612,8 @@ Recorded from retro RETRO0034.
 ## L-0050: A dry-run pre-flight is only a safety net if it takes the SAME branch as the real mint on every configuration the real mint branches on
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: triage.py:161-173 pre-flights every bug through a dry-run mint with consolidate=False so it mirrors the real mint; the same-branch requirement is explicit in the pre-flight comments.
 
 A dry-run pre-flight is only a safety net if it takes the SAME branch as the real mint on every configuration the real mint branches on. Here the real `artifact.new` routed a v3 Low-severity finding through consolidation while the dry-run did not, so triage's pre-flight passed and the real mint corrupted a CR. Test the pre-flight on each schema/config the create path forks on, not just the default.
 
@@ -3581,7 +3622,8 @@ Recorded from retro RETRO0034.
 ## L-0049: A migration must report what it cannot convert, never guess
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: migrate_v3.py:294-297 writes Size where sound and flags a story or bug carrying Effort without Points for human re-sizing rather than guessing; the report-never-guess behaviour is in the code.
 
 A migration must report what it cannot convert, never guess. Effort predicts cost far worse than points, so there is no honest Effort->Points map; the migration writes a Size where the mapping is sound (Effort/points on a container) and FLAGS a delivery unit's Effort for human re-sizing rather than inventing a number the estimator would then be judged on.
 
@@ -3590,7 +3632,8 @@ Recorded from retro RETRO0033.
 ## L-0048: Extract a shared definition BEFORE writing the second caller, not after
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:1029 size_for_points is the shared definition that refine and the migration both call; AGENTS.md 'use the deterministic tooling' and LL0016 keep the extract-first rule.
 
 Extract a shared definition BEFORE writing the second caller, not after. The point->size band was copied into the migration and immediately became an LL0016 drift risk (two paths, one meaning); the fix was to move it to `sdlc_md.size_for_points` and have both `refine` and the migration call it. A helper worth copying is a helper worth sharing.
 
@@ -3599,7 +3642,8 @@ Recorded from retro RETRO0033.
 ## L-0047: Fix the friction the last retro logged, and log the new friction you hit
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: reference-sprint.md carries the friction-logging step and the project rule is to file every defect or friction as a Bug/CR; the retro still takes the last retro's friction as input.
 
 Fix the friction the last retro logged, and log the new friction you hit. This sprint delivered the `refine add` that RETRO0031 flagged as a blocker, and it surfaced its own tiny friction (the missing import) - caught by tests, not worth a ticket, but named here.
 
@@ -3608,7 +3652,8 @@ Recorded from retro RETRO0032.
 ## L-0046: Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: refine.py cmd_add (refine.py:1181) shares _decompose (:262) with apply, so the shared core is the design; sharing the core is how the variant inherits validation and rollback.
 
 Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs. `add` got apply's up-front validation, rollback and atomic_write for free by sharing `_decompose`, and the review found nothing - where the two earlier refine reviews each found a real bug. Extract the shared core BEFORE adding the variant.
 
@@ -3617,7 +3662,8 @@ Recorded from retro RETRO0032.
 ## L-0045: The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: AGENTS.md requires one independent reviewer per unit in a fresh context via critic.py brief, and sprint sign refuses a principal who authored or reviewed a unit (AGENTS.md gate table).
 
 The independence gate earns its cost on exactly the bugs the author cannot see: both this sprint's blocking bugs were invisible to the author (one a cross-repo CWD read, one an orphan invisible to reconcile in the very projects the tool targets), and both were caught by a reviewer attacking the claim rather than re-reading the code.
 
@@ -3626,7 +3672,8 @@ Recorded from retro RETRO0031.
 ## L-0044: A multi-step create is atomic only if EVERY input is validated before the first write
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: refine.py _decompose (refine.py:262) and _decompose_into (:361) still validate up front and roll back; the all-inputs-before-first-write rule is the design of the create path.
 
 A multi-step create is atomic only if EVERY input is validated before the first write. refine validated points up front but titles mid-loop, so a bad title orphaned an epic; the fix validates all titles (and the request's Status line) up front and rolls back on a residual IO error. Split validation is a half-promise of atomicity.
 
@@ -3635,7 +3682,8 @@ Recorded from retro RETRO0031.
 ## L-0043: A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:1497 two_backlog_enforced defaults False (config-defaults.yaml:127-128 enforce: false) with this repo opting in via its own .config.yaml:175; the default-off-for-upgrades rule is in code.
 
 A gate on a live workflow must default OFF for existing projects and be opt-in, or an upgrade breaks them. `two_backlog_enforced` (default off, one config line to turn on) is the pattern: ship the discipline, but let each project adopt it when ready, and never through a defaults-merge that flips it on globally.
 
@@ -3644,7 +3692,8 @@ Recorded from retro RETRO0031.
 ## L-0042: A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md 'Decide which by execution (git log -S), not by impression' and transition -> Fixed requiring a Verify line or ticked criterion mean a bug is confirmed to reproduce before it is closed; overtaken scope remains a live case.
 
 A bug's stated scope can be overtaken by an earlier change: BG0145 part (1) named a CLI restriction that RFC0038 had already removed. Verify the defect still reproduces before fixing the described symptom; decline with the reason when it does not.
 
@@ -3653,7 +3702,8 @@ Recorded from retro RETRO0030.
 ## L-0041: A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: artifact.py:1095 and :1276 refuse an Affects that resolves to nothing at the one creation seam, so a test creating an artefact with a dummy Affects still needs a real file; the fixture ripple persists.
 
 A gate on the canonical creation path ripples into every test that used the old creation shortcut as a fixture (the Affects-resolve gate hit 12 files, ~140 cases). Budget the fixture migration as part of the gate.
 
@@ -3667,11 +3717,13 @@ Recorded from retro RETRO0030.
 The migration story for a breaking model change is part of the change, not an afterthought. This session shipped a universal, non-schema-gated two-backlog + sizing model; an existing consuming project upgrading to it would find its CR workflow refused (G1), its childless-CR completion blocked (G2), and its stale-Affects units ungroomed - with no opt-in and no data migration. Because it is all unreleased (freeze until ~2026-07-21) there is a window to build the migration before it ships, and a breaking change earns a semver-major bump.
 
 Recorded from retro RETRO0030.
+- **Status:** Closed - Time-boxed advice that is complete: it asked for a migration before the 2026-07-21 freeze, and scripts/migrate.py and scripts/migrate_v3.py now ship it (migrate_v3.py:294-297 flags Effort for re-sizing) with two_backlog default off (sdlc_md.py:1497); nothing remains to do.
 
 ## L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: sprint plan splits units over the threshold (AGENTS.md gate table) and refine decomposes; decomposed sizing remains the forecast method, per flow.py per-period counts.
 
 Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment found. The way to a good forecast is smaller, decomposed units - not a cleverer single-shot guess.
 
@@ -3680,7 +3732,8 @@ Recorded from retro RETRO0029.
 ## L-0038: A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: L-0041 repeated the ripple and the pre-commit lanes select test modules by touched file; the fixture migration cost of a creation-path gate remains a plan-time item.
 
 A gate that changes the canonical creation path ripples into every test that used the old path as a generic fixture. Budget the migration as part of the gate, not as a surprise: the ripple is the measure of how load-bearing the old behaviour was.
 
@@ -3689,7 +3742,8 @@ Recorded from retro RETRO0029.
 ## L-0037: A worked-around symptom is a bug you have not found yet
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md 'Review is independent of the author' and the rule to file findings with file_finding.py; hand-editing a triggering artefact to dodge a defect is the workaround this forbids.
 
 A worked-around symptom is a bug you have not found yet. US0120's parenthetical defect was first met by hand-editing the artefact that triggered it (stripping the annotation off CR0271); an independent reviewer, not the author, is what turned that workaround into a root-cause fix. Verify by an independent actor attacking the claim, not the author re-reading it.
 
@@ -3698,7 +3752,8 @@ Recorded from retro RETRO0029.
 ## L-0036: A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and enforced: retro.py:2850 states pooling per-(project, model) rows is the cohort confound and refuses it, as the lesson itself says.
 
 A cross-cohort figure must be refused, not pooled - now enforced in code (`collate` refuses a rate across `(project, model)` cells), so the confound that produced two withdrawn findings this week cannot recur through the tooling.
 
@@ -3707,7 +3762,8 @@ Recorded from retro RETRO0028.
 ## L-0035: A single-estimator one-shot size read off an artefact is a weak input
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: reference-sprint.md:272 sizes by relative points with the measured batch rate, and refine decomposes before sizing; a single-estimator one-shot read is still not the input.
 
 A single-estimator one-shot size read off an artefact is a weak input. The method that predicts is relative, decomposed and multi-estimator; it converges (independent estimators agree) and it is honest (nobody sees the outcome).
 
@@ -3716,7 +3772,8 @@ Recorded from retro RETRO0028.
 ## L-0034: Decomposition makes the estimate accurate, not only the Done checkable
 
 - **Added:** 2026-07-15
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: sprint plan refuses a batch whose units lack Affects or Points or exceed the split threshold (AGENTS.md gate table), and refine sizes decomposed units; decomposed estimates remain the method.
 
 Decomposition makes the estimate accurate, not only the Done checkable. A blind decomposed estimate hit the batch to 1.00x where a whole-unit single-shot guess missed by half. Break a request into the stories you would actually create, and the hidden work - and the honest size - surfaces.
 
@@ -3725,7 +3782,8 @@ Recorded from retro RETRO0028.
 ## L-0033: Counting is not a worse estimator than modelling; it is the honest one when no signal exists
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: flow.py:194 and :374 count delivered items per period and the forecast simulates over those counts, the honest counting method this lesson endorses; no modelled predictor replaced it.
 
 Counting is not a worse estimator than modelling; it is the honest one when no signal exists. The forecast that gives up on prediction is currently outperforming everything built to predict.
 
@@ -3734,7 +3792,8 @@ Recorded from retro RETRO0027.
 ## L-0032: Merging units to dodge a file collision destroys per-unit measurement
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sprint.py:2205 detects identical-Affects pairs and :2432 states disjointness is only as good as declared Affects, so the plan sequences colliding units instead of merging them; per-unit Points stay the measured base.
 
 Merging units to dodge a file collision destroys per-unit measurement. Two units of this sprint are UNMEASURED because they were delivered inside a third's agent - and merging also makes units bigger and less uniform, which is the opposite of what the evidence says to do.
 
@@ -3743,7 +3802,8 @@ Recorded from retro RETRO0027.
 ## L-0031: Setting the bar BEFORE measuring is what makes a negative result possible
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the groomed stories in this very run (US1105 Verify lines fixed before any judgement) set the bar before measuring, and retro.py:3184 floors cohorts in advance; the pre-registration practice stands.
 
 Setting the bar BEFORE measuring is what makes a negative result possible. CR0262 could drop the forecast only because it had written down, in advance, what "good enough" meant.
 
@@ -3752,7 +3812,8 @@ Recorded from retro RETRO0027.
 ## L-0030: The presence of a field is not a measurement
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: retro.py:44 and :1116 report an absent value as UNMEASURED, not zero, so a missing field is not scored as a measurement; the rule is held in the reporting code.
 
 The presence of a field is not a measurement. Scoring a missing value as zero turns "when this field was invented" into a predictor, and the calendar will happily correlate with anything that grew over time.
 
@@ -3761,7 +3822,8 @@ Recorded from retro RETRO0027.
 ## L-0029: A signal that flips sign between cohorts is not a predictor, however good its pooled correlation looks
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: retro.py:2802 records a field that flipped sign between cohorts as a withdrawn finding and retro.py:2850 refuses pooled (project, model) rows; the rule is in code.
 
 A signal that flips sign between cohorts is not a predictor, however good its pooled correlation looks. Check WITHIN the groups before trusting an average ACROSS them.
 
@@ -3770,49 +3832,56 @@ Recorded from retro RETRO0027.
 ## L-0028: A plausible story fitted to a real pattern is not a finding
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: this is the lesson that replaced the retracted L-0021; retro.py:3277 still warns that before/after is a cohort split and a fitted story is not a finding.
 
 Recorded from retro RETRO0026.
 
 ## L-0027: Before tuning a coefficient, check that its input correlates with the target at all
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: complexity.py:288-362 still emits max_cognitive with applicable, and retro.py reports correlation floors (retro.py:3184) before any coefficient is trusted; the check-the-input-first rule stands.
 
 Recorded from retro RETRO0026.
 
 ## L-0026: A resolved-but-inapplicable signal is more dangerous than an absent one
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and guarded in code: retro.py:44 treats UNMEASURED as not-yet-captured and complexity.py:288 tells readers to read applicable before max_cognitive for exactly this reason (a resolved but inapplicable score).
 
 Recorded from retro RETRO0026.
 
 ## L-0025: A decoy field beats a correct one: `templates/core/cr.md` carried a placeholder `**Effort:**` above the real one, and `extract_field` takes
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sdlc_md.py:1177 extract_field still captures the first matching field, so a placeholder above the real one still wins; templates/core/cr.md no longer carries the decoy Effort line (grep finds none), removing the instance but not the hazard.
 
 Recorded from retro RETRO0026.
 
 ## L-0024: The tool that measures a sprint cannot be built by that sprint
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: retro.py reads committed records after the close (retro.py:92), so the measuring tool stays outside the sprint it measures; the circularity hazard is unchanged for any new instrument.
 
 Recorded from retro RETRO0026.
 
 ## L-0023: A record kept in a gitignored working directory is not a record
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: .gitignore:15-16 keeps sdlc-studio/ committed with only .local ignored, and retro.py:92 and :3982 move a legacy gitignored lessons log into the committed one; the rule is applied in the tree.
 
 Recorded from retro RETRO0026.
 
 ## L-0022: Verify a fix by ATTACKING it, not by re-reading it
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md 'Exercise every claim' and the QA seat's mutant execution via critic.py brief hold the attack-not-reread rule; critic.py self-check requires claims and mutants against the current diff.
 
 Recorded from retro RETRO0026.
 
@@ -3840,102 +3909,117 @@ moving-standard narrative explained the misses, was written up as a lesson, and 
 it was never tested against the data that was already on disk. Before recording WHY something failed,
 check whether the number that would falsify the explanation is already in reach. Here it was one
 correlation away.
+- **Status:** Closed - Retracted the day it was filed: the lesson records it was refuted by measurement and kept only as a record; its replacement L-0028 stays open, so this stub carries no live advice.
 
 ## L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: conformance.py:71 DONE_STAGES and transition.py's Done gate judge the same artefact, and a shared definition of complete is still needed; two separate readers remain.
 
 Recorded from retro RETRO0025.
 
 ## L-0019: A gate belongs in the command people actually run, not in a step they are told to run
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and now gated: promoted to LL0027 in lessons/_index.md; the pre-commit and commit-msg hooks and the pre-push gate (AGENTS.md 'What will refuse you') put the gate in the command people run.
 
 Recorded from retro RETRO0025.
 
 ## L-0018: Reporting a model's fit against the same data it was fitted to is training error, not validation
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: retro.py:3184 floors cohorts and the velocity history is kept as committed evidence (retro.py:92); reporting in-sample fit as validation remains a hazard for any new calibration, so the rule stands.
 
 Recorded from retro RETRO0025.
 
 ## L-0017: An estimate re-derived at judgement time from the constants it is meant to be judging is not a prediction, and a loop built on one cannot
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: sprint plan prices from Points and the measured batch rate (reference-sprint.md:272) rather than re-deriving an estimate from the constants it is judged against; the rule against self-referential estimates stands.
 
 Recorded from retro RETRO0025.
 
 ## L-0016: Verify a subagent's work through the public path before trusting the report
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: AGENTS.md 'Exercise every claim through the shipped entry point' and critic.py brief refusing an unrecorded self-check (review.author_self_check: block) hold this rule.
 
 Recorded from retro RETRO0024.
 
 ## L-0015: Sweep for the class, do not fix the enumerated list
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the class-sweep rule recurs in L-0065 and L-0066 on read_text, and the sdlc_md.py:176 and :2020 handlers were applied to the class; AGENTS.md hook lanes are class-wide guards, not enumerated fixes.
 
 Recorded from retro RETRO0024.
 
 ## L-0014: A narrow sample can make a variable look constant; widen the RANGE before concluding
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a measurement rule: retro.py:3184 sets a units floor below which a cohort says nothing and retro.py:2850 refuses pooling; widening the range before concluding is the stated practice.
 
 Recorded from retro RETRO0024.
 
 ## L-0013: When two code paths express the same filter (`review_prep`'s two persona-index excludes), give them one shared definition or they drift -
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and visibly so: PERSONA_INDEX_NAMES is still defined twice (review_prep.py:33 and status.py:119) with the same value, so the drift risk the lesson names remains in the tree.
 
 Recorded from retro RETRO0023.
 
 ## L-0012: A gate that enforces a ceremony should be run against its own delivery as the acceptance test: CR0253 flagging its own sprint's stale
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the repo runs its gates over its own delivery (pre-push gate.py --boundary push on every pushed commit, per AGENTS.md); no ceremony gate is exempt from being its own acceptance test.
 
 Recorded from retro RETRO0023.
 
 ## L-0011: A false finding is not free: under a disposition gate that turns findings into work, a confident wrong one manufactures work for everyone
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: critic.py:4638 undispositioned_plan_findings still turns findings into work needing a disposition, so a confident wrong finding still manufactures work; AGENTS.md 'only a regression blocks' limits but does not remove the cost.
 
 Recorded from retro RETRO0022.
 
 ## L-0010: Marking a work item Complete while part of its acceptance criteria is unwired is the same failure as a tool reporting a success it did not
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated: transition -> Done refuses a story whose executable ACs have not passed (AGENTS.md gate table), the mechanical form of this rule; a CR is Complete only when its children are resolved (transition.py:443).
 
 Recorded from retro RETRO0022.
 
 ## L-0009: A guard that branches on invocation mode must be tested in every invocation mode; assert on output, not the exit code, when the failure
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the repo's gates run in distinct modes (pre-commit, commit-msg and pre-push per AGENTS.md) and the 'exercise every claim through the shipped entry point' rule demands each mode be driven; the multi-mode hazard is unchanged.
 
 Recorded from retro RETRO0022.
 
 ## L-0008: A gate that checks an artefact exists, not what is in it, is satisfied by `touch`
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: verify_ac.py:300 treats an all-skipped run as empty rather than green, and transition -> Done needs executed ACs (AGENTS.md gate table); a lane that checks presence only is still satisfiable by touch, so the rule stands.
 
 Recorded from retro RETRO0022.
 
 ## L-0007: A hazard found by calling a private helper directly may already be guarded at the only call site that matters - reproduce through the
 
 - **Added:** 2026-07-14
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a review rule: AGENTS.md 'Exercise every claim through the shipped entry point before asking for review' states the reproduce-through-the-call-site rule that this lesson records.
 
 Recorded from retro RETRO0022.
 
@@ -3943,7 +4027,8 @@ Recorded from retro RETRO0022.
 
 - **Tags:** security, injection, testing, review
 - **Added:** 2026-07-13
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the check-versus-write bypass class is unchanged (sdlc_md.py holds the shared writers; values are still checked and written in separate steps); the placement-matrix advice holds and no change removed the surface.
 
 BG0115 refused a complete character class (every str.splitlines character plus NUL) at the guard, passed a green 1863-test suite, and still shipped its headline RCE - because the guard checked the STRIPPED value while the writers emitted the RAW value, so a LEADING newline slipped through. The character class was exhaustive; the placement matrix was not. When hardening an injection surface, the value that is CHECKED must be byte-identical to the value that is WRITTEN - any normalisation (strip, casefold, collapse) between check and write is a bypass waiting to be found. Test the payload at every position (leading, trailing, interior) against every writer, and drive it END TO END (does the injected content actually reach the sink and execute), not just 'the guard raised'. The green suite was green because every test used interior breaks - the tests encoded the same false assumption as the code. An independent reviewer caught it; a self-review would have re-run the interior-break tests and signed off.
 
@@ -3951,7 +4036,8 @@ BG0115 refused a complete character class (every str.splitlines character plus N
 
 - **Tags:** testing, templates, shared-surface
 - **Added:** 2026-07-13
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: artifact.py:958 still substitutes RETRO-{{retro_id}} at the sites it knows, so a new placeholder site in a template still leaks; the pre-commit hook selects test modules by staged file and the pre-push gate runs the full suite.
 
 A unit edited templates/reviews/retro.md and added a second {{retro_id}} site. The renderer (artifact.py_render_meta) substitutes that placeholder only at the sites it knows about, so the new one leaked into every rendered retro - caught only by the full suite, because the author ran only their own targeted modules per their file boundary. A narrow test boundary is right for avoiding collisions, but a template is not a leaf: it has a consumer. If you edit a template, run the tests of whatever renders it, even when that renderer is outside your surface. The corollary bit too: the obvious fix (make the renderer substitute the placeholder globally) would have been WRONG - the renderer emits the display form RETRO-0001 while the flag globs the file form RETRO0001*.md, so a global replace would have baked a silently-matching-nothing command into every retro. Read the render output before choosing the fix.
 
@@ -3960,7 +4046,8 @@ A unit edited templates/reviews/retro.md and added a second {{retro_id}} site. T
 - **Epic:** EP0014
 - **Tags:** review, composition, sprint-close
 - **Added:** 2026-07-13
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: units sharing a file still interact; sprint.py:2205 detects identical-Affects pairs and :2432 states disjointness is only as good as declared Affects, and the push gate runs the whole tree (AGENTS.md), which is the closing full-diff pass.
 
 When several stories touch the same creation path (artifact.py/status.py here), a per-unit critic that sees only one story's diff cannot see cross-unit interactions. The closing full-diff pass caught a tranche silently dropped by US0067 consolidation x US0068 pass-through - invisible to both per-unit reviews by construction.
 
@@ -3969,7 +4056,8 @@ When several stories touch the same creation path (artifact.py/status.py here), 
 - **Epic:** EP0014
 - **Tags:** review, creation-paths, era-gating
 - **Added:** 2026-07-13
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: file_finding.py and artifact.py new/batch remain separate creation entry points, so a gate on one still needs its siblings checked; AGENTS.md 'use the deterministic tooling' names both.
 
 US0065's design note said 'artifact.py files findings into inbox', but the primary agent finding-filer was file_finding.py - which the note never mentioned. The independent critic caught the bypass. A design note names the tidy path; grep for every code path that does the thing (here: every artefact-creation entry point) and gate all of them, or one is a silent bypass.
 
@@ -3982,6 +4070,7 @@ US0065's design note said 'artifact.py files findings into inbox', but the prima
 - **Applies to:** Any change touching `.claude/skills/sdlc-studio/` in this repo
 - **Added:** 2026-07-13
 - **Review-by:** 2027-01-25
+- **Status:** Closed - Advice is now wrong: AGENTS.md:173 says never run install.sh from the dev repo because its sweep clobbers the git-tracked tree, and tools/forward-port.sh (--check, --yes) is the guarded mirror that replaced per-file cp and bare install.sh.
 
 ## L-0001: Amend the AC in the same unit when the implementation deviates
 
@@ -3991,4 +4080,5 @@ US0065's design note said 'artifact.py files findings into inbox', but the prima
 - **Fix:** When deviating, reword the AC + add a revision-history note in the same commit; the critic checks AC-vs-delivered-behaviour
 - **Applies to:** Every CR/story whose delivery differs from its written AC
 - **Added:** 2026-07-13
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: AGENTS.md 'Review is independent of the author' and critic.py brief carry the canonical ACs as law, so a deviation from the written AC is what the reviewer flags; no rule or gate has relaxed it.
