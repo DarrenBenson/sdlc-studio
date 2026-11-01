@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 153 |
+| Open | 154 |
 | In Progress | 0 |
 | Fixed | 817 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1143** |
+| **Total** | **1144** |
 
 ## All Bugs
 
@@ -219,6 +219,7 @@
 | [BG1141](BG1141-the-gate-host-docs-test-s-docstrings-claim.md) | The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config` | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1142](BG1142-doc-freshness-is-described-as-a-latest-md.md) | doc-freshness is described as a LATEST.md check everywhere, though it now censuses the TRD, PRD and TSD; one hook comment lists it as a per-commit lane | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1143](BG1143-doc-freshness-s-baseline-leg-has-no-pin.md) | doc_freshness's baseline leg has no pin for checking every Coverage line, nor for skipping the revision history | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1144](BG1144-the-commit-hook-s-unittest-fallback-ignores-pytest.md) | The commit hook's unittest fallback ignores pytest's serial_only and boundary_only marks, so a push-only test still runs on a commit there | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
