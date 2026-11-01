@@ -60,3 +60,6 @@
 | US1109 | Claude Sonnet 5.5 (builder) | 2026-11-01 | TRUE 14, FALSE 0, UNVERIFIABLE 0 | none - no test declared | fe746e6821772c4a at ce4d25252665 |
 | US1081 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 45, FALSE 0, UNVERIFIABLE 0 | killed 26, survived 0 | 3750365af15b644f at 5fac0d2b38c9 |
 | US1109 | Claude Opus 5.5 (orchestrator, repair round 1) | 2026-11-01 | TRUE 18, FALSE 0, UNVERIFIABLE 0 | none - no test declared | d438c24434413f5c at 5fac0d2b38c9 |
+| BG1137 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 18, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 7 | f42010bd559b75c1 at 59df073fd7f2 |
+| BG1138 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | 43d448c106d33972 at 00891ced8c29 |
+| US1099 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 16, survived 0 | eea4fb223b9bf60d at 4ddefceb7d98 |
