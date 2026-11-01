@@ -2,7 +2,7 @@
 
 **Project:** SDLC Studio
 **Version:** 6.1.0
-**Last Updated:** 2026-10-03
+**Last Updated:** 2026-11-01
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -11,14 +11,15 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v6.0.0 as cut, plus the 6.1 work on `main` since. The v6 line
+> **Coverage:** v6.1.0 as cut, plus the 6.2 work on `main` since. The v6 line
 > covers the refusal gates (the breakdown gate, the executable-criteria gate on
 > Done, the vacuous-verifier refusal), one independent review per unit and one
 > signature per run (`sprint sign`), the cost work that made the gate cheap enough
 > to leave on, and the derived sprint close, which files the sprint report that
-> hands over the remaining work. Anything not yet in a tagged release is marked
-> **[Unreleased]** in the tables below. The document version tracks the product
-> version; it is not itself a release artefact.
+> hands over the remaining work. The tables below describe what is built; the
+> release that first carried a feature is `CHANGELOG.md`'s record, not a marker
+> here. The document version tracks the product version; it is not itself a
+> release artefact.
 
 ---
 
@@ -204,12 +205,11 @@ importing it.
 
 ## 3. Feature Inventory
 
-Status: all features **Complete** at v4.1.0 (the skill is in production use), with
-the rows marked **[Unreleased]** complete on `main` and not yet in a tagged
-release. Confidence **[HIGH]** unless noted – extracted directly from source. The
-Epic column maps each feature to its owning epic (see `sdlc-studio/epics/`); a few
-[Unreleased] rows delivered by an interactive RFC/CR sprint before the per-request
-epic decomposition cite that governing RFC/CR instead.
+Baseline: v6.1.0 as cut, plus the 6.2 work on `main` (the skill is in production
+use); each row's Status column gives its feature's state. Confidence **[HIGH]**
+unless noted – extracted directly from source. The Epic column maps each feature to
+its owning epic (see `sdlc-studio/epics/`); a few rows delivered before the
+per-request epic decomposition cite their governing RFC or CR instead.
 
 > **Complete vs Ready:** these statuses describe the *implementation* - the
 > features ship and work. The generated spec that documents them was tracked at
@@ -253,6 +253,7 @@ epic decomposition cite that governing RFC/CR instead.
 | Repo map | AST repo indexer (stdlib), ranks files for a story | Complete | Medium | reference-repo-map.md, scripts/repo_map.py | EP0008 |
 | GitHub sync | Two-way Issues sync via `gh` (CR/story/epic) | Complete | Medium | reference-github-sync.md, scripts/github_sync.py | EP0008 |
 | Validate | Skill + instructions + seat hygiene checks | Complete | Medium | scripts/validate.py | EP0008 |
+| Project constitution | An optional `sdlc-studio/constitution.md` declares a project's principles. One carrying a backticked `rule:` from a fixed vocabulary (story-requires-epic, links-resolve, ac-requires-verify, story-has-ac, status-in-vocab, no-index-drift) is asserted by `constitution.py check`; the rest is advisory prose. The `constitution` gate lane runs on demand, and joins the plain gate, where a violation fails it, once `constitution.enforce: true` is set | Complete | Medium | help/gate.md, scripts/constitution.py, scripts/gate.py | CR0040 |
 | Lessons registry | Cross-project lessons-learned, recall before decisions | Complete | Medium | lessons/, scripts/lessons.py | EP0009 |
 | Init / Onboarding | Project config + doctrine onboarding + agent-instructions seed | Complete | High | help/init.md, reference-doctrine.md | EP0009 |
 | Operator heuristics | Live-service patterns, deploy readiness, release gate | Complete | Medium | reference-operator-heuristics.md, reference-deploy-readiness.md | EP0009 |
@@ -265,16 +266,16 @@ epic decomposition cite that governing RFC/CR instead.
 | --- | --- | --- | --- | --- | --- |
 | Sprint loop (Goal-Driven) | A prioritised batch driven along `triage -> plan -> design -> done`; WSJF order, dependency waves, agentic execution. A Sprint Goal of 20 words or fewer traced to a PRD outcome or persona, one plan approval, one reviewer per unit for at most two rounds, and a one-pass close that files the one-page sprint report `sprint sign` seals | Complete | High | reference-sprint.md, scripts/sprint.py | EP0031, EP0032 |
 | Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver | Complete | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
-| Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete **[Unreleased]** | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
-| Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete **[Unreleased]** | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | CR0259 |
+| Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
+| Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | CR0259 |
 | Run appetite / breaker | `--appetite-minutes` / `--appetite-units` bound an unattended run; the breaker stops it cleanly at a unit boundary with its own exit code | Complete | High | reference-sprint.md#appetite, scripts/loop_guard.py | EP0032 |
-| Sizing and velocity loop | Modified Fibonacci **Points** (1, 2, 3, 5, 8, 13, 20) size a story/bug and a T-shirt **Size** sizes a CR/RFC/epic - the one size vocabulary (Effort S/M/L is retired). Forecast = sum(Points) x the measured tokens-per-point rate; WSJF = CoD / Points; `retro accuracy` judges the recorded plan-time forecast against measured actuals; `retros/VELOCITY.md` is a committed history. **Points are the first cost predictor to clear the pre-registered bar** (r = +0.68, §10) | Complete **[Unreleased]** | Medium | scripts/sprint.py, scripts/retro.py, scripts/telemetry.py | RFC0038, EP0048 |
+| Sizing and velocity loop | Modified Fibonacci **Points** (1, 2, 3, 5, 8, 13, 20) size a story/bug and a T-shirt **Size** sizes a CR/RFC/epic - the one size vocabulary (Effort S/M/L is retired). Forecast = sum(Points) x the measured tokens-per-point rate; WSJF = CoD / Points; `retro accuracy` judges the recorded plan-time forecast against measured actuals; `retros/VELOCITY.md` is a committed history. **Points are the first cost predictor to clear the pre-registered bar** (r = +0.68, §10) | Complete | Medium | scripts/sprint.py, scripts/retro.py, scripts/telemetry.py | RFC0038, EP0048 |
 | Distributed identity (schema v3) | Collision-free ULID ids (`US-01JQK3F8`) so uncoordinated writers - human and agent, across machines and git states - never mint the same id. Sequential ids stay valid; `migrate_v3 adopt` is forward-only and the two eras coexist | Complete | High | reference-upgrade.md, scripts/migrate_v3.py, scripts/lib/sdlc_md.py | EP0012, EP0028 |
 | Generated team (seats) | `persona generate --team` grows fresh named engineering seats from THIS project (PRD/TRD/config/repo map) onto behavioural variables and risk axes, never demographics. 3 core roles + up to 2 signal-earned extras, cast capped at 5. Provenance stamp + content hash keep an operator's edit from being clobbered | Complete | High | reference-persona-generate.md#team-generation, scripts/persona_gen.py | EP0030 |
 | Stakeholder panel | `persona generate --stakeholders` generates the other side of the table (buyer, compliance, ops, served) with veto lines and the Cooper arbitration rule on every card: a buyer goal never overrides the Primary user's interface | Complete | Medium | reference-persona-generate.md, templates/personas/stakeholder-template.md | EP0030 |
 | Cooper persona arbitration | Personas arbitrate rather than decorate: a multi-Primary cast warns, two Primaries on one `Interface:` is an error, `**Serves:**` tags feed a coverage check, and every consult carries the Primary test plus a per-seat objection quota | Complete | Medium | reference-persona.md, scripts/validate.py | EP0030 |
-| Learning loop | Each repeated failure is a failure class in `sdlc-studio/lessons.jsonl` (`LC-NNN`: a rule, a behaviour and the phases it is injected at). The plan, the build brief and the review brief each carry their phase's live classes, at most five; a retro Try item or a review finding cites its class, and the close counts the hit, files one CR for a class repeated twice after it was recorded and retires a class quiet for five runs. A retro is still checked on its content and every finding takes a disposition; `lessons.loop: judgement` makes those close lanes advisory | Complete **[Unreleased]** | High | reference-retro.md, scripts/retro.py, scripts/lessons.py, sdlc-studio/lessons.jsonl | EP0010 |
-| Lessons ranking | `lessons rank` orders the registry by recurrence (computed from citations in the files, never asserted), recency, and structural-fix demotion - a lesson whose class a shipped guard now makes impossible stops crowding out live ones | Complete **[Unreleased]** | Medium | scripts/lessons.py | EP0010 |
+| Learning loop | Each repeated failure is a failure class in `sdlc-studio/lessons.jsonl` (`LC-NNN`: a rule, a behaviour and the phases it is injected at). The plan, the build brief and the review brief each carry their phase's live classes, at most five; a retro Try item or a review finding cites its class, and the close counts the hit, files one CR for a class repeated twice after it was recorded and retires a class quiet for five runs. A retro is still checked on its content and every finding takes a disposition; `lessons.loop: judgement` makes those close lanes advisory | Complete | High | reference-retro.md, scripts/retro.py, scripts/lessons.py, sdlc-studio/lessons.jsonl | EP0010 |
+| Lessons ranking | `lessons rank` orders the registry by recurrence (computed from citations in the files, never asserted), recency, and structural-fix demotion - a lesson whose class a shipped guard now makes impossible stops crowding out live ones | Complete | Medium | scripts/lessons.py | EP0010 |
 | Mutation testing | Proves the tests can FAIL, where `verify_ac` proves they pass: a bounded declared fault set applied to a surface, re-running the suite per mutation, reporting killed / survived / error / unviable. An opt-in run (`mutation.py run`) that reports its yield; no gate lane reads it | Complete | High | help/mutation.md, reference-test-best-practices.md, scripts/mutation.py | EP0011 |
 | Quality gate (`gate`) | One portable, ecosystem-neutral exit code over the deterministic checks (conformance, reconcile, validate, integrity, duplicate-id, doc-coverage, engagement-floor, doc-freshness, ...), plus bound close lanes (retro, lessons, review currency) and `--release`, which EXECUTES every story's `Verify:` line | Complete | High | help/gate.md, scripts/gate.py | EP0026, EP0031 |
 | Independence gate | Author != reviewer, enforced mechanically; a bug reaches Fixed only while its recorded `verify_ac` run is green | Complete | High | scripts/transition.py, scripts/critic.py | EP0026 |
@@ -286,17 +287,29 @@ epic decomposition cite that governing RFC/CR instead.
 | PVD (multi-repo) | The Product Vision Document above the PRD; cross-repo `Depends on:` resolution through its manifest | Complete | Low | reference-pvd.md, scripts/pvd.py, scripts/lib/xrepo.py | EP0032 |
 | Id allocation | Deterministic next-id (sequential era) and collision-free ULID minting (v3), remote-aware, serialised by an allocation lock | Complete | High | scripts/next_id.py, scripts/artifact.py | EP0008, EP0012 |
 | Skill self-update / version check | `hint`/`status` compare the installed version against the latest GitHub release over a direct HTTPS GET (`api.github.com`); default on, `version_check.enabled` opt-out, 5s timeout, silent when offline; `skill-update` installs a newer release | Complete | Low | help/skill-update.md, reference-skill-update.md, scripts/version_check.py | EP0008 |
-| Two-backlog workflow | A request backlog (CR/RFC/Issue) sits beside the product backlog: `plan` refuses a request as a sprint unit (G1), a request's terminal status is derived from its children (G2), request/child links resolve both ways (G3), `status` reports the two backlogs apart (G4), and reconcile flags an accepted childless request as undecomposed (G5). Gated by `two_backlog.enforce`, default off so an upgrade keeps the old flow until it opts in | Complete **[Unreleased]** | High | reference-sprint.md, scripts/lib/sdlc_md.py, scripts/sprint.py | EP0033, EP0034 |
-| refine (request decomposition) | `refine` turns a CR/RFC into an epic plus sized stories with the two-backlog links wired; `--add` appends further epics to an already-decomposed request, and `show` lists an existing decomposition read-only | Complete **[Unreleased]** | High | reference-scripts-create.md, scripts/refine.py | EP0035, EP0036, EP0039 |
-| Migration to the sizing model | `migrate_v3 sizing` converts legacy Effort to a T-shirt `Size` or point band deterministically and reports the units a human must re-size; the `migrate` orchestrator runs the project upgrade, that sizing pass and an artefact-review sweep in one dry-run report, applying only the safe set | Complete **[Unreleased]** | Medium | reference-upgrade.md, scripts/migrate.py, scripts/migrate_v3.py | EP0037, EP0042 |
-| Issue type and triage | An `Issue` discovery artefact joins the vocabulary; `triage` refiles an Issue into bugs atomically, reconcile flags an untriaged Issue, and an Issue's terminal status derives from its children | Complete **[Unreleased]** | Medium | help/issue.md, help/triage.md, scripts/triage.py, scripts/file_finding.py | EP0038 |
-| Amigo consult in refine/triage | refine and triage route a request's open questions to the resolved seat cards by lens, record which seats were consulted, degrade gracefully when seats are absent, and hold the author != reviewer independence line | Complete **[Unreleased]** | Medium | reference-consult.md, scripts/refine.py, scripts/triage.py | EP0040 |
-| Command-surface audit | `command_audit.py` enumerates every command and route with a keep/fold/retire disposition mapped to the process spine, a dead-route check confirms each kept command's tooling runs, and `hint`/`status` surface the Discovery-versus-Delivery backlog split | Complete **[Unreleased]** | Low | scripts/command_audit.py, scripts/status.py | EP0041 |
-| reconcile apply creates a missing index | `reconcile apply` materialises a missing pipeline or meta `_index.md` from its template, clearing missing-index drift rather than only reporting it | Complete **[Unreleased]** | Low | reference-reconcile.md, scripts/reconcile.py | EP0043 |
-| Audit cost pre-flight | `audit` estimates the agents, tokens and wall-time of a scoped run and confirms above a threshold before a large adversarial fan-out | Complete **[Unreleased]** | Low | reference-audit.md, scripts/audit_cost.py | EP0044 |
-| Interactive sprint token capture | `retro` records an interactive sprint's actual token count and computes its tokens-per-point, retiring the "interactive means UNMEASURED" framing while keeping the forecast-is-not-a-gate guards | Complete **[Unreleased]** | Low | reference-retro.md, scripts/retro.py | EP0045 |
-| Sprint close-down gate | A close-owed detector names terminal delivery units filed since the last retro; `status`/`hint` nudge (an advisory, not a gate: `gate --require-close` was retired in v6, and `sprint sign` seals each run); a Stop-hook installer redefines sprint-done as close-gate-green | Complete **[Unreleased]** | Medium | reference-sprint.md, scripts/gate.py, scripts/handoff.py | EP0046 |
-| Backlog triage in plan | Triage lenses (duplicate/subsumed/superseded by Affects-overlap and title similarity, plus oversized, stale and orphaned-dependency) run as a pass inside `sprint plan` - oversized blocks, judgement lenses report, drops are logged - with filing-time duplicate detection and a `status` summary | Complete **[Unreleased]** | Medium | reference-sprint.md, scripts/backlog_triage.py, scripts/sprint.py | EP0047 |
+| Two-backlog workflow | A request backlog (CR/RFC/Issue) sits beside the product backlog: `plan` refuses a request as a sprint unit (G1), a request's terminal status is derived from its children (G2), request/child links resolve both ways (G3), `status` reports the two backlogs apart (G4), and reconcile flags an accepted childless request as undecomposed (G5). Gated by `two_backlog.enforce`, default off so an upgrade keeps the old flow until it opts in | Complete | High | reference-sprint.md, scripts/lib/sdlc_md.py, scripts/sprint.py | EP0033, EP0034 |
+| refine (request decomposition) | `refine` turns a CR/RFC into an epic plus sized stories with the two-backlog links wired; `refine.py add` appends further epics to an already-decomposed request, and `show` lists an existing decomposition read-only | Complete | High | reference-scripts-create.md, scripts/refine.py | EP0035, EP0036, EP0039 |
+| Migration to the sizing model | `migrate_v3 sizing` converts legacy Effort to a T-shirt `Size` or point band deterministically and reports the units a human must re-size; the `migrate` orchestrator runs the project upgrade, that sizing pass and an artefact-review sweep in one dry-run report, applying only the safe set | Complete | Medium | reference-upgrade.md, scripts/migrate.py, scripts/migrate_v3.py | EP0037, EP0042 |
+| Issue type and triage | An `Issue` discovery artefact joins the vocabulary; `triage` refiles an Issue into bugs atomically, reconcile flags an untriaged Issue, and an Issue's terminal status derives from its children | Complete | Medium | help/issue.md, help/triage.md, scripts/triage.py, scripts/file_finding.py | EP0038 |
+| Amigo consult in refine/triage | refine and triage route a request's open questions to the resolved seat cards by lens, record which seats were consulted, degrade gracefully when seats are absent, and hold the author != reviewer independence line | Complete | Medium | reference-consult.md, scripts/refine.py, scripts/triage.py | EP0040 |
+| Command-surface audit | `command_audit.py` enumerates every command and route with a keep/fold/retire disposition mapped to the process spine, a dead-route check confirms each kept command's tooling runs, and `hint`/`status` surface the Discovery-versus-Delivery backlog split | Complete | Low | scripts/command_audit.py, scripts/status.py | EP0041 |
+| reconcile apply creates a missing index | `reconcile apply` materialises a missing pipeline or meta `_index.md` from its template, clearing missing-index drift rather than only reporting it | Complete | Low | reference-reconcile.md, scripts/reconcile.py | EP0043 |
+| Audit cost pre-flight | `audit` estimates the agents, tokens and wall-time of a scoped run and confirms above a threshold before a large adversarial fan-out | Complete | Low | reference-audit.md, scripts/audit_cost.py | EP0044 |
+| Interactive sprint token capture | `retro` records an interactive sprint's actual token count and computes its tokens-per-point, retiring the "interactive means UNMEASURED" framing while keeping the forecast-is-not-a-gate guards | Complete | Low | reference-retro.md, scripts/retro.py | EP0045 |
+| Sprint close-down gate | A close-owed detector names terminal delivery units filed since the last retro; `status`/`hint` nudge (an advisory, not a gate: `gate --require-close` was retired in v6, and `sprint sign` seals each run); a Stop-hook installer redefines sprint-done as close-gate-green | Complete | Medium | reference-sprint.md, scripts/gate.py, scripts/handoff.py | EP0046 |
+| Backlog triage in plan | Triage lenses (duplicate/subsumed/superseded by Affects-overlap and title similarity, plus oversized, stale and orphaned-dependency) run as a pass inside `sprint plan` - oversized blocks, judgement lenses report, drops are logged - with filing-time duplicate detection and a `status` summary | Complete | Medium | reference-sprint.md, scripts/backlog_triage.py, scripts/sprint.py | EP0047 |
+
+### v5 and v6 capabilities
+
+| Feature | Description | Status | Priority | Location | Epic |
+| --- | --- | --- | --- | --- | --- |
+| Charter queue | A charter (`SCxxxx`, made with `artifact.py new --type charter`) is a run somebody intends: its Sprint Goal, a `Scope query` that selects its batch, and its appetite. `sprint.py next` resolves the head of the queue against the backlog as it stands then and opens nothing; `sprint.py plan --write --charter SCxxxx` opens the run and marks the charter Spent. `sprint.py queue` shows, reorders, cancels and clears the queue. `next` refuses when a run is open, when the head charter has no resolvable scope query, or when its scope selects nothing, and the charter stays Queued | Complete | Medium | help/sprint.md#charter-queue, scripts/sprint.py, scripts/artifact.py | EP0176 |
+| Rolling runs | `sprint.py plan --write --cycles N --sprint-goal "..."` records a standing policy of N cycles. `sprint.py boundary --retro RETROxxxx` crosses each boundary: it closes the cycle, fetches, regenerates the plan against the backlog as it stands then, previews it and opens the next cycle. A failed close gate, a strict origin-drift refusal and a refused plan always stop the run, and `--stop-on empty-backlog` adds a stop when nothing is left to select | Complete | Medium | help/sprint.md, scripts/sprint.py | EP0076 |
+| Boundary gates | `gate.py --boundary push` adds the `full-suite` lane, the whole suite run once, to the standard lanes and judges conformance and validate over the pushed range; `--boundary release` adds the `release-rehearsal` and `module-alone` lanes beside it. A boundary declines a green verdict a partial run earned. This repository's pre-push hook runs `release` for a commit a pushed tag points at and `push` for the rest | Complete | High | help/gate.md, scripts/gate.py, .githooks/pre-push | EP0177, EP0214, EP0261 |
+| Risk-banded review | `critic.py brief` derives a unit's review tier from its risk band, `route.py`'s difficulty estimate: a trivial or low band gets the light brief and a medium or worse one the full adversarial pass, and an unresolvable band fails towards full. The light tier leaves out the file history and the claim inventory, cuts the diff at a lower line cap and states a smaller tool-call budget. `--tier` overrides the derivation and is recorded as an explicit choice | Complete | High | reference-review.md, scripts/critic.py, scripts/route.py | EP0208 |
+| Line coverage gate | `review.line_coverage` sets what a story's Done or a bug's Fixed does with an added line the unit's own verifiers never executed, measured by `verify_ac.py run --coverage` at the transition: `block` refuses, naming the file and the line; `report` prints the count and proceeds; `off`, the shipped default, collects nothing. `verify_ac.py coverage rule` rules one uncovered line equivalent, inside the artefact. Needs `coverage` 7.10 or later, an optional dependency | Complete | Medium | help/verify.md, scripts/verify_ac.py, scripts/transition.py | EP0247 |
+| Changelog fragments and release cut | Release notes are composed from per-unit fragments under `changelog.d/`, and `changelog.py check` lists any not yet composed. `release_cut.py changelog-cut --version X.Y.Z` composes them into `[Unreleased]` and moves that body under a new versioned heading; `record-green` stamps the commit the pre-tag gate passed on, and `tag-check` refuses a tag unless that stamp names the tagged commit and CI passed on it, asked of the forge with `gh run list`. Only a clone with no remote, or one whose forge `gh` cannot query, is let through without that answer | Complete | Medium | reference-scripts-domain.md, scripts/changelog.py, scripts/release_cut.py | EP0058, EP0117 |
+| Sprint report and sign | `sprint.py close --retro RETROxxxx` runs the close as one chain (goal verdict, retro, lessons, gate, reconcile) and files the run's one-page report, `RPTxxxx` under `sdlc-studio/reports/`, derived from the run's own artefacts. `sprint.py sign` then seals the run under one principal, moving the batch to its terminal statuses. It refuses a report that is not the run's, a tree changed since the close, a page that no longer re-derives to what was filed, and a principal who is a unit's author or a reviewer recorded on it | Complete | High | reference-sprint.md, scripts/sprint.py, scripts/sprint_report.py | EP0048, EP0192, EP0255 |
 
 ### Feature Details (representative)
 
@@ -346,7 +359,7 @@ skipped exactly on the changes that need it.
 **Dependencies:** scripts/engagement_floor.py, scripts/gate.py, reference-doctrine.md rule 16
 **Status:** Complete · **Confidence:** [HIGH]
 
-#### Breakdown gate (`sprint plan` refuses an ungroomed batch) [Unreleased]
+#### Breakdown gate (`sprint plan` refuses an ungroomed batch)
 
 **User Story:** As an operator, I want the planner to refuse a batch it cannot
 honestly size, so a plan is never false authority over unsized work.
@@ -360,7 +373,7 @@ honestly size, so a plan is never false authority over unsized work.
 - [ ] `sprint breakdown` reports the same census read-only, so a backlog can be groomed against exactly what the gate reads.
 
 **Dependencies:** scripts/sprint.py, reference-sprint.md#breakdown
-**Status:** Complete **[Unreleased]** · **Confidence:** [HIGH]
+**Status:** Complete · **Confidence:** [HIGH]
 
 > The remaining features follow the same shape. Implementation-ready AC for each
 > is extracted at the **story** layer (`story generate`), not duplicated here.
@@ -715,6 +728,7 @@ once it has enough delivered units, so today's forecasts still lean on the study
 | 2026-07-14 | 4.1.0 | Refresh to the v4 feature set: the engagement floor, the breakdown gate, sprint capacity and the run appetite, the sizing and velocity loop (with its falsification stated), ULID identity, the generated team and stakeholder panel, the learning loop, the mutation gate and the release gate. `autosprint` renamed to `sprint`. Corrected the corpus and test counts, replaced the closed 2026-07-04 enforcement-gap list, and expanded the config reference to the gate-bearing keys |
 | 2026-09-25 | 5.1.0 | Lean refresh (US0929): a numbered Outcomes section citing persona End goals, for a Sprint Goal to trace to; the Mission and Core Behaviours describe the loop as it runs (a goal of 20 words or fewer, one plan approval, one reviewer for at most two rounds with carried known issues, persona rulings, the one-page report); the learning loop is described as failure classes in `lessons.jsonl` |
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984): the Coverage note describes the v6 line (one independent review per unit, one signature per run, the signed report handing over the remaining work) in place of the two-role review and mutation evidence v6 retired, and the Mutation gate row is renamed Mutation testing, since no gate lane reads a run |
+| 2026-11-01 | 6.1.0 | Baseline refresh (US1103): the baseline reads v6.1.0 plus the 6.2 work on `main`, and the release markers are gone, RV0028 PRD-5 having found every marked row shipped by v6.0.0. The inventory gains rows for the capabilities RV0028 PRD-10 names: the charter queue, rolling runs, the boundary gates, risk-banded review, the line coverage gate, changelog fragments and the release cut, the project constitution, and the sprint report and sign. The refine row names `refine.py add`, a subcommand, where it said `--add` |
 
 ---
 

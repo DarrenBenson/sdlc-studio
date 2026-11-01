@@ -7,9 +7,12 @@ only slices a card's End goals as written, for a word-for-word comparison. Outsi
 pins no persona or End goal by hand: a card that gains, loses or renumbers an End goal moves
 what an outcome may cite. Every
 `<script>.py <subcommand>` the loop sections name is checked against that script's own `--help`,
-so a retired subcommand cannot stay described as current.
+so a retired subcommand cannot stay described as current. `PrdBaselineTests` (US1103) pins the
+release the PRD's baseline names, reads its capability set from RV0028's PRD-10 row, and checks
+the commands those capabilities' inventory rows name the same way.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
+import functools
 import re
 import shutil
 import subprocess
@@ -24,6 +27,7 @@ PRD = REPO / "sdlc-studio" / "prd.md"
 sys.path.insert(0, str(SCRIPTS))
 
 import sprint  # noqa: E402 - the outcome and persona readers US0927 ships
+from lib import sdlc_md  # noqa: E402 - the id resolver an inventory row's Epic cell is read by
 
 #: One citation inside an outcome: `(Maya Okafor, End goal 4)`; several are `;`-separated.
 _CITE_RE = re.compile(r"([A-Z][\w'-]*(?: [A-Z][\w'-]*)+), End goal (\d+)")
@@ -122,8 +126,10 @@ def section(text: str, heading: str) -> str:
     return m.group(1) if m else ""
 
 
-def subcommands(script: str) -> set[str] | None:
-    """The subcommands `<script>.py --help` lists, or None when there is no such script."""
+@functools.lru_cache(maxsize=None)
+def subcommands(script: str) -> frozenset[str] | None:
+    """The subcommands `<script>.py --help` lists, or None when there is no such script. Cached,
+    since the inventory checks ask the same scripts once per mutant."""
     path = SCRIPTS / f"{script}.py"
     if not path.is_file():
         return None
@@ -132,7 +138,7 @@ def subcommands(script: str) -> set[str] | None:
     names: set[str] = set()
     for group in re.findall(r"\{([^{}]*)\}", out, re.S):
         names.update(n.strip() for n in group.split(",") if n.strip())
-    return names
+    return frozenset(names)
 
 
 def unknown_commands(text: str) -> list[str]:
@@ -344,6 +350,235 @@ class OutcomeCitationTests(unittest.TestCase):
                        then.replace(first, first.replace(first.split()[0], "Reword", 1))):
             self.assertNotEqual(then, mutant)
             self.assertTrue(goal_drift(then, mutant), mutant[-400:])
+
+
+#: The release the PRD's baseline names and the work on `main` beside it (US1103 AC1), pinned
+#: as the criterion names them: a PRD that moves its baseline moves these with it.
+BASELINE = "6.1.0"
+ON_MAIN = "6.2"
+#: The release marker a row carried while its feature was untagged. Inside a code span it names
+#: CHANGELOG.md's heading, as the release-cut row does, and is not read as a marker.
+UNRELEASED = "[Unreleased]"
+_VERSION_RE = re.compile(r"\bv?(\d+\.\d+\.\d+)\b")
+_CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
+_SHIPPED_RE = re.compile(r"^\W*(?:Complete|Partial)\b")
+_ID_RE = re.compile(r"\b(?:EP|CR|RFC)\d{4}\b")
+#: The named fixture for US1103 AC2: RV0028's PRD-10 row, whose parenthesis lists the
+#: capabilities with no inventory row. No code enumerates capabilities, so the review's own row
+#: is the set, read from the review rather than copied here.
+RV0028 = next((REPO / "sdlc-studio" / "reviews").glob("RV0028-*.md"))
+PRD10_ROW = "| PRD-10 |"
+#: How many capabilities that parenthesis names, so a misread of it cannot pass.
+PRD10_COUNT = 8
+
+
+def baseline_problems(prd: str) -> list[str]:
+    """Why the header (above the first `---` rule) or the Feature Inventory's preamble (above
+    its first table) does not name v`BASELINE` plus `ON_MAIN` on main, or names another
+    `X.Y.Z` release; empty when both hold."""
+    preamble = section(prd, "## 3. Feature Inventory").split("\n|", 1)[0]
+    problems = []
+    for where, text in (("header", prd.split("\n---\n", 1)[0]),
+                        ("inventory preamble", preamble)):
+        other = sorted({v for v in _VERSION_RE.findall(text) if v != BASELINE})
+        if other:
+            problems.append(f"the {where} names {', '.join(other)}, not only {BASELINE}")
+        if not re.search(rf"\bv{re.escape(BASELINE)}\b.*?\bplus\b.*?\b{re.escape(ON_MAIN)}\b"
+                         r".*?\bmain\b", text, re.S):
+            problems.append(f"the {where} does not name v{BASELINE} plus {ON_MAIN} on main")
+    return problems
+
+
+def feature_rows(prd: str) -> list[dict[str, str]]:
+    """Each data row of a table in the Feature Inventory, as {header cell: cell}, plus `line`."""
+    rows: list[dict[str, str]] = []
+    header: list[str] | None = None
+    for line in section(prd, "## 3. Feature Inventory").splitlines():
+        if not line.startswith("|"):
+            header = None
+            continue
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+        if header is None:
+            header = cells
+        elif not re.fullmatch(r"[\s|:-]+", line):
+            rows.append({**dict(zip(header, cells)), "line": line})
+    return rows
+
+
+def unreleased_marks(prd: str) -> list[str]:
+    """Each shipped feature row (Status Complete or Partial) and each Feature Details block
+    whose `**Status:**` reads so, carrying `UNRELEASED` outside a code span."""
+    marked = [f"row {row.get('Feature', '?')}" for row in feature_rows(prd)
+              if _SHIPPED_RE.match(row.get("Status", ""))
+              and UNRELEASED in _CODE_SPAN_RE.sub("", row["line"])]
+    details = section(prd, "### Feature Details (representative)")
+    for block in re.split(r"^(?=#### )", details, flags=re.M):
+        status = re.search(r"^\*\*Status:\*\*(.*)$", block, re.M)
+        if block.startswith("#### ") and status and _SHIPPED_RE.match(status.group(1)) \
+                and UNRELEASED in _CODE_SPAN_RE.sub("", block):
+            marked.append(f"details {block.splitlines()[0][5:]}")
+    return marked
+
+
+def prd10_capabilities(review: str) -> list[str]:
+    """The capabilities RV0028's PRD-10 row names in its parenthesis, in order."""
+    row = next((line for line in review.splitlines() if line.startswith(PRD10_ROW)), "")
+    m = re.search(r"\(([^()]+)\)", row)
+    return [name.strip() for name in m.group(1).split(",")] if m else []
+
+
+def _names(name: str) -> re.Pattern:
+    """`name` as whole words, case-insensitive, a space and a hyphen between words read
+    alike."""
+    words = r"[\s-]+".join(re.escape(w) for w in re.split(r"[\s-]+", name.strip()))
+    return re.compile(rf"(?<![\w-]){words}(?![\w-])", re.I)
+
+
+def location_problems(location: str) -> list[str]:
+    """Each comma-separated Location entry that resolves to no file under the skill or the
+    repo root, or names a `#anchor` its file does not declare as `{#anchor}`."""
+    bad = []
+    for entry in (e.strip() for e in location.split(",") if e.strip()):
+        path, _, anchor = entry.partition("#")
+        found = next((p for p in (SCRIPTS.parent / path, REPO / path) if p.is_file()), None)
+        if found is None:
+            bad.append(f"{entry} is no file")
+        elif anchor and f"{{#{anchor}}}" not in found.read_text(encoding="utf-8"):
+            bad.append(f"{entry}: {path} declares no {{#{anchor}}}")
+    return bad
+
+
+@functools.lru_cache(maxsize=None)
+def resolves(rec_id: str) -> bool:
+    """Whether an artefact with this id exists, by `sdlc_md.find_by_id`. Cached, like
+    `subcommands`."""
+    return bool(sdlc_md.find_by_id(REPO, rec_id))
+
+
+def capability_problems(prd: str, capabilities: list[str]) -> list[str]:
+    """Why a capability has no Feature Inventory row whose Feature cell names it, or why a row
+    that does is not shipped, names a Location or a `<script>.py <subcommand>` that does not
+    resolve, or cites no epic or request, or one that does not resolve; empty when every
+    capability has a sound row."""
+    rows = feature_rows(prd)
+    problems = []
+    for name in capabilities:
+        mine = [r for r in rows if _names(name).search(r.get("Feature", ""))]
+        if not mine:
+            problems.append(f"no Feature Inventory row names {name}")
+            continue
+        for row in mine:
+            feature = row["Feature"]
+            if not _SHIPPED_RE.match(row.get("Status", "")):
+                problems.append(f"{feature}: Status {row.get('Status')!r} is not shipped")
+            problems += [f"{feature}: {p}" for p in location_problems(row.get("Location", ""))]
+            problems += [f"{feature}: {c}" for c in unknown_commands(row.get("Description", ""))]
+            ids = _ID_RE.findall(row.get("Epic", ""))
+            if not ids:
+                problems.append(f"{feature}: the Epic cell names no epic or request")
+            problems += [f"{feature}: {i} does not resolve" for i in ids if not resolves(i)]
+    return problems
+
+
+class PrdBaselineTests(unittest.TestCase):
+    """US1103: the PRD's baseline reads v6.1.0 plus 6.2 on main, no shipped row carries the
+    release marker, and each capability RV0028 PRD-10 names has a sound inventory row. Each
+    check is also run on a mutated copy, so it is shown able to refuse."""
+
+    def setUp(self):
+        self.prd = PRD.read_text(encoding="utf-8")
+
+    def test_no_shipped_row_is_unreleased(self):
+        """AC1. Mutants: one [Unreleased] marker left on a shipped row's Status, or on a
+        Feature Details heading; the header's baseline back at v6.0.0, or the inventory's at
+        v4.1.0; the header naming no 6.2 work on main. Near misses that must pass: the marker
+        inside a code span, and on a row whose Status is not shipped."""
+        self.assertEqual([], baseline_problems(self.prd))
+        self.assertEqual([], unreleased_marks(self.prd))
+        rows = [r for r in feature_rows(self.prd) if _SHIPPED_RE.match(r.get("Status", ""))]
+        self.assertGreater(len(rows), 40, "the Feature Inventory's rows were not read")
+        row = rows[-1]
+        status = f"| {row['Status']} |"
+        self.assertIn(status, row["line"])
+        marked = row["line"].replace(status, f"| {row['Status']} **{UNRELEASED}** |", 1)
+        self.assertEqual([f"row {row['Feature']}"],
+                         unreleased_marks(self.prd.replace(row["line"], marked, 1)))
+        spanned = row["line"].replace(status, f"| {row['Status']} `{UNRELEASED}` |", 1)
+        self.assertEqual([], unreleased_marks(self.prd.replace(row["line"], spanned, 1)))
+        planned = row["line"].replace(status, f"| Not Started **{UNRELEASED}** |", 1)
+        self.assertEqual([], unreleased_marks(self.prd.replace(row["line"], planned, 1)))
+        heading = re.search(r"^#### .+$", self.prd, re.M).group(0)
+        self.assertEqual([f"details {heading[5:]} {UNRELEASED}"],
+                         unreleased_marks(self.prd.replace(heading,
+                                                           f"{heading} {UNRELEASED}", 1)))
+        coverage = re.search(r"\*\*Coverage:\*\* v\S+ as cut, plus the \S+ work", self.prd)
+        self.assertIsNotNone(coverage, "the header states no Coverage baseline")
+        preamble = section(self.prd, "## 3. Feature Inventory").split("\n|", 1)[0]
+        self.assertIn(f"v{BASELINE}", preamble)
+        unnamed = [f"the {{}} does not name v{BASELINE} plus {ON_MAIN} on main"]
+        for old, new, expected in (
+                (coverage.group(0), "**Coverage:** v6.0.0 as cut, plus the 6.1 work",
+                 [f"the header names 6.0.0, not only {BASELINE}"] + unnamed),
+                (coverage.group(0), f"**Coverage:** v{BASELINE} as cut", unnamed),
+                (preamble, preamble.replace(f"v{BASELINE}", "v4.1.0"),
+                 [f"the inventory preamble names 4.1.0, not only {BASELINE}"] + unnamed)):
+            where = "inventory preamble" if old == preamble else "header"
+            mutant = self.prd.replace(old, new, 1)
+            self.assertNotEqual(self.prd, mutant, new)
+            self.assertEqual(sorted(e.format(where) for e in expected),
+                             sorted(baseline_problems(mutant)), new)
+
+    def test_every_capability_since_july_has_a_row(self):
+        """AC2. Mutants: one PRD-10 capability's row dropped, moved below the Feature Inventory,
+        or left named only in another row's Description; a row whose Location names no file or
+        an undeclared anchor, whose Description names a subcommand its script lacks, whose Epic
+        cell cites nothing or an id that does not resolve, or whose Status is not shipped."""
+        capabilities = prd10_capabilities(RV0028.read_text(encoding="utf-8"))
+        self.assertEqual(PRD10_COUNT, len(capabilities), capabilities)
+        self.assertEqual([], capability_problems(self.prd, capabilities))
+        rows = feature_rows(self.prd)
+        for name in capabilities:
+            row = next(r for r in rows if _names(name).search(r["Feature"]))
+            line = row["line"] + "\n"
+            dropped = self.prd.replace(line, "", 1)
+            self.assertEqual([f"no Feature Inventory row names {name}"],
+                             capability_problems(dropped, [name]))
+            # moved as a whole one-row table, so a reader of the whole PRD would count it
+            cells = [k for k in row if k != "line"]
+            table = (f"| {' | '.join(cells)} |\n| {' | '.join('---' for _ in cells)} |\n{line}")
+            moved = dropped.replace("## 4. Functional Requirements\n",
+                                    f"## 4. Functional Requirements\n\n{table}", 1)
+            self.assertNotEqual(dropped, moved)
+            self.assertEqual([f"no Feature Inventory row names {name}"],
+                             capability_problems(moved, [name]))
+        other = rows[0]
+        prose = self.prd.replace(f"| {other['Description']} |",
+                                 f"| {other['Description']}; the {capabilities[0]} |", 1)
+        prose = prose.replace(next(r for r in rows if _names(capabilities[0]).search(
+            r["Feature"]))["line"] + "\n", "", 1)
+        self.assertEqual([f"no Feature Inventory row names {capabilities[0]}"],
+                         capability_problems(prose, capabilities[:1]))
+        row = next(r for r in rows if _names(capabilities[0]).search(r["Feature"]))
+        cells = (
+            (row["Location"], f"{row['Location']}, scripts/nosuch.py", "scripts/nosuch.py is no"),
+            (row["Location"], f"{row['Location']}, help/sprint.md#nosuch", "declares no {#nosuch}"),
+            (row["Description"], f"{row['Description']}; `sprint.py nosuch`", "sprint.py nosuch"),
+            (row["Epic"], "EP9999", "EP9999 does not resolve"),
+            (row["Epic"], "none", "names no epic or request"),
+            (row["Status"], "Not Started", "'Not Started' is not shipped"))
+        for old, new, says in cells:
+            mutant = self.prd.replace(row["line"],
+                                      row["line"].replace(f"| {old} |", f"| {new} |", 1), 1)
+            self.assertNotEqual(self.prd, mutant, new)
+            problems = capability_problems(mutant, capabilities[:1])
+            self.assertEqual(1, len(problems), (new, problems))
+            self.assertTrue(problems[0].startswith(f"{row['Feature']}: "), problems)
+            self.assertIn(says, problems[0])
+        # the readers themselves: a review row with no parenthesis names nothing, and a name is
+        # matched as whole words, a hyphen and a space alike
+        self.assertEqual([], prd10_capabilities(f"{PRD10_ROW} Important | x | none | CR0647 |"))
+        self.assertIsNone(_names("constitution").search("Constitutional review"))
+        self.assertIsNotNone(_names("risk-banded review").search("Risk banded review"))
 
 
 if __name__ == "__main__":
