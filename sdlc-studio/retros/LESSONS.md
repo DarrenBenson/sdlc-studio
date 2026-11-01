@@ -808,7 +808,8 @@ Recorded from retro RETRO0107.
 ## L-0360: Ceremony scaled by FILE size is not ceremony scaled by risk
 
 - **Added:** 2026-08-21
-- **Review-by:** 2026-11-19
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true on the current weights: `route.py:60` sets `code` 0.25 and `risk` 0.15, and both come from one call, `complexity.assess(root, resolved)` (`route.py:120`), whose `max_cognitive` is the maximum over every function in every declared file (`complexity.py:297-302`). Together that is the 0.40 the lesson names, so a small change to a large module still inherits its worst function. No gate bounds that.
 
 Ceremony scaled by FILE size is not ceremony scaled by risk. `route.estimate` takes 0.40 of its weight from a complexity read over every function in every declared file, so a two-line change to a large module inherits that module's worst function. Measured over 603 bugs: 87% tier `full`, `code` and `risk` both saturated for 48%, and half the corpus inside a six-point score spread. A gate with that little dynamic range is a constant wearing the appearance of a gate.
 
@@ -817,7 +818,8 @@ Recorded from retro RETRO0107.
 ## L-0359: A changelog fragment written at the first commit describes the design that existed THEN
 
 - **Added:** 2026-08-21
-- **Review-by:** 2026-11-19
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a changelog fragment describes the design that existed at its commit. AGENTS.md:133 requires the fragment in the same commit as the code (`changelog.d/<UNIT-ID>.md`), and `critic.py:2526-2534` has the reviewer rule every CHANGELOG claim TRUE, FALSE or UNVERIFIABLE; `check_self_check` (`critic.py:2899`) requires a claim from each declared fragment. A redesign that leaves a stale fragment is caught only by that pass.
 
 A changelog fragment written at the first commit describes the design that existed THEN. A redesign must rewrite the fragment, not only the code: BG0593's shipped for three commits describing the symlink mechanism its own AC3 forbids by name, and was caught only when a reviewer applied the fragment's own words as a mutant and watched the unit's test kill it.
 
@@ -832,6 +834,8 @@ Re-registering against a file edited since the first registration DISCARDS the e
 
 Recorded from retro RETRO0107.
 
+- **Status:** Closed - No longer true: re-registering a verdict against an edited file was the per-target ledger's behaviour, and that ledger is gone. `mutation.py` retired `register`, `retract` and `audit` (`RETIRED_VERBS`, `mutation.py:2142`; US0936), and a run keeps only its series row. There is no registration to discard, so register-after-the-last-edit advice no longer applies.
+
 ## L-0357: A retract-and-re-register cycle leaves the superseded row LIVE unless something withdraws it, and a join keyed on `(criterion, row)` then
 
 - **Added:** 2026-08-21
@@ -841,10 +845,13 @@ A retract-and-re-register cycle leaves the superseded row LIVE unless something 
 
 Recorded from retro RETRO0107.
 
+- **Status:** Closed - No longer true: the retract-and-re-register cycle it describes is gone. `mutation.py` retired `register`, `retract`, `retractions` and `audit` and keeps no per-target ledger (`RETIRED_VERBS`, `mutation.py:2142`; docstring `mutation.py:32`; US0936), so there is no superseded live row to leave behind. A duplicate-live-row audit is moot.
+
 ## L-0356: Scope a rung fix to the rung it is about, never to "not `done`"
 
 - **Added:** 2026-08-18
-- **Review-by:** 2026-11-16
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held where it was found: BG0582 and BG0584 are Fixed, and `sprint.py` scopes the rung to its own terminal (`sprint.py:3242` `_terminal_in_type_vocab`, `:6964` `undelivered_blockers`, 'RUNG-AWARE'). A new rung fix written as 'not done' is not gated; the correct ruling lives in those comments.
 
 Scope a rung fix to the rung it is about, never to "not `done`". Done twice now: BG0582's siblings were rejected for it at their round two, the correct ruling was written into `sprint.py` twice, and BG0584 made the same mistake again with those comments in the file.
 
@@ -853,7 +860,8 @@ Recorded from retro RETRO0105.
 ## L-0355: A false premise RESTATED is worse than the original, because each restatement reads as verification
 
 - **Added:** 2026-08-18
-- **Review-by:** 2026-11-16
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a false premise restated reads as verification. no gate holds it; nearest guidance is AGENTS.md:98-101 (decide by execution) and the claim inventory (`critic.py:2526-2534`), which marks a claim TRUE only after a command settles it. BG0583 (Won't Fix) shows the premise being refuted by measurement.
 
 A false premise RESTATED is worse than the original, because each restatement reads as verification. "Every retro carries asterisks" was corrected once to blame the generator - also false - before measurement gave 102 dash and 3 asterisk of 105.
 
@@ -862,7 +870,8 @@ Recorded from retro RETRO0105.
 ## L-0354: A fixture that makes the mutant equivalent is the commonest way a test measures nothing here
 
 - **Added:** 2026-08-18
-- **Review-by:** 2026-11-16
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a fixture that makes the mutant equivalent is the commonest way a test measures nothing. `best-practices/testing.md:108` and `:113` list 'A fixture shape the product cannot produce' and 'A positive control already passing', and `critic.py:2459-2467` has the reviewer mutate the tests and isolate a survivor. No gate checks a fixture can distinguish the mutant.
 
 A fixture that makes the mutant equivalent is the commonest way a test measures nothing here. Three instances this run: a census test whose repo root resolved to `.claude/` so its glob matched nothing; a thematic-break test whose fixture put the real list ahead of the break; and a green-figure test whose every story had `manual=0`, hiding a numerator that counted manual criteria as green.
 
@@ -871,7 +880,8 @@ Recorded from retro RETRO0105.
 ## L-0353: A detector's SILENCE is evidence only once it has been shown able to speak
 
 - **Added:** 2026-08-18
-- **Review-by:** 2026-11-16
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a detector's silence is evidence only once it has spoken. AGENTS.md:122 requires the refusals plus a positive control, and `critic.py brief` is refused without a recorded self-check (`critic.py:2899`). `tools/gate_prereqs.py check` names each missing prerequisite (AGENTS.md:52-59), the repair for the markdownlint case; a new helper that treats a missing tool as clean is not gated.
 
 A detector's SILENCE is evidence only once it has been shown able to speak. The markdownlint helper caught a missing binary and not a missing package, so it handed `npm ERR! 404` to an `assertNotIn` and four criteria's lint half was inert in any clone without `npm ci` - while both its docstring and the depth field said "skipped, never faked". Prove the tool detects the thing on a known-bad input before trusting a clean result.
 
@@ -881,14 +891,16 @@ Recorded from retro RETRO0105.
 
 - **Tags:** measurement, filing, exit-codes
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a fabricated finding costs more than the bug it invents, and the mechanism is the L-0277 pipe-status one. BG0583 is Won't Fix, confirming the premise was false. Filing does not re-run the claim, so before-filing verification is the author's act; the nearest guidance is AGENTS.md:98-101 and :122 (exercise each claim through the entry point, refusals included).
 
 BG0583 was filed as a High defect claiming `verify_ac run` exits 0 for a unit it never read. Every branch of that contract was correct: 0 green, 1 red, 2 could-not-read. The evidence was five exit codes read as `cmd | tail -2; echo $?`, which reports tail's status - the exact construct L-0277 already forbids in general terms. The lesson did not need widening; it was read and not followed. What makes this worth its own entry is the COST SHAPE, which is not the cost of a missed defect. A fabricated finding propagates: it was ruled not-stop-ship in a retro, written into reviews/LATEST.md as a real finding for the next session to read first, counted in the open-High set that the release-notes bar compares against, and it displaced a real fix from the queue. Refuting it took longer than filing it, and every artefact that had already quoted it needed correcting. So: before filing, re-run the reproduction through the shipped entry point with the exit code read DIRECTLY - redirect to a file, echo $? on its own line - and prefer refuting your own premise to being refuted by a reviewer. A finding is a claim about the code; measure it with the same care a criterion demands, because everything downstream treats it as measured.
 
 ## L-0351: A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a ledger reading zero because nobody looked is not one reading zero. `gate.py:2126-2128` degrades an unknown to RUNNING, and `sprint_report.py:396-403` words a missing record as 'not a run that found nothing'. A new ledger gets neither automatically; no gate checks a detector can report a non-zero.
 
 A ledger that reads zero because nobody looked is indistinguishable from one that reads zero because it is zero. The only reason this was visible is that a detector asked the question that no gate asks.
 
@@ -897,7 +909,8 @@ Recorded from retro RETRO0104.
 ## L-0350: Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a repair raised by a review round is an unplanned unit. `sprint batch add` (`sprint.py:12379`) is the verb that names it in the run (`help/sprint.md:328`), and nothing forces its use when the repair gets an id; no gate reports a unit that reached terminal in a run whose batch never named it. The practice rests on the operator.
 
 Repairs raised by a review round are new units nobody planned, and they are the systematic leak rather than the careless one. Three of these twelve were round-two repairs; the moment such a repair gets its own id it needs `sprint batch --add`, or the run that caused it will not name it.
 
@@ -906,7 +919,8 @@ Recorded from retro RETRO0104.
 ## L-0349: A batch is approved once and then only read, so work agreed AFTER the approval never joins it
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a batch is approved once and then only read. `sprint batch add`, `add-epic`, `drop` and `swap` exist (`sprint.py:12379`, `help/sprint.md:501` records them) but nothing compares units that reached terminal inside the run against the batch: a grep of `sprint.py` and `sprint_report.py` found no off-batch check. The close accounts for the batch, not for everything shipped.
 
 A batch is approved once and then only read, so work agreed AFTER the approval never joins it. Twelve units reached terminal inside runs whose batches never named them, and both runs still closed green - the close checks that the batch is accounted for, never that the account is the whole of what shipped.
 
@@ -915,7 +929,8 @@ Recorded from retro RETRO0104.
 ## L-0348: An exit condition satisfied by deleting a marker is not an exit condition
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: an exit condition cleared by deleting a marker is not one. `conformance.py` `story_is_ungroomed` (`conformance.py:195-216`) returns True on the marker token, and otherwise judges the AC section for a placeholder with no real criterion, so removing the token alone passes only a story with no placeholder left. No gate requires red-now evidence for a goal; that stays the charter's own premise.
 
 An exit condition satisfied by deleting a marker is not an exit condition. `story_is_ungroomed` returns false the moment the placeholder token goes, so the goal needed evidence - the red-now ledger - rather than a gate that a `touch` clears.
 
@@ -924,7 +939,8 @@ Recorded from retro RETRO0103.
 ## L-0347: A charter whose declared scope has emptied does not become a licence for whatever batch is convenient
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and now gated: `sprint.py` `resolve_head_charter` (`sprint.py:1435`) refuses an `empty-scope` charter (`sprint.py:1475`, 'the work it was written for is delivered') and leaves it Queued rather than licensing an arbitrary batch, and refuses a charter with no scope query. Amending the charter on the record remains the operator's act.
 
 A charter whose declared scope has emptied does not become a licence for whatever batch is convenient. SC0005 named 20 bug ids, all now terminal, and its scope query authorised no story at all - amend it on the record, or the run has no charter.
 
@@ -933,7 +949,8 @@ Recorded from retro RETRO0103.
 ## L-0346: A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and repaired at its site: BG0581 (the goal review brief stating a reachable end) is Fixed, and `sprint.py` `_terminal_in_type_vocab` (`sprint.py:3242`) and `undelivered_blockers` (`sprint.py:6964`) now judge a unit against the rung's own terminal. A new brief that states a terminal without the rung is not gated.
 
 A rung is a claim about what a run can reach, and stating a terminal without knowing the rung is stating an answer to a question nobody asked. The brief promised Review for a run that correctly ends at Ready (BG0581).
 
@@ -942,7 +959,8 @@ Recorded from retro RETRO0103.
 ## L-0345: An admission rule that asks a question whose answer moves with the tree admits entries that silently stop qualifying
 
 - **Added:** 2026-08-17
-- **Review-by:** 2026-11-15
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: an admission rule whose answer moves with the tree rots. The instance was repaired ('the bar is now unconditional', RETRO0103 lines 49-52; commit 734c775c) and BG0556 is Fixed. The general rule has no gate; a new inventory with a tree-dependent admission test would be caught only by the control that removed these entries.
 
 An admission rule that asks a question whose answer moves with the tree admits entries that silently stop qualifying. Four inventory entries were removed in two days, each caught by the control rather than by anyone reading the list; none was wrong to admit, and every one passed its measurement honestly on the day it went in. Bars must be unconditional or they rot.
 
@@ -952,7 +970,8 @@ Recorded from retro RETRO0103.
 
 - **Tags:** review-independence, gates, close, rung
 - **Added:** 2026-08-16
-- **Review-by:** 2026-11-14
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and a standing rule: never repair the gate refusing your own run. AGENTS.md:87-91 (review independent of the author) and the bypass rule (AGENTS.md:60, `--no-verify` and nothing else) hold it as policy; `sprint.py` `undelivered_blockers` is now rung-aware (`sprint.py:6964`), the repair this lesson refused to author in-session now exists in the tree. No gate prevents a self-repair; `sprint sign` refuses an author as principal.
 
 A design-rung run finished its work and then could not close: three lanes (undelivered_blockers, the done-gate fan-out, critic signoff) all assume the delivery rung's terminal, and `critic signoff` refuses to WRITE for a unit at Ready, so the operator cannot clear the stop by hand either. The obvious move was to make the closer rung-aware - a small change, already specified in the same file's own docstring, and it would have closed the run in minutes. It was rejected, and that rejection is the lesson. Editing the gate that is refusing your run, in the session it is refusing, with no independent review, is indistinguishable from disabling it: the author is the only judge of whether the repair was correct, and the evidence that it worked is that the author's own run now passes. The circularity is total. A gate is worth exactly what it refuses when refusing is inconvenient. So: when a gate walls your close, record the wall with the exact refusal text, file it, and leave the run OPEN. An open run with a filed blocker is a true record; a closed run with a self-authored gate repair is a false one, and the falseness is invisible afterwards because the gate is green. The corollary for tool design: a rung that can be ENTERED and not EXITED is worse than one that does not exist, because the work is done before the wall is met - either the planner refuses the rung, or every lane in the close chain reads it.
 
@@ -960,7 +979,8 @@ A design-rung run finished its work and then could not close: three lanes (undel
 
 - **Tags:** mutation, evidence, verification, testing
 - **Added:** 2026-08-16
-- **Review-by:** 2026-11-14
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true for the practice: after applying a mutant, confirm the test fails for the stated reason. `critic.py:2463-2467` ('a survivor is evidence about the harness, not about the test') and `critic.py` `check_self_check` (`critic.py:2899`) require the author's mutants to name a test and a result. The register-inside-the-branch advice is moot (`mutation.py:2142`, `register` retired); the rest holds and no gate applies it.
 
 Declaring a mutant is not executing one, and executing one is not reaching the claim. A mutant that never reaches the behaviour its criterion names returns SURVIVED - or worse, KILLED for an unrelated reason - and either reading is evidence about the harness rather than about the test.
 
@@ -980,7 +1000,8 @@ The reason this matters more than an ordinary test defect: a surviving mutant is
 ## L-0342: A recorded list is a claim like any other and rots the same way
 
 - **Added:** 2026-08-15
-- **Review-by:** 2026-11-13
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a recorded list is a claim and rots. `critic.py` `validate_claim_inventory` (`critic.py:3650`) refuses an unruled claim, and `lessons.py revalidate` (this pass) re-checks recorded lessons against the tree. A hand-maintained list elsewhere (a debt list, a count) is re-measured only by whoever reads it; no gate does.
 
 A recorded list is a claim like any other and rots the same way. An eight-of-twelve stale debt list, a 12% fictional backlog, and a bug whose 4.5x premise measured 0.98x were all found by re-measuring rather than by reading.
 
@@ -989,7 +1010,8 @@ Recorded from retro RETRO0102.
 ## L-0341: A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted
 
 - **Added:** 2026-08-15
-- **Review-by:** 2026-11-13
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a guard a paraphrase defeats is weak and one the opposite statement satisfies is inverted. `best-practices/testing.md:55-64` (heuristic 6, 'A message and its verdict are driven by one test') drives both over one battery of inputs. No gate checks that a spec-agreement guard fails on the opposite statement.
 
 A guard a paraphrase can defeat is weak; one the OPPOSITE statement satisfies is inverted. Two spec-agreement guards were inverted, and either would have reported agreement while the specification stated the reverse of the code.
 
@@ -998,7 +1020,8 @@ Recorded from retro RETRO0102.
 ## L-0340: Verification run where the author is standing is not verification
 
 - **Added:** 2026-08-15
-- **Review-by:** 2026-11-13
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: verification run where the author stands is not verification. `critic.py brief` demands a fresh reviewer context (AGENTS.md:87-91) and `critic.py:2472` requires an isolated checkout; the author's own pass is recorded by `check_self_check` (`critic.py:2899`) but is compulsory and not independent. No gate runs a verification in a clean worktree on the author's behalf.
 
 Verification run where the author is standing is not verification. A tracked-file write was invisible because gitignored state made the regeneration byte-identical; a control accepted the root path as evidence and so passed on a crash. Both were found only by a clean worktree.
 
@@ -1018,7 +1041,8 @@ Recorded from retro RETRO0102.
 ## L-0338: Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes
 
 - **Added:** 2026-08-11
-- **Review-by:** 2026-11-09
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a plan review catches what code review cannot. The `test-spec` type ships (`sdlc-studio/test-specs/`) and `best-practices/testing.md:122-126` states the honest limit of a pre-implementation design review. No gate requires a plan review before code.
 
 Reviewing the PLAN catches what code review cannot: a wrong discriminator, an exemption inherited unscoped, and a missing step that makes the goal unreachable rather than merely late.
 
@@ -1027,7 +1051,8 @@ Recorded from retro RETRO0101.
 ## L-0337: A number nobody re-measures is wrong
 
 - **Added:** 2026-08-11
-- **Review-by:** 2026-11-09
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a number nobody re-measures is wrong. The tree re-measures its own figures where it can (`tools/gate_timing.py` estimates from recorded runs; `tools/check_budgets.py` records measured ceilings), and the claim inventory marks a stated figure TRUE, FALSE or UNVERIFIABLE (`critic.py:2526-2534`). A figure stated in prose and never re-run is not gated.
 
 A number nobody re-measures is wrong. Five stated figures were re-run this sprint and five were stale - the red-criteria count, the disclosed total, both suite durations, and a bug's own account of why its repair changed nothing.
 
@@ -1036,7 +1061,8 @@ Recorded from retro RETRO0101.
 ## L-0336: A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced
 
 - **Added:** 2026-08-11
-- **Review-by:** 2026-11-09
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and fixed at the site: `test_transition.py:53-80` `_refuse_working_tree` now asks four relations (a `.git` entry, the repository root, a parent of it, and a root inside it) rather than 'is it under /tmp', exactly the repair this lesson records. A new narrowed guard is not checked by any gate; the opposite-side fixture is the practice.
 
 A guard narrowed to the RIGHT question can be less safe than the wrong one it replaced. The fixture guard asked "is this under /tmp", which refused a subdirectory for the wrong reason; asking "is this the repository" without the containment relation accepted it.
 
@@ -1045,7 +1071,8 @@ Recorded from retro RETRO0101.
 ## L-0335: A comparison is satisfied by agreement, INCLUDING agreement the defect produces
 
 - **Added:** 2026-08-11
-- **Review-by:** 2026-11-09
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a comparison is satisfied by agreement, including the defect's. `critic.py:2459-2462` ('two implementations agree by construction') and `best-practices/testing.md:55-64` (a substring check passes for an input the sentence does not describe) hold it as guidance. No gate checks a test asserts the value, not the agreement.
 
 A comparison is satisfied by agreement, INCLUDING agreement the defect produces. Three tests this run claimed more than they could observe: one compared two results with each other, one passed under the exact mutation its own message named, and one compared a set of paths so a write to an existing file was invisible. Assert the value, not the agreement.
 
@@ -1054,7 +1081,8 @@ Recorded from retro RETRO0101.
 ## L-0334: A test that proves a guard works must not depend on the guard working
 
 - **Added:** 2026-08-11
-- **Review-by:** 2026-11-09
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held for the guard it names: the fixture-root guard is pinned against a fake checkout (`test_transition.py` `_fake_checkout`, the under-the-temp-directory case at `test_transition.py:2677-2690`) and asks the predicate rather than building the workspace, so the test no longer depends on the guard working. The general rule has no gate.
 
 A test that proves a guard works must not depend on the guard working. The test written to pin the fixture root guard handed it the real checkout and relied on it to refuse - so it was safe only while the thing it tested was correct, and it ran on the day that thing was wrong, which is the day it exists for. It destroyed a reviewer's checkout.
 
@@ -1063,7 +1091,8 @@ Recorded from retro RETRO0101.
 ## L-0333: **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed
 
 - **Added:** 2026-08-10
-- **Review-by:** 2026-11-08
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a test that passes only because a sibling ran first is not passing. `mutation.py` `_purge_bytecode` (`mutation.py:354`) drops cached bytecode before each mutant, and its docstring says `_run_tests` refuses to write bytecode, which closes the cache-warming path named. `critic.py:2463-2467` asks the reviewer to run a survivor's branch alone. Running a criterion cold is not gated.
 
 **A test that passes only because a sibling ran first is not passing.** US0664 AC3 held for a whole round because two tests above it warmed the bytecode cache the harness itself wrote. Run the criterion alone, cold, which is how a reviewer will run it.
 
@@ -1072,7 +1101,8 @@ Recorded from retro RETRO0100.
 ## L-0332: **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root"
 
 - **Added:** 2026-08-10
-- **Review-by:** 2026-11-08
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and partly mechanised: `critic.py:2472` tells a reviewer to mutate only in an isolated checkout and not use tree-wide cleanup, and `test_transition.py:53-80` (`_refuse_working_tree`) refuses a fixture root that is a checkout before anything is written. A declared mutant that destroys a stranger's work is not refused by any gate, so it rests on how the mutant is written.
 
 **A declared mutant is executed by strangers - write it so it cannot destroy their work.** "Change the fixture root to the repository root" met a `rm -rf "$WORK"` trap and deleted a reviewer's worktree. The harness now refuses that root before the trap is armed.
 
@@ -1081,7 +1111,8 @@ Recorded from retro RETRO0100.
 ## L-0331: **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git
 
 - **Added:** 2026-08-10
-- **Review-by:** 2026-11-08
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a suppression is also a blindfold. no gate holds it; nearest guidance is AGENTS.md:98-101 (decide by execution, not impression). Ignore rules and residue paths are not reviewed by any lane, and `mutation.py` `_purge_bytecode` (`mutation.py:354`) is a case of removing residue rather than hiding it.
 
 **A guard that hides a fault also hides the evidence of it.** Gitignoring the residue path stopped it being committed and stopped `git status` seeing it, in the very criterion the ignore rule was added to harden. Every suppression is also a blindfold; ask what stopped being visible.
 
@@ -1090,7 +1121,8 @@ Recorded from retro RETRO0100.
 ## L-0330: **A presence check can never detect an addition.** US0663 AC3 asserted two strings were PRESENT while its own declared mutant was an
 
 - **Added:** 2026-08-10
-- **Review-by:** 2026-11-08
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a presence check cannot detect an addition. `best-practices/testing.md:113` lists 'A positive control already passing' and `critic.py:2459-2462` has the reviewer mutate the tests, including an added key. No gate checks an absence-shaped criterion has an absence-shaped assertion.
 
 **A presence check can never detect an addition.** US0663 AC3 asserted two strings were PRESENT while its own declared mutant was an ADDITION, so adding the forbidden key made the test pass harder. An absence-shaped criterion needs an absence-shaped assertion and a control that adds the thing.
 
@@ -1099,7 +1131,8 @@ Recorded from retro RETRO0100.
 ## L-0329: **A repair that is correct and ungated is not a repair.** Rounds 3 and 5 each reverted the previous round's fix against a green suite and
 
 - **Added:** 2026-08-10
-- **Review-by:** 2026-11-08
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a correct but ungated repair reverts silently. `critic.py:2468-2471` tells the reviewer to report missing regression cover on a behaviour-changing repair as a finding. No gate requires a failing-if-reverted test for a repair; it is the reviewer's finding.
 
 **A repair that is correct and ungated is not a repair.** Rounds 3 and 5 each reverted the previous round's fix against a green suite and watched nothing fail: the boundary regression, the spurious advisory, and the bytecode residue were all fixed and all unguarded. The question after any repair is not "is it right" but "what fails if it comes back".
 
@@ -1108,7 +1141,8 @@ Recorded from retro RETRO0100.
 ## L-0328: A tool whose blast radius is its own source must be scoped to the literal it rewrites
 
 - **Added:** 2026-08-08
-- **Review-by:** 2026-11-06
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and repaired where found: `tools/check_budgets.py` `record_ceilings` (`tools/check_budgets.py:136`) rewrites only ceiling integers and is 'SCOPED TO THE ALLOWLIST LITERAL' (`:151`) rather than line-wise over the source. The general rule for any other tool rewriting its own source has no gate; review catches it.
 
 A tool whose blast radius is its own source must be scoped to the literal it rewrites. The demonstration cost nothing - a ceiling-shaped line in a docstring - and the failure mode is silent corruption of the file that decides what every budget is.
 
@@ -1117,7 +1151,8 @@ Recorded from retro RETRO0099.
 ## L-0327: Drive the claim through the COMMAND and it finds wiring the suite cannot see
 
 - **Added:** 2026-08-08
-- **Review-by:** 2026-11-06
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and still producing: AGENTS.md:122 requires each claim driven through the shipped entry point before review, and `best-practices/testing.md:66-90` states the rule. `critic.py brief` is refused until the self-check is recorded (`review.author_self_check: block`, `critic.py:2899`), so the pass is compulsory; the lane check (`verify_ac.py:1331`) is advisory.
 
 Drive the claim through the COMMAND and it finds wiring the suite cannot see. Adding one CLI-driving verifier per unit, to satisfy an advisory lane check, found that `docgen.py references` and `surface` threaded `--root` to the file they wrote but not to the content they read, and that `nesting_depth` had zero callers. A 6348-test green suite held both.
 
@@ -1126,7 +1161,8 @@ Recorded from retro RETRO0099.
 ## L-0326: A criterion is only as good as the mutant its test can fail on
 
 - **Added:** 2026-08-08
-- **Review-by:** 2026-11-06
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a criterion is only as good as the mutant its test can fail on. `best-practices/testing.md:92-96` (name the mutant first) and `critic.py:2459-2462` (the reviewer mutates the tests) hold it; `critic.py brief` carries the canonical criteria as law (AGENTS.md:92-96). No gate compares a test's strength with its criterion.
 
 A criterion is only as good as the mutant its test can fail on. Three of this sprint's four rejections were tests asserting a WEAKER claim than the criterion above them - present rather than exactly-one, a synthetic fixture rather than the corpus, an equality an empty result also satisfies. All were green from the day they were written, so no run could have surfaced them; only reading each test back against its criterion did.
 
@@ -1135,7 +1171,8 @@ Recorded from retro RETRO0099.
 ## L-0325: **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a rule: a fixed probe line across a fixture family reads past the short ones. The severity-fixture example is no longer in the tree (a grep for the `module level` fallback found only unrelated code comments), and `best-practices/testing.md:108` is the nearest guidance. No gate detects a shared probe constant across fixtures.
 
 **A fixed line number in a fixture family probes past the end of the short ones.** Every severity fixture shared a probe line, and the short one returned `module level` - a different wrong answer wearing the same green tick. The line travels with the body now.
 
@@ -1144,7 +1181,8 @@ Recorded from retro RETRO0098.
 ## L-0324: **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a rule though the instance is gone: the registered-versus-measured mutant join named in US0661 AC4 died with the ledger (`mutation.py:32`, US0936). A criterion whose premise is not decidable from what is stored is still satisfied by a fixture; `best-practices/testing.md:108` ('A fixture shape the product cannot produce') is the nearest guidance and no gate holds it.
 
 **A criterion whose premise is not decidable from what is stored gets satisfied by a fixture.** US0661 AC4 demanded that a registered claim be caught disagreeing with a measurement. A registered mutant is the author's prose and a measured one is the generator's fault class; the two join on nothing. The criterion was narrowed to what the ledger can decide and the rest filed - because the alternative was a check that refuses on a comparison nobody can make.
 
@@ -1153,7 +1191,8 @@ Recorded from retro RETRO0098.
 ## L-0323: **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a general rule: a repair relocates its defect one construct over. The instance's code (the terminality rule) is no longer in the tree (`mutation.py` retired the mutation-evidence ledger, US0936), but `critic.py:2455-2458` requires a repair review to rule each prior finding CLOSED, OVER-CLAIMED or MOVED, and a MOVED defect counts as open (`repair_open_findings`, `critic.py:3636`). The other-side fixture is not gated.
 
 **A repair relocates its defect one construct over, and the second construct is the one nobody checks.** The terminality rule learned If, Try, With and `while True` in round one, and was still wrong about `for`/`else`, `match`, `async with`, an inner loop's `break`, and a `break` that jumps past the `else`. Five rounds of one rule. Widening a rule is not the same as making it right, and the test for the difference is a fixture on the OTHER side - bodies that genuinely DO have the property, or the rule can be widened until it claims everything.
 
@@ -1162,7 +1201,8 @@ Recorded from retro RETRO0098.
 ## L-0322: **A registered mutant is a claim; clear the ledger and apply them before believing the count.** 61 registrations, 47 applied for real, two
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true for the claim, and its ledger form is gone: `mutation.py` retired `register`, `retract`, `retractions` and `audit` (`RETIRED_VERBS`, `mutation.py:2142`; US0936) so there is no registered count to clear. What remains is the author's recorded mutants, which `critic.py` `check_self_check` (`critic.py:2899`) admits as claims and `critic.py:2459-2467` has the reviewer apply. Apply them before believing a count; no gate does.
 
 **A registered mutant is a claim; clear the ledger and apply them before believing the count.** 61 registrations, 47 applied for real, two survivors the paperwork called kills. Register AFTER the last edit to a file, and only from a script that applies, runs, restores and registers on a genuine red. (LL0053)
 
@@ -1171,7 +1211,8 @@ Recorded from retro RETRO0098.
 ## L-0321: **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held in code: `verify_ac.py` `selector_resolves(expr, cwd=None)` (`verify_ac.py:868`) takes the working directory explicitly and returns None, not False, for a selector it cannot resolve this way (`:876`), so a sweep no longer invents work from the runner's directory. A new sweep inheriting the cwd is not checked by any gate.
 
 **L-0314: a guard that fails in the direction of inventing work is still wrong.** The resolvability sweep inherited the runner's working directory and answered False for selectors that resolve perfectly well.
 
@@ -1180,7 +1221,8 @@ Recorded from retro RETRO0097.
 ## L-0320: **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and gated at the push: `--no-verify` is the sole bypass (AGENTS.md:60), and the pre-push hook runs the boundary gate over the pushed range (`gate.py:135`, `:362`) with the full suite once (`gate.py:878`), so lanes that failed behind a bypass surface at the next push. The next-commit timing is guidance; only the push is gated.
 
 **L-0313: an emergency bypass is a debt due on the NEXT commit.** Three lanes had been failing behind one `--no-verify`; the gate that would have said so was the thing being bypassed.
 
@@ -1189,7 +1231,8 @@ Recorded from retro RETRO0097.
 ## L-0319: **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and partly guarded: `test_transition.py:53-80` (`_refuse_working_tree`) refuses a fixture root that is a checkout, by four relations, and `mutation.py` `window` (`mutation.py:2014` `cmd_window`) refuses a concurrent rewrite. A fixture whose root is a parameter in any other test module is not guarded; no gate scans for a real-path write.
 
 **L-0312: a fixture whose root is a PARAMETER will eventually be given the wrong one.** Writing to a real path looks exactly like writing to a temp path until somebody checks what changed - and the thing destroyed was gitignored, so git could not restore it.
 
@@ -1198,7 +1241,8 @@ Recorded from retro RETRO0097.
 ## L-0318: **L-0311: a repair judged only against its own finding can void the guarantee beside it.** Round 2 must re-run the SIBLING unit's mutants
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a repair judged only against its own finding can void the guarantee beside it. `critic.py:2455-2458` makes a repair review rule each prior finding CLOSED, OVER-CLAIMED or MOVED, and `:2468-2471` asks for regression cover on the repair. AGENTS.md:98-101 bounds a review to the unit's own diff, so re-running a sibling unit's mutants is not gated and rests on the reviewer.
 
 **L-0311: a repair judged only against its own finding can void the guarantee beside it.** Round 2 must re-run the SIBLING unit's mutants, not just the repaired one's. Two mutants silently stopped being lethal here and nothing in the suite noticed.
 
@@ -1207,7 +1251,8 @@ Recorded from retro RETRO0097.
 ## L-0317: **L-0310: a criterion asking for ONE implementation cannot be verified by two agreeing.** Agreement is what two correct-today
 
 - **Added:** 2026-08-07
-- **Review-by:** 2026-11-05
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: two agreeing implementations satisfy a criterion that forbids duplication. `critic.py:2459-2462` names it (a shape list where two implementations agree by construction passes every mutant), and the structural fix (patch the shared routine, require every reader to move) is the practice behind `best-practices/testing.md:92-96`. No gate detects an agreement-only assertion.
 
 **L-0310: a criterion asking for ONE implementation cannot be verified by two agreeing.** Agreement is what two correct-today implementations produce by construction, so the assertion is satisfied by the exact duplication the criterion forbids. This produced a FALSE `killed` in the mutation ledger - on the instrument whose own bug this was - and then produced it a second time in the same run on a different unit. The shape that works is structural: patch the shared routine and require every reader to move with it.
 
@@ -1216,7 +1261,8 @@ Recorded from retro RETRO0097.
 ## L-0316: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the
 
 - **Added:** 2026-08-06
-- **Review-by:** 2026-11-04
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: mutation results are claims until somebody else runs them. `critic.py:2459-2467` has a fresh reviewer mutate the author's tests and `:2472` demands an isolated checkout; `critic.py` `check_self_check` (`critic.py:2899`) records the author's mutants as claims (killed or survived) but cannot prove they were applied. The plan-seat versus mutation-seat split is not enforced.
 
 **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the author's claims, and two of them were false: a mutant asserted killed had survived 2,137 tests, and a criterion's own rationale was factually wrong about the engine it described. Mutation results are claims until somebody else runs them.
 
@@ -1225,7 +1271,8 @@ Recorded from retro RETRO0096.
 ## L-0315: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the
 
 - **Added:** 2026-08-06
-- **Review-by:** 2026-11-04
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and repaired at its site: `sprint.py` `undelivered_blockers` (`sprint.py:6964`) asks first whether a unit's code landed with its status unmoved, so the cause is named before the downstream consequences, and it is now rung-aware. BG0528 is Fixed. The general rule (report the cause, not only the symptom) has no gate for new guards.
 
 **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the previous close, when twenty blockers named review coverage, sign-off and Done gates while the real fault was eight units still at `Ready`. It reproduced here exactly - and cost one command, because the message named it. Filing the diagnosis gap was worth more than fixing the instance.
 
@@ -1234,7 +1281,8 @@ Recorded from retro RETRO0096.
 ## L-0314: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment
 
 - **Added:** 2026-08-06
-- **Review-by:** 2026-11-04
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: write the retraction where the machine looks. `transition.py` `_done_verify_gate` (`transition.py:152`) reads the recorded verifier result and `Verified` marker, so prose elsewhere does not retract; the repair is a criterion with no verifier, reported unverified by `verify_ac.py`. No gate detects a prose-only retraction beside a marker; a reviewer reading the claim finds it.
 
 **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment block left `**Verified:** yes` on the line the tooling reads - `verify_ac` re-stamped it green from a test that does not exercise the property, so every mechanical reader still saw the criterion met. Setting the marker by hand did not survive either. The honest fix was to split the undelivered limb into a criterion with NO verifier, so the tool reports it unverified because it is. Write the retraction where the machine looks, or it has not happened.
 
@@ -1249,6 +1297,8 @@ Recorded from retro RETRO0096.
 
 Recorded from retro RETRO0096.
 
+- **Status:** Closed - Duplicate of L-0316, which carries the identical plan-seat and mutation-results claim and stays open.
+
 ## L-0312: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the
 
 - **Added:** 2026-08-06
@@ -1257,6 +1307,8 @@ Recorded from retro RETRO0096.
 **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the previous close, when twenty blockers named review coverage, sign-off and Done gates while the real fault was eight units still at `Ready`. It reproduced here exactly - and cost one command, because the message named it. Filing the diagnosis gap was worth more than fixing the instance.
 
 Recorded from retro RETRO0096.
+
+- **Status:** Closed - Duplicate of L-0315, which carries the identical symptom-versus-cause claim and stays open.
 
 ## L-0311: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment
 
@@ -1267,6 +1319,8 @@ Recorded from retro RETRO0096.
 
 Recorded from retro RETRO0096.
 
+- **Status:** Closed - Duplicate of L-0314, which carries the identical retraction-in-prose claim and stays open.
+
 ## L-0310: **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the
 
 - **Added:** 2026-08-06
@@ -1275,6 +1329,8 @@ Recorded from retro RETRO0096.
 **The seat that reviews the plan should not be the one that trusts the author's mutation results.** Both seats independently re-derived the author's claims, and two of them were false: a mutant asserted killed had survived 2,137 tests, and a criterion's own rationale was factually wrong about the engine it described. Mutation results are claims until somebody else runs them.
 
 Recorded from retro RETRO0096.
+
+- **Status:** Closed - Duplicate of L-0316, which carries the identical plan-seat and mutation-results claim and stays open.
 
 ## L-0309: **A guard that reports the symptom and not the cause costs a day the first time and a command the second.** BG0528 was filed at the
 
@@ -1285,6 +1341,8 @@ Recorded from retro RETRO0096.
 
 Recorded from retro RETRO0096.
 
+- **Status:** Closed - Duplicate of L-0315, which carries the identical symptom-versus-cause claim and stays open.
+
 ## L-0308: **A retraction written only in prose is not a retraction.** US0632's AC3 was narrowed on a false premise, and correcting it in a comment
 
 - **Added:** 2026-08-06
@@ -1294,10 +1352,13 @@ Recorded from retro RETRO0096.
 
 Recorded from retro RETRO0096.
 
+- **Status:** Closed - Duplicate of L-0314, which carries the identical retraction-in-prose claim and stays open.
+
 ## L-0307: A fixture that always supplies the thing under test hides the refusal that depends on its absence
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a fixture that always supplies the thing under test hides the refusal that depends on its absence. The brief-provenance interlock still exists (`critic.py:119` 'unbriefed' rows, `critic.py:848` the matched-fingerprint rule), and `best-practices/testing.md:108` lists 'A fixture shape the product cannot produce'. No gate checks each fixture family has an absent-value case.
 
 A fixture that always supplies the thing under test hides the refusal that depends on its absence. Every panel test supplied a brief fingerprint, so the brief-provenance interlock went unpinned until a mutant deleted it and nothing reddened.
 
@@ -1306,7 +1367,8 @@ Recorded from retro RETRO0095.
 ## L-0306: A sample drawn from the head of a sorted corpus is not a sample of the corpus
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a head-of-corpus sample is not a sample. `triage_sampling.py` `sample` (`triage_sampling.py:76-100`) ranks the whole pool by a stable hash rather than taking the head. No gate stops a new estimator being validated on a sorted head; nearest guidance is AGENTS.md:98-101 (decide by execution over the corpus, not by impression).
 
 A sample drawn from the head of a sorted corpus is not a sample of the corpus. Sixty bugs taken by id banded 60 of 60 the same way and reported a working gate as degenerate; the same estimator over a strided sample of the whole corpus returned four distinct bands.
 
@@ -1315,7 +1377,8 @@ Recorded from retro RETRO0095.
 ## L-0305: Widening a table by INSERTING a column shifts every historical row; appending one does not
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a rule and repaired for the case named: the velocity history is parsed by column name, not position (`retro.py:934` comment, `:944` `VELOCITY_COLUMNS`, `_velocity_index` `retro.py:2212`), and `Written` is documented as 'ADDED, never back-filled'. Any other positional table still shifts historical rows on insertion; no gate checks writer, header and reader agree.
 
 Widening a table by INSERTING a column shifts every historical row; appending one does not. Adding `Written` to VELOCITY.md's header alone made the estimate column read back the actual, because the schema is written out three times - header, row writer, reader - with nothing making them agree.
 
@@ -1324,7 +1387,8 @@ Recorded from retro RETRO0095.
 ## L-0304: An absent value and a defaulted one must be distinguishable in the record, or a rule applied later reinterprets history
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and visible in code: absent is kept distinct from defaulted. `conformance.py` `tier_covers` (`conformance.py:382-400`) treats 'no recorded tier' as its own answer, `retro.py:934-943` (the velocity column comment) reads a row without a column as unrecorded rather than assumed, and `critic.py` `record_self_check` writes `-` for no author. No gate checks a new column does the same.
 
 An absent value and a defaulted one must be distinguishable in the record, or a rule applied later reinterprets history. The tier column reads `-` for absent rather than `full`, and the capacity column never reads `seat` for a row that predates it - in both cases the unsafe direction is a claim nobody made being attributed to somebody.
 
@@ -1333,7 +1397,8 @@ Recorded from retro RETRO0095.
 ## L-0303: A guard whose deletion changes no behaviour is dead code, however reasonable it reads
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a guard whose deletion changes no behaviour is dead code. `mutation.py` `FAULT_CLASSES` (`mutation.py:50`, including `invert-guard`) is the instrument that applies the deletion, and `mutation.py:35` says plainly that 'No gate lane reads a mutation run'. `conformance.py` `tier_covers` (`conformance.py:382`) is the cited guard and remains. No gate runs the deletion automatically.
 
 A guard whose deletion changes no behaviour is dead code, however reasonable it reads. This sprint filed exactly that defect against `gate.py:3170` while planning, and then wrote one into `conformance.tier_covers` six hours later; only mutation caught it. Apply the deletion, not the reasoning.
 
@@ -1342,7 +1407,8 @@ Recorded from retro RETRO0095.
 ## L-0302: **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true in general and repaired at the site: AGENTS.md no longer carries a lane roster at all, it points at `.githooks/pre-commit --list` and `.githooks/commit-msg --list` (AGENTS.md:73-77), each lane read from the hook's own `run` calls, which is the derive-from-source repair this lesson named. The general rule (fixing the instance leaves the class) has no gate; a restated roster elsewhere would be found by review.
 
 **Fixing the instance leaves the class.** BG0500 added `runbook.py` to the AGENTS.md lane roster; four commits later the same batch shipped a `warning-ratchet` lane and did not. The repair was to derive the roster from the hook, one subtest per lane, so lane fourteen fails when it is written rather than when a reviewer notices.
 
@@ -1351,7 +1417,8 @@ Recorded from retro RETRO0094.
 ## L-0301: **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: reviewing the test plan is far cheaper than reviewing the code. The `test-spec` type ships (`sdlc-studio/test-specs/`, 3 specs) and `best-practices/testing.md:92-96` is the guidance. No gate requires a reviewed test plan before code; the measured cost figures are history and are not re-measured here.
 
 **Reviewing the test costs two orders of magnitude less than reviewing the code.** Measured this run, by accident, on the first hand-run use of EP0207's mechanism: an independent seat rejected all three rows of US0629's test plan for 55k tokens and 3 minutes. The batch-boundary review that caught the same class - verifiers that cannot fail on what they claim - cost roughly 400k tokens and two hours, after the code had shipped.
 
@@ -1360,7 +1427,8 @@ Recorded from retro RETRO0094.
 ## L-0300: **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on
 
 - **Added:** 2026-08-05
-- **Review-by:** 2026-11-03
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a mutant derived from the implementation is the one the test was built to catch. `best-practices/testing.md:92-96` states the rule (state the mutant in the test's docstring before writing the test) and `critic.py:2459-2462` has the reviewer mutate the tests; `critic.py` `check_self_check` (`critic.py:2899`) requires the author to list mutants against a declared test file. Whether a mutant came from the criterion is not gated.
 
 **A mutant derived from the implementation is the mutant the test was built to catch.** Five AC-named mutants did not kill their tests, on units committed claiming they had. The generative defect was writing each mutant AFTER the code, from the code. The criterion already stated the mutant in every case - US0468 AC2 literally says "a key added or renamed fails the test" - and the test was written from the implementation instead. Derive the mutant from the criterion before the code exists, or the mutation check certifies nothing. (LL0044, L-0272.)
 
@@ -1369,7 +1437,8 @@ Recorded from retro RETRO0094.
 ## L-0299: A file-disjoint unit is not necessarily an independent one
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and partly gated: `refine.py` `seam_declarations` (`refine.py:960`) and `seam_findings` (`refine.py:1040`) report declared couplings between units that share no file. An undeclared coupling (a criterion reading what another unit creates, a registry each verb must join) is not detected and rests on the reviewer.
 
 A file-disjoint unit is not necessarily an independent one. Three couplings in this epic were invisible to a seam check: criteria that read what another unit creates, a guard requiring each verb to document itself, and a shared registry every verb must declare into.
 
@@ -1378,7 +1447,8 @@ Recorded from retro RETRO0093.
 ## L-0298: A mutant that removes ONE of two sufficient fixes measures less than it appears to
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a mutant removing one of two sufficient fixes survives and reads as coverage. `critic.py:2463-2467` tells the reviewer to re-test a survivor's branch in isolation and `best-practices/testing.md:92-96` has the author name the production change; no gate or tool (`mutation.py` is an instrument, `mutation.py:35`) derives the honest multi-fix mutant.
 
 A mutant that removes ONE of two sufficient fixes measures less than it appears to. The honest mutant reproduces the exact state that shipped; a partial one survives and reads as coverage.
 
@@ -1387,7 +1457,8 @@ Recorded from retro RETRO0093.
 ## L-0297: A stub is not the shipped entry point
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a stub is not the shipped entry point. `best-practices/testing.md:66-90` (entry point) and `:106` ('Bypassing the surface under test', a hand-built `argparse.Namespace`) hold it as guidance, and AGENTS.md:122 requires each claim run through the shipped entry point. `verify_ac.py` `lane_check` (`:1331`) flags only library-only verifiers and is advisory.
 
 A stub is not the shipped entry point. A verifier that monkeypatches the collaborator under test proves the call happened and cannot see that it failed - which is how a verb that tracebacked on every invocation passed the suite, verify_ac, the lane-check and the gate.
 
@@ -1396,7 +1467,8 @@ Recorded from retro RETRO0093.
 ## L-0296: Satisfying a gate is not the same as satisfying the criterion, and when the two pull apart the criterion wins
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: when the gate and the criterion pull apart, the criterion wins. AGENTS.md:92-96 makes the criteria 'law' in the brief that `critic.py brief` carries, and a lane-check flag (`verify_ac.py:1331`) is advisory so clearing it is not the goal. No gate compares a moved verifier with the criterion's original claim.
 
 Satisfying a gate is not the same as satisfying the criterion, and when the two pull apart the criterion wins. Two rejections in this run were caused by moving a verifier to clear a lane-check, each time onto ground where the criterion's own gap was invisible.
 
@@ -1405,7 +1477,8 @@ Recorded from retro RETRO0093.
 ## L-0295: Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: two readers of one file drift. The tree records the fix by sharing one reader, e.g. the velocity table parsed once by column name (`retro.py:944` `VELOCITY_COLUMNS`, `_velocity_index` `retro.py:2212`) and the single coverage authority noted at `critic.py:2224`. No gate detects a second reader added by someone unaware of the first.
 
 Two readers of one file will disagree eventually, and the second one is written by whoever did not know the first existed. Both defects this run introduced were that shape.
 
@@ -1414,7 +1487,8 @@ Recorded from retro RETRO0092.
 ## L-0294: A ceiling you guessed is a ceiling that passes both cases
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a guessed ceiling passes both cases. `tools/check_budgets.py` (`record_ceilings`, `tools/check_budgets.py:136`) now rewrites ceilings to measured sizes with headroom (`:63`), so the budget case is held by measurement. The general rule for a test's own pinned bound has no gate; `best-practices/testing.md:92-96` (name the mutant first) is the guidance.
 
 A ceiling you guessed is a ceiling that passes both cases. The first draft of the cache pin used a round number and survived its own mutant; measuring the two bounds (157 cached, 283 uncached) is what made it discriminate.
 
@@ -1423,7 +1497,8 @@ Recorded from retro RETRO0092.
 ## L-0293: A postcondition cannot express an ordering
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a postcondition cannot express an ordering, so an ordering claim needs the write path observed. `best-practices/testing.md:113` ('A positive control already passing') and `critic.py:2459-2462` (the reviewer mutates the tests) are the only holds; no gate checks that a test of a refusal-first claim observes the attempts rather than their aftermath.
 
 A postcondition cannot express an ordering. "Nothing landed" holds equally when every write was attempted and every write failed; if the claim is that the refusal arrives FIRST, the write path has to be observed, not its aftermath.
 
@@ -1432,7 +1507,8 @@ Recorded from retro RETRO0092.
 ## L-0292: A test that opens the mechanism itself proves the mechanism and never its CALLER
 
 - **Added:** 2026-08-04
-- **Review-by:** 2026-11-02
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and visible in the tree: `reconcile.py` `detect_all` (`reconcile.py:2419`) opens `sdlc_md.corpus_cache()` itself (`:2438`), as do `unit_corpus` (`:1980`) and `settle` (`:3386`), so the wrapper is the caller. The general rule (a test that opens the mechanism proves the mechanism, never its caller) is `best-practices/testing.md:111` ('Testing the helper, not the caller'); no gate checks a test enters via the caller.
 
 A test that opens the mechanism itself proves the mechanism and never its CALLER. Eleven tests each opened `corpus_cache()` inside their own fixture, so neutering the production wrapper in `reconcile.detect_all` left every one of them passing. The caller is the part a fixture-built sweep cannot see.
 
@@ -1441,7 +1517,8 @@ Recorded from retro RETRO0092.
 ## L-0291: **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a red fixture is evidence about the fixture as often as the guard. `best-practices/testing.md:108` lists 'A fixture shape the product cannot produce' as a vacuity mechanism, and `test_transition.py:53-80` (`_refuse_working_tree`) is a guard whose fixtures had to be made realistic. No gate classifies a red as fixture-side or guard-side; that is the reviewer's judgement.
 
 **A guard reddening a fixture is evidence about the fixture as often as about the guard.** Seven rolling tests went red because they never committed their delivered work - a state no real close reaches. The guard was right; the fixtures were unrealistic, and had been for as long as they had existed.
 
@@ -1450,7 +1527,8 @@ Recorded from retro RETRO0091.
 ## L-0290: **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: fixing the row an operator does not read is not fixing it. AGENTS.md:122 and `best-practices/testing.md:66-90` require driving the command the criterion names, and `verify_ac.py` `lane_check` (`verify_ac.py:1331`) reports a unit whose verifiers never enter the command. The lane check is advisory, so a criterion verified through a private function can still pass.
 
 **Fixing the row an operator does not read is not fixing it.** `US0624` changed a checklist resolver while the preflight - the command an operator actually runs - built its coverage line through an entirely different path, and the criterion's own verifier called the private function rather than the shipped one. A criterion that names a command must be driven through that command, or it certifies the wrong thing convincingly.
 
@@ -1459,7 +1537,8 @@ Recorded from retro RETRO0091.
 ## L-0289: **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and repaired at its site: the repair record's matching is now exact. `critic.py` `validate_repair_verdict` (`critic.py:3618`) looks each prior finding up by its own key and raises on an unruled one ('never taken as closed'), and `repair_open_findings` (`critic.py:3636`) counts anything not CLOSED as open. The general rule (a rule that decides a gate resolves to one answer) has no gate beyond review.
 
 **A matching rule that is convenient is a gate that is optional.** The repair record's closure-to-finding match was bidirectional substring because that was forgiving to write against. It made a one-character closure close every finding, which turned the review gate into a formality reachable from the command line. Where a rule decides whether a gate opens, it must resolve to exactly one answer and refuse ambiguity rather than resolving it in the author's favour.
 
@@ -1468,7 +1547,8 @@ Recorded from retro RETRO0091.
 ## L-0288: **A mechanism verified only in fixtures is verified only in fixtures.** Two of this sprint's own deliveries were inert on the real
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a mechanism verified only in fixtures is verified only in fixtures. `best-practices/testing.md:10-18` ('Production-state-shape integration tests') and AGENTS.md:122 (exercise each claim through the shipped entry point) hold it as guidance; `critic.py brief` is refused until the author records that pass (`review.author_self_check: block`, `critic.py:2899` `check_self_check`), which makes the pass compulsory but does not judge its quality.
 
 **A mechanism verified only in fixtures is verified only in fixtures.** Two of this sprint's own deliveries were inert on the real repository while every fixture passed, and in both cases the fixture differed from production in one detail nobody had thought about - a `.gitignore` line, and a test that stamped the value it was meant to observe. Run the new thing against the tree it ships into, and assert the OUTPUT is non-empty rather than that two computations agree, because two empty answers agree perfectly.
 
@@ -1477,7 +1557,8 @@ Recorded from retro RETRO0091.
 ## L-0287: **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and repaired where it was found: `reconcile.py` now detects `epic-status-stale` (`reconcile.py:85` the kind, `:1084` the detector, `:3277` its repair), the direction that masks finished work. The general rule (a cascade that ticks a box is not a status cascade) rests on `_cascade_epic`; no gate asserts a new cascade moves the parent's Status.
 
 **A cascade that ticks a checkbox is not a status cascade.** `_cascade_epic` ticks the story's line in its parent's Story Breakdown and returns; it never touches the parent's Status. Fifteen of thirty open epics have every child Done and every box ticked and still read Draft, and `reconcile detect` reports `drift_items=0` over all of them. The direction that masks unfinished work was detected; the direction that masks finished work was not, so a delivery backlog can be overstated by half and nothing says so - `BG0503`, now the `epic-status-stale` kind. Clearing it showed the overstatement was not confined to the epic layer: closing the fifteen made 29 requests derivable, and Discovery fell 60 to 31, Delivery 106 to 89.
 
@@ -1486,7 +1567,8 @@ Recorded from retro RETRO0090.
 ## L-0286: **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: the advisory reports state, not whether its remedy works. `reconcile.py:403-425` still emits the archive advice ('Advisory only: it never blocks and never runs the archive', `reconcile.py:410`) and `status.py:820` lists it. Nothing exercises the remedy the advisory prints, so a blocked remedy accumulates silently; the practice is AGENTS.md:122 (exercise each claim through the entry point).
 
 **An operation the tooling advises on every run, and that nobody can commit, accumulates silently and is invisible in the advisory itself.** Five indexes reached 6-15x their threshold while `reconcile detect` printed the remedy every time. The advisory reported the state correctly and could not report that taking its own advice was blocked, which is why the debt grew rather than being paid. Exercise the remedy an advisory prints, not just the detector that prints it.
 
@@ -1495,7 +1577,8 @@ Recorded from retro RETRO0090.
 ## L-0285: **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150`
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a floor calibrated against the live, unarchived index tracks the snapshot. The archive advisory still fires on live terminal rows (`reconcile.py:403-425`, `DEFAULT_ARCHIVE_AFTER`) and the index census unions archive sub-index rows (`reconcile.py:370`, `_merge_archive_rows`), so census floors are best set on the union. No gate checks a guard's floor against the corpus population.
 
 **A guard that reads the live index treats "what nobody has archived yet" as the corpus.** Both failing guards asserted floors - `> 150` rows, `> 100` epics - that exist to prove the sweep is not silently matching nothing. Calibrated against an unarchived snapshot, the floor tracks the snapshot rather than the corpus, so the guard reddens on a maintenance step instead of on a defect. The population, not the number, is what needed fixing.
 
@@ -1504,7 +1587,8 @@ Recorded from retro RETRO0090.
 ## L-0284: **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a mutation-killed test does not prove production takes the path. `best-practices/testing.md:66-90` (name the entry point) and `:106` ('Bypassing the surface under test') hold it as guidance, and `critic.py:2459-2462` has the reviewer mutate the author's tests. No gate checks a fixture reaches a state the shipped command produces.
 
 **A mutation-killed test proves the test can fail, not that production takes that path.** `US0604` needed four rounds. Each repair was mutation-verified and each was wrong one layer out, because the fixture handed the code a state the shipped command never produces. Killing the mutant you thought of is necessary and nowhere near sufficient: drive the entry point, or the test is measuring a path nobody walks.
 
@@ -1513,7 +1597,8 @@ Recorded from retro RETRO0089.
 ## L-0283: **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and
 
 - **Added:** 2026-08-03
-- **Review-by:** 2026-11-01
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held by construction: every downstream gate reads the ledger, so an unrecorded verdict is no verdict. `critic.py` `coverage_state` (`critic.py:2219`) reads only recorded rows and `sprint.py` `review_coverage` (`sprint.py:5345`) counts only ledger or frozen-batch cover, with a self-review covering nothing. 'Record the verdict in the same breath' is guidance; no gate catches a verdict produced and never recorded.
 
 **A review exists when the ledger says so, not when it happened.** Fifteen of this run's verdicts were produced and never recorded, and twenty units were never reviewed at all, while the run's own account claimed 38 reviewed. Every gate downstream reads the ledger, so an unrecorded pass is indistinguishable from no pass - correctly, and expensively. Record the verdict in the same breath as forming it, or do not count it.
 
@@ -1522,7 +1607,8 @@ Recorded from retro RETRO0089.
 ## L-0282: **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently
 
 - **Added:** 2026-08-02
-- **Review-by:** 2026-10-31
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: `verify_ac.py` `lane_check` (`verify_ac.py:1331`) is advisory, and a grep of every script and tool found no gate lane, `critic.py` or `sprint.py` caller of it, so a flag on the author changes nothing until a reviewer acts on it. Its yield is recorded to `verify_ac.py:3182` (`_LANE_YIELD_REL`). `best-practices/testing.md:81-84` describes the same advisory.
 
 **An advisory detector that fires on the author changes nothing.** `lane-check`'s yield is no longer a question: 7 flagged, 6 independently confirmed hollow. That is the number `CR0520` asked for.
 
@@ -1531,7 +1617,8 @@ Recorded from retro RETRO0089.
 ## L-0281: **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not
 
 - **Added:** 2026-08-02
-- **Review-by:** 2026-10-31
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: broken and unproven are different facts. `critic.py` records a verdict of APPROVE or REJECT only (`critic.py:31-33`, `VERDICTS`), so a REJECT still carries both meanings; the distinction rests on the finding text. No gate separates them (CR0524 named the fix); the brief's claim inventory marks an unrunnable claim UNVERIFIABLE rather than FALSE (`critic.py:2526-2534`), which is the nearest mechanism.
 
 **"Broken" and "unproven" are different facts and want different words.** Roughly 13 of the 27 rejections were a feature that does not work; roughly 14 were a correct feature with evidence that cannot fail. One verdict carried both, so the count read as catastrophe and gave no signal about which repairs were urgent. `CR0524`.
 
@@ -1540,7 +1627,8 @@ Recorded from retro RETRO0089.
 ## L-0280: **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover
 
 - **Added:** 2026-08-02
-- **Review-by:** 2026-10-31
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and the artefact now ships: the `test-spec` type exists (`sdlc-studio/test-specs/` holds 3 specs) and `best-practices/testing.md:92-96` ('Name the mutant BEFORE writing the test') is the rule. Nothing gates writing a spec before code, so a plan reviewed before code is still the author's choice.
 
 **Reviewing the test is cheaper than reviewing the code.** This run spent five adversarial passes and roughly 800k tokens to discover, after the fact, that ~14 verifiers could not fail. A reviewed test plan would have found the same thing before a line of code. The `test-spec` artefact type and the name-the-mutant-first rule ALREADY SHIP; the repository contains two test specs and this run wrote none. `CR0525`.
 
@@ -1549,7 +1637,8 @@ Recorded from retro RETRO0089.
 ## L-0279: **A test that asserts the shape of a change cannot fail when the change is deleted.** The weakness was not random: it clustered at the end
 
 - **Added:** 2026-08-02
-- **Review-by:** 2026-10-31
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a shape-asserting test survives deletion of the change. `best-practices/testing.md:107` lists 'Asserting text the code supplies for free' (a `def` line satisfying `assertIn`) as a vacuity mechanism, and `critic.py:2459-2462` tells the reviewer to mutate the author's tests. No gate runs a mutation over an author's new tests.
 
 **A test that asserts the shape of a change cannot fail when the change is deleted.** The weakness was not random: it clustered at the end of units, where the feature already worked and the test felt like paperwork. `grep -q "NOT FINISHED"` exits 0 against an unreachable print; `assertIn("attribute_kill(", src)` is satisfied by the `def` line. Both shipped.
 
@@ -1558,14 +1647,16 @@ Recorded from retro RETRO0089.
 ## L-0278: Two copies of a rule drift apart: the coverage rule was restated in three modules and this diff falsified all three at once
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held for the instance: the review-coverage rule has one authority, `critic.py` `coverage_state` (`critic.py:2219`), which `sprint.py:5605`, `transition.py:897` and `sprint_report.py:1158` and `:1742` (via `coverage_counts`) all call. The general rule (two copies drift) has no gate; a new restatement of any rule is found by review.
 
 Recorded from retro RETRO0088.
 
 ## L-0277: Reading a command's verdict through a pipe reports the pipe's status
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a pipe reports the last command's status, and L-0352 records it being read and not followed. no gate holds it for ad-hoc shell. `best-practices/script.md:25` and `:125` require `set -euo pipefail` in scripts, and `tools/remote-gate.sh:303` reads `PIPESTATUS[1]` correctly, but a hand-run `cmd | tail; echo $?` is unchecked.
 
 Reading a command's verdict through a pipe reports the pipe's status. Redirect, then echo the code separately.
 
@@ -1574,7 +1665,8 @@ Recorded from retro RETRO0088.
 ## L-0276: A premise measured on one instance is an anecdote
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a premise measured on one instance is an anecdote. no gate holds it; the nearest guidance is AGENTS.md:98-101, which settles regression versus pre-existing by execution (`git log -S`) rather than impression. `triage_sampling.py` `sample` (`triage_sampling.py:76`) is one place the rule is honoured, sampling the whole pool by hash.
 
 A premise measured on one instance is an anecdote. Replay it over the corpus before building on it.
 
@@ -1583,7 +1675,8 @@ Recorded from retro RETRO0088.
 ## L-0275: A review that fails every unit carries the same information as one that passes every unit
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a review that rejects everything says nothing. The brief bounds a review to the unit's own `Affects` against the base ref (AGENTS.md:98-101, delivered by `critic.py brief`), and only a regression or newly introduced defect blocks. That bound is guidance in the brief; no gate measures a reviewer's reject rate.
 
 A review that fails every unit carries the same information as one that passes every unit. Bounding the scope is what makes a REJECT mean something.
 
@@ -1592,7 +1685,8 @@ Recorded from retro RETRO0088.
 ## L-0274: A library test cannot see a missing lane: the wiring between entry point and function is exactly the part it does not exercise, and it is
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and held where it can be: `best-practices/testing.md:66-90` ('Name the ENTRY POINT before writing the test') states the rule, and `verify_ac.py` `lane_check` (`verify_ac.py:1331`, `lane-check` verb) reports a unit whose verifiers never enter the command. It is advisory (no other script calls it), so an unflagged missing lane is caught only by the reviewer.
 
 A library test cannot see a missing lane: the wiring between entry point and function is exactly the part it does not exercise, and it is where this defect class lives. State the ENTRY POINT a test enters through before writing it.
 
@@ -1601,7 +1695,8 @@ Recorded from retro RETRO0088.
 ## L-0273: **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a delivery rule: no gate holds it, and no script or doc line was found that states it (a grep of the skill docs for part-built or half-delivered wording found none). It rests on operator judgement; the nearest guidance is AGENTS.md:83, which makes work a story or bug with criteria before a diff exists.
 
 **Stopping is a delivery decision, and it is cheaper than half-building.** BG0448 was left untouched rather than part-built, because its half-delivered form is the exact artefact it was filed to describe.
 
@@ -1610,7 +1705,8 @@ Recorded from retro RETRO0087.
 ## L-0272: **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true: a green verifier proves it ran, not that it can fail. `transition.py` `_done_verify_gate` (`transition.py:152`) refuses a red or never-run criterion but cannot tell a vacuous passing one; no gate checks a verifier can fail. The reviewer is told to mutate the author's tests (`critic.py:2459-2462`) and `best-practices/testing.md:92-96` makes the author name the mutant first.
 
 **Check the criterion's verifier can FAIL before ticking it.** Two criteria here were `Verified: yes` over tests that passed at the commit the defect was still present. A green verifier proves the verifier ran, not that the work landed.
 
@@ -1619,7 +1715,8 @@ Recorded from retro RETRO0087.
 ## L-0271: **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke
 
 - **Added:** 2026-08-01
-- **Review-by:** 2026-10-30
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true and now gated at the push: a commit runs only its selected test modules, so a selected run still cannot show the tree is green, and the pre-push hook runs `gate.py` `_full_suite` (`gate.py:878`, 'every test module of both suites, run ONCE') under `--boundary push` (`gate.py:2048`). AGENTS.md:136 states the rule. A commit-time green claim is still unchecked.
 
 **A selected test run cannot tell you the tree is green.** Six commits passed a gate that never ran the test my first commit broke. The rule against this shipped in the same sprint, one commit later, and I did not apply it to the work beside it. Run the full suite before the commit, or do not claim the suite is green.
 
