@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_lean_release_verify.py, tools/tests/test_lean_precommit_parallel.py, tools/tests/test_test_census.py, changelog.d/BG0963.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_lean_release_verify.py, tools/tests/test_lean_precommit_parallel.py, tools/tests/test_test_census.py, changelog.d/BG0963.md, .claude/skills/sdlc-studio/scripts/tests/test_config.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_busy_eacces.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_fails_closed.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, tools/tests/test_lean_refusal_log.py, pytest.ini, tools/run-suite.sh, .claude/skills/sdlc-studio/scripts/gate.py
 > **Evidence:** Push boundary gate on 65e36b98 (2026-10-06, load average 17) and fb1ce886 (2026-10-07, load 21-27); commit hook on c578a919 twice (2026-10-07, load 5-11); each named test passed alone in a clean worktree.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -24,7 +24,7 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** No test in the parallel partition compares a measured duration against a fixed constant; a census test fails when one does, naming it
+- [ ] **AC1** No test in the parallel partition bounds a measured duration from above by a fixed constant; a census test fails when one does, naming it. A lower bound (a duration asserted to be at least a constant) is not flagged, since load can only lengthen a duration
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_no_parallel_test_bounds_a_measured_duration_by_a_constant
 - [ ] **AC2** Output a test compares byte for byte carries no measured duration, or the comparison normalises it, shown by a test that varies the seconds
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_compared_output_is_insensitive_to_measured_seconds
@@ -48,3 +48,4 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-20 | Claude Opus 5.5 | Further evidence: the 2026-10-20 push refusal of fd16f28a on a byte-compared close cost line |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-10-31 | Claude Opus 5.5 | In flight (RUN-01M6A3K2): the builder's census found nine upper-bound sites in seven test files outside Affects; Affects widened to them and to the three files whose comments describe serial_only (pytest.ini, run-suite.sh, gate.py). AC1 narrowed to upper bounds: a lower bound cannot fail under load, and moving one to the serial partition would only lengthen the push gate |
