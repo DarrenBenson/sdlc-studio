@@ -62,8 +62,9 @@ class BoundaryRunCostTests(unittest.TestCase):
 
     Fails when the whole elapsed time is judged against the budget (the push reads OVER), when
     the dominant lane is chosen among the boundary lanes, when a boundary run is recorded as the
-    baseline (the 300s baseline moves), when it is compared with the baseline, and when the
-    release boundary's two extra lanes are judged."""
+    baseline (the 300s baseline moves), when it is compared with the baseline, at the push and
+    at the release boundary, when the release boundary's two extra lanes are judged, and when
+    the shipped registry's swapped push lanes are named outside the budget."""
 
     BOUNDARY_LANES = ("_full_suite", "_release_rehearsal", "_module_alone")
 
@@ -131,12 +132,60 @@ class BoundaryRunCostTests(unittest.TestCase):
 
     def test_a_release_run_leaves_all_three_boundary_lanes_outside_the_budget(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            cost = self._run(self._root(d), standard=10.0, boundary="release")
+            root = self._root(d)
+            cost = self._run(root, standard=10.0, boundary="release")
+            self.assertEqual(gate.read_gate_cost_baseline(root), 300.0,
+                             "a release run overwrote the standard run's baseline")
         self.assertEqual(cost["outside_budget"], {"full-suite": 600.0,
                                                   "release-rehearsal": 600.0,
                                                   "module-alone": 600.0})
         self.assertEqual(cost["judged_seconds"], 11.0)
         self.assertFalse(cost["over"], cost["detail"])
+        self.assertFalse(cost["recorded"])
+        self.assertIn("at the release boundary; its standard lanes 11.0s of a 30s budget",
+                      cost["detail"])
+        self.assertIn("BOUNDARY run - not compared with the baseline", cost["detail"])
+        self.assertNotIn("faster than", cost["detail"])
+        self.assertNotIn("slower than", cost["detail"])
+
+    def test_the_shipped_registry_keeps_its_swapped_push_lanes_inside_the_budget(self) -> None:
+        """With no injected registry, a push swaps conformance and validate for their
+        pushed-range lanes. Fails when the boundary lanes are worked out after that swap, which
+        names both outside the budget beside the full suite. Every lane the run selects is a
+        stub, so the run is hermetic."""
+        clock = [1000.0]
+        calls: list[str] = []
+
+        def lane(name: str, seconds: float):
+            def check(_root):
+                calls.append(name)
+                clock[0] += seconds
+                return {"count": 0, "blocking": True, "detail": "ok"}
+            return check
+        with tempfile.TemporaryDirectory() as d, contextlib.ExitStack() as stack:
+            root = self._root(d)
+            stack.enter_context(mock.patch.dict(gate.DEFAULT_CHECKS, {
+                n: lane(f"default:{n}", 0.0) for n in gate.DEFAULT_CHECKS}))
+            stack.enter_context(mock.patch.dict(gate.PUSHED_RANGE_LANES, {
+                "conformance": lane("pushed:conformance", 10.0),
+                "validate": lane("pushed:validate", 1.0)}))
+            for name in self.BOUNDARY_LANES:
+                stack.enter_context(mock.patch.object(gate, name, lane(name, 600.0)))
+            stack.enter_context(mock.patch.object(
+                gate, "time", types.SimpleNamespace(monotonic=lambda: clock[0])))
+            out = gate.run_gate(root, boundary="push", record_cost=True)
+        # The discriminating half: the swap ran, so the pushed lanes stood in for the shipped ones.
+        self.assertIn("pushed:conformance", calls)
+        self.assertIn("pushed:validate", calls)
+        self.assertNotIn("default:conformance", calls)
+        self.assertNotIn("default:validate", calls)
+        self.assertIn("_full_suite", calls)
+        self.assertEqual(len(calls), len(out["checks"]), "a lane ran that is not a stub")
+        cost = out["cost"]
+        self.assertEqual(cost["outside_budget"], {"full-suite": 600.0})
+        self.assertEqual(cost["judged_seconds"], 11.0)
+        self.assertEqual(cost["dominant"], "conformance")
+        self.assertIn("outside the budget: full-suite at 600.0s; BOUNDARY run", cost["detail"])
 
 
 if __name__ == "__main__":
