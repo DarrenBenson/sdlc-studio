@@ -14,7 +14,7 @@ Decomposed from CR0655. Delivers the work CR0655 requested.
 
 ## Story Breakdown
 
-- [ ] [US1105: Each open lesson from L-0001 to L-0090 is closed with its reason or extended after a check against the current tree](../stories/US1105-each-open-lesson-from-l-0001-to-l.md)
+- [x] [US1105: Each open lesson from L-0001 to L-0090 is closed with its reason or extended after a check against the current tree](../stories/US1105-each-open-lesson-from-l-0001-to-l.md)
 - [ ] [US1106: Each open lesson from L-0091 to L-0180 is closed with its reason or extended after a check against the current tree](../stories/US1106-each-open-lesson-from-l-0091-to-l.md)
 - [ ] [US1107: Each open lesson from L-0181 to L-0270 is closed with its reason or extended after a check against the current tree](../stories/US1107-each-open-lesson-from-l-0181-to-l.md)
 - [ ] [US1108: Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree](../stories/US1108-each-open-lesson-from-l-0271-to-l.md)

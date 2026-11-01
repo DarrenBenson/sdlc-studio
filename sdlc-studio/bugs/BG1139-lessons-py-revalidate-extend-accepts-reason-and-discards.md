@@ -1,6 +1,6 @@
 # BG1139: lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, changelog.d/BG1139.md
@@ -28,10 +28,13 @@ Record each extension on the lesson as a `- **Revalidated:** <date> - <reason>` 
 
 - [ ] **AC1** `revalidate --extend L-NNNN --reason R` records `Revalidated: <today> - R` on each lesson it extends, replacing an earlier Revalidated line, and still moves Review-by by the validity window.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC2** `revalidate --extend` with no reason is refused by name, writing nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC3** `revalidate --unjudged-since DATE --range A:B` exits 1 listing each open lesson in the range with neither a close nor a Revalidated date on or after DATE, and exits 0 when there is none (positive control).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 

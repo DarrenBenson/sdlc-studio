@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 15 |
+| Ready | 14 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 826 |
+| Done | 827 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -142,7 +142,7 @@
 | [US1102](US1102-the-tsd-states-coverage-by-the-ci-step.md) | The TSD states coverage by the CI step, describes per-unit line coverage, names both test-module conventions, maps every PRD NFR to a row and carries a 6.2 header | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1103](US1103-the-prd-s-baseline-reads-v6-1-0.md) | The PRD's baseline reads v6.1.0 plus 6.2, no shipped feature row carries [Unreleased], and the inventory has a row for each capability shipped since July | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1104](US1104-the-prd-s-business-rules-nfrs-and-cost.md) | The PRD's business rules, NFRs and cost model match the code, its derived counts are bands, and the engagement floor reads Partial until BG0959 is Fixed | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
-| [US1105](US1105-each-open-lesson-from-l-0001-to-l.md) | Each open lesson from L-0001 to L-0090 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |
+| [US1105](US1105-each-open-lesson-from-l-0001-to-l.md) | Each open lesson from L-0001 to L-0090 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1106](US1106-each-open-lesson-from-l-0091-to-l.md) | Each open lesson from L-0091 to L-0180 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1107](US1107-each-open-lesson-from-l-0181-to-l.md) | Each open lesson from L-0181 to L-0270 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1108](US1108-each-open-lesson-from-l-0271-to-l.md) | Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 156 |
 | In Progress | 0 |
-| Fixed | 818 |
+| Fixed | 819 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1147** |
+| **Total** | **1148** |
 
 ## All Bugs
 
@@ -214,7 +214,7 @@
 | [BG1136](BG1136-bg0962-s-ac7-test-pins-only-the-frozen.md) | BG0962's AC7 test pins only the frozen-REJECT half of 'an unreadable per-unit ledger is read as no verdict' | Superseded | Low | 2026-10-31 | 2026-10-31 |
 | [BG1137](BG1137-the-closing-review-fold-s-append-order-tiebreak.md) | The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1138](BG1138-the-gate-host-s-prerequisite-check-reports-gh.md) | The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran | Open | Low | 2026-10-31 | 2026-10-31 |
-| [BG1139](BG1139-lessons-py-revalidate-extend-accepts-reason-and-discards.md) | lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one | Open | Medium | 2026-10-31 | 2026-10-31 |
+| [BG1139](BG1139-lessons-py-revalidate-extend-accepts-reason-and-discards.md) | lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one | Fixed | Medium | 2026-10-31 | 2026-10-31 |
 | [BG1140](BG1140-readiness-py-tells-a-carried-unit-whose-verifiers.md) | readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves | Fixed | Low | 2026-10-31 | 2026-10-31 |
 | [BG1141](BG1141-the-gate-host-docs-test-s-docstrings-claim.md) | The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config` | Open | Low | 2026-10-31 | 2026-10-31 |
 | [BG1142](BG1142-doc-freshness-is-described-as-a-latest-md.md) | doc-freshness is described as a LATEST.md check everywhere, though it now censuses the TRD, PRD and TSD; one hook comment lists it as a per-commit lane | Open | Low | 2026-10-31 | 2026-10-31 |
@@ -223,6 +223,7 @@
 | [BG1145](BG1145-readiness-s-carry-note-names-a-re-review.md) | readiness's carry note names a re-review that critic.py record refuses for a unit at the cap with no filed carry bug; only a --ruling discharges it | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1146](BG1146-lessons-py-revalidate-close-appends-its-status-bullet.md) | lessons.py revalidate --close appends its Status bullet straight after a paragraph, so the lessons log fails markdownlint MD032 | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1147](BG1147-the-pre-commit-markdown-lane-skips-in-a.md) | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1148](BG1148-revalidate-s-real-date-guard-has-no-test.md) | revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
