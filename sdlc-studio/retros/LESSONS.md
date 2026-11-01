@@ -3265,7 +3265,7 @@ Recorded from retro RETRO0045.
 
 - **Added:** 2026-07-17
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: worktree subagents still branch from a base SHA (this run is in such a worktree), so git diff main..branch misleads as stated; git show <commit> --name-only remains the scope check.
+- **Revalidated:** 2026-11-01 - Still true: reference-delivery.md:52 has a parallel build give each agent its own git worktree, merged afterwards (disjointness check at :18-25), so a reviewer reading git diff main..branch of such a branch still sees the other side reverted; git show <commit> --name-only remains the scope check.
 
 A worktree subagent branches from a base SHA, so `git diff main..branch` shows the other side "reverted" and misleads; a three-way merge is still clean when the groups are file-disjoint. Verify scope with `git show <commit> --name-only`, not the full-tree diff.
 
@@ -3563,7 +3563,7 @@ Recorded from retro RETRO0036.
 
 - **Added:** 2026-07-15
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: a generated artefact asserting an unverified claim is still possible for any new audit output; AGENTS.md 'Exercise every claim' and the blocking findings in doc_coverage.py:150 keep claims tied to what was checked.
+- **Revalidated:** 2026-11-01 - Still true and held in code: command_audit.py:844-848 builds the tool note from the checked flag (broken tools or 'tooling not checked') and :904 writes 'every tool runs' only when checked, so the persisted audit asserts only what was verified.
 
 A generated artefact must only assert what it verified. The audit doc claimed "every tool runs" while the tool check was off by default; a persisted, unverified certification is a lie with a long half-life. Thread a `checked` flag and phrase the claim from it.
 
@@ -3803,7 +3803,7 @@ Recorded from retro RETRO0027.
 
 - **Added:** 2026-07-14
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: the groomed stories in this very run (US1105 Verify lines fixed before any judgement) set the bar before measuring, and retro.py:3184 floors cohorts in advance; the pre-registration practice stands.
+- **Revalidated:** 2026-11-01 - Still true: retro.py:838-841 requires the Points to be the sizes the PLAN recorded, never sizes revised after the outcome, because the column matters only if it was written down before anyone knew; the estimate-versus-actual bar is fixed before the measurement.
 
 Setting the bar BEFORE measuring is what makes a negative result possible. CR0262 could drop the forecast only because it had written down, in advance, what "good enough" meant.
 
