@@ -3653,7 +3653,7 @@ Recorded from retro RETRO0032.
 
 - **Added:** 2026-07-15
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: refine.py cmd_add (refine.py:1181) shares _decompose (:262) with apply, so the shared core is the design; sharing the core is how the variant inherits validation and rollback.
+- **Revalidated:** 2026-11-01 - Still true: refine.py `cmd_add` (refine.py:1181) shares `_decompose` (:262) with apply, so the shared core is the design; sharing the core is how the variant inherits validation and rollback.
 
 Reusing a hardened core is how a new feature inherits fixes instead of re-introducing bugs. `add` got apply's up-front validation, rollback and atomic_write for free by sharing `_decompose`, and the review found nothing - where the two earlier refine reviews each found a real bug. Extract the shared core BEFORE adding the variant.
 
@@ -3673,7 +3673,7 @@ Recorded from retro RETRO0031.
 
 - **Added:** 2026-07-15
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: refine.py _decompose (refine.py:262) and _decompose_into (:361) still validate up front and roll back; the all-inputs-before-first-write rule is the design of the create path.
+- **Revalidated:** 2026-11-01 - Still true: refine.py `_decompose` (refine.py:262) and `_decompose_into` (:361) still validate up front and roll back; the all-inputs-before-first-write rule is the design of the create path.
 
 A multi-step create is atomic only if EVERY input is validated before the first write. refine validated points up front but titles mid-loop, so a bad title orphaned an epic; the fix validates all titles (and the request's Status line) up front and rolls back on a residual IO error. Split validation is a half-promise of atomicity.
 
@@ -3717,6 +3717,7 @@ Recorded from retro RETRO0030.
 The migration story for a breaking model change is part of the change, not an afterthought. This session shipped a universal, non-schema-gated two-backlog + sizing model; an existing consuming project upgrading to it would find its CR workflow refused (G1), its childless-CR completion blocked (G2), and its stale-Affects units ungroomed - with no opt-in and no data migration. Because it is all unreleased (freeze until ~2026-07-21) there is a window to build the migration before it ships, and a breaking change earns a semver-major bump.
 
 Recorded from retro RETRO0030.
+
 - **Status:** Closed - Time-boxed advice that is complete: it asked for a migration before the 2026-07-21 freeze, and scripts/migrate.py and scripts/migrate_v3.py now ship it (migrate_v3.py:294-297 flags Effort for re-sizing) with two_backlog default off (sdlc_md.py:1497); nothing remains to do.
 
 ## L-0039: Decomposition makes the estimate accurate (LL0038 again): a single-shot CR sized 8 decomposed to 14, the same 1.75x the prior experiment
@@ -3909,6 +3910,7 @@ moving-standard narrative explained the misses, was written up as a lesson, and 
 it was never tested against the data that was already on disk. Before recording WHY something failed,
 check whether the number that would falsify the explanation is already in reach. Here it was one
 correlation away.
+
 - **Status:** Closed - Retracted the day it was filed: the lesson records it was refuted by measurement and kept only as a record; its replacement L-0028 stays open, so this stub carries no live advice.
 
 ## L-0020: When two tools judge the same artefact, they must agree on what a COMPLETE one is

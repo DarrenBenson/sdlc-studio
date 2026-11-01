@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 154 |
+| Open | 156 |
 | In Progress | 0 |
 | Fixed | 818 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1145** |
+| **Total** | **1147** |
 
 ## All Bugs
 
@@ -221,6 +221,8 @@
 | [BG1143](BG1143-doc-freshness-s-baseline-leg-has-no-pin.md) | doc_freshness's baseline leg has no pin for checking every Coverage line, nor for skipping the revision history | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1144](BG1144-the-commit-hook-s-unittest-fallback-ignores-pytest.md) | The commit hook's unittest fallback ignores pytest's serial_only and boundary_only marks, so a push-only test still runs on a commit there | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1145](BG1145-readiness-s-carry-note-names-a-re-review.md) | readiness's carry note names a re-review that critic.py record refuses for a unit at the cap with no filed carry bug; only a --ruling discharges it | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1146](BG1146-lessons-py-revalidate-close-appends-its-status-bullet.md) | lessons.py revalidate --close appends its Status bullet straight after a paragraph, so the lessons log fails markdownlint MD032 | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1147](BG1147-the-pre-commit-markdown-lane-skips-in-a.md) | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules | Open | Medium | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
