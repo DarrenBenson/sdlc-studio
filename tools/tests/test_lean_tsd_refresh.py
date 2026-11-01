@@ -40,14 +40,29 @@ CONVENTIONS = {"per-script": "test_<script>.py", "per-unit lean": "test_lean_<to
 ON_MAIN = "6.2"
 NFR_HEADING = "## Quality Gates (PRD section 5 NFR mapping)"
 _SENTENCE_RE = re.compile(r"(?<=[.;])\s+")
-_PERCENT_RE = re.compile(r"(\d+(?:\.\d+)?)\s?%")
+_TWO_TO_NINETY = (r"two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"
+                  r"fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|"
+                  r"seventy|eighty|ninety")
+_NUMBER_WORD = rf"\b(?:zero|one|{_TWO_TO_NINETY}|hundred)\b"
+#: A percentage: a figure in digits, or in number words (`eighty-two`), then `%`, `percent`,
+#: `per cent` or `per-cent`, in any case.
+_PERCENT_RE = re.compile(rf"(?:(?P<digits>\d+(?:\.\d+)?)|(?P<words>{_NUMBER_WORD}"
+                         rf"(?:[\s-]+{_NUMBER_WORD})*))\s*(?:%|per[\s-]*cent\b)", re.I)
 _TICKED_RE = re.compile(r"`([^`\n]+)`")
+#: The words by which a sentence speaks of this repository: `this repo`, `this repository`, `here`.
+_OURS_RE = re.compile(r"\b(?:this repo(?:sitory)?|here)\b", re.I)
 _STEP_RE = re.compile(r"^[ \t]*- name: (?P<name>[^\n]+?)[ \t]*\n(?:[ \t]*#[^\n]*\n)*"
                       r"[ \t]*run: (?P<run>coverage report\b[^\n]*?)[ \t]*$", re.M)
-#: A component count: a number, in digits or as a word from two to twelve ("one test" is a
-#: sentence, not an inventory), before `module`, `file`, `test` or `script`, up to two words on.
-_COUNT_RE = re.compile(r"\b(?:\d[\d,]*\+?|two|three|four|five|six|seven|eight|nine|ten|eleven|"
-                       r"twelve)\s+(?:[\w-]+\s+){0,2}(?:modules?|files?|tests?|scripts?)\b", re.I)
+#: A component count: a number in digits, or a word from two to ninety, `dozen`, `hundred` or
+#: `thousand` (plurals too; "one test" is a sentence, not an inventory), with an optional `+` or
+#: hyphened tail (`300-odd`, `thirty-two`), before `module`, `file`, `test` or `script`, up to
+#: two words on.
+_COUNT_RE = re.compile(rf"\b(?:\d[\d,]*|{_TWO_TO_NINETY}|dozens?|hundreds?|thousands?)"
+                       r"(?:\+|-\w+)?\s+(?:[\w-]+\s+){0,2}(?:modules?|files?|tests?|scripts?)\b",
+                       re.I)
+#: The fewest words a row's quote must have to map a PRD clause: a word or two, such as "is",
+#: can sit in a clause the row does not map.
+MIN_QUOTE_WORDS = 3
 _QUOTE_RE = re.compile(r'"([^"]+)"')
 _ROW_HEADING_RE = re.compile(r"^\*\*(?P<h>[^*]+)\*\*")
 _TEST_REF_RE = re.compile(r"`(?:[\w./-]*/)?(test_\w+\.py)(?:::(\w+))?(?:::(\w+))?`")
@@ -94,25 +109,35 @@ def coverage_step(workflow: str) -> dict | None:
             "floor": floor.group(1) if floor else None}
 
 
-def stated_modes(sentence: str, modes: tuple[str, ...]) -> set[str]:
-    """The `review.line_coverage` modes a sentence names in code spans, bare or as `key: mode`."""
-    named = set()
+def mode_mentions(sentence: str, modes: tuple[str, ...]) -> list[str]:
+    """The `review.line_coverage` modes a sentence names in code spans, bare, or any value as
+    `review.line_coverage: <value>`; one entry per span."""
+    named = []
     for token in _TICKED_RE.findall(sentence):
         keyed = re.fullmatch(r"review\.line_coverage:\s*(\S+)", token)
         if token in modes:
-            named.add(token)
+            named.append(token)
         elif keyed:
-            named.add(keyed.group(1))
+            named.append(keyed.group(1))
     return named
 
 
 def coverage_problems(tsd: str, step: dict, mode: str, unset: bool) -> list[str]:
-    """Why the TSD pins a coverage percentage other than the CI step's floor, why its Coverage
-    Measurement section does not point at that step, or why it misstates per-unit line coverage
-    or this repository's `mode`; empty when it states coverage as the CI step holds it."""
+    """Why the TSD above its revision history pins a percentage in digits other than the CI
+    step's floor, or writes one in words; why its Coverage Measurement section does not point at
+    that step; or why it misstates per-unit line coverage or this repository's `mode`. Empty
+    when it states coverage as the CI step holds it.
+
+    Of the section's sentences that name a mode, the first to name each mode once without
+    speaking of this repository (`this repo`, `this repository`, `here`) describes the modes.
+    Each other one states a setting, and only one may: the one naming `review.line_coverage`
+    and this repository, which must name `mode` alone."""
     modes = transition.LINE_COVERAGE_MODES
+    pins = list(_PERCENT_RE.finditer(body(tsd)))
     problems = [f"the TSD pins {p}%, which is not the CI step's {step['floor']}% floor"
-                for p in sorted(set(_PERCENT_RE.findall(body(tsd))) - {step["floor"]})]
+                for p in sorted({m["digits"] for m in pins if m["digits"]} - {step["floor"]})]
+    problems += [f"the TSD writes a percentage in words: {w!r}"
+                 for w in sorted({flat(m.group(0)) for m in pins if m["words"]})]
     measurement = flat(section(tsd, "## Coverage Measurement"))
     for what in (step["name"], step["run"], WORKFLOW.relative_to(REPO).as_posix(),
                  "verify_ac.py run --coverage"):
@@ -120,20 +145,29 @@ def coverage_problems(tsd: str, step: dict, mode: str, unset: bool) -> list[str]
             problems.append(f"Coverage Measurement does not name {what!r}")
     problems += [f"Coverage Measurement does not describe `{m}`" for m in modes
                  if f"`{m}`" not in measurement]
-    stated = [s for s in _SENTENCE_RE.split(measurement)
-              if "review.line_coverage" in s and re.search(r"\bthis repository\b", s, re.I)]
-    if not stated:
+    naming = [(s, named) for s in _SENTENCE_RE.split(measurement)
+              if (named := mode_mentions(s, modes))]
+    described = next((i for i, (s, named) in enumerate(naming)
+                      if sorted(named) == sorted(modes) and not _OURS_RE.search(s)), None)
+    settings = [(s, set(named)) for i, (s, named) in enumerate(naming) if i != described]
+    ours = next((i for i, (s, _) in enumerate(settings) if "review.line_coverage" in s
+                 and re.search(r"\bthis repository\b", s, re.I)), None)
+    if ours is None:
         problems.append("Coverage Measurement does not state this repository's "
                         "review.line_coverage")
-    for s in stated:
-        named = stated_modes(s, modes)
-        if named != {mode}:
-            problems.append(f"this repository's review.line_coverage is stated as "
-                            f"{sorted(named)}; the config reads {mode}: {s!r}")
-        if "shipped default" in s and mode != transition.LINE_COVERAGE_DEFAULT:
-            problems.append(f"{mode} is called the shipped default: {s!r}")
-        if re.search(r"\bunset\b", s) and not unset:
-            problems.append(f"the config is said to leave review.line_coverage unset: {s!r}")
+    problems += [f"Coverage Measurement states a review.line_coverage mode outside this "
+                 f"repository's one sentence: {s!r}" for i, (s, _) in enumerate(settings)
+                 if i != ours]
+    if ours is None:
+        return problems
+    s, named = settings[ours]
+    if named != {mode}:
+        problems.append(f"this repository's review.line_coverage is stated as "
+                        f"{sorted(named)}; the config reads {mode}: {s!r}")
+    if "shipped default" in s and mode != transition.LINE_COVERAGE_DEFAULT:
+        problems.append(f"{mode} is called the shipped default: {s!r}")
+    if re.search(r"\bunset\b", s) and not unset:
+        problems.append(f"the config is said to leave review.line_coverage unset: {s!r}")
     return problems
 
 
@@ -275,10 +309,17 @@ def missing_tests(cell: str) -> list[str]:
     return out
 
 
+def quotes_clause(quote: str, clause: str) -> bool:
+    """Whether `clause` holds `quote` with no letter, digit or underscore either side of it."""
+    return re.search(rf"(?<!\w){re.escape(quote)}(?!\w)", clause) is not None
+
+
 def nfr_problems(prd: str, tsd: str) -> list[str]:
-    """Why a PRD section 5 clause has no TSD row quoting it, why a row maps a heading or quotes
-    words the PRD does not state, or why a row's gate names a test that does not exist; empty
-    when the table and the section map one to the other."""
+    """Why a PRD section 5 clause has no TSD row quoting it, why a row maps a heading, quotes
+    fewer than `MIN_QUOTE_WORDS` words or quotes words the PRD does not state, or why a row's
+    gate names a test that does not exist; empty when the table and the section map one to the
+    other. A quote maps a clause only when it has `MIN_QUOTE_WORDS` words or more and
+    `quotes_clause` holds."""
     stated = prd_nfrs(prd)
     rows = nfr_rows(tsd)
     problems = [] if stated else ["the PRD's section 5 yielded no clause"]
@@ -291,12 +332,17 @@ def nfr_problems(prd: str, tsd: str) -> list[str]:
         if not row["quotes"]:
             problems.append(f"a TSD row quotes no PRD clause: {row['line'][:80]}")
         for q in row["quotes"]:
-            if not any(h == row["heading"] and q in c for h, c, _ in stated):
+            if len(q.split()) < MIN_QUOTE_WORDS:
+                problems.append(f"a TSD {row['heading']} row quotes {q!r}, under "
+                                f"{MIN_QUOTE_WORDS} words")
+            elif not any(h == row["heading"] and quotes_clause(q, c) for h, c, _ in stated):
                 problems.append(f"a TSD {row['heading']} row quotes {q!r}, which no PRD "
                                 f"{row['heading']} clause states")
         problems += [f"a TSD {row['heading']} row names {m}" for m in missing_tests(row["gate"])]
     for h, c, _ in stated:
-        if not any(r["heading"] == h and any(q in c for q in r["quotes"]) for r in rows):
+        if not any(r["heading"] == h and any(len(q.split()) >= MIN_QUOTE_WORDS
+                                              and quotes_clause(q, c) for q in r["quotes"])
+                   for r in rows):
             problems.append(f"PRD {h}: no TSD row maps {c!r}")
     return problems
 
@@ -356,10 +402,11 @@ class TsdRefreshTests(unittest.TestCase):
         self.prd = _read(PRD)
 
     def test_coverage_points_at_ci_and_names_line_coverage(self):
-        """AC1. Mutants: a pinned measured percentage restored; the floor changed in CI and not
-        here; the CI step renamed; this repository's mode stated as `block`, bare or as
-        `review.line_coverage: block`; the config set to `report`; the key set explicitly where
-        the TSD says unset."""
+        """AC1. Mutants: a pinned measured percentage restored, as `%`, `per cent`, `percent` or
+        `per-cent`, in digits or words, in Coverage Measurement or the Unit Testing row; the
+        floor changed in CI and not here; the CI step renamed; this repository's mode stated as
+        another mode, bare or as `review.line_coverage: <mode>`, in its sentence or a second
+        one; the config set to `report`; the key set explicitly where the TSD says unset."""
         step = coverage_step(_read(WORKFLOW))
         self.assertIsNotNone(step, "no workflow step runs `coverage report`")
         self.assertIsNotNone(step["floor"], "the coverage step names no --fail-under")
@@ -370,11 +417,34 @@ class TsdRefreshTests(unittest.TestCase):
                                    capture_output=True, text=True, check=False).stdout
         self.assertIn("--coverage", help_text, "verify_ac.py run takes no --coverage")
 
-        pinned = mutate(self.tsd, "## Coverage Measurement\n",
-                        "## Coverage Measurement\n\nMeasured coverage sits at roughly 82%.\n")
-        self.assertEqual(["the TSD pins 82%, which is not the CI step's "
-                          f"{step['floor']}% floor"],
-                         coverage_problems(pinned, step, mode, unset))
+        def pinning(figure: str) -> str:
+            return mutate(self.tsd, "## Coverage Measurement\n", "## Coverage Measurement\n\n"
+                          f"Measured coverage sits at roughly {figure}.\n")
+
+        pin = f"the TSD pins 82%, which is not the CI step's {step['floor']}% floor"
+        for figure in ("82%", "82 per cent", "82 percent", "82 per-cent", "82 Per Cent",
+                       "82\nper cent"):
+            with self.subTest(pinned=figure):
+                self.assertEqual([pin], coverage_problems(pinning(figure), step, mode, unset))
+        for figure in ("eighty-two per cent", "ninety percent", "Eighty Two %"):
+            with self.subTest(in_words=figure):
+                self.assertEqual([f"the TSD writes a percentage in words: {figure!r}"],
+                                 coverage_problems(pinning(figure), step, mode, unset))
+        for figure in (f"{step['floor']} per cent", "the 82 percentile"):
+            with self.subTest(not_a_pin=figure):
+                self.assertEqual([], coverage_problems(pinning(figure), step, mode, unset))
+        # a table cell outside Coverage Measurement; and the revision history, which the scan
+        # leaves out
+        target = next(line for line in section(self.tsd, "### Unit Testing").splitlines()
+                      if line.startswith("| Coverage Target |"))
+        aspiration = mutate(self.tsd, target, target.replace(" [HIGH] |",
+                                                             "; ~90% aspiration [HIGH] |"))
+        self.assertEqual([f"the TSD pins 90%, which is not the CI step's {step['floor']}% floor"],
+                         coverage_problems(aspiration, step, mode, unset))
+        last = re.findall(r"^\| \d{4}-\d{2}-\d{2} \|.*$",
+                          section(self.tsd, "## Revision History"), re.M)[-1]
+        history = mutate(self.tsd, last, last + "\n| 2026-11-02 | test | 82 per cent, 82% |")
+        self.assertEqual([], coverage_problems(history, step, mode, unset))
         self.assertTrue(coverage_problems(self.tsd, {**step, "floor": "85"}, mode, unset))
         self.assertTrue(coverage_problems(self.tsd, {**step, "name": "Coverage (scripts)"},
                                           mode, unset))
@@ -402,6 +472,27 @@ class TsdRefreshTests(unittest.TestCase):
                 found = coverage_problems(mutant, step, mode, unset)
                 self.assertEqual(1, len(found), found)
                 self.assertIn("is stated as", found[0])
+        # a second sentence stating a mode, even the config's own, keyed or bare, after or before
+        for m in transition.LINE_COVERAGE_MODES:
+            for extra in (f"Here `review.line_coverage: {m}` is set.",
+                          f"This repo runs it at `{m}`."):
+                for at, joined in ((span.end(), f" {extra}"), (span.start(), f"{extra} ")):
+                    with self.subTest(extra=extra, at=at):
+                        mutant = self.tsd[:at] + joined + self.tsd[at:]
+                        self.assertEqual([f"Coverage Measurement states a review.line_coverage "
+                                          f"mode outside this repository's one sentence: "
+                                          f"{extra!r}"],
+                                         coverage_problems(mutant, step, mode, unset))
+        # a setting folded into the sentence that describes the modes: a mode named twice, with
+        # or without this repository, or each mode once beside this repository
+        tail = "naming each one by file and line."
+        for folded in (f"naming each one by file and line, and this repo runs `{other_mode}`.",
+                       f"naming each one by file and line, as `{other_mode}` alone does.",
+                       "naming each one by file and line, as it does here."):
+            with self.subTest(folded=folded):
+                found = coverage_problems(mutate(self.tsd, tail, folded), step, mode, unset)
+                self.assertEqual(1, len(found), found)
+                self.assertIn("outside this repository's one sentence", found[0])
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "sdlc-studio").mkdir()
             (Path(tmp) / "sdlc-studio" / ".config.yaml").write_text(
@@ -420,7 +511,8 @@ class TsdRefreshTests(unittest.TestCase):
 
     def test_the_test_tree_names_both_conventions(self):
         """AC2. Mutants: a convention, a helper, the root conftest, a marker or a hook dropped
-        from Test Organisation; a helper added to the tree and not named; a module count."""
+        from Test Organisation; a helper added to the tree and not named; a module count, in
+        digits, words, `dozen` or `300-odd`."""
         for tree in TEST_TREES:
             names = [p.name for p in tree.glob("test_*.py")]
             self.assertTrue(any(n.startswith("test_lean_") for n in names), tree)
@@ -445,14 +537,19 @@ class TsdRefreshTests(unittest.TestCase):
         counted = org.replace("```\n", "```\n\n196 of 332 skill modules are lean.\n", 1)
         self.assertEqual(["Test Organisation states a count: '332 skill modules'"],
                          problems_with(counted))
-        worded = org.replace("```\n", "```\n\nIt holds three lean modules.\n", 1)
-        self.assertEqual(["Test Organisation states a count: 'three lean modules'"],
-                         problems_with(worded))
+        for count in ("three lean modules", "a dozen modules", "300-odd modules",
+                      "thirty-two test modules", "dozens of scripts", "300+ files"):
+            with self.subTest(count=count):
+                worded = org.replace("```\n", f"```\n\nIt holds {count}.\n", 1)
+                self.assertEqual([f"Test Organisation states a count: "
+                                  f"{count.removeprefix('a ')!r}"], problems_with(worded))
+        self.assertEqual([], problems_with(org.replace("```\n", "```\n\nIt holds one test.\n", 1)))
 
     def test_every_prd_nfr_has_a_tsd_row(self):
         """AC3. Mutants: a clause added to a PRD NFR, a network path added as a list item, a
-        new NFR heading; the appetite breaker's row dropped; a quote the PRD does not state; a
-        gate naming a test that does not exist."""
+        new NFR heading; the appetite breaker's row dropped; the ULID row dropped beside a
+        one-word quote; a quote cut inside a word; a quote the PRD does not state; a gate naming
+        a test that does not exist."""
         stated = prd_nfrs(self.prd)
         self.assertTrue(any(item for _, _, item in stated), "no PRD NFR list item was read")
         for words in ("appetite breaker", "ULID"):
@@ -476,6 +573,25 @@ class TsdRefreshTests(unittest.TestCase):
         dropped = nfr_problems(self.prd, mutate(self.tsd, appetite + "\n", ""))
         self.assertEqual(1, len(dropped), dropped)
         self.assertIn("appetite breaker", dropped[0])
+        ulid = next(r["line"] for r in nfr_rows(self.tsd)
+                    if any("ULID" in q for q in r["quotes"]))
+        ulid_quote = next(q for q in _QUOTE_RE.findall(ulid) if "ULID" in q)
+        disclosure = '"Progressive disclosure keeps always-loaded context minimal"'
+        # the ULID row dropped, and a short quote that most clauses hold put in another row
+        short = nfr_problems(self.prd, mutate(mutate(self.tsd, ulid + "\n", ""), disclosure,
+                                              f'{disclosure}; "is"'))
+        self.assertEqual(2, len(short), short)
+        self.assertEqual(f"a TSD Scalability row quotes 'is', under {MIN_QUOTE_WORDS} words",
+                         short[0])
+        self.assertIn("no TSD row maps", short[1])
+        self.assertIn("ULID", short[1])
+        # a quote cut inside a word at either end
+        for cut in (ulid_quote[2:], ulid_quote[:-2]):
+            with self.subTest(cut=cut):
+                found = nfr_problems(self.prd, mutate(self.tsd, f'"{ulid_quote}"', f'"{cut}"'))
+                self.assertEqual(2, len(found), found)
+                self.assertIn("which no PRD Scalability clause states", found[0])
+                self.assertIn("no TSD row maps", found[1])
         quote = '"Agentic waves bound concurrency"'
         moved = nfr_problems(self.prd, mutate(self.tsd, quote, '"Agentic waves cap concurrency"'))
         self.assertEqual(2, len(moved), moved)

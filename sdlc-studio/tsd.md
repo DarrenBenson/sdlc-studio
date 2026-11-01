@@ -394,17 +394,20 @@ quality-gate tables for the NFR mapping and the remaining gaps.
 ## Quality Gates (PRD section 5 NFR mapping)
 
 Every PRD Non-Functional Requirement is mapped to a concrete gate or an explicit
-not-gated rationale. Each row quotes words from each PRD section 5 clause it maps, as the PRD
-writes them. `tools/tests/test_lean_tsd_refresh.py` splits that section into clauses at each
-`.` or `;` that a space or the end follows, outside a code span or a parenthesis, with each list
-item a block of its own. It holds each clause to a row, each quote to a clause, and each test a
-row's gate cell names in a code span as `test_<module>.py[::Class[::test]]` to the test trees.
+not-gated rationale. Each row quotes three or more words from each PRD section 5 clause it
+maps, as the PRD writes them. `tools/tests/test_lean_tsd_refresh.py` splits that section into
+clauses at each `.` or `;` that a space or the end follows, outside a code span or a
+parenthesis, with each list item a block of its own. It holds each clause to a row, each quote
+to a clause, and each test a row's gate cell names in a code span as
+`test_<module>.py[::Class[::test]]` to the test trees. A quote of fewer than three words is
+reported and maps nothing, and a quote maps a clause only where no letter, digit or underscore
+adjoins either end of it.
 
 | NFR (PRD section 5) | Quality gate | Blocking | Confidence |
 | --- | --- | --- | --- |
 | **Performance** - "each run in under a minute"; "minutes, not seconds" | Observed on most of the read path, with one part bounded: `test_status.py::GatherPerformanceTests` and `test_status.py::HintPerformanceTests` hold `status` and `status hint` to a wall-clock bound over a corpus-shaped fixture, and `reconcile detect` has no such bound. A slowdown also shows in the gate's own cost, measured on every run against its declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, overridden by `gate.budget_seconds`) and reported, never refused; at a push or release boundary only the standard lanes are judged against it. A mutation run is not a gate lane. | Partial (the `status` bounds run at the push and in CI) | [MEDIUM] |
 | **Performance** - "write nothing in the workspace"; "keeps its cache in the skill's own"; "write within a tested, bounded surface" | `test_lean_prd_refresh.py::PrdRulesTests` runs each script the PRD names as writing nothing on a fixture workspace and names any file it creates, changes or removes; it also refuses a write primitive in such a script's source, and a script named as writing whose source has none. Where the release check keeps its cache, and that each writer stays within its surface, is not held by this test. | Partial (the read-only set) | [MEDIUM] |
-| **Performance** - "Scripts are pure stdlib" | Not gated as such. `test_lean_gate_toolchain_docs.py::GateToolchainDocsTests` reads the third-party modules the shipped scripts import inside a `try` that catches the import's failure, and holds the framework rows to them; it does not read an import outside such a `try`. | No | [MEDIUM] |
+| **Performance** - "Scripts are pure stdlib" | Not gated as such. `test_lean_gate_toolchain_docs.py::GateToolchainDocsTests::test_the_shipped_scripts_soft_dependencies_are_named` reads the third-party modules that the `.py` files directly in `scripts/` and `scripts/lib/` import in the body of a `try` with an `ImportError` or `ModuleNotFoundError` handler, and holds the TRD's Technology Stack rows that state soft dependencies to naming each one, `yaml` as `PyYAML`. It reads no import outside such a `try`. | No | [MEDIUM] |
 | **Security** - "outbound, optional paths only"; "the `gh` CLI, from `github_sync.py`" | `test_lean_prd_refresh.py::PrdRulesTests` scans each shipped script's source for a `gh` argv, a `fetch origin` argument pair and an HTTP client, and refuses a PRD list that names a script with none or omits one with one. Each `gh` caller is tested with no real `gh`: `test_github_sync.py` with it mocked, `test_lean_frozen_report_inputs.py::FrozenCiRunsTests` with a stub on `PATH`, and `test_release_cut.py::ForgeCiTests` against a scripted forge. | Yes (the suite) | [HIGH] |
 | **Security** - "a direct HTTPS GET to `api.github.com`" | `test_version_check.py::CheckTests`: a disabled check makes no network call, and an offline or raising fetch reads as offline. | Yes (the suite) | [HIGH] |
 | **Security** - "`git fetch origin` from `sprint.py`" | `test_sprint_rolling.py::BoundaryOriginFetchTests`: the boundary fetches each cycle, and `--no-fetch` suppresses the fetch and still compares. `test_sprint_rolling.py::UnreachableOriginIsNotCleanTests`: a failed fetch is reported unverified, which `--strict` turns into a refusal at the plan and a stop at the boundary. | Yes (the suite) | [HIGH] |
