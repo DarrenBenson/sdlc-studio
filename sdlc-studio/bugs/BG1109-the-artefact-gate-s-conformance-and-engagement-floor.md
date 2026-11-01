@@ -33,6 +33,7 @@ The gate costs 330 s on a whole-workspace run, against a 45 s budget, and that c
 
 ## Notes
 
+- Correction, 2026-11-01: the pre-run baseline's 'conformance 0.9s' was a diff-scoped run, not a whole-workspace one (BG1109's builder). Measured by the builder, alternating the pre-change scripts with the tree over the same working tree, 4 pairs at load 8-21: engagement-floor 48.5/146.1/103.7/207.8s before against 12.9/23.5/4.9/8.6s after; `--only engagement-floor` CPU 79.0 and 96.6s before against 9.2 and 8.5s after. On the real repo the two lanes opened the decisions log 2256 times and the verdict ledger 2478 times before, and once each after, with identical lane output.
 - Pre-run baseline, 2026-10-31 at 62fc405a: a standard `gate.py` run took 38.6s; engagement-floor 26.3s, validate 6.8s, conformance 0.9s. The conformance re-read cost has already gone; the saving left to make is in engagement-floor. The run's close judges "gates cost less" against these figures (D0393, the goal review's done-means).
 
 ## Revision History

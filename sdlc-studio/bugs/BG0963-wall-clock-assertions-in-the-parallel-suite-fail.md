@@ -1,6 +1,6 @@
 # BG0963: Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_mutation.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_yield.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_mutation_ledger_retired.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, tools/tests/test_lean_release_verify.py, tools/tests/test_lean_precommit_parallel.py, tools/tests/test_test_census.py, changelog.d/BG0963.md, .claude/skills/sdlc-studio/scripts/tests/test_config.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_busy_eacces.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_fails_closed.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_last_lows.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, tools/tests/test_lean_refusal_log.py, pytest.ini, tools/run-suite.sh
@@ -26,10 +26,13 @@ Run every wall-clock assertion in the `serial_only` partition, which runs after 
 
 - [ ] **AC1** No test in the parallel partition bounds a measured duration from above by a fixed constant; a census test fails when one does, naming it. A lower bound (a duration asserted to be at least a constant) is not flagged, since load can only lengthen a duration
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_no_parallel_test_bounds_a_measured_duration_by_a_constant
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC2** Output a test compares byte for byte carries no measured duration, or the comparison normalises it, shown by a test that varies the seconds
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_compared_output_is_insensitive_to_measured_seconds
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC3** Each timing assertion named here still runs at the push boundary, in the serial partition or against a calibrated bound, and still fails on the slowdown it exists to catch
   - **Verify:** pytest tools/tests/test_test_census.py::WallClockCensusTests::test_the_timing_assertions_still_run_at_the_boundary
+  - **Verified:** yes (2026-11-01)
 
 ## Further evidence
 

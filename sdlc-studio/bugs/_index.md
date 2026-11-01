@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 157 |
+| Open | 156 |
 | In Progress | 0 |
-| Fixed | 819 |
+| Fixed | 820 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -38,7 +38,7 @@
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Fixed | High | 2026-10-07 | 2026-10-07 |
-| [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Open | High | 2026-10-07 | 2026-10-07 |
+| [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0964](BG0964-help-refine-md-never-mentions-into-so-a.md) | help/refine.md never mentions `--into`, so a story added to an already-refined epic is made with `artifact.py new` and carries no Delivers link | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0966](BG0966-review-prep-persona-usage-calls-a-persona-unused.md) | review_prep persona_usage calls a persona unused unless its file's H1 appears verbatim in prd.md - stories, CRs and consult logs are never read | Open | Low | 2026-10-07 | 2026-10-07 |
