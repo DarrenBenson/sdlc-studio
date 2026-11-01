@@ -146,3 +146,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0134](RETRO0134-maya-s-ledger-and-signed-runs-keep-what.md) | Maya's ledger and signed runs keep what was decided, and her gates say up front what they need and cost | 2026-10-15 | -- | -- |
 | [RETRO-0135](RETRO0135-rowan-s-push-is-judged-on-a-configured.md) | Rowan's push is judged on a configured gate host, and the gate's documents and weekly run tell the truth | 2026-10-20 | -- | -- |
 | [RETRO-0136](RETRO0136-reviewers-see-only-self-checked-work-and-a.md) | Reviewers see only self-checked work, and a run's real cost is measured and held to budget | 2026-10-27 | -- | -- |
+| [RETRO-0137](RETRO0137-6-2-is-releasable-its-documents-and-personas.md) | 6.2 is releasable: its documents and personas match the code, every lesson is judged, and gates cost less | 2026-11-01 | -- | -- |
