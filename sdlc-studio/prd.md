@@ -128,12 +128,12 @@ discipline stays.
 
 ### Tech Stack
 
-- **Markdown** – the skill is a progressive-disclosure set of instruction files
-  (`SKILL.md` router + 52 `reference-*.md` + 41 `help/*.md` + 78 templates + 20
-  best-practice guides + a cross-project lessons registry). No runtime beyond the
-  agent reading them.
-- **Python 3.10+ (stdlib only)** – 58 deterministic helper scripts under
-  `scripts/`, sharing a six-module `lib/` whose parsing core is `lib/sdlc_md.py`.
+- **Markdown** – the skill is a progressive-disclosure set of instruction files:
+  the `SKILL.md` router, about 55 reference files (`reference-*.md`), about 45 help
+  files (`help/*.md`), about 90 templates, about 20 best-practice guides and a
+  cross-project lessons registry. No runtime beyond the agent reading them.
+- **Python 3.10+ (stdlib only)** – about 70 scripts under `scripts/`, deterministic
+  helpers sharing a `lib/` package whose parsing core is `lib/sdlc_md.py`.
   Pure stdlib; no third-party packages required (PyYAML is used for config when
   present and degrades to the caller's default when absent).
 - **Soft runtime deps** – `gh` CLI (sync), `pytest`/`jest`/`vitest`/`go`/`curl`/
@@ -245,7 +245,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Test automation | Generate executable tests | Complete | High | help/test-automation.md | EP0004 |
 | Test environment | Containerised test env setup | Complete | Low | help/test-env.md | EP0004 |
 | Reconcile | Census-based drift detection + auto-fix; `--verify` | Complete | High | reference-reconcile.md, scripts/reconcile.py | EP0005 |
-| Verify AC | Executable AC verifier DSL | Complete | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
+| Verify AC | Executable AC verifier DSL; its vitest and jest verbs cannot select a test while BG1023 is open | Partial | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
 | Review | Unified PRD/TRD/TSD/Persona + CODE review, cadence | Complete | High | reference-review.md, scripts/review_prep.py | EP0005 |
 | Status / Hint | Pipeline dashboard + single next step | Complete | High | help/status.md, scripts/status.py | EP0005 |
 | Project orchestration | `project plan` / `project implement`, dependency order | Complete | High | reference-project.md | EP0007 |
@@ -258,15 +258,15 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Init / Onboarding | Project config + doctrine onboarding + agent-instructions seed | Complete | High | help/init.md, reference-doctrine.md | EP0009 |
 | Operator heuristics | Live-service patterns, deploy readiness, release gate | Complete | Medium | reference-operator-heuristics.md, reference-deploy-readiness.md | EP0009 |
 | Upgrade | Schema migration between versions, incl. the v2 -> v3 id walk | Complete | Low | reference-upgrade.md, scripts/migrate_v3.py | EP0008 |
-| Cross-tool portability | AGENTS.md standard, cross-harness installer (six targets) | Complete | High | templates/agent-instructions.md, install scripts | EP0009 |
+| Cross-tool portability | AGENTS.md standard, cross-harness installer (`install.sh --list-targets` prints its targets) | Complete | High | templates/agent-instructions.md, install scripts | EP0009 |
 
 ### v3 and v4 capabilities
 
 | Feature | Description | Status | Priority | Location | Epic |
 | --- | --- | --- | --- | --- | --- |
 | Sprint loop (Goal-Driven) | A prioritised batch driven along `triage -> plan -> design -> done`; WSJF order, dependency waves, agentic execution. A Sprint Goal of 20 words or fewer traced to a PRD outcome or persona, one plan approval, one reviewer per unit for at most two rounds, and a one-pass close that files the one-page sprint report `sprint sign` seals | Complete | High | reference-sprint.md, scripts/sprint.py | EP0031, EP0032 |
-| Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver | Complete | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
-| Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
+| Engagement floor | A multi-file change in a spec-bearing repo REQUIRES the planning pass. Deterministic gate lane: a shipped unit that neither planned (AC / `Verify:` / linked plan) nor declares a real single-file `Affects:` is refused. Opt out only by recorded config or waiver. Its `adopt_after` escape refuses a ULID cutoff while BG0959 is open | Partial | High | reference-doctrine.md (rule 16), reference-config.md, scripts/engagement_floor.py | EP0031 |
+| Breakdown gate | `sprint plan` REFUSES an ungroomed batch (a unit must declare `Affects:` and a size, a story or bug must carry acceptance criteria with at least one `Verify:` line or `manual` marker, and no unit may be pointed above the split ceiling). Exits non-zero and prints no plan. `sprint.breakdown: judgement` downgrades it to a report; an absent config BLOCKS | Complete | High | reference-sprint.md#breakdown, scripts/sprint.py | CR0260 |
 | Sprint capacity | `capacity.tokens/minutes/units` - one number feeding both the plan-time fit check and the run-time appetite breaker. Over-budget WARNS, never gates | Complete | Medium | reference-config.md#capacity, scripts/sprint.py, scripts/loop_guard.py | CR0259 |
 | Run appetite / breaker | `--appetite-minutes` / `--appetite-units` bound an unattended run; the breaker stops it cleanly at a unit boundary with its own exit code | Complete | High | reference-sprint.md#appetite, scripts/loop_guard.py | EP0032 |
 | Sizing and velocity loop | Modified Fibonacci **Points** (1, 2, 3, 5, 8, 13, 20) size a story/bug and a T-shirt **Size** sizes a CR/RFC/epic - the one size vocabulary (Effort S/M/L is retired). Forecast = sum(Points) x the measured tokens-per-point rate; WSJF = CoD / Points; `retro accuracy` judges the recorded plan-time forecast against measured actuals; `retros/VELOCITY.md` is a committed history. **Points are the first cost predictor to clear the pre-registered bar** (r = +0.68, §10) | Complete | Medium | scripts/sprint.py, scripts/retro.py, scripts/telemetry.py | RFC0038, EP0048 |
@@ -296,7 +296,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | reconcile apply creates a missing index | `reconcile apply` materialises a missing pipeline or meta `_index.md` from its template, clearing missing-index drift rather than only reporting it | Complete | Low | reference-reconcile.md, scripts/reconcile.py | EP0043 |
 | Audit cost pre-flight | `audit` estimates the agents, tokens and wall-time of a scoped run and confirms above a threshold before a large adversarial fan-out | Complete | Low | reference-audit.md, scripts/audit_cost.py | EP0044 |
 | Interactive sprint token capture | `retro` records an interactive sprint's actual token count and computes its tokens-per-point, retiring the "interactive means UNMEASURED" framing while keeping the forecast-is-not-a-gate guards | Complete | Low | reference-retro.md, scripts/retro.py | EP0045 |
-| Sprint close-down gate | A close-owed detector names terminal delivery units filed since the last retro; `status`/`hint` nudge (an advisory, not a gate: `gate --require-close` was retired in v6, and `sprint sign` seals each run); a Stop-hook installer redefines sprint-done as close-gate-green | Complete | Medium | reference-sprint.md, scripts/gate.py, scripts/handoff.py | EP0046 |
+| Sprint close-down gate | A close-owed detector names terminal delivery units filed since the last retro; `status`/`hint` nudge (an advisory, not a gate; `sprint sign` seals each run); a Stop-hook installer redefines sprint-done as close-gate-green | Complete | Medium | reference-sprint.md, scripts/gate.py, scripts/handoff.py | EP0046 |
 | Backlog triage in plan | Triage lenses (duplicate/subsumed/superseded by Affects-overlap and title similarity, plus oversized, stale and orphaned-dependency) run as a pass inside `sprint plan` - oversized blocks, judgement lenses report, drops are logged - with filing-time duplicate detection and a `status` summary | Complete | Medium | reference-sprint.md, scripts/backlog_triage.py, scripts/sprint.py | EP0047 |
 
 ### v5 and v6 capabilities
@@ -308,7 +308,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Boundary gates | `gate.py --boundary push` adds the `full-suite` lane, the whole suite run once, to the standard lanes and judges conformance and validate over the pushed range; `--boundary release` adds the `release-rehearsal` and `module-alone` lanes beside it. A boundary declines a green verdict a partial run earned. This repository's pre-push hook runs `release` for a commit a pushed tag points at and `push` for the rest | Complete | High | help/gate.md, scripts/gate.py, .githooks/pre-push | EP0177, EP0214, EP0261 |
 | Risk-banded review | `critic.py brief` derives a unit's review tier from its risk band, `route.py`'s difficulty estimate: a trivial or low band gets the light brief and a medium or worse one the full adversarial pass, and an unresolvable band fails towards full. The light tier leaves out the file history and the claim inventory, cuts the diff at a lower line cap and states a smaller tool-call budget. `--tier` overrides the derivation and is recorded as an explicit choice | Complete | High | reference-review.md, scripts/critic.py, scripts/route.py | EP0208 |
 | Line coverage gate | `review.line_coverage` sets what a story's Done or a bug's Fixed does with an added line the unit's own verifiers never executed, measured by `verify_ac.py run --coverage` at the transition: `block` refuses, naming the file and the line; `report` prints the count and proceeds; `off`, the shipped default, collects nothing. `verify_ac.py coverage rule` rules one uncovered line equivalent, inside the artefact. Needs `coverage` 7.10 or later, an optional dependency | Complete | Medium | help/verify.md, scripts/verify_ac.py, scripts/transition.py | EP0247 |
-| Changelog fragments and release cut | Release notes are composed from per-unit fragments under `changelog.d/`, and `changelog.py check` lists any not yet composed. `release_cut.py changelog-cut --version X.Y.Z` composes them into `[Unreleased]` and moves that body under a new versioned heading; `record-green` stamps the commit the pre-tag gate passed on, and `tag-check` refuses a tag unless that stamp names the tagged commit and CI passed on it, asked of the forge with `gh run list`. Only a clone with no remote, or one whose forge `gh` cannot query, is let through without that answer | Complete | Medium | reference-scripts-domain.md, scripts/changelog.py, scripts/release_cut.py | EP0058, EP0117 |
+| Changelog fragments and release cut | Release notes are composed from per-unit fragments under `changelog.d/`, and `changelog.py check` lists any not yet composed. `release_cut.py changelog-cut --version X.Y.Z` composes them into `[Unreleased]` and moves that body under a new versioned heading; `record-green` stamps the commit the pre-tag gate passed on, and `tag-check` refuses a tag unless that stamp names the tagged commit and CI passed on it, asked of the forge with `gh run list`. Only a clone with no remote, or one whose forge `gh` cannot address (a non-GitHub forge), is let through without that answer; an absent or unauthenticated `gh` refuses the tag | Complete | Medium | reference-scripts-domain.md, scripts/changelog.py, scripts/release_cut.py | EP0058, EP0117 |
 | Sprint report and sign | `sprint.py close --retro RETROxxxx` runs the close as one chain (goal verdict, retro, lessons, gate, reconcile) and files the run's one-page report, `RPTxxxx` under `sdlc-studio/reports/`, derived from the run's own artefacts. `sprint.py sign` then seals the run under one principal, moving the batch to its terminal statuses. It refuses a report that is not the run's, a tree changed since the close, a page that no longer re-derives to what was filed, and a principal who is a unit's author or a reviewer recorded on it | Complete | High | reference-sprint.md, scripts/sprint.py, scripts/sprint_report.py | EP0048, EP0192, EP0255 |
 
 ### Feature Details (representative)
@@ -320,10 +320,10 @@ in one pass so dashboards and statuses stay true after agentic runs.
 
 **Acceptance Criteria:**
 
-- [ ] Builds a census of all artifacts from disk (files are truth), not from indexes.
-- [ ] Detects status drift, stale index rows, unticked cascade checkboxes, broken dependency-table statuses.
-- [ ] `--scope` limits to a subset (e.g. `stories,epics`); `--verify` delegates to `verify_ac.py`.
-- [ ] Auto-fixes mechanical drift; reports judgement-call items without auto-transitioning.
+- [x] Builds a census of all artifacts from disk (files are truth), not from indexes.
+- [x] Detects status drift, stale index rows and unticked cascade checkboxes (`reconcile.py detect`); the command's agent step checks dependency-table statuses (reference-reconcile.md).
+- [x] `--scope` limits detection to one scope (e.g. `stories`); `--verify` delegates to `verify_ac.py`.
+- [x] Auto-fixes mechanical drift; reports judgement-call items without auto-transitioning.
 
 **Dependencies:** scripts/reconcile.py, lib/sdlc_md.py
 **Status:** Complete · **Confidence:** [HIGH]
@@ -335,13 +335,13 @@ against the running code so "Done" means verified, not asserted.
 
 **Acceptance Criteria:**
 
-- [ ] Parses `Verify:` lines in story AC into executable checks.
-- [ ] Runs each check; reports `Verified: yes/no` per AC with pass/fail/manual counts.
-- [ ] Supports a verify gate (`require_ac_verification`) that aborts the completion cascade on failure.
-- [ ] Writes a machine-readable report to `.local/verify-report.json`.
+- [ ] Parses the `- **Verify:**` lines of a story's or a bug's criteria (`sdlc_md.EXECUTES_VERIFIERS`) into executable checks. Held by BG1023: the vitest and jest verbs fold the whole tail into `-t`, so they cannot select a test.
+- [x] Runs each check; reports `Verified: yes/no` per AC with pass/fail/manual counts.
+- [ ] Supports a verify gate (`require_ac_verification`) that aborts the completion cascade on failure. Held by BG1063: no code reads the key, and the live Done gate is `quality.done_requires_verified`.
+- [x] Writes a machine-readable report to `.local/verify-report.json`.
 
 **Dependencies:** scripts/verify_ac.py
-**Status:** Complete · **Confidence:** [HIGH]
+**Status:** Partial · **Confidence:** [HIGH]
 
 #### Engagement floor (the planning pass is not a judgement call)
 
@@ -351,13 +351,13 @@ skipped exactly on the changes that need it.
 
 **Acceptance Criteria:**
 
-- [ ] A shipped unit that touches more than one source file and carries no acceptance criterion, no `Verify:` line and no linked plan FAILS the gate.
-- [ ] "Multi-file" is judged from the unit's declared `Affects:` and cross-checked against the source files its own commit touched, so pure omission cannot dodge the floor.
-- [ ] A `Refs: <id>` commit trailer attributes a shared commit's files per id; attribution is strictly additive, so a "see also" trailer can never lower a unit's file count and disarm its own check.
-- [ ] The only escapes are recorded: `engagement_floor: judgement` in config (the lane reports, never blocks), an `adopt_after:` id cutoff that is refused if set beyond the current work, or a `decisions waive` entry.
+- [x] A shipped unit that touches more than one source file and carries no acceptance criterion, no `Verify:` line and no linked plan FAILS the gate.
+- [x] "Multi-file" is judged from the unit's declared `Affects:` and cross-checked against the source files its own commit touched, so pure omission cannot dodge the floor.
+- [x] A `Refs: <id>` commit trailer attributes a shared commit's files per id; attribution is strictly additive, so a "see also" trailer can never lower a unit's file count and disarm its own check.
+- [ ] The only escapes are recorded: `engagement_floor: judgement` in config (the lane reports, never blocks), an `adopt_after:` id cutoff that is refused if set beyond the current work, or a `decisions waive` entry. Held by BG0959: the floor refuses a ULID `adopt_after` cutoff, so a schema-v3 project cannot grandfather its ULID ids that way.
 
 **Dependencies:** scripts/engagement_floor.py, scripts/gate.py, reference-doctrine.md rule 16
-**Status:** Complete · **Confidence:** [HIGH]
+**Status:** Partial · **Confidence:** [HIGH]
 
 #### Breakdown gate (`sprint plan` refuses an ungroomed batch)
 
@@ -366,20 +366,20 @@ honestly size, so a plan is never false authority over unsized work.
 
 **Acceptance Criteria:**
 
-- [ ] A unit is groomed only when it declares BOTH the files it will touch (`Affects:`) and a size: a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`.
-- [ ] With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints NO plan, naming each offending unit, what it lacks, and the command that fixes it.
-- [ ] The planner derives shared-file clusters from `Affects:`, so two units touching the same file are never reported as safely parallel.
-- [ ] `sprint.breakdown: judgement` makes the lane report instead of block; an absent config BLOCKS and an unknown mode falls back to enforce.
-- [ ] `sprint breakdown` reports the same census read-only, so a backlog can be groomed against exactly what the gate reads.
+- [x] A unit is groomed only when it declares the files it will touch (`Affects:`, at least one of them resolving or none a typo), a size (a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`) and, for a story or bug, acceptance criteria that are not absent, the template placeholder or only the text the filer derived, at least one of them carrying a `Verify:` line or a `manual` marker; a pointed unit above the split ceiling (`sprint.points_split_above`, default 8) is refused as oversized and must be split.
+- [x] With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints NO plan, naming each offending unit, what it lacks, and the command that fixes it.
+- [x] The planner derives shared-file clusters from `Affects:`, so two units touching the same file are never reported as safely parallel.
+- [x] `sprint.breakdown: judgement` makes the lane report instead of block; an absent config BLOCKS and an unknown mode falls back to enforce.
+- [x] `sprint breakdown` reports the same census read-only, so a backlog can be groomed against exactly what the gate reads.
 
 **Dependencies:** scripts/sprint.py, reference-sprint.md#breakdown
 **Status:** Complete · **Confidence:** [HIGH]
 
 > The remaining features follow the same shape. Implementation-ready AC for each
 > is extracted at the **story** layer (`story generate`), not duplicated here.
-> Only a **story** carries executable `- **Verify:**` lines; CR and bug acceptance
-> criteria are prose, and the filer refuses a command-shaped `Verify:` in one (see
-> §4, Business Logic Rules).
+> A **story** and a **bug** carry executable `- **Verify:**` lines; CR and RFC
+> acceptance criteria are prose, and both creators refuse a command-shaped
+> `Verify:` in one (see §4, Business Logic Rules).
 
 ---
 
@@ -437,15 +437,20 @@ honestly size, so a plan is never false authority over unsized work.
 - "Done" requires verification: a story reaches Done only when its executable ACs
   pass. `transition -> Done` is gated, and a bug reaches Fixed only while its
   recorded `verify_ac` run is green.
-- **Only a story carries executable `- **Verify:**` lines.** CR and bug acceptance
-  criteria are prose, and the filer refuses a command-shaped `Verify:` in one: a
-  line nothing executes is a permanent false RED when it is wrong and a false GREEN
-  when it is loose, and both had already happened.
+- **A story and a bug carry executable `- **Verify:**` lines** (the delivery units,
+  `sdlc_md.EXECUTES_VERIFIERS`). CR and RFC acceptance criteria are prose, and both
+  creators (`artifact.py` and `file_finding.py`) refuse a command-shaped `Verify:`
+  in one: a line nothing executes is a permanent false RED when it is wrong and a
+  false GREEN when it is loose, and both had already happened.
 - **The engagement floor:** a change touching more than one source file in a
   spec-bearing repo gets the planning pass before any code - a rule, not a
   judgement call.
-- **The breakdown gate:** a batch reaching `sprint plan` must be groomed (every
-  unit declares `Affects:` and a size) or the plan is refused outright.
+- **The breakdown gate:** a batch reaching `sprint plan` must be groomed or the
+  plan is refused outright. Every unit declares a size and an `Affects:` with a
+  path that resolves or none that is a typo; a story or bug also carries
+  acceptance criteria, at least one with a `Verify:` line or a `manual` marker,
+  and is pointed at or under the split ceiling (`sprint.points_split_above`,
+  default 8), above which it is split rather than estimated.
 - **The learning loop:** every retro finding takes a disposition - filed, or
   declined with a reason. Both are green; silence is not.
 - A gate's fire/skip decision is computed from artefact fields, config and
@@ -461,30 +466,44 @@ honestly size, so a plan is never false authority over unsized work.
 
 ### Performance
 
-Scripts are pure stdlib. Read-path scripts (status, repo map, next-id,
-review_prep, audit, critic, `gate`) are read-only over the workspace; the
-authoring and repair scripts (`artifact`, `file_finding`, `transition`,
-`reconcile apply`, `verify_ac`, `archive`, `lessons`, `retro`) write within a
-tested, bounded surface, going through `atomic_write` for any shared file.
-reconcile/status run in well under a second on a typical project (observed in
-normal use, not a gated benchmark). `mutation` is the exception by design: it
-re-runs the suite once per mutant and is minutes, not seconds.
+Scripts are pure stdlib. `status.py`, `next_id.py`, `readiness.py` and
+`handoff.py` write nothing in the workspace; the release check `status` runs keeps
+its cache in the skill's own `.local/`. The authoring and repair scripts
+(`artifact`, `file_finding`, `transition`, `reconcile apply`, `verify_ac`,
+`archive`, `lessons`, `retro`) write within a tested, bounded surface, and some
+scripts that mostly read also write: `critic.py` appends each `critic record`
+verdict to `sdlc-studio/reviews/critic-verdicts.md`, `gate.py` records its cost
+and suite verdict under `sdlc-studio/.local/`, and `repo_map.py` caches its index
+at `sdlc-studio/.local/repo-map.json`. `status` and `reconcile detect` each run
+in under a minute on this repository's own workspace (observed in use, not a
+gated benchmark). `mutation` is the exception by design: it re-runs the suite
+once per mutant and is minutes, not seconds.
 
 ### Security
 
-Network access is limited to four outbound, optional paths, each degrading silently
-when offline: the `gh` CLI (GitHub sync), a direct HTTPS GET to `api.github.com` for
-the release check (the skill self-update; default on, opt out with
-`version_check.enabled: false`; 5s timeout, any failure treated as offline),
-`git fetch origin` in `sprint plan`'s origin-drift preflight and remote-aware id
-allocation (best-effort, failure ignored), and the tools a project's Verify lines
-invoke - whose reachable hosts a project bounds with `SDLC_VERIFY_HTTP_HOSTS`. No
-secrets handled by the skill; secret handling is the consuming project's concern
+The skill's scripts reach the network on these outbound, optional paths only:
+
+- the `gh` CLI, from `github_sync.py` (GitHub sync, which fails loud without it;
+  see Availability), `sprint_report.py` (the close's `gh run list`, which freezes
+  the run's CI record onto its report and records none when the forge cannot
+  answer) and `release_cut.py` (`tag-check` asks `gh run list` whether CI passed
+  on the tagged commit);
+- a direct HTTPS GET to `api.github.com` from `version_check.py` for the release
+  check (the skill self-update; default on, opt out with
+  `version_check.enabled: false`; 5s timeout, any failure treated as offline);
+- `git fetch origin` from `sprint.py`, in `sprint plan`'s origin-drift preflight
+  and at each `sprint boundary`, where a failed fetch marks the comparison
+  unverified rather than up to date;
+- the tools a project's Verify lines invoke, whose reachable hosts a project bounds
+  with `SDLC_VERIFY_HTTP_HOSTS`.
+
+Id allocation reads `origin/main` with `git ls-tree` and never fetches. No secrets
+handled by the skill; secret handling is the consuming project's concern
 (documented in its AGENTS.md).
 
 ### Scalability
 
-Progressive disclosure keeps always-loaded context minimal (SKILL.md ~260 lines,
+Progressive disclosure keeps always-loaded context minimal (SKILL.md about 300 lines,
 CI-budgeted under 500) regardless of total skill size. Agentic waves bound
 concurrency; the appetite breaker bounds an unattended run. Schema-v3 ULID
 identity is what makes the workspace safe for several uncoordinated writers -
@@ -628,14 +647,13 @@ targets. See `reference-config.md` for the full reference.
 
 ### Tested Functionality
 
-The Python scripts have unit tests (`scripts/tests/`; 2151 at the time of writing -
-run `python3 -m unittest discover` for the live count rather than trusting a pinned
-number, and `tools/tests/` covers the repo-only CI checkers). Markdown is guarded by
-the eight-check `npm run lint` chain (markdownlint, prose style, links, skill
-frontmatter, version consistency, line budgets, neutrality, action pins), each of
-which except markdownlint runs without npm - see AGENTS.md "Testing the Skill". A
-pre-commit hook (`tools/enable-hooks.sh`) makes the whole gate un-skippable rather
-than something an agent has to remember.
+The Python scripts have unit tests (`scripts/tests/`, and `tools/tests/` covers
+the repo-only CI checkers), and `npm test` runs both. Markdown is guarded by the
+`npm run lint` chain, whose checks `package.json` names, each of which except
+markdownlint runs without npm - see AGENTS.md "Testing".
+`tools/enable-hooks.sh` installs the tracked hooks: pre-commit runs the cheap
+guards, commit-msg checks the message and then runs the test modules the staged
+change selects, and pre-push runs the full suite at push.
 
 ### Untested Areas
 
@@ -665,40 +683,35 @@ across four sprints were re-estimated in modified Fibonacci points blind to outc
 Points cleared every clause: **r = +0.682 pooled** (and +0.782 on units <= 8) against
 Effort's 0.35 and file-complexity's 0.03. Points are the first cost predictor this
 project has found that works. The shipped model is `forecast = sum(Points) x the
-measured tokens-per-point rate` - a point measures about 25,000 tokens (flat across
-the 2-, 3-, 5- and 8-point bands), seeded from that blind study and replaced by the
-project's own measured rate once it has enough delivered units. Effort S/M/L is
-retired; a unit too big to size on the scale is decomposed, not estimated.
+tokens-per-point rate in force`. A plan prices from the project's own measured rate:
+the rolling median tokens per point of its latest `retros/VELOCITY.md` rows for the
+model doing the work, which `retro.py velocity` prints (or, with no usable row, the
+per-unit evidence log), unless the operator records an override in
+`estimate.tokens_per_point`. The blind study's seed of 25,000 tokens
+per point prices a plan only while the project has measured no rate of its own.
+Effort S/M/L is retired; a unit too big to size on the scale is decomposed, not
+estimated.
 
-The two loop defects this section used to list as open are **fixed** (BG0133, BG0136):
-`retro accuracy` now judges only the forecast recorded at plan time and never
-re-derives one from the live constants, so a recalibration can no longer silently
-rewrite what a past sprint is deemed to have predicted; and the finder records
-`Affects:`, so a filed bug is born plannable instead of refused by the project's own
-planner. The forecast ships quoted with a band (honest to about +/-50%), never a gate;
-`retro accuracy` and the committed `retros/VELOCITY.md` keep the next miss visible.
+`retro accuracy` judges only the forecast recorded at plan time and never re-derives
+one from the live constants, so a recalibration cannot rewrite what a past sprint is
+deemed to have predicted. The forecast ships quoted with a band (honest to about
++/-50%), never a gate; `retro accuracy` and the committed `retros/VELOCITY.md` keep
+the next miss visible.
 
 ### Technical Debt
 
 Known historical id collisions documented in `reference-outputs.md`. Generate-mode
 validation (tests against behaviour) is not yet wired for the markdown layer.
 
-The 2026-07-04 enforcement-gap retrospective that this section used to carry is
-**closed**: mutation testing is shipped as an opt-in run (assertion integrity is executably
-checked, not merely written down), `transition` refuses a terminal bug status while its
-recorded `verify_ac` run is red, reconcile's findings name their cause and route to the tool that
-diagnoses them, the router carries a Deterministic Entry Points card and
-`reference-scripts.md` is the catalogue, and the style guard enforces British
-spellings. Each was a rule stated but not enforced; each is now a lane with an exit
-code. The live backlog is small and is listed in `reviews/LATEST.md`; `bugs/_index.md`
-is the register of record.
+The live backlog is listed in `reviews/LATEST.md`; `bugs/_index.md` is the register
+of record.
 
-The honest residue: the loop can now measure itself, and it did - a first predictor was
-falsified and a second (Fibonacci points) cleared a pre-registered bar (above). The
-sizing feature is Complete and, unlike its predecessor, earns a cost claim - held to a
-band, never a gate. What remains open is calibration to THIS project: the ~25,000
-tokens-per-point rate ships as a seed and only becomes the project's own measurement
-once it has enough delivered units, so today's forecasts still lean on the study's rate.
+The honest residue: the loop measures itself - a first predictor was falsified and a
+second (Fibonacci points) cleared a pre-registered bar (above). The sizing feature is
+Complete and, unlike its predecessor, earns a cost claim - held to a band, never a
+gate. Calibration is the project's own: a plan prices from its measured
+tokens-per-point rate, and the seed stands only for a project that has measured
+none.
 
 ---
 
@@ -729,6 +742,7 @@ once it has enough delivered units, so today's forecasts still lean on the study
 | 2026-09-25 | 5.1.0 | Lean refresh (US0929): a numbered Outcomes section citing persona End goals, for a Sprint Goal to trace to; the Mission and Core Behaviours describe the loop as it runs (a goal of 20 words or fewer, one plan approval, one reviewer for at most two rounds with carried known issues, persona rulings, the one-page report); the learning loop is described as failure classes in `lessons.jsonl` |
 | 2026-10-03 | 6.0.0 | Spec truth for 6.1 (US0984): the Coverage note describes the v6 line (one independent review per unit, one signature per run, the signed report handing over the remaining work) in place of the two-role review and mutation evidence v6 retired, and the Mutation gate row is renamed Mutation testing, since no gate lane reads a run |
 | 2026-11-01 | 6.1.0 | Baseline refresh (US1103): the baseline reads v6.1.0 plus the 6.2 work on `main`, and the release markers are gone, RV0028 PRD-5 having found every marked row shipped by v6.0.0. The inventory gains rows for the capabilities RV0028 PRD-10 names: the charter queue, rolling runs, the boundary gates, risk-banded review, the line coverage gate, changelog fragments and the release cut, the project constitution, and the sprint report and sign. The refine row names `refine.py add`, a subcommand, where it said `--add` |
+| 2026-11-01 | 6.1.0 | Rules, NFRs and cost model (US1104): stories and bugs execute their Verify lines, per `sdlc_md.EXECUTES_VERIFIERS`; the groomed definition names the criteria check and the split ceiling; the network paths add the close's and the tag check's `gh run list` and drop the fetch that id allocation never made; `critic`, `gate` and `repo_map` leave the read-only set; a plan prices from the measured tokens-per-point rate, the 25,000 seed standing only where none is measured. Derived counts are bands. The engagement floor and Verify AC read Partial while BG0959, BG1023 and BG1063 are open, and the detail criteria that hold are ticked, Reconcile's `--scope` corrected to one scope. Per-ship history leaves §10 for this table: BG0133 and BG0136 fixed the accuracy judge and the finder's `Affects:`, and the 2026-07-04 enforcement-gap retrospective closed |
 
 ---
 
