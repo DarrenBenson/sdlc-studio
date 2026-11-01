@@ -18,7 +18,7 @@ Decomposed from CR0648 and re-read against D0379 after the D0374 stakeholder con
 
 - [x] [US1079: A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill](../stories/US1079-a-skill-maintainer-card-is-the-primary-for.md)
 - [x] [US1080: A unit is minted against the Primary of the interface its Affects touches, read from interface paths the project declares](../stories/US1080-a-unit-is-minted-against-the-primary-of.md)
-- [ ] [US1081: Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit](../stories/US1081-maya-s-and-trevor-s-cards-state-the.md)
+- [x] [US1081: Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit](../stories/US1081-maya-s-and-trevor-s-cards-state-the.md)
 - [ ] [US1082: The PRD's outcome citations name End goals that say them, and Jonah's upgrade goal has an outcome](../stories/US1082-the-prd-s-outcome-citations-name-end-goals.md)
 - [ ] [US1083: The persona index's history is complete and ordered, it links the seat cards, and the legacy personas.md agrees with its banner](../stories/US1083-the-persona-index-s-history-is-complete-and.md)
 

@@ -11,8 +11,8 @@
 | Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
-| Review | 1 |
-| Done | 832 |
+| Review | 0 |
+| Done | 833 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -118,7 +118,7 @@
 | [US1078](US1078-run-suite-sh-runs-the-full-suite-on.md) | run-suite.sh runs the full suite on the gate host and records a verdict its check can read | Done | EP0288 | 2026-10-12 | 2026-10-12 |
 | [US1079](US1079-a-skill-maintainer-card-is-the-primary-for.md) | A skill-maintainer card is the Primary for the repository-tooling interface, beside Maya as Primary for the shipped skill | Done | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1080](US1080-a-unit-is-minted-against-the-primary-of.md) | A unit is minted against the Primary of the interface its Affects touches, read from interface paths the project declares | Done | EP0289 | 2026-10-19 | 2026-10-19 |
-| [US1081](US1081-maya-s-and-trevor-s-cards-state-the.md) | Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit | Review | EP0289 | 2026-10-19 | 2026-10-19 |
+| [US1081](US1081-maya-s-and-trevor-s-cards-state-the.md) | Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit | Done | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1082](US1082-the-prd-s-outcome-citations-name-end-goals.md) | The PRD's outcome citations name End goals that say them, and Jonah's upgrade goal has an outcome | Ready | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1083](US1083-the-persona-index-s-history-is-complete-and.md) | The persona index's history is complete and ordered, it links the seat cards, and the legacy personas.md agrees with its banner | Ready | EP0289 | 2026-10-19 | 2026-10-19 |
 | [US1084](US1084-the-trd-and-tsd-name-each-hook-what.md) | The TRD and TSD name each hook, what it runs, where the full suite runs and what a tag push does not run, read from the hooks themselves | Done | EP0290 | 2026-10-19 | 2026-10-19 |

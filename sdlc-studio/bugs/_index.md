@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 160 |
+| Open | 161 |
 | In Progress | 0 |
 | Fixed | 822 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1155** |
+| **Total** | **1156** |
 
 ## All Bugs
 
@@ -231,6 +231,7 @@
 | [BG1153](BG1153-executes-verifiers-s-docstring-says-verify-ac-reads.md) | EXECUTES_VERIFIERS's docstring says verify_ac reads it, but verify_ac keeps its own VERIFIABLE_PREFIXES, and the TRD says an un-decomposed CR 'reaches Done' | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1154](BG1154-trevor-s-card-says-a-sign-off-on.md) | Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1155](BG1155-decisions-read-once-s-change-detection-is-pinned.md) | decisions.read_once's change detection is pinned only by a growing file: dropping inode, mtime or ctime from its identity stays green | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1156](BG1156-test-persona-coherence-s-span-recogniser-skips-some.md) | test_persona_coherence's span recogniser skips some `script.py verb` shapes, and its mixed-unit probe cannot tell first-listed Primary from first-path owner | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
