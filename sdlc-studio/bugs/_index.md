@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 168 |
+| Open | 170 |
 | In Progress | 0 |
 | Fixed | 825 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1166** |
+| **Total** | **1168** |
 
 ## All Bugs
 
@@ -242,6 +242,8 @@
 | [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Open | High | 2026-11-01 | 2026-11-01 |
+| [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
