@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 3 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 838 |
+| Done | 839 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -137,7 +137,7 @@
 | [US1097](US1097-a-run-whose-open-stamp-was-taken-under.md) | A run whose open stamp was taken under an earlier counting basis has that reading re-derived from the transcript, never subtracted from a reading on the current basis | Done | EP0292 | 2026-10-22 | 2026-10-22 |
 | [US1098](US1098-doc-freshness-reports-a-count-or-version-in.md) | doc_freshness reports a count or version in the PRD or TSD that no longer matches the tree, as it does for the TRD | Done | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1099](US1099-the-trd-and-the-two-stale-code-comments.md) | The TRD and the two stale code comments name sdlc_md.EXECUTES_VERIFIERS: stories and bugs execute their Verify lines, and CRs and RFCs refuse a command-shaped one | Done | EP0293 | 2026-10-31 | 2026-10-31 |
-| [US1100](US1100-the-trd-s-storage-sections-list-the-committed.md) | The TRD's storage sections list the committed evidence and describe the run state and lifecycle through close and sign, and the .local writer pin fails on a writer that stops writing | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
+| [US1100](US1100-the-trd-s-storage-sections-list-the-committed.md) | The TRD's storage sections list the committed evidence and describe the run state and lifecycle through close and sign, and the .local writer pin fails on a writer that stops writing | Done | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1101](US1101-the-trd-s-type-registry-network-section-adr.md) | The TRD's type registry, network section, ADR-003, ADR-009, ADR-012 and header match what is built on 6.2 | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1102](US1102-the-tsd-states-coverage-by-the-ci-step.md) | The TSD states coverage by the CI step, describes per-unit line coverage, names both test-module conventions, maps every PRD NFR to a row and carries a 6.2 header | Ready | EP0293 | 2026-10-31 | 2026-10-31 |
 | [US1103](US1103-the-prd-s-baseline-reads-v6-1-0.md) | The PRD's baseline reads v6.1.0 plus 6.2, no shipped feature row carries [Unreleased], and the inventory has a row for each capability shipped since July | Done | EP0293 | 2026-10-31 | 2026-10-31 |

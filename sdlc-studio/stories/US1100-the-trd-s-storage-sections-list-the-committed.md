@@ -1,6 +1,6 @@
 # US1100: The TRD's storage sections list the committed evidence and describe the run state and lifecycle through close and sign, and the .local writer pin fails on a writer that stops writing
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0645
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given the committed evidence (the actuals and forecasts shards, lessons.jsonl, the verdict logs, the RPT reports and the run records), when the TRD's storage sections are read, then each is listed with its path
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_every_committed_record_is_listed
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given a run, when the TRD is read, then it says which run state is live in `.local` and which is tracked, and describes the run from plan through close to sign
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_run_lifecycle_reaches_sign
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given a `.local` file the TRD documents with its writer, when that writer no longer writes it, then the pin in the residue module fails
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalWriterPinTests::test_a_writer_that_stops_writing_fails_the_pin
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 
