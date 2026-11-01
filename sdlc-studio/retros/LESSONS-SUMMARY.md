@@ -208,7 +208,6 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0246: **Ship the wiring in the same unit as the mechanism, or it is inert.** Twice in one sprint a correct mechanism reached nothing: the surface**
 - **L-0245: **A measured proxy is the wrong instrument for "did anything change".** The surface hash was computed over the set of files the suites were**
 - **L-0244: **The strongest evidence a fail-loud fix works is that it refuses its own repository.** Three did**
-- **L-0243: **Put the evidence where the tooling actually reads it.** A `Verify:` line on a bug executes nothing - only a story's does**
 - **L-0242: **Per-lane green is not suite green.** Parallel file-disjoint delivery removes file collisions, not semantic ones: a lane that changes a**
 - **L-0241: **A widened check must not block on the backlog it reveals.** Widening the placeholder sweep was correct and immediately surfaced 31**
 - **L-0240: Meeting the user where their fingers already are (the natural CLI form) removes a friction that a help string never fully fixes - accept**
