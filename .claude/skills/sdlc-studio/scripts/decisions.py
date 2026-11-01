@@ -15,8 +15,11 @@ import importlib
 import json
 import re
 import sys
+import time
+from collections.abc import Callable
 from datetime import date, datetime
 from pathlib import Path
+from typing import TypeVar
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
@@ -39,6 +42,37 @@ DOC_LEGS = ("prd", "trd", "tsd", "personas")
 
 def _log_path(root: Path) -> Path:
     return Path(root) / LOG_REL
+
+
+#: How long after its last change a file's identity alone vouches for its content. A file
+#: changed more recently could change again inside one timestamp tick and keep its size, so
+#: `read_once` derives its value afresh on every call, as git does for a racily clean entry.
+SETTLED_NS = 2_000_000_000
+_READS: dict = {}
+T = TypeVar("T")
+
+
+def read_once(path: Path, key: str, derive: Callable[[], T]) -> T:
+    """`derive()`, the value `key` names for the file at `path`, computed once while the file
+    keeps its device, inode, size, mtime and ctime.
+
+    The gate's lanes ask for a ledger once per unit, and each ask re-read and re-parsed the
+    whole file. A file whose ctime is younger than `SETTLED_NS` when it is looked at is not
+    memoised, so one written a moment ago is read exactly as before. The value is shared by
+    every caller: `derive` returns something nobody mutates, or each caller takes a copy."""
+    now = time.time_ns()
+    st = path.stat()
+    ident = (st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns)
+    slot = (str(path), key)
+    hit = _READS.get(slot)
+    if hit is not None and hit[0] == ident:
+        return hit[1]
+    value = derive()
+    if now - st.st_ctime_ns >= SETTLED_NS:
+        _READS[slot] = (ident, value)
+    else:
+        _READS.pop(slot, None)
+    return value
 
 
 def ensure_log(root: Path | str) -> bool:
@@ -616,9 +650,16 @@ def backfill_superseded(root: Path | str) -> int:
 
 
 def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
+    """Every decision row, or those with `status`. The log is parsed once while it is unchanged
+    (`read_once`), and each caller gets its own copy of every row."""
     p = _log_path(Path(root))
     if not p.exists():
         return []
+    return [dict(rec) for rec in read_once(p, "list_decisions", lambda: _parse_log(p))
+            if status is None or rec["status"] == status]
+
+
+def _parse_log(p: Path) -> tuple[dict, ...]:
     out = []
     for ln in p.read_text(encoding="utf-8").splitlines():
         if not _ROW.match(ln):
@@ -628,11 +669,9 @@ def list_decisions(root: Path | str, status: str | None = None) -> list[dict]:
         cells = [c.strip().replace("\\|", "|")
                  for c in _UNESCAPED_PIPE.split(ln.strip().strip("|"))]
         if len(cells) >= 6:
-            rec = {"id": cells[0], "decision": cells[1], "rationale": cells[2],
-                   "status": cells[3], "supersedes": cells[4], "date": cells[5]}
-            if status is None or rec["status"] == status:
-                out.append(rec)
-    return out
+            out.append({"id": cells[0], "decision": cells[1], "rationale": cells[2],
+                        "status": cells[3], "supersedes": cells[4], "date": cells[5]})
+    return tuple(out)
 
 
 #: The prose a ruling is made of. Both fields are free text an author writes, so both belong in

@@ -587,6 +587,12 @@ def _write_verdict_row(path: Path, row: str) -> None:
     sdlc_md.atomic_write(path, "".join(lines))
 
 
+def _ledger_text(path: Path) -> str:
+    """The ledger's text, read once while the file is unchanged (`decisions.read_once`)."""
+    import decisions  # noqa: PLC0415 - lazy: decisions.py owns the file memo
+    return decisions.read_once(path, "text", lambda: path.read_text(encoding="utf-8"))
+
+
 def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     """All recorded verdicts for `phase`, in order, as
     {unit, verdict, reviewer, author, date, issues} plus the supersession annotation
@@ -596,12 +602,22 @@ def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     pre-date the independence gate; a legacy row's author is the empty string. A retired
     row is still returned, marked - dropping it would lose the record that it happened,
     which is the reason the log is append-only in the first place.
+
+    The ledger is parsed once while it is unchanged (`decisions.read_once`), and each caller
+    gets its own copy of every row.
     """
     path = verdicts_path(repo_root, phase)
     if not path.exists():
         return []
+    import decisions  # noqa: PLC0415 - lazy: decisions.py owns the file memo
+    rows = decisions.read_once(path, "rows", lambda: tuple(_parse_verdicts(repo_root, phase)))
+    return [dict(row) for row in rows]
+
+
+def _parse_verdicts(repo_root: Path | str, phase: str) -> list[dict]:
+    path = verdicts_path(repo_root, phase)
     out: list[dict] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in _ledger_text(path).splitlines():
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or cells[0] in ("Unit",):
             continue
@@ -971,7 +987,7 @@ def read_round_rulings(repo_root: Path | str) -> list[dict]:
     if not path.exists():
         return []
     out = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in _ledger_text(path).splitlines():
         stripped = line.strip()
         if stripped.startswith(_RULING_PREFIX):
             body = stripped[len(_RULING_PREFIX):]
@@ -1018,7 +1034,7 @@ def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[d
     if not path.exists():
         return []
     out: list[dict] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in _ledger_text(path).splitlines():
         stripped = line.strip()
         if not stripped.startswith(_SUPERSEDE_PREFIX):
             continue
