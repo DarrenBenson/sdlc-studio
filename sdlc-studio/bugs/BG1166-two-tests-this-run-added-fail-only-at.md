@@ -1,6 +1,6 @@
 # BG1166: Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1166.md
@@ -28,8 +28,10 @@ Route the gate-budget commit check through tests/gitutil.git. Have `_ignored` ju
 
 - [ ] **AC1** `test_gitutil.py`::UnconfinedRawGitCallSweepTests passes, with `test_gate_budget` making no unconfined git call.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py -k UnconfinedRawGitCallSweepTests
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC2** TrdStorageTests passes when sdlc-studio/.local is a symlink, as on the gate host, when it is a directory, and when it is absent, and still fails when the TRD's Run state table says a tracked path is kept in `.local`.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py -k TrdStorageTests
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # US1102: The TSD states coverage by the CI step, describes per-unit line coverage, names both test-module conventions, maps every PRD NFR to a row and carries a 6.2 header
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0646
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given the CI coverage step and `review.line_coverage` in this repo's config, when the TSD is read, then coverage is stated by pointing at that step rather than as a pinned figure, and per-unit added-line coverage is described with this repo's setting
   - **Verify:** pytest tools/tests/test_lean_tsd_refresh.py::TsdRefreshTests::test_coverage_points_at_ci_and_names_line_coverage
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the test tree, when the TSD is read, then it names both module conventions (per-script and per-unit lean), the shared helpers, the pytest markers and the hooks, with no module count
   - **Verify:** pytest tools/tests/test_lean_tsd_refresh.py::TsdRefreshTests::test_the_test_tree_names_both_conventions
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given every non-functional requirement in the PRD, when the TSD is read, then each maps to a TSD row, including the network paths, the appetite breaker and ULID identity
   - **Verify:** pytest tools/tests/test_lean_tsd_refresh.py::TsdRefreshTests::test_every_prd_nfr_has_a_tsd_row
+  - **Verified:** yes (2026-11-01)
 - **AC4:** Given the TSD's header and revision history, when they are read, then the header names the 6.2 baseline and one of the document's own status values, and the history is in date order
   - **Verify:** pytest tools/tests/test_lean_tsd_refresh.py::TsdRefreshTests::test_the_header_and_history
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

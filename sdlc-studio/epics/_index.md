@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 14 |
+| Draft | 13 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 247 |
+| Done | 248 |
 | Superseded | 33 |
 | **Total** | **294** |
 
@@ -43,7 +43,7 @@
 | [EP0290](EP0290-the-trd-and-tsd-describe-the-gate-as.md) | The TRD and TSD describe the gate as it runs: the hooks, the boundary gates, the toolchain, CI and the gate host | Done | 3 | -- | 2026-10-19 | 2026-10-19 |
 | [EP0291](EP0291-the-author-s-self-check-is-run-and.md) | The author's self-check is run and recorded before a reviewer is briefed | Done | 4 | -- | 2026-10-20 | 2026-10-20 |
 | [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Done | 7 | -- | 2026-10-22 | 2026-10-22 |
-| [EP0293](EP0293-the-prd-trd-and-tsd-describe-6-2.md) | The PRD, TRD and TSD describe 6.2, and the freshness census checks all three | Draft | 7 | -- | 2026-10-31 | 2026-10-31 |
+| [EP0293](EP0293-the-prd-trd-and-tsd-describe-6-2.md) | The PRD, TRD and TSD describe 6.2, and the freshness census checks all three | Done | 7 | -- | 2026-10-31 | 2026-10-31 |
 | [EP0294](EP0294-every-open-project-lesson-is-judged-against-the.md) | Every open project lesson is judged against the current tree: closed with its reason, or extended after a check | Done | 5 | -- | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases

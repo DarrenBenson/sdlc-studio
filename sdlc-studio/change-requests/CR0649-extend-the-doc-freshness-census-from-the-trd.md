@@ -1,6 +1,6 @@
 # CR-0649: Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0293
 > **Priority:** Medium
 > **Type:** Improvement
