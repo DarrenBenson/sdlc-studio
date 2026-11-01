@@ -124,9 +124,9 @@ _CENSUS_CLAIMS = {
                                   re.I),
     "help files": re.compile(_APPROX + r"(?P<n>\d+)(?P<floor>\+?)\s+help\s+files?\b", re.I),
 }
-# The release a document names as its baseline ("Coverage: v6.1.0 as cut, plus ..."). SKILL.md's
-# version is set by each release cut and names the last one between cuts, so a baseline naming
-# any other release is stale.
+# The release a document names as its baseline ("Coverage: v6.1.0 as cut, plus ..."), read as the
+# dotted number after the `v`. It must equal SKILL.md's version: a baseline whose major, minor or
+# patch figure differs is reported as stale.
 _BASELINE_CLAIM = re.compile(r"\bCoverage:\**\s*v(?P<version>\d+(?:\.\d+)+)", re.I)
 # The documents the census reads. Each is judged on the claims it makes itself.
 CENSUS_DOCUMENTS = ("sdlc-studio/trd.md", "sdlc-studio/prd.md", "sdlc-studio/tsd.md")

@@ -416,24 +416,31 @@ class PrdTsdFreshnessTests(unittest.TestCase):
         self.assertIn("claim(s) in sdlc-studio/prd.md verified", text)
 
     def test_a_stale_tsd_figure_is_reported(self):
-        """AC2. MUTANT: leave the TSD out of the census's document set. A baseline naming a release
-        other than SKILL.md's version, and a count the tree no longer holds, are each reported."""
-        major, rest = self.version.split(".", 1)
-        older = f"{int(major) - 1}.{rest}"
+        """AC2. MUTANT: leave the TSD out of the census's document set, compare the baseline on its
+        major figure alone (or its major and minor), or report only a baseline behind SKILL.md. A
+        baseline one major, minor or patch figure behind SKILL.md's version, or one patch ahead,
+        and a count the tree no longer holds, are each reported."""
+        major, minor, patch = (int(n) for n in self.version.split("."))
         stale = self.measured["help files"] + 5
-        _spec(self.root, "tsd.md", (
-            "# Test Strategy Document\n\n"
-            f"> **Coverage:** v{older} as cut, plus the work on `main` since.\n\n"
-            f"The skill ships {stale} help files.\n"))
-        findings = self._findings()
-        self.assertEqual([f["kind"] for f in findings], ["census-drift"] * 2, findings)
-        self.assertTrue(all("sdlc-studio/tsd.md" in f["detail"] for f in findings), findings)
-        baseline = next(f["detail"] for f in findings if "as its baseline" in f["detail"])
-        self.assertIn(f"names v{older} as its baseline", baseline)
-        self.assertIn(f"SKILL.md is {self.version}", baseline)
-        self.assertIn(f"v{older} as cut", baseline)
-        count = next(f["detail"] for f in findings if f"claims {stale} help files" in f["detail"])
-        self.assertIn(f"{self.measured['help files']} counted", count)
+        # one figure off at a time, so an exact comparison and a partial one disagree
+        for other in (f"{major - 1}.{minor}.{patch}", f"{major}.{minor - 1}.{patch}",
+                      f"{major}.{minor}.{patch - 1}", f"{major}.{minor}.{patch + 1}"):
+            with self.subTest(baseline=other):
+                _spec(self.root, "tsd.md", (
+                    "# Test Strategy Document\n\n"
+                    f"> **Coverage:** v{other} as cut, plus the work on `main` since.\n\n"
+                    f"The skill ships {stale} help files.\n"))
+                findings = self._findings()
+                self.assertEqual([f["kind"] for f in findings], ["census-drift"] * 2, findings)
+                self.assertTrue(all("sdlc-studio/tsd.md" in f["detail"] for f in findings),
+                                findings)
+                baseline = next(f["detail"] for f in findings if "as its baseline" in f["detail"])
+                self.assertIn(f"names v{other} as its baseline", baseline)
+                self.assertIn(f"SKILL.md is {self.version}", baseline)
+                self.assertIn(f"v{other} as cut", baseline)
+                count = next(f["detail"] for f in findings
+                             if f"claims {stale} help files" in f["detail"])
+                self.assertIn(f"{self.measured['help files']} counted", count)
 
     def test_matching_prd_and_tsd_are_clean(self):
         """AC3, the positive control. MUTANT: read a band ("about 50", "40+") as a pinned count -
@@ -474,6 +481,48 @@ class PrdTsdFreshnessTests(unittest.TestCase):
                 self.assertIn(f"claims {word}{far} scripts", findings[0]["detail"])
                 self.assertIn("an approximate claim holds while the count sits in",
                               findings[0]["detail"])
+
+    def test_the_approximate_band_is_pinned_at_both_edges(self):
+        """MUTANT: widen or narrow the band (a ratio of 1.1 or 1.9 for 1.25), or swap either edge's
+        comparison (`<=` at the top, `<` at the bottom). "about N" holds while the count sits in
+        [N / 1.25, N x 1.25): the bottom edge is in the band and the top edge is not."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            actual = df._CENSUS_MEASURES["scripts"](_census_tree(root, 40, 1, 1))
+            # 1.25 is written here, not read off the module, so a change to the module's ratio
+            # fails; a count divisible by 20 puts both edges on whole numbers
+            self.assertEqual(actual % 20, 0, actual)
+            # at_top x 1.25 == actual == at_bottom / 1.25
+            at_top, at_bottom = actual * 4 // 5, actual * 5 // 4
+            for claimed, holds in ((at_top - 1, False), (at_top, False), (at_top + 1, True),
+                                   (at_bottom - 1, True), (at_bottom, True),
+                                   (at_bottom + 1, False)):
+                with self.subTest(claimed=claimed, actual=actual):
+                    _spec(root, "prd.md", f"# PRD\n\nabout {claimed} scripts.\n")
+                    r = json.loads(_run(root, "--format", "json"))
+                    prd = next(c for c in r["census"] if c["document"] == "sdlc-studio/prd.md")
+                    self.assertEqual([c["ok"] for c in prd["checked"]], [holds], prd)
+                    self.assertEqual(len(r["findings"]), 0 if holds else 1, r["findings"])
+
+    def test_a_prd_or_tsd_alone_makes_the_check_applicable(self):
+        """MUTANT: judge applicability on the TRD alone (`census[0]["applicable"]`), or on the TRD
+        and the PRD. On SKILL.md and one stale PRD or TSD, with no LATEST.md and no TRD, the first
+        prints N/A for either document and the second for the TSD."""
+        spec_dir = self.root / "sdlc-studio"
+        (spec_dir / "trd.md").unlink()
+        self.assertFalse((spec_dir / "reviews" / "LATEST.md").exists())
+        stale = self.measured["scripts"] - 9
+        for doc in ("prd.md", "tsd.md"):
+            with self.subTest(doc=doc):
+                for each in ("prd.md", "tsd.md"):
+                    (spec_dir / each).unlink(missing_ok=True)
+                _spec(self.root, doc, f"# Spec\n\n{stale} scripts.\n")
+                r = json.loads(_run(self.root, "--format", "json"))
+                self.assertTrue(r["applicable"], r)
+                self.assertEqual([f["detail"].split(" claims ")[0] for f in r["findings"]],
+                                 [f"sdlc-studio/{doc}"], r["findings"])
+                self.assertIn(f"[census-drift] sdlc-studio/{doc} claims {stale} scripts",
+                              _run(self.root))
 
     def test_a_baseline_is_unchecked_when_skill_md_names_no_version(self):
         """MUTANT: judge a stated baseline against a missing version - it is then reported as
