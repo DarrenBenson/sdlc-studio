@@ -1,6 +1,6 @@
 # BG1065: The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Depends on:** BG0963
@@ -27,6 +27,7 @@ Find why conformance costs 121 s and cut it, or re-derive the budget from a reco
 
 - [ ] **AC1** `GATE_BUDGET_S` is re-derived from a measured standard-gate run recorded beside it as data (seconds, date, commit), and is not below that measurement
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py::GateBudgetTests::test_the_budget_is_not_below_its_recorded_measurement
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 
