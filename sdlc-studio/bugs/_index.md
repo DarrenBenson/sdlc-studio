@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 159 |
+| Open | 161 |
 | In Progress | 0 |
-| Fixed | 820 |
+| Fixed | 821 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1152** |
+| **Total** | **1155** |
 
 ## All Bugs
 
@@ -184,7 +184,7 @@
 | [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
-| [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Open | Medium | 2026-10-21 | 2026-10-21 |
@@ -228,6 +228,9 @@
 | [BG1150](BG1150-sprint-py-still-says-the-planner-reads-the.md) | sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358 | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1151](BG1151-the-interface-path-persona-router-reads-a-template.md) | The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1152](BG1152-artifact-py-batch-writes-a-list-valued-affects.md) | artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push'] | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1153](BG1153-executes-verifiers-s-docstring-says-verify-ac-reads.md) | EXECUTES_VERIFIERS's docstring says verify_ac reads it, but verify_ac keeps its own VERIFIABLE_PREFIXES, and the TRD says an un-decomposed CR 'reaches Done' | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1154](BG1154-trevor-s-card-says-a-sign-off-on.md) | Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1155](BG1155-decisions-read-once-s-change-detection-is-pinned.md) | decisions.read_once's change detection is pinned only by a growing file: dropping inode, mtime or ctime from its identity stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

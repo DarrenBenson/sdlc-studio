@@ -1,6 +1,6 @@
 # US1109: Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0655
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given each open lesson from L-0361 to L-0450, when the pass is done, then each is closed with its reason or extended with a reason naming the check made against the current tree, both through `lessons.py revalidate`
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/lessons.py revalidate --unjudged-since 2026-10-31 --range L-0361:L-0450
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the judged log, when the summary is checked, then LESSONS-SUMMARY.md is current with it
   - **Verify:** shell python3 -c "import sys; sys.path.insert(0, '.claude/skills/sdlc-studio/scripts'); import lessons; sys.exit(1 if lessons.summary_status('.').get('stale') else 0)"
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

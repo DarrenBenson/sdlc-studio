@@ -7,3 +7,8 @@
 {"id": "US1107", "type": "story", "project": "sdlc-studio"}
 {"id": "US1080", "type": "story", "project": "sdlc-studio"}
 {"id": "US1108", "type": "story", "project": "sdlc-studio"}
+{"id": "US1109", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0294", "type": "epic", "project": "sdlc-studio"}
+{"id": "US1081", "type": "story", "project": "sdlc-studio"}
+{"id": "CR0655", "type": "cr", "project": "sdlc-studio"}
+{"id": "BG1109", "type": "bug", "project": "sdlc-studio"}

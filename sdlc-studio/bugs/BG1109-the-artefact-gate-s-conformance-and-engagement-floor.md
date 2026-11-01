@@ -1,6 +1,6 @@
 # BG1109: The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_reads_once.py, changelog.d/BG1109.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
@@ -26,6 +26,7 @@ Read each ledger once per gate run and pass it to the per-unit readers, or memoi
 
 - [ ] **AC1** One gate run reads the verdict ledger and the decisions log once each, and each lane's output is the same as with the per-unit re-reads
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_reads_once.py::GateReadsOnceTests::test_each_ledger_is_read_once_and_the_lanes_agree
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 

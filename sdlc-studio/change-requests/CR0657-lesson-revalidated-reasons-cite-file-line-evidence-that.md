@@ -24,6 +24,10 @@ The next re-validation pass, and any reader in between, meets citations that poi
 - [ ] The re-validation guidance asks a reason to name the symbol beside each line, and the critic.py citations in L-0001 to L-0270 are re-anchored to the current tree.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py
 
+## Notes
+
+- Also correct L-0370's Revalidated reason (written in US1109's repair, ae604272): it says `gate.py` `_index_derived` 'refuses an index that does not re-derive', but the lane reports and never blocks (gate.py:118-121, 'Reports, never blocks'), and BLOCKING_ON_ERROR at gate.py:544 only makes a crash of the lane block. Say it reports, and that the commit hook's `reconcile settle` regenerates the index (qa-seat-US1109-r1, round 2).
+
 ## Revision History
 
 | Date | Author | Change |

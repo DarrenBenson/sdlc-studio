@@ -1,6 +1,6 @@
 # US1081: Maya's and Trevor's cards state the signed run, the shipped gate's cost, the sign-once boundary and which Primary governs a mixed unit
 
-> **Status:** Ready
+> **Status:** Review
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given Maya's card, when its End goals are read, then End goals 1 to 4 are word for word what they are at commit 7f3e91a9, and End goal 5 reads, on one line, `Keep the process small enough to serve the work - every check earns its keep, and one that catches nothing is retired`
   - **Verify:** pytest tools/tests/test_persona_coherence.py::CardsStateTheRunTests::test_mayas_end_goals_keep_their_numbers_and_gain_the_fifth
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given Maya's card, when its code spans are read, then each `script.py verb` span names a verb the shipped scripts accept, none names a path in the tooling Primary's `Interface` row read from that card, and her Scenario's spans name a `sprint` run before `sprint.py sign`
   - **Verify:** pytest tools/tests/test_persona_coherence.py::CardsStateTheRunTests::test_mayas_card_names_shipped_commands_and_the_sign_step
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given Maya's card, when its Boundaries section is read, then it links the card of every other Primary `primary_cards()` returns, and carries a table whose rows map each Primary's interface (read from that card's `Interface` row) to that Primary and a unit touching both to the Primary listed first in the persona index, with cells equal to those readings
   - **Verify:** pytest tools/tests/test_persona_coherence.py::CardsStateTheRunTests::test_mayas_boundaries_table_the_primary_for_each_interface
+  - **Verified:** yes (2026-11-01)
 - **AC4:** Given Trevor's card, when it is read, then it names `sprint.py sign` and D0213, D0213 resolves, and it links the card of each Primary `primary_cards()` returns
   - **Verify:** pytest tools/tests/test_persona_coherence.py::CardsStateTheRunTests::test_trevors_card_names_the_one_signature_and_each_primary
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

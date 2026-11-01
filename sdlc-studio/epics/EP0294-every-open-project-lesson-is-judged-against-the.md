@@ -1,6 +1,6 @@
 # EP0294: Every open project lesson is judged against the current tree: closed with its reason, or extended after a check
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 15
 > **Parent:** CR0655
 > **Created:** 2026-10-31
@@ -18,7 +18,7 @@ Decomposed from CR0655. Delivers the work CR0655 requested.
 - [x] [US1106: Each open lesson from L-0091 to L-0180 is closed with its reason or extended after a check against the current tree](../stories/US1106-each-open-lesson-from-l-0091-to-l.md)
 - [x] [US1107: Each open lesson from L-0181 to L-0270 is closed with its reason or extended after a check against the current tree](../stories/US1107-each-open-lesson-from-l-0181-to-l.md)
 - [x] [US1108: Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree](../stories/US1108-each-open-lesson-from-l-0271-to-l.md)
-- [ ] [US1109: Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree](../stories/US1109-each-open-lesson-from-l-0361-to-l.md)
+- [x] [US1109: Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree](../stories/US1109-each-open-lesson-from-l-0361-to-l.md)
 
 ## Acceptance Criteria (Epic Level)
 

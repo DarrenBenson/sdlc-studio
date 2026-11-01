@@ -1,6 +1,6 @@
 # CR-0655: Re-validate every open project lesson against the current tree, closing those no longer true
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0294
 > **Priority:** Medium
 > **Type:** Process

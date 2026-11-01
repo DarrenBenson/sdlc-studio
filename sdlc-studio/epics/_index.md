@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 16 |
+| Draft | 15 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 245 |
+| Done | 246 |
 | Superseded | 33 |
 | **Total** | **294** |
 
@@ -44,7 +44,7 @@
 | [EP0291](EP0291-the-author-s-self-check-is-run-and.md) | The author's self-check is run and recorded before a reviewer is briefed | Done | 4 | -- | 2026-10-20 | 2026-10-20 |
 | [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Done | 7 | -- | 2026-10-22 | 2026-10-22 |
 | [EP0293](EP0293-the-prd-trd-and-tsd-describe-6-2.md) | The PRD, TRD and TSD describe 6.2, and the freshness census checks all three | Draft | 7 | -- | 2026-10-31 | 2026-10-31 |
-| [EP0294](EP0294-every-open-project-lesson-is-judged-against-the.md) | Every open project lesson is judged against the current tree: closed with its reason, or extended after a check | Draft | 5 | -- | 2026-10-31 | 2026-10-31 |
+| [EP0294](EP0294-every-open-project-lesson-is-judged-against-the.md) | Every open project lesson is judged against the current tree: closed with its reason, or extended after a check | Done | 5 | -- | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases
 
