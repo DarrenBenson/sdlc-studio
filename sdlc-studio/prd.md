@@ -100,10 +100,11 @@ End goal it answers, numbered as on that persona's card in
 - **O2:** The true state of the work is on disk and one command away after any session, reset or compaction (Maya Okafor, End goal 2)
 - **O3:** A sprint runs from one approved plan to one signed report, pausing only for a decision that is genuinely the operator's (Maya Okafor, End goal 3)
 - **O4:** Specs, indexes and code stay reconciled, and drift is reported when it happens rather than found later (Maya Okafor, End goal 4)
-- **O5:** The process stays small enough to serve the work: a repeated failure is fixed in the code path, and a check that catches nothing is deleted (Maya Okafor, End goal 3)
+- **O5:** The process stays small enough to serve the work: a repeated failure is fixed in the code path, and a check that catches nothing is deleted (Maya Okafor, End goal 5)
 - **O6:** An inherited codebase yields a specification validated against its code that the team can trust (Jonah Reyes, End goal 1)
 - **O7:** A team adopts the lifecycle a piece at a time, read-only first, with no big-bang migration (Jonah Reyes, End goal 2)
 - **O8:** Humans and agents are held to the same artefacts and the same gates (Jonah Reyes, End goal 3)
+- **O9:** A project upgrades to a new skill release with the mechanical changes made for it and the judgement calls reported rather than guessed (Jonah Reyes, End goal 4)
 
 ---
 
