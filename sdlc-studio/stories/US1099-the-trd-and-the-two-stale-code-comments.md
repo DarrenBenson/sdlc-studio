@@ -1,6 +1,6 @@
 # US1099: The TRD and the two stale code comments name sdlc_md.EXECUTES_VERIFIERS: stories and bugs execute their Verify lines, and CRs and RFCs refuse a command-shaped one
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0645
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given `sdlc_md.EXECUTES_VERIFIERS`, when the TRD is read, then it names that set as the authority, names every type in it as executing its Verify lines, and says a CR or RFC refuses a command-shaped Verify line
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_trd_names_the_executing_types
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the comments in `file_finding.py` and `artifact.py` that CR0645 names, when they are read, then neither says only a story executes its verifier, and each names the set
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_code_comments_name_the_set
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

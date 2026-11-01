@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 161 |
+| Open | 162 |
 | In Progress | 0 |
 | Fixed | 823 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1157** |
+| **Total** | **1158** |
 
 ## All Bugs
 
@@ -233,6 +233,7 @@
 | [BG1155](BG1155-decisions-read-once-s-change-detection-is-pinned.md) | decisions.read_once's change detection is pinned only by a growing file: dropping inode, mtime or ctime from its identity stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1156](BG1156-test-persona-coherence-s-span-recogniser-skips-some.md) | test_persona_coherence's span recogniser skips some `script.py verb` shapes, and its mixed-unit probe cannot tell first-listed Primary from first-path owner | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1157](BG1157-no-test-pins-that-a-host-prerequisite-check.md) | No test pins that a --host prerequisite check still names a missing markdownlint, so widening PUSHER_ONLY to it stays green | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1158](BG1158-the-trd-verifier-authority-scan-misses-some-story.md) | The TRD verifier-authority scan misses some story-only rewordings and fails true sentences about a story-only run | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
