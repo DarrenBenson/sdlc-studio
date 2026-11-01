@@ -1,6 +1,6 @@
 # BG1140: readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py, changelog.d/BG1140.md, .claude/skills/sdlc-studio/reference-scripts-review.md
@@ -28,8 +28,10 @@ In readiness, check for an unanswered delivery REJECT (the rule transition appli
 
 - [ ] **AC1** A unit holding an unanswered delivery REJECT whose verifiers pass is not flagged already-satisfied. readiness names the carry and the reviewer id that can discharge it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC2** A unit with no standing REJECT whose verifiers pass is still flagged already-satisfied (the positive control).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 
