@@ -49,3 +49,5 @@
 | US1105 | Claude Sonnet 5.5 (builder) | 2026-11-01 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | none - no test declared | 03e607cd12c59ee7 at 64fc91441c20 |
 | US1105 | Claude Sonnet 5.5 (builder) | 2026-11-01 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | none - no test declared | 35c584a847065bc3 at 9033e56686bc |
 | US1106 | Claude Sonnet 5.5 (builder) | 2026-11-01 | TRUE 16, FALSE 0, UNVERIFIABLE 0 | none - no test declared | 122ee6dcf4d11a2b at 3dc5342aad4d |
+| BG0963 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 46, FALSE 0, UNVERIFIABLE 0 | killed 32, survived 2 | 8817d48dd22f1b5f at d645ef6ac0c1 |
+| US1106 | Claude Sonnet 5.5 (builder) | 2026-11-01 | TRUE 24, FALSE 0, UNVERIFIABLE 2 | none - no test declared | 2bc2070b854b7d97 at ba9b1c91eeb3 |

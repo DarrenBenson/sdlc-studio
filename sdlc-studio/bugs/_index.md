@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 156 |
+| Open | 157 |
 | In Progress | 0 |
 | Fixed | 819 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1148** |
+| **Total** | **1149** |
 
 ## All Bugs
 
@@ -224,6 +224,7 @@
 | [BG1146](BG1146-lessons-py-revalidate-close-appends-its-status-bullet.md) | lessons.py revalidate --close appends its Status bullet straight after a paragraph, so the lessons log fails markdownlint MD032 | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1147](BG1147-the-pre-commit-markdown-lane-skips-in-a.md) | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules | Open | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1148](BG1148-revalidate-s-real-date-guard-has-no-test.md) | revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1149](BG1149-rfc0048-s-resolved-d6-still-states-a-120s.md) | RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20 | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
