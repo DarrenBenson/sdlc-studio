@@ -309,7 +309,7 @@ Recorded from retro RETRO0119.
 
 - **Added:** 2026-09-21
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: `backlog_triage.py` `_abandoned_findings` (`backlog_triage.py:297`, In Progress requests whose children nothing touched) and `_unruled_findings` (`backlog_triage.py:266`) exist because status alone misleads; reading the commits is still manual, no gate holds it; nearest guidance.
+- **Revalidated:** 2026-11-01 - Still true: `backlog_triage.py` `_abandoned_findings` (`backlog_triage.py:297`, In Progress requests whose children nothing touched) and `_unruled_findings` (`backlog_triage.py:266`) exist because status alone misleads, but reading the commits behind a status is still manual. No gate holds it. The nearest guidance is AGENTS.md:98-101, which decides a finding by execution (`git log -S`) rather than by impression.
 
 A backlog count is a claim about state, and `In Progress` is the weakest link in it: in one cluster of eleven, not a single commit naming any request was a `feat` or a `fix`. Read the commits, not the status.
 
@@ -812,13 +812,12 @@ Recorded from retro RETRO0108.
 ## L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that
 
 - **Added:** 2026-08-24
-- **Review-by:** 2026-11-22
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a general rule, though its `testplan` example is retired (`verify_ac.py` `RETIRED_VERBS`, `verify_ac.py:4325`): a derived table belongs to the tool that derives it, and a hand-edited one can parse differently from how it reads. AGENTS.md:118 says never hand-author `_index.md` because it is derived, and `gate.py` `_index_derived` (`gate.py:111`, registered at `gate.py:1038`, blocking on error at `gate.py:544`) refuses an index that does not re-derive. AGENTS.md:103 is the look-for-a-tool rule. A derived table no gate re-derives still rests on the author.
 
 The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that `verify_ac.py testplan derive` owns. That produced a FUSED table row inside US0674's AC4 Title cell - a row a human reads and `testplan_rows_by_criterion` cannot see, so the unit's own derived field said "plan rows 8; executed 8; not-run 0" and every one of those numbers was computed over a table missing a row - and Title cells on two US0676 criteria stating a different criterion's claim. Running the tool repaired all of it in one command and then reported "unchanged". AGENTS.md's rule is "always look for a tool before doing anything by hand", the runbook names this exact command, and the failure mode it prevents is not sloppiness but a table that parses differently from how it reads.
 
 Recorded from retro RETRO0108.
-
-- **Status:** Closed - the tool is gone: `verify_ac.py` `RETIRED_VERBS` (`verify_ac.py:4325`) refuses `testplan` ('no `## Test Plan` is derived... the criteria and their Verify selectors are the plan'), so there are no derived test-plan tables to hand-edit.
 
 ## L-0369: The derived field caught its own run's stale evidence, which is the first time an instrument this project built reported against the
 

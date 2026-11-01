@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 11 |
+| Ready | 10 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 830 |
+| Done | 831 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -145,7 +145,7 @@
 | [US1105](US1105-each-open-lesson-from-l-0001-to-l.md) | Each open lesson from L-0001 to L-0090 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1106](US1106-each-open-lesson-from-l-0091-to-l.md) | Each open lesson from L-0091 to L-0180 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1107](US1107-each-open-lesson-from-l-0181-to-l.md) | Each open lesson from L-0181 to L-0270 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
-| [US1108](US1108-each-open-lesson-from-l-0271-to-l.md) | Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |
+| [US1108](US1108-each-open-lesson-from-l-0271-to-l.md) | Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1109](US1109-each-open-lesson-from-l-0361-to-l.md) | Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree | Ready | EP0294 | 2026-10-31 | 2026-10-31 |
 
 ## Archived Releases

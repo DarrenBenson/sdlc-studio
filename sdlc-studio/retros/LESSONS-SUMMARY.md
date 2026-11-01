@@ -68,6 +68,7 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0373: A fixture that cannot reach the branch is a fixture that proves the fail-open path**
 - **L-0372: A gate's behaviour must be read for the POPULATION you care about, not in general**
 - **L-0371: A repair for unpinned behaviour can itself ship unpinned, and did**
+- **L-0370: The plan review took FOUR rounds, and the biggest single cause was a rule already written down: I hand-edited test-plan tables that**
 - **L-0368: A repair whose test can be satisfied by EITHER of two guards pins neither, and I shipped that shape while repairing this very defect**
 - **L-0365: A gate lane that mutates the shared working tree corrupts whatever else is reading it**
 - **L-0364: A fixture whose counts are EQUAL cannot detect a swap, and the REPAIR for it moved the defect rather than closing it**
