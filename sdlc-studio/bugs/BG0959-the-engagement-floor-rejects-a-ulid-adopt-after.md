@@ -36,6 +36,10 @@ Parse the floor's cutoff with allow_ulid and exempt with cutoff_exempts, the sam
 - Reproduced at fb1ce886. Already in the code: US0974 (2026-10-01) taught `conformance` ULID cutoffs through `sdlc_md.parse_cutoff(allow_ulid=True)` and `sdlc_md.cutoff_exempts`; the floor (CR0229, 2026-07-13) was never moved onto them. Not a regression of a recent run.
 - Re-sized 3 -> 2: one parse call, one comparator and one remedy string, with tests.
 
+## Notes
+
+- From US1104 (2026-11-01): tools/tests/test_lean_prd_refresh.py::PrdRulesTests reads this bug's status. When BG0959 reaches Fixed, the PRD's held criterion must be ticked and its row and block must read Complete in the same commit, or the test goes red. Add sdlc-studio/prd.md to this unit's Affects when it is planned.
+
 ## Revision History
 
 | Date | Author | Change |

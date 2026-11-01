@@ -31,6 +31,10 @@ Retire the key from templates/config-defaults.yaml and every reference that name
 
 An operator who sets the documented key believes they changed a gate; nothing changes.
 
+## Notes
+
+- From US1104 (2026-11-01): tools/tests/test_lean_prd_refresh.py::PrdRulesTests reads this bug's status. When BG1063 reaches Fixed, the PRD's held criterion must be ticked and its row and block must read Complete in the same commit, or the test goes red. Add sdlc-studio/prd.md to this unit's Affects when it is planned.
+
 ## Revision History
 
 | Date | Author | Change |

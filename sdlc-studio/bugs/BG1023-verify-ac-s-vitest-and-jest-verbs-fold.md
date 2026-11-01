@@ -37,6 +37,10 @@ The executable AC gate silently cannot run the most natural vitest/jest Verify l
 - Confirmed at 0c7e4d90 by the code path: `_parse_dsl` returns `["vitest", "run", "-t", tail]` and `["jest", "-t", tail]` (verify_ac.py:1497-1499), so a file in the tail is folded into the name pattern, and the bare binary is invoked. Pre-existing.
 - Severity Medium stands: the most natural Node Verify form can never pass. Private project name generalised; changelog fragment added to Affects.
 
+## Notes
+
+- From US1104 (2026-11-01): tools/tests/test_lean_prd_refresh.py::PrdRulesTests reads this bug's status. When BG1023 reaches Fixed, the PRD's held criterion must be ticked and its row and block must read Complete in the same commit, or the test goes red. Add sdlc-studio/prd.md to this unit's Affects when it is planned.
+
 ## Revision History
 
 | Date | Author | Change |
