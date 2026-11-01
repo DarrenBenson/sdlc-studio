@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 170 |
+| Open | 171 |
 | In Progress | 0 |
 | Fixed | 825 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1168** |
+| **Total** | **1169** |
 
 ## All Bugs
 
@@ -244,6 +244,7 @@
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Open | High | 2026-11-01 | 2026-11-01 |
 | [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Open | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1169](BG1169-mutation-py-s-drop-ignored-ignores-git-check.md) | mutation.py's _drop_ignored ignores git check-ignore's exit code, so one path git refuses leaves the rest partly filtered | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

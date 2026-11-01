@@ -75,3 +75,4 @@
 | US1101 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 25, FALSE 0, UNVERIFIABLE 0 | killed 34, survived 0 | 7e289b9132168453 at 0f26c3e85eb6 |
 | US1102 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 25, FALSE 0, UNVERIFIABLE 0 | killed 30, survived 0 | 223aee4d4356af4a at d4028a31c57c |
 | US1102 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 30, FALSE 0, UNVERIFIABLE 0 | killed 26, survived 0 | 54bcc390439c6752 at cf4d02bca7e3 |
+| BG1166 | Claude Opus 5.5 (builder) | 2026-11-01 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | b39622267ef8bdd8 at 6a7404b5c5c9 |
