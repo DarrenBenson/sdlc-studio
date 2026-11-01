@@ -27,6 +27,7 @@ a real lifecycle she can trust to run without her watching every step.
 2. Never lose the thread - know the true state of the work after any session, reset, or compaction
 3. Drive a whole batch of work to "done" autonomously, pausing only when a decision is genuinely hers
 4. Keep specs, code, and tests in sync so the documentation never quietly drifts from reality
+5. Keep the process small enough to serve the work - every check earns its keep, and one that catches nothing is retired
 
 ## Experience Goals
 
@@ -41,6 +42,8 @@ a real lifecycle she can trust to run without her watching every step.
 - **Environment:** a terminal and an agent (Claude Code); a single repo she owns end to end
 - **Frequency:** daily, in long working sessions that often outlast a single context window
 - **Proficiency:** strong engineer, fluent on the CLI; new to running a *formal* lifecycle and happy to let the tool hold that discipline
+- **Gate:** `/sdlc-studio gate` in her own repository, which states a run's cost against a
+  declared budget and names the lane that dominated it
 
 ## Frustrations
 
@@ -56,12 +59,29 @@ a real lifecycle she can trust to run without her watching every step.
 
 *A short narrative of this persona using the product to reach an End goal.*
 
-Maya has a backlog of accepted change requests and a free afternoon. She runs an autosprint over
-the proposed CRs with the goal set to "done", approves the triage plan it shows her, then steps
+Maya has a backlog of accepted change requests and a free afternoon. She runs
+`/sdlc-studio sprint --crs Proposed --goal done`, approves the triage plan it shows her, then steps
 away. The loop drives each unit - decompose, test, verify, an independent review, a green commit -
-and pauses once to ask a real scoping question. She comes back to a finished tranche, a reconcile
-showing zero drift, and a sprint report of what shipped, what it actually cost (rework included,
-priced from her own rates), and whether the estimate held. Nothing drifted; nothing surprised her.
+and pauses once to ask a real scoping question. She comes back to a reconcile showing zero drift
+and the sprint report the close filed: what shipped, what it actually cost (rework included,
+priced from her own rates), and whether the estimate held. She reads it and signs the run once,
+with `sprint.py sign`, which moves the batch to its terminal statuses. Nothing drifted; nothing
+surprised her.
+
+## Boundaries
+
+- **[Rowan Achterberg](rowan-achterberg-skill-maintainer.md) is Primary for this repository's own
+  tooling**, which does not ship and which Maya never sees. His want is met there, never by adding
+  a step to her run.
+- A unit is judged against the Primary of the interface its Affects touch. A unit touching both
+  touches a shipped path, so it is Maya's; a story minted with no `--persona` names her too, as the
+  Primary the persona index lists first.
+
+| A unit touching | Is judged against |
+| --- | --- |
+| The shipped skill | Maya Okafor |
+| Repository tooling | Rowan Achterberg |
+| Both interfaces | Maya Okafor |
 
 ---
 

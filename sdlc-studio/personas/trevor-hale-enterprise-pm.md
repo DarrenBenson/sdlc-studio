@@ -34,6 +34,19 @@ action - the opposite of the value here. Chasing his needs would add boards, rol
 and approval ceremony that would ruin the product for Maya. His requirements are a **clear signal
 to decline**, not a backlog.
 
+## Boundaries
+
+- **He is the Negative persona on both interfaces:** the shipped skill, whose Primary is
+  [Maya Okafor](maya-okafor-founder-engineer.md), and this repository's own tooling, whose Primary
+  is [Rowan Achterberg](rowan-achterberg-skill-maintainer.md).
+- **A run carries one signature (D0213).** The operator signs it once, after the close, with
+  `sprint.py sign`, which refuses a principal who is a unit's author or a reviewer recorded on it.
+  A sign-off on each unit, a second signature, or an approver on every ruling is his want, and is
+  declined.
+- **His objections are weighed on their evidence.** One is adopted when evidence shows that what
+  he objects to harms a Primary's End goal, and declined when adopting it would serve only him. It
+  is never adopted or dismissed for being his.
+
 ## Behaviours & Context
 
 - **Environment:** a browser, an enterprise work-tracker, recurring governance meetings

@@ -1,6 +1,7 @@
 """US0450/US0451: the PRD and the persona registry must state one design target.
 US1079: with two Primaries, one per interface (D0379), each states which interface it serves.
 US1080: a story minted with no persona follows the paths those Interface rows declare.
+US1081: the shipped skill's Primary and the Negative state the run as it now runs.
 
 Two failures this guards:
 
@@ -15,6 +16,7 @@ down here, so adding, renaming or removing a registry entry fails this file unti
 is updated to match. The files scanned in the second suite are **listed from the repo**,
 not enumerated by hand, so a new document cannot silently exempt itself.
 """
+import functools
 import json
 import re
 import shutil
@@ -77,18 +79,23 @@ CITED_ID = re.compile(r"\b(D\d{4}|(?:BG|US|CR|EP|RV|RFC|LL|RETRO|RPT)\d{4})\b")
 CAST_ROLE_ROW = re.compile(r"^\|\s*\*\*Cast role\*\*\s*\|\s*(.+?)\s*\|\s*$", re.M)
 
 
-def primary_cards(index_path: Path = REGISTRY) -> list[tuple[str, Path]]:
-    """Each `## Primary` bullet as (name, card path), in index order. Never hardcoded."""
-    out, in_primary = [], False
+def cards_under(role: str, index_path: Path = REGISTRY) -> list[tuple[str, Path]]:
+    """Each linked bullet under the index's `## <role>` heading as (name, card path), in order."""
+    out, in_role = [], False
     for line in index_path.read_text(encoding="utf-8").splitlines():
         heading = re.match(r"##\s+(\w+)", line)
         if heading:
-            in_primary = heading.group(1) == "Primary"
+            in_role = heading.group(1) == role
             continue
-        link = re.match(r"\s*-\s+\[([^\]]+)\]\(([^)]+)\)", line) if in_primary else None
+        link = re.match(r"\s*-\s+\[([^\]]+)\]\(([^)]+)\)", line) if in_role else None
         if link:
             out.append((link.group(1).strip(), index_path.parent / link.group(2)))
     return out
+
+
+def primary_cards(index_path: Path = REGISTRY) -> list[tuple[str, Path]]:
+    """Each `## Primary` bullet as (name, card path), in index order. Never hardcoded."""
+    return cards_under("Primary", index_path)
 
 
 def interface_of(card: Path) -> str:
@@ -327,6 +334,193 @@ class TwoPrimaryCastTests(unittest.TestCase):
             self.assertRegex(boundary, rf"{re.escape(first_name(name))}'s want is met in "
                                        rf"repository-only surface, never by shipped surface",
                              f"{name}'s card does not keep his want to repository-only surface")
+
+
+#: The commit the shipped Primary's End goals 1 to 4 are held to, word for word (US1081 AC1).
+GOALS_BASE = "7f3e91a9"
+#: End goal 5 as US1081 AC1 states it (D0383), so the test holds the criterion's words.
+END_GOAL_5 = ("Keep the process small enough to serve the work - every check earns its keep, "
+              "and one that catches nothing is retired")
+CODE_SPAN = re.compile(r"`([^`\n]+)`")
+#: A `script.py verb` span: an optional `python3` and directory, the script, then a word that is
+#: not a flag.
+SCRIPT_VERB = re.compile(r"^(?:python3\s+)?(?:\S*/)?([\w-]+\.py)\s+([^\s-]\S*)")
+#: A skill command span such as `/sdlc-studio gate`.
+SKILL_COMMAND = re.compile(r"^/sdlc-studio\s+([a-z][\w-]*)")
+#: A sprint run: the skill's `sprint` command with flags only, so `sprint plan` is not one.
+SPRINT_RUN = re.compile(r"^/sdlc-studio\s+sprint(?:\s+--|$)")
+SIGN_SPAN = re.compile(r"^sprint\.py\s+sign(?:\s|$)")
+
+
+def end_goal_items(text: str) -> dict[str, list[str]]:
+    """A card's End goals by number, each as the lines it is written on."""
+    items: dict[str, list[str]] = {}
+    current = None
+    for line in card_section(text, "End Goals").splitlines():
+        numbered = re.match(r"^(\d+)\.\s+(.*\S)\s*$", line)
+        if numbered:
+            current = items.setdefault(numbered.group(1), [])
+            current.append(numbered.group(2))
+        elif current is not None and line.strip():
+            current.append(line.strip())
+        else:
+            current = None
+    return items
+
+
+def committed_text(commit: str, path: Path) -> str:
+    run = subprocess.run(["git", "show", f"{commit}:{path.relative_to(REPO).as_posix()}"],
+                         cwd=str(REPO), capture_output=True, text=True)
+    if run.returncode:
+        raise AssertionError(f"cannot read {path.name} at {commit}: {run.stderr.strip()}")
+    return run.stdout
+
+
+@functools.lru_cache(maxsize=None)
+def verb_accepted(script: str, verb: str) -> bool:
+    """Does the shipped script take `verb` as a subcommand? Asked of its own `--help`."""
+    if not (SCRIPTS / script).is_file():
+        return False
+    run = subprocess.run([sys.executable, str(SCRIPTS / script), verb, "--help"],
+                         capture_output=True, text=True, cwd=str(REPO))
+    return run.returncode == 0 and run.stdout.startswith(f"usage: {script} {verb}")
+
+
+def interface_paths(card: Path) -> list[str]:
+    """The paths a card's Interface row declares: its code spans holding no whitespace."""
+    return re.findall(r"`([^`\s]+)`", interface_of(card))
+
+
+def names_path(span: str, path: str) -> bool:
+    """Does a code span name `path`, at a path boundary rather than inside another path?"""
+    bare = path.removeprefix("./").rstrip("/")
+    span = re.sub(r"(?:^|(?<=\s))\./", "", span)
+    return re.search(rf"(?<![\w./-]){re.escape(bare)}(?![\w.-])", span) is not None
+
+
+def interface_name(card: Path) -> str:
+    """A card's interface as its Interface row names it: the row's text before its first colon."""
+    return interface_of(card).split(":", 1)[0].strip()
+
+
+#: A markdown table's separator row.
+TABLE_RULE = re.compile(r"\|(?:\s*:?-+:?\s*\|)+")
+
+
+def table_rows(section: str) -> list[list[str]]:
+    """The body rows of the markdown tables in a section, each as its cells: no header, no rule."""
+    lines = [line.strip() for line in section.splitlines()] + [""]
+    return [[cell.strip() for cell in line.strip("|").split("|")]
+            for line, below in zip(lines, lines[1:])
+            if line.startswith("|") and not TABLE_RULE.fullmatch(line)
+            and not TABLE_RULE.fullmatch(below)]
+
+
+def links_from(card: Path, text: str) -> set[Path]:
+    return {(card.parent / href.split("#", 1)[0]).resolve()
+            for href in re.findall(r"\]\(([^)\s]+)\)", text)}
+
+
+class CardsStateTheRunTests(unittest.TestCase):
+    """US1081: the shipped skill's Primary and the Negative state the run as it now runs."""
+
+    def setUp(self) -> None:
+        self.shipped, self.tooling = shipped_and_tooling()
+        self.assertTrue(self.shipped and self.tooling, "no shipped and tooling Primaries")
+        self.card = dict(primary_cards())[self.shipped]
+        self.text = self.card.read_text(encoding="utf-8")
+
+    def test_mayas_end_goals_keep_their_numbers_and_gain_the_fifth(self) -> None:
+        """AC1. Mutants: End goal 1 to 4 reworded or renumbered; End goal 5 missing, reworded
+        or wrapped onto a second line, which BG1107 truncates."""
+        base = end_goal_items(committed_text(GOALS_BASE, self.card))
+        self.assertEqual(sorted(base), ["1", "2", "3", "4"], f"the {GOALS_BASE} baseline moved")
+        now = end_goal_items(self.text)
+        self.assertEqual({n: now.get(n) for n in base}, base,
+                         f"End goals 1 to 4 differ from {GOALS_BASE}")
+        self.assertEqual(now.get("5"), [END_GOAL_5], "End goal 5 is not the criterion's one line")
+
+    def test_mayas_card_names_shipped_commands_and_the_sign_step(self) -> None:
+        """AC2, each `script.py verb` span asked of that script's own `--help`. Mutants: a span
+        naming a verb the script does not take (`sprint.py sigh`) or a script that does not ship;
+        a span naming a path in the tooling Primary's Interface row (`.githooks/pre-push`); the
+        Scenario naming no `sprint` run (an autosprint), or naming `sprint.py sign` before it."""
+        spans = CODE_SPAN.findall(self.text)
+        verbs = [m.groups() for m in map(SCRIPT_VERB.match, spans) if m]
+        self.assertTrue(verbs, "the card names no `script.py verb` span")
+        self.assertEqual([f"{s} {v}" for s, v in verbs if not verb_accepted(s, v)], [],
+                         "a span names a verb the shipped scripts do not accept")
+        commands = [m.group(1) for m in map(SKILL_COMMAND.match, spans) if m]
+        self.assertEqual([c for c in commands
+                          if not (SCRIPTS.parent / "help" / f"{c}.md").is_file()], [],
+                         "a span names a skill command with no help file")
+        paths = [p for _, card in self.tooling for p in interface_paths(card)]
+        self.assertTrue(paths, "the tooling Primary's Interface row declares no path")
+        self.assertEqual([s for s in spans if any(names_path(s, p) for p in paths)], [],
+                         "a span names a path in the tooling Primary's interface")
+        scenario = CODE_SPAN.findall(card_section(self.text, "Scenario"))
+        runs = [i for i, s in enumerate(scenario) if SPRINT_RUN.match(s)]
+        signs = [i for i, s in enumerate(scenario) if SIGN_SPAN.match(s)]
+        self.assertTrue(runs, f"the Scenario names no `sprint` run: {scenario}")
+        self.assertTrue(signs, f"the Scenario names no `sprint.py sign`: {scenario}")
+        self.assertLess(runs[0], signs[0], "the Scenario signs before it runs the sprint")
+
+    def test_mayas_boundaries_table_the_primary_for_each_interface(self) -> None:
+        """AC3, with the mixed row also asked of the shipped mint. Mutants: no link to another
+        Primary's card; the mixed row naming the tooling Primary (the rule reversed); an
+        interface cell that is not the name the card's Interface row gives; the index listing
+        the tooling Primary first, which moves both the reading and the mint."""
+        cards = primary_cards()
+        boundary = card_section(self.text, "Boundaries")
+        self.assertTrue(boundary.strip(), "the card has no Boundaries section")
+        links = links_from(self.card, boundary)
+        self.assertEqual([n for n, c in cards if c.resolve() != self.card.resolve()
+                          and c.resolve() not in links], [],
+                         "Boundaries does not link every other Primary's card")
+        rows = table_rows(boundary)
+        expected = [[interface_name(c), n] for n, c in cards]
+        self.assertEqual([e for e in expected if e not in rows], [],
+                         f"no row maps each interface to its Primary: {rows}")
+        mixed = [r for r in rows if r not in expected]
+        self.assertEqual(len(mixed), 1, f"want one row for a unit touching both: {rows}")
+        self.assertRegex(mixed[0][0], r"(?i)\bboth\b")
+        self.assertEqual(mixed[0][1:], [cards[0][0]],
+                         "a unit touching both is not the Primary the index lists first")
+        home = Path(tempfile.mkdtemp(prefix="us1081-"))
+        try:
+            shutil.copytree(REGISTRY.parent, home / "sdlc-studio" / "personas",
+                            ignore=shutil.ignore_patterns("seats"))
+            artifact = [sys.executable, str(SCRIPTS / "artifact.py"), "--root", str(home), "new"]
+            made = subprocess.run(artifact + ["--type", "epic", "--title", "Fixture epic"],
+                                  capture_output=True, text=True)
+            self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+            affects = ",".join(f"{interface_paths(c)[0].rstrip('/')}/probe.md" for _, c in cards)
+            run = subprocess.run(artifact + ["--type", "story", "--epic", "EP0001", "--title",
+                                             "Mixed unit", "--affects", affects, "--dry-run",
+                                             "--format", "json"], capture_output=True, text=True)
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            self.assertEqual(json.loads(run.stdout).get("persona"), mixed[0][1], affects)
+        finally:
+            shutil.rmtree(home, ignore_errors=True)
+
+    def test_trevors_card_names_the_one_signature_and_each_primary(self) -> None:
+        """AC4. Mutants: the card left without the `sprint.py sign` span or without D0213; an id
+        it cites that resolves to nothing; a Primary's card not linked."""
+        negatives = cards_under("Negative")
+        self.assertTrue(negatives, "the index lists no Negative persona")
+        for name, card in negatives:
+            text = card.read_text(encoding="utf-8")
+            self.assertTrue([s for s in CODE_SPAN.findall(text) if SIGN_SPAN.match(s)],
+                            f"{name}'s card names no `sprint.py sign`")
+            self.assertTrue(verb_accepted("sprint.py", "sign"))
+            cited = CITED_ID.findall(text)
+            self.assertIn("D0213", cited, f"{name}'s card does not cite D0213")
+            self.assertEqual([c for c in cited if not id_resolves(c)], [],
+                             f"{name}'s card cites id(s) that resolve to nothing")
+            links = links_from(card, text)
+            self.assertEqual([n for n, c in primary_cards() if c.resolve() not in links], [],
+                             f"{name}'s card does not link each Primary's card")
+
 
 def tracked_markdown() -> list[Path]:
     """Every tracked markdown file, listed from the repo rather than enumerated."""
