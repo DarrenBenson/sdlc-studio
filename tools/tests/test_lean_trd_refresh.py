@@ -40,11 +40,17 @@ COMMAND_SHAPED = "Verify: rg -q needle src/app.py"
 OUTCOME_SHAPED = "Verify: the operator sees a red banner naming the file"
 #: The two verdicts the TRD's table may give a type, as its second column spells them.
 EXECUTED, REFUSED = "executed", "refused when command-shaped"
-#: "only a story", "only the story", "only stories", "story-only" or "stories only", in any case:
-#: the wording CR0645 retires.
-_STORY_ONLY_RE = re.compile(
-    r"\bonly\s+(?:an?\s+|the\s+)?stor(?:y|ies)\b|\bstor(?:y|ies)[- ]only\b", re.I)
-_EXECUTION_RE = re.compile(r"verif|execut", re.I)
+#: A sentence or clause speaks of executing a `Verify:` line when it holds one of these words and
+#: the stem `verif` ("Verify", "verifier", `verify_ac`), both in any case.
+_EXECUTING_RE = re.compile(r"\b(?:execut\w*|run|runs|ran|running)\b", re.I)
+_VERIF_RE = re.compile(r"verif", re.I)
+#: Where a sentence is cut into clauses, outside a code span: a `;`, a spaced hyphen, a parenthesis.
+_CLAUSE_CUT_RE = re.compile(r";|\s-\s|[()]")
+#: "the authority", or "the one", "the single" or "the sole authority", in any case.
+_THE_AUTHORITY = r"(?i:\bthe\s+(?:(?:one|single|sole)\s+)?authority\b)"
+#: The text allowed between the set's name and that phrase: no backtick (so no other code span),
+#: `;`, `:` or `.`, and no `not`, `no` or `never` as a word or `n't`, in any case.
+_GAP = r"(?:(?!(?i:\b(?:not|no|never)\b|n't))[^`;:.])*?"
 
 
 def _read(path: Path) -> str:
@@ -74,9 +80,59 @@ def _section(text: str, heading: str) -> str:
     return "\n".join(out)
 
 
-def _blocks(text: str) -> list[str]:
-    """The blank-line-separated blocks of `text`, each joined onto one line."""
-    return [" ".join(b.split()) for b in re.split(r"\n\s*\n", text) if b.strip()]
+def _units(text: str) -> list[str]:
+    """The sentences of `text`'s lines that are not table rows, cut after a `.`, `!` or `?` that
+    whitespace follows, then each cell of the rows (lines opening `|`), so that a table is not
+    read as one sentence."""
+    prose, cells = [], []
+    for line in text.splitlines():
+        if line.lstrip().startswith("|"):
+            cells.extend(c.strip() for c in line.strip().strip("|").split("|"))
+        else:
+            prose.append(line)
+    sentences = re.split(r"(?<=[.!?])\s+", " ".join(" ".join(prose).split()))
+    return [u for u in sentences + cells if u]
+
+
+def _clauses(unit: str) -> list[str]:
+    """`unit` cut at each `_CLAUSE_CUT_RE` match that falls outside a code span."""
+    out = [""]
+    for i, part in enumerate(re.split(r"(`[^`]*`)", unit)):
+        pieces = [part] if i % 2 else _CLAUSE_CUT_RE.split(part)
+        out[-1] += pieces[0]
+        out.extend(pieces[1:])
+    return [c.strip() for c in out if c.strip()]
+
+
+def _names(text: str, type_: str) -> bool:
+    """Whether `text` holds `type_` as a word, or its plural (a final `y` as `ies`, otherwise an
+    added `s`), in any case."""
+    stem = (re.escape(type_[:-1]) + "(?:y|ies)" if type_.endswith("y")
+            else re.escape(type_) + "s?")
+    return re.search(rf"\b{stem}\b", text, re.I) is not None
+
+
+def _narrower_than(text: str, types: set[str]) -> list[str]:
+    """Each sentence or table cell of `text` (`_units`), and each clause of one (`_clauses`),
+    that speaks of executing a `Verify:` line (`_EXECUTING_RE` and `_VERIF_RE`) and names some of
+    `types` but not all of them (`_names`). It reads which types are named, not what is said of
+    each: a clause that names every type passes whatever it says of them, and a sentence that
+    names none passes too."""
+    out = []
+    for unit in _units(text):
+        for piece in dict.fromkeys([unit, *_clauses(unit)]):
+            named = {t for t in types if _names(piece, t)}
+            if (named and named != types and _EXECUTING_RE.search(piece)
+                    and _VERIF_RE.search(piece)):
+                out.append(piece)
+    return out
+
+
+def _calls_it_the_authority(sentence: str, name: str) -> bool:
+    """Whether `sentence` runs from `name` to `_THE_AUTHORITY`, or from that phrase to `name`,
+    through text `_GAP` allows."""
+    n = re.escape(name)
+    return re.search(rf"{n}{_GAP}{_THE_AUTHORITY}|{_THE_AUTHORITY}{_GAP}{n}", sentence) is not None
 
 
 def _tables(text: str) -> list[list[list[str]]]:
@@ -91,13 +147,6 @@ def _tables(text: str) -> list[list[list[str]]]:
             tables.append(rows)
             rows = []
     return tables
-
-
-def _story_only(text: str) -> list[str]:
-    """The sentences of `text` that `_STORY_ONLY_RE` matches and that name verifying or
-    executing."""
-    sentences = re.split(r"(?<=[.!?])\s+", " ".join(text.split()))
-    return [s for s in sentences if _STORY_ONLY_RE.search(s) and _EXECUTION_RE.search(s)]
 
 
 def _comment_above(path: Path, anchor: str) -> str:
@@ -147,14 +196,15 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
         self.assertEqual(set(), refused & self.executes)
 
     def test_the_trd_names_the_executing_types(self) -> None:
-        """Mutants: a type added to `EXECUTES_VERIFIERS` that the TRD's table does not give as
-        executed; a type the creators refuse that the table does not give as refused; a table row
-        with any other verdict; the TRD saying again that only a story executes; the section no
-        longer naming `sdlc_md.EXECUTES_VERIFIERS` as the authority."""
-        section = _section(_trd_body(), "Acceptance criteria")
-        self.assertTrue(
-            any(f"`sdlc_md.{AUTHORITY}`" in b and "authority" in b for b in _blocks(section)),
-            f"no paragraph of the section names `sdlc_md.{AUTHORITY}` as the authority")
+        """Mutants: no sentence or table cell of the section naming `sdlc_md.EXECUTES_VERIFIERS`
+        and calling it the authority, as `_calls_it_the_authority` reads one; a type added to
+        `EXECUTES_VERIFIERS` that the TRD's table does not give as executed; a type the creators
+        refuse that the table does not give as refused; a table row with any other verdict; a
+        sentence, cell or clause of the TRD outside its Revision History that `_narrower_than`
+        finds naming some of the executing types and not all."""
+        section, name = _section(_trd_body(), "Acceptance criteria"), f"`sdlc_md.{AUTHORITY}`"
+        self.assertTrue(any(_calls_it_the_authority(s, name) for s in _units(section)),
+                        f"no sentence or cell of the section names {name} and calls it the authority")
         tables = [t for t in _tables(section) if t[0][0] == "Type"]
         self.assertEqual(1, len(tables), "expected one table headed Type in the section")
         verdicts = {row[0].strip("`"): row[1] for row in tables[0][1:]}
@@ -163,7 +213,7 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
         self.assertEqual(self.executes, {t for t, v in verdicts.items() if v == EXECUTED})
         self.assertEqual(refused, {t for t, v in verdicts.items() if v == REFUSED})
         self.assertEqual(self.executes | refused, set(verdicts))
-        self.assertEqual([], _story_only(_trd_body()))
+        self.assertEqual([], _narrower_than(_trd_body(), self.executes))
 
     def test_the_code_comments_name_the_set(self) -> None:
         """Mutant: either comment reverted to the story-only wording, or no longer naming the
@@ -174,7 +224,7 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
             comment = _comment_above(path, anchor)
             with self.subTest(path=path.name):
                 self.assertIn(f"`sdlc_md.{AUTHORITY}`", comment)
-                self.assertEqual([], _story_only(comment))
+                self.assertEqual([], _narrower_than(comment, self.executes))
 
     def test_the_filer_s_refusal_names_the_executing_types(self) -> None:
         """Mutant: the refusal `file_finding.py file` prints reverted to saying verify_ac runs
@@ -193,7 +243,7 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
                 self.assertIn(f"`sdlc_md.{AUTHORITY}`", why)
                 for member in self.executes:
                     self.assertRegex(why, rf"\b{re.escape(member)}\b")
-                self.assertEqual([], _story_only(why))
+                self.assertEqual([], _narrower_than(why, self.executes))
 
 
 if __name__ == "__main__":

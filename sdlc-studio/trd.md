@@ -174,9 +174,9 @@ in the default sweep for a project that sets them to block. Bound lanes attach t
 specific obligation and cannot be skipped or excluded away: `--require-retro` (the
 retro's content, plus the lessons summary and validity), `--require-review` (review
 currency, not presence), and `--release`, which EXECUTES every
-story's `Verify:` expression rather than reading a stored report that could carry a
-stale green. Its lanes are the mechanism behind ADR-006 through ADR-011: a lane is how a rule
-stops being prose.
+story's `Verify:` expression, and no bug's, rather than reading a stored report that
+could carry a stale green. Its lanes are the mechanism behind ADR-006 through ADR-011:
+a lane is how a rule stops being prose.
 
 The gate writes only untracked state under `sdlc-studio/.local/`, so a run never dirties the
 tree it judges:
@@ -1210,7 +1210,7 @@ touches the component. The constraints below span components.
 | 2026-10-19 | 6.1.0 | US1085: §4 names every package `requirements-dev.txt` and `package.json` declare, `requirements-dev.txt` as the one Python dependency list, and the shipped scripts' soft dependencies (PyYAML, lizard, coverage); which runner runs which suite |
 | 2026-10-19 | 6.1.0 | US1086: §3 describes the gate host: the git config keys and the local override, the fallback when none is set, and that an unreachable host refuses the push |
 | 2026-10-22 | 6.1.0 | BG1095: §3 gives where the push gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
-| 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier) |
+| 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier); §3 says `--release` executes no bug's `Verify:` expression |
 
 ---
 
