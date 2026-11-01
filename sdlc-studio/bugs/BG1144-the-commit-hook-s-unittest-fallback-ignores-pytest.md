@@ -34,6 +34,10 @@ Have every `boundary_only` test use `boundary.boundary_only(reason)`, or a decor
 
 On the fallback path a commit pays for the push-only tests and can be refused by a wall-clock bound under load, which BG0963 exists to stop.
 
+## Notes
+
+- From BG1065's review (2026-11-01): scripts/tests/boundary.py:30-35 marks a test only when BOTH conditions hold; the second ('cannot regress ... without some cheaper test also going red', from c3d867ec, BG0579) does not hold for the wall-clock bounds BG0963 marked, since no cheaper test sees a duration regression. Rule which condition governs a duration bound when this unit lands.
+
 ## Revision History
 
 | Date | Author | Change |

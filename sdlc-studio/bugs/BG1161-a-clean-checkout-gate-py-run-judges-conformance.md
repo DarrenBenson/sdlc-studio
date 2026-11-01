@@ -32,6 +32,10 @@ Give the clean-checkout (CI) run its own measured budget, or scope its conforman
 
 CI's gate cost line is permanently OVER, so a real ratchet would not be noticed there.
 
+## Notes
+
+- From BG1065's review (2026-11-01): `gate.py --release` with no boundary runs a different lane set (whole-workspace conformance and validate plus the verify lane) yet is compared with and recorded as the standard baseline (it printed '88% faster than the 0.6s baseline' and overwrote gate-cost.json on a fixture), from the same `if record and not scoped` branch BG1065 fixed for boundaries. Fold it into this unit.
+
 ## Revision History
 
 | Date | Author | Change |
