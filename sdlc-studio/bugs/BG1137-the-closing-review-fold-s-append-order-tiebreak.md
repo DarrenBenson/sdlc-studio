@@ -1,6 +1,6 @@
 # BG1137: The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_batch_row_append_tiebreak.py
@@ -25,6 +25,7 @@ Add a test with two batch verdict rows for one unit on the same date, in which t
 
 - [ ] **AC1** Two batch rows for one unit dated the same day are folded so that the later-appended row decides, and the test fails when the tiebreak is reversed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_row_append_tiebreak.py
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 
