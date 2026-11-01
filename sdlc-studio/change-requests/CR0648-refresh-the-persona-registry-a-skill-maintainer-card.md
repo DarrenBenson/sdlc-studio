@@ -1,6 +1,6 @@
 # CR-0648: Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0289
 > **Priority:** Medium
 > **Type:** Improvement

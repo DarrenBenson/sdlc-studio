@@ -1,6 +1,6 @@
 # US1082: The PRD's outcome citations name End goals that say them, and Jonah's upgrade goal has an outcome
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given the PRD's outcome citations and the cards they cite, when each persona the outcomes cite is read, then every one of its End goals is cited by at least one outcome, and no persona and End goal pair is cited by two outcomes
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_every_end_goal_is_cited_once
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given outcome O5, when its citation is read, then it cites Maya Okafor's End goal 5, and an outcome cites Jonah Reyes's End goal 4
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_o5_and_jonahs_upgrade_goal_are_cited
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given Jonah Reyes's card, when its End goals are read, then End goals 1 to 4 are word for word what they are at commit 7f3e91a9
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_jonahs_end_goals_are_unchanged
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

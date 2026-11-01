@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 12 |
 | Approved | 0 |
-| In Progress | 29 |
-| Complete | 525 |
+| In Progress | 28 |
+| Complete | 526 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -59,7 +59,7 @@
 | [CR-0645](CR0645-refresh-the-trd-to-6-2-delivery-units.md) | Refresh the TRD to 6.2: delivery units that execute Verify lines, committed evidence and run records, the type registry, network paths and the stale ADRs | In Progress | High | Improvement | 2026-10-19 | EP0293 |
 | [CR-0646](CR0646-refresh-the-rest-of-the-tsd-the-measured.md) | Refresh the rest of the TSD: the measured coverage, per-unit line coverage, the test-tree conventions, NFR rows and the header | In Progress | Medium | Improvement | 2026-10-19 | EP0293 |
 | [CR-0647](CR0647-refresh-the-prd-to-v6-1-0-plus.md) | Refresh the PRD to v6.1.0 plus 6.2: release markers, the features shipped since July, the business rules and NFRs that moved, and counts as bands | In Progress | Medium | Improvement | 2026-10-19 | EP0293 |
-| [CR-0648](CR0648-refresh-the-persona-registry-a-skill-maintainer-card.md) | Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index | In Progress | Medium | Improvement | 2026-10-19 | EP0289 |
+| [CR-0648](CR0648-refresh-the-persona-registry-a-skill-maintainer-card.md) | Refresh the persona registry: a skill-maintainer card (D0373), Maya's and Trevor's cards brought to current work, the PRD outcome citations and the index | Complete | Medium | Improvement | 2026-10-19 | EP0289 |
 | [CR-0649](CR0649-extend-the-doc-freshness-census-from-the-trd.md) | Extend the doc_freshness census from the TRD to the PRD and TSD, so a pinned count or stale baseline in either is caught when it drifts | In Progress | Medium | Improvement | 2026-10-19 | EP0293 |
 | [CR-0650](CR0650-the-author-s-self-check-is-a-step.md) | The author's self-check is a step the tools run and require, not a rule an agent remembers | Complete | High | Process | 2026-10-19 | EP0291 |
 | [CR-0651](CR0651-a-sprint-costs-what-its-work-costs-the.md) | A sprint costs what its work costs: the meter reads true, each unit is built and reviewed in a small fresh context, and a regression is caught at the close | Complete | High | Enhancement | 2026-10-22 | EP0292 |
