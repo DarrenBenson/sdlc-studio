@@ -12,7 +12,7 @@ Related: reference-persona.md, help/persona.md
 | Attribute | Value |
 | --- | --- |
 | **Cast role** | {{primary / secondary / supplemental / negative / customer / served}} |
-| **Interface** | {{optional - the interface this persona is Primary FOR; declare it when the cast has more than one Primary (one Primary per interface)}} |
+| **Interface** | {{optional - the interface this persona is Primary FOR, its repository paths in backticks (`src/`, `bin/run`); declare it when the cast has more than one Primary (one Primary per interface)}} |
 | **Role** | {{job_title}} |
 | **Context** | {{where and how they work - one line}} |
 

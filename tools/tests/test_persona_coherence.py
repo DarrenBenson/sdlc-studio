@@ -1,5 +1,6 @@
 """US0450/US0451: the PRD and the persona registry must state one design target.
 US1079: with two Primaries, one per interface (D0379), each states which interface it serves.
+US1080: a story minted with no persona follows the paths those Interface rows declare.
 
 Two failures this guards:
 
@@ -14,6 +15,7 @@ down here, so adding, renaming or removing a registry entry fails this file unti
 is updated to match. The files scanned in the second suite are **listed from the repo**,
 not enumerated by hand, so a new document cannot silently exempt itself.
 """
+import json
 import re
 import shutil
 import subprocess
@@ -248,7 +250,8 @@ class TwoPrimaryCastTests(unittest.TestCase):
 
     def test_an_unnamed_mint_still_defaults_to_the_shipped_skills_primary(self) -> None:
         """AC2, through the shipped CLI. Mutant: the tooling Primary listed first under
-        `## Primary`, which silently makes every unnamed mint his until US1080."""
+        `## Primary`, which makes every unnamed mint whose Affects picks no interface his
+        (US1080: here, a mint with no Affects at all)."""
         shipped, _ = shipped_and_tooling()
         self.assertTrue(shipped, "no shipped-skill Primary to expect")
         home = Path(tempfile.mkdtemp(prefix="us1079-"))
@@ -265,6 +268,33 @@ class TwoPrimaryCastTests(unittest.TestCase):
                                 re.M)
             self.assertIsNotNone(persona, "the minted story carries no Persona field")
             self.assertEqual(persona.group(1).strip(), shipped)
+        finally:
+            shutil.rmtree(home, ignore_errors=True)
+
+    def test_a_mint_follows_the_live_interface_rows(self) -> None:
+        """US1080 AC5: a dry-run mint with no `--persona` against this repository's own cards,
+        through the shipped CLI. Mutants: the tooling row's prose read as one path, or only its
+        first code span read (`.githooks/` is its second), so a hooks unit mints the shipped
+        Primary; the interface default dropped, so every unit does."""
+        shipped, tooling = shipped_and_tooling()
+        self.assertTrue(shipped and len(tooling) == 1, "no shipped and tooling Primary pair")
+        home = Path(tempfile.mkdtemp(prefix="us1080-"))
+        try:
+            shutil.copytree(REGISTRY.parent, home / "sdlc-studio" / "personas",
+                            ignore=shutil.ignore_patterns("seats"))
+            artifact = [sys.executable, str(SCRIPTS / "artifact.py"), "--root", str(home), "new"]
+            made = subprocess.run(artifact + ["--type", "epic", "--title", "Fixture epic"],
+                                  capture_output=True, text=True)
+            self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+            for affects, want in ((".githooks/pre-commit", tooling[0][0]),
+                                  (".claude/skills/sdlc-studio/scripts/artifact.py", shipped)):
+                run = subprocess.run(artifact + ["--type", "story", "--epic", "EP0001",
+                                                 "--title", "Unnamed mint", "--affects", affects,
+                                                 "--dry-run", "--format", "json"],
+                                     capture_output=True, text=True)
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+                self.assertEqual(json.loads(run.stdout).get("persona"), want, affects)
+            self.assertFalse((home / "sdlc-studio" / "stories").exists(), "a dry-run wrote")
         finally:
             shutil.rmtree(home, ignore_errors=True)
 

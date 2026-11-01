@@ -2816,6 +2816,35 @@ def persona_registry(repo_root) -> PersonaRegistry:
     return PersonaRegistry(str(path), True, None, tuple(entries))
 
 
+#: A card's `| **Interface** | ... |` Quick Reference row: the interface a Primary is FOR.
+_INTERFACE_ROW_RE = re.compile(r"^\|\s*\*\*Interface\*\*\s*\|([^|\n]*)\|", re.M | re.I)
+#: A path an Interface row declares: a code span holding no whitespace.
+_INTERFACE_PATH_RE = re.compile(r"`([^`\s]+)`")
+
+
+def persona_interface_paths(card) -> tuple[str, ...] | None:
+    """The repository paths a persona card's `Interface` row declares, in the order written.
+
+    A path is a code span in the row with no whitespace in it, so the prose around the spans is
+    never read as a path: `this repository's `tools/`, `.githooks/` and `.github/`, and the
+    forward-port` declares three. A leading `./` and a trailing `/` are dropped. None when the
+    card has no Interface row or cannot be read; an empty tuple for a row with no code span.
+    Read-only."""
+    try:
+        text = Path(card).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    row = _INTERFACE_ROW_RE.search(text)
+    if row is None:
+        return None
+    out: list[str] = []
+    for span in _INTERFACE_PATH_RE.findall(row.group(1)):
+        path = span.removeprefix("./").rstrip("/")
+        if path and path not in out:
+            out.append(path)
+    return tuple(out)
+
+
 def alias_map(repo_root) -> dict[str, str]:
     """Map every artefact alias (normalised) -> its current canonical id, read from the
     `> **Aliases:** OLD1, OLD2` metadata line. Lets a reader resolve a pre-migration id to the

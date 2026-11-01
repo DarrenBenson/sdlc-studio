@@ -2439,6 +2439,166 @@ class BatchPersonaResolutionTests(unittest.TestCase):
             self.assertIn("Nobody Real", err.getvalue())
 
 
+#: Two Primary cards whose `Interface` rows each declare several paths in prose, the shape this
+#: repository's tooling card takes. The paths are the fixture's own, so a reader that carried
+#: this repository's paths in code would route nothing here.
+INTERFACE_CARDS = {
+    "Ada Lund": ("ada-lund-app-user.md",
+                 "The shipped app: what installs from `src/`, `pkg/` and `bin/run` and runs on a "
+                 "user's machine"),
+    "Tom Bryce": ("tom-bryce-maintainer.md",
+                  "Repository tooling: this repository's `ops/`, `hooks/` and `ci/`, and the "
+                  "release cut. It does not ship"),
+}
+
+
+def _interface_registry(repo: Path, primaries: tuple = tuple(INTERFACE_CARDS),
+                        interfaces: tuple = tuple(INTERFACE_CARDS)) -> None:
+    """A registry listing `primaries` under `## Primary` in the order given; a card carries its
+    `Interface` row only when its persona is in `interfaces`."""
+    pdir = repo / "sdlc-studio" / "personas"
+    pdir.mkdir(parents=True, exist_ok=True)
+    (pdir / "index.md").write_text(
+        "# Persona Index\n\n## Primary (the design target)\n\n"
+        + "".join(f"- [{n}]({INTERFACE_CARDS[n][0]}) - a Primary.\n" for n in primaries)
+        + "\n## Secondary (served, never at the Primary's expense)\n\n"
+          "- [Jonah Reyes](jonah-reyes-team-lead.md) - small-team lead.\n\n"
+          "## Negative (deliberately not designed for)\n\n"
+          "- [Trevor Hale](trevor-hale-enterprise-pm.md) - a signal to decline.\n",
+        encoding="utf-8")
+    for name, (card, interface) in INTERFACE_CARDS.items():
+        row = f"| **Interface** | {interface} |\n" if name in interfaces else ""
+        (pdir / card).write_text(
+            f"# {name}\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+            f"| **Cast role** | Primary |\n{row}| **Role** | fixture |\n", encoding="utf-8")
+
+
+class InterfacePersonaMintTests(unittest.TestCase):
+    """US1080 (D0379): a story minted with no `--persona` names the Primary whose card's
+    `Interface` row declares paths covering its Affects, through `new` and `batch` alike."""
+
+    def _repo(self, d: str, primaries: tuple = tuple(INTERFACE_CARDS),
+              interfaces: tuple = tuple(INTERFACE_CARDS)) -> Path:
+        repo = Path(d)
+        _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+        _epic(repo)
+        _interface_registry(repo, primaries, interfaces)
+        return repo
+
+    def _cli(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = artifact.main(argv)
+        return rc, out.getvalue(), err.getvalue()
+
+    def _new(self, repo: Path, title: str, affects: str, *extra: str):
+        """`artifact.py new --type story` through the CLI: (exit, minted Persona, stderr)."""
+        rc, out, err = self._cli(["new", "--type", "story", "--epic", "EP0001", "--title", title,
+                                  "--affects", affects, "--format", "json", "--root", str(repo),
+                                  *extra])
+        return rc, (_persona_line(_json.loads(out)["path"]) if rc == 0 else None), err
+
+    def _batch(self, repo: Path, items: list[dict]):
+        """`artifact.py batch --type story` through the CLI: (exit, Personas in order, stderr)."""
+        spec = repo / "batch-spec.json"
+        spec.write_text(_json.dumps([{"epic": "EP0001", **it} for it in items]), encoding="utf-8")
+        rc, out, err = self._cli(["batch", "--type", "story", "--spec", str(spec),
+                                  "--format", "json", "--root", str(repo)])
+        made = _json.loads(out)["created"] if rc == 0 else []
+        return rc, [_persona_line(c["path"]) for c in made], err
+
+    def test_affects_wholly_in_one_interface_mints_its_primary(self) -> None:
+        """AC1. Mutants: the interface paths carried in code rather than read from the cards (the
+        fixture's paths are its own); a row's second and third paths ignored (each unit lies in
+        its card's second and third); a test module in the other interface deciding. Both
+        listing orders run, so the first-listed fallback cannot pass for the routing."""
+        cases = {"Ada Lund": "pkg/core.py, bin/run, ops/tests/test_core.py, changelog.d/US0001.md",
+                 "Tom Bryce": "hooks/pre-push, ci/lint.yml, src/tests/test_hooks.py, "
+                              "changelog.d/US0002.md"}
+        for order in (("Ada Lund", "Tom Bryce"), ("Tom Bryce", "Ada Lund")):
+            with tempfile.TemporaryDirectory() as d:
+                repo = self._repo(d, order)
+                for (name, affects), title in zip(cases.items(), ("app core", "hook wiring")):
+                    rc, persona, err = self._new(repo, title, affects)
+                    self.assertEqual((rc, persona), (0, name), f"new, listed {order}: {err}")
+                rc, personas, err = self._batch(repo, [
+                    {"title": "batched app", "affects": cases["Ada Lund"]},
+                    {"title": "batched hooks", "affects": cases["Tom Bryce"]}])
+                self.assertEqual((rc, personas), (0, list(cases)), f"batch, listed {order}: {err}")
+
+    def test_a_mixed_or_undeclared_affects_mints_the_first_primary(self) -> None:
+        """AC2. Mutants: a unit's own test modules deciding (the tests-only case would mint Tom);
+        a mixed unit minted against the last-matched Primary, or the first-matched (the mixed
+        case runs in both path orders); a unit partly in one interface and partly in none
+        minted against that one; a declared path matched as a bare string prefix."""
+        cases = [("both, app path first", "src/thing.py, ops/release.sh"),
+                 ("both, tooling path first", "ops/release.sh, src/thing.py"),
+                 ("neither", "docs/guide.md, README.md"),
+                 ("neither, near-miss prefixes", "opsx/release.sh, hooksmith/run.py"),
+                 ("tests and fragment only",
+                  "ops/tests/test_release.py, hooks/tests/test_pre_push.py, changelog.d/US0003.md"),
+                 ("partly in none", "ops/release.sh, docs/guide.md")]
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            for case, affects in cases:
+                rc, persona, err = self._new(repo, case, affects)
+                self.assertEqual((rc, persona), (0, "Ada Lund"), f"{case}: {err}")
+            rc, personas, err = self._batch(repo, [{"title": f"batched {case}", "affects": a}
+                                                   for case, a in cases])
+            self.assertEqual((rc, personas), (0, ["Ada Lund"] * len(cases)), err)
+
+    def test_an_explicit_persona_always_wins(self) -> None:
+        """AC3. Mutants: the interface default applied over an explicit `--persona` on `batch`,
+        or on `new` (each persona named is one the Affects would not pick)."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d)
+            for persona, affects in (("Ada Lund", "hooks/pre-push, ci/lint.yml"),
+                                     ("Jonah Reyes", "hooks/pre-push"),
+                                     ("Tom Bryce", "src/thing.py")):
+                rc, got, err = self._new(repo, f"named {persona}", affects, "--persona", persona)
+                self.assertEqual((rc, got), (0, persona), err)
+            rc, got, err = self._batch(repo, [
+                {"title": "batch names Ada", "affects": "hooks/pre-push", "persona": "Ada Lund"},
+                {"title": "batch names Tom", "affects": "pkg/core.py", "persona": "Tom Bryce"}])
+            self.assertEqual((rc, got), (0, ["Ada Lund", "Tom Bryce"]), err)
+
+    def test_a_cast_without_interfaces_mints_as_before_and_warns_on_two_primaries(self) -> None:
+        """AC4. Mutants: a two-Primary cast with no Interface row refused (by `new`, `new
+        --strict` or `batch`) or minted silently; a one-Primary cast routed or warned by its
+        Affects; a card that declares its paths named in the warning beside one that does not."""
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            _index(repo, "story", "| ID | Title | Status | Epic | Created |")
+            _epic(repo)
+            _registry(repo)  # one Primary, whose card has no Interface row
+            for title, affects in (("lone tooling", "ops/release.sh"),
+                                   ("lone mixed", "src/thing.py, docs/guide.md")):
+                rc, persona, err = self._new(repo, title, affects)
+                self.assertEqual((rc, persona), (0, "Maya Okafor"), err)
+                self.assertNotIn("Interface", err)
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, ("Tom Bryce",))  # one Primary, its Affects outside his paths
+            rc, persona, err = self._new(repo, "outside the lone interface", "src/thing.py")
+            self.assertEqual((rc, persona), (0, "Tom Bryce"), err)
+            self.assertNotIn("Interface", err)
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, interfaces=())
+            rc, persona, err = self._new(repo, "undeclared hooks", "hooks/pre-push", "--strict")
+            self.assertEqual((rc, persona), (0, "Ada Lund"), err)
+            for named in ("Ada Lund", "Tom Bryce", "| **Interface** |"):
+                self.assertIn(named, err)
+            rc, personas, err = self._batch(repo, [{"title": "batched undeclared hooks",
+                                                    "affects": "hooks/pre-push"}])
+            self.assertEqual((rc, personas), (0, ["Ada Lund"]), err)
+            self.assertIn("| **Interface** |", err)
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._repo(d, interfaces=("Tom Bryce",))
+            rc, persona, err = self._new(repo, "half declared hooks", "hooks/pre-push")
+            self.assertEqual((rc, persona), (0, "Tom Bryce"), err)
+            self.assertIn("Ada Lund", err)
+            self.assertNotIn("Tom Bryce", err)
+
+
 class SuppliedContentLandsTests(unittest.TestCase):
     """A creator that accepts content and drops it hands back exit 0 over a document the
     caller's words never reached. By the time a downstream floor objects the words are gone

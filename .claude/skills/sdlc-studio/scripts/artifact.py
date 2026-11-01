@@ -279,13 +279,15 @@ class PersonaRefused(ValueError):
     any id is allocated or any file written, so a refusal leaves nothing half-minted."""
 
 
-def _resolve_persona(root: Path | str, requested, strict: bool = False, label: str = "") -> str:
+def _resolve_persona(root: Path | str, requested, strict: bool = False, label: str = "",
+                     affects=None) -> str:
     """The Persona a story is minted with, resolved through the design-persona registry.
 
     ONE resolver for every minting path, so `new`, `batch` and the commands that mint in bulk
     cannot disagree about who a story serves:
 
-    - no persona given -> the declared Primary, the project's design target;
+    - no persona given -> the declared Primary, the project's design target; with two or
+      more, the one whose interface the unit's `affects` lies in (`_interface_primary`);
     - a registered name -> its canonical spelling from the registry;
     - an unregistered name -> minted anyway with a warning naming who IS registered, and
       REFUSED under `strict` before anything is allocated;
@@ -314,7 +316,7 @@ def _resolve_persona(root: Path | str, requested, strict: bool = False, label: s
                   f"this story names no design target - declare one under a `## Primary` "
                   f"heading, or pass --persona", file=sys.stderr)
             return ""
-        return primary.name
+        return _interface_primary(reg, affects, where)
     entry = reg.find(name)
     if entry is None:
         known = ", ".join(reg.names) or "nobody"
@@ -331,6 +333,50 @@ def _resolve_persona(root: Path | str, requested, strict: bool = False, label: s
               f"deliberately does not design for them. Minted anyway (never refused): confirm "
               f"this story is a deliberate decline, not a backlog item.", file=sys.stderr)
     return entry.name
+
+
+def _is_paperwork(path: str) -> bool:
+    """A test module (`file_finding.is_test_path`) or a file in a `changelog.d/` directory:
+    what a unit ships beside its change, so neither says whose interface the change is in."""
+    return file_finding.is_test_path(path) or "changelog.d" in path.split("/")[:-1]
+
+
+def _interface_primary(reg: sdlc_md.PersonaRegistry, affects, where: str = "") -> str:
+    """The Primary a story minted with no `--persona` names, chosen by the interface its
+    `affects` lies in. Interfaces are project data: the paths each Primary's card declares in
+    its `Interface` row (`sdlc_md.persona_interface_paths`), never paths carried here.
+
+    - one Primary -> that Primary, whatever the Affects;
+    - test modules and changelog fragments set aside, every remaining Affects path under the
+      declared paths of one Primary and no other -> that Primary;
+    - anything else (paths in two interfaces, a path in none, nothing left once the paperwork
+      is set aside) -> the first Primary the index lists;
+    - two or more Primaries and one with no interface path declared -> a warning naming it on
+      every such mint. Warned, never refused: the mint goes ahead as above.
+    """
+    primaries = reg.by_role("primary")
+    if len(primaries) == 1:
+        return primaries[0].name
+    declared = [(p, sdlc_md.persona_interface_paths(p.card) if p.card else None)
+                for p in primaries]
+    silent = [p.name for p, paths in declared if not paths]
+    if silent:
+        print(f"warning:{where} {len(primaries)} Primary personas, and no interface paths are "
+              f"declared for {', '.join(silent)} - name them in backticks in the card's "
+              f"`| **Interface** | ... |` Quick Reference row, or pass --persona. Until then a "
+              f"story is minted against {primaries[0].name}, the first listed in {reg.path}, "
+              f"unless its Affects lie wholly in one declared interface.", file=sys.stderr)
+    owners = set()
+    for path in file_finding.declared_affects(str(affects or "")):
+        path = path.removeprefix("./")
+        if _is_paperwork(path):
+            continue
+        hits = [p.name for p, paths in declared
+                if paths and any(path == d or path.startswith(d + "/") for d in paths)]
+        if len(hits) != 1:
+            return primaries[0].name
+        owners.add(hits[0])
+    return owners.pop() if len(owners) == 1 else primaries[0].name
 
 
 def _with_notes(result: dict, ac_warnings: list[str], dupes: list[dict]) -> dict:
@@ -1137,7 +1183,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
         # Who the story is FOR, resolved against the design-persona registry rather than carried
         # as free text nothing downstream consumes. Resolved (and refused, under strict) here -
         # before an id is allocated - so a refusal leaves nothing behind.
-        f["persona"] = _resolve_persona(root, f.get("persona"), strict=strict)
+        f["persona"] = _resolve_persona(root, f.get("persona"), strict=strict,
+                                        affects=f.get("affects"))
     # A criterion carrying its verifier inside itself is warned by name here, positionally - it
     # would otherwise be written out as prose with no Verify line anyone could run.
     ac_warnings = check_pipe_acs(f)
@@ -1189,6 +1236,10 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
                                 "indexed": idx_exists or would_create_index,
                                 "would_create_index": would_create_index,
                                 "epic_linked": (type_ == "story" and bool(f.get("epic"))) or None,
+                                # a preview writes no file, so the result is the one place
+                                # the persona a story would be minted against can be read
+                                **({"persona": f.get("persona") or None}
+                                   if type_ == "story" else {}),
                                 "dry_run": True}, ac_warnings, dupes)
         if consolidate and type_ in sdlc_md.FINDING_TYPES:
             triage_noise.enforce_session_cap(root)  # refuse the N+1th finding loudly (v3)
@@ -1304,7 +1355,8 @@ def new_batch(repo_root: Path | str, type_: str, items: list[dict],
             # the same design target it would have named one at a time. Resolved BEFORE any id
             # is reserved, so the batch stays all-or-nothing.
             it["persona"] = _resolve_persona(root, it.get("persona"),
-                                             label=str(it.get("title") or ""))
+                                             label=str(it.get("title") or ""),
+                                             affects=it.get("affects"))
     # CR0183/BG0076: allocate the id block + write all files under the advisory lock,
     # so a concurrent `new`/`new_batch` cannot mint an overlapping id block. NOT under a preview,
     # for the reason the single-artefact path carries: taking the lock OPENS a file in the target
@@ -1743,8 +1795,10 @@ def build_parser() -> argparse.ArgumentParser:
     # born clean; omit it and the scaffold keeps the slot for the agent to fill.
     n.add_argument("--persona",
                    help="story: the design persona it serves, resolved against "
-                        "personas/index.md. Omitted, it defaults to the declared Primary; "
-                        "an unregistered name is warned about (refused under --strict)")
+                        "personas/index.md. Omitted, it defaults to the declared Primary "
+                        "(with two or more, the one whose card's Interface paths hold every "
+                        "--affects path but its tests and changelog fragments, else the first "
+                        "listed); an unregistered name is warned about (refused under --strict)")
     n.add_argument("--summary", help="the Summary/Overview section")
     n.add_argument("--steps", help="bug: steps to reproduce (the evidence a bug must carry)")
     n.add_argument("--fix", help="bug: proposed fix")
