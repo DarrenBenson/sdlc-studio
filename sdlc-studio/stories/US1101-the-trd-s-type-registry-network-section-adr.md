@@ -1,6 +1,6 @@
 # US1101: The TRD's type registry, network section, ADR-003, ADR-009, ADR-012 and header match what is built on 6.2
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0645
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given the type registry in code, when the TRD's registry is read, then it lists `charter` with its vocabulary and names `META_TYPES`
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdRegistryNetworkTests::test_the_type_registry_matches_the_code
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given every script that calls `gh`, when the TRD's network section is read, then each caller is listed and the version-check GET is recorded as an ADR-004 exception
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdRegistryNetworkTests::test_every_gh_caller_is_listed
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given ADR-003, ADR-009 and ADR-012, when they are read, then each matches what is built, ADR-012 carries a revision row, and the header's coverage line names v6.1.0 plus 6.2 on main
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdRegistryNetworkTests::test_the_adrs_and_header_match_6_2
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 165 |
+| Open | 166 |
 | In Progress | 0 |
 | Fixed | 825 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1163** |
+| **Total** | **1164** |
 
 ## All Bugs
 
@@ -239,6 +239,7 @@
 | [BG1161](BG1161-a-clean-checkout-gate-py-run-judges-conformance.md) | A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
