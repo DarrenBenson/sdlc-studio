@@ -1,6 +1,6 @@
 # US1104: The PRD's business rules, NFRs and cost model match the code, its derived counts are bands, and the engagement floor reads Partial until BG0959 is Fixed
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0647
 > **Created:** 2026-10-31
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given the code, when the PRD's business rules, NFRs and cost model are read, then they match it: the delivery units that execute Verify lines, the groomed definition, the network paths, the read-only set and the measured tokens-per-point rate
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given a derived count in the PRD, when it is read, then it is stated as a band per the PRD's own rule, and per-ship history sits in the changelog table, not in feature blocks
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_derived_counts_are_bands
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given BG0959's status, when the PRD's engagement-floor row is read, then it reads Partial while BG0959 is open, and the verified detail criteria are ticked
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_engagement_floor_tracks_bg0959
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 
