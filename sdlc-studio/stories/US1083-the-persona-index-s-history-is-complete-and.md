@@ -30,6 +30,7 @@
 
 ## Notes
 
+- From US1080's review (2026-11-01): sdlc-studio/personas/index.md:14 still says 'Listed second, so a story minted with no persona still names the shipped skill's Primary'. Since US1080, an unnamed mint follows the interface its Affects touch (a `.githooks/` unit mints Rowan Achterberg), so that sentence is false; correct it in this unit, which already owns index.md.
 - Serves: Maya Okafor, End goal 4.
 - Delivers CR0648:28 (EP0289:31; the consult at :451 and :467). Today the history rows run 07-27, 06-21, 07-16, 10-19; the 2026-07-29 change (cec10acc, BG0307) has no row; there is no Last updated line; :6 names the seats but links none; personas.md:46's Role field says 'primary user' under a banner (:19) saying it records no Primary, and its maintainer section does not link Rowan's card.
 - The registry reader registers any bullet under a role heading (sdlc_md.py persona_registry), so the seat links go under a non-role heading; AC3's second clause holds that.
@@ -46,3 +47,4 @@
 | 2026-10-19 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-21 | Claude Opus 5.5 | Regroomed on the run-three goal review's two rounds (engineering, product and qa seats; D0384) |
 | 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on US1081, which shares a file this unit declares |
+| 2026-11-01 | Claude Opus 5.5 | Note from US1080's review: the index sentence on the unnamed-mint default is now false |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 157 |
+| Open | 159 |
 | In Progress | 0 |
 | Fixed | 820 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1150** |
+| **Total** | **1152** |
 
 ## All Bugs
 
@@ -226,6 +226,8 @@
 | [BG1148](BG1148-revalidate-s-real-date-guard-has-no-test.md) | revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1149](BG1149-rfc0048-s-resolved-d6-still-states-a-120s.md) | RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20 | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1150](BG1150-sprint-py-still-says-the-planner-reads-the.md) | sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358 | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1151](BG1151-the-interface-path-persona-router-reads-a-template.md) | The interface-path persona router reads a template placeholder as a declared interface, cuts a row at an escaped pipe, leaves ./ unpinned, and disagrees with validate on overlap | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1152](BG1152-artifact-py-batch-writes-a-list-valued-affects.md) | artifact.py batch writes a list-valued affects as a Python repr, so the Affects line reads ['hooks/pre-push'] | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

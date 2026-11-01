@@ -1,6 +1,6 @@
 # US1080: A unit is minted against the Primary of the interface its Affects touches, read from interface paths the project declares
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0648
 > **Created:** 2026-10-19
 > **Created-by:** sdlc-studio new
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture cast of two Primary cards whose `Interface` rows each declare several paths in prose, as this repository's tooling card does, when `artifact.py new --type story` mints with no `--persona` and Affects wholly under one card's paths beside a test module and a `changelog.d/` fragment, then the minted Persona is that card's Primary, for each card; `batch` mints the same
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePersonaMintTests::test_affects_wholly_in_one_interface_mints_its_primary
+  - **Verified:** yes (2026-11-01)
 - **AC2:** Given the same cast, when the Affects touches both declared interfaces, or neither, or reaches one only through test modules and changelog fragments, then the Primary listed first in the persona index is minted
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePersonaMintTests::test_a_mixed_or_undeclared_affects_mints_the_first_primary
+  - **Verified:** yes (2026-11-01)
 - **AC3:** Given an explicit `--persona`, when `new` or `batch` mints, then that persona is minted whatever the Affects
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePersonaMintTests::test_an_explicit_persona_always_wins
+  - **Verified:** yes (2026-11-01)
 - **AC4:** Given a one-Primary cast, when any Affects is minted, then the Persona is the one minted today; given two Primaries and no `Interface` row, then the first Primary is minted, stderr names the missing interface declaration, and the mint succeeds
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::InterfacePersonaMintTests::test_a_cast_without_interfaces_mints_as_before_and_warns_on_two_primaries
+  - **Verified:** yes (2026-11-01)
 - **AC5:** Given this repository's own cards, when a story is minted dry-run with no `--persona`, then Affects wholly under `.githooks/` mints Rowan Achterberg and Affects under `.claude/skills/sdlc-studio/` mints Maya Okafor
   - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_a_mint_follows_the_live_interface_rows
+  - **Verified:** yes (2026-11-01)
 
 ## Notes
 
