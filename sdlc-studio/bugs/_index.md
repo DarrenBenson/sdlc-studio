@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 162 |
 | In Progress | 0 |
-| Fixed | 823 |
+| Fixed | 824 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1158** |
+| **Total** | **1159** |
 
 ## All Bugs
 
@@ -210,7 +210,7 @@
 | [BG1132](BG1132-bg0962-s-ac7-test-proves-only-the-reject.md) | BG0962's AC7 test proves only the REJECT half of 'the frozen verdict decides' when the per-unit ledger cannot be read | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1133](BG1133-three-velocity-priced-pt-behaviours-us1092-states-are.md) | Three VELOCITY Priced/pt behaviours US1092 states are pinned by no test: the Source guard, an earlier row keeping its recorded figure, and rows with no Source named in the rate's basis | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1134](BG1134-us1095-s-cost-check-is-pinned-only-on.md) | US1095's cost check is pinned only on the older retro shape, cost-baseline add reports a row the median never uses, and its latest-five window has no test | Open | Low | 2026-10-26 | 2026-10-26 |
-| [BG1135](BG1135-critic-py-supersede-cannot-retire-either-of-two.md) | critic.py supersede cannot retire either of two delivery rows that share a unit, date, reviewer and verdict | Open | Medium | 2026-10-27 | 2026-10-27 |
+| [BG1135](BG1135-critic-py-supersede-cannot-retire-either-of-two.md) | critic.py supersede cannot retire either of two delivery rows that share a unit, date, reviewer and verdict | Fixed | Medium | 2026-10-27 | 2026-10-27 |
 | [BG1136](BG1136-bg0962-s-ac7-test-pins-only-the-frozen.md) | BG0962's AC7 test pins only the frozen-REJECT half of 'an unreadable per-unit ledger is read as no verdict' | Superseded | Low | 2026-10-31 | 2026-10-31 |
 | [BG1137](BG1137-the-closing-review-fold-s-append-order-tiebreak.md) | The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test | Fixed | Low | 2026-10-31 | 2026-10-31 |
 | [BG1138](BG1138-the-gate-host-s-prerequisite-check-reports-gh.md) | The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran | Fixed | Low | 2026-10-31 | 2026-10-31 |
@@ -234,6 +234,7 @@
 | [BG1156](BG1156-test-persona-coherence-s-span-recogniser-skips-some.md) | test_persona_coherence's span recogniser skips some `script.py verb` shapes, and its mixed-unit probe cannot tell first-listed Primary from first-path owner | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1157](BG1157-no-test-pins-that-a-host-prerequisite-check.md) | No test pins that a --host prerequisite check still names a missing markdownlint, so widening PUSHER_ONLY to it stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1158](BG1158-the-trd-verifier-authority-scan-misses-some-story.md) | The TRD verifier-authority scan misses some story-only rewordings and fails true sentences about a story-only run | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1159](BG1159-supersede-s-reference-omits-brief-and-row-brief.md) | supersede's reference omits --brief and row-brief, two of its new guarantees are unpinned, and a no-match refusal contradicts itself | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG1135: critic.py supersede cannot retire either of two delivery rows that share a unit, date, reviewer and verdict
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Depends on:** BG1109
@@ -27,6 +27,7 @@ Let supersede narrow by the row's brief fingerprint (`--brief <fingerprint>`), a
 
 - [ ] **AC1** critic.py supersede --brief <fingerprint> retires exactly the one row with that fingerprint when several share unit, date, reviewer and verdict, and the refusal for an ambiguous match names each candidate's fingerprint.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_supersede_by_brief.py
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 
