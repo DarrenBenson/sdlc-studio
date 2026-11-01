@@ -49,6 +49,15 @@ the commit it was taken at, so a record of committed work survives another unit'
 to a shared file; a record of uncommitted work can still read as stale. See
 [the author's self-check](../reference-review.md#author-self-check).
 
+## Retiring a verdict row
+
+`critic.py supersede` retires a delivery verdict row that records an event which did not happen
+by appending a record that names it; the row stays. The row is found by `--unit` and `--date`,
+narrowed with `--reviewer`, `--verdict` and `--brief <fingerprint>` (the row's Brief cell, `-`
+for none), so one of two rows that differ only in their brief can be retired alone. While the
+narrowing matches several rows it is refused, naming each one's fingerprint, and nothing is
+written. See [correcting the verdict log](../reference-review.md#superseding-a-verdict).
+
 ## The review brief
 
 `critic.py brief --unit <id> --seat <seat>` prints the brief a reviewer is given. Beside the seat

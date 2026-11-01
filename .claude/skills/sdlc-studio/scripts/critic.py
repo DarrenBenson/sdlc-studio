@@ -902,10 +902,11 @@ _SUPERSEDE_INTRO = (
     "> addition. Prose, not a table - the row parser reads every pipe-delimited line here.\n\n")
 #: Record fields, in write order. Also the parse boundary: a value runs to the next of these
 #: keys, so a reason containing punctuation (or a semicolon-separated agent id) stays whole.
+#: `row-brief` is written only when the supersession names the row's brief (`--brief`).
 _SUPERSEDE_KEYS = ("unit", "row-date", "row-verdict", "row-reviewer", "row-author",
-                   "authorised-by", "boundary", "reason", "recorded")
+                   "row-brief", "authorised-by", "boundary", "reason", "recorded")
 _SUPERSEDE_COLS = ("unit", "row_date", "row_verdict", "row_reviewer", "row_author",
-                   "authorised_by", "boundary", "reason", "recorded")
+                   "row_brief", "authorised_by", "boundary", "reason", "recorded")
 _SUPERSEDE_PREFIX = "SUPERSEDED "
 
 
@@ -1029,7 +1030,8 @@ def ruling_refusal(repo_root: Path | str, unit: str, ruling: str) -> str | None:
 
 def read_supersessions(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     """Every supersession record in `phase`'s log, in order, as {unit, row_date, row_verdict,
-    row_reviewer, row_author, authorised_by, boundary, reason, recorded}."""
+    row_reviewer, row_author, row_brief, authorised_by, boundary, reason, recorded}. A record
+    written before `row-brief` existed, or without `--brief`, has an empty `row_brief`."""
     path = verdicts_path(repo_root, phase)
     if not path.exists():
         return []
@@ -1051,7 +1053,9 @@ def _supersession_index(records: list[dict]) -> dict:
     normalised four ids. Over this repository - 848 verdict rows against 32 records - that is
     27,136 comparisons per annotation, and the ledger is annotated on EVERY lookup, so a single
     whole-workspace conformance run made 16,837,139 of them and 37 million id normalisations
-    A record retires a row of ITS OWN unit or of none, so the unit is the index.
+    A record retires a row of ITS OWN unit or of none, so the unit is the index. Each key holds
+    its records in written order, because a record naming a brief retires only the row carrying
+    it (`_retires_brief`), so the first record under a key need not be the one that applies.
     """
     index: dict = {}
     for rec in records:
@@ -1059,8 +1063,21 @@ def _supersession_index(records: list[dict]) -> dict:
                rec.get("row_date", ""),
                (rec.get("row_verdict", "") or "").upper(),
                _id(rec.get("row_reviewer", "")))
-        index.setdefault(key, rec)      # first record wins, as `next()` did
+        index.setdefault(key, []).append(rec)
     return index
+
+
+def _supersede_brief(value: str | None) -> str:
+    """A Brief cell as a supersession compares it: whitespace folded, case-folded, and `-` for
+    a row with no brief, which the ledger writes as `-` or, on a pre-brief row, leaves empty."""
+    return " ".join(str(value or "").split()).casefold() or "-"
+
+
+def _retires_brief(rec: dict, row: dict) -> bool:
+    """True when a record's brief, if it names one, is the row's. A record with no `row-brief`
+    names none, so it retires every row its other fields match, as it always has."""
+    named = (rec.get("row_brief") or "").strip()
+    return not named or _supersede_brief(named) == _supersede_brief(row.get("brief"))
 
 
 def _annotate_superseded(rows: list[dict], records: list[dict]) -> list[dict]:
@@ -1068,10 +1085,11 @@ def _annotate_superseded(rows: list[dict], records: list[dict]) -> list[dict]:
     so a reader never has to tell 'live' from 'field absent'."""
     index = _supersession_index(records)
     for row in rows:
-        rec = index.get((sdlc_md.norm_id(row.get("unit", "")),
-                         row.get("date", ""),
-                         (row.get("verdict", "") or "").upper(),
-                         _id(row.get("reviewer", ""))))
+        rec = next((r for r in index.get((sdlc_md.norm_id(row.get("unit", "")),
+                                           row.get("date", ""),
+                                           (row.get("verdict", "") or "").upper(),
+                                           _id(row.get("reviewer", ""))), ())
+                    if _retires_brief(r, row)), None)   # first applicable record wins
         row["superseded"] = rec is not None
         row["superseded_reason"] = rec["reason"] if rec else ""
         row["superseded_by"] = rec["authorised_by"] if rec else ""
@@ -1122,14 +1140,19 @@ def _matches_row(row: dict, other: dict) -> bool:
 
 def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str,
                         authorised_by: str, boundary: str, reviewer: str | None = None,
-                        verdict: str | None = None, phase: str = "delivery") -> Path:
+                        verdict: str | None = None, phase: str = "delivery",
+                        brief: str | None = None) -> Path:
     """Retire one verdict row by appending a supersession record naming it.
 
-    The row is identified by unit and date, narrowed with `reviewer` and `verdict` when a
-    unit carries more than one row that day. Refusals, all loud and all writing nothing:
+    The row is identified by unit and date, narrowed with `reviewer`, `verdict` and `brief`
+    (the row's Brief cell, `-` for none) when a unit carries more than one row that day. A
+    record written with `brief` carries the row's cell as `row-brief`, so it retires that row
+    and not another sharing its unit, date, verdict and reviewer. Refusals, all loud and all
+    writing nothing:
 
     - no row matches, or more than one does - a correction pointing at nothing (or at an
-      unspecified one of several) is a false erratum;
+      unspecified one of several) is a false erratum; the refusal for several names each
+      one's brief fingerprint;
     - no authoriser, or no `boundary` (the separate trust boundary the authoriser acted in) -
       superseding can retire an independence attribution, so it is held to the sign-off's own
       rule: a correction with no recorded boundary is a hand edit with extra steps;
@@ -1161,6 +1184,9 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
         candidates = [v for v in candidates if _id(v["reviewer"]) == _id(reviewer)]
     if verdict:
         candidates = [v for v in candidates if v["verdict"].upper() == verdict.upper()]
+    if (brief or "").strip():
+        candidates = [v for v in candidates
+                      if _supersede_brief(v.get("brief")) == _supersede_brief(brief)]
     if not candidates:
         dates = sorted({v["date"] for v in read_verdicts(repo_root, phase)
                         if sdlc_md.norm_id(v["unit"]) == target})
@@ -1169,10 +1195,16 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
                          f"(that unit has {seen}) - a supersession that points at nothing "
                          f"is a false erratum; nothing written")
     if len(candidates) > 1:
+        unused = [flag for flag, given in (("--reviewer", reviewer), ("--verdict", verdict),
+                                           ("--brief", (brief or "").strip())) if not given]
+        hint = (f"narrow it with {' or '.join(unused)}" if unused else
+                "they agree on every field supersede narrows by, so no record can retire one "
+                "of them alone")
+        briefs = ", ".join(str(v.get("brief") or "").strip() or "-" for v in candidates)
         raise ValueError(
-            f"{len(candidates)} {phase} verdict rows match {target} dated {want_date} - "
-            f"narrow it with --reviewer and/or --verdict; retiring an unspecified one of "
-            f"several is not a correction")
+            f"{len(candidates)} {phase} verdict rows match {target} dated {want_date}, with "
+            f"brief fingerprints {briefs} - {hint}; retiring an unspecified one of several is "
+            f"not a correction")
     row = candidates[0]
     if _id(authorised_by) == _id(row["author"]):
         raise ValueError(
@@ -1185,13 +1217,16 @@ def record_supersession(repo_root: Path | str, unit: str, date: str, reason: str
             f"controls cannot authorise retiring the review, on the sign-off's independence "
             f"rule; name a principal in a separate trust boundary")
     path = verdicts_path(repo_root, phase)
+    row_brief = (_supersede_value(str(row.get("brief") or "").strip() or "-", escape=False)
+                 if (brief or "").strip() else "")
     record = _SUPERSEDE_PREFIX + " ".join(
         f"{key}={value}" for key, value in zip(_SUPERSEDE_KEYS, (
             sdlc_md.norm_id(row["unit"]), row["date"], row["verdict"].upper(),
             _supersede_value(row["reviewer"], escape=False),
-            _supersede_value(row["author"] or "-", escape=False),
+            _supersede_value(row["author"] or "-", escape=False), row_brief,
             _supersede_value(authorised_by), _supersede_value(boundary),
-            _supersede_value(reason), sdlc_md.now_date())))
+            _supersede_value(reason), sdlc_md.now_date()))
+        if key != "row-brief" or value)
     with _ledger_lock(path):
         text = path.read_text(encoding="utf-8")
         with path.open("a", encoding="utf-8") as fh:  # append-only, below the table
@@ -4359,12 +4394,13 @@ def cmd_supersede(args: argparse.Namespace) -> int:
             allowed=("reason",)).get("reason", "")
         path = record_supersession(args.root, args.unit, args.date, reason,
                                    args.authorised_by, args.boundary, reviewer=args.reviewer,
-                                   verdict=args.verdict)
+                                   verdict=args.verdict, brief=args.brief)
     except (OSError, ValueError) as exc:
         print(f"supersede refused: {exc}", file=sys.stderr)
         return 2
+    named = f" with brief {args.brief.strip()}" if (args.brief or "").strip() else ""
     print(f"superseded the delivery verdict row for {sdlc_md.norm_id(args.unit)} "
-          f"dated {args.date} -> {path}")
+          f"dated {args.date}{named} -> {path}")
     return 0
 
 
@@ -4466,6 +4502,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--reviewer", default=None,
                     help="narrow the match when the unit has several rows that date")
     sp.add_argument("--verdict", default=None, help="narrow the match by the row's verdict")
+    sp.add_argument("--brief", default=None, metavar="FINGERPRINT",
+                    help="narrow the match by the row's Brief cell (`-` for a row with none), "
+                         "when rows share unit, date, reviewer and verdict")
     sp.add_argument("--root", default=".")
     sp.set_defaults(func=cmd_supersede)
     sc = sub.add_parser("self-check",
