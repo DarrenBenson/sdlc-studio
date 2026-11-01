@@ -1,6 +1,6 @@
 # BG1138: The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/gate_prereqs.py, tools/remote-gate.sh, tools/tests/test_gate_prereqs.py, changelog.d/BG1138.md
@@ -28,8 +28,10 @@ Give `gate_prereqs.py` a host mode (or a per-tool scope) so that the host-side p
 
 - [ ] **AC1** The host-side preflight that remote-gate.sh runs does not name gh as a missing prerequisite.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py
+  - **Verified:** yes (2026-11-01)
 - [ ] **AC2** The local check (`gate_prereqs.py check` with no host flag) still names a missing gh with its consequence, and still exits 0 for it under --refusing.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py
+  - **Verified:** yes (2026-11-01)
 
 ## Impact
 

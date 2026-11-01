@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 161 |
 | In Progress | 0 |
-| Fixed | 822 |
+| Fixed | 823 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1156** |
+| **Total** | **1157** |
 
 ## All Bugs
 
@@ -213,7 +213,7 @@
 | [BG1135](BG1135-critic-py-supersede-cannot-retire-either-of-two.md) | critic.py supersede cannot retire either of two delivery rows that share a unit, date, reviewer and verdict | Open | Medium | 2026-10-27 | 2026-10-27 |
 | [BG1136](BG1136-bg0962-s-ac7-test-pins-only-the-frozen.md) | BG0962's AC7 test pins only the frozen-REJECT half of 'an unreadable per-unit ledger is read as no verdict' | Superseded | Low | 2026-10-31 | 2026-10-31 |
 | [BG1137](BG1137-the-closing-review-fold-s-append-order-tiebreak.md) | The closing-review fold's append-order tiebreak between batch rows of one date is pinned by no test | Fixed | Low | 2026-10-31 | 2026-10-31 |
-| [BG1138](BG1138-the-gate-host-s-prerequisite-check-reports-gh.md) | The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran | Open | Low | 2026-10-31 | 2026-10-31 |
+| [BG1138](BG1138-the-gate-host-s-prerequisite-check-reports-gh.md) | The gate host's prerequisite check reports gh missing with a consequence that is false there, so every push says the red-CI read is off when it ran | Fixed | Low | 2026-10-31 | 2026-10-31 |
 | [BG1139](BG1139-lessons-py-revalidate-extend-accepts-reason-and-discards.md) | lessons.py revalidate --extend accepts --reason and discards it, so a judged extension leaves no record and cannot be told from an unjudged one | Fixed | Medium | 2026-10-31 | 2026-10-31 |
 | [BG1140](BG1140-readiness-py-tells-a-carried-unit-whose-verifiers.md) | readiness.py tells a carried unit whose verifiers pass to close rather than be batched, but transition refuses its Done until the reviewer who rejected it approves | Fixed | Low | 2026-10-31 | 2026-10-31 |
 | [BG1141](BG1141-the-gate-host-docs-test-s-docstrings-claim.md) | The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config` | Open | Low | 2026-10-31 | 2026-10-31 |
@@ -232,6 +232,7 @@
 | [BG1154](BG1154-trevor-s-card-says-a-sign-off-on.md) | Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1155](BG1155-decisions-read-once-s-change-detection-is-pinned.md) | decisions.read_once's change detection is pinned only by a growing file: dropping inode, mtime or ctime from its identity stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1156](BG1156-test-persona-coherence-s-span-recogniser-skips-some.md) | test_persona_coherence's span recogniser skips some `script.py verb` shapes, and its mixed-unit probe cannot tell first-listed Primary from first-path owner | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1157](BG1157-no-test-pins-that-a-host-prerequisite-check.md) | No test pins that a --host prerequisite check still names a missing markdownlint, so widening PUSHER_ONLY to it stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 
 ## Archived Releases
 
