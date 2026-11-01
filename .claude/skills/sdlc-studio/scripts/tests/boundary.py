@@ -27,7 +27,8 @@ disables tests silently, which is worse than the cost it was meant to save.
 
 Mark a test only when BOTH hold:
 
-* it costs seconds, not milliseconds - the whole point is wall-clock; and
+* it costs seconds, not milliseconds, or it bounds a wall-clock duration from above - the
+  whole point is wall-clock; and
 * what it measures cannot regress between a commit and the next boundary WITHOUT some cheaper
   test also going red. A defect that only this test can see is a defect that must be caught on
   the commit that introduces it, whatever it costs.
