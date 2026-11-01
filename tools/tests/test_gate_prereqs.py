@@ -292,5 +292,81 @@ class CheckerEdgeTests(_Fixture):
         self.assertIn("is older than 3.10", r.stdout, r.stdout + r.stderr)
 
 
+class HostScopeTests(_Fixture):
+    """BG1138: gh is the pusher's (the red-CI read runs in the local pre-push hook), so a check
+    run on a gate host leaves it out, and the local check still names it.
+
+    MUTANTS, each failing a test here: remote-gate.sh's preflight run without `--host` (AC1);
+    the host doctor reading the list without the host scope; `--host` ignored by the checker;
+    `--host` dropping every tool, not only gh; `--host` hiding a gap that refuses the push; gh
+    left out of the local check too, or counted as refusing there (AC2)."""
+
+    def _check(self, clone: Path, *flags: str, present: tuple[str, ...]) -> subprocess.CompletedProcess:
+        env = self._env(PATH=self._stub_path(*present))
+        return subprocess.run(["python3", "tools/gate_prereqs.py", "check", *flags], cwd=clone,
+                              capture_output=True, text=True, timeout=120, env=env)
+
+    @staticmethod
+    def _path_without(root: Path, *names: str) -> str:
+        """One directory linking the first executable of each name on this PATH, less `names`."""
+        d = root / "path-without"
+        d.mkdir()
+        for directory in os.environ.get("PATH", "/usr/bin:/bin").split(os.pathsep):
+            if not os.path.isdir(directory):
+                continue
+            for entry in os.scandir(directory):
+                link = d / entry.name
+                if entry.name in names or os.path.lexists(link):
+                    continue
+                if entry.is_file() and os.access(entry.path, os.X_OK):
+                    link.symlink_to(entry.path)
+        return str(d)
+
+    def test_a_host_check_leaves_out_gh_and_nothing_else(self) -> None:
+        clone = self._clone("")
+        r = self._check(clone, "--refusing", "--host", present=("markdownlint",))
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertNotIn("gh is not found", r.stdout, "a host check named the pusher's gh")
+        self.assertIn("note: rg is not found", r.stdout, "the host scope dropped every tool")
+        r = self._check(clone, "--host", present=("markdownlint", "rg"))
+        self.assertEqual((0, "gate prerequisites: every one present"),
+                         (r.returncode, r.stdout.strip()), "a host lacking only gh has a gap")
+        r = self._check(self._clone("zzq-absent-dist\n"), "--refusing", "--host",
+                        present=("markdownlint", "rg"))
+        self.assertEqual(1, r.returncode, "the host scope hid a gap that refuses the push")
+        self.assertIn("REFUSES: zzq-absent-dist is missing", r.stdout)
+
+    def test_the_local_check_still_names_a_missing_gh(self) -> None:
+        """AC2."""
+        clone = self._clone("")
+        r = self._check(clone, "--refusing", present=("markdownlint", "rg"))
+        self.assertEqual(0, r.returncode, "a missing gh refused the push: " + r.stdout)
+        self.assertIn("note: gh is not found - the red-CI read before a push reads UNREAD",
+                      r.stdout)
+        r = self._check(clone, present=("markdownlint", "rg"))
+        self.assertEqual(1, r.returncode, r.stdout)
+        self.assertIn("gh is not found - the red-CI read before a push reads UNREAD. Install: "
+                      "https://cli.github.com", r.stdout)
+
+    def test_the_gate_hosts_preflight_and_doctor_leave_gh_out(self) -> None:
+        """AC1: a real push judged on a fixture host whose PATH has neither gh nor rg; the rg
+        note shows that the host's preflight ran and printed its notes."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from test_remote_gate_doctor import _DoctorClone  # noqa: PLC0415 - its fixture, not its tests
+        fx = _DoctorClone()
+        self.addCleanup(fx.cleanup)
+        host = os.pathsep.join([fx.host().split(os.pathsep)[0],
+                                self._path_without(fx.tmp, "gh", "rg")])
+        self.assertIsNone(shutil.which("gh", path=host), "the fixture host has a gh")
+        r = fx.push(host_path=host)
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertIn("note: rg is not found", r.stderr, "the host's preflight printed no notes")
+        self.assertNotIn("gh is not found", r.stderr, "the host's preflight named the pusher's gh")
+        r = fx.doctor(fx.host(lacking=("_",)))
+        self.assertEqual(0, r.returncode, r.stderr)
+        self.assertIn("note: rg is not found", r.stderr, "the host doctor printed no notes")
+        self.assertNotIn("gh is not found", r.stderr, "the host doctor named the pusher's gh")
+
+
 if __name__ == "__main__":
     unittest.main()

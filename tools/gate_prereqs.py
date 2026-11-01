@@ -14,6 +14,8 @@ Subcommands:
   check   print every gap with its consequence and route; exit 1 if any, 0 if none
           (`--refusing`: exit 1 only when a gap turns the push suite red, every other gap
           printed as a note - the pre-push hook's preflight)
+          (`--host`: leave out gh, whose red-CI read runs in the pushing clone's own hook, for a
+          check on a gate host - remote-gate.sh's preflight)
 """
 from __future__ import annotations
 
@@ -49,6 +51,11 @@ TOOLS = (
     ("gh", "gh", "the red-CI read before a push reads UNREAD",
      "https://cli.github.com (the package `gh`)"),
 )
+
+#: The tools whose consequence above falls on the pushing clone alone: the red-CI read is made by
+#: its own pre-push hook before anything is sent to a gate host, so a check on the host
+#: (`check --host`) leaves them out.
+PUSHER_ONLY = frozenset({"gh"})
 
 #: One requirement line: a name, optional extras, a specifier set, an optional environment marker.
 _REQ = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(\[[^\]]*\])?\s*([^;#]*?)\s*(;[^#]*)?(#.*)?$")
@@ -139,8 +146,9 @@ def _other_route(python: str, dist: str, floor: tuple[int, ...] | None) -> str:
     return f"{python} -m pip install '{spec}' (the interpreter SDLC_COVERAGE_PYTHON names)"
 
 
-def gaps(root: Path) -> list[str]:
-    """One line per missing or too-old prerequisite, each with its consequence and route."""
+def gaps(root: Path, host: bool = False) -> list[str]:
+    """One line per missing or too-old prerequisite, each with its consequence and route.
+    `host` leaves out the PUSHER_ONLY tools, for a check run on a gate host."""
     out = []
     if sys.version_info[:2] < PYTHON_FLOOR:
         out.append(f"python3 {sys.version.split()[0]} is older than "
@@ -174,6 +182,8 @@ def gaps(root: Path) -> list[str]:
             how = route
         out.append(f"{problem} - {consequence}. Install: {how}")
     for name, exe, consequence, how in TOOLS:
+        if host and name in PUSHER_ONLY:
+            continue
         local = root / "node_modules" / ".bin" / exe
         if shutil.which(exe) or (name == "markdownlint" and os.access(local, os.X_OK)):
             continue
@@ -183,7 +193,7 @@ def gaps(root: Path) -> list[str]:
 
 def cmd_check(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
-    found = gaps(root)
+    found = gaps(root, host=args.host)
     if not found:
         print("gate prerequisites: every one present")
         return 0
@@ -206,6 +216,9 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--refusing", action="store_true",
                        help="exit 1 only for a gap that turns the push suite red; name the "
                             "rest as notes")
+    check.add_argument("--host", action="store_true",
+                       help="a check on a gate host: leave out gh, whose red-CI read runs in "
+                            "the pushing clone's own hook")
     args = ap.parse_args(argv)
     return cmd_check(args)
 

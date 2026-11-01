@@ -254,7 +254,7 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
 
   # US1005's preflight, on THIS host's interpreter: the one that will run the suite.
   if [ -f tools/gate_prereqs.py ]; then
-    if ! python3 tools/gate_prereqs.py check --refusing; then
+    if ! python3 tools/gate_prereqs.py check --refusing --host; then
       echo "remote gate: refused before $what runs: $here's interpreter lacks a prerequisite marked REFUSES above"
       exit "$HOST_SETUP_FAILED"
     fi
@@ -333,15 +333,15 @@ cmd_host_doctor() {
     echo "  python3 is not on $here's PATH - the gate cannot run; put it on the PATH, or in ~/$GATE_DIR/gate-env.sh"
     exit 1
   fi
-  # The one list, read by the one checker. Its non-Python tools are the pusher's (gh, for the
-  # red-main read) or optional on a host (rg; markdownlint comes from npm ci), so they are notes.
+  # The one list, read by the one checker, less gh: the red-main read runs on the pusher. The
+  # other tools are optional on a host (rg; markdownlint comes from npm ci), so they are notes.
   python3 - <<'PY' || problems=1
 import sys
 from pathlib import Path
 sys.path.insert(0, "tools")
 import gate_prereqs
 tools = {tool[0] for tool in gate_prereqs.TOOLS}
-gaps = gate_prereqs.gaps(Path("."))
+gaps = gate_prereqs.gaps(Path("."), host=True)
 notes = [g for g in gaps if g.split(" ", 1)[0] in tools]
 missing = [g for g in gaps if g not in notes]
 for line in missing:
