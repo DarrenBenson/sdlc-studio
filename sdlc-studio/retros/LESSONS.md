@@ -2437,24 +2437,22 @@ Recorded from retro RETRO0064.
 ## L-0180: **Deleting a guard requires evidence from the surface the guard protects.** The `if not refused` check was removed because the ledger
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a general rule, though the mutation ledger it came from is gone: this tree still removes guards on a claimed redundancy, and the guards it keeps were proven where they sit. `sprint.py:1606-1611` records that an `is_file()` probe was measured redundant against the real `IsADirectoryError` and removed, and `tools/gate_timing.py:161-164` and `:175-179` record two guards shown unreachable by a surviving mutant. Nothing gates it; the proof is the author's and the reviewer's.
 
 **Deleting a guard requires evidence from the surface the guard protects.** The `if not refused` check was removed because the ledger already excluded refused targets. That was verified against the ledger and never against the report. A guard's redundancy must be proven where it sits.
 
 Recorded from retro RETRO0064.
 
-- **Status:** Closed - Its subject is gone: the ledger the removed `if not refused` guard sat behind no longer exists (`mutation.py:22` keeps no per-target ledger; `gate.py:382-383` removed the mutation lane).
-
 ## L-0179: **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then
 
 - **Added:** 2026-07-21
-- **Review-by:** 2027-01-25
+- **Review-by:** 2027-01-30
+- **Revalidated:** 2026-11-01 - Still true as a general rule, though its BG0238 example is gone with the mutation ledger: the review ledger under `sdlc-studio/reviews/` is written by `critic.py` and read by several consumers that each apply their own test of it - `review_rounds_across_ledgers` (`critic.py:1636`, called at `sprint.py:1603`), `is_independent` (`critic.py:2344`, applied at `critic.py:2230` and `sprint.py:5393`) and `_principal_refusals` (`sprint.py:9951`) - so a rule about what counts as evidence has to be checked in each reader. No gate does that.
 
 **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then overlaid the raw report on top of it, so the careful rule was bypassed by the surface that reads it. When you write a rule about what counts as evidence, go and check every reader of that evidence, not just the writer.
 
 Recorded from retro RETRO0064.
-
-- **Status:** Closed - Its subject is gone: `gate.py:382-383` records the mutation lane has left the gate and `mutation.py:22` states no per-target ledger is kept, so the producer/consumer overlay it describes no longer exists.
 
 ## L-0178: **The harness token capture (5,672,289 -> 472,691/pt) is NOT this sprint's cost and was blanked from the VELOCITY row as
 
@@ -2471,7 +2469,7 @@ Recorded from retro RETRO0063.
 
 - **Added:** 2026-07-21
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: `tools/skill-tests.sh:53` scrubs the variables and `.githooks/commit-msg:265-268` and `.githooks/pre-push:332-338` scrub them for the other lanes, so the protection reaches the neighbouring suites.
+- **Revalidated:** 2026-11-01 - Still true as a general rule: a protection built for one suite does not reach another. What holds the known copies now is a pin, not the lane fixes. `tools/skill-tests.sh:50-52` says the scrub list is written out in four places and that `tools/tests/test_skill_tests_env.py` holds them equal and sweeps the repo for an unregistered fifth copy; a new lane beside `.githooks/commit-msg:265-268` and `.githooks/pre-push:332-338` still has to be given the scrub by its author.
 
 **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the index-wipe incident, and `test_skill_tests_env.py` pins the list. The hook's tool-tests lane, invoked on the very next line, ran unscrubbed - so the first `tools/` test to build a git fixture could write ITS tree into the real repo's pending commit under `git commit -a`. Reproduced on three victim repos. A fix recorded as a lesson is not a fix applied everywhere it holds.
 
@@ -2491,7 +2489,7 @@ Recorded from retro RETRO0063.
 
 - **Added:** 2026-07-21
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: `sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md:131` now carries the corrected D6 row (120s against a 99s baseline, the 93.1 sum recorded as reference only), so the correction did reach the decision of record; the propagation rule still stands.
+- **Revalidated:** 2026-11-01 - Still true, with a live instance: `sdlc-studio/.config.yaml:207-218` re-declared `gate_budget` on 2026-09-20 at 480s against a 400s baseline, while the decision of record `sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md:131` (D6) still reads 120s against a 99s baseline. No script compares a resolved RFC decision with the config value it names, so propagation to the decision of record is still left to the author.
 
 **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in `.config.yaml` left RFC0048's D6 row asserting it, so the resolved decision was literally false about the file it pointed at - and US0287's AC4 ("Resolved with the chosen number AND the baseline it was measured against") silently became untrue. Spec rot created by accepting a finding halfway.
 
@@ -2541,7 +2539,7 @@ Recorded from retro RETRO0063.
 
 - **Added:** 2026-07-21
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: No lint flags a narrowed `except`; `critic.py:2468-2470` demands regression cover for behaviour-changing repairs, which covers it.
+- **Revalidated:** 2026-11-01 - Still true: no gate catches it. The repo carries no `pyproject.toml`, `ruff.toml` or `.ruff.toml`, so no lint flags a narrowed `except`. `critic.py:2468-2470` asks for a regression test only once a reviewer already counts the repair as behaviour-changing, and this lesson records the misreading where the narrowing looked like a cost change, so the rule rests on the author naming a narrowed `except` as a behaviour change.
 
 **Narrowing an exception clause is a behaviour change, not a tidy-up.** Moving a read out of a broad `except` and catching only `OSError` let `UnicodeDecodeError` - a `ValueError` - escape a function documented as never raising. The refactor looked like it only changed cost.
 
@@ -3299,7 +3297,7 @@ Recorded from retro RETRO0048.
 
 - **Added:** 2026-07-18
 - **Review-by:** 2027-01-30
-- **Revalidated:** 2026-11-01 - Still true: No gate holds it (a design heuristic); `critic.py:2468-2470` makes the reviewer report a repair that lacks a test asserting the re-derived comparison, which is where a newly live guard would be caught.
+- **Revalidated:** 2026-11-01 - Still true: no gate holds it. Nothing in `scripts/` or `tools/` detects a guard that was a no-op only because a constant was wrong, and a corrected constant reads as a one-line data change. `critic.py:2468-2470` asks for a test of a behaviour-changing repair, but only when the reviewer sees the constant change as changing behaviour, so the general rule on the author is the only cover.
 
 Correcting a wrong constant can activate dead code that only ever "worked" because the constant was wrong. When a `max(x, CONST)` or `x < CONST` guard exists only to be a no-op, fixing CONST turns it live - re-derive what the guard should actually compare against, do not just change the number.
 

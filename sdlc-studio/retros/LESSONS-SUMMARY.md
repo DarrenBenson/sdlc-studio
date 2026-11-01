@@ -271,6 +271,8 @@ Rolling digest of still-valid project lessons, read at sprint start. The full lo
 - **L-0183: **Refuse a total rather than return a short one.** A skipped malformed record yields a quietly low sum, and a low baseline inflates every**
 - **L-0182: **Do not judge a measurement by the history of that same measurement.** BG0239's filed fix suggested a duration band to validate a**
 - **L-0181: **A guard every caller already short-circuits is not covered by its callers' tests.** Hit twice this sprint, by different authors**
+- **L-0180: **Deleting a guard requires evidence from the surface the guard protects.** The `if not refused` check was removed because the ledger**
+- **L-0179: **A rule enforced in the producer is not enforced in the consumer.** BG0238's ledger applied the verdict rule correctly and the gate then**
 - **L-0177: **A protection built for one suite does not cover the suite beside it.** `skill-tests.sh` has scrubbed 11 git variables since the**
 - **L-0176: **Restoring a global you patched can cost the guarantee the patch was for.** A `tearDownModule` was added so an unrelated module would not**
 - **L-0175: **A correction has to be propagated to the decision of record, not just the file it was found in.** Retiring the 93.1s baseline in**
