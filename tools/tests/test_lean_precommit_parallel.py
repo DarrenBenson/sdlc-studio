@@ -28,6 +28,8 @@ import time
 import unittest
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / ".githooks" / "pre-commit"
 SKILL = ".claude/skills/sdlc-studio/scripts"
@@ -314,6 +316,10 @@ class ParallelLaneTests(unittest.TestCase):
 
     # -- the criteria ---------------------------------------------------------------------
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_lanes_run_concurrently(self) -> None:
         """US0891 AC1, BG0759 AC1. MUTANTS: run each lane to completion before starting the
         next, as the hook did; or run the gate lane in sequence after the others are collected.
@@ -461,6 +467,10 @@ class ParallelLaneTests(unittest.TestCase):
         self.assertEqual(rc, 130, out)
         self._assert_every_lane_stopped_with_the_hook(exited, out)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_hangup_or_terminate_stops_every_lane_with_the_hook(self) -> None:
         """BG0759 AC3. MUTANTS: no HUP trap (the carried patch), so a dropped SSH session or a
         closed terminal ends the hook and orphans every lane, which `set -m` moved out of the
@@ -479,6 +489,10 @@ class ParallelLaneTests(unittest.TestCase):
                 self.assertLess(exited - sent, 3, "the hook took too long to stop")
                 self._assert_every_lane_stopped_with_the_hook(exited, out)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_lane_that_ignores_terminate_is_killed_rather_than_hanging_the_hook(self) -> None:
         """MUTANTS: poll a lane's group with no bound, so the hook never exits; or stop polling
         without the SIGKILL, so the lane runs on after the hook.

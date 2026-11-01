@@ -14,16 +14,19 @@ the happy one.
 """
 from __future__ import annotations
 
+import ast
 import contextlib
 import importlib.util
 import io
 import json
+import os
 import re
 import sys
 import tempfile
 import shutil
 import subprocess
 import unittest
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "test_census.py"
@@ -1056,6 +1059,535 @@ class TheGuardSeesTheCallNotTheDocstringTests(unittest.TestCase):
         self.assertFalse(tc_conftest_inserts_path(without),
                          "the guard is satisfied with the call deleted, because it is reading "
                          "the docstring that mentions it")
+
+
+# BG0963: a wall-clock bound in the parallel partition measures the machine's load, not the code.
+
+#: The suite directories the wall-clock census reads, relative to the repository root.
+_WALL_CLOCK_DIRS = ("tools/tests", ".claude/skills/sdlc-studio/scripts/tests")
+#: The `time` functions a duration is read from.
+_CLOCKS = frozenset({"monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns", "time",
+                     "time_ns"})
+#: The assertions that order two values, each with whether its first argument is the larger.
+#: An equality is not a bound, so it is not read.
+_ORDERING_ASSERTS = {"assertLess": False, "assertLessEqual": False, "assertGreater": True,
+                     "assertGreaterEqual": True}
+_ORDERING_OPS = (ast.Lt, ast.LtE, ast.Gt, ast.GtE)
+#: The census reads a clock only through an import of `time`, so a module with no line holding
+#: `import ... time` or `from time import` is not parsed. One spelt across lines is not seen.
+_IMPORTS_TIME = re.compile(r"\bimport\s[^\n#]*\btime\b|\bfrom\s+time\s+import\b")
+
+
+def _names_marker(nodes, marker: str, aliases: set[str]) -> bool:
+    """Whether decorators or a `pytestmark` value carry `marker`, spelt out or through a name
+    an assignment in the module binds to it, such as `serial = pytest.mark.serial_only`."""
+    return any((isinstance(sub, ast.Attribute) and sub.attr == marker)
+               or (isinstance(sub, ast.Name) and sub.id in aliases)
+               for node in nodes for sub in ast.walk(node))
+
+
+class _Measured:
+    """Which expressions in one module carry a clock reading taken in the test's own process.
+
+    A name is measured when a binding gives it a value that reads a clock or a measured name:
+    `t0 = time.monotonic()`, `elapsed = time.monotonic() - t0`, `spent.append(perf_counter() -
+    t)`, a `self.` attribute any method of the class binds so, and a helper's return, by
+    position when the helper returns a tuple (`rc, out, secs = self._commit()`)."""
+
+    def __init__(self, tree: ast.Module) -> None:
+        self.modules, self.bare = set(), set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                self.modules |= {a.asname or a.name for a in node.names if a.name == "time"}
+            elif isinstance(node, ast.ImportFrom) and node.module == "time":
+                self.bare |= {a.asname or a.name for a in node.names if a.name in _CLOCKS}
+        self.returns: dict[str, object] = {}
+        self._signs: dict[int, tuple] = {}
+        self._pairs: dict[int, list] = {}
+
+    @staticmethod
+    def _callee(func) -> str | None:
+        if isinstance(func, ast.Name):
+            return func.id
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name) \
+                and func.value.id in ("self", "cls"):
+            return func.attr
+        return None
+
+    def _sign(self, node) -> tuple:
+        """What `node` reads, walked once: a clock call, the names, and the callees."""
+        got = self._signs.get(id(node))
+        if got is None:
+            clock, names, callees = False, set(), set()
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Call):
+                    f = sub.func
+                    clock = clock or (isinstance(f, ast.Attribute) and f.attr in _CLOCKS
+                                      and isinstance(f.value, ast.Name)
+                                      and f.value.id in self.modules) \
+                        or (isinstance(f, ast.Name) and f.id in self.bare)
+                    callees.add(self._callee(f))
+                elif isinstance(sub, ast.Name):
+                    names.add(sub.id)
+                elif isinstance(sub, ast.Attribute) and isinstance(sub.value, ast.Name) \
+                        and sub.value.id in ("self", "cls"):
+                    names.add("." + sub.attr)
+            got = self._signs[id(node)] = (clock, frozenset(names), frozenset(callees - {None}))
+        return got
+
+    def reads(self, node, names: set[str]) -> bool:
+        clock, read, callees = self._sign(node)
+        if clock or not read.isdisjoint(names):
+            return True
+        return any(ret is True or (isinstance(ret, list) and any(ret))
+                   for ret in map(self.returns.get, callees))
+
+    @staticmethod
+    def _keys(target) -> list[str]:
+        if isinstance(target, ast.Name):
+            return [target.id]
+        if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) \
+                and target.value.id in ("self", "cls"):
+            return ["." + target.attr]
+        if isinstance(target, ast.Starred):
+            return _Measured._keys(target.value)
+        if isinstance(target, (ast.Tuple, ast.List)):
+            return [k for e in target.elts for k in _Measured._keys(e)]
+        return []
+
+    def _bindings(self, func) -> list:
+        got = self._pairs.get(id(func))
+        if got is None:
+            got = []
+            for node in ast.walk(func):
+                if isinstance(node, ast.Assign):
+                    got += [(t, node.value) for t in node.targets]
+                elif isinstance(node, (ast.AnnAssign, ast.AugAssign)) and node.value is not None:
+                    got.append((node.target, node.value))
+                elif isinstance(node, (ast.For, ast.comprehension)):
+                    got.append((node.target, node.iter))
+                elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                        and node.func.attr in ("append", "extend", "add") and node.args:
+                    got.append((node.func.value, node.args[0]))
+            self._pairs[id(func)] = got
+        return got
+
+    def taint(self, func, names: set[str]) -> set[str]:
+        """The names `func` binds to a measured value, with `names` measured already."""
+        names = set(names)
+        while True:
+            before = len(names)
+            for target, value in self._bindings(func):
+                ret = (self.returns.get(self._callee(value.func) or "")
+                       if isinstance(value, ast.Call) else None)
+                if isinstance(ret, list) and isinstance(target, (ast.Tuple, ast.List)) \
+                        and len(ret) == len(target.elts):
+                    for elt, hot in zip(target.elts, ret):
+                        if hot:
+                            names.update(self._keys(elt))
+                elif self.reads(value, names):
+                    names.update(self._keys(target))
+            if len(names) == before:
+                return names
+
+    def summarise(self, func, local: set[str]) -> None:
+        for node in ast.walk(func):
+            if isinstance(node, ast.Return) and node.value is not None:
+                if isinstance(node.value, ast.Tuple):
+                    self.returns[func.name] = [self.reads(e, local) for e in node.value.elts]
+                elif self.reads(node.value, local):
+                    self.returns[func.name] = True
+
+
+def _bounds(measured: _Measured, func, local: set[str]):
+    """Each ordering assertion in `func` that holds a measured value below one that is not: an
+    `assert`, an `assertLess`-family call, or a comparison handed to `assertTrue`/`False`. A
+    lower bound is not one, since load only lengthens a duration; nor are two measured sides,
+    such as a deadline polled against the clock."""
+    def compares(node, negated=False):
+        for cmp in ast.walk(node):
+            if isinstance(cmp, ast.Compare):
+                sides = [cmp.left, *cmp.comparators]
+                for op, a, b in zip(cmp.ops, sides, sides[1:]):
+                    if isinstance(op, _ORDERING_OPS):
+                        larger_first = isinstance(op, (ast.Gt, ast.GtE)) != negated
+                        yield (cmp, b, a) if larger_first else (cmp, a, b)
+
+    for node in ast.walk(func):
+        found = []
+        if isinstance(node, ast.Assert):
+            found = list(compares(node.test))
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            if node.func.attr in _ORDERING_ASSERTS and len(node.args) >= 2:
+                a, b = node.args[:2]
+                found = [(node, b, a) if _ORDERING_ASSERTS[node.func.attr] else (node, a, b)]
+            elif node.func.attr in ("assertTrue", "assertFalse") and node.args:
+                found = list(compares(node.args[0], node.func.attr == "assertFalse"))
+        for site, low, high in found:
+            if measured.reads(low, local) and not measured.reads(high, local):
+                yield site
+
+
+def _module_bounds(src: str, label: str) -> list[str]:
+    """`<label>::<Class>::<function>:<line>` for each upper bound in a function a commit can run:
+    one that does not carry both `serial_only`, which keeps it out of the parallel pass, and
+    `boundary_only`, which keeps it out of the per-commit run a busy machine's load still
+    reaches. Either may sit on the function, its class, or the module's `pytestmark`."""
+    tree = ast.parse(src)
+    measured = _Measured(tree)
+    if not (measured.modules or measured.bare):
+        return []
+    module = [node.value for node in tree.body if isinstance(node, ast.Assign)
+              and any(isinstance(t, ast.Name) and t.id == "pytestmark" for t in node.targets)]
+
+    def carries(marker: str):
+        aliases = {t.id for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                   for t in node.targets if isinstance(t, ast.Name)
+                   and _names_marker([node.value], marker, set())}
+        return lambda cls, func: _names_marker(
+            [*module, *func.decorator_list, *(cls.decorator_list if cls else [])], marker, aliases)
+
+    serial, boundary = carries("serial_only"), carries("boundary_only")
+    scopes = [(None, node) for node in tree.body
+              if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    scopes += [(node, f) for node in tree.body if isinstance(node, ast.ClassDef)
+               for f in node.body if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    attrs: dict[str, set[str]] = {}
+    for _ in range(3):   # a helper returning another helper's measurement
+        for cls, func in scopes:
+            local = measured.taint(func, attrs.get(cls.name, set()) if cls else set())
+            if cls is not None:
+                attrs.setdefault(cls.name, set()).update(n for n in local if n.startswith("."))
+            measured.summarise(func, local)
+    out = []
+    for cls, func in scopes:
+        if serial(cls, func) and boundary(cls, func):
+            continue
+        local = measured.taint(func, attrs.get(cls.name, set()) if cls else set())
+        where = "::".join(x for x in (label, cls.name if cls else None, func.name) if x)
+        out += [f"{where}:{site.lineno}" for site in _bounds(measured, func, local)]
+    return out
+
+
+def wall_clock_bounds(repo: Path) -> list[str]:
+    """Every parallel-partition upper bound of a measured duration in both suite directories."""
+    out = []
+    for rel in _WALL_CLOCK_DIRS:
+        for path in sorted((repo / rel).glob("test_*.py")):
+            src = path.read_text(encoding="utf-8")
+            if _IMPORTS_TIME.search(src):
+                out += _module_bounds(src, f"{rel}/{path.name}")
+    return out
+
+
+SKILL_TESTS = ".claude/skills/sdlc-studio/scripts/tests"
+
+try:
+    import pytest
+    #: Running the bounds slowed costs about 40 s, so a commit's selected run defers it and the
+    #: push runs it, beside the bounds it judges.
+    boundary = pytest.mark.boundary_only
+except ImportError:     # the unittest runner deselects nothing, so there is no marker to set
+    def boundary(test):
+        return test
+
+#: The wall-clock bounds in the modules BG0963 names, each kept with its constant and run at
+#: push only, in the serial phase after the parallel pass. HAND-MAINTAINED ON PURPOSE: the list
+#: is the assertion that every one of them still runs and still bounds.
+_SERIAL_BOUNDS = (
+    f"{SKILL_TESTS}/test_status.py::GatherPerformanceTests::"
+    "test_the_shipped_command_answers_a_corpus_shaped_fixture_with_the_headline_first",
+    f"{SKILL_TESTS}/test_status.py::HintPerformanceTests::"
+    "test_the_hint_command_answers_the_corpus_shaped_fixture_inside_the_bound",
+    f"{SKILL_TESTS}/test_lean_test_selection.py::SelectionTests::"
+    "test_selection_is_fast_on_this_repository",
+    f"{SKILL_TESTS}/test_mutation.py::KilledMutantsCarryTheirKillerTests::"
+    "test_a_backgrounded_child_does_not_hang_the_run",
+    f"{SKILL_TESTS}/test_mutation.py::TheRunLeavesNothingBehindTests::"
+    "test_a_backgrounded_child_is_reaped_on_the_normal_exit_path",
+    f"{SKILL_TESTS}/test_mutation.py::TheRunLeavesNothingBehindTests::"
+    "test_the_timeout_still_bounds_a_genuinely_hanging_command",
+    "tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::"
+    "test_the_lanes_run_concurrently",
+    "tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::"
+    "test_a_hangup_or_terminate_stops_every_lane_with_the_hook",
+    "tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::"
+    "test_a_lane_that_ignores_terminate_is_killed_rather_than_hanging_the_hook",
+)
+#: The upper bounds the census found outside those modules, judged by collection alone: most
+#: time work done in the test's own process, which `_SLOW_CLOCK` does not slow.
+_SERIAL_IN_PROCESS = (
+    "tools/tests/test_lean_refusal_log.py::RefusalLogTests::"
+    "test_a_refused_commit_logs_its_lane_and_a_clean_one_logs_nothing",
+    f"{SKILL_TESTS}/test_config.py::IntegrationTests::"
+    "test_status_gathers_a_fixture_never_this_repository",
+    f"{SKILL_TESTS}/test_lean_lock_busy_eacces.py::LockBusyEaccesTests::"
+    "test_a_busy_lock_reported_as_eacces_is_waited_on",
+    f"{SKILL_TESTS}/test_lean_lock_errors.py::LockErrorTests::"
+    "test_a_non_busy_flock_error_is_named_at_once",
+    f"{SKILL_TESTS}/test_lean_lock_fails_closed.py::LockFailsClosedTests::"
+    "test_a_killed_holder_does_not_wedge_the_next_writer",
+    f"{SKILL_TESTS}/test_lean_v61_last_lows.py::V61LastLowsTests::"
+    "test_the_note_parser_is_linear_on_repeated_names",
+    f"{SKILL_TESTS}/test_lean_v61_review_residue.py::V61ReviewResidueTests::"
+    "test_the_note_parser_is_linear",
+)
+#: Bounded by the release gate's own per-verifier ceiling rather than by a clock it reads, so it
+#: stays in the parallel pass, at push only.
+_BOUNDARY_CEILING = ("tools/tests/test_lean_release_verify.py::ReleaseVerifyTests::"
+                     "test_the_measured_red_criteria_pass_or_are_retired")
+
+#: A pytest plugin that makes the code under test look a day slower: each process the test
+#: starts and each `os.killpg` it calls moves `time.monotonic`, `perf_counter` and `time` on by a
+#: day. `subprocess` waits read the clock it bound at import, so no timeout fires early.
+_SLOW_CLOCK = '''\
+import os, subprocess, time
+_late = [0.0]
+for _name in ("monotonic", "perf_counter", "time"):
+    setattr(time, _name, lambda _real=getattr(time, _name): _real() + _late[0])
+def _slowed(call):
+    def slowed(*args, **kwargs):
+        try:
+            return call(*args, **kwargs)
+        finally:
+            _late[0] += 86400.0
+    return slowed
+subprocess.Popen.__init__ = _slowed(subprocess.Popen.__init__)
+os.killpg = _slowed(os.killpg)
+'''
+
+#: The tests BG0963 found comparing a close's printed output, which carries the seconds the
+#: close's own pre-flight gate measured: (module, class, test, the module's normaliser or None).
+_COMPARED_CLOSES = (
+    ("test_lean_lane_yield", "LaneYieldTests",
+     "test_a_lane_that_caught_nothing_in_three_runs_is_listed_not_enforced", "_unmeasured"),
+    ("test_lean_mutation_ledger_retired", "MutationLedgerRetiredTests",
+     "test_brief_and_close_read_no_ledger", "_unmeasured"),
+    ("test_sprint", "InertVerifierRepairTests", "test_a_close_emits_its_cost_line", None),
+)
+
+#: Runs one of `_COMPARED_CLOSES` with the k-th gate run its closes record carrying `k * step`
+#: seconds more than it measured, its normaliser made the identity when `mode` says so,
+#: and prints the cost lines the close produced and whether the normaliser is narrow: blind to
+#: the seconds, not to the run count beside them.
+_VARIED_CLOSE = '''\
+import contextlib, importlib.util, io, json, sys, unittest
+from pathlib import Path
+from unittest import mock
+tests, name, cls, test, normaliser, mode, step = sys.argv[1:]
+sys.path[:0] = [tests, str(Path(tests).parent)]
+spec = importlib.util.spec_from_file_location(name, Path(tests) / f"{name}.py")
+mod = sys.modules[name] = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+import loader
+sprint = loader.load_script("sprint")
+narrow = None
+if normaliser != "-":
+    unmeasured = getattr(mod, normaliser)
+    shape = "close cost: {}s of gate over {} run(s)"
+    narrow = (unmeasured(shape.format(0, 1)) == unmeasured(shape.format(399, 1))
+              and unmeasured(shape.format(7, 1)) != unmeasured(shape.format(7, 2)))
+record, line, lines, calls = sprint.record_execution_run, sprint.close_cost_line, [], [0]
+def varied(root, **kw):
+    calls[0] += 1
+    if kw.get("seconds") is not None:
+        kw["seconds"] += float(step) * calls[0]
+    return record(root, **kw)
+def seen(cost):
+    lines.append(line(cost))
+    return lines[-1]
+with contextlib.ExitStack() as stack:
+    stack.enter_context(mock.patch.object(sprint, "record_execution_run", varied))
+    stack.enter_context(mock.patch.object(sprint, "close_cost_line", seen))
+    if hasattr(mod, "_load"):
+        stack.enter_context(mock.patch.object(mod, "_load", lambda: sprint))
+    if mode == "identity":
+        stack.enter_context(mock.patch.object(mod, normaliser, lambda text: text))
+    result = unittest.TextTestRunner(stream=io.StringIO()).run(getattr(mod, cls)(test))
+print(json.dumps({"ok": result.wasSuccessful(), "lines": lines, "narrow": narrow,
+                  "problems": [p[1][-400:] for p in result.failures + result.errors]}))
+'''
+
+
+class WallClockCensusTests(unittest.TestCase):
+    """BG0963. A test that bounds a measured duration by a constant, run beside every other
+    module, fails when the machine is busy and passes alone: it measured the load. Commits and
+    pushes here were refused on that alone, and a gate that refuses on load trains its users to
+    bypass it.
+
+    The census reads both suite directories by AST: a clock reading taken in the test's own
+    process (`time.monotonic`, `perf_counter`, `time` and their `_ns` forms, through `import
+    time [as x]` or `from time import`), bounded from above by a value that is not one. A lower
+    bound is left alone: load can only lengthen a duration. It does not see a duration that
+    reaches the test as data - a row's `elapsed_s`, a printed `398s` - so it cannot refuse one;
+    the printed seconds BG0963 found are pinned below by name."""
+
+    def _plant(self, body: str) -> list[str]:
+        return _module_bounds("import time\nimport unittest\nimport pytest\n\n" + body, "m.py")
+
+    def test_no_parallel_test_bounds_a_measured_duration_by_a_constant(self) -> None:
+        """AC1. MUTANT: remove `serial_only` or `boundary_only` from any test in `_SERIAL_BOUNDS`
+        or `_SERIAL_IN_PROCESS`."""
+        found = wall_clock_bounds(REPO)
+        self.assertEqual([], found,
+                         "a commit runs these tests, which bound a duration their own process "
+                         "measured, so they fail on a busy machine and pass alone; mark each "
+                         "`@pytest.mark.serial_only` and `@pytest.mark.boundary_only`, or take "
+                         "the clock out of the assertion:\n"
+                         + "\n".join(found))
+
+    def test_the_census_names_a_planted_bound_and_passes_its_near_misses(self) -> None:
+        """AC1's control. MUTANTS: read only `assertLess`; skip the tuple-returning helper;
+        exempt nothing for the markers; exempt `serial_only` alone; flag a deadline polled
+        against the clock; flag a lower bound; read `assertFalse` as `assertTrue`."""
+        bound = ("    def test_fast(self):\n        t0 = time.monotonic()\n"
+                 "        elapsed = time.monotonic() - t0\n        self.assertLess(elapsed, 3.0)\n")
+        cases = {
+            "assertLess": ("class T(unittest.TestCase):\n" + bound, ["m.py::T::test_fast:9"]),
+            "assert": ("def test_f():\n    t0 = time.perf_counter()\n"
+                       "    assert time.perf_counter() - t0 <= 2\n", ["m.py::test_f:7"]),
+            "assertTrue": ("class T(unittest.TestCase):\n    def test_t(self):\n"
+                           "        s = [time.time()]\n        self.assertTrue(1.5 > s[0])\n",
+                           ["m.py::T::test_t:8"]),
+            "assertFalse": ("class T(unittest.TestCase):\n    def test_f(self):\n"
+                            "        t0 = time.time()\n"
+                            "        self.assertFalse(time.time() - t0 > 2)\n",
+                            ["m.py::T::test_f:8"]),
+            "a lower bound": ("class T(unittest.TestCase):\n    def test_w(self):\n"
+                              "        t0 = time.monotonic()\n"
+                              "        waited = time.monotonic() - t0\n"
+                              "        self.assertGreaterEqual(waited, 0.3)\n"
+                              "        assert 0.3 <= waited\n"
+                              "        self.assertFalse(waited < 0.3)\n", []),
+            "a helper's tuple": (
+                "class T(unittest.TestCase):\n    def _run(self):\n        t0 = time.monotonic()\n"
+                "        return 0, 'out', time.monotonic() - t0\n    def test_r(self):\n"
+                "        rc, out, secs = self._run()\n        self.assertEqual(0, rc)\n"
+                "        self.assertLess(len(out), 9)\n        self.assertLess(secs, 4)\n",
+                ["m.py::T::test_r:13"]),
+            "a class attribute": (
+                "class T(unittest.TestCase):\n    @classmethod\n    def setUpClass(cls):\n"
+                "        cls.started = time.monotonic()\n    def test_c(self):\n"
+                "        self.assertLessEqual(time.monotonic() - self.started, 9)\n",
+                ["m.py::T::test_c:10"]),
+            "serial_only alone": ("class T(unittest.TestCase):\n    @pytest.mark.serial_only\n"
+                                  + bound, ["m.py::T::test_fast:10"]),
+            "boundary_only alone": ("class T(unittest.TestCase):\n"
+                                    "    @pytest.mark.boundary_only\n" + bound,
+                                    ["m.py::T::test_fast:10"]),
+            "the method marked": ("class T(unittest.TestCase):\n    @pytest.mark.serial_only\n"
+                                  "    @pytest.mark.boundary_only\n" + bound, []),
+            "the class marked": ("@pytest.mark.serial_only\n@pytest.mark.boundary_only\n"
+                                 "class T(unittest.TestCase):\n" + bound, []),
+            "split across levels": ("@pytest.mark.serial_only\nclass T(unittest.TestCase):\n"
+                                    "    @pytest.mark.boundary_only\n" + bound, []),
+            "an alias marked": ("try:\n    serial = pytest.mark.serial_only\n"
+                                "    boundary = pytest.mark.boundary_only\nexcept ImportError:\n"
+                                "    serial = boundary = lambda f: f\n\n"
+                                "class T(unittest.TestCase):\n    @serial\n    @boundary\n"
+                                + bound, []),
+            "the module marked": ("pytestmark = [pytest.mark.serial_only,\n"
+                                  "              pytest.mark.boundary_only]\n\n"
+                                  "class T(unittest.TestCase):\n" + bound, []),
+            "a deadline": ("class T(unittest.TestCase):\n    def test_d(self):\n"
+                           "        deadline = time.monotonic() + 20\n"
+                           "        self.assertLess(time.monotonic(), deadline)\n", []),
+            "an equality": ("class T(unittest.TestCase):\n    def test_e(self):\n"
+                            "        self.assertEqual(time.time() - time.time(), 0)\n", []),
+        }
+        for label, (body, expected) in cases.items():
+            with self.subTest(case=label):
+                self.assertEqual(expected, self._plant(body))
+        self.assertEqual([], _module_bounds("import unittest\n\nclass T(unittest.TestCase):\n"
+                                            + bound, "m.py"), "no clock is imported")
+
+    def test_compared_output_is_insensitive_to_measured_seconds(self) -> None:
+        """AC2. Each comparison runs with the k-th gate run its closes record 7k s longer than
+        it measured, so two closes print different seconds; it must still pass. The control:
+        with the module's normaliser made the identity, the same run fails. MUTANTS: drop
+        `_unmeasured` from either module's comparison; widen its pattern past the seconds;
+        assert `398s` again in `test_sprint`."""
+        tests = REPO / SKILL_TESTS
+        with tempfile.TemporaryDirectory() as d:
+            driver = Path(d) / "varied_close.py"
+            driver.write_text(_VARIED_CLOSE, encoding="utf-8")
+
+            def run(name, cls, test, normaliser, mode="varied"):
+                proc = subprocess.run([sys.executable, "-B", str(driver), str(tests), name, cls,
+                                       test, normaliser or "-", mode, "7"], capture_output=True,
+                                      text=True, timeout=600, cwd=REPO)
+                self.assertEqual(0, proc.returncode, proc.stderr[-2000:])
+                return json.loads(proc.stdout.splitlines()[-1])
+
+            for name, cls, test, normaliser in _COMPARED_CLOSES:
+                with self.subTest(test=f"{name}::{test}"):
+                    got = run(name, cls, test, normaliser)
+                    self.assertTrue(got["ok"], got["problems"])
+                    seconds = [int(m.group(1)) for line in got["lines"]
+                               for m in [re.search(r"(\d+)s of gate over", line)] if m]
+                    self.assertEqual(len(got["lines"]), len(seconds), got["lines"])
+                    if normaliser is None:
+                        self.assertGreaterEqual(min(seconds), 398 + 7, got["lines"])
+                        continue
+                    self.assertEqual(len(seconds), len(set(seconds)),
+                                     f"the closes printed the same seconds, so nothing varied: "
+                                     f"{got['lines']}")
+                    self.assertTrue(got["narrow"], f"{normaliser} hides more than the seconds")
+                    self.assertFalse(run(name, cls, test, normaliser, "identity")["ok"],
+                                     "unnormalised, the comparison still passed, so the varied "
+                                     "seconds never reached the output it compares")
+
+    @boundary
+    def test_the_timing_assertions_still_run_at_the_boundary(self) -> None:
+        """AC3. Each bound is collected under `serial_only and boundary_only`, so it runs at
+        push, in the serial phase, and no commit runs it; each in `_SERIAL_BOUNDS` fails on its
+        own assertion when the code under test is slowed (`_SLOW_CLOCK`). The release verifier
+        is collected `boundary_only` outside the serial phase and fails when its ceiling is a
+        second. A lower bound, `test_a_timed_out_writer_writes_nothing`, stays in the parallel
+        partition. MUTANTS: delete or skip a bound; take its `serial_only` or `boundary_only`
+        off; turn its `assertLess` into a comparison that cannot fail; mark the lower bound or
+        the release verifier serial."""
+        env = {**os.environ, "SDLC_STUDIO_BOUNDARY_SUITE": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+        pytest = [sys.executable, "-B", "-m", "pytest", "-p", "no:cacheprovider", "-q"]
+        unmarked = (f"{SKILL_TESTS}/test_status.py::GatherPerformanceTests::"
+                    "test_the_headline_is_in_the_buffer_and_flushed_before_gather_is_entered")
+        nodes = [*_SERIAL_BOUNDS, *_SERIAL_IN_PROCESS]
+        lower = (f"{SKILL_TESTS}/test_lean_lock_fails_closed.py::LockFailsClosedTests::"
+                 "test_a_timed_out_writer_writes_nothing")
+
+        def collect(markers):
+            got = subprocess.run([*pytest, "--collect-only", "-m", markers, *nodes, unmarked,
+                                  lower, _BOUNDARY_CEILING], capture_output=True, text=True,
+                                 timeout=300, cwd=REPO, env=env)
+            return set(got.stdout.split()), got.stdout[-2000:]
+
+        collected, said = collect("serial_only and boundary_only")
+        self.assertEqual([], [n for n in nodes if n not in collected],
+                         f"not in the serial phase of the push alone:\n{said}")
+        for other in (unmarked, lower, _BOUNDARY_CEILING):
+            self.assertNotIn(other, collected, f"{other} was moved out of the parallel pass")
+        collected, said = collect("boundary_only and not serial_only")
+        self.assertIn(_BOUNDARY_CEILING, collected, f"the release verifier left the push:\n{said}")
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "bg0963_slow_clock.py").write_text(_SLOW_CLOCK, encoding="utf-8")
+            report = Path(d) / "slow.xml"
+            subprocess.run([*pytest, "-p", "bg0963_slow_clock", f"--junitxml={report}",
+                            *_SERIAL_BOUNDS], capture_output=True, text=True, timeout=600,
+                           cwd=REPO, env={**env, "PYTHONPATH": d})
+            failed: dict[str, list[str]] = {}
+            for case in ElementTree.parse(report).iter("testcase"):
+                for bad in [*case.iter("failure"), *case.iter("error")]:
+                    failed.setdefault(case.get("name"), []).append(bad.get("message") or "")
+            for node in _SERIAL_BOUNDS:
+                name = node.rsplit("::", 1)[1]
+                with self.subTest(bound=name):
+                    self.assertTrue(failed.get(name), "a slowed run passed, so the bound is gone")
+                    self.assertEqual([], [m for m in failed[name] if "not less than" not in m],
+                                     "it failed on something other than its own bound")
+        ceiling = subprocess.run([*pytest, _BOUNDARY_CEILING], capture_output=True, text=True,
+                                 timeout=600, cwd=REPO, env={**env, "SDLC_VERIFY_TIMEOUT": "1"})
+        self.assertNotEqual(0, ceiling.returncode, ceiling.stdout[-2000:])
+        self.assertIn("red when the release gate runs it", ceiling.stdout)
 
 
 if __name__ == "__main__":

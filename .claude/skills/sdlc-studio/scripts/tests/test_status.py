@@ -19,6 +19,8 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
 import gitutil  # noqa: E402
 
@@ -1207,6 +1209,10 @@ class GatherPerformanceTests(unittest.TestCase):
         _corpus_shaped_fixture(d)
         return d
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_shipped_command_answers_a_corpus_shaped_fixture_with_the_headline_first(self) -> None:
         import subprocess, time  # noqa: PLC0415
         root = self._fixture()
@@ -1292,6 +1298,10 @@ class HintPerformanceTests(unittest.TestCase):
         _corpus_shaped_fixture(d)
         return d
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_hint_command_answers_the_corpus_shaped_fixture_inside_the_bound(self) -> None:
         import subprocess, time  # noqa: PLC0415
         from lib import sdlc_md  # noqa: PLC0415

@@ -21,6 +21,8 @@ import time
 import unittest
 from pathlib import Path
 
+import pytest
+
 HERE = Path(__file__).resolve().parent
 SCRIPTS = HERE.parent
 REPO = SCRIPTS.parents[3]
@@ -238,6 +240,10 @@ class SelectionTests(unittest.TestCase):
         self.assertIn("no_such_module_us0880", proc.stdout + proc.stderr)
         self.assertNotEqual(0, proc.returncode, f"a collection error passed:\n{proc.stdout}")
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_selection_is_fast_on_this_repository(self) -> None:
         """AC4. MUTANT: build the whole repository's import graph again (about four seconds)."""
         changed = f"{SKILL}/next_id.py"

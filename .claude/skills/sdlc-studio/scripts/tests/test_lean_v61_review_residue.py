@@ -28,6 +28,8 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_lean_close as lean  # noqa: E402 - the close fixture, shared
 import test_lean_goal_note_ratio_numeric as numeric  # noqa: E402 - by module, not re-collected
@@ -123,6 +125,10 @@ class V61ReviewResidueTests(unittest.TestCase):
                 got = run_state.session_tokens(tmp, transcripts_dir=folder)
             self.assertEqual(3_000, got.get("tokens"), got)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_note_parser_is_linear(self) -> None:
         """AC3. MUTANT: HEAD's pattern, whose lazy run after the name and the punctuation lead
         before the number both claim the same characters, so 8,000 of them straight after

@@ -18,6 +18,8 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
 import gitutil  # noqa: E402
 
@@ -1056,9 +1058,15 @@ class MutationSeriesRowTests(unittest.TestCase):
         # The property a hardcoded number satisfies every other assertion of: the wall-clock
         # must TRACK the time the run spent. Two runs of the same shape, one delayed by a known
         # amount, so a constant (of any value) fails on the difference rather than the size.
+        # The run reads `time.monotonic`, and here that clock is the test's own: it moves a
+        # microsecond a read and by the delay, so a busy machine adds nothing to either run. A
+        # real 0.4 s sleep against the real clock read a difference of 0.485 under load (BG0963).
         mut = _load()
+        import itertools
         import time as _time
-        with tempfile.TemporaryDirectory() as d:
+        reads, delay = itertools.count(), [0.0]
+        with tempfile.TemporaryDirectory() as d, unittest.mock.patch.object(
+                _time, "monotonic", lambda: next(reads) * 1e-6 + delay[0]):
             root = _fixture(Path(d))
             cmd = f"{sys.executable} -m unittest test_good"
             mut.run_gate(root, [root / "target.py"], cmd, max_mutations=1)
@@ -1066,15 +1074,15 @@ class MutationSeriesRowTests(unittest.TestCase):
             real = mut._run_tests
 
             def _slow(command, cwd):
-                _time.sleep(0.4)
+                delay[0] += 0.4
                 return real(command, cwd)
 
             with unittest.mock.patch.object(mut, "_run_tests", _slow):
                 mut.run_gate(root, [root / "target.py"], cmd, max_mutations=1)
             slow = self._rows(root)[-1]["elapsed_s"]
-            self.assertGreater(fast, 0)
             # baseline + one mutant, delayed 0.4s each: the same run, 0.8s longer
-            self.assertGreaterEqual(slow - fast, 0.6)
+            self.assertEqual(0.0, fast, "the row holds a figure the clock did not measure")
+            self.assertAlmostEqual(0.8, slow - fast, places=3)
 
     def test_the_row_names_the_run_surface_and_command(self) -> None:
         mut = _load()
@@ -2452,6 +2460,10 @@ class KilledMutantsCarryTheirKillerTests(unittest.TestCase):
                          mut._killing_test(mut._LAST_RUN_OUTPUT[0]),
                          "the runner's output did not reach the attribution")
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_backgrounded_child_does_not_hang_the_run(self) -> None:
         """A pipe ties the read to EOF, so a suite that backgrounds anything held it open and
         blocked the FULL timeout per mutant - and the verdict then flipped from `survived`, an
@@ -2786,6 +2798,10 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
         self.mut = _load()
         self.mut._RUN_TIMEOUT = 5
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_backgrounded_child_is_reaped_on_the_normal_exit_path(self) -> None:
         """Not on timeout - on the ordinary return, which is the path a backgrounded child
         now takes. The direct child having exited says nothing about what it launched."""
@@ -2821,6 +2837,10 @@ class TheRunLeavesNothingBehindTests(unittest.TestCase):
             self.assertEqual(before_fds, len(os.listdir("/proc/self/fd")),
                              "a failed run leaked its sink descriptor")
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_timeout_still_bounds_a_genuinely_hanging_command(self) -> None:
         """Moving the kill into `finally` must not let the timeout branch block on a second
         unbounded `wait()` first - that restores the full-runtime hang the bound exists for."""

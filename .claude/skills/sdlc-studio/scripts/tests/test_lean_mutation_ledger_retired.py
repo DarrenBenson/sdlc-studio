@@ -128,6 +128,16 @@ def _ledger(root: Path) -> None:
                                         "at": "2026-09-25T00:00:00Z"}}]}]}))
 
 
+#: The close prints the seconds its own pre-flight gate measured, which two closes need not
+#: share, so a comparison of two closes' output reads the rest of the line, not the figure
+#: (BG0963).
+_MEASURED_SECONDS = re.compile(r"\b\d+s of gate over\b")
+
+
+def _unmeasured(text: str) -> str:
+    return _MEASURED_SECONDS.sub("<n>s of gate over", text)
+
+
 def _live(name: str):
     return sys.modules.get(name) or loader.load_script(name)
 
@@ -149,8 +159,8 @@ def _close(root: Path) -> tuple[int, str]:
         rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
     said = (out.getvalue() + err.getvalue()).replace(str(root), "<root>")
     # The filed report's fingerprint covers its own generation time and the open run's elapsed
-    # minutes, so two closes a second apart differ there and nowhere else.
-    return rc, re.sub(r"fingerprint [0-9a-f]{16}", "fingerprint <fp>", said)
+    # minutes, so two closes a second apart differ there, and in the measured seconds.
+    return rc, _unmeasured(re.sub(r"fingerprint [0-9a-f]{16}", "fingerprint <fp>", said))
 
 
 def _ledger_reads(path: Path) -> list[str]:

@@ -10,6 +10,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parent.parent / "config.py"
 DEFAULTS = Path(__file__).resolve().parent.parent.parent / "templates" / "config-defaults.yaml"
 REF_DOC = Path(__file__).resolve().parent.parent.parent / "reference-config.md"
@@ -94,6 +96,10 @@ class IntegrationTests(unittest.TestCase):
         self.assertIsNotNone(data["config"])
         self.assertEqual(data["config"]["schema_version"], 2)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_status_gathers_a_fixture_never_this_repository(self) -> None:
         # BG0647 AC1: the gather reaches the fixture and nothing else - pinned three ways.
         import time  # noqa: PLC0415

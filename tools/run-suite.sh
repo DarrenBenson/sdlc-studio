@@ -200,10 +200,12 @@ fi
 # See scripts/tests/boundary.py for what may be marked and why (BG0579).
 export SDLC_STUDIO_BOUNDARY_SUITE=1
 
-# TWO PHASES, because one test in this suite asks a question that has no answer while other
+# TWO PHASES, because some tests in this suite ask a question that has no answer while other
 # tests are running. `serial_only` marks a test whose assertion is about GLOBAL state - the
 # working tree, the whole repository - so a concurrent worker doing legitimate work makes it
-# wrong. It is neither flaky nor slow; it is global.
+# wrong; it is neither flaky nor slow, it is global. It also marks a test that bounds a
+# wall-clock duration from above, which beside the parallel pass measures the load; such a
+# test is `boundary_only` too, so it runs here and never on a commit (BG0963).
 #
 # Phase 1 runs everything else across all cores. Phase 2 runs the marked tests alone. Nothing is
 # skipped in either phase: `-m "not serial_only"` and `-m serial_only` partition the suite, so a

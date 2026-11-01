@@ -19,6 +19,8 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_lean_close as lean  # noqa: E402 - the close fixture, shared
 import test_lean_goal_note_ratio_numeric as numeric  # noqa: E402 - by module, not re-collected
@@ -109,6 +111,10 @@ class V61LastLowsTests(unittest.TestCase):
                                            "seats": [residue.SEAT]})
             self.assertEqual(0, rc, said)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_note_parser_is_linear_on_repeated_names(self) -> None:
         """AC3. MUTANT: HEAD's scan, which re-tries every measure name in a whitespace-free run
         and runs each attempt to the end of the run, so 20,000 characters of `tokens-` cost

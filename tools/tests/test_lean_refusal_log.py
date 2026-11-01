@@ -20,6 +20,8 @@ import time
 import unittest
 from pathlib import Path
 
+import pytest
+
 from test_message_first_gate import (  # noqa: F401 - tearDownModule removes the shared template
     _GateFixture, _clean_env, _failed_lanes, _git, _lanes, tearDownModule)
 
@@ -73,6 +75,10 @@ class RefusalLogTests(_GateFixture):
             return []
         return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_refused_commit_logs_its_lane_and_a_clean_one_logs_nothing(self) -> None:
         """MUTANT: append the line inside `run`'s failure path. The suite lanes fail inside
         the repo-writes window, so that lane then reports the log as a stray write and refuses

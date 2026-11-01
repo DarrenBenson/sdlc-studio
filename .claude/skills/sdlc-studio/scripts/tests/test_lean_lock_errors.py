@@ -25,6 +25,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 import critic  # noqa: E402
@@ -103,6 +105,10 @@ class LockErrorTests(unittest.TestCase):
         patch.start()
         self.addCleanup(patch.stop)
 
+    # A wall-clock bound measures the load beside other work, so it runs only at push, in the
+    # serial phase on the gate host (BG0963).
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_non_busy_flock_error_is_named_at_once(self) -> None:
         """AC1. MUTANT: retry every `OSError` as if the lock were busy, so ENOLCK waits out
         the timeout and is reported as another writer holding the lock. The control: a busy

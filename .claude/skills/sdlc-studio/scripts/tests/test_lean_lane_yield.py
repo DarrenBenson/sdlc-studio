@@ -33,6 +33,16 @@ RUN = "RUN-01LANEYLD"
 RETRO = "RETRO0001"
 
 
+#: The close prints the seconds its own pre-flight gate measured, which two closes need not
+#: share, so a comparison of two closes' output reads the rest of the line, not the figure
+#: (BG0963).
+_MEASURED_SECONDS = re.compile(r"\b\d+s of gate over\b")
+
+
+def _unmeasured(text: str) -> str:
+    return _MEASURED_SECONDS.sub("<n>s of gate over", text)
+
+
 def _live(name: str):
     """The module as `sys.modules` holds it NOW, imported on first use (see test_lean_close)."""
     return sys.modules.get(name) or importlib.import_module(name)
@@ -253,8 +263,8 @@ class LaneYieldTests(unittest.TestCase):
                     "rc": rc, "new_files": sorted(after - before),
                     "known_issues": state.get("close_known_issues"),
                     "fingerprint": report["fingerprint"],
-                    "out": re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", out),
-                    "err": re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", err),
+                    "out": _unmeasured(re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", out)),
+                    "err": _unmeasured(re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", err)),
                     "rows": _yield_rows(report), "section": _section_of(report)}
         listed = {lane for lane, r in closes[True]["rows"].items()
                   if r["yield_verdict"].startswith("delete")}

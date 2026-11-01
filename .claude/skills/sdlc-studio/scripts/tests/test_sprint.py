@@ -9,6 +9,7 @@ import io
 import json
 import hashlib
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -12817,9 +12818,14 @@ class InertVerifierRepairTests(unittest.TestCase):
                           "the close emitted no cost line at all")
             # And it carries the MEASURED figure, not the UNMEASURED fallback - a line that
             # always says "not measured" would satisfy the presence check while reporting
-            # nothing, which is the same defect one level down.
-            self.assertIn("398s", printed,
-                          f"the cost line carries no measured figure. Printed:\n{printed[:400]}")
+            # nothing, which is the same defect one level down. The figure is the fixture's 398 s
+            # plus the seconds the close's own pre-flight gate measured, so it is read as at
+            # least 398 over both runs: `398s` exactly failed on a pre-flight of half a second
+            # or more (BG0963).
+            cost = re.search(r"close cost: (\d+)s of gate over 2 run\(s\)", printed)
+            self.assertTrue(cost, f"the cost line carries no measured figure. Printed:\n"
+                                  f"{printed[:400]}")
+            self.assertGreaterEqual(int(cost.group(1)), 398, cost.group(0))
             self.assertNotIn("close cost: no gate event", printed)
 
 class UngroomedCensusCoversEveryTypeTests(unittest.TestCase):
