@@ -1,6 +1,6 @@
 # EP0295: v6.2.0 ships with paperwork that matches the code
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -12,7 +12,7 @@ The paperwork that ships v6.2.0 (D0395), after RUN-01M6A3K2 was signed over RPT0
 ## Story Breakdown
 
 - [x] [US1110: The v6.2 release notes lead with what changed for the person using it](../stories/US1110-the-v6-2-release-notes-lead-with-what.md)
-- [ ] [US1111: v6.2.0 is cut: version, changelog, known issues, install pins and the specs' baseline](../stories/US1111-v6-2-0-is-cut-version-changelog-known.md)
+- [x] [US1111: v6.2.0 is cut: version, changelog, known issues, install pins and the specs' baseline](../stories/US1111-v6-2-0-is-cut-version-changelog-known.md)
 
 ## Revision History
 
