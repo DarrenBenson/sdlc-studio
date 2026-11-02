@@ -8,6 +8,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import tempfile
 import shutil
@@ -1171,6 +1172,145 @@ class TierCoverageTests(unittest.TestCase):
             self.assertEqual(mod.critic.verdict_for(root, "US0002")["tier"], "")
             self.assertTrue(mod.verdict_half_ok(root, "US0002", sprint_covers=False),
                             "a verdict from before the column existed stopped covering")
+
+    # BG1167 (absorbing BG1052): a light APPROVE whose band later derives full. Three small
+    # declared modules and four criteria band low (light); one of them grown to cognitive 40,
+    # or a fourth such module added to the Affects, bands medium (full).
+    _SMALL = "def f():\n    return 1\n"
+    _HEAVY = "def f():\n" + "    if True:\n        pass\n" * 40
+
+    def _write_drift_unit(self, root: Path, affects: list[str]) -> None:
+        criteria = "".join(f"### AC{i}: works\n- **Given** a thing\n- **Verify:** shell echo ok\n"
+                           f"- **Verified:** yes (2026-01-01)\n" for i in range(1, 5))
+        (root / "sdlc-studio" / "stories" / "US0004-sample.md").write_text(
+            f"# US0004: sample\n\n> **Status:** Done\n> **Epic:** [EP0001: x](../epics/EP0001-x.md)"
+            f"\n> **Affects:** {', '.join(affects)}\n\n## Acceptance Criteria\n\n{criteria}",
+            encoding="utf-8")
+
+    def _commit(self, root: Path, message: str) -> None:
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-qm", message], cwd=root)
+
+    def _approved_light(self, root: Path, affects: list[str], tier_explicit: bool = False):
+        """US0004, Done and otherwise conformant, declaring `affects`, approved light and
+        committed. Returns the loaded conformance module."""
+        for name in ("a", "b", "c", "d"):
+            fp = root / "src" / f"{name}.py"
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            fp.write_text(self._SMALL, encoding="utf-8")
+        (root / "sdlc-studio" / "stories").mkdir(parents=True, exist_ok=True)
+        self._write_drift_unit(root, affects)
+        _index(root, {4: "Done"})
+        gitutil.git(["init", "-q"], cwd=root)
+        self._commit(root, "US0004 delivered")
+        mod = _load()
+        self.assertEqual(mod.critic.tier_for(root, "US0004"), "light",
+                         "the fixture does not start light - it proves nothing")
+        mod.critic.record_verdict(root, "US0004", "approve", reviewer="qa", author="dev",
+                                  brief="0123456789ab", tier="light",
+                                  tier_explicit=tier_explicit)
+        self._commit(root, "US0004 approved light")
+        return mod
+
+    def _census_unit(self, mod, root: Path) -> dict:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            mod.main(["check", "--root", str(root), "--format", "json"])
+        return {u["id"]: u for u in json.loads(out.getvalue())["units"]}["US0004"]
+
+    def test_a_later_units_edit_to_a_shared_file_does_not_fail_a_light_approve(self) -> None:
+        """AC1. Mutant: re-derive the band from today's tree alone (the pre-BG1167
+        `tier_covers`) - another unit's growth of src/a.py fails a review that was right."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            affects = ["src/a.py", "src/b.py", "src/c.py"]
+            mod = self._approved_light(root, affects)
+            (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
+            self._commit(root, "US0005 grows src/a.py")
+            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full",
+                             "the later edit does not raise the band - it proves nothing")
+            unit = self._census_unit(mod, root)
+            self.assertTrue(unit["conformant"], unit["missing"])
+            self.assertEqual(unit["critiqued_missing"], [])
+
+    def test_done_stages_names_the_depth_half_for_a_shallow_independent_approve(self) -> None:
+        """AC2. Mutant: `_done_stages` names HALF_VERDICT for every unmet `critiqued` - the
+        census sends the reviewer to find an independent APPROVE already on file."""
+        with tempfile.TemporaryDirectory() as d:
+            root, mod = Path(d), _load()
+            self._unit(root, "US0002", heavy=True)
+            mod.critic.record_verdict(root, "US0002", "approve", reviewer="qa", author="dev",
+                                      tier="light")
+            *_, unmet = mod._done_stages(root, "US0002", ["yes"], False, set(), True)
+            self.assertEqual(unmet, [mod.HALF_TIER])
+            # the census's own output, not only the helper it calls
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                mod.main(["check", "--root", str(root), "--format", "json"])
+                unit = {u["id"]: u for u in json.loads(out.getvalue())["units"]}["US0002"]
+            self.assertIn("critiqued", unit["missing"])
+            self.assertEqual(unit["critiqued_missing"], [mod.HALF_TIER])
+            # the control: no APPROVE at all still owes the verdict itself
+            mod.critic.record_verdict(root, "US0002", "reject", reviewer="qa", author="dev",
+                                      issues="[new] it does not work (a.py:1)", tier="full")
+            *_, unmet = mod._done_stages(root, "US0002", ["yes"], False, set(), True)
+            self.assertEqual(unmet, [mod.HALF_VERDICT])
+
+    def test_a_units_own_affects_widening_still_owes_the_deeper_review(self) -> None:
+        """AC3. Mutants: judge only that a commit recorded the verdict, never the Affects there
+        (a widened unit keeps its light review); read the Affects at HEAD rather than at the
+        recording commit (today's Affects always equal themselves)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
+            (root / "src" / "d.py").write_text(self._HEAVY, encoding="utf-8")
+            self._write_drift_unit(root, ["src/a.py", "src/b.py", "src/c.py", "src/d.py"])
+            self._commit(root, "US0004 repair widens its Affects")
+            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full",
+                             "the widening does not raise the band - it proves nothing")
+            unit = self._census_unit(mod, root)
+            self.assertFalse(unit["conformant"])
+            self.assertEqual(unit["missing"], ["critiqued"])
+            self.assertEqual(unit["critiqued_missing"], [mod.HALF_TIER])
+
+    def test_a_units_own_affects_narrowing_keeps_its_light_approve(self) -> None:
+        """A dropped file is not a widening: the light review saw every file still declared.
+        Mutant: demand the two Affects be equal rather than today's within the recorded."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py", "src/d.py"])
+            self._write_drift_unit(root, ["src/a.py", "src/b.py", "src/c.py"])
+            (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
+            self._commit(root, "US0004 drops src/d.py; US0005 grows src/a.py")
+            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full")
+            self.assertTrue(self._census_unit(mod, root)["conformant"])
+
+    def test_an_explicit_light_tier_is_not_excused_by_an_unchanged_scope(self) -> None:
+        """An operator's `--tier light` was never derived from the band, so an unchanged scope
+        says nothing about the band it was taken at. Mutant: drop the explicit check - the
+        operator's choice clears the gate whenever the Affects stand still."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"],
+                                       tier_explicit=True)
+            (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
+            self._commit(root, "US0005 grows src/a.py")
+            self.assertEqual(self._census_unit(mod, root)["critiqued_missing"], [mod.HALF_TIER])
+
+    def test_a_light_approve_git_cannot_place_owes_the_deeper_review(self) -> None:
+        """Fails towards full when git cannot name the recording commit: a row with no brief
+        fingerprint, and a row recorded but not yet committed. Mutant: read no commit as no
+        change of scope."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
+            (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
+            self._commit(root, "US0005 grows src/a.py")
+            for brief in ("", "fedcba987654"):   # no fingerprint; one no commit carries
+                mod.critic.record_verdict(root, "US0004", "approve", reviewer="qa",
+                                          author="dev", brief=brief, tier="light")
+                v = mod.critic.verdict_for(root, "US0004")
+                self.assertFalse(mod.tier_covers(root, "US0004", v), brief or "no brief")
 
 
 class VerifierGroomingTests(unittest.TestCase):

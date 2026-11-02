@@ -394,7 +394,8 @@ def tier_covers(root, rid, verdict: dict | None) -> bool:
         state, and applying the rule backwards would re-open every closed unit in the corpus
         for a fact nobody could have recorded.
       * a tier at least as deep as the band demands -> COVERS.
-      * a `light` verdict on a unit the band tiers `full` -> DOES NOT cover.
+      * a `light` verdict on a unit the band tiers `full` -> DOES NOT cover, unless the band
+        rose with no widening of the unit's own Affects (`_scope_not_widened`).
 
     A band that cannot be resolved demands `full`, so an unreadable unit fails towards
     demanding the deeper review rather than accepting the shallower one.
@@ -409,26 +410,48 @@ def tier_covers(root, rid, verdict: dict | None) -> bool:
     # code, and dead code beside a comment describing it as load-bearing is what this repository
     # files bugs about.
     depth = str((verdict or {}).get("tier") or "").strip().split(" ")[0]
-    return not (depth == "light" and critic.tier_for(root, rid) == "full")
+    if not (depth == "light" and critic.tier_for(root, rid) == "full"):
+        return True
+    return _scope_not_widened(root, rid, verdict)
+
+
+def _scope_not_widened(root, rid, verdict: dict) -> bool:
+    """Whether a light APPROVE still covers a unit whose band now tiers `full`.
+
+    True when the tier was derived, not chosen, and every file the unit declares today was
+    declared at the commit that recorded the verdict: another unit's later edit to a shared
+    file moves the band of a unit that did nothing. False when the unit's own Affects gained a
+    file, for an explicit `light`, and whenever git cannot name that commit or the unit file
+    there, which fails towards the deeper review. Only a unit that reaches this pays the git
+    call.
+    """
+    if critic.EXPLICIT_SUFFIX.strip() in str(verdict.get("tier") or ""):
+        return False
+    then = critic.affects_when_recorded(root, rid, verdict)
+    found = sdlc_md.find_by_id(Path(root), rid) if then is not None else None
+    if not found:
+        return False
+    return set(sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))) <= set(then)
+
+
+def _owed_half(root, rid) -> str:
+    """WHICH half an unmet `critiqued` owes, so the remedy fits: HALF_TIER for an independent
+    (or grandfathered) APPROVE that fails only on depth, else HALF_VERDICT. The one reading for
+    `critiqued_unmet` and the census."""
+    verdict = critic.verdict_for(root, rid)
+    approve_but_shallow = (bool(verdict) and verdict["verdict"] == critic.APPROVE
+                           and (critic.is_independent(verdict) or critic.is_pre_gate(verdict))
+                           and not tier_covers(root, rid, verdict))
+    return HALF_TIER if approve_but_shallow else HALF_VERDICT
 
 
 def critiqued_unmet(root, rid, critic_required: bool = True) -> list[str]:
     """What `critiqued` still owes for `rid`, in this module's own vocabulary: nothing, the
     independent APPROVE, or a review at the depth the unit's risk band demands."""
-    verdict = critic.verdict_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(
         root, rid, critic.sprint_review_for(root, rid))
     verdict_ok = verdict_half_ok(root, rid, sprint_covers)
-    unmet = []
-    if critic_required and not verdict_ok:
-        # WHICH of the two it is, so the remedy fits. An APPROVE that is independent and fails
-        # only on depth is a different state from no approval at all.
-        approve_but_shallow = (bool(verdict) and verdict["verdict"] == critic.APPROVE
-                               and (critic.is_independent(verdict)
-                                    or critic.is_pre_gate(verdict))
-                               and not tier_covers(root, rid, verdict))
-        unmet.append(HALF_TIER if approve_but_shallow else HALF_VERDICT)
-    return unmet
+    return [_owed_half(root, rid)] if critic_required and not verdict_ok else []
 
 
 def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
@@ -461,7 +484,7 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # per-unit REJECT; only the rejecting reviewer's round-2 APPROVE answers one.
     critiqued = (verdict_half_ok(root, rid, sprint_covers, licensed)
                  if critic_required else True)
-    unmet = [] if critiqued else [HALF_VERDICT]
+    unmet = [] if critiqued else [_owed_half(root, rid)]
     return verified, reconciled, critiqued, doc_ok, unmet
 
 

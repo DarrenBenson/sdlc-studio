@@ -3307,6 +3307,54 @@ def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
             f"scope. Re-brief the seat: {again}")
 
 
+def affects_when_recorded(repo_root: Path | str, unit: str, verdict: dict) -> list[str] | None:
+    """The Affects `unit` declared at the commit that added `verdict`'s row to the delivery
+    ledger, or None when git cannot say.
+
+    That commit is the oldest whose change to the ledger moved the count of the row's brief
+    fingerprint (`git log -S`), searched from two days before the row's date. None for a row
+    with no fingerprint, a row not yet committed, a unit file absent there, or no git.
+    """
+    from datetime import date, timedelta  # noqa: PLC0415 - only this question needs dates
+    root, fp = Path(repo_root), _brief_key(verdict)
+    found = sdlc_md.find_by_id(root, unit) if fp else None
+    if not found:
+        return None
+    args = ["log", f"-S{fp}", "--format=%H", "--reverse"]
+    if dated := re.match(r"\d{4}-\d{2}-\d{2}", str(verdict.get("date") or "").strip()):
+        try:  # the row is dated when `record` wrote it: the margin absorbs a time zone
+            args.append(f"--since={date.fromisoformat(dated.group(0)) - timedelta(days=2)}")
+        except ValueError:
+            pass
+    cp = _git(root, *args, "--", f"sdlc-studio/reviews/{_FILE['delivery']}")
+    commits = cp.stdout.decode("utf-8", "replace").split() if cp and cp.returncode == 0 else []
+    try:
+        blob = (_rev_blob(root, commits[0],
+                          found[0].resolve().relative_to(root.resolve()).as_posix())
+                if commits else None)
+    except (ValueError, _GitUnreadable):
+        return None
+    return None if blob is None else sdlc_md.affects_files(blob.decode("utf-8", "replace"))
+
+
+def under_depth_notice(repo_root: Path | str, unit: str) -> str | None:
+    """The warning for a unit whose latest live APPROVE is shallower than its risk band now
+    demands, as conformance judges it (`conformance.tier_covers`), or None."""
+    uid = sdlc_md.norm_id(unit)
+    approves = [r for r in _live_verdict_rows(repo_root, uid)
+                if str(r.get("verdict") or "").upper() == APPROVE]
+    if not approves:
+        return None
+    import conformance  # noqa: PLC0415 - deferred sibling: the one depth rule, never a second
+    row = approves[-1]
+    if conformance.tier_covers(repo_root, uid, row):
+        return None
+    return (f"warning: {uid}'s APPROVE by {row.get('reviewer')} on {row.get('date')} (brief "
+            f"{_brief_key(row) or '-'}) was taken at tier {row.get('tier')}, and its risk band "
+            f"now demands the full tier, so conformance does not count it. Brief the deeper "
+            f"review: critic.py brief --unit {uid} --seat <seat>")
+
+
 def brief_diff_cap(repo_root: Path | str, tier: str) -> int:
     """The line cap on the brief's UNIT DIFF at `tier`: the project's
     `review.brief_diff_lines.<tier>`, else `BRIEF_DIFF_LINES[tier]`. A setting that is not a
@@ -4328,6 +4376,8 @@ def cmd_record(args: argparse.Namespace) -> int:
             print(notice)
         if brief and (moved := rebrief_notice(args.root, unit, brief)):
             print(moved, file=sys.stderr)
+        if shallow := under_depth_notice(args.root, unit):
+            print(shallow, file=sys.stderr)
     if drift := _seat_drift_warning(args.root, args.reviewer):
         print(f"WARNING: {drift}", file=sys.stderr)
     return rc
