@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 2
 > **Affects:** tools/tests/test_lean_release_verify.py, .claude/skills/sdlc-studio/scripts/migrate.py, changelog.d/BG1183.md, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio file
@@ -24,8 +24,10 @@ Make each criterion's verifier finish well under 300 s (scope US0940's test to t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** `gate.py --release` passes US0940 AC1 and US0926 AC1 under its default 300 s ceiling.
-  - **Verify:** pytest tools/tests/test_lean_release_verify.py
+- [ ] **AC1** US0940 AC1's verifier, `tools/tests/test_lean_release_verify.py`, finishes inside the release gate's default 300 s ceiling, and still fails on each measured criterion it re-runs when that criterion is red.
+  - **Verify:** shell timeout 300 python3 -m pytest -q tools/tests/test_lean_release_verify.py
+- [ ] **AC2** US0926 AC1's `migrate.py` dry run on this repository finishes inside verify_ac's default 120 s ceiling.
+  - **Verify:** shell timeout 120 python3 .claude/skills/sdlc-studio/scripts/migrate.py
 
 ## Impact
 
@@ -36,3 +38,4 @@ A release gate on an ordinary machine goes red on a passing test unless someone 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed for run five (goal review, all three seats): the Verify ran the whole module, which passes today, just slowly; each criterion is now a timing-bound check that is red today (534.65 s and 180 s measured 2026-11-02). Points 1 to 2 |

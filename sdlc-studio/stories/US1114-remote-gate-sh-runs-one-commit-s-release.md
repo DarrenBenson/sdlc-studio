@@ -24,12 +24,15 @@
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_verify_settings_reach_the_host_and_a_bad_value_is_refused
 - **AC3:** Given the host's release gate passed on <sha>, then `sdlc-studio/.local/release-gate-green.json` names exactly <sha>; given it refused, or the connection failed, then the marker is byte-identical to before
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_green_is_recorded_only_for_the_sha_the_host_passed
+- **AC4:** Given a `boundary_only` verifier, when the release gate runs on the host and locally, then both routes set `SDLC_STUDIO_BOUNDARY_SUITE` the same way and the verifier gets the same verdict on both
+  - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_host_and_local_routes_agree_on_boundary_only_verifiers
 
 ## Notes
 
 - Serves: Rowan Achterberg, End goal 3 (a release a consuming team can upgrade to). CR0660; D0399.
 - AC1 must fail on: the host job running `gate.py --boundary release`, which binds no verify lane, or a refusal exiting 0.
 - AC2 must fail on: the variables not forwarded, so the host uses 300 s, or forwarded unvalidated, so a value containing `;` reaches the remote command line.
+- AC4 must fail on: the host job exporting `SDLC_STUDIO_BOUNDARY_SUITE=1` while a local `gate.py --release` does not, or the reverse. US0940 AC1's verifier carries `boundary_only`, so this decides its verdict per route (QA and engineering seats, goal review).
 - AC3 must fail on: green recorded before the exit code is read, or on any exit, or HEAD recorded instead of <sha>. Use the fake-ssh fixture that `test_remote_gate_runs.py` already uses.
 - Risks: the host job exports `SDLC_STUDIO_BOUNDARY_SUITE=1` today and a local `gate.py --release` does not; choose parity on purpose, or boundary_only verifiers change verdict between routes. The host lock (US1076) serialises this job with every clone's pushes for as long as it runs. Write the marker through `release_cut.record_green`; `tag-check` still asks the forge. The shipped toolchain runbook (section 6) is Maya's surface and is not edited here: name the route in the script's usage header.
 - Overlaps: CR0635 and US1075 (the remote gate), US1076 (the lock), BG1028. Independent of US1113's files, so it can build beside it.
@@ -40,3 +43,4 @@
 | --- | --- | --- |
 | 2026-11-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-02 | Claude Opus 5.5 (grooming) | Groomed under D0399 from the run-five planning pass: user story, criteria with Verify lines, mutants and risks |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Goal review (QA and engineering seats): AC4 pins the boundary-suite parity the Risks left open |
