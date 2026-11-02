@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-10-31
+**Last Updated:** 2026-11-02
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 0 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1109** |
+| **Total** | **1111** |
 
 ## All Stories
 
@@ -147,6 +147,8 @@
 | [US1107](US1107-each-open-lesson-from-l-0181-to-l.md) | Each open lesson from L-0181 to L-0270 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1108](US1108-each-open-lesson-from-l-0271-to-l.md) | Each open lesson from L-0271 to L-0360 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1109](US1109-each-open-lesson-from-l-0361-to-l.md) | Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
+| [US1110](US1110-the-v6-2-release-notes-lead-with-what.md) | The v6.2 release notes lead with what changed for the person using it | Ready | EP0295 | 2026-11-02 | 2026-11-02 |
+| [US1111](US1111-v6-2-0-is-cut-version-changelog-known.md) | v6.2.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Ready | EP0295 | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 

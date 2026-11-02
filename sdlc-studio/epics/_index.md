@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-10-31
+**Last Updated:** 2026-11-02
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 248 |
 | Superseded | 33 |
-| **Total** | **294** |
+| **Total** | **295** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -45,6 +45,7 @@
 | [EP0292](EP0292-a-sprint-costs-what-its-work-costs-a.md) | A sprint costs what its work costs: a true meter, small fresh contexts per unit, and a regression caught at the close | Done | 7 | -- | 2026-10-22 | 2026-10-22 |
 | [EP0293](EP0293-the-prd-trd-and-tsd-describe-6-2.md) | The PRD, TRD and TSD describe 6.2, and the freshness census checks all three | Done | 7 | -- | 2026-10-31 | 2026-10-31 |
 | [EP0294](EP0294-every-open-project-lesson-is-judged-against-the.md) | Every open project lesson is judged against the current tree: closed with its reason, or extended after a check | Done | 5 | -- | 2026-10-31 | 2026-10-31 |
+| [EP0295](EP0295-v6-2-0-ships-with-paperwork-that-matches.md) | v6.2.0 ships with paperwork that matches the code | Draft | 2 | -- | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 

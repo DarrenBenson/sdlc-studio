@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-01
+**Last Updated:** 2026-11-02
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 172 |
+| Open | 174 |
 | In Progress | 0 |
 | Fixed | 826 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1171** |
+| **Total** | **1173** |
 
 ## All Bugs
 
@@ -247,6 +247,8 @@
 | [BG1169](BG1169-mutation-py-s-drop-ignored-ignores-git-check.md) | mutation.py's _drop_ignored ignores git check-ignore's exit code, so one path git refuses leaves the rest partly filtered | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1170](BG1170-the-tsd-and-trd-refresh-tests-leave-low.md) | The TSD and TRD refresh tests leave low residual gaps their round-2 and BG1166 reviews named | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1171](BG1171-reconcile-settle-closes-an-epic-in-the-pre.md) | reconcile settle closes an epic in the pre-commit hook but leaves the requests that close made derivable, so the same commit's gate refuses on that drift | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1172](BG1172-four-open-dependabot-alerts-on-main-sit-in.md) | Four open Dependabot alerts on main sit in development dependencies: markdown-it (High and Low), smol-toml (Medium) and katex (Low) | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1173](BG1173-a-close-that-reuses-a-pinned-token-actual.md) | A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the run's priced cost | Open | Low | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 
