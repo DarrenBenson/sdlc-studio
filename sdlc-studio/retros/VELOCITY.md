@@ -214,4 +214,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0134 | 2026-10-15 | 18 | 0 | 11 | 37 | - | 3,255,696 | 7,598,923 | - | 205,376 | - | 0 | - | - | - | TOKENS_PER_POINT=135654 | out-of-sample | claude-opus-5-5 | - | harness |
 | RETRO0135 | 2026-10-20 | 9 | 0 | 9 | 15 | 26 | 3,803,358 | 10,098,487 | - | 673,232 | - | 0 | - | - | - | TOKENS_PER_POINT=146283 | out-of-sample | claude-opus-5-5 | - | harness |
 | RETRO0136 | 2026-10-27 | 18 | 0 | 7 | - | 52 | 2,980,032 | 37,014,716 | - | - | - | 0 | - | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | harness (main thread and subagents, once per message) |
-| RETRO0137 | 2026-11-01 | 24 | 0 | 24 | 69 | - | 12,851,388 | 22,817,311 | - | 330,686 | - | 0 | - | - | - | TOKENS_PER_POINT=186252 | out-of-sample | - | - | supplied |
+| RETRO0137 | 2026-11-01 | 24 | 0 | 24 | 69 | - | 12,851,388 | 22,817,311 | - | 330,686 | - | 0 | - | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | supplied |

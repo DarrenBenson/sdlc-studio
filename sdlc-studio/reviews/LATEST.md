@@ -1,5 +1,5 @@
 <!-- close-status:begin -->
-> **RUN-01M5EM9N closed partial.** 19 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
+> **RUN-01M6A3K2 closed partial.** 24 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 > **RUN-01M5EM9N, the third 6.2 run.** Goal, amended once under US1096: "Reviewers see only

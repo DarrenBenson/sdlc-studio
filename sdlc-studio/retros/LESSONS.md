@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-01
+**Last Updated:** 2026-11-02
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0453: Start `sprint.py close --dry-run` as soon as the last unit enters review: the first one here was stopped at 20 minutes without printing a…
+
+- **Added:** 2026-11-02
+- **Review-by:** 2027-01-31
+
+Start `sprint.py close --dry-run` as soon as the last unit enters review: the first one here was stopped at 20 minutes without printing a line, and its refusals can be cleared while the reviews run.
+
+Recorded from retro RETRO0137.
+
+## L-0452: Until BG1167 is fixed, re-derive `critic.tier_for` for every closed light-tier unit that declares a file the landing unit changes, and…
+
+- **Added:** 2026-11-02
+- **Review-by:** 2027-01-31
+
+Until BG1167 is fixed, re-derive `critic.tier_for` for every closed light-tier unit that declares a file the landing unit changes, and brief a full review then, not at push.
+
+Recorded from retro RETRO0137.
+
+## L-0451: Before landing a unit that adds a test module or a git call, run test_gitutil.py's sweep and the modules that enumerate tests, in a clone…
+
+- **Added:** 2026-11-02
+- **Review-by:** 2027-01-31
+
+Before landing a unit that adds a test module or a git call, run test_gitutil.py's sweep and the modules that enumerate tests, in a clone whose sdlc-studio/.local is a symlink, as on the gate host.
+
+Recorded from retro RETRO0137.
 
 ## L-0450: Land units whose Affects do not overlap as one proven tree, so one host run covers several landings
 

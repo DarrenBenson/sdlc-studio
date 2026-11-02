@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0453: Start `sprint.py close --dry-run` as soon as the last unit enters review: the first one here was stopped at 20 minutes without printing a…**
+- **L-0452: Until BG1167 is fixed, re-derive `critic.tier_for` for every closed light-tier unit that declares a file the landing unit changes, and…**
+- **L-0451: Before landing a unit that adds a test module or a git call, run test_gitutil.py's sweep and the modules that enumerate tests, in a clone…**
 - **L-0450: Land units whose Affects do not overlap as one proven tree, so one host run covers several landings**
 - **L-0449: Clear each carried unit's standing review rows at plan time, so the close never meets one**
 - **L-0448: Hold the batch at plan: new work joins the next run unless the operator rules an amendment, and the amendment is priced against…**

@@ -31,3 +31,4 @@ than edited when a figure moves.
 | [RPT0020](RPT0020-sprint-report-run-01m4r168.md) | RUN-01M4R168 | 2026-10-16T08:33:39Z | cf3fd54456d58755 | Darren Benson |
 | [RPT0021](RPT0021-sprint-report-run-01m59trm.md) | RUN-01M59TRM | 2026-10-20T09:45:29Z | 69a1a2631ded6070 | Darren Benson |
 | [RPT0022](RPT0022-sprint-report-run-01m5em9n.md) | RUN-01M5EM9N | 2026-10-28T00:09:55Z | ebea81ff8c27f180 | Darren Benson |
+| [RPT0023](RPT0023-sprint-report-run-01m6a3k2.md) | RUN-01M6A3K2 | 2026-11-02T07:15:32Z | 795b535a9b3bcd7a | Darren Benson |

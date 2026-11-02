@@ -1,0 +1,546 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M6A3K2",
+  "started_at": "2026-10-31T23:12:36Z",
+  "ended_at": "2026-11-02T07:17:43Z",
+  "outcome": "partial",
+  "goal": null,
+  "batch": [
+    "BG0963",
+    "BG1065",
+    "BG1109",
+    "BG1135",
+    "BG1139",
+    "US1080",
+    "US1081",
+    "US1082",
+    "US1083",
+    "US1098",
+    "US1099",
+    "US1100",
+    "US1101",
+    "US1103",
+    "US1104",
+    "US1102",
+    "US1105",
+    "US1106",
+    "US1107",
+    "US1108",
+    "US1109",
+    "BG1137",
+    "BG1138",
+    "BG1140"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 88298220,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-10-31T23:12:47Z",
+    "priced": 469212886,
+    "components": {
+      "input": 27420,
+      "output": 4643423,
+      "cache_write_5m": 64938020,
+      "cache_write_1h": 18689357,
+      "cache_read": 3274171119
+    },
+    "subagents": true,
+    "meter": "once-per-message, main thread and subagent transcripts, priced components"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 88316116,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-10-31T23:13:10Z",
+      "kind": "open",
+      "model": "mixed",
+      "priced": 469242818,
+      "components": {
+        "input": 27422,
+        "output": 4643433,
+        "cache_write_5m": 64955904,
+        "cache_write_1h": 18689357,
+        "cache_read": 3274246365
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 111567534,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-02T07:15:32Z",
+      "kind": "report",
+      "model": "mixed",
+      "priced": 580638164,
+      "components": {
+        "input": 36334,
+        "output": 5894825,
+        "cache_write_5m": 85745170,
+        "cache_write_1h": 19891205,
+        "cache_read": 4041638328
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  ],
+  "delegated_tokens": [],
+  "reopened": [],
+  "batch_changes": [],
+  "rulings": [
+    {
+      "id": "D0394",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "daf2f295dee8d8ca5dbe4bf44cd82e48f76ae760",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-10-31T23:11:04Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "6.2 is releasable: its documents and personas match the code, every lesson is judged, and gates cost less.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "yes",
+        "done_means": "(a) The PRD, TRD and persona index and cards pass each unit's executable ACs against the 6.2 code, run through the CLI. (b) Zero open lessons are left unjudged; each is closed with a reason or extended with a recorded reason. (c) The gate's recorded cost on a fresh run is measurably below its pre-run figure of 127 s locally, and BG1065's own AC states the target. (d) BG0963's wall-clock flake no longer fails a loaded-machine commit. (e) The cluster-sharing units are delivered in sequence and every unit is Fixed or Done with an independent review.",
+        "one_increment": "yes",
+        "note": "Serves O4 (specs, indexes and code reconciled) and O5 (small process, gates cost less), plus Rowan Achterberg's End goal 3 (a release a consuming team can upgrade to). BG1065 is the riskiest: 127 s must come under 45 s, so 'less' has to be read as a measured cut, not the full 45 s. Suggested amendment: '6.2 is releasable (Rowan goal 3, O4, O5): documents and personas match code, lessons judged, gates cheaper.'",
+        "rereview": "no"
+      },
+      {
+        "seat": "engineering",
+        "achievable": "partly",
+        "done_means": "(1) US1080-US1084 and US1099-US1104 are Done, meaning every executable AC passes and the TRD, TSD and PRD claims were re-run against a fixture, per LC-018; (2) US1105-US1109 are Done, so every open lesson L-0001 onward is closed or extended with a reason naming the tree check, via `lessons.py revalidate`, `--unjudged-since` reports none left, and LESSONS-SUMMARY.md matches the log; (3) BG0963, BG1065, BG1109 and BG1135 are Fixed, with no fixed-constant timing assertion in the parallel partition, `GATE_BUDGET_S` set from a recorded measurement, a gate run reading each ledger once with unchanged lane output, and `critic.py supersede --brief` retiring exactly one row; (4) a push gate and release boundary run is green, and `forward-port.sh --check` shows no drift; (5) a changelog fragment ships for each unit, and the five shared-file clusters landed serially.",
+        "one_increment": "yes, but loosely - the lessons run is one theme and the document run is another, while the four gate-cost bugs sit apart. All three feed one 6.2 release-readiness theme. The 5-lesson and 6-document clusters share files, so order them serially.",
+        "note": "Achievable partly: the document and personas clauses (US1080-US1084, US1099-US1104) and the gate-cost clauses (BG0963, BG1065, BG1109, BG1135) are each groomed with Affects, Points and Verify lines. 'Every lesson is judged' rests on US1105-US1109, which are serial on shared LESSONS.md and its summary. They also depend on BG1139, which is not in the 24-unit batch, so its listing and place in the order must be confirmed; if it does not land first, US1105-US1109 cannot pass. 'Gates cost less' is thin: BG1065 only re-derives the budget, and nothing shows a measured saving beyond BG1109's single read of the ledger and decisions log. Serves O4 (specs, indexes and code stay reconciled) and O5 (the process stays small, a repeated failure fixed in the code path), and Rowan Achterberg End goal 3 (a release a consuming team can upgrade to). Amend: '6.2 is releasable: documents and personas match code, every lesson judged, gate cost measurably lower.' Make sure BG1139 is in the batch.",
+        "rereview": "no"
+      },
+      {
+        "seat": "qa",
+        "achievable": "partly",
+        "done_means": "(a) every batch unit reaches Fixed/Done with its Verify lines green under verify_ac, and each doc-claim command and figure is run against a fixture [LC-018]; (b) `lessons.py revalidate --unjudged-since 2026-10-31` reports zero unjudged lessons and `summary_status` is not stale; (c) a clean-tree `gate.py` run is measurably cheaper than the 330s profile, with BG1109's read-once test green and the BG1065 budget at or above a recorded measurement; (d) no parallel test bounds a measured duration, per BG0963's census test; (e) the PRD, TRD and persona Verify lines pass and the persona index links the seat cards; (f) the push gate is green on the final commit.",
+        "one_increment": "yes - every unit makes the 6.2 release boundary honest (docs, personas and lesson judgement match the code, gates cheaper), but the lesson stories and the gate bugs are two themes, joined only by the 6.2 release.",
+        "note": "Achievable partly: the documents, personas and lessons halves are achievable (US1080/1081/1083, US1099-1104, US1082, US1105-1109, each with Verify lines; 449 open lessons fit L-0001..L-0450). 'Gates cost less' is decided by BG1065 and BG1109. BG1109 has a read-once AC, but BG1065's AC1 only re-derives the 45s budget from a measurement, which can pass with no gate cost reduction. BG0963 and BG1135 are timing-flake and ledger repairs. I did not see 6 of the 24 units (the listed clusters name 18). Serves O4 (specs, indexes and code reconciled), O5 (a smaller process) and Rowan End goal 3 (a releasable 6.2). Amend: 'gates cost less' to 'the clean-tree gate runs under its re-derived budget'; add that BG1065 must cut cost.",
+        "rereview": "no"
+      }
+    ],
+    "goal": "6.2 is releasable: its documents and personas match the code, every lesson is judged, and gates cost less.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 8,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-10-31T22:28:30Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "requested_by": null,
+    "needs_reconsult": [],
+    "themed": [],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0963": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "BG1065": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1109": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "BG1135": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1139": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1080": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1081": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1082": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "US1083": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "US1098": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1099": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1100": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1101": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1103": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1104": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1102": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1105": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1106": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1107": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1108": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1109": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1137": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1138": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1140": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 186252,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 12851388,
+  "review_base": {
+    "US1098": 0,
+    "BG0963": 0,
+    "BG1140": 0,
+    "US1105": 0,
+    "BG1139": 0,
+    "US1106": 0,
+    "US1107": 0,
+    "US1080": 0,
+    "US1108": 0,
+    "US1109": 0,
+    "US1081": 0,
+    "BG1109": 0,
+    "BG1137": 0,
+    "BG1138": 0,
+    "US1099": 0,
+    "US1083": 0,
+    "US1082": 0,
+    "BG1135": 0,
+    "US1103": 0,
+    "BG1065": 0,
+    "US1104": 0,
+    "US1100": 0,
+    "US1101": 0,
+    "US1102": 0
+  },
+  "scaffolded_retro": "RETRO0137",
+  "sprint_goal_verdict": {
+    "verdict": "partial",
+    "note": "Every lesson is judged and the commit gate fell from 38.6s to 14.6s, but the push gate stayed at about 610s and filed false sentences remain in the TRD, TSD and a persona card (D0394)"
+  },
+  "close_attempts": [
+    {
+      "at": "2026-11-01T18:26:18Z",
+      "outstanding": 0,
+      "stages": []
+    },
+    {
+      "at": "2026-11-02T07:02:25Z",
+      "outstanding": 0,
+      "stages": []
+    }
+  ],
+  "close_known_issues": [],
+  "close_not_measured": [],
+  "close_tree": "c8201a867284e1425036bb1658bc280a1b8edba2",
+  "report_gate_clear": [
+    "BG0963",
+    "BG1065",
+    "BG1109",
+    "BG1135",
+    "BG1137",
+    "BG1138",
+    "BG1139",
+    "BG1140",
+    "US1080",
+    "US1081",
+    "US1082",
+    "US1083",
+    "US1098",
+    "US1099",
+    "US1100",
+    "US1101",
+    "US1102",
+    "US1103",
+    "US1104",
+    "US1105",
+    "US1106",
+    "US1107",
+    "US1108",
+    "US1109"
+  ],
+  "verified_sha": "72cf1aead22d33ec8ceb9e2e5c562c1e145e03ca",
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-01T09:36:22Z",
+        "databaseId": 41293856806,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "49609c6fa8b572bba1f4b897fb79973bf243b0c9",
+        "updatedAt": "2026-11-01T10:08:48Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-01T05:27:24Z",
+        "databaseId": 41277013912,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "268f47f9560854e08835ed9835c5dcecf8d71dfe",
+        "updatedAt": "2026-11-01T06:10:23Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-01T04:16:28Z",
+        "databaseId": 41272443826,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "2f93cab5a15cd273078b3491ec579752e318fe95",
+        "updatedAt": "2026-11-01T04:49:32Z",
+        "workflowName": "Lint"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-01T01:27:30Z",
+        "databaseId": 41261170080,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "43626a1c50052a2e8e13e9f4e28d3cfa3bc21795",
+        "updatedAt": "2026-11-01T02:31:20Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0963": [
+      "547ab2c1a0d740b3",
+      "b11cb8a8a8e9a851"
+    ],
+    "BG1065": [
+      "dedbe3e90b062250",
+      "802f8ef2e66cbe46"
+    ],
+    "BG1109": [
+      "c8c7fa53778303f2"
+    ],
+    "BG1135": [
+      "2afe94b6aec1e4fa"
+    ],
+    "BG1139": [
+      "7759040aa74bed78"
+    ],
+    "US1080": [
+      "a536903bef293988"
+    ],
+    "US1081": [
+      "1ec394f99c9b4433",
+      "b56607a73090a907"
+    ],
+    "US1082": [
+      "1a8ff959e461f38e",
+      "b63291c0692da2ef"
+    ],
+    "US1083": [
+      "577e227ddccaba2e"
+    ],
+    "US1098": [
+      "31375b73f06bcda2",
+      "5c407f3a30578e8c"
+    ],
+    "US1099": [
+      "6ac8fb8a4ccbf720",
+      "d00aa0a7723d3c41"
+    ],
+    "US1100": [
+      "7351202fc1b0f795"
+    ],
+    "US1101": [
+      "0f4661dd33cb3cd1"
+    ],
+    "US1103": [
+      "fc33e76ceae38c3d",
+      "57099118146efadc"
+    ],
+    "US1104": [
+      "e9bc118a81acd2b0"
+    ],
+    "US1102": [
+      "3de29d3ff26d8749",
+      "70f599e9d7d0710e"
+    ],
+    "US1105": [
+      "edf982c08669d63d"
+    ],
+    "US1106": [
+      "0f395c97b4ea456c",
+      "2242aa12ab969cf4"
+    ],
+    "US1107": [
+      "f3590e58f3ee374d",
+      "9c0ff47d4a44c00b"
+    ],
+    "US1108": [
+      "c39999b202739310",
+      "c9dafb76b5e26866"
+    ],
+    "US1109": [
+      "5c1d7ce5dae8259f",
+      "20680c1fb5a53561"
+    ],
+    "BG1137": [
+      "0694a39d8e8e488e"
+    ],
+    "BG1138": [
+      "2ff63aa49a2a9fd3"
+    ],
+    "BG1140": [
+      "801bcf8c1df55f10"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0023",
+  "report_fingerprint": "795b535a9b3bcd7a",
+  "report_window_end": "2026-11-02T07:15:32Z",
+  "unanswered": [],
+  "unanswered_rulings_from": "RETRO0137",
+  "signature": {
+    "principal": "Darren Benson",
+    "signed_at": "2026-11-02T07:17:43Z",
+    "report": "RPT0023",
+    "fingerprint": "795b535a9b3bcd7a"
+  }
+}
