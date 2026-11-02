@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 176 |
+| Open | 184 |
 | In Progress | 0 |
 | Fixed | 827 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1176** |
+| **Total** | **1184** |
 
 ## All Bugs
 
@@ -252,6 +252,14 @@
 | [BG1174](BG1174-the-v6-2-notes-test-exempts-the-whole.md) | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1176](BG1176-eight-done-criteria-went-stale-in-the-6.md) | Eight Done criteria went stale in the 6.2 work: five Verify greps lost their sentences to run four's spec refreshes, and three criteria still name v6.1.0 or a folded fragment after the cut | Fixed | Low | 2026-11-02 | 2026-11-02 |
+| [BG1177](BG1177-readme-s-6-2-0-line-and-the.md) | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1178](BG1178-known-issues-py-check-compares-the-page-with.md) | known_issues.py check compares the page with the corpus but never reads the release notes' count sentence, so a hand edit of that line goes unchecked until the tag | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1179](BG1179-the-trd-refresh-test-pins-vocabulary-rather-than.md) | The TRD refresh test pins vocabulary rather than US1101's corrected claims: the ADR-012 row, the ADR sentences and an aliased urlopen all slip past it | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1180](BG1180-the-prd-s-section-8-says-git-fetch.md) | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1181](BG1181-gate-prereqs-py-check-reports-every-prerequisite-present.md) | gate_prereqs.py check reports every prerequisite present on a machine with no Python 3.10, which the release gate's US0908 lane needs | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1182](BG1182-test-agents-md-full-suite-rule-s-problems.md) | `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops early | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1184](BG1184-bg1176-s-re-pointed-criteria-leave-three-sub.md) | BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment | Open | Low | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 
