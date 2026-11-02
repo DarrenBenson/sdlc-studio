@@ -27,9 +27,9 @@ Also look for markdownlint in the main worktree's `node_modules` (resolve `git r
 ## Acceptance Criteria
 
 - [ ] **AC1** A commit made in a linked worktree runs the markdown lane with the main worktree's markdownlint when its own `node_modules` is absent, and refuses a markdown error as the main tree does.
-  - **Verify:** pytest tools/tests/test_lean_commit_lanes.py
+  - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::CommitLaneTests::test_markdown_lane_in_a_linked_worktree_uses_the_main_worktrees_markdownlint
 - [ ] **AC2** With no markdownlint anywhere, the lane still prints SKIP naming what it looked for (the positive control).
-  - **Verify:** pytest tools/tests/test_lean_commit_lanes.py
+  - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::CommitLaneTests::test_markdown_skip_names_every_place_it_looked
 
 ## Impact
 
@@ -40,3 +40,4 @@ A gate the main tree enforces is silently off for every delegated builder, which
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: each criterion's Verify names its own node (the whole module was green before the fix). Mutants: AC1, look only in ./node_modules (pre-commit:293); AC2, print SKIP without the paths |

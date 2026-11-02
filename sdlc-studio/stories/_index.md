@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 85 |
-| Ready | 0 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1111** |
+| **Total** | **1116** |
 
 ## All Stories
 
@@ -149,6 +149,11 @@
 | [US1109](US1109-each-open-lesson-from-l-0361-to-l.md) | Each open lesson from L-0361 to L-0450 is closed with its reason or extended after a check against the current tree | Done | EP0294 | 2026-10-31 | 2026-10-31 |
 | [US1110](US1110-the-v6-2-release-notes-lead-with-what.md) | The v6.2 release notes lead with what changed for the person using it | Done | EP0295 | 2026-11-02 | 2026-11-02 |
 | [US1111](US1111-v6-2-0-is-cut-version-changelog-known.md) | v6.2.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Done | EP0295 | 2026-11-02 | 2026-11-02 |
+| [US1112](US1112-the-release-verify-lane-s-pytest-batch-runs.md) | The release verify lane's pytest batch runs on every core under its own ceiling and states how many criteria it resolved | Ready | EP0296 | 2026-11-02 | 2026-11-02 |
+| [US1113](US1113-the-release-verify-lane-runs-the-criteria-its.md) | The release verify lane runs the criteria its batch cannot resolve on a bounded worker pool, serial_only ones after it | Ready | EP0296 | 2026-11-02 | 2026-11-02 |
+| [US1114](US1114-remote-gate-sh-runs-one-commit-s-release.md) | remote-gate.sh runs one commit's release gate on the gate host and records it green only when the host passed it | Ready | EP0296 | 2026-11-02 | 2026-11-02 |
+| [US1115](US1115-check-commit-msg-accepts-a-mentions-trailer-for.md) | check-commit-msg accepts a Mentions: trailer for an id the subject only mentions, and the engagement floor attributes no files to it | Ready | EP0297 | 2026-11-02 | 2026-11-02 |
+| [US1116](US1116-the-commit-msg-hook-s-paste-ready-trailers.md) | The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for | Ready | EP0297 | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 

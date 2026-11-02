@@ -2,8 +2,9 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, changelog.d/BG1167.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Points:** 5
+> **Supersedes:** BG1052
+> **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1167.md
 > **Evidence:** devserver1 push of 1fbb6a46: '[FAIL] conformance: 2 non-conformant unit(s)'. route.estimate for US1082 and US1103 gives difficulty_band medium with max_cognitive 28. critic-verdicts.md holds light APPROVEs by qa-seat-US1082-r1 (0a792a44f477) and qa-seat-US1103-r1 (34875a02186d).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file
@@ -27,9 +28,13 @@ Judge the depth against the band the tier was derived from at brief time. Record
 ## Acceptance Criteria
 
 - [ ] **AC1** A unit approved at the tier its band derived when it was briefed stays conformant after a later commit raises the band of a file it declares.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_a_later_units_edit_to_a_shared_file_does_not_fail_a_light_approve
 - [ ] **AC2** A conformance check of an independent APPROVE that fails only on depth names 'a review at the depth this unit's risk band demands', not 'independent APPROVE verdict'.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_done_stages_names_the_depth_half_for_a_shallow_independent_approve
+- [ ] **AC3** Given a unit whose own Affects widened after its light APPROVE, so its band now derives full, when conformance checks it, then it is non-conformant and names 'a review at the depth this unit's risk band demands'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_a_units_own_affects_widening_still_owes_the_deeper_review
+- [ ] **AC4** Given that unit, when `critic.py record` writes any verdict on it, then stderr names the under-depth APPROVE and the tier its band now demands.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py::UnderDepthTests::test_record_names_an_under_depth_approve
 
 ## Impact
 
@@ -40,3 +45,4 @@ A closed unit's conformance changes when a later unit touches a shared file. The
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: absorbs BG1052 (one decision in one chain, tier_covers to critic.tier_for to route.estimate, wanting opposite answers for another unit's drift and the unit's own widening; fixing BG1167 alone would mask BG1052, LL0052). Merged rule: when a light APPROVE meets a band that now derives full, compare the unit's own Affects at the commit that recorded the verdict (git log -S on the brief fingerprint in critic-verdicts.md) with today's; unchanged covers, widened owes the deeper review; a shallow clone that cannot answer fails toward full. AC3 and AC4 added, points 3 to 5. US1082, US1103 and US1090 should turn conformant if their Affects did not change, so D0397's waiver could then be retired |

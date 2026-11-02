@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG1160.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py, changelog.d/BG1160.md
 > **Evidence:** BG1065 builder report, 2026-11-01, outside-the-unit item 2 (reproduced).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file
@@ -27,9 +27,9 @@ Refuse a --run-tests path that does not exist by name before running anything, a
 ## Acceptance Criteria
 
 - [ ] **AC1** A --run-tests path that does not exist is refused by name, non-zero, before any test runs.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py::RunTestsPathTests::test_a_missing_path_is_refused_by_name_before_any_test_runs
 - [ ] **AC2** With every path real, a failing test fails the run (the positive control).
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py::RunTestsPathTests::test_a_failing_test_fails_the_run_when_every_path_is_real
 
 ## Impact
 
@@ -40,3 +40,4 @@ A caller that passes one stale path gets a green gate over a red module.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: a new small test module replaces test_gate.py (about 3 min per selected commit) and each criterion names its node. Reproduced at planning: a missing path beside a real one prints 'no tests ran' and exits 0. Risk: the pre-commit selection must never pass a deleted module |

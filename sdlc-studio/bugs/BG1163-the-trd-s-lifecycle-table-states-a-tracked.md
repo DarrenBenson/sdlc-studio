@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/US1100.md
+> **Points:** 5
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/BG1163.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1100 APPROVE by qa-seat-US1100-r1 (brief dddd8305722e): mutants D, E, F and M6 survive.
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file
@@ -27,11 +27,13 @@ Give the lifecycle table the stop and file-and-close routes, with what each file
 ## Acceptance Criteria
 
 - [ ] **AC1** The TRD's lifecycle names stop and close --file-and-close and says what each files, and a test fails if a close route that reaches `run_state.close_run` is unnamed.
-  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_every_close_route_reaching_close_run_is_named_in_the_lifecycle
 - [ ] **AC2** The pin fails when a documented writer exists but nothing calls it, and when the file moves out of the documented directory.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalWriterPinTests::test_an_uncalled_writer_or_a_moved_file_fails_the_pin
 - [ ] **AC3** Swapping the Live and Tracked labels fails TrdStorageTests.
-  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_swapped_live_and_tracked_labels_fail
+- [ ] **AC4** A page line that negates a write ('does not write', 'never records') is not read as that page writing the file.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalWriterPinTests::test_a_negated_write_line_is_not_a_writer
 
 ## Impact
 
@@ -42,3 +44,4 @@ A TRD sentence is false for one close route, and the pin can pass with a documen
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: Affects drop changelog.d/US1100.md (folded at the 6.2.0 cut; US1100's entry is now in CHANGELOG.md's 6.2.0 section) for BG1163's own fragment, which states the correction; points 3 to 5 for six sub-fixes and AC1's call reachability; each criterion names its node; AC4 added for finding (4), since `_PAGE_WRITE_RE` has no negation guard |

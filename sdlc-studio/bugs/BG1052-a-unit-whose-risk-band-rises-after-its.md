@@ -1,6 +1,7 @@
 # BG1052: A unit whose risk band rises after its review is found under-reviewed only at the close
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1167
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py, changelog.d/BG1052.md
@@ -35,3 +36,4 @@ Have `critic.py record` refuse or warn when the verdict's tier is below the tier
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Superseded by BG1167 under D0399: the two turn on one decision and must be one unit (see BG1167's revision history). BG1052's status criterion is dropped, because status.py has no review-coverage reader; its record-time warning is BG1167's AC4 |

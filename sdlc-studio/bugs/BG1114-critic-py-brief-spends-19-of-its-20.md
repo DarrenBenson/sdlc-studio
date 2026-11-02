@@ -26,7 +26,7 @@ Hold `sdlc_md.corpus_cache()` open for the read-only part of `critic.brief`, as 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** When `critic.brief` reads the unit's file history, the corpus cache is open: with `reconcile.file_history_section` patched to record `sdlc_md.corpus_cache_active()`, a brief records True, and the cache is closed again once the brief returns
+- [ ] **AC1** When `critic.brief` reads the unit's file history, the corpus cache is open: with `reconcile.file_history_section` patched to record whether `sdlc_md._CORPUS_CACHE` is not None, a brief records True, and it is None again once the brief returns
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_corpus_cache.py::CriticBriefCorpusCacheTests::test_the_brief_reads_history_inside_the_corpus_cache
 
 ## Impact
@@ -38,3 +38,4 @@ Each review brief costs about 20 s, and more on a loaded machine; a run with fif
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: AC1 named `sdlc_md.corpus_cache_active()`, which does not exist; it now reads the `_CORPUS_CACHE` global that `corpus_cache()` sets |
