@@ -1,6 +1,6 @@
 # US1110: The v6.2 release notes lead with what changed for the person using it
 
-> **Status:** Ready
+> **Status:** Done
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given docs/release-notes-v6.2.0.md, then it opens with a one-sentence headline naming 6.2.0 as the current release, and its first section leads with what changed for the person using it under four themes, each naming the units that delivered it: a reviewer judges only work its author has self-checked (US1087, US1088, US1089, US1094); one command gives a builder its whole brief (US1093); a run states what it cost, priced, over the main thread and every subagent (US1091, US1092, US1095, US1097); and the gates cost less (BG1065, BG1109). It links the CHANGELOG section that lists every change. Fails on: the 6.1.0 notes with the version changed, or a theme with no unit named.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
+  - **Verified:** yes (2026-11-02)
 - **AC2:** Given the notes' section on changed behaviour, then it names each change a 6.1 user meets as a new refusal or a changed default, each beside what to do instead, among them `review.author_self_check` (shipped as `report`; `block` refuses a brief whose unit has no matching `critic.py self-check record` row) and the single goal-review round with its `rereview: yes` answer (US1096), and it states that no 6.2 fragment is filed under Breaking or Removed. Fails on: a changed default named with no replacement, or a breaking change claimed that no fragment records.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do
+  - **Verified:** yes (2026-11-02)
 - **AC3:** Given the notes' 'Upgrading from 6.1' section, then it says to reinstall, gives `migrate` before `migrate --apply` as commands, and states what each reports for a 6.1 project, each statement checked by running it on a 6.1-shaped fixture. Fails on: a step naming a command the shipped CLI refuses, or `--apply` given before the dry run.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_the_61_upgrade_path_is_given
+  - **Verified:** yes (2026-11-02)
 - **AC4:** Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes carry exactly one `**v6.2.0 discloses N open defects: N Medium, N Low.**` line for `known_issues.py write --release 6.2.0` to fill. Fails on: a broken CHANGELOG anchor, an em dash, or a missing count line.
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.2\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.2.0.md)" = 1
+  - **Verified:** yes (2026-11-02)
 
 ## Notes
 

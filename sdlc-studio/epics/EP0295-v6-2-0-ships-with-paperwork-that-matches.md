@@ -11,7 +11,7 @@ The paperwork that ships v6.2.0 (D0395), after RUN-01M6A3K2 was signed over RPT0
 
 ## Story Breakdown
 
-- [ ] [US1110: The v6.2 release notes lead with what changed for the person using it](../stories/US1110-the-v6-2-release-notes-lead-with-what.md)
+- [x] [US1110: The v6.2 release notes lead with what changed for the person using it](../stories/US1110-the-v6-2-release-notes-lead-with-what.md)
 - [ ] [US1111: v6.2.0 is cut: version, changelog, known issues, install pins and the specs' baseline](../stories/US1111-v6-2-0-is-cut-version-changelog-known.md)
 
 ## Revision History

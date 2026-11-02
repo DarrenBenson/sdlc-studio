@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 174 |
+| Open | 176 |
 | In Progress | 0 |
 | Fixed | 826 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 39 |
-| **Total** | **1173** |
+| **Total** | **1175** |
 
 ## All Bugs
 
@@ -249,6 +249,8 @@
 | [BG1171](BG1171-reconcile-settle-closes-an-epic-in-the-pre.md) | reconcile settle closes an epic in the pre-commit hook but leaves the requests that close made derivable, so the same commit's gate refuses on that drift | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1172](BG1172-four-open-dependabot-alerts-on-main-sit-in.md) | Four open Dependabot alerts on main sit in development dependencies: markdown-it (High and Low), smol-toml (Medium) and katex (Low) | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1173](BG1173-a-close-that-reuses-a-pinned-token-actual.md) | A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the run's priced cost | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1174](BG1174-the-v6-2-notes-test-exempts-the-whole.md) | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Open | Low | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 

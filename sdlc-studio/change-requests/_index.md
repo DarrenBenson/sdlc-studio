@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-01
+**Last Updated:** 2026-11-02
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 12 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 24 |
 | Complete | 530 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **657** |
+| **Total** | **659** |
 
 ## All Changes
 
@@ -69,6 +69,8 @@
 | [CR-0655](CR0655-re-validate-every-open-project-lesson-against-the.md) | Re-validate every open project lesson against the current tree, closing those no longer true | Complete | Medium | Process | 2026-10-27 | EP0294 |
 | [CR-0656](CR0656-a-command-to-amend-a-planned-unit-s.md) | A command to amend a planned unit's Affects or a criterion in flight, recording why, so a builder's scope finding is not a hand edit | Proposed | Medium | Enhancement | 2026-10-31 | -- |
 | [CR-0657](CR0657-lesson-revalidated-reasons-cite-file-line-evidence-that.md) | Lesson Revalidated reasons cite file:line evidence that drifts as code lands; check and re-anchor it | Proposed | Medium | Enhancement | 2026-11-01 | -- |
+| [CR-0658](CR0658-the-author-self-check-s-claim-surfaces-have.md) | The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes | Proposed | Low | Feature | 2026-11-02 | -- |
+| [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | Proposed | Low | Feature | 2026-11-02 | -- |
 
 ## Archived Releases
 
