@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 177 |
+| Open | 176 |
 | In Progress | 0 |
-| Fixed | 826 |
+| Fixed | 827 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -251,7 +251,7 @@
 | [BG1173](BG1173-a-close-that-reuses-a-pinned-token-actual.md) | A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the run's priced cost | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1174](BG1174-the-v6-2-notes-test-exempts-the-whole.md) | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Open | Low | 2026-11-02 | 2026-11-02 |
-| [BG1176](BG1176-eight-done-criteria-went-stale-in-the-6.md) | Eight Done criteria went stale in the 6.2 work: five Verify greps lost their sentences to run four's spec refreshes, and three criteria still name v6.1.0 or a folded fragment after the cut | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1176](BG1176-eight-done-criteria-went-stale-in-the-6.md) | Eight Done criteria went stale in the 6.2 work: five Verify greps lost their sentences to run four's spec refreshes, and three criteria still name v6.1.0 or a folded fragment after the cut | Fixed | Low | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases
 
