@@ -19,7 +19,7 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given the PRD, when it is read, then its baseline names v6.1.0 plus 6.2 on main and no feature row for a shipped capability carries [Unreleased]
+- **AC1:** Given the PRD, when it is read, then its baseline names the release package.json declares plus the next minor series on main and no feature row for a shipped capability carries [Unreleased]
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdBaselineTests::test_no_shipped_row_is_unreleased
   - **Verified:** yes (2026-11-01)
 - **AC2:** Given the capabilities RV0028 PRD-10 names as shipped since July 2026, when the feature inventory is read, then each has a row
@@ -41,3 +41,4 @@
 | 2026-10-31 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-31 | Claude Opus 5.5 | Groomed for run four (D0392): criteria with Verify lines, each criterion's mutant, overlaps and sequence |
 | 2026-10-31 | Claude Opus 5.5 | Run-four plan (D0392): depends on US1082, which shares a file this unit declares |
+| 2026-11-02 | Claude Opus 5.5 | BG1176: AC1 names the release package.json declares plus the next minor series on main, not the literal v6.1.0 plus 6.2 the v6.2.0 cut (8267f275) made false; the test reads both from `release_baseline()`. The title and User Story keep the delivered wording as history |

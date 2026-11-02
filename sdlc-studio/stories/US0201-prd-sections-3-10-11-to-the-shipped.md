@@ -24,12 +24,12 @@
 - **Verify:** grep "first cost predictor to clear the pre-registered bar" sdlc-studio/prd.md
 - **Verified:** yes (2026-07-17)
 
-### AC2: prd.md Section 10 no longer claims the two loop defects are open; it cites BG0133/BG0136 as fixed
+### AC2: prd.md Section 10 no longer claims the two loop defects are open; it states the shipped accuracy behaviour
 
 - **Given** prd.md Section 10 asserted the token forecast was a falsified hypothesis with two loop defects open
 - **When** Section 10 is rewritten to the resolved points model
-- **Then** prd.md Section 10 no longer claims the two loop defects are open; it cites BG0133/BG0136 as fixed with the shipped behaviour (accuracy reads only the recorded forecast; `file_finding` accepts --affects)
-- **Verify:** grep "loop defects this section used to list as open are" sdlc-studio/prd.md
+- **Then** prd.md Section 10 no longer claims the two loop defects are open; it states the shipped accuracy behaviour (`retro accuracy` judges only the forecast recorded at plan time), and the PRD's Changelog row for US1104 cites BG0133 and BG0136 as having fixed the accuracy judge and the finder's `Affects:`
+- **Verify:** grep "judges only the forecast recorded at plan time" sdlc-studio/prd.md
 - **Verified:** yes (2026-07-17)
 
 ### AC3: prd.md Section 11's plan-time-predictor open question is closed citing RFC0038's points model
@@ -53,3 +53,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-07-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-02 | Claude Opus 5.5 | BG1176: AC2's Verify re-pointed at "judges only the forecast recorded at plan time", a sentence of this story's own delivery (1efb2d81) that US1104 (8f380767) kept when it removed the one the old grep read. Its heading and Then reworded: Section 10 no longer cites BG0133/BG0136 or `file_finding`'s `--affects`, and the PRD's Changelog row for US1104 now cites both bugs |

@@ -25,7 +25,7 @@
 - **AC2:** Given every script that calls `gh`, when the TRD's network section is read, then each caller is listed and the version-check GET is recorded as an ADR-004 exception
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdRegistryNetworkTests::test_every_gh_caller_is_listed
   - **Verified:** yes (2026-11-01)
-- **AC3:** Given ADR-003, ADR-009 and ADR-012, when they are read, then each matches what is built, ADR-012 carries a revision row, and the header's coverage line names v6.1.0 plus 6.2 on main
+- **AC3:** Given ADR-003, ADR-009 and ADR-012, when they are read, then each matches what is built, ADR-012 carries a revision row, and the header's coverage line names the release package.json declares plus the next minor series on main
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdRegistryNetworkTests::test_the_adrs_and_header_match_6_2
   - **Verified:** yes (2026-11-01)
 
@@ -45,3 +45,4 @@
 | --- | --- | --- |
 | 2026-10-31 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-31 | Claude Opus 5.5 | Groomed for run four (D0392): criteria with Verify lines, each criterion's mutant, overlaps and sequence |
+| 2026-11-02 | Claude Opus 5.5 | BG1176: AC3 names the release package.json declares plus the next minor series on main, not the literal v6.1.0 plus 6.2 the v6.2.0 cut (8267f275) made false; the test reads both from `release_baseline()` |
