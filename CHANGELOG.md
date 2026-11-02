@@ -7,6 +7,1040 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0] - 2026-11-02
+
+### Added
+
+- The v6.2.0 release notes, `docs/release-notes-v6.2.0.md` (US1110). They open with what changed
+  for a 6.1 user under four themes, each naming the units that delivered it, then list each change
+  a 6.1 habit meets as a new refusal or a changed default beside what to do instead, and state
+  that no 6.2 fragment is filed under Breaking or Removed. Among those changes, `lessons.py
+  summary`, which `sprint.py close` runs, now exits 1 and writes nothing where the committed
+  `LESSONS-SUMMARY.md` lists a lesson the log lacks, as on a second machine of a 6.1 project. The
+  upgrade path from 6.1 is reinstall, `migrate`, then `migrate --apply`, which for a 6.1 project
+  restamps `sdlc-studio/.version` and changes nothing else. The open-defect count line carries
+  the figures `known_issues.py` counts today, 174 (56 Medium, 118 Low), for the cut to refill.
+- `tools/tests/test_lean_release_notes_v62.py` holds the notes to this:
+  - the first section holds the four themes and nothing else, each naming exactly its units, and
+    a unit id anywhere else outside the known-issues and sources passages is refused, as is a
+    figure whose sentence names no source;
+  - each listed change sits in exactly one bullet with its `Instead:` clause, and an `Instead:`
+    followed by fewer than three words, a bullet no listed change names, and any paragraph but
+    the no-Breaking statement are refused; that statement must agree with the 6.2 entries;
+  - the figures the notes give for three shipped config defaults, the cost comparison's window,
+    floor and ratio, the goal-word limit, RPT0023's cost and points, and BG1109's reads are each
+    compared with their source, read when the test runs: the shipped `config-defaults.yaml`,
+    which `config.py show` is held to, the constants in `retro.py` and `sprint.py`, RPT0023's
+    Estimates and BG1109's entry;
+  - the notes' own `migrate.py` steps are run, in their order, on a project v6.1.0's `init.py`
+    made, and their reinstall line must be one `docs/INSTALL.md` gives;
+  - `critic.py brief` under `review.author_self_check`, `sprint.py goal-review record` with
+    `rereview`, and `lessons.py summary` on a second clone of that project are run too, the last
+    beside v6.1.0's own. Each runs against the v6.2.0 tag's tree once the tag exists, and before
+    then against this tree with its 6.1.0 version read as 6.2.0.
+- A `sprint.py close` that runs its chain now compares the run's priced cost per gate-cleared
+  point with a baseline and prints the comparison (US1095). The baseline is the median of the 5
+  most recent priced runs once 3 exist. A priced run is a VELOCITY.md row with a Priced/pt figure
+  or a `sdlc-studio/retros/COST-BASELINE.md` row, and the run's own retro is never one. A row
+  whose Priced/pt is absent is not counted. With fewer than 3, the close compares against the
+  configured `cost.baseline_per_point` and names it. Set to `off`, the comparison prints
+  UNMEASURED, naming how many priced runs there are and that 3 are needed.
+- A run over 1.5 times its baseline, and not one at exactly 1.5 times, is recorded as one `cost`
+  known issue on the run and handed over on the report, and the close completes. The issue names
+  the run's figure, the baseline, the ratio and the retros the median came from. It also lists
+  each batch unit's priced span cost, reading NOT MEASURED where the unit has none, and the
+  unattributed remainder.
+- `retro.py validate` refuses the retro of a run carrying that issue until a `## Cost` section
+  holds a bullet that is not a `{{placeholder}}`. The demand is read from the run's recorded
+  issue, so no other retro is asked for the section, and the close's own validate step sees it.
+  A cost issue whose retro names its cause does not halt `sprint.py boundary`, and `sprint.py
+  sign` signs over it.
+- `sprint.py plan` prints the batch's cost budget below the token forecast: its points times 1.5
+  times the baseline, in priced tokens, with the baseline and the runs it came from.
+- `retro.py cost-baseline add --retro <id> --since <iso> --until <iso>` prices a past run's
+  window from the harness transcripts with the meter's own reader, once per message and
+  subagents included. It appends one row to COST-BASELINE.md naming the retro, the window, the
+  points, the priced cost per point and the weights, and never writes VELOCITY.md. A window
+  holding no transcript record, or a retro already recorded, is refused and nothing is written.
+- `templates/config-defaults.yaml` ships `cost.baseline_per_point: 2500000`, between two of
+  this repository's runs priced from their transcripts (about 2.0M and 3.0M per point). A
+  project should set its own.
+- `sprint.py lane brief --units <id>` is now a builder's whole brief for one unit (US1093). After
+  the criteria it lists the unit's Affects, one path per line, and names the engineering seat
+  card `persona_resolve` resolves as the work render to adopt: the project's own seat when it
+  declares one, else the shipped default. It ends with the author self-check `critic.py brief`
+  prints on stderr, verbatim, then the commands that run the unit's criteria
+  (`verify_ac.py run --id <id>`), record the self-check
+  (`critic.py self-check record --unit <id>`) and commit the unit: `git add -- <its Affects>`,
+  with the unit id in the commit subject. A unit with no Affects is told to declare them, and no
+  staging command is printed. `--format json` carries the same three facts as `affects`,
+  `self_check` and `seat_card`.
+- The toolchain runbook's `3. Deliver a unit` table opens with three rows: build each unit with
+  `sprint.py lane brief --units <id>` handed to a fresh agent, or a fresh session per unit where
+  the harness has no subagents; wait for the builder's completion notification rather than
+  polling; and accept its return with `sprint.py lane return --units <id>` rather than reading
+  its diff or transcript into the orchestrating context. `reference-sprint.md`'s Build step and
+  `help/sprint.md`'s Lanes section describe the same delivery.
+- `review.author_self_check` decides what `critic.py brief` does when the unit has no author
+  self-check row whose digest matches the content of its Affects as they stand, first round or
+  `--rejoinder`, at either tier (US1089):
+  - `block` refuses the brief: it exits 2 naming the missing or stale record and
+    `critic.py self-check record`, prints nothing on stdout and notes no brief fingerprint, and
+    still prints the AUTHOR SELF-CHECK section on stderr so the author is told what to record;
+  - `report`, the shipped default, prints the brief and names the missing or stale record on
+    stderr, so a project upgrading is not refused on its first review;
+  - `off` says nothing of it.
+- Any other value refuses the brief, naming the value, rather than reading as `off`. Any row
+  whose digest matches admits the brief, so a diff restored to one already checked needs no
+  second record.
+- `templates/config-defaults.yaml` and `reference-config.md` give the key with its default.
+- `critic.py self-check record --unit <id> --claims <file> --mutants <file>` records the
+  author's own claim inventory and mutation pass in the committed log
+  `sdlc-studio/reviews/author-self-checks.md` (US1088). It is refused, naming the cause and
+  writing nothing:
+  - when the claims file lists no claim, when a claim is unruled or ruled outside TRUE, FALSE
+    and UNVERIFIABLE, when one is FALSE, or when every one is UNVERIFIABLE;
+  - when the commit message, or a changelog fragment the unit's Affects declares, carries no
+    claim, or a claim names a surface the self-check does not name;
+  - when a unit that declares a test file lists no mutant, or a mutant names a test outside the
+    declared test files, has no result of killed or survived, or survived with no answer.
+- Each row names the unit, the author, the date, the claim counts by ruling, the mutant counts
+  by result and a digest of the content of the unit's Affects files. A unit that declares no
+  test file records an empty mutants list, and its row says no test was declared.
+- The author self-check section `critic.py brief` prints on stderr now ends with that command
+  for the unit.
+- `critic.py brief` prints an author self-check on stderr before its footer, on the first-round
+  and the `--rejoinder` path (US1087). It names the claim-inventory surfaces and the mutation
+  targets over the unit itself:
+  - the surfaces are the commit message, each prose surface the brief's claim inventory names,
+    and each changelog fragment the unit's Affects declares;
+  - the targets are the test files its Affects declares;
+  - its instructions are the brief's own claim-inventory text and its practice to mutate the
+    author's tests.
+- The brief on stdout and its fingerprint are unchanged.
+- `tools/run-suite.sh` runs on the gate host when this clone names one (`sdlc.gateHost`).
+  - What runs there is the tree the script already hashes: the working tree, staged or not,
+    untracked files included. It is wrapped as a commit with `git commit-tree`, so no branch,
+    HEAD or index moves, and sent with `tools/remote-gate.sh push --suite`, whose host side runs
+    the commit's own `run-suite.sh` for the suite asked for.
+  - The verdict is written in this clone, bound to the tree that was sent, so `run-suite.sh
+    --check` reads a host run as it reads a local one. It refuses once the tree moves on,
+    including an edit made while the host was running.
+  - `SDLC_GATE_LOCAL=1` runs it on this machine (that value only, as the pre-push hook reads it).
+    The host's suite command comes from the host and its `~/sdlc-gate/gate-env.sh`: this clone's
+    `SUITE_CMD_OVERRIDE` is not sent.
+  - A suite's own non-zero exit is a red run (1) on the pushing side, so it cannot be mistaken
+    for exit 4, the host's setup refusing before anything ran.
+  - A host that cannot be reached leaves a red verdict (exit 3) naming
+    `SDLC_GATE_LOCAL=1 tools/run-suite.sh <suite>`.
+- The list of failing tests a red `run-suite.sh` prints names each test once.
+- `bash tools/remote-gate.sh doctor` says whether the configured gate host (`sdlc.gateHost`)
+  can judge a push. It checks the host itself, over the same transport a push uses:
+  - git on the PATH an ssh command sees there;
+  - Node and npm, after `~/sdlc-gate/gate-env.sh`;
+  - every distribution in this clone's `requirements-dev.txt` on the host's interpreter, read by
+    the same `tools/gate_prereqs.py` the local check uses, sent from this clone's HEAD.
+
+  Each gap is named with its install route for that interpreter. It exits 0 when the host is
+  ready, 1 when it is not, and 3 when the host cannot be reached.
+- `tools/enable-hooks.sh` names the configured gate host and runs the doctor against it.
+- Runs on a gate host (`tools/remote-gate.sh`) no longer collide or outlive their push.
+  - Each run gets a directory and a ref of its own.
+  - One run at a time holds the host's lock. A run that has to wait says so and names the run it
+    is waiting for.
+  - The connection's stdin stays open for the whole run. When a push goes away (interrupted,
+    terminated, or its connection dropped), the host reads end-of-file, stops the run's gate with
+    its whole process group, and removes the run's tree.
+  - The host's line naming the commit it judges also states the host's load average.
+  - The host's gate runs with SIGINT, SIGQUIT, SIGPIPE and SIGXFSZ at their defaults. A script's
+    shell has no job control, so it starts a background job with SIGINT and SIGQUIT ignored, and
+    the suite's test that interrupts a hook it runs could not otherwise stop it. The Python that
+    restores those two ignores SIGPIPE and SIGXFSZ at its own start, and an ignored signal
+    survives exec, so without their reset a pipeline's writer in the job would fail with a broken
+    pipe and exit 1 rather than end on SIGPIPE.
+  - The suite's stub gate and its child give up after a deadline, and a fixture kills each stub
+    gate and child it recorded before removing its tree, so a failing test no longer leaves a
+    process polling for ever on the shared host.
+- This repository's pre-push gate can run on a gate host: `git config sdlc.gateHost <host>`.
+  The hook then sends exactly the commit being pushed, with this clone's remote-tracking refs
+  and tags, to a bare repository kept on the host for this clone. It judges it there with
+  `tools/remote-gate.sh`, whose host side is streamed from the pushed commit's own copy, and
+  shows the host's output on the pusher's stderr. A tag is judged at the release boundary.
+  The rest stays local, as before:
+  - the red-main read, before anything is sent;
+  - the known-issues check, at a tag.
+
+  The host's copy of this clone's tags and remote-tracking branches follows the clone, so one
+  withdrawn here is withdrawn there. The prerequisite check runs on the host's interpreter,
+  before the host's gate.
+
+  A host that cannot be reached, or a connection that drops mid-run, refuses the push and names
+  `SDLC_GATE_LOCAL=1`, which runs the gate locally for one push. A host setup fault, such as no
+  git on its ssh PATH, is named as one rather than as a connection failure. Only a run that
+  reached the host's gate records a duration, under `boundary-push@<host>`, never in the local
+  series.
+- The pre-push hook checks what the suite needs before it runs, at a tag as at a branch push.
+  - **What refuses.** A missing or too-old coverage, PyYAML or pytest, without which the push
+    suite cannot be green, refuses the push in the time one python3 takes to start. It names
+    each gap and the route that installs it. Before, a missing coverage or PyYAML was found
+    only by the suite's own red tests, after a full run.
+  - **What is only a note.** A missing pytest-xdist, rg, markdownlint or gh never makes the
+    suite red, so it is named as a note and the push proceeds.
+  - **The command.** `python3 tools/gate_prereqs.py check --refusing` runs the same check.
+- `bash tools/enable-hooks.sh` now checks what the gates need, on the `python3` the hooks run,
+  and names each gap:
+  - **Python distributions.** A missing or too-old one from `requirements-dev.txt` (PyYAML,
+    pytest, pytest-xdist, coverage 7.10 or later), with the version found and the floor. It
+    reads `>=`, `==` and `~=` floors, extras and markers, and names any line it cannot read
+    rather than dropping it.
+  - **Node and executables.** markdownlint, rg and gh.
+  - **The interpreter floor.** Python 3.10 or later.
+  - **What breaks.** Each gap says what breaks without it: the push suite goes red, runs
+    serially, a markdown lane skips, or the red-CI read reads UNREAD.
+  - **How to install.** The route works on the interpreter that lacks the package.
+    `python3 -m pip install -r requirements-dev.txt` is offered only where pip is present.
+    Otherwise it suggests the OS package or a virtual environment first on PATH, or pip
+    itself for a virtual environment made without it.
+  - **`SDLC_COVERAGE_PYTHON`.** When it is set, coverage is checked on that interpreter,
+    with that interpreter's route, and an override that cannot run is named.
+
+  A gap never stops setup. Run `python3 tools/gate_prereqs.py check` to check again.
+
+### Changed
+
+- v6.2.0 is cut: every version home carries 6.2.0, README and `docs/INSTALL.md` pin
+  `--version v6.2.0` and list the 6.2.0 notes as the current release, `docs/known-issues.md`
+  and the notes' open-defect line are derived from the bug corpus at the cut, the notes link
+  this section, and the PRD, TRD and TSD name v6.2.0 as cut, plus the 6.3 work on `main`
+  (US1111).
+- The PRD, TRD and TSD refresh tests read the release those documents must name from
+  package.json, and the work on `main` beside it as the next minor series, in place of the 6.1.0
+  and 6.2 they pinned, so the next cut moves them with the version.
+  `tools/tests/test_lean_release_cut_v62.py` runs `known_issues.py check` and `bar` against the
+  commit that cut 6.2.0 (the v6.2.0 tag once it exists, else the commit that last wrote the
+  page) and holds the notes' count line to the page's figures.
+- The PRD's business rules, NFRs and cost model state what the code decides (US1104, RV0028
+  PRD-1, PRD-3, PRD-4, PRD-7, PRD-11):
+  - a story and a bug execute their `- **Verify:**` lines, per `sdlc_md.EXECUTES_VERIFIERS`,
+    and both creators refuse a command-shaped `Verify:` in a CR's or an RFC's criteria;
+  - a groomed unit has a size and an `Affects:` with a path that resolves or none that is a
+    typo; a story or bug also has criteria with at least one `Verify:` line or `manual`
+    marker and is pointed at or under the split ceiling (`sprint.points_split_above`,
+    default 8);
+  - the Security NFR lists each script whose source makes a network call: `github_sync.py`,
+    `sprint_report.py` (the close's `gh run list`), `release_cut.py` (`tag-check`),
+    `version_check.py` and `sprint.py` (`git fetch origin`). Id allocation never fetches;
+  - `status.py`, `next_id.py`, `readiness.py` and `handoff.py` write nothing in the workspace,
+    while `critic.py`, `gate.py` and `repo_map.py` write;
+  - a plan prices from the project's measured tokens-per-point rate (the velocity record's,
+    which `retro.py velocity` prints, else the per-unit evidence log's), or from the
+    `estimate.tokens_per_point` override. The 25,000 seed stands only where no rate is
+    measured.
+- The PRD's derived counts are bands: about 70 scripts, about 55 reference files, about 45 help
+  files, about 90 templates, about 20 best-practice guides, and a `SKILL.md` of about 300
+  lines. `doc_freshness` reads the first three and finds them current. Per-ship history moves
+  from §10 to the changelog table (RV0028 PRD-12, PRD-25).
+- The Engagement floor's row and block read Partial while BG0959 is open, and Verify AC's
+  while BG1023 and BG1063 are. Each unticked detail criterion names the bug that holds it, and
+  the 14 that hold are ticked. Reconcile's `--scope` criterion says one scope, as
+  `reconcile.py detect` takes (RV0028 PRD-6, PRD-21, PRD-24).
+- The release cut row says a tag passes without a CI answer only for a clone with no remote
+  or a forge `gh` cannot address (a non-GitHub forge); an absent or unauthenticated `gh`
+  refuses it.
+- `tools/tests/test_lean_prd_refresh.py` gains `PrdRulesTests`, which reads each fact from the
+  code:
+  - the executing and prose types from `sdlc_md`, and the grooming checks and criteria shapes
+    from `sprint.py`;
+  - the network callers and the write primitives from each script's source, and it runs the
+    scripts named as writing nothing on a fixture workspace to show that they write nothing
+    in it;
+  - each count from the tree, held to `doc_freshness`'s band ratio, with a bare number refused
+    as pinned;
+  - each held criterion's bug status from the bug's own file.
+- The PRD's baseline reads v6.1.0 plus the 6.2 work on `main`, in its header and in the Feature
+  Inventory's preamble, and no feature row or Feature Details block carries an `[Unreleased]`
+  marker (US1103, RV0028 PRD-5). The release that first carried a feature is left to
+  `CHANGELOG.md`.
+- The Feature Inventory has a row for each capability RV0028 PRD-10 names: a new "v5 and v6
+  capabilities" table holds the charter queue, rolling runs, the boundary gates, risk-banded
+  review, the line coverage gate, changelog fragments and the release cut, and the sprint report
+  and sign, and the core table gains the project constitution. The refine row names the
+  `refine.py add` subcommand, where it said `--add`.
+- `tools/tests/test_lean_prd_refresh.py` holds the PRD to this:
+  - the header and the inventory preamble each name v6.1.0 plus 6.2 on main, and no other
+    `X.Y.Z` release;
+  - no row whose Status is Complete or Partial, and no Feature Details block whose Status reads
+    so, carries `[Unreleased]` outside a code span;
+  - the capability set is read from RV0028's PRD-10 row, and each capability needs a shipped row
+    whose Feature cell names it, whose Location files and anchors exist, whose
+    `<script>.py <subcommand>` spans are subcommands the script's `--help` lists, and whose Epic
+    cell cites an epic or request that resolves.
+- The TSD states coverage by the CI step that gates it, and per-unit line coverage with this
+  repository's setting (US1102, CR0646):
+  - Coverage Measurement names the `ci` job's `Coverage gate (runtime scripts, >= 80%)` step in
+    `.github/workflows/lint.yml` and its `coverage report` command, and leaves the measured
+    figure to the `TOTAL` line that step prints. The "roughly 82%" figure and the ~90%
+    aspiration are gone, so the only percentage above the revision history is the CI floor;
+  - it describes `verify_ac.py run --coverage`, the three `review.line_coverage` modes, and this
+    repository's value, `off`, which `sdlc-studio/.config.yaml` leaves at the shipped default.
+- Test Organisation names the per-script (`test_<script>.py`) and per-unit lean
+  (`test_lean_<topic>.py`) conventions in both test trees, each shared helper module and
+  `fixtures/`, the root `conftest.py` and `pytest.ini` with its `serial_only` and
+  `boundary_only` markers, and the three `.githooks/` hooks with what each runs. It states no
+  module count.
+- The NFR mapping table maps each clause of the PRD's section 5 to a row that quotes the PRD's
+  words. New rows cover the write surface, the pure-stdlib claim, each network path (`gh`, the
+  release check's HTTPS GET, `git fetch origin`, the Verify tools), id allocation, the appetite
+  breaker and ULID identity. Each row names the test or lint that holds it, or says it is not
+  gated. The performance row and the Performance Testing prose now name the `status` and
+  `status hint` wall-clock bounds in `test_status.py`, where they had said no latency threshold
+  is asserted.
+- The gate budget prose says what BG1065 left: `GATE_BUDGET_S` is derived from the run
+  recorded in `GATE_BUDGET_MEASURED`, and a push or release judges only the standard lanes
+  against it. It no longer says every run exceeds the budget.
+- The TSD header reads v6.1.0 plus the 6.2 work on `main`, with the status `In Progress`, one
+  of the document's own status values. The revision history runs in date order.
+- `tools/tests/test_lean_tsd_refresh.py` holds each of these to its source: the floor, the
+  step's name and command from the workflow, the line-coverage mode through
+  `transition.line_coverage_mode`, the helpers, markers and hooks from the tree, the NFR
+  clauses from the PRD, the baseline through `doc_freshness`, and each test a row's gate cell
+  names in a code span to the test trees.
+- `doc_freshness.py` reads `sdlc-studio/prd.md` and `sdlc-studio/tsd.md` as well as
+  `sdlc-studio/trd.md` (US1098). A count of scripts, reference files or help files that either
+  document states is judged against the tree as the TRD's is, and each document gets its own
+  `census:` line. In `--format json`, `census` is now a list with one entry per document.
+- The census also reads the release each of the three documents names as its baseline
+  (`Coverage: vX.Y.Z`) and reports one that differs from SKILL.md's version, naming the
+  document and both versions and quoting the claim. A baseline is left unchecked when SKILL.md
+  states no version.
+- A count written as a band is judged as a band. `about`, `around`, `roughly`,
+  `approximately` or `~` before the number makes it approximate, holding while the count sits
+  in [N / 1.25, N x 1.25); a floor (`40+`) holds in [N, N x 1.25), as before.
+- The findings keep the lane's advisory severity: `doc-freshness` still never blocks and is not
+  in the per-commit gate. On today's tree it reports three baselines against SKILL.md's 6.1.0:
+  the TRD's v5.1.0 and the PRD's and TSD's v6.0.0. Outside their revision histories, neither the
+  PRD nor the TSD states a count in a shape the census reads (the PRD writes `58 deterministic
+  helper scripts`), so both `census:` lines list the three counts as unchecked.
+- A run whose readings were taken by an earlier meter, counted per record or on the main thread
+  alone and naming no counting basis, has each of them re-derived from its transcript, and its
+  subagent transcripts, up to the moment it was taken, under the current basis (US1097). The
+  re-derivations are recorded in the run's stamps when its first current-basis reading lands, in
+  any of its sessions, while the transcripts still hold the records. The run total, the report's
+  Estimates and `retro.run_attributed_tokens` then read the whole run on that one basis. The
+  report's `Tokens` and `Priced cost` rows, its cost appendix, the close checklist and the close
+  report's COST section each say how many readings were re-derived.
+- A run holding only its legacy baseline is re-derived on the report's page as it is by the
+  retro: the opening reading is read from the file the closing reading came from, since the
+  record's source, made portable for the page, names no file.
+- Where a transcript no longer holds the records up to a reading's time, the run's total reads
+  not attributable, naming the earlier counting basis. It is never the difference, or the sum, of
+  readings on two counting bases. A usage record with no timestamp, or a reading that records no
+  time, cannot be placed against the reading's moment, so the re-derivation is refused and the
+  total reads not attributable.
+- A unit span opened on an earlier basis and closed on the current one records no tokens rather
+  than a difference across the two. A page measured to a moment before the run's first
+  current-basis reading re-derives unchanged.
+- One goal-review round is the default (US1096). `sprint.py goal-review record --amend-from`
+  now carries every seat's verdict on the prior wording forward, not only the requesting seat's.
+  A seat that asked to re-review is the exception: it answers `rereview: yes`, either as a
+  `--fields-file` seat key or as a last `--seat` field of exactly yes or no. Its verdict is not
+  carried, and `sprint plan` prints it as owing a verdict on the new wording. A `--fields-file`
+  `rereview` other than yes or no is refused (a JSON boolean reads as either). Any other last
+  `--seat` field stays in the note, which keeps its pipes as before; a note that itself ends in
+  `|yes` or `|no` reads as the answer, so it goes through `--fields-file`.
+- The goal-review read that `sprint plan` prints reads the rounds on the latest wording
+  together, back to the amendment that introduced it, taking each seat's newest verdict. A seat
+  owing a verdict records it alone, and the verdicts already given on that wording stand. Before,
+  the latest round was read alone, so a round from one seat re-opened every other seat.
+- Only the requesting seat's carried objection is answered by the amendment. Any other carried
+  objection stands and is printed as advice.
+- `--requested-by operator` records an amendment the operator asked for. It needs no prior
+  verdict and answers no seat's objection, even a seat whose role is `operator`. When
+  `--amend-from` is the open run's goal, the run state's `sprint_goal` becomes the new wording,
+  so the close judges it. `sprint_goal_amendments` records the wording it replaced, and the plan
+  keeps the goal as planned. Once the run's goal verdict is recorded, such an amendment is
+  refused, naming that verdict, and nothing is written.
+- An amended goal over 20 words is refused before anything is written.
+- A `--material` change may be recorded with no `--seat`. Every seat then owes a verdict on the
+  new wording, and `sprint plan` names them.
+- `critic.py brief` carries what a reviewer used to spend its turns finding (US1094):
+  - a VERIFY COMMAND section at both tiers, `python3 <skill>/scripts/verify_ac.py run --id <id>
+    --dry-run`, the one command that runs the unit's Verify lines and writes nothing to its
+    file;
+  - a UNIT DIFF section when a run names the unit and it declares Affects: each changed Affects
+    file's `git diff <base> HEAD -- <file>` from the run's base, committed work only, held to
+    the new `review.brief_diff_lines` cap (400 lines at full, 150 at light). Past the cap, one
+    line names each file cut or left out, how many of its lines are not shown and the command
+    that prints it;
+  - with no run naming the unit, a line saying no base is recorded and no diff is carried.
+- Each tier's sections, practices and tool-call budget are declared in `critic.TIER_SECTIONS`,
+  `TIER_PRACTICES` and `TIER_TOOL_BUDGET`, and the brief states its budget: 40 tool calls at
+  full, 15 at light, not enforced.
+- The light tier no longer carries the files' history, which also skips its corpus walk, nor
+  the two mutation practices, and is refused only for a practice it carries: the two repair
+  practices and the isolated checkout. The full brief puts a FILE HISTORY heading over its
+  history.
+- `retro.py accuracy --tokens-from-harness` states the run's priced cost in the retro's accuracy
+  block (US1092): the priced input-equivalent total on one line, with its cost per delivered
+  point, then each component (input, output, cache write 5m, cache write 1h, cache read) on its
+  own line with its count and weight. The priced figure covers the same window as the token
+  actual, and a supplied delegated total is outside it. Where no priced figure can be formed,
+  the block says why in one line: a reading taken before the meter priced its components, a
+  token actual that was not attributable, or one reused from the row rather than re-captured.
+- VELOCITY.md gains a `Priced/pt` column: the run's priced cost per delivered point, a whole
+  number written with thousands separators (`3,846`) and read back by `retro.velocity_history`
+  as `priced_per_point`, an int, or None for `-`. It is written only under the Source of the
+  harness capture that formed it. It is kept while the row's actual and Source are unchanged,
+  and dropped once either changes, for example by a typed `--tokens N`.
+- A harness Source now names its counting basis after its kind:
+  `harness (main thread and subagents, once per message)`, or
+  `harness (main thread, once per message)` for a session with no subagent transcript, and the
+  same for `harness+supplied`. Earlier rows keep their cells: a bare `harness` stays bare, and
+  their `Priced/pt` reads `-`.
+- `sprint.tokens_per_point` and `retro.measured_rate` return `sources`, the Sources of the rows
+  the rate pooled. The rate's basis names them: one Source is named as the only one, and two or
+  more are listed with the statement that the rate is taken across them and is not one figure.
+- The session token meter reads the main thread and every subagent transcript the session ran
+  (`<session-id>/subagents/agent-*.jsonl`, depth-2 agents included), counting each assistant
+  message once (US1091). Each reading carries input, output, cache write at 5 minutes and at
+  1 hour, and cache read, in total and split into main thread and subagents. `tokens` stays the
+  input + output + cache-write sum.
+- Each reading, stamp and run total carries `priced`: every component weighed from one table,
+  `run_state.TOKEN_WEIGHTS` (input 1, output 5, cache write 1.25 at 5 minutes and 2.0 at 1 hour,
+  cache read 0.1, per D0390). A run total carries each component's delta beside `tokens`. A run
+  whose stamps were written before this change reports `priced` as None with a reason, never 0,
+  and its `tokens` is unchanged.
+- The sprint report's Estimates lead the token rows with a `Priced cost` row, labelled as priced
+  input-equivalent tokens, with the input + output + cache-write sum and each component beside
+  it. The close report's COST section states the same figure first. Where the run's token
+  actual adds a supplied delegated total, the row's basis, the close checklist and the COST
+  headline say that total is outside the priced figure. A page filed before this change
+  re-derives without the row.
+- A session whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main
+  thread alone, with no subagent figure rather than a zero, and its basis names the directory
+  and says the reading is a lower bound. A malformed or unreadable subagent transcript refuses
+  the whole reading.
+- Over a run whose readings hold the subagent transcripts, a builder total supplied with
+  `sprint lane return --tokens N` is kept on the record but not added to the run's actual, by
+  the report, the close checklist or `retro.run_attributed_tokens`, and the basis says the
+  subagents are already in the reading. The Estimates tokens ratio is then not withheld for want
+  of supplied totals, and the close's captured token line drops "AT LEAST". A run whose stamps
+  carry no such flag adds the total as before, so a page filed from it re-derives unchanged.
+  The retro takes that answer from the run's stamps, as the report does, not from its own
+  reading, so the two add the same totals. Where its own reading holds subagent transcripts
+  and the stamps do not say theirs did, its basis says so and does not call the figure a lower
+  bound.
+- AGENTS.md names the push gate as the full-suite check, retiring the rule to run the full suite
+  before a commit that touches shared surface (US1090, D0382). Its paragraph now says:
+  - a commit runs only the test modules its change selects;
+  - the pre-push hook runs the whole suite on each pushed commit, on the gate host when
+    `sdlc.gateHost` is set;
+  - `tools/run-suite.sh all` runs it on demand against the working tree, on that host too, and
+    `run-suite.sh --check` reads its verdict.
+- `tools/tests/test_agents_md_full_suite_rule.py` reads the bold lead sentence of each paragraph
+  in AGENTS.md's Non-negotiable rules section as a set, and the code spans of the paragraph the
+  new lead heads. The `sdlc.` keys those spans name are judged against the pre-push hook and
+  `run-suite.sh`, and the paths against the tree.
+- The TRD and the TSD describe the gate host a clone can configure. Both name `sdlc.gateHost`,
+  `sdlc.gateSsh`, `sdlc.gateCloneId` and `SDLC_GATE_LOCAL` in their push-gate sections, and both
+  give where the push gate runs as the same table (BG1095). With `sdlc.gateHost` unset or empty it
+  runs on this machine. With a host set it runs on that host, through `tools/remote-gate.sh`,
+  unless `SDLC_GATE_LOCAL=1` is in the push's environment, when it runs on this machine. When the
+  connection to the host fails, the push is refused and the gate does not run on this machine in
+  its place. The TSD's push stage adds that the host's preflight takes the local prerequisite
+  check's place, and gives the cost of a host's run as a series of its own (`gate_timing.py
+  estimate --suite boundary-push@<host>`). The TRD adds that `tools/run-suite.sh` runs on the
+  same host, that `remote-gate.sh doctor` and `enable-hooks.sh` report on it, and what the host
+  needs: git on the PATH an ssh command sees, and the gate's Python and Node, which
+  `~/sdlc-gate/gate-env.sh` may put on that PATH.
+- `tools/tests/test_lean_gate_host_docs.py` reads the settings from the four scripts that choose
+  or report where the gate runs (the pre-push hook, `remote-gate.sh`, `run-suite.sh` and
+  `enable-hooks.sh`) and requires each in both documents' push-gate sections. It compares each
+  document's table cell for cell with the one it holds, and pins that one to the pre-push hook by
+  running the hook's own host decision and host branch under each row's cases. The fall-back
+  phrase scan it replaces is gone.
+- The TRD's technology stack and the TSD's framework rows name every package the clone installs:
+  `PyYAML`, `pytest`, `pytest-xdist` and `coverage` from `requirements-dev.txt`, which the TRD names
+  as the one Python dependency list, and `markdownlint-cli` from `package.json`. The TRD no longer
+  says the tests need no third-party runner, says which runner runs which suite, and names the
+  shipped scripts' soft dependencies (`PyYAML`, `lizard`, `coverage`) and what degrades without
+  each.
+- The TSD names each CI job (`ci`, `windows-smoke`, `corpus`, `corpus-verify`, `publish`) with
+  the triggers it runs on and what it runs, and says what `corpus-verify` compares against
+  `tools/verify-corpus-baseline.txt`.
+- The TSD names every check `npm run lint` chains, `lint:dead-flags`, `lint:action-pins` and
+  `lint:disclosure` among them, and neither document states how many there are.
+- `tools/tests/test_lean_gate_toolchain_docs.py` reads each of these from `requirements-dev.txt`,
+  `package.json` and the workflows, including the Python floor from the versions the `ci` job
+  installs.
+- The TRD and the TSD describe the gate as the hooks and `gate.py` run it.
+  - Both name the three hooks: `.githooks/pre-commit`, `.githooks/commit-msg` and
+    `.githooks/pre-push`. The TSD's pipeline stages follow git's order and point at each hook's
+    own `--list` instead of restating its lanes.
+  - Both name `gate.py --boundary push` for a branch push and `gate.py --boundary release` for a
+    tag push. The TSD's push stage names the prerequisite check and the red-main
+    acknowledgement (D0181) that run before the gate. The full suite runs at the push boundary,
+    while a commit runs only the selected suites against an advisory 90-second budget.
+  - The TSD names `release_cut.py changelog-cut`, `gate.py --release`, `release_cut.py
+    record-green` and `release_cut.py tag-check` as manual pre-tag steps that no hook, workflow
+    or tag push runs (D0375).
+  - The TRD names the four files the gate writes under `.local/`, and the TSD's artefact-gate
+    section says it writes only untracked state, where both had said it wrote nothing. Both state
+    the gate's declared 45 s budget and its source, and that every run here now exceeds it
+    (BG1065), where the TRD had called the gate sub-second.
+  - The TSD's push stage gives the hook's own steps in its order, the known-issues check
+    included, which the hook runs itself, not the gate.
+  - The TSD says where the test-noise ratchet is held (in CI, and in the commit-msg hook only
+    without pytest), tabulates the delivery gates (plan, Done, Fixed, close, sign), and gives
+    version consistency as blocking on every commit, strictly at release.
+- `tools/tests/test_lean_gate_docs.py` derives each of these facts from the file it describes,
+  so the documents are held to the hooks rather than to a list typed into the test.
+- The persona registry's index is a record its history and links bear out (US1083):
+  - its Revision History runs in date order, with a row for every date `git log --date=short`
+    gives for a commit that changed the index, the 2026-07-29 change (BG0307) included;
+  - a `Last updated` line carries the latest row's date;
+  - a Review seats heading links the three cards `persona_resolve.py resolve --seat <seat>
+    --path-only` prints for engineering, product and qa, and the registry reader returns the same
+    personas with or without those links;
+  - Rowan Achterberg's line said an unnamed mint names the shipped skill's Primary, false since
+    US1080; it now says such a mint names him when its Affects, test modules and changelog
+    fragments set aside, lie wholly under `tools/`, `.githooks/` and `.github/`, and Maya otherwise;
+  - the Primary and Secondary headings read for two Primaries.
+- The legacy `sdlc-studio/personas.md` agrees with its banner: the operator's Role field no longer
+  calls them the primary user, and the Skill Maintainer section links Rowan Achterberg's card.
+- `tools/tests/test_persona_coherence.py` holds both files to this. It reads the role words from
+  the index's role headings through the shipped registry reader, the seat paths from
+  `persona_resolve.py`, and the tooling Primary from the index, so no persona or path is written
+  into the test. A commit that changes the index on a date its history has no row for fails it.
+- The PRD's outcome citations name End goals that say them (US1082):
+  - O5, that the process stays small enough to serve the work, cites Maya Okafor's End goal 5
+    (D0383), where it cited End goal 3, which O3 also cites;
+  - a new O9, that a project upgrades to a new skill release with the mechanical changes made
+    for it and the judgement calls reported rather than guessed, cites Jonah Reyes's End goal 4,
+    which no outcome cited.
+- `tools/tests/test_lean_prd_refresh.py` holds the PRD to this:
+  - each End goal of a persona an outcome cites is cited, and by one outcome only;
+  - O5 cites Maya Okafor's End goal 5 and nothing else, an outcome cites Jonah Reyes's End goal
+    4, and each card must still state the End goal cited;
+  - both checks read the outcomes and the End goals with the planner's readers,
+    `sprint.prd_outcomes` and `sprint.persona_cards`;
+  - Jonah Reyes's End goals 1 to 4 are compared, word for word, with his card at commit
+    7f3e91a9.
+- Maya Okafor's persona card states the work as it runs today (US1081):
+  - End goal 5, "Keep the process small enough to serve the work - every check earns its keep,
+    and one that catches nothing is retired", follows End goals 1 to 4, which keep their numbers
+    and words (D0383);
+  - her Scenario runs `/sdlc-studio sprint --crs Proposed --goal done` where it said autosprint,
+    and has her sign the run once, after the close, with `sprint.py sign`;
+  - her context names `/sdlc-studio gate`, which states a run's cost against a declared budget and
+    names the lane that dominated it;
+  - a Boundaries section links Rowan Achterberg's card and tables which Primary a unit is judged
+    against: each interface's own Primary, and Maya for a unit touching both, the Primary an
+    unnamed mint names too.
+- Trevor Hale's card gains a Boundaries section, and his End goals are unchanged:
+  - he is the Negative persona on both interfaces, with a link to each Primary's card;
+  - a run carries one signature (D0213), given once after the close with `sprint.py sign`, which
+    refuses a principal who is a unit's author or a reviewer recorded on it, and a sign-off on
+    each unit or a second signature is declined;
+  - his objections are weighed on their evidence.
+- `tools/tests/test_persona_coherence.py` holds both cards to this, with no persona name written
+  into the test:
+  - Maya's End goals 1 to 4 are compared with commit 7f3e91a9;
+  - each `script.py verb` span on her card is asked of that script's own `--help`;
+  - no span on her card may name a path in the tooling Primary's Interface row;
+  - her mixed-unit row is compared with what `artifact.py new --dry-run` mints for a unit touching
+    both interfaces.
+- `artifact.py new --type story` and `batch` given no `--persona` mint a story against the
+  Primary of the interface its Affects lie in, read from the paths each Primary's card names in
+  backticks in its `| **Interface** | ... |` Quick Reference row (US1080). A story whose Affects
+  lie wholly under one Primary's paths names that Primary; its test modules and `changelog.d/`
+  fragments do not count. Paths in two interfaces, a path in none, or nothing but tests and
+  fragments name the first Primary the persona index lists.
+- A one-Primary cast mints exactly as before, whatever the Affects, and an explicit `--persona`
+  always wins.
+- When two or more Primaries are listed and a card declares no interface paths, a mint with no
+  `--persona` warns on stderr, naming each such Primary, and goes ahead: it is never refused,
+  `--strict` included.
+- `new --type story --dry-run --format json` carries a `persona` key: the persona the story would
+  be minted against.
+- This repository's own persona registry now has a Primary for each of its two interfaces
+  (D0379):
+  - Maya Okafor for the shipped skill;
+  - Rowan Achterberg, a new skill-maintainer card, for this repository's own tooling, which does
+    not ship: `tools/`, `.githooks/`, `.github/` and the forward-port to the installed copy.
+
+  Each Primary's card declares its interface in an `Interface` row, and the PRD's Target Users
+  says which interface each Primary serves. Repository-only work now has a design target of its
+  own, instead of being attributed to the shipped skill's Primary. Maya stays listed first, so a
+  story minted with no `--persona` still names her. `tools/tests/test_persona_coherence.py`
+  checks all of this against the registry, with no name written into the test.
+- With no recorded boundary run, the pre-push hook's cost line no longer says "expect about
+  five minutes" (fifteen at a tag), a figure measured on another machine. It now states what
+  this clone and interpreter decide:
+  - no run is recorded here;
+  - how many test modules the suite holds, and whether they run in parallel across the cores
+    or serially, because pytest-xdist is missing;
+  - this clone's own full commit-suite median, as a floor, when it has one.
+
+  `python3 tools/gate_timing.py first-run --suite boundary-push` prints it. A recorded history
+  still gives its median, as before. AGENTS.md names `gate_timing.py estimate` instead of a
+  figure.
+- CI installs the suite's Python packages from `requirements-dev.txt`, the same file
+  `tools/gate_prereqs.py` checks a clone against.
+  - **What a test holds.** In the ci job, every command that names pip must take one of four
+    exact forms: `python -m pip install`, `python3 -m pip install`, `pip install` or
+    `pip3 install`. Each may carry only listed flags that take no value, and must install
+    either `-r requirements-dev.txt` alone or named tools that are not suite packages.
+  - **What it refuses.** Any other command that names pip, another installer, a `PIP_`
+    setting in a run block or an `env:`, and a change of directory in a step that installs. An
+    install made through a wrapper script, an action or a command held in a variable is not
+    read, because none names pip on the job's own lines.
+  - **The file and corpus-verify.** The file includes no other. The scheduled corpus-verify job
+    keeps its own shorter list in the same exact forms, held to a subset of the file with no
+    looser floor.
+- The one-list test holds the ci and corpus-verify jobs to exact pip forms instead of reading
+  each spelling pip accepts. Reading spellings missed one more form at every review round,
+  including an editable install. The forms and what is refused are listed in the US1004 entry
+  and in the test's own docstring.
+
+### Fixed
+
+- The TRD's type registry lists `charter` (`sdlc-studio/charters`, `SC`) and its status
+  vocabulary, the epic's `Superseded`, and a new table of `META_TYPES`: review, retro, handoff
+  and report (US1101).
+- The TRD's network rule points to a new Network paths table. It lists each shipped script and
+  function that calls `gh` (`github_sync.py`, `release_cut.py` and `sprint_report.py`), the
+  version check's HTTPS GET and `git fetch origin`, with what each does when it gets no answer.
+  ADR-004 now names all three `gh` callers and records the version check's GET as its one
+  exception. §5 and §9 no longer count three paths, and §1, §4, §7, §9 and §13 no longer say
+  every GitHub call goes through `gh`.
+- ADR-003 says the pre-commit hook runs `reconcile.py settle` when a commit stages a file under
+  `sdlc-studio/`. ADR-009 says the generation flow writes each card and `persona_gen.py` writes
+  none (its `stamp`, `classify` and `accept` verbs), and that default seats ship in
+  `templates/personas/amigos/`. ADR-012 reads as not yet built, in the future tense, and lists
+  what does not exist yet. A Revision History row now records ADR-012.
+- The coverage line reads v6.1.0 plus the 6.2 work on `main`. §10's gate row no longer says every
+  run exceeds the 45 s budget: it cites `GATE_BUDGET_MEASURED`, and says a push or release run
+  holds only its standard lanes to the budget.
+- `tools/tests/test_lean_trd_refresh.py` reads the registry tables from `sdlc_md`'s maps. It finds
+  the network callers by scanning the shipped scripts' syntax trees for a `gh` argv, a
+  connection call or a `fetch` argument, after checking the scanners on a sample with near
+  misses. It holds ADR-003, ADR-009 and ADR-012 to the parsers, hook, seat directory and paths
+  they name, and the coverage line to v6.1.0 plus 6.2.
+- The TRD's storage sections list the committed records with their paths: the actuals and
+  forecast shards, the audit cost ledger and the claim-drift study under
+  `sdlc-studio/retros/evidence/`, `sdlc-studio/lessons.jsonl`, the delivery and plan-review
+  verdict logs, the author self-check log, the `RPT` reports and their Markdown twins, and the
+  run records under `sdlc-studio/reports/runs/` (US1100). `telemetry.jsonl` leaves the `.local`
+  table: an older release's `.local/telemetry.jsonl` is read until `telemetry.py migrate` moves
+  it into the shards.
+- A new Run state section says the live record and its archive are kept in `.local`, in the
+  clone that wrote them, and the run record is tracked. A lifecycle table takes the run from
+  `sprint.py plan --write` through delivery and `sprint.py close` to `sprint.py sign`, and says
+  which step files the tracked record. The `.local` table gains `sprint-plan.json`,
+  `goal-review.json` and `briefs.jsonl`, and its `run-state.json` row names `lib/run_state.py`.
+- `tools/tests/test_lean_trd_refresh.py` reads each record's path from its writer's code and
+  checks that git tracks it and the TRD lists it, and that every tracked file under the evidence
+  and report directories matches a listed path. It reads the run-state paths from `run_state`,
+  their tiers from git, and which `sprint.py` verbs open the run or file the tracked record from
+  the verbs' handlers.
+- The `.local` writer pin in `test_lean_v61_review_residue.py` now fails when a writer the TRD
+  names no longer writes its file. It had passed any writer whose source named the file, so the
+  `telemetry.jsonl` row passed on `telemetry.py`'s legacy path constant, though `telemetry.py`
+  only reads that file and moves it away. A script now passes when one of its calls writes a path built from the file name, or calls a
+  function that does; a page passes when one of its lines names the file beside a word such as
+  write or update. Each writer of each row, edited so it stops writing, fails the pin.
+- The TRD no longer says only a story carries an executable verifier. Its acceptance-criteria
+  section names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their
+  `Verify:` lines, and a table gives a story and a bug as executed and a CR and an RFC as refused
+  when command-shaped, with what holds each: `verify_ac.py` and the Done and Fixed gates, or the
+  two creators and `validate.py`'s warning on an open request. Its gate section says
+  `--release` executes every story's `Verify:` expression and no bug's, as the gate's verify
+  lane says in its scope note when a bug file exists (US1099).
+- The comments in `file_finding.py` and `artifact.py` that said only a story's `Verify:` line
+  runs name the set instead, and so does the refusal `file_finding.py file` prints for a
+  command-shaped `Verify:` in a CR or RFC, which said verify_ac executes a story's line alone.
+  The refusal now reads the set's members from `sdlc_md`, so it names a story and a bug.
+- `tools/tests/test_lean_trd_refresh.py` reads the executing set from `sdlc_md` and the refused
+  set from the creators' shared refusal, run over every type in `sdlc_md.ARTIFACT_TYPES`, and
+  compares both with the TRD's table. A sentence or table cell of the section must name the set
+  and call it "the authority" (or "the one", "single" or "sole authority"), with no other code
+  span, `;`, `:`, `.`, `not`, `no`, `never` or `n't` between the two. The two comments and the refusal must name the set. The test fails on a sentence,
+  table cell or clause that speaks of executing a `Verify:` line and names some of the executing
+  types but not all, read from the TRD outside its Revision History, either comment, and the
+  refusal's `Why:` line. It reads which types a clause names, not what it says of each, so a
+  clause naming every type passes whatever it says of them.
+- Two tests this run added, which failed only at the push gate, are fixed (BG1166).
+  - `test_gate_budget.py`'s commit check runs git through `tests/gitutil.git`, so
+    `test_gitutil.py`'s unconfined-call sweep holds at zero again.
+  - `test_lean_trd_refresh.py`'s `_ignored` asks git in a scratch repository holding only the
+    `.gitignore` files the checkout tracks. Asked in the checkout, git refuses a path beyond a
+    symbolic link with rc 128, and the gate host makes `sdlc-studio/.local` one, so both `.local`
+    rows of the TRD's Run state table read as not ignored and failed there. Neither the
+    checkout's `info/exclude` nor a host excludes file at `$XDG_CONFIG_HOME/git/ignore` has a
+    say now.
+  - A new test, `TrdStorageTests::test_the_tier_does_not_depend_on_what_local_is`, gives each
+    Run state path the same tier with `.local` a symlink, a directory and absent. Its symlink
+    fixture draws git's rc 128 refusal, as the gate host's checkout does.
+- `readiness.py check` no longer tells a carried unit to close (BG1140). A story or bug whose
+  verifiers pass but which still carries an unanswered delivery REJECT is no longer flagged
+  already-satisfied, since `transition.py` refuses its Done or Fixed until the reviewer who
+  rejected it approves. It is ready for the batch, and a `carried: re-review by <reviewer id>`
+  note names that reviewer and the `critic.py brief --rejoinder` route. The rule is the one the
+  transition guard applies, called rather than restated. A unit with no REJECT, or with one its
+  reviewer answered, is still flagged already-satisfied.
+- `lessons.py revalidate --extend L-NNNN --reason R` now records the judgement on each lesson it
+  extends as `- **Revalidated:** <today> - R`, replacing an earlier Revalidated line, and still
+  moves Review-by by the validity window (BG1139). The reason was accepted and dropped before, so
+  a judged extension could not be told from an unjudged one. A reason that spans lines is
+  recorded on one.
+- `--extend` with no reason, or a blank one, is refused naming `--reason`, and writes nothing.
+- `revalidate --unjudged-since DATE [--range L-NNNN:L-NNNN]` checks a re-validation pass: it
+  exits 1 listing each open lesson in the range with no Revalidated date on or after DATE, and
+  0 when there is none. A malformed date or range, a range that runs backwards, one naming no
+  lesson in the log, or `--range` without `--unjudged-since`, is refused with exit 2.
+- The `revalidate --format json` listing gives each open lesson its latest `revalidated` date
+  and `revalidated_reason`, or null for both.
+- A push judged on a gate host no longer prints `note: gh is not found - the red-CI read before
+  a push reads UNREAD` from the host's preflight when the host has no gh (BG1138). The red-CI
+  read runs in the local pre-push hook before anything is sent, so the note was false there.
+  - `tools/gate_prereqs.py check --host` leaves gh out. `tools/remote-gate.sh` runs its host
+    preflight as `check --refusing --host`, and its host doctor reads the list the same way, so
+    `remote-gate.sh doctor` no longer names gh either. Both still name a missing rg or
+    markdownlint as a note, and a gap that turns the push suite red still refuses.
+  - Without `--host` the check behaves as before: `gate_prereqs.py check`, and
+    `tools/enable-hooks.sh` through it, still names a missing gh with its consequence, and
+    `check --refusing` still exits 0 for it.
+- `critic.py supersede --brief <fingerprint>` retires one of several delivery verdict rows that
+  share a unit, date, reviewer and verdict (BG1135). Before, `supersede` narrowed only by
+  `--reviewer` and `--verdict`, so it refused both of BG0962's 2026-10-07 REJECT rows as
+  ambiguous, though they differ in their brief fingerprints.
+  - The record carries the row's Brief cell as `row-brief`, and `read_verdicts`, which marks
+    the superseded rows for every caller, retires only a row carrying that cell. A record
+    without `row-brief` still retires every row its other fields name, so this repository's
+    ledgers read as before: the same rows are superseded.
+  - `--brief` is matched whole, ignoring case; `-` names a row with no brief.
+  - While the narrowing still matches several rows the command is refused, naming each one's
+    brief fingerprint, and nothing is written. When every narrowing flag is given, the refusal
+    says no record can retire one of them alone.
+- A run holding only its opening readings, the plan-time baseline and the open stamp taken
+  beside it, no longer reads a measured token cost of 0 (BG1127). The two are one moment read
+  twice, so the run's total now reads not attributable and names them, and its page and the
+  close state no cost of 0. Once a later stamp lands, the total reads the spend from the earlier
+  of the two to that stamp.
+- An author self-check record keeps the commit it was taken at, so a record of committed work
+  survives another unit's later commit to a shared file (BG1117). `critic.py self-check record`
+  writes the commit after the digest in the row's Digest cell (`<digest> at <commit>`), and
+  `critic.py brief` admits a row whose digest matches the unit's Affects content as it stands
+  or, when HEAD descends from the row's commit, that content with each file lacking an
+  uncommitted edit read at its newest commit since then whose subject names this unit or no
+  unit id, else at the row's commit:
+  - a later commit whose subject names only other units' ids is set aside where it tops a
+    file's history and the file has no uncommitted edit, so a record of committed work
+    survives it;
+  - the author's own further edit still stales the record: an uncommitted edit, or a commit
+    other than a merge whose subject names this unit or no unit id;
+  - not yet handled: a record of uncommitted work is still staled by another unit's commit to
+    a file it edits landing before the author's own commit, as is a record whose commit was
+    rebased or cherry-picked (BG1121), and an edit made inside a merge commit can be missed
+    (BG1120);
+  - a row written before this change (it names no commit) and a project outside git are judged
+    on the content as it stands, as before.
+- The digest leaves out what the review tooling itself writes: the self-check log
+  (`author-self-checks.md`), the verdict log (`critic-verdicts.md`) and the runtime notes under
+  `sdlc-studio/.local`. A unit whose Affects declares one of them, or a directory holding one,
+  is no longer staled by its own record, by another unit's verdict or by its own brief. Such a
+  unit's digest moves once with this change, so its earlier record reads as stale.
+- `tools/check_neutrality.py` now refuses three more consuming-project names the operator ruled
+  private (BG1113). As with the names it already blocked, it holds only their SHA-256 hashes,
+  and a finding prints a hash prefix, never the name.
+- The 64 tracked files that named them no longer do. Each mention is generalised, mostly to
+  "a consuming project" or "that project". Nine shipped lessons, LL0013 to LL0021, were among
+  them: each now reads `origin: a consuming project`.
+- The session token meter (`run_state.session_tokens`) counts each assistant message once,
+  keyed on `message.id` (BG1111). The harness repeats a message's usage on the record of every
+  content block it writes, and the meter summed every record, so the transcript that found it
+  read 2.5 times what it spent. The stamp `sprint plan --write` takes at open, the stamp the
+  close takes for the report, and the run total formed from them all read this meter.
+  - A message whose repeats disagree is counted at its largest reading: an earlier record can
+    carry a smaller output count than the message's last.
+  - A record with no `message.id` is counted by itself, as every record was before.
+  - A malformed usage value on a repeated record still refuses the read.
+- Stamps taken before this change are on the per-record basis, so a run total whose stamps
+  span the change subtracts readings of two different bases and is not a spend. Earlier
+  VELOCITY rows are not re-derived here.
+- The conformance and engagement-floor lanes read the verdict ledger and the decisions log at
+  most once each in a gate run, where they re-read and re-parsed them once per unit (BG1109).
+  Judged over this repository's whole workspace, the two lanes opened the decisions log 2256
+  times and the verdict ledger 2478 times; they now open each once, and their output is
+  unchanged.
+  - `decisions.read_once` holds a value derived from a file while the file keeps its device,
+    inode, size, mtime and ctime. While the file's ctime is less than two seconds old, the value
+    is derived afresh on every call, so a file written a moment ago is read on each call as
+    before.
+  - `decisions.list_decisions` and `critic.read_verdicts` parse through it, and each caller
+    gets its own copy of every row. `critic.read_supersessions` and `critic.read_round_rulings`
+    read the ledger's text through it too.
+  - A malformed verdict row's warning now prints when the ledger is parsed, not on every call
+    that asks for its rows.
+- The TSD says again that the `test-noise` leg runs in CI, in the words US0253 AC3's verifier
+  reads. US1084's rewording had turned that Done criterion red on the weekly corpus-verify run.
+- The shipped product seat card only approved a story that served a Primary persona's goal, so a
+  project that declares a Secondary persona had no way to get that persona's stories approved. The
+  card now approves a story serving either:
+  - the End goal of the Primary for the interface the story's Affects touch;
+  - a declared Secondary's End goal, never at that Primary's expense.
+
+  With more than one Primary, a unit is judged against the Primary of the interface its Affects
+  touch, and a unit touching the shipped product against the shipped product's Primary. With one
+  Primary and no interfaces declared, the card reads as before. This repository's own product seat card
+  makes the same change, and no longer names a single design persona.
+- `gate.py` records the run its cost budget is derived from as data beside it,
+  `GATE_BUDGET_MEASURED`: 39.8 s for `gate.py --root .` on this workspace with a staged change
+  that touches no story, at commit 1ccb8795 on 2026-11-01, with a one-minute load average of
+  7.96 on 8 cores (BG1065). `GATE_BUDGET_S` is re-derived from it and stays 45 s, 13% above
+  the measurement. `test_gate_budget.py` fails when the budget is below that measurement, when the record is
+  missing or loses its seconds, date or commit, and when the commit is not one the repository
+  holds.
+- At a push or release boundary the gate cost line judges only the standard lanes against the
+  budget. `full-suite`, and at a tag `release-rehearsal` and `module-alone`, are named with
+  their seconds as outside the budget and are not chosen as the dominant lane. A boundary run is
+  no longer compared with the cost baseline or recorded as it, because it measures a different
+  lane set; before this, a push run was judged on its whole time, so its full suite put it OVER,
+  and it was compared with the baseline and recorded as it. The JSON cost report gains
+  `judged_seconds` and `outside_budget`.
+- The `run_tests_plan` docstring says a `serial_only` test may bound a wall-clock duration from
+  above as well as assert on global tree state, and that a `boundary_only` test may bound one
+  too. The `boundary_only` rule in `scripts/tests/boundary.py` and the marker's description in
+  `pytest.ini` name that upper bound beside the test that costs seconds or runs the real gate.
+- The committed project lessons log (`sdlc-studio/retros/LESSONS.md`) passes markdownlint's MD026
+  (no trailing punctuation in a heading, on by default), so the commit that adds it passes this
+  repository's markdown lane. Each `## L-NNNN:` heading drops its sentence's trailing
+  punctuation through the shared heading helper (`sdlc_md.heading_title`, which also drops a
+  `?`), plus the full-width marks MD026 refuses, and an elided heading ends in `…` rather than
+  `...`.
+  - The body keeps the whole lesson. A one-sentence lesson now carries its sentence in the body
+    too, because the heading no longer holds it exactly.
+  - A log written before this reads as the same lessons. `retro.py extract` recognises the
+    existing entries, so none is added twice, and `lessons.py summary` still finds every lesson
+    an existing summary lists.
+  - A legacy log moved from `sdlc-studio/.local/lessons.md` has its headings normalised as it
+    moves, so the moved log's first commit passes too.
+- The scheduled `corpus-verify` job installs what the criteria it runs need. It now installs
+  `pytest-xdist`, from the declared list (US0892 AC1's test skips without it, and the lane read
+  the all-skipped verifier as red), and `poppler-utils` for `pdftotext` (US0957 AC3). It also
+  times US0940 AC1's verifier, the slowest criterion known, on the runner, so its per-verifier
+  ceiling can be set from a measured figure. Dispatched run 39322298831 measured that verifier
+  at 353 s, over the 300 s ceiling, so the ceiling is now 450 s, with that run's id and the
+  97 s headroom recorded beside it. The timing step reads AC1's own Verify line, reports a
+  failing verifier rather than stopping the job, and has a ceiling of its own.
+- US0985 AC2 no longer reddens whenever a High defect is filed after the v6.1.0 cut. Its verifier
+  runs `known_issues.py check --at v6.1.0` and `known_issues.py bar` against an archive of the
+  v6.1.0 tree, the cut's committed record, instead of the live backlog. The criterion still pins
+  `bar`.
+- The test that holds CI to one package list no longer passes a second package source on the
+  suite step, such as a second requirements file beside the first.
+- A status test no longer goes red with the calendar: its fixture bugs were dated 2026-07-16 and
+  read stale from 2026-10-14, the ninetieth day, on every machine. They are now dated the day the
+  test runs.
+- The test that holds the push's first-run cost line to no fixed figure reads every way of
+  stating a duration. US1006's first repair missed a number glued to its unit (`~5min`,
+  `300sec`, `2hrs`), the first two of which the earlier pattern had caught, and a test now pins
+  the detector itself.
+- A ruling record from `critic.py record --ruling` is now written and read the way its fragment
+  promised.
+  - **The note.** Whether a ledger's Supersessions section owes its note on RULING records is
+    decided by the section alone. A verdict row quoting the phrase no longer stands in for it, and
+    a section a ruling reached without the note gets it before the next ruling.
+  - **No forged fields.** Whitespace in a reviewer id is folded before field keys are defused, so
+    a tab before `recorded=` no longer forges that field.
+  - **Duplicate rows.** A ruled row whose cells repeat earlier rows carries its ruling alone,
+    keyed by its place among its copies.
+  - **Status case.** A decision whose Status cell reads `Accepted` is read as accepted, not
+    misnamed superseded.
+  - **Below the cap.** An unknown ruling given there is noted as not needed, as a known one is.
+- Further fixes to how a reviewer's verdict is recorded, after BG0950's second review:
+  - **Origin tags always start a finding.** An origin tag after a `;` or a line break starts
+    a new finding even inside brackets or a code span. A backtick or bracket left open in one
+    finding can no longer swallow a later finding, which once let a REJECT carrying a
+    regression pass the coverage gate. A quoted tag is written with `\;` before it.
+  - **Code spans** are found as the review ledger finds them, within one finding, so a span
+    opened by two backticks keeps a `;` inside it, as a one-backtick span does.
+  - **A stray closing bracket** with no opener, such as `a)` in a lettered list, no longer
+    makes a later `;` inside brackets end the finding.
+  - **The return contract** states both rules.
+- **The history section of each review brief:**
+  - It undoes the ledger's escapes on the whole cell, code spans included, before it
+    splits the cell. Rows written before spans were left alone show `test_config`, not
+    `test\_config`, and a reviewer's own backslash is kept.
+  - It keeps a finding that merely quotes a pre-existing tag, judging each finding by its own
+    origin tag.
+- The test of the module-alone gate lane no longer asserts the lane finishes in under three
+  seconds. That bound measured the machine's load, not the lane, and turned the push gate red
+  on a busy host. The test's sleeper modules now meet at a barrier, so it proves every one runs
+  at once on the machine's cores, however loaded the machine is. A smaller pool, or a lane
+  serialised behind a lock, still fails it.
+- `sprint sign` no longer moves a batch unit to its terminal status when the close's retro
+  carries it in `## Known issues carried` with a valid ruling. That retro is the one the filed
+  page records. A bug an operator ruled not-stop-ship and left Open on purpose stays Open.
+  - **Sign's output.** Sign names the unit as carried and not moved, and the signed page still
+    checks VALID. Every other batch unit is moved as before.
+  - **Rows that carry nothing.** A carried row the close reads as no ruling (no ruler, or a
+    ruling outside the four) holds nothing back. If the carried rows cannot be read, sign says
+    why on stderr.
+  - **After the seal.** The refusal to change such a unit still names `sprint.py reopen` as the
+    way back, and `--force` does not waive it.
+- `critic.py record --ruling DNNNN` records a review round past `review.max_rounds` that an
+  operator authorised. Before, nothing could, and the ledger's last word on the unit stayed a
+  REJECT the unit had moved past.
+  - **What it requires.** The decision must be accepted and still standing in
+    `sdlc-studio/decisions.md`: one a later decision supersedes is refused even before its
+    own cell is flipped. It must name the unit as its subject, the first artefact id in its
+    text, read in either id era and dashed or not. And it must not have authorised a round on
+    that unit already: one ruling, one round. The round still comes from the reviewer who
+    rejected.
+  - **How it's recorded.** A RULING record below the table names the row it authorised by the
+    row's identity, and the delivery round it was. So the ruling stays with its row when an
+    earlier row is superseded, and a reviewer id cannot forge one of its fields.
+  - **What it refuses.** A missing, unaccepted, superseded or unrelated decision is refused by
+    name, as a round past the cap always was. A ruling given below the cap is not needed:
+    `record` says so and spends nothing.
+- A commit's test selection now reaches more of the test modules that drive a changed file
+  (BG1000). `gate.py --suite-decision` selects:
+  - a module that loads a script through the shared test loader, `loader.load_script("x")`;
+  - a module whose `test-census-subject` header names the changed file, a document included.
+    Only the first marker in a module's first 40 lines counts, as in the test census;
+  - a module that imports a fixture test module, for whatever that fixture imports or loads,
+    one level deep. The fixture's census subject, and the file it is named for, are not
+    inherited.
+- A change to `sprint.py` now selects `test_lean_close.py`, `test_lean_close_shows_the_page.py`
+  and `test_lean_sign.py`, which drive it but were skipped. Commits touching a script that many
+  modules load select more modules than before.
+- The lessons suite is quiet again. BG0989 moved the project lessons log to
+  `sdlc-studio/retros/LESSONS.md` and moves a legacy `.local/lessons.md` there whenever a `lessons`
+  command uses the default log (not under `--global` or an explicit `--project-file`), but seven `test_lessons.py` fixtures still seeded the legacy path, so each printed the
+  migration line and CI's green-run noise gate failed on main. The fixtures now seed the
+  committed default; the migration keeps its own tests.
+- A sprint run is open in every checkout, not only the one that closed it. Whether a
+  run was open lived in the gitignored `.local/run-state.json`, so a second machine could plan a
+  second run beside one awaiting its signature, and could not sign it. `sprint close` now files
+  the run's record, still running, at `sdlc-studio/reports/runs/<RUN-ID>.json` beside the
+  report; `sprint plan --write` in a clone that does not hold the run open refuses while a tracked
+  record awaits a signature, naming the run, its report and the `sign` command; `sprint sign
+  --report <id>` takes the run up from that record in a clone that never held it, writing
+  nothing unless every check passes; and a checkout whose copy is older than the record (signed,
+  or reopened and re-closed, elsewhere) takes the record up at its next plan, sign or close
+  instead of filing over it. A close never strips a signature from the record: only `sign` writes
+  one. The close's tree digest leaves the
+  run records out, so a clone at the close's commit matches it, and a tree recorded before that
+  change still compares. A run ended without a signature updates its record, so it stops
+  awaiting one.
+- A sprint close on a second machine no longer wipes the committed `LESSONS-SUMMARY.md`. The
+  project lessons log now lives at `sdlc-studio/retros/LESSONS.md`, committed beside the summary
+  built from it, instead of the gitignored `sdlc-studio/.local/lessons.md`, which existed only on
+  the machine that wrote it. Any `lessons` command or `retro extract` moves a legacy log
+  there once and says to commit it; if both files exist, it refuses and names them, so two
+  machines' records are merged by hand rather than one replacing the other. `lessons summary`,
+  and so the close, refuses to regenerate a digest when the log lacks a lesson the committed
+  summary lists; closing a lesson still removes it from the digest, and `lessons prune` removes
+  the lessons it deletes from the digest as well.
+- The pre-push hook's own tests run the gate's `python3` as the interpreter running the tests,
+  through a small wrapper, instead of through a symlink. A contributor whose pytest lives only
+  in a virtualenv can now get a push through the gate. Before, the symlinked interpreter lost
+  the virtualenv's packages and the gate reported `No module named pytest`.
+- The pre-push hook prints its ssh keepalive advice only when no keepalive is in force. It
+  stays silent when the ssh command git will use carries a positive `ServerAliveInterval`:
+  `GIT_SSH_COMMAND`, which overrides `core.sshCommand`, or else `core.sshCommand` at any
+  scope. It also stays silent when `ssh -G` resolves one for the host of an ssh remote, in
+  the `ssh://`, `git+ssh://`, `ssh+git://` or `user@host:path` form. Before, it printed on
+  every push, including from a clone `enable-hooks.sh` had just configured.
+- The wall-clock upper bounds that refused commits and pushes on a busy machine carry both
+  `serial_only` and `boundary_only`, so a commit's pytest run leaves them out and the push runs
+  them in the serial phase after the parallel pass, each with its constant unchanged (BG0963).
+  The commit hook's unittest fallback ignores both marks and still runs them (BG1144). They are
+  the `status` headline and exit bounds, `status hint`, the test selection's speed, the three
+  `mutation` checks on a backgrounded child and the run timeout, the three pre-commit checks on
+  lane concurrency and signals, and seven more the census found in `test_config`, the three
+  allocation-lock modules, the two v6.1 note-parser modules and `test_lean_refusal_log`. A
+  lower bound, which load cannot break, stays in the parallel pass.
+- `MutationSeriesRowTests` reads the run's elapsed seconds from a clock the test moves, so the
+  0.8 s difference it asserts no longer depends on how busy the machine is.
+- The close comparisons in `test_lean_lane_yield` and `test_lean_mutation_ledger_retired`
+  replace the seconds the close's own pre-flight gate measured before comparing two closes, and
+  the cost-line test in `test_sprint` reads the figure as at least 398 s over two runs rather
+  than exactly `398s`.
+- `tools/tests/test_test_census.py::WallClockCensusTests` refuses a test without both markers
+  that bounds a duration its own process measured from above by a value that is not one,
+  naming each by module, class, function and line. Read with the markers' exemption off, the
+  census must name all sixteen bounded tests above, so a census that reads no module fails
+  rather than passes. It also requires each named close comparison to pass when the k-th gate
+  run its closes record carries 7k seconds more than it measured, and, where the comparison
+  has a normaliser, to fail with it removed. It requires each named bound to be collected under
+  `-m "serial_only and boundary_only"` and the release verifier under
+  `-m "boundary_only and not serial_only"`. The nine bounds in `test_status`,
+  `test_lean_test_selection`, `test_mutation` and `test_lean_precommit_parallel` must each fail
+  on its own `assertLess` when each process started and each `os.killpg` called moves the
+  clock on a day; the seven others are judged by collection and the census alone.
+- The `serial_only` descriptions in `pytest.ini` and `tools/run-suite.sh` name the wall-clock
+  bounds beside the global-state tests.
+- `sprint close` no longer refuses a run whose units are all independently approved because one
+  of them carries a REJECT in the frozen pre-6.x batch review ledger (BG0962). The closing-review
+  row now reads each unit's latest verdict across both ledgers, by date: a per-unit APPROVE
+  recorded after a frozen batch REJECT clears the unit, and a REJECT recorded later than an
+  APPROVE still holds it whichever ledger records it.
+- A per-unit APPROVE and a frozen batch REJECT recorded on the same day hold the unit, since the
+  ledgers record days and cannot order the two.
+- `critic.py record --from-verdict` records a verdict written to the brief's own return
+  contract without the author touching it:
+  - **Untagged BLOCKING items.** An untagged BLOCKING item that quotes an ISSUES finding (its
+    start, part of it, or every content word of it) marks that finding `BLOCKING:` and is
+    recorded once. Before, it was refused as untagged, or recorded a second time when tagged.
+  - **Items that match nothing or several findings.** An untagged item that quotes no
+    finding, or quotes several, is refused by name. Its origin is never guessed.
+  - **Semicolons inside a finding.** An origin tag after a `;` or a line break always starts a
+    new finding, so no bracket or backtick left open in one finding can swallow the next. A
+    `;` before a quoted tag is written `\;`, even inside a code span. Any other `;` stays in
+    its finding when brackets or a code span that close within that finding enclose it, so
+    evidence such as `(x.json:69; also in the parent commit)` is no longer split and refused.
+    A bare `;` before untagged text still ends the finding, and that text is still refused as
+    unclassified.
+  - **Bulleted lists.** A bulleted list of tagged findings records one finding per bullet.
+- **How a kept `;` is stored.** The stored row escapes it as `\;`. `critic.py` reads it back
+  unchanged, and so does the history section of every later review brief. That section undoes
+  the ledger's escapes on the whole cell and then splits it with `critic.py`'s own splitter,
+  instead of splitting on each semicolon and space. In a code span the escape shows in the
+  rendered ledger.
+- The return contract in every reviewer brief now states these rules.
+- The release note for a ruling logged between `sprint close` and `sprint sign` no longer says
+  the page is signed. It now says what happens: the ruling changes the tracked decisions log,
+  so `sprint sign` refuses until the run is re-closed. A test runs those steps through the CLI
+  and holds the note to them.
+- Three behaviours that 6.1's sign and config fixes shipped now have tests that fail when they
+  break:
+  - a project's deliberate leaf null in `.config.yaml` (`review.max_rounds:`) overrides the
+    shipped default, while a section holding only comments does not;
+  - a ruling logged after reopening a sealed run is counted against it;
+  - `sprint sign` on a page it cannot re-derive signs on the report alone and says so.
+
+  No behaviour changes.
+- `config.py show --key` reads every key `config-defaults.yaml` declares, including
+  `review.max_rounds`, `review.line_coverage` and `review.blocking_priority`, in a project whose
+  `.config.yaml` keeps a section holding only comments. YAML reads such a section as empty, and
+  the merge let it replace the defaults' whole section, so `show` called each key under it
+  undeclared and `config.get` returned its caller's fallback. A section that sets nothing now
+  leaves the defaults' keys in force; a key declared nowhere is still reported as undeclared.
+- A ruling logged with `decisions.py add --by operator` (or persona) between `sprint close` and
+  `sprint sign` is no longer counted into the run, so the filed page still checks VALID. The
+  ruling is still written to the decisions log; only the run's count is withheld, with one
+  warning line naming the closed run. Because the log is a tracked file, the ruling changes the
+  tree, so `sprint sign` refuses until the run is re-closed. A ruling before the close, or after
+  a `sprint reopen`, is counted as before.
+- `sprint sign` re-derives the filed page with `sprint_report check`'s own reading before it
+  writes the seal, and refuses to seal a page that no longer matches, naming each figure that
+  moved (for example `operator_rulings filed 1, now 2`) and how to re-file it. A page that still
+  matches seals as before, and a page that cannot be re-derived is signed on the report alone,
+  as before.
+
 ## [6.1.0] - 2026-10-03
 
 ### Breaking

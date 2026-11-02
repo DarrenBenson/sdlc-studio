@@ -3,7 +3,7 @@
 **SDLC Studio 6.2.0 is the current release: a review brief can now require the author's own
 check first, and a run states what it cost, priced over the main thread and every subagent.**
 
-Every entry is in [the CHANGELOG's 6.2 section](../CHANGELOG.md#unreleased). From 6.1, the
+Every entry is in [the CHANGELOG's 6.2 section](../CHANGELOG.md#620---2026-11-02). From 6.1, the
 "Upgrading from 6.1" section below is the whole path; from an earlier release, start with
 [the existing-users page](existing-users.md).
 
@@ -157,7 +157,7 @@ Every open finding this release ships is listed by id on [the disclosure page](k
 which `tools/known_issues.py write` generates from the bug corpus at the cut, together with the
 count below, so the two cannot disagree.
 
-**v6.2.0 discloses 174 open defects: 56 Medium, 118 Low.**
+**v6.2.0 discloses 176 open defects: 56 Medium, 120 Low.**
 
 ## For contributors to this repository
 

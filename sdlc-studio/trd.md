@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.1.0
+**Version:** 6.2.0
 **Status:** Draft
-**Last Updated:** 2026-11-01
+**Last Updated:** 2026-11-02
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -34,7 +34,7 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v6.1.0 as cut, plus the 6.2 work on `main` since. The document version
+Coverage: v6.2.0 as cut, plus the 6.3 work on `main` since. The document version
 tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
@@ -1324,6 +1324,7 @@ touches the component. The constraints below span components.
 | 2026-11-01 | 6.1.0 | US1099: §6 names `sdlc_md.EXECUTES_VERIFIERS` as the authority on which types execute their Verify lines, in a table giving a story and a bug as executed and a CR and an RFC as refused when command-shaped (it had said only a story carries an executable verifier); §3 says `--release` executes no bug's `Verify:` expression |
 | 2026-11-01 | 6.1.0 | US1100: §6 Storage Strategy lists the committed evidence and records with their paths, adds the Run state and run lifecycle sections (live and archived in `.local`, tracked under `sdlc-studio/reports/runs/`, from plan through close to sign), drops `telemetry.jsonl` from the `.local` table and adds `sprint-plan.json`, `goal-review.json` and `briefs.jsonl` |
 | 2026-11-01 | 6.1.0 | US1101: §6's type registry gains `charter` and its vocabulary, the epic's `Superseded` and a `META_TYPES` table; §5 gives the network paths as a table holding all three `gh` callers, the version check's GET and `git fetch`, and ADR-004 records the GET as its exception; ADR-003 adds `reconcile.py settle` at commit; ADR-009 says `persona_gen.py` writes no card and the default seats ship; ADR-012 says it is not yet built; §10's gate row cites `GATE_BUDGET_MEASURED`; the coverage line reads v6.1.0 plus 6.2 on `main` |
+| 2026-11-02 | 6.2.0 | US1111: the release cut. The Coverage line reads v6.2.0 as cut, plus the 6.3 work on `main` |
 
 ---
 

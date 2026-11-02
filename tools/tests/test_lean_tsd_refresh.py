@@ -6,8 +6,9 @@ Each fact is read from where it is decided: the coverage floor, step name and co
 `transition.line_coverage_mode`, which reads `sdlc-studio/.config.yaml`, and the modes from
 `transition.LINE_COVERAGE_MODES`; the shared helpers from the two test trees and the repository
 root, the markers from `pytest.ini` and the hooks from `.githooks/`; the NFRs from the PRD's
-section 5, split into clauses; the release baseline through `doc_freshness`'s census. Pinned by
-hand, as the criteria name them: the two module conventions and the `6.2` on main.
+section 5, split into clauses; the release baseline through `doc_freshness`'s census, and the
+work on main beside it from package.json (US1111). Pinned by hand, as the criteria name them: the
+two module conventions.
 """
 # test-census-subject: sdlc-studio/tsd.md
 import configparser
@@ -28,16 +29,19 @@ PRD = REPO / "sdlc-studio" / "prd.md"
 WORKFLOW = REPO / ".github" / "workflows" / "lint.yml"
 TEST_TREES = (SCRIPTS / "tests", REPO / "tools" / "tests")
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import doc_freshness  # noqa: E402 - the census that reads a document's release baseline
 import transition  # noqa: E402 - the reader of `review.line_coverage` and its modes
 from lib import sdlc_md  # noqa: E402 - the raw `.config.yaml` reader, with no defaults merged
+from test_lean_prd_refresh import release_baseline  # noqa: E402 - the release the specs name
 
 #: The two module conventions (US1102 AC2), as the criterion names them, with the file pattern
 #: each is written as.
 CONVENTIONS = {"per-script": "test_<script>.py", "per-unit lean": "test_lean_<topic>.py"}
-#: The work on `main` beside the released baseline (US1102 AC4), as the criterion names it.
-ON_MAIN = "6.2"
+#: The work on `main` beside the released baseline (US1102 AC4): the series after the release
+#: package.json declares, read from the tree so the cut moves it (US1111).
+ON_MAIN = release_baseline()[1]
 NFR_HEADING = "## Quality Gates (PRD section 5 NFR mapping)"
 _SENTENCE_RE = re.compile(r"(?<=[.;])\s+")
 _TWO_TO_NINETY = (r"two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"

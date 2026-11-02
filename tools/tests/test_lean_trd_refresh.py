@@ -39,12 +39,14 @@ ARTIFACT = SCRIPTS / "artifact.py"
 
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SCRIPTS / "tests"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
 import doc_freshness  # noqa: E402
 import file_finding  # noqa: E402
 import gitutil  # noqa: E402 - confined git for the scratch and fixture repositories
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
+from test_lean_prd_refresh import release_baseline  # noqa: E402 - the release the specs name
 import reconcile  # noqa: E402
 import sprint  # noqa: E402
 import sprint_report  # noqa: E402
@@ -469,10 +471,10 @@ class TrdStorageTests(unittest.TestCase):
         return root
 
 
-#: The release the TRD's coverage line names and the work on `main` beside it (US1101 AC3),
-#: pinned as the criterion names them, as `test_lean_prd_refresh` pins the PRD's: a TRD that
-#: moves its baseline moves these with it.
-BASELINE, ON_MAIN = "6.1.0", "6.2"
+#: The release the TRD's coverage line names and the work on `main` beside it (US1101 AC3), read
+#: from package.json as `test_lean_prd_refresh` reads the PRD's (US1111): a cut that moves the
+#: version moves these with it.
+BASELINE, ON_MAIN = release_baseline()
 _VERSION_RE = re.compile(r"(?<![\d.])\d+\.\d+\.\d+(?!\.?\d)")
 #: The three verdicts the network table's `Under ADR-004` column may give a path.
 VIA_GH, EXCEPTION, NOT_GITHUB = "via `gh`", "exception", "not GitHub"
@@ -644,9 +646,9 @@ class TrdRegistryNetworkTests(unittest.TestCase):
 
     def test_the_adrs_and_header_match_6_2(self) -> None:
         """AC3. Mutants: ADR-012 with no Revision History row dated on or after its acceptance;
-        a coverage line naming an older baseline, no 6.2 work on main, or a second baseline; a
-        header or coverage line naming another release; ADR-012 naming a path that does not
-        exist outside its Not yet built paragraph, or listing one there that now exists;
+        a coverage line naming an older baseline, no `ON_MAIN` work on main, or a second
+        baseline; a header or coverage line naming another release; ADR-012 naming a path that
+        does not exist outside its Not yet built paragraph, or listing one there that now exists;
         ADR-003 not naming `reconcile.py settle`, or the hook not running it; ADR-009 not
         naming a `persona_gen.py` verb or a shipped default seat; a `persona_gen.py` verb
         creating a card that was not there."""

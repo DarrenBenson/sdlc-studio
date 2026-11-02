@@ -7,15 +7,16 @@ only slices a card's End goals as written, for a word-for-word comparison. Outsi
 pins no persona or End goal by hand: a card that gains, loses or renumbers an End goal moves
 what an outcome may cite. Every
 `<script>.py <subcommand>` the loop sections name is checked against that script's own `--help`,
-so a retired subcommand cannot stay described as current. `PrdBaselineTests` (US1103) pins the
-release the PRD's baseline names, reads its capability set from RV0028's PRD-10 row, and checks
-the commands those capabilities' inventory rows name the same way. `PrdRulesTests` (US1104)
-reads the rules, NFRs and cost model against the code that decides them, holds each derived
-count to a band around the tree's own measure, and ties the detail criteria's ticks to the
-status of the bug that holds each one.
+so a retired subcommand cannot stay described as current. `PrdBaselineTests` (US1103) reads the
+release the PRD's baseline must name from package.json (US1111), reads its capability set from
+RV0028's PRD-10 row, and checks the commands those capabilities' inventory rows name the same
+way. `PrdRulesTests` (US1104) reads the rules, NFRs and cost model against the code that decides
+them, holds each derived count to a band around the tree's own measure, and ties the detail
+criteria's ticks to the status of the bug that holds each one.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 import functools
+import importlib.util
 import re
 import shutil
 import subprocess
@@ -33,6 +34,11 @@ sys.path.insert(0, str(SCRIPTS))
 import doc_freshness  # noqa: E402 - the census whose measures and band ratio a count is held to
 import sprint  # noqa: E402 - the outcome and persona readers US0927 ships
 from lib import sdlc_md  # noqa: E402 - the id resolver an inventory row's Epic cell is read by
+
+_spec = importlib.util.spec_from_file_location("check_versions",
+                                               REPO / "tools" / "check_versions.py")
+check_versions = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(check_versions)
 
 #: One citation inside an outcome: `(Maya Okafor, End goal 4)`; several are `;`-separated.
 _CITE_RE = re.compile(r"([A-Z][\w'-]*(?: [A-Z][\w'-]*)+), End goal (\d+)")
@@ -357,10 +363,23 @@ class OutcomeCitationTests(unittest.TestCase):
             self.assertTrue(goal_drift(then, mutant), mutant[-400:])
 
 
-#: The release the PRD's baseline names and the work on `main` beside it (US1103 AC1), pinned
-#: as the criterion names them: a PRD that moves its baseline moves these with it.
-BASELINE = "6.1.0"
-ON_MAIN = "6.2"
+def release_baseline() -> tuple[str, str]:
+    """`(baseline, on_main)` read from the tree (US1111): the semver core of the release
+    package.json declares, the version `check_versions.py --strict` holds every spec's `Version:`
+    to, and the next minor series, whose work on `main` sits beside it. `6.2.0` gives
+    `("6.2.0", "6.3")`. Shared with the TRD and TSD refresh tests, so a release cut moves all
+    three and no literal is left to edit."""
+    version = check_versions.from_package_json(REPO)
+    if not version:
+        raise AssertionError("package.json declares no version, so no baseline can be read")
+    core = version.split("-", 1)[0]
+    major, minor = (int(part) for part in core.split(".")[:2])
+    return core, f"{major}.{minor + 1}"
+
+
+#: The release the PRD's baseline names and the work on `main` beside it (US1103 AC1), read from
+#: the tree rather than pinned: a cut that moves package.json moves these with it.
+BASELINE, ON_MAIN = release_baseline()
 #: The release marker a row carried while its feature was untagged. Inside a code span it names
 #: CHANGELOG.md's heading, as the release-cut row does, and is not read as a marker.
 UNRELEASED = "[Unreleased]"
@@ -486,9 +505,9 @@ def capability_problems(prd: str, capabilities: list[str]) -> list[str]:
 
 
 class PrdBaselineTests(unittest.TestCase):
-    """US1103: the PRD's baseline reads v6.1.0 plus 6.2 on main, no shipped row carries the
-    release marker, and each capability RV0028 PRD-10 names has a sound inventory row. Each
-    check is also run on a mutated copy, so it is shown able to refuse."""
+    """US1103: the PRD's baseline reads v`BASELINE` plus `ON_MAIN` on main, no shipped row
+    carries the release marker, and each capability RV0028 PRD-10 names has a sound inventory
+    row. Each check is also run on a mutated copy, so it is shown able to refuse."""
 
     def setUp(self):
         self.prd = PRD.read_text(encoding="utf-8")
@@ -496,7 +515,8 @@ class PrdBaselineTests(unittest.TestCase):
     def test_no_shipped_row_is_unreleased(self):
         """AC1. Mutants: one [Unreleased] marker left on a shipped row's Status, or on a
         Feature Details heading; the header's baseline back at v6.0.0, or the inventory's at
-        v4.1.0; the header naming no 6.2 work on main. Near misses that must pass: the marker
+        v4.1.0; the header naming no `ON_MAIN` work on main; the header's baseline put back at the
+        stale v6.1.0 plus 6.2 (US1111). Near misses that must pass: the marker
         inside a code span, and on a row whose Status is not shipped."""
         self.assertEqual([], baseline_problems(self.prd))
         self.assertEqual([], unreleased_marks(self.prd))
@@ -525,6 +545,8 @@ class PrdBaselineTests(unittest.TestCase):
                 (coverage.group(0), "**Coverage:** v6.0.0 as cut, plus the 6.1 work",
                  [f"the header names 6.0.0, not only {BASELINE}"] + unnamed),
                 (coverage.group(0), f"**Coverage:** v{BASELINE} as cut", unnamed),
+                (coverage.group(0), "**Coverage:** v6.1.0 as cut, plus the 6.2 work",
+                 [f"the header names 6.1.0, not only {BASELINE}"] + unnamed),
                 (preamble, preamble.replace(f"v{BASELINE}", "v4.1.0"),
                  [f"the inventory preamble names 4.1.0, not only {BASELINE}"] + unnamed)):
             where = "inventory preamble" if old == preamble else "header"
