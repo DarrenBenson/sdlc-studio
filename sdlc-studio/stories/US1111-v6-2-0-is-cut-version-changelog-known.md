@@ -4,7 +4,7 @@
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, README.md, docs/INSTALL.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, docs/known-issues.md, docs/release-notes-v6.2.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v62.py
+> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, README.md, docs/INSTALL.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, docs/known-issues.md, docs/release-notes-v6.2.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v62.py, .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py
 > **Epic:** EP0295
 > **Points:** 3
 > **Persona:** Maya Okafor
@@ -35,6 +35,7 @@
 - Measured at 519d125c, these tests name 6.1.0: `test_lean_prd_refresh.py` (`BASELINE`), `test_lean_trd_refresh.py` (`BASELINE`, `ON_MAIN`) and `test_lean_tsd_refresh.py` (`ON_MAIN`) pin the specs' baseline and are in Affects for AC4. `test_lean_release_notes_v61.py`, `test_lean_v61_last_lows.py`, `test_known_issues.py`, `test_lean_retired_handoff_surface.py`, `test_corpus_verify_env.py` and `test_release_prerelease.py` name 6.1.0 as history or a fixture and should pass unchanged; run each at the cut. A file outside Affects that needs a change is a finding to report, not an edit.
 - The cut touches many test subjects, so run `tools/run-suite.sh all` (on the gate host) before review, and run US1101 to US1104's Verify lines through `verify_ac.py run --id <id>`.
 - Out of this unit, after its review (D0395): `gate.py --release` exit 0, `release_cut.py record-green` and `tag-check`, the tag, the release workflow's publish, and the forward-port.
+- Affects amended 2026-11-02, in flight (no command does this yet, CR0656): `test_bg0940_fragment_matches_sign.py` reads `changelog.d/BG0940.md` by path and has that fragment as its census subject, so the cut's fold of the fragment turns it red (the builder's `run-suite.sh all` on the gate host: 1 failed of 7313). It is re-pointed to read the entry from the fragment while it exists and from the released CHANGELOG section after the cut, keeping BG0945's and BG1035's mutants.
 
 ## Revision History
 
@@ -42,3 +43,4 @@
 | --- | --- | --- |
 | 2026-11-02 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-02 | Claude Opus 5.5 (grooming) | Groomed for EP0295 under D0395: user story, criteria with Verify lines and notes, modelled on EP0273 |
+| 2026-11-02 | Claude Opus 5.5 (grooming) | Affects amended in flight: the BG0940 fragment test, which the cut's fold turns red (see Notes) |
