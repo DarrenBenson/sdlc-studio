@@ -77,9 +77,17 @@ new refusal or a changed default, each with what to do instead:
   `light: 150`). Instead: brief at `--tier full` for a unit that needs its history or a mutation
   pass, and raise `review.brief_diff_lines` in `.config.yaml` for a longer diff.
 - **The project lessons log is committed.** It lives at `sdlc-studio/retros/LESSONS.md`, where
-  6.1 kept it in the gitignored `sdlc-studio/.local/lessons.md`. The first `lessons` command
-  moves a legacy log there and says to commit it; with both files present it refuses, naming
-  them. Instead: commit the moved log, and merge two machines' logs by hand when it names both.
+  6.1 kept it in the gitignored `sdlc-studio/.local/lessons.md`. The first `lessons` command on
+  the project log, or `retro.py extract`, moves a legacy log there and says to commit it; with
+  both files present it refuses, naming them. Instead: commit the moved log, and merge two
+  machines' logs by hand when it names both.
+- **`lessons.py summary` refuses to drop a committed lesson.** Where the committed
+  `LESSONS-SUMMARY.md` lists a lesson the log lacks, as on a second machine holding the summary
+  but not 6.1's gitignored log, it exits 1 and writes nothing, where 6.1 rewrote the digest
+  without it. `sprint.py close` runs it, carries the refusal to the report as a known issue and
+  leaves the digest as committed. Instead: run a `lessons` command on the machine that holds the
+  6.1 log, commit the log it moves to `sdlc-studio/retros/LESSONS.md`, and pull it before you
+  close anywhere else.
 - **`lessons.py revalidate --extend` needs a reason.** With no `--reason`, or a blank one, it is
   refused and writes nothing. Instead: pass `--reason` saying why the lesson still holds; it is
   recorded as the lesson's `Revalidated` line.
@@ -138,8 +146,9 @@ keys, `review.author_self_check`, `review.brief_diff_lines` and `cost.baseline_p
 not written to your `.config.yaml`; each reads its shipped default until you set it.
 
 **Two records to commit.** `migrate` leaves a legacy `sdlc-studio/.local/lessons.md` where it
-is: the first `lessons` command moves it to `sdlc-studio/retros/LESSONS.md` and says to commit
-it. From the first 6.2 close, each run's record is filed under `sdlc-studio/reports/runs/`
+is: the first `lessons` command on the project log, or `retro.py extract`, moves it to
+`sdlc-studio/retros/LESSONS.md` and says to commit it. Commit it before you close on another
+machine. From the first 6.2 close, each run's record is filed under `sdlc-studio/reports/runs/`
 beside its report: commit both.
 
 ## Known issues
