@@ -1580,7 +1580,8 @@ VERIFY_BATCH_TIMEOUT_ENV = "SDLC_VERIFY_BATCH_TIMEOUT"
 #: How many stories the verify lane runs at once, after the batch: a positive integer, else
 #: min(cores, `_VERIFY_WORKERS_CAP`). The pytest batch answers only a bare `pytest <node>` line
 #: whose file it collected; the rest (631 lines that are not a bare node on 2026-11-03) ran one
-#: story at a time. `1` restores that.
+#: story at a time. `1` runs one at a time again, though a story naming a `serial_only` test
+#: module still runs after the rest.
 VERIFY_WORKERS_ENV = "SDLC_VERIFY_WORKERS"
 _VERIFY_WORKERS_CAP = 8
 _MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
@@ -1629,7 +1630,11 @@ def _names_serial_only(verifiers: list[str], root: Path, memo: dict) -> bool:
     `memo` holds each file's answer, so a file is read once per run."""
     for line in verifiers:
         tokens = [t.split("::", 1)[0] for t in line.replace("'", " ").replace('"', " ").split()]
-        bases = [root, *(root / t for t in tokens if t and (root / t).is_dir())]
+        # `os.path.isdir`, never `Path.is_dir`: each word is statted, and on Python 3.10 and 3.12
+        # `Path.is_dir` raises, out of the whole lane, for a word whose stat fails with
+        # ENAMETOOLONG (a 300-character grep pattern) or EACCES (a path under an unreadable
+        # directory). `os.path.isdir` answers False.
+        bases = [root, *(root / t for t in tokens if t and os.path.isdir(root / t))]
         for token in tokens:
             if token.endswith(".py"):
                 names = [token]

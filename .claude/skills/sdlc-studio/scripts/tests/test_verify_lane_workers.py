@@ -11,6 +11,7 @@ many ran at once, and in what order, is observed rather than patched (LL0014).
 # test-census-subject: .claude/skills/sdlc-studio/scripts/gate.py
 from __future__ import annotations
 
+import errno
 import os
 import re
 import signal
@@ -71,6 +72,8 @@ class MarkedCase(unittest.TestCase):
     def test_s3(self):
         _probe("s3")
 '''
+#: A test module carrying the marker whose one test fails.
+RED_MARKED = "import pytest\n\n\n@pytest.mark.serial_only\ndef test_red():\n    assert False\n"
 PYTEST_INI = ("[pytest]\naddopts = -p no:cacheprovider\nmarkers =\n"
               "    serial_only: runs in the serial phase\n")
 
@@ -232,10 +235,13 @@ class VerifyLaneWorkersTests(unittest.TestCase):
 
     def test_the_pool_reports_in_story_order_and_writes_nothing(self) -> None:
         """AC4. MUTANTS: reports collected with `as_completed` (the red clause lists the fastest
-        first); `verify_story(dry_run=False)` (the green criterion gains `Verified: yes`, and the
-        stamped red one is downgraded). The red criteria finish in the reverse of path order
-        here, and every clause is compared with the one-worker run's."""
+        first); the `serial_only` story reported after the pooled ones, as it ran (US9101 moves
+        to the end of the red clause, and one worker runs it last too, so only the ids named
+        here see it); `verify_story(dry_run=False)` (the green criterion gains `Verified: yes`,
+        and the stamped red one is downgraded). The red criteria finish in the reverse of path
+        order here, and every clause is compared with the one-worker run's."""
         _workspace(self.root, [
+            ("Done", f'shell "{sys.executable}" -m pytest -q tests/test_red_marked.py', ""),
             ("Done", probe("r1", 1.2, 1) + "\n- **Verified:** yes", ""),
             ("Done", probe("r2", 0.8, 1), ""),
             ("Done", probe("g1", 0.1), ""),
@@ -245,15 +251,17 @@ class VerifyLaneWorkersTests(unittest.TestCase):
             ("Done", None, ""),
             ("Done", probe("b1", 0), "> **Provenance:** external\n"),
             ("Done", None, "")])
+        (self.root / "tests" / "test_red_marked.py").write_text(RED_MARKED, encoding="utf-8")
         stories = sorted((self.root / "sdlc-studio" / "stories").glob("*.md"))
         before = {p.name: p.read_bytes() for p in stories}
         pooled = _lane(self.root, "4")
         serial = _lane(self.root, "1")
         self.assertEqual(before, {p.name: p.read_bytes() for p in stories})
         detail = pooled["detail"]
-        self.assertIn("[ids: US9101::AC1 US9102::AC1 US9105::AC1]", detail)
-        self.assertLess(detail.index("US9104::AC1"), detail.index("US9106::AC1"), detail)
-        self.assertLess(detail.index("US9107"), detail.index("US9109"), detail)
+        self.assertIn("then 1 naming a serial_only test module, one at a time", detail)
+        self.assertIn("[ids: US9101::AC1 US9102::AC1 US9103::AC1 US9106::AC1]", detail)
+        self.assertLess(detail.index("US9105::AC1"), detail.index("US9107::AC1"), detail)
+        self.assertLess(detail.index("US9108"), detail.index("US9110"), detail)
 
         def without_cost(text: str) -> str:
             return re.sub(r" \[\d+ story/stories, [^]]*\]", "", text)
@@ -292,6 +300,31 @@ class PoolEdgeTests(unittest.TestCase):
                                     "shell cd t && python3 -m unittest test_c.C"], root, {}))
             (root / "t" / "test_m.py").write_text("", encoding="utf-8")
             self.assertTrue(names(["pytest t/test_m.py"], root, memo), "read once, from the memo")
+
+    def test_a_verify_token_too_long_to_stat_is_judged_not_raised(self) -> None:
+        """REGRESSION. The directory test stats every word of a Verify line, and on Python 3.10
+        and 3.12 `Path.is_dir` raises on the stat's ENAMETOOLONG, as for a 300-character grep
+        pattern: the lane raised `OSError: [Errno 36] File name too long` and judged nothing.
+        Python 3.14 answers False, so `Path.is_dir` is made to raise as 3.10 does, and the test
+        fails on the old line under 3.14 as well as 3.10. MUTANT: the directory test back on
+        `Path.is_dir`."""
+        real_is_dir = Path.is_dir
+
+        def is_dir_as_on_3_10(path, *args, **kwargs):
+            if any(len(part) > 255 for part in path.parts):
+                raise OSError(errno.ENAMETOOLONG, "File name too long", str(path))
+            return real_is_dir(path, *args, **kwargs)
+
+        line = "grep -q " + "a" * 300 + " README.md"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _workspace(root, [("Done", line, "")])
+            (root / "README.md").write_text("x\n", encoding="utf-8")
+            with mock.patch.object(Path, "is_dir", is_dir_as_on_3_10):
+                self.assertFalse(gate._names_serial_only([line], root, {}))
+                res = _lane(root, "2")
+        self.assertEqual(1, res["count"], res["detail"])
+        self.assertIn("[ids: US9101::AC1]", res["detail"])
 
     def test_the_worker_setting_is_read_from_its_variable(self) -> None:
         """MUTANT: the override ignored, a nonsense value honoured, or the default not capped."""
