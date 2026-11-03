@@ -25,9 +25,11 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -342,6 +344,158 @@ def _frozen(root: Path) -> list[dict]:
     return out
 
 
+class _QuietCollection:
+    """While on, every `pytest --collect-only` started from this process runs with pytest's cache
+    off and writes its bytecode only under a private temporary directory, `PYTHONPYCACHEPREFIX`,
+    which `off` removes. The collections share that bytecode, so one that imports a module an
+    earlier one compiled reads it. With bytecode writes off, the guard before this, each compiled
+    every module it imported that no earlier run had left bytecode for beside the source. `on`
+    and `off` save and restore `PYTEST_ADDOPTS`, `PYTHONDONTWRITEBYTECODE` and
+    `PYTHONPYCACHEPREFIX`. A guard turned on while another is on changes nothing, so the
+    collections already running keep the directory they write to."""
+
+    _KEYS = ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")
+    _active = False
+
+    def __init__(self) -> None:
+        self._saved: dict | None = None
+        self._prefix: str | None = None
+
+    def on(self) -> None:
+        if _QuietCollection._active:
+            return
+        import tempfile  # noqa: PLC0415 - needed only here
+        self._prefix = tempfile.mkdtemp(prefix="sdlc-migrate-pyc-")
+        self._saved = {k: os.environ.get(k) for k in self._KEYS}
+        _QuietCollection._active = True
+        opts = self._saved["PYTEST_ADDOPTS"] or ""
+        os.environ["PYTEST_ADDOPTS"] = f"{opts} -p no:cacheprovider".strip()
+        os.environ.pop("PYTHONDONTWRITEBYTECODE", None)
+        os.environ["PYTHONPYCACHEPREFIX"] = self._prefix
+
+    def off(self) -> None:
+        if self._prefix is None:
+            return
+        import shutil  # noqa: PLC0415 - needed only here
+        for key, value in (self._saved or {}).items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(self._prefix, ignore_errors=True)
+        self._saved = self._prefix = None
+        _QuietCollection._active = False
+
+    def __enter__(self) -> "_QuietCollection":
+        self.on()
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self.off()
+
+
+#: The most test-file collections `_CollectionPrimer` runs at once, the cap the release verify
+#: lane puts on its story pool.
+_PRIME_WORKERS_CAP = 8
+
+
+class _CollectionPrimer:
+    """The conformance lane's test-file collections, run side by side and ahead of it.
+
+    The lane resolves each stamped `pytest` selector on a Done story by collecting its test file
+    with `verify_ac._collect_nodes`, one `pytest --collect-only` per distinct file and one after
+    another, caching each file's node list. On this repository that was 266 files and most of a
+    dry run's wall time. `start` reads the files off the Done stories and submits each to that
+    same function, with the same root, `min(cores, 8)` at a time and under `_QuietCollection`.
+    While `serving`, the lane's call for a submitted file waits for that collection and then
+    reads the cache, so the lane runs beside the collections and repeats none that returned. A
+    file the primer did not submit, or whose collection raised, is collected by the lane itself.
+    `wait` joins every collection and restores the environment."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self._started = False
+        self._pool = None
+        self._futures: dict = {}
+        self._quiet = _QuietCollection()
+
+    def _files(self, verify_ac) -> list[str]:
+        """Each distinct test file the lane collects: named by the first Verify line of a
+        criterion recorded `yes` whose runner `verify_ac` collects, on a story whose status is
+        Done, in the order the lane reads them."""
+        vocab = sdlc_md.status_vocab("story", self.root)
+        files: dict[str, None] = {}
+        for path in sdlc_md.artifact_files("story", self.root):
+            text = sdlc_md.read_text_safe(path)
+            status = sdlc_md.canonical_status(sdlc_md.extract_field(text, "Status"), vocab)
+            if status != "Done":
+                continue
+            for block in verify_ac.criteria_blocks(text):
+                line = block.verifier or ""
+                if ((block.verified_state or "").strip().lower() != "yes" or not line.split()
+                        or line.split(None, 1)[0].lower() not in verify_ac._COLLECTABLE):
+                    continue
+                test_file = verify_ac.selector_target_file(line, self.root)
+                if test_file:
+                    files.setdefault(test_file, None)
+        return list(files)
+
+    def start(self) -> None:
+        """Submit the collections, once: a later call does nothing, and so does a first call
+        that finds no file to collect."""
+        if self._started:
+            return
+        self._started = True
+        try:
+            import verify_ac  # noqa: PLC0415 - the lane's collector, needed only here
+        except ImportError:
+            return
+        from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+        try:
+            files = self._files(verify_ac)
+        except _STEP_ERRORS:     # the lane reads the same stories, under the step guard
+            return
+        if not files:
+            return
+        self._quiet.on()
+        self._pool = ThreadPoolExecutor(
+            max_workers=max(1, min(os.cpu_count() or 1, _PRIME_WORKERS_CAP)))
+        collect = verify_ac._collect_nodes
+        for test_file in files:
+            self._futures[(test_file, str(self.root))] = self._pool.submit(
+                collect, test_file, self.root)
+
+    @contextlib.contextmanager
+    def serving(self):
+        """While open, `verify_ac._collect_nodes` waits for the submitted collection of the
+        file it is asked for before it reads the cache."""
+        if not self._futures:
+            yield
+            return
+        import verify_ac  # noqa: PLC0415 - the lane's collector, needed only here
+        collect = verify_ac._collect_nodes
+
+        def waiting(test_file, cwd=None):
+            future = self._futures.get((test_file, str(cwd) if cwd else None))
+            if future is not None:
+                future.exception()      # wait; a raised collection is the lane's to redo
+            return collect(test_file, cwd)
+
+        verify_ac._collect_nodes = waiting
+        try:
+            yield
+        finally:
+            verify_ac._collect_nodes = collect
+
+    def wait(self, cancel: bool = False) -> None:
+        """Join the collections (dropping the ones not yet begun when `cancel`), then restore
+        the environment `start` changed."""
+        if self._pool is not None:
+            self._pool.shutdown(wait=True, cancel_futures=cancel)
+            self._pool = None
+        self._quiet.off()
+
+
 def _conformance_cutoff(root: Path) -> list[dict]:
     """The `conformance.adopt_after` line that grandfathers every unit the conformance lane would
     fail, for a human: the cutoff is a judgement about the project's history, so it is named,
@@ -354,27 +508,18 @@ def _conformance_cutoff(root: Path) -> list[dict]:
     (a missing story index) is named with its count and fix and no line: no cutoff is the answer.
 
     The lane resolves a stamped pytest selector by running the project's `pytest --collect-only`,
-    so the call runs with pytest's cache and Python's bytecode writes off, restored after: a
-    migrate run, a dry one above all, leaves the project's bytes where they were."""
+    so the call runs under `_QuietCollection`: a migrate run, a dry one above all, leaves the
+    project's bytes where they were."""
     import conformance  # noqa: PLC0415 - the lane is needed only here
-    saved = {k: os.environ.get(k) for k in ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE")}
-    opts = saved["PYTEST_ADDOPTS"] or ""
-    os.environ["PYTEST_ADDOPTS"] = f"{opts} -p no:cacheprovider".strip()
-    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
-        result = conformance.detect_conformance(root)
+        with _QuietCollection():
+            result = conformance.detect_conformance(root)
     except ValueError as exc:        # a malformed existing cutoff: the lane refuses it, loudly
         return [{"kind": "conformance-cutoff", "lane": "conformance", "ids": [], "count": None,
                  "command": None,
                  "detail": f"the conformance lane cannot read this project ({exc}), so no "
                            f"`conformance.adopt_after` cutoff can be proposed - fix it, then "
                            f"re-run"}]
-    finally:
-        for key, value in saved.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
     units = result["units"]
     # The lane's own count, as the gate's conformance lane takes it: every non-conformant unit
     # plus each repo-wide failure, so an item's number is the one the gate then fails on.
@@ -729,7 +874,29 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
                 "terminal_sized": 0, "frozen": [],
                 "summary": {"deterministic": 0, "needs_human": len(needs), "terminal_sized": 0,
                             "frozen": 0, "applied": False}}
+    # A dry run writes nothing, so it reads the artefact corpus through `sdlc_md.corpus_cache`,
+    # which walks each type once; --apply writes between its steps, so each step reads the disk.
+    # The cache keys a walk by the root's absolute path and hands every caller the paths the
+    # first walk built, so the root is made absolute first: a relative one handed relative paths
+    # to a step that had made the root absolute itself, which `Path.relative_to` then refused.
+    root = Path(os.path.abspath(root))
+    # The conformance step's collections: a dry run starts them here, so they run while steps 1
+    # to 5 do; under --apply step 6 starts them once the steps that write have run, so they
+    # collect the tree the lane judges.
+    primer = _CollectionPrimer(root)
+    with contextlib.nullcontext() if apply else sdlc_md.corpus_cache():
+        if not apply:
+            primer.start()
+        try:
+            return _sweep(root, primer, apply=apply, with_default_amigos=with_default_amigos,
+                          today=today)
+        finally:
+            primer.wait(cancel=True)
 
+
+def _sweep(root: Path, primer: _CollectionPrimer, *, apply: bool, with_default_amigos: bool,
+           today: str | None) -> dict:
+    """`migrate`'s steps, run once its input check has passed."""
     # 1. conventions + version. Classify from `audit()` in BOTH modes - never from `apply()`'s
     # free-text action strings, which mix real changes with advisories and warnings (the team-offer
     # nudge, the BG0150 "version NOT stamped" warning, "SKIPPED" notes). Reporting an advisory as an
@@ -814,8 +981,12 @@ def migrate(repo_root: Path | str, *, apply: bool = False, with_default_amigos: 
                                 "command": cmd(item)})
     needs_human += records_human
     # 6. the grandfathering cutoff, judged on the tree as it now stands: migrated under --apply,
-    # as found on a dry run.
-    needs_human += steps.run("conformance-cutoff", lambda: _conformance_cutoff(root), [])
+    # as found on a dry run. The lane runs beside the collections `primer` submitted and reads
+    # each from the cache once it has run.
+    primer.start()
+    with primer.serving():
+        needs_human += steps.run("conformance-cutoff", lambda: _conformance_cutoff(root), [])
+    primer.wait()
     needs_human += steps.run("engagement-floor-cutoff", lambda: _engagement_floor_cutoff(root), [])
 
     # Terminal legacy-sized units are NOT needs-human work: a Closed/Fixed unit is never planned,
@@ -896,4 +1067,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # SIGTERM (a `timeout` running out, a cancelled job) unwinds as an exit, so the collection
+    # guard still removes its bytecode directory: Python's default stops the process where it
+    # stands and leaves the directory behind.
+    signal.signal(signal.SIGTERM, lambda signum, _frame: sys.exit(128 + signum))
     raise SystemExit(main())

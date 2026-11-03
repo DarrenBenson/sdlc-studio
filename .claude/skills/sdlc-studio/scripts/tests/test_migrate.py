@@ -321,6 +321,172 @@ class ConformanceCutoffTests(unittest.TestCase):
             self.assertEqual(("conformance", []), (items[0]["lane"], items[0]["ids"]))
 
 
+#: A stand-in `pytest` for `CollectionPrimerTests`: it logs each `--collect-only` it is asked for,
+#: with when it ran, the environment it ran under and whether CR0001 was sized when it started,
+#: holds for a moment so that collections run together overlap, and lists one node.
+_FAKE_PYTEST = """#!{python}
+import json, os, sys, time
+start = time.time()
+cr = os.path.join("sdlc-studio", "change-requests", "CR0001-legacy.md")
+with open(cr, encoding="utf-8") as f:
+    sized = "**Size:**" in f.read()
+time.sleep(1)
+row = {{"file": sys.argv[-1], "start": start, "end": time.time(), "sized": sized,
+        "addopts": os.environ.get("PYTEST_ADDOPTS", ""),
+        "prefix": os.environ.get("PYTHONPYCACHEPREFIX"),
+        "dontwrite": os.environ.get("PYTHONDONTWRITEBYTECODE")}}
+with open(os.environ["FAKE_PYTEST_LOG"], "a", encoding="utf-8") as log:
+    log.write(json.dumps(row) + "\\n")
+print(sys.argv[-1] + "::test_ok")
+"""
+
+
+class CollectionPrimerTests(unittest.TestCase):
+    """BG1183 AC2: the conformance step's test-file collections run side by side, each once,
+    under the guard, and under --apply only once the steps that write have run."""
+
+    FILES = [f"tests/test_{n}.py" for n in (1, 2, 3, 4)]
+
+    def _run(self, apply: bool) -> tuple[list[dict], Path]:
+        import json  # noqa: PLC0415
+        import os  # noqa: PLC0415
+        import shutil  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        root, fake_bin, log = d / "repo", d / "bin", d / "collect.log"
+        root.mkdir()
+        fake_bin.mkdir()
+        _v4_era(root)
+        (root / "tests").mkdir()
+        for n, rel in enumerate(self.FILES, 3):
+            (root / rel).write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+            _w(root, f"stories/US000{n}-stamped.md",
+               f"# US000{n}: stamped\n\n> **Status:** Done\n> **Epic:** EP0001\n\n"
+               f"## Acceptance Criteria\n\n- [x] **AC1** given x, when y, then z\n"
+               f"  - **Verify:** pytest {rel}::test_ok\n  - **Verified:** yes (2026-11-03)\n")
+        # Two the lane never collects, so the primer must not: a Done story's unstamped line and
+        # a Ready story's stamped one.
+        for sid, status, stamp in (("US0007", "Done", ""),
+                                   ("US0008", "Ready", "  - **Verified:** yes (2026-11-03)\n")):
+            (root / f"tests/test_{sid}.py").write_text("def test_ok():\n    pass\n", "utf-8")
+            _w(root, f"stories/{sid}-other.md",
+               f"# {sid}: other\n\n> **Status:** {status}\n> **Epic:** EP0001\n\n"
+               f"## Acceptance Criteria\n\n- [ ] **AC1** given x, when y, then z\n"
+               f"  - **Verify:** pytest tests/test_{sid}.py::test_ok\n{stamp}")
+        fake = fake_bin / "pytest"
+        fake.write_text(_FAKE_PYTEST.format(python=sys.executable), encoding="utf-8")
+        fake.chmod(0o755)
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("PYTEST_ADDOPTS", "PYTHONPYCACHEPREFIX")}
+        env.update(PATH=f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
+                   FAKE_PYTEST_LOG=str(log))
+        with mock.patch.dict(os.environ, env, clear=True):
+            migrate.migrate(root, apply=apply)
+            self.assertNotIn("PYTEST_ADDOPTS", os.environ, "the guard leaked past the call")
+            self.assertNotIn("PYTHONPYCACHEPREFIX", os.environ, "the guard leaked past the call")
+        return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()], root
+
+    def test_a_dry_run_collects_each_file_once_side_by_side_under_the_guard(self) -> None:
+        """Fails on: no priming, or one worker (no two collections overlap); a primer whose
+        cache key the lane does not read, or a lane that does not wait for a collection in
+        flight (a file collected twice); a primer that collects a file the lane does not (an
+        unstamped line, a story not Done); a guard that keeps `PYTHONDONTWRITEBYTECODE`, sets
+        no bytecode prefix, leaves it behind, or is turned on again inside the lane."""
+        import itertools  # noqa: PLC0415
+        import os  # noqa: PLC0415
+        rows, root = self._run(apply=False)
+        self.assertEqual(self.FILES, sorted(r["file"] for r in rows))
+        if (os.cpu_count() or 1) > 1:
+            self.assertTrue(any(a["start"] < b["end"] and b["start"] < a["end"]
+                                for a, b in itertools.combinations(rows, 2)),
+                            "the collections ran one after another")
+        for row in rows:
+            self.assertEqual("-p no:cacheprovider", row["addopts"], "one guard, not two")
+            self.assertIsNone(row["dontwrite"], "bytecode writes off: nothing is shared")
+            self.assertTrue(row["prefix"], "no private bytecode directory")
+            self.assertNotIn(str(root), row["prefix"], "the bytecode went into the project")
+            self.assertFalse(Path(row["prefix"]).exists(), "the bytecode directory was left")
+
+    def test_a_guard_turned_on_inside_another_changes_nothing(self) -> None:
+        """The lane turns its guard on while the primer's collections may still be starting.
+        Fails on an inner guard that sets its own bytecode directory and a second
+        `-p no:cacheprovider`, or whose `off` restores the outer one's values and removes the
+        directory the running collections write to."""
+        import os  # noqa: PLC0415
+        keys = ("PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX")
+        outer = migrate._QuietCollection()
+        outer.on()
+        try:
+            before = {k: os.environ.get(k) for k in keys}
+            with migrate._QuietCollection():
+                self.assertEqual(before, {k: os.environ.get(k) for k in keys})
+            self.assertEqual(before, {k: os.environ.get(k) for k in keys})
+            self.assertTrue(Path(before["PYTHONPYCACHEPREFIX"]).is_dir())
+        finally:
+            outer.off()
+        self.assertFalse(Path(before["PYTHONPYCACHEPREFIX"]).exists())
+
+    def test_a_relative_root_reads_the_cached_corpus(self) -> None:
+        """A dry run reads the corpus through `sdlc_md.corpus_cache`, which hands every caller
+        the paths its first walk built. Fails on a root left relative: the conventions step
+        reaches `reconcile` with the root made absolute, is handed relative paths, and
+        `Path.relative_to` refuses them."""
+        import os  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _v4_era(root)
+            self.assertEqual(migrate.migrate(root),
+                             migrate.migrate(Path(os.path.relpath(root))))
+
+    def test_a_terminated_run_removes_its_bytecode_directory(self) -> None:
+        """Fails on a CLI run that keeps Python's default SIGTERM: `timeout` stops it mid-way,
+        no `finally` runs, and the guard's bytecode directory is left in the temporary
+        directory, about 25 MB of it on this repository."""
+        import os  # noqa: PLC0415
+        import shutil  # noqa: PLC0415
+        import signal  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+        import time  # noqa: PLC0415
+        d = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, d, True)
+        root, fake_bin, tmp = d / "repo", d / "bin", d / "tmp"
+        for path in (root, fake_bin, tmp):
+            path.mkdir()
+        _v4_era(root)
+        (root / "tests").mkdir()
+        (root / "tests" / "test_1.py").write_text("def test_ok():\n    pass\n", "utf-8")
+        _w(root, "stories/US0003-stamped.md",
+           "# US0003: stamped\n\n> **Status:** Done\n> **Epic:** EP0001\n\n"
+           "## Acceptance Criteria\n\n- [x] **AC1** given x, when y, then z\n"
+           "  - **Verify:** pytest tests/test_1.py::test_ok\n  - **Verified:** yes (2026-11-03)\n")
+        started = d / "started"
+        fake = fake_bin / "pytest"
+        fake.write_text(f"#!{sys.executable}\nimport pathlib, time\n"
+                        f"pathlib.Path({str(started)!r}).touch()\ntime.sleep(3)\n"
+                        f"print('tests/test_1.py::test_ok')\n", encoding="utf-8")
+        fake.chmod(0o755)
+        env = dict(os.environ, TMPDIR=str(tmp),
+                   PATH=f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}")
+        proc = subprocess.Popen([sys.executable, str(_SCRIPTS / "migrate.py"), "--root", str(root)],
+                                env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        deadline = time.monotonic() + 60
+        while not started.exists() and proc.poll() is None and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertTrue(started.exists(), "the run never reached a collection")
+        self.assertTrue(any(tmp.glob("sdlc-migrate-pyc-*")), "no bytecode directory to remove")
+        proc.send_signal(signal.SIGTERM)
+        self.assertEqual(128 + signal.SIGTERM, proc.wait(timeout=60))
+        self.assertEqual([], [p.name for p in tmp.glob("sdlc-migrate-pyc-*")])
+
+    def test_apply_collects_only_after_the_steps_that_write(self) -> None:
+        """Fails on a primer started before the steps under --apply: it collects while CR0001
+        still carries its Effort, so its rows read the tree before the migration."""
+        rows, _root = self._run(apply=True)
+        self.assertEqual(self.FILES, sorted(r["file"] for r in rows))
+        self.assertTrue(all(r["sized"] for r in rows), rows)
+
+
 class EngagementFloorCutoffTests(unittest.TestCase):
     """BG0843: a v4.1 project's engagement-floor lane failed 349 shipped units before and after
     `migrate --apply`, and migrate never mentioned the floor. It now asks the lane which units it

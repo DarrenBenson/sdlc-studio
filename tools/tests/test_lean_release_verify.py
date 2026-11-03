@@ -6,8 +6,11 @@ retired in the D0259 pattern where the behaviour was removed on purpose, so v6 s
 ruling that tolerates red evidence. One of them also wrote into the tree the gate was judging.
 
 This module runs ONLY the named criteria, through the same `verify_ac.verify_story` call and the
-same per-verifier ceiling the release gate's verify lane uses. It never runs the corpus lane: a
-criterion that runs every criterion would recurse, and would take the 25 minutes the lane does.
+same per-verifier ceiling the release gate's verify lane uses, several stories at a time as that
+lane runs them (`_run_all`). A criterion whose Verify lines are each a bare `pytest <node>` is a
+test of this suite, so it is checked to still select a test rather than run a second time. It
+never runs the corpus lane: a criterion that runs every criterion would recurse, and would take
+the 25 minutes the lane does.
 
 Run from the repo root:
     python3 -m unittest discover -s tools/tests -p test_lean_release_verify.py
@@ -38,7 +41,7 @@ from lib import sdlc_md  # noqa: E402
 
 try:
     import pytest
-    #: Executing the named criteria costs minutes (215 s measured under a loaded machine), so a
+    #: Executing the named criteria costs a minute (62 s measured at load 4 to 14), so a
     #: commit's selected run defers it and the push's full suite runs it, the same trade `test_gate.py` makes for its real-gate tests.
     boundary = pytest.mark.boundary_only
 except ImportError:     # the unittest runner deselects nothing, so there is no marker to set
@@ -108,6 +111,29 @@ def _run(path: Path, acs: set[str], root: Path, scratch: Path) -> verify_ac.Stor
                                   timeout=gate._verify_timeout(), repo_root=root)
 
 
+def _run_all(executable: dict[str, set[str]], root: Path,
+             scratch: Path) -> dict[str, verify_ac.StoryReport]:
+    """`_run` on each story's named criteria, scheduled as the release gate's verify lane
+    schedules the stories its pytest batch leaves, keyed by story id (BG1183: run one story at
+    a time, the module took up to 535 s). The stories run `gate._verify_workers()` at a time,
+    and a story whose named criteria's Verify lines name a `serial_only` test module
+    (`gate._names_serial_only`) waits until the pool has drained and then runs on its own."""
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+    paths = {sid: _story(root, sid) for sid in executable}
+    memo: dict = {}
+    serial = sorted(sid for sid, acs in executable.items() if gate._names_serial_only(
+        [line for b in verify_ac.criteria_blocks(paths[sid].read_text(encoding="utf-8"))
+         if b.ac_id in acs for line in b.verifiers], root, memo))
+    workers, _default = gate._verify_workers()
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {sid: pool.submit(_run, paths[sid], acs, root, scratch)
+                   for sid, acs in executable.items() if sid not in serial}
+    reports = {sid: f.result() for sid, f in futures.items()}
+    for sid in serial:
+        reports[sid] = _run(paths[sid], executable[sid], root, scratch)
+    return reports
+
+
 def _baseline_ids(metric: str) -> set[str]:
     for line in BASELINE.read_text(encoding="utf-8").splitlines():
         if line.startswith(f"{metric}|"):
@@ -150,11 +176,22 @@ class ReleaseVerifyTests(unittest.TestCase):
                         self.assertIsNotNone(block.verified_line, "a retirement with no stamp")
                         self.assertRegex(lines[block.verified_line], RETIRED_STAMP,
                                          "the stamp does not name what superseded it")
+                elif all(map(verify_ac._batchable_pytest_target, block.verifiers)):
+                    # A bare `pytest <node>` names a test of this suite. The push's full suite
+                    # runs it beside this test, and the release lane's pytest batch answers it as
+                    # its own criterion, so executing it here ran the same test again (BG1183).
+                    # What only this test sees is a node that no longer exists, which no suite
+                    # run reports and the release gate reads red.
+                    with self.subTest(criterion=f"{sid}::{ac}", kind="resolves"):
+                        for line in block.verifiers:
+                            self.assertIs(verify_ac.selector_resolves(line, REPO), True,
+                                          f"{line} no longer selects a test")
                 else:
                     executable.setdefault(sid, set()).add(ac)
         with tempfile.TemporaryDirectory() as scratch:
+            reports = _run_all(executable, REPO, Path(scratch))
             for sid, acs in sorted(executable.items()):
-                report = _run(_story(REPO, sid), acs, REPO, Path(scratch))
+                report = reports[sid]
                 for ac in sorted(acs):
                     with self.subTest(criterion=f"{sid}::{ac}", kind="executed"):
                         failure = next((f for f in report.failures if f["ac"] == ac), None)
@@ -163,6 +200,38 @@ class ReleaseVerifyTests(unittest.TestCase):
         still_tolerated = sorted(set(MEASURED_RED) & _baseline_ids("red-criteria"))
         self.assertEqual(still_tolerated, [],
                          f"{BASELINE.name} still tolerates criteria this unit answered")
+
+    def test_the_pooled_run_reads_each_red_criterion_red(self) -> None:
+        """BG1183 AC1: `_run_all` keeps each story's verdicts its own and runs only the named
+        criteria. Fails on a pool that hands one story's report to another, drops a story,
+        reads a red criterion green, runs an unnamed criterion (US0001 AC3, US0003 AC2), or
+        runs a held-back story before the pool has drained (US0003 AC1 then starts before
+        US0002 writes its marker, 2 s in, and reads red)."""
+        with tempfile.TemporaryDirectory() as d:
+            root, scratch = Path(d) / "repo", Path(d) / "scratch"
+            (root / "sdlc-studio" / "stories").mkdir(parents=True)
+            scratch.mkdir()
+            stories = {
+                "US0001": ("shell true", "shell false", "shell false"),
+                "US0002": ("shell false", "shell sleep 2 && touch two"),
+                "US0003": ("shell test -f two && echo held-back", "shell false"),
+            }
+            for sid, lines in stories.items():
+                body = "".join(f"- [ ] **AC{i}** criterion {i}\n  - **Verify:** {line}\n"
+                               for i, line in enumerate(lines, 1))
+                (root / "sdlc-studio" / "stories" / f"{sid}-x.md").write_text(
+                    f"# {sid}: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n{body}",
+                    encoding="utf-8")
+            held = mock.patch.object(gate, "_names_serial_only",
+                                     lambda lines, _root, _memo: any("held-back" in ln
+                                                                     for ln in lines))
+            with held:
+                reports = _run_all({"US0001": {"AC1", "AC2"}, "US0002": {"AC1", "AC2"},
+                                    "US0003": {"AC1"}}, root, scratch)
+            got = {sid: (sorted(r.passed), sorted(f["ac"] for f in r.failures))
+                   for sid, r in reports.items()}
+            self.assertEqual({"US0001": (["AC1"], ["AC2"]), "US0002": (["AC2"], ["AC1"]),
+                              "US0003": (["AC1"], [])}, got)
 
     def test_no_verify_line_writes_a_tracked_file(self) -> None:
         writers = []
