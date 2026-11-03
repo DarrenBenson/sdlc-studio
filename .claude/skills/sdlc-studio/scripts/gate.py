@@ -1575,6 +1575,12 @@ VERIFY_TIMEOUT_ENV = "SDLC_VERIFY_TIMEOUT"
 #: 26 (2026-11-03), and below the 4,447 s the whole 6.2.0 lane took.
 VERIFY_BATCH_TIMEOUT = 3600
 VERIFY_BATCH_TIMEOUT_ENV = "SDLC_VERIFY_BATCH_TIMEOUT"
+#: How many stories the verify lane runs at once, after the batch: a positive integer, else
+#: min(cores, `_VERIFY_WORKERS_CAP`). The pytest batch answers only a bare `pytest <node>` line
+#: whose file it collected; the rest (631 lines that are not a bare node on 2026-11-03) ran one
+#: story at a time. `1` restores that.
+VERIFY_WORKERS_ENV = "SDLC_VERIFY_WORKERS"
+_VERIFY_WORKERS_CAP = 8
 _MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
 
 
@@ -1591,6 +1597,49 @@ def _ceiling(env: str, default: int) -> int:
 def _verify_timeout() -> int:
     """The per-verifier ceiling in force for THIS run."""
     return _ceiling(VERIFY_TIMEOUT_ENV, VERIFY_TIMEOUT)
+
+
+def _verify_workers() -> tuple[int, int]:
+    """`(workers in force for THIS run, the default)` for the verify lane's story pool."""
+    default = min(os.cpu_count() or 1, _VERIFY_WORKERS_CAP)
+    return _ceiling(VERIFY_WORKERS_ENV, default), default
+
+
+#: A unittest dotted name, `tests.test_gate.GateTests`, read as the module path it names.
+_DOTTED_NAME = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+")
+
+
+def _names_serial_only(verifiers: list[str], root: Path, memo: dict) -> bool:
+    """Does one of a story's Verify lines name a test module whose text carries `serial_only`?
+
+    `run_tests_plan`'s text test, applied to each test module (`test_*.py` or `*_test.py`) a line
+    names, once quotes are dropped and any `::node` is cut: as a path, or as a unittest dotted
+    name (`tests.test_gate.GateTests` names `tests/test_gate.py`). Each is read against the
+    workspace root and against every directory the line names, so `cd <dir> && python3 -m
+    unittest <dotted>` and `discover -s <dir> -p <file>` both count. A directory named as the
+    target itself is not searched, and a script that is not a test module is never read.
+    `memo` holds each file's answer, so a file is read once per run."""
+    for line in verifiers:
+        tokens = [t.split("::", 1)[0] for t in line.replace("'", " ").replace('"', " ").split()]
+        bases = [root, *(root / t for t in tokens if t and (root / t).is_dir())]
+        for token in tokens:
+            if token.endswith(".py"):
+                names = [token]
+            elif _DOTTED_NAME.fullmatch(token):
+                parts = token.split(".")
+                names = ["/".join(parts[:i]) + ".py" for i in range(1, len(parts) + 1)]
+            else:
+                continue
+            for name in names:
+                module = name.rsplit("/", 1)[-1]
+                if not (module.startswith("test_") or module.endswith("_test.py")):
+                    continue
+                for path in (base / name for base in bases):
+                    if path not in memo:
+                        memo[path] = "serial_only" in (sdlc_md.read_text_safe(path) or "")
+                    if memo[path]:
+                        return True
+    return False
 
 
 def _pytest_batch_clause(cache, verifiers: int) -> str:
@@ -1669,8 +1718,13 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
       a rotted `Verify:` line reached a green gate. A story whose ACs are ALL declared
       `Verify: manual` is honestly declaring human verification and PASSES - the guard fires on
       omission, never on a declared judgement call.
+    * It runs stories on a bounded pool and REPORTS in path order. At most `SDLC_VERIFY_WORKERS`
+      stories run at once; a story naming a test module that carries `serial_only` runs after
+      the pool has drained, one at a time; each clause lists its criteria in the order one story at
+      a time gives, so no clause depends on which verifier finished first.
     """
     import verify_ac
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
     rr = Path(root).resolve()
     stories = list(verify_ac.walk_stories(rr / "sdlc-studio" / "stories"))
     if not stories:
@@ -1722,11 +1776,47 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
     blocked: list[str] = []
     unspecified: list[str] = []
     acs = manual = unspec = 0
-    for path in stories:
+
+    def run(path: Path) -> tuple:
+        # Each story resolves against its own view of the batch. `resolve_pytest_from_cache`
+        # counts an answer with `+=` on the cache it is handed, which is not atomic across
+        # threads, so the shared cache is never handed to a worker; its count is the sum of the
+        # views', added in the main thread below.
+        view = (verify_ac.PytestBatch(pytest_cache, ceiling=pytest_cache.ceiling,
+                                      durations=pytest_cache.durations)
+                if isinstance(pytest_cache, verify_ac.PytestBatch) else pytest_cache)
         report = verify_ac.verify_story(path, dry_run=True, timeout=timeout, repo_root=rr,
-                                        jest_cache=jest_cache, pytest_cache=pytest_cache,
+                                        jest_cache=jest_cache, pytest_cache=view,
                                         pytest_collected=pytest_collected,
                                         allow_external=allow_external)
+        return report, getattr(view, "resolved", 0)
+
+    # THE POOL. The batch has already run; what is left is one subprocess per
+    # verifier it could not answer, so stories run `workers` at a time. A story naming a test
+    # module that carries `serial_only` waits until the pool has drained and then runs alone. Each
+    # report is kept against its path and read in path order, never in completion order.
+    workers, default_workers = _verify_workers()
+    memo: dict = {}
+    serial = [p for p in stories if _names_serial_only(
+        [line for block in verify_ac.criteria_blocks(sdlc_md.read_text_safe(p) or "")
+         for line in block.verifiers], rr, memo)]
+    alone = set(serial)
+    pool = ThreadPoolExecutor(max_workers=workers)
+    try:
+        futures = {p: pool.submit(run, p) for p in stories if p not in alone}
+        pool.shutdown(wait=True)
+    except BaseException:
+        # An interrupt cancels the stories still queued; without it the interpreter's exit
+        # would wait for every one of them to run.
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise
+    results = {p: f.result() for p, f in futures.items()}
+    for p in serial:
+        results[p] = run(p)
+    for path in stories:
+        report, resolved = results[path]
+        if isinstance(pytest_cache, verify_ac.PytestBatch):
+            pytest_cache.resolved += resolved
         story_id = sdlc_md.extract_record_id(path.stem) or path.stem
         acs += report.ac_count
         manual += report.manual
@@ -1762,6 +1852,9 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
     # apart without rerunning it.
     how = (_pytest_batch_clause(pytest_cache, len(pytest_targets)) if batch
            else " (per-AC subprocess)")
+    how += (f", stories on {workers} worker(s) ({VERIFY_WORKERS_ENV}, default {default_workers})"
+            + (f", then {len(serial)} naming a serial_only test module, one at a time"
+               if serial else ""))
     cost = (f"{len(stories)} story/stories, {executable} executable AC(s) in {elapsed}s{how}"
             f"{f' - OVER the {VERIFY_LANE_BUDGET_S}s declared budget' if elapsed > VERIFY_LANE_BUDGET_S else ''}")
     parts = []
@@ -2864,7 +2957,10 @@ def build_parser() -> argparse.ArgumentParser:
                         "pytest-xdist is installed, under its own ceiling "
                         f"({VERIFY_BATCH_TIMEOUT_ENV}, default {VERIFY_BATCH_TIMEOUT}s); each "
                         "criterion is still held to "
-                        f"{VERIFY_TIMEOUT_ENV} (default {VERIFY_TIMEOUT}s)")
+                        f"{VERIFY_TIMEOUT_ENV} (default {VERIFY_TIMEOUT}s). Then at most "
+                        f"{VERIFY_WORKERS_ENV} stories run at once (default the cores, at most "
+                        f"{_VERIFY_WORKERS_CAP}), and a story whose Verify line names a test "
+                        "module carrying `serial_only` runs alone after them")
     p.add_argument("--allow-external", dest="allow_external", action="store_true",
                    help="--release: run shell-backed verifiers on stories stamped "
                         "`Provenance: external` too (off by default - the trust boundary; "
