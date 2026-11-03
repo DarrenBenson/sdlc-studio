@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 183 |
+| Open | 187 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1185** |
+| **Total** | **1189** |
 
 ## All Bugs
 
@@ -261,6 +261,10 @@
 | [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1184](BG1184-bg1176-s-re-pointed-criteria-leave-three-sub.md) | BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1185](BG1185-bg1167-s-rule-reads-a-light-approve-s.md) | BG1167's rule reads a light APPROVE's scope from git history, so three narrow orderings still count a unit whose own Affects widened as covered | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1186](BG1186-the-release-verify-lane-s-declared-budget-is.md) | The release verify lane's declared budget is 600 s against a measured 3,340 s, so every release run prints OVER and the pin keeps it there | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1187](BG1187-us0944-ac3-s-verifier-verify-ac-py-stamps.md) | US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1188](BG1188-one-lane-cap-test-took-695-s-on.md) | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
 
 ## Archived Releases
 
