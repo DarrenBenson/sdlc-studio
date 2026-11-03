@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 187 |
+| Open | 188 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1189** |
+| **Total** | **1190** |
 
 ## All Bugs
 
@@ -265,6 +265,7 @@
 | [BG1187](BG1187-us0944-ac3-s-verifier-verify-ac-py-stamps.md) | US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1188](BG1188-one-lane-cap-test-took-695-s-on.md) | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
 
 ## Archived Releases
 
