@@ -9,11 +9,13 @@ import contextlib
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import shutil
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import gitutil  # noqa: E402 - confined git for the fixture repos below
@@ -1191,9 +1193,11 @@ class TierCoverageTests(unittest.TestCase):
         gitutil.git(["add", "-A"], cwd=root)
         gitutil.git(["commit", "-qm", message], cwd=root)
 
-    def _approved_light(self, root: Path, affects: list[str], tier_explicit: bool = False):
-        """US0004, Done and otherwise conformant, declaring `affects`, approved light and
-        committed. Returns the loaded conformance module."""
+    def _approved_light(self, root: Path, affects: list[str], tier_explicit: bool = False,
+                        commit: bool = True, delivered: bool = True):
+        """US0004, Done and otherwise conformant, declaring `affects`, approved light and, unless
+        `commit` is false, committed; `delivered` false leaves no commit before the approval.
+        Returns the loaded conformance module."""
         for name in ("a", "b", "c", "d"):
             fp = root / "src" / f"{name}.py"
             fp.parent.mkdir(parents=True, exist_ok=True)
@@ -1202,14 +1206,16 @@ class TierCoverageTests(unittest.TestCase):
         self._write_drift_unit(root, affects)
         _index(root, {4: "Done"})
         gitutil.git(["init", "-q"], cwd=root)
-        self._commit(root, "US0004 delivered")
+        if delivered:
+            self._commit(root, "US0004 delivered")
         mod = _load()
         self.assertEqual(mod.critic.tier_for(root, "US0004"), "light",
                          "the fixture does not start light - it proves nothing")
         mod.critic.record_verdict(root, "US0004", "approve", reviewer="qa", author="dev",
                                   brief="0123456789ab", tier="light",
                                   tier_explicit=tier_explicit)
-        self._commit(root, "US0004 approved light")
+        if commit:
+            self._commit(root, "US0004 approved light")
         return mod
 
     def _census_unit(self, mod, root: Path) -> dict:
@@ -1256,22 +1262,80 @@ class TierCoverageTests(unittest.TestCase):
             *_, unmet = mod._done_stages(root, "US0002", ["yes"], False, set(), True)
             self.assertEqual(unmet, [mod.HALF_VERDICT])
 
+    def _widen(self, root: Path, commit: bool = True) -> None:
+        """US0004's own Affects gain a heavy fourth module, which bands it full."""
+        (root / "src" / "d.py").write_text(self._HEAVY, encoding="utf-8")
+        self._write_drift_unit(root, ["src/a.py", "src/b.py", "src/c.py", "src/d.py"])
+        if commit:
+            self._commit(root, "US0004 repair widens its Affects")
+
+    def _shallow_clone(self, root: Path, dest: Path, depth: int) -> Path:
+        gitutil.git(["clone", "-q", "--depth", str(depth), f"file://{root}", str(dest)],
+                    cwd=dest.parent)
+        shallow = gitutil.git(["rev-parse", "--is-shallow-repository"], cwd=dest)
+        self.assertEqual(shallow.stdout.strip(), b"true", "the clone is not shallow")
+        return dest
+
     def test_a_units_own_affects_widening_still_owes_the_deeper_review(self) -> None:
-        """AC3. Mutants: judge only that a commit recorded the verdict, never the Affects there
-        (a widened unit keeps its light review); read the Affects at HEAD rather than at the
-        recording commit (today's Affects always equal themselves)."""
+        """AC3, in the full history and in a `--depth 1` clone of it. Mutants: judge only that
+        a commit recorded the verdict, never the Affects there (a widened unit keeps its light
+        review); read the Affects at HEAD rather than before the recording commit (today's
+        Affects always equal themselves); read them at the recording commit and trust a shallow
+        clone (its boundary commit appears to add the ledger, so it reads today's Affects)."""
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as c:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
+            self._widen(root)
+            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full",
+                             "the widening does not raise the band - it proves nothing")
+            clone = self._shallow_clone(root, Path(c) / "clone", 1)
+            for where in (root, clone):
+                unit = self._census_unit(mod, where)
+                self.assertFalse(unit["conformant"], where.name)
+                self.assertEqual(unit["missing"], ["critiqued"])
+                self.assertEqual(unit["critiqued_missing"], [mod.HALF_TIER])
+
+    def test_a_widening_committed_with_the_light_approve_row_owes_the_deeper_review(self) -> None:
+        """The row and the unit's own widening land in one commit, so the Affects are read at
+        that commit's parent. Mutant: read them at the recording commit itself - the widened
+        Affects equal themselves and the light APPROVE counts."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"],
+                                       commit=False)
+            self._widen(root, commit=False)
+            self._commit(root, "US0004 approved light; its repair widens its Affects")
+            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full")
+            self.assertEqual(self._census_unit(mod, root)["critiqued_missing"], [mod.HALF_TIER])
+
+    def test_the_oldest_commit_on_a_brief_fingerprint_is_the_recording_commit(self) -> None:
+        """A second light APPROVE on the same brief, committed after the unit's own widening,
+        moves the fingerprint's count again. The brief both rows reviewed was cut before the
+        first, so the oldest commit decides. Mutant: take the newest (`commits[-1]`) - its parent
+        carries the widened Affects and the light APPROVE counts."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
-            (root / "src" / "d.py").write_text(self._HEAVY, encoding="utf-8")
-            self._write_drift_unit(root, ["src/a.py", "src/b.py", "src/c.py", "src/d.py"])
-            self._commit(root, "US0004 repair widens its Affects")
-            self.assertEqual(mod.critic.tier_for(root, "US0004"), "full",
-                             "the widening does not raise the band - it proves nothing")
-            unit = self._census_unit(mod, root)
-            self.assertFalse(unit["conformant"])
-            self.assertEqual(unit["missing"], ["critiqued"])
-            self.assertEqual(unit["critiqued_missing"], [mod.HALF_TIER])
+            self._widen(root)
+            mod.critic.record_verdict(root, "US0004", "approve", reviewer="eng", author="dev",
+                                      brief="0123456789ab", tier="light")
+            self._commit(root, "US0004 eng approves light on the same brief")
+            self.assertEqual(self._census_unit(mod, root)["critiqued_missing"], [mod.HALF_TIER])
+
+    def test_a_shallow_clone_that_skips_its_boundary_commit_still_fails_towards_full(self) -> None:
+        """With `log.showRoot` false, git's pickaxe skips a shallow clone's grafted boundary, so
+        it names only the later same-brief row, whose parent is in the clone and carries the
+        widened Affects. Only the shallow-clone check stops that counting. Mutant: drop it."""
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as c:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
+            self._widen(root)
+            mod.critic.record_verdict(root, "US0004", "approve", reviewer="eng", author="dev",
+                                      brief="0123456789ab", tier="light")
+            self._commit(root, "US0004 eng approves light on the same brief")
+            clone = self._shallow_clone(root, Path(c) / "clone", 2)
+            gitutil.git(["config", "log.showRoot", "false"], cwd=clone)
+            self.assertEqual(self._census_unit(mod, clone)["critiqued_missing"], [mod.HALF_TIER])
 
     def test_a_units_own_affects_narrowing_keeps_its_light_approve(self) -> None:
         """A dropped file is not a widening: the light review saw every file still declared.
@@ -1299,18 +1363,41 @@ class TierCoverageTests(unittest.TestCase):
 
     def test_a_light_approve_git_cannot_place_owes_the_deeper_review(self) -> None:
         """Fails towards full when git cannot name the recording commit: a row with no brief
-        fingerprint, and a row recorded but not yet committed. Mutant: read no commit as no
-        change of scope."""
+        fingerprint, a row recorded but not yet committed, and a clone whose shallowness git
+        does not answer. Mutants: read no commit as no change of scope; ask only whether the
+        clone answers `true` (no answer then reads as a full history)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"])
             (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
             self._commit(root, "US0005 grows src/a.py")
+            v = mod.critic.verdict_for(root, "US0004")
+            self.assertTrue(mod.tier_covers(root, "US0004", v), "the control does not cover")
+            real_git = mod.critic._git
+
+            def unanswered(where, *args):
+                if args[:2] == ("rev-parse", "--is-shallow-repository"):
+                    return subprocess.CompletedProcess(args, 128, b"", b"fatal: no answer")
+                return real_git(where, *args)
+            with mock.patch.object(mod.critic, "_git", unanswered):
+                self.assertFalse(mod.tier_covers(root, "US0004", v), "no shallowness answer")
             for brief in ("", "fedcba987654"):   # no fingerprint; one no commit carries
                 mod.critic.record_verdict(root, "US0004", "approve", reviewer="qa",
                                           author="dev", brief=brief, tier="light")
                 v = mod.critic.verdict_for(root, "US0004")
                 self.assertFalse(mod.tier_covers(root, "US0004", v), brief or "no brief")
+
+    def test_a_row_in_the_first_commit_has_no_parent_to_read(self) -> None:
+        """The repository's first commit carries the light APPROVE row, so no parent says what
+        the unit declared before it, and that fails towards full even when another unit's edit
+        alone raised the band. Mutant: read the recording commit itself when it has no parent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            mod = self._approved_light(root, ["src/a.py", "src/b.py", "src/c.py"],
+                                       delivered=False)
+            (root / "src" / "a.py").write_text(self._HEAVY, encoding="utf-8")
+            self._commit(root, "US0005 grows src/a.py")
+            self.assertEqual(self._census_unit(mod, root)["critiqued_missing"], [mod.HALF_TIER])
 
 
 class VerifierGroomingTests(unittest.TestCase):

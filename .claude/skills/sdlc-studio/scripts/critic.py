@@ -3308,12 +3308,16 @@ def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
 
 
 def affects_when_recorded(repo_root: Path | str, unit: str, verdict: dict) -> list[str] | None:
-    """The Affects `unit` declared at the commit that added `verdict`'s row to the delivery
-    ledger, or None when git cannot say.
+    """The Affects `unit` declared at the parent of the commit that added `verdict`'s row to
+    the delivery ledger, or None when git cannot say.
 
     That commit is the oldest whose change to the ledger moved the count of the row's brief
-    fingerprint (`git log -S`), searched from two days before the row's date. None for a row
-    with no fingerprint, a row not yet committed, a unit file absent there, or no git.
+    fingerprint (`git log -S`), searched from two days before the row's date; the oldest,
+    because a later row carrying the same fingerprint names the same brief. Its parent is read
+    so that a widening committed with the row counts as a widening. None for a row with no
+    fingerprint, a row not yet committed, a recording commit with no parent, a shallow clone
+    (its cut history can name a boundary commit, or a later one, as the recording commit), a
+    unit file absent at the parent, or no git.
     """
     from datetime import date, timedelta  # noqa: PLC0415 - only this question needs dates
     root, fp = Path(repo_root), _brief_key(verdict)
@@ -3328,10 +3332,13 @@ def affects_when_recorded(repo_root: Path | str, unit: str, verdict: dict) -> li
             pass
     cp = _git(root, *args, "--", f"sdlc-studio/reviews/{_FILE['delivery']}")
     commits = cp.stdout.decode("utf-8", "replace").split() if cp and cp.returncode == 0 else []
-    try:
-        blob = (_rev_blob(root, commits[0],
-                          found[0].resolve().relative_to(root.resolve()).as_posix())
-                if commits else None)
+    # Only `false` rules a cut history out; `true`, or no answer, fails towards full.
+    deep = _git(root, "rev-parse", "--is-shallow-repository") if commits else None
+    if deep is None or deep.stdout.strip() != b"false":
+        return None
+    try:  # `<commit>^` of a root commit names nothing, which `_rev_blob` raises on
+        blob = _rev_blob(root, f"{commits[0]}^",
+                         found[0].resolve().relative_to(root.resolve()).as_posix())
     except (ValueError, _GitUnreadable):
         return None
     return None if blob is None else sdlc_md.affects_files(blob.decode("utf-8", "replace"))

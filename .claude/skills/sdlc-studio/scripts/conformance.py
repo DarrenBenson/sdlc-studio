@@ -419,11 +419,11 @@ def _scope_not_widened(root, rid, verdict: dict) -> bool:
     """Whether a light APPROVE still covers a unit whose band now tiers `full`.
 
     True when the tier was derived, not chosen, and every file the unit declares today was
-    declared at the commit that recorded the verdict: another unit's later edit to a shared
-    file moves the band of a unit that did nothing. False when the unit's own Affects gained a
-    file, for an explicit `light`, and whenever git cannot name that commit or the unit file
-    there, which fails towards the deeper review. Only a unit that reaches this pays the git
-    call.
+    declared at the parent of the commit that recorded the verdict: another unit's later edit
+    to a shared file moves the band of a unit that did nothing. False when the unit's own
+    Affects gained a file, in that commit or since, for an explicit `light`, and whenever git
+    cannot name that commit or the unit file at its parent, as in a shallow clone, which fails
+    towards the deeper review. Only a unit that reaches this pays the git calls.
     """
     if critic.EXPLICIT_SUFFIX.strip() in str(verdict.get("tier") or ""):
         return False
