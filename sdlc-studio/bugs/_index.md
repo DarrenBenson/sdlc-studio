@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 189 |
+| Open | 190 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1191** |
+| **Total** | **1192** |
 
 ## All Bugs
 
@@ -267,6 +267,7 @@
 | [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
 | [BG1191](BG1191-the-batch-s-phase-plugin-reads-serial-only.md) | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1192](BG1192-us1113-ac3-s-one-at-a-time-pin.md) | US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other | Open | Low | 2026-11-03 | 2026-11-03 |
 
 ## Archived Releases
 

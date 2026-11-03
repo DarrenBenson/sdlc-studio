@@ -1,6 +1,6 @@
 # US1113: The release verify lane runs the criteria its batch cannot resolve on a bounded worker pool, serial_only ones after it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0660
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given `SDLC_VERIFY_WORKERS=3` and six fixture stories whose verifiers record their start and end, when the release verify lane runs, then no more than three verifiers ever overlap and some do, the detail names `3 worker(s)`, and with `SDLC_VERIFY_WORKERS=1` none overlap
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py::VerifyLaneWorkersTests::test_the_pool_is_bounded_by_the_worker_setting
+  - **Verified:** yes (2026-11-03)
 - **AC2:** Given one verifier that outlives the per-verifier ceiling while others run beside it, when the lane reports, then that criterion is red and named in `[ids: ...]`, it is not re-run, and the red count equals the serial run's
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py::VerifyLaneWorkersTests::test_a_timeout_on_the_pool_still_reads_red
+  - **Verified:** yes (2026-11-03)
 - **AC3:** Given stories whose verifiers name a test module carrying `serial_only`, when the lane runs, then those stories run after the pool has drained, never beside another verifier
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py::VerifyLaneWorkersTests::test_serial_only_verifiers_run_after_the_pool
+  - **Verified:** yes (2026-11-03)
 - **AC4:** Given the pool, when the lane renders, then every clause lists its criteria in the serial run's order and no story file's bytes change
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py::VerifyLaneWorkersTests::test_the_pool_reports_in_story_order_and_writes_nothing
+  - **Verified:** yes (2026-11-03)
 
 ## Notes
 
