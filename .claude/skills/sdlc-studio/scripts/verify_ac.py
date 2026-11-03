@@ -1790,7 +1790,7 @@ class PytestBatch(dict):
     A dict, so a caller that reads a node's result reads it as before. `reason` says why the
     batch resolved nothing ('' once it holds a node), `seconds` is its wall-clock, `ceiling` the
     per-verifier ceiling each node's recorded `durations` entry is held to, `batch_ceiling` the
-    batch's own, `phases` the names of the `pytest_batch_plan` phases it planned, and `resolved`
+    batch's own, `phases` the names of the `pytest_batch_argv` phases it ran, and `resolved`
     counts the verifier lines `resolve_pytest_from_cache` answered from it.
     """
 
@@ -1808,33 +1808,96 @@ class PytestBatch(dict):
         self.resolved = 0
 
 
-#: The pytest-xdist release that added `--maxschedchunk`; an older one refuses the option.
-_MAXSCHEDCHUNK_SINCE = (3, 2, 0)
+def _xdist_args(repo_root: Path, probe: str, seconds: float) -> list[str] | None:
+    """`-n auto`, plus `--maxschedchunk=1` where it is taken (one test per hand-out, so a class
+    of heavy tests is not queued on one worker), when the `pytest` the batch runs takes them
+    under this workspace's configuration; None otherwise. The hand-out `gate.run_tests_plan`
+    gives a commit's selection.
+
+    Asked of that `pytest` itself, never of this interpreter: a collect-only run of the one
+    test file `probe` with the options, which it refuses (exit 4) when no plugin it loads knows
+    them. `--version` is no probe: pytest answers it with exit 0 beside an option it does not know.
+    The batch runs the `pytest` on PATH, as each criterion's own spawn does, and that one may
+    lack pytest-xdist, be a wrapper passing `-p no:xdist`, or read a project configuration that
+    disables it. Each then gets one serial run rather than a refused `-n`. `seconds` bounds each
+    probe."""
+    for chunk in (["--maxschedchunk=1"], []):
+        try:
+            rc = subprocess.run(["pytest", "-q", "--co", "--continue-on-collection-errors",
+                                 "-n", "0", *chunk, probe], cwd=str(repo_root),
+                                capture_output=True, timeout=max(seconds, 0.001),
+                                check=False).returncode  # nosec B603 B607
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            sdlc_md.debug("_xdist_args", exc)
+            return None
+        if rc in (0, 1, 5):
+            return ["-n", "auto", *chunk]
+    return None
 
 
-def _xdist_args() -> list[str] | None:
-    """`-n auto`, plus `--maxschedchunk=1` where the installed pytest-xdist knows it (one test
-    per hand-out, so a class of heavy tests is not queued on one worker); None without xdist.
-    The hand-out `gate.run_tests_plan` gives a commit's selection."""
-    import importlib.metadata  # noqa: PLC0415 - only needed in batch mode
-    import importlib.util  # noqa: PLC0415
-    if importlib.util.find_spec("xdist") is None:
-        return None
-    try:
-        version = importlib.metadata.version("pytest-xdist")
-        chunk = tuple(int(part) for part in version.split(".")[:3]) >= _MAXSCHEDCHUNK_SINCE
-    except (importlib.metadata.PackageNotFoundError, ValueError):
-        chunk = False
-    return ["-n", "auto"] + (["--maxschedchunk=1"] if chunk else [])
+#: The plugin each phase of a split batch loads with `-p`, written beside its reports. It keeps
+#: the tests whose own `serial_only` mark matches the phase, read from each collected test by a
+#: `trylast` hook, after a conftest's hooks and a project plugin's have run, so a mark either
+#: applies counts as one written above the test. No `-m` reaches the command line, where it
+#: would replace the mark expression the project's own configuration gives. The parallel phase
+#: writes the files of the tests it held back, one list per worker, and the serial phase runs
+#: those files.
+_PHASE_PLUGIN = '''\
+"""verify_ac.py's pytest batch, one phase: keep each test where "marked serial_only" is {serial}."""
+from pathlib import Path
+
+import pytest
+
+SERIAL = {serial!r}
+HELD = {held!r}
 
 
-def pytest_batch_plan(repo_root: Path, scope: list[str],
-                      xdist: list[str] | None) -> list[tuple[str, list[str]]]:
-    """The batch's phases, in order, as `(name, pytest argv)`.
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config, items):
+    keep, held = [], []
+    for item in items:
+        serial = item.get_closest_marker("serial_only") is not None
+        (keep if serial is SERIAL else held).append(item)
+    if not held:
+        return
+    config.hook.pytest_deselected(items=held)
+    items[:] = keep
+    if HELD:
+        worker = getattr(config, "workerinput", {{}}).get("workerid", "main")
+        Path(HELD, worker + ".txt").write_text(
+            "".join(str(getattr(item, "path", None) or item.fspath) + "\\n" for item in held),
+            encoding="utf-8")
+'''
 
-    With xdist, every test not marked `serial_only` runs across the cores, then the
-    `serial_only` tests run with no worker over the files whose text carries the marker, as
-    `gate.run_tests_plan` runs a selection. Without it, one serial run of everything.
+
+def _phase_plugins(tmp: Path) -> dict[str, str]:
+    """Write a split batch's two phase plugins into `tmp` and return the environment its phases
+    run in: this one, with `tmp` first on PYTHONPATH, so a batch that runs inside another
+    batch's test loads its own plugins rather than the outer one's."""
+    (tmp / "held").mkdir()
+    for phase, serial, held in (("parallel", False, str(tmp / "held")),
+                                ("serial_only", True, None)):
+        (tmp / f"_sdlc_batch_{phase}.py").write_text(
+            _PHASE_PLUGIN.format(serial=serial, held=held), encoding="utf-8")
+    path = os.environ.get("PYTHONPATH")
+    return {**os.environ, "PYTHONPATH": os.pathsep.join([str(tmp)] + ([path] if path else []))}
+
+
+def _held_files(tmp: Path, repo_root: Path, scope: list[str]) -> list[str]:
+    """The files in `scope`, in its order, that hold a test the parallel phase held back."""
+    held = {Path(line).resolve() for f in sorted((tmp / "held").glob("*.txt"))
+            for line in (sdlc_md.read_text_safe(f) or "").splitlines() if line}
+    return [f for f in scope if (repo_root / f).resolve() in held]
+
+
+def pytest_batch_argv(phase: str, files: list[str], xdist: list[str] | None = None) -> list[str]:
+    """One batch phase's pytest argv over `files`.
+
+    `serial` is one run of everything with no worker and no plugin: the batch whose `pytest`
+    does not take `-n`. `parallel` runs across the cores with `xdist`'s arguments, its phase plugin
+    holding back every `serial_only` test, and `serial_only` then runs those tests with no
+    worker over the files that hold them. `gate.run_tests_plan` splits a commit's selection
+    the same way, but with `-m` and over the files whose text names the marker.
 
     `--continue-on-collection-errors` keeps one file that fails to import from aborting the run:
     whatever collects is cached and the rest falls through to its own subprocess, so uncached
@@ -1842,17 +1905,25 @@ def pytest_batch_plan(repo_root: Path, scope: list[str],
     two `tests` packages collect in one session.
     """
     base = ["pytest", "-q", "--tb=no", "--continue-on-collection-errors"]
-    if xdist is None:
-        return [("serial", base + scope)]
-    serial = [f for f in scope
-              if "serial_only" in (sdlc_md.read_text_safe(repo_root / f) or "")]
-    plan = [("parallel", base + xdist + ["-m", "not serial_only"] + scope)]
-    if serial:
-        plan.append(("serial_only", base + ["-m", "serial_only"] + serial))
-    return plan
+    if phase == "serial":
+        return base + files
+    workers = (xdist or []) if phase == "parallel" else []
+    return base + workers + ["-p", f"_sdlc_batch_{phase}"] + files
 
 
-def _run_phase(argv: list[str], cwd: Path, sink: Path, seconds: float) -> int | None:
+def _phase_error(sink: Path) -> str:
+    """` (<line>)`: the last line of a failed phase's output holding `error` in any case, else
+    its last line; '' when it printed nothing. pytest ends a refused command line with its
+    `inifile:` and `rootdir:` lines, so the last line alone says where it ran, not what it
+    refused."""
+    lines = [ln.strip() for ln in (sdlc_md.read_text_safe(sink) or "").splitlines() if ln.strip()]
+    if not lines:
+        return ""
+    return f" ({next((ln for ln in reversed(lines) if 'error' in ln.lower()), lines[-1])[:160]})"
+
+
+def _run_phase(argv: list[str], cwd: Path, sink: Path, seconds: float,
+               env: dict[str, str] | None = None) -> int | None:
     """Run one phase with its output in `sink` and return its exit code, or None when it outlived
     `seconds`, its whole process group then killed.
 
@@ -1861,7 +1932,7 @@ def _run_phase(argv: list[str], cwd: Path, sink: Path, seconds: float) -> int | 
     (`start_new_session`), captured while it lives, and it is killed on every exit."""
     with sink.open("w", encoding="utf-8") as out:
         proc = subprocess.Popen(argv, cwd=str(cwd), stdout=out, stderr=subprocess.STDOUT,
-                                start_new_session=True)  # nosec B603 B607
+                                env=env, start_new_session=True)  # nosec B603 B607
         try:
             return proc.wait(timeout=max(seconds, 0.001))
         except subprocess.TimeoutExpired:
@@ -1878,9 +1949,11 @@ def pytest_batch_cache(repo_root: Path, timeout: float, targets: list[str] | Non
     resolve against one result set instead of a cold process start each.
 
     `targets` are the test files, or node ids, the verifiers name; the run is scoped to the
-    distinct files among them that exist. It runs in `pytest_batch_plan`'s phases, each writing
-    its own JUnit report, merged: a node reported twice keeps the worse verdict and the longer
-    duration.
+    distinct files among them that exist. It runs in `pytest_batch_argv`'s phases: one serial
+    run, or, when `_xdist_args` finds the `pytest` it runs takes `-n`, a parallel phase and then
+    a `serial_only` phase over the files whose tests the first held back, if any. Each phase
+    writes its own JUnit report, merged: a node reported twice keeps the worse verdict and the
+    longer duration.
 
     Two ceilings, held apart. `batch_timeout` bounds the whole batch, every phase together
     (default: `timeout`). `timeout` is the per-verifier ceiling each node is held to: a node
@@ -1896,40 +1969,46 @@ def pytest_batch_cache(repo_root: Path, timeout: float, targets: list[str] | Non
     """
     ceiling = timeout if batch_timeout is None else batch_timeout
     started = time.monotonic()
-    plan: list[tuple[str, list[str]]] = []
+    ran: list[str] = []
 
     def batch(nodes=None, durations=None, reason=""):
         return PytestBatch(nodes, reason=reason, seconds=time.monotonic() - started,
                            ceiling=timeout, batch_ceiling=ceiling, durations=durations,
-                           phases=tuple(name for name, _ in plan))
+                           phases=tuple(ran))
 
     files = dict.fromkeys(t.split("::", 1)[0] for t in (targets or []))
     scope = [f for f in files if (repo_root / f).is_file()]
     if not scope:
         return batch(reason="none of the named test files exists" if files
                      else "no pytest verifier names a test")
-    plan = pytest_batch_plan(repo_root, scope, _xdist_args())
+    xdist = _xdist_args(repo_root, scope[0], ceiling)
     nodes: dict[str, bool] = {}
     durations: dict[str, float] = {}
     with tempfile.TemporaryDirectory() as d:
-        for i, (phase, argv) in enumerate(plan):
-            report, sink = Path(d) / f"junit-{i}.xml", Path(d) / f"out-{i}.txt"
+        tmp = Path(d)
+        env = _phase_plugins(tmp) if xdist else None
+        phase, phase_files = ("parallel" if xdist else "serial"), scope
+        while phase_files:
+            ran.append(phase)
+            report, sink = tmp / f"junit-{phase}.xml", tmp / f"out-{phase}.txt"
+            argv = pytest_batch_argv(phase, phase_files, xdist)
             left = ceiling - (time.monotonic() - started)
             try:
                 rc = _run_phase(argv[:1] + [f"--junit-xml={report}"] + argv[1:], repo_root,
-                                sink, left)
+                                sink, left, env)
             except OSError as exc:
                 sdlc_md.debug("pytest_batch_cache", exc)
                 return batch(reason=f"pytest could not start ({exc})")
             if rc is None:
                 return batch(reason=f"timed out at its {ceiling:g}s ceiling in the {phase} phase")
             if rc not in (0, 1, 5) or not report.is_file():
-                tail = (sdlc_md.read_text_safe(sink) or "").strip().splitlines()
                 return batch(reason=f"the {phase} phase exited {rc} with no usable report"
-                                    + (f" ({tail[-1][:160]})" if tail else ""))
+                                    + _phase_error(sink))
             for node, ok, seconds in _junit_cases(sdlc_md.read_text_safe(report) or "", scope):
                 nodes[node] = nodes.get(node, True) and ok
                 durations[node] = max(durations.get(node, 0.0), seconds)
+            phase, phase_files = "serial_only", (_held_files(tmp, repo_root, scope)
+                                                 if phase == "parallel" else [])
     if not nodes:
         return batch(reason="its report named none of the verifiers' tests")
     return batch(nodes, durations)

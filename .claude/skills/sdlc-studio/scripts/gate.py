@@ -1571,8 +1571,10 @@ VERIFY_TIMEOUT_ENV = "SDLC_VERIFY_TIMEOUT"
 #: file: under the per-verifier 300 s the serial batch timed out and resolved nothing (measured
 #: 2026-11-02), and each criterion paid its own cold start. A criterion the batch timed at longer
 #: than the per-verifier ceiling still reads red, so raising this one does not raise that one.
-#: Set above the 2,261 s and 2,966 s the parallel batch took on an 8-core machine at load 2 to
-#: 26 (2026-11-03), and below the 4,447 s the whole 6.2.0 lane took.
+#: Set above each of three separate runs of the parallel batch, measured on one 8-core machine
+#: on 2026-11-03 while its phases still split with `-m`: two at load 2 to 26 took 2,261 s and
+#: 2,966 s, and one at load 2 to 14 took 1,788 s (the run the changelog gives). It sits below
+#: the 4,447 s the whole 6.2.0 lane took.
 VERIFY_BATCH_TIMEOUT = 3600
 VERIFY_BATCH_TIMEOUT_ENV = "SDLC_VERIFY_BATCH_TIMEOUT"
 #: How many stories the verify lane runs at once, after the batch: a positive integer, else
@@ -1584,19 +1586,25 @@ _VERIFY_WORKERS_CAP = 8
 _MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
 
 
-def _ceiling(env: str, default: int) -> int:
-    """The ceiling in force for THIS run: `env` when it is a positive integer, else `default`.
-    Read when the lane runs, never when it is registered."""
+def _positive(raw: str | None, default: int) -> int:
+    """`raw` when it is a positive integer, else `default`."""
     try:
-        seconds = int(os.environ.get(env) or default)
+        seconds = int(raw or default)
     except ValueError:
         return default
     return seconds if seconds > 0 else default
 
 
+def _ceiling(env: str, default: int) -> int:
+    """The ceiling in force for THIS run: `env` when it is a positive integer, else `default`.
+    Read when the lane runs, never when it is registered."""
+    return _positive(os.environ.get(env), default)
+
+
 def _verify_timeout() -> int:
-    """The per-verifier ceiling in force for THIS run."""
-    return _ceiling(VERIFY_TIMEOUT_ENV, VERIFY_TIMEOUT)
+    """The per-verifier ceiling in force for THIS run. It reads its variable itself, where
+    tools/tests/test_lint_workflow_coverage.py finds the name the CI corpus job must set."""
+    return _positive(os.environ.get(VERIFY_TIMEOUT_ENV), VERIFY_TIMEOUT)
 
 
 def _verify_workers() -> tuple[int, int]:
@@ -1644,15 +1652,18 @@ def _names_serial_only(verifiers: list[str], root: Path, memo: dict) -> bool:
 
 def _pytest_batch_clause(cache, verifiers: int) -> str:
     """The cost clause's batch half: how many pytest verifiers the batch answered, of the
-    `verifiers` it could, and why it answered none. Never a bare `(batched)`, which read the same
-    whether the batch resolved every criterion or timed out and resolved nothing."""
+    `verifiers` it could, and why it answered none: its own reason when it failed, and when it
+    ran, that none of the tests it reported answered one. Never a bare `(batched)`, which read
+    the same whether the batch resolved every criterion or timed out and resolved nothing."""
     rest = verifiers - cache.resolved
     how = ("in one serial run" if "parallel" not in cache.phases else "on xdist workers"
            + (", then its serial_only tests with no worker" if "serial_only" in cache.phases
               else ""))
     what = (f": {cache.reason}, so each ran on its own" if cache.reason else
             f" in {cache.seconds:.0f}s {how}"
-            + (f", the other {rest} on their own" if rest else ""))
+            + ("" if not rest else f", the other {rest} on their own" if cache.resolved else
+               f", but its {len(cache)} reported test(s) answered none of them, so each ran on "
+               f"its own"))
     return (f" (batch resolved {cache.resolved} of {verifiers} pytest verifier(s){what}; "
             f"batch ceiling {cache.batch_ceiling:g}s ({VERIFY_BATCH_TIMEOUT_ENV}, default "
             f"{VERIFY_BATCH_TIMEOUT}s))")
@@ -2953,8 +2964,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "
                         "no report rewrite). One command, one exit code, before you tag. "
                         "Deselecting the `verify` lane under --release is refused. The bare "
-                        "`pytest <node>` verifiers run as one batch, on every core where "
-                        "pytest-xdist is installed, under its own ceiling "
+                        "`pytest <node>` verifiers run as one batch, on every core when the "
+                        "`pytest` on PATH takes pytest-xdist's -n, under its own ceiling "
                         f"({VERIFY_BATCH_TIMEOUT_ENV}, default {VERIFY_BATCH_TIMEOUT}s); each "
                         "criterion is still held to "
                         f"{VERIFY_TIMEOUT_ENV} (default {VERIFY_TIMEOUT}s). Then at most "
