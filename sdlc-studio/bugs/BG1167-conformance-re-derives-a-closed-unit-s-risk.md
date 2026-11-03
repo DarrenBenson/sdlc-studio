@@ -1,6 +1,6 @@
 # BG1167: Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Supersedes:** BG1052
@@ -29,12 +29,16 @@ Judge the depth against the band the tier was derived from at brief time. Record
 
 - [ ] **AC1** A unit approved at the tier its band derived when it was briefed stays conformant after a later commit raises the band of a file it declares.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_a_later_units_edit_to_a_shared_file_does_not_fail_a_light_approve
+  - **Verified:** yes (2026-11-03)
 - [ ] **AC2** A conformance check of an independent APPROVE that fails only on depth names 'a review at the depth this unit's risk band demands', not 'independent APPROVE verdict'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_done_stages_names_the_depth_half_for_a_shallow_independent_approve
+  - **Verified:** yes (2026-11-03)
 - [ ] **AC3** Given a unit whose own Affects widened after its light APPROVE, so its band now derives full, when conformance checks it, then it is non-conformant and names 'a review at the depth this unit's risk band demands'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_conformance.py::TierCoverageTests::test_a_units_own_affects_widening_still_owes_the_deeper_review
+  - **Verified:** yes (2026-11-03)
 - [ ] **AC4** Given that unit, when `critic.py record` writes any verdict on it, then stderr names the under-depth APPROVE and the tier its band now demands.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py::UnderDepthTests::test_record_names_an_under_depth_approve
+  - **Verified:** yes (2026-11-03)
 
 ## Impact
 
@@ -46,3 +50,4 @@ A closed unit's conformance changes when a later unit touches a shared file. The
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
 | 2026-11-02 | Claude Opus 5.5 (grooming) | Re-groomed under D0399: absorbs BG1052 (one decision in one chain, tier_covers to critic.tier_for to route.estimate, wanting opposite answers for another unit's drift and the unit's own widening; fixing BG1167 alone would mask BG1052, LL0052). Merged rule: when a light APPROVE meets a band that now derives full, compare the unit's own Affects at the commit that recorded the verdict (git log -S on the brief fingerprint in critic-verdicts.md) with today's; unchanged covers, widened owes the deeper review; a shallow clone that cannot answer fails toward full. AC3 and AC4 added, points 3 to 5. US1082, US1103 and US1090 should turn conformant if their Affects did not change, so D0397's waiver could then be retired |
+| 2026-11-03 | Claude Opus 5.5 | Fixed at round 2 (qa-seat-BG1167-r1): as built, the rule reads the unit's Affects at the PARENT of the commit that recorded the light APPROVE, and fails toward full in a shallow clone or when that commit has no parent. Three narrow orderings the round-2 review found are filed as BG1185 |

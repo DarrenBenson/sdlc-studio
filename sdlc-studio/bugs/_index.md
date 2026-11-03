@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-03
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 183 |
 | In Progress | 0 |
-| Fixed | 827 |
+| Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1184** |
+| **Total** | **1185** |
 
 ## All Bugs
 
@@ -242,7 +242,7 @@
 | [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Fixed | High | 2026-11-01 | 2026-11-01 |
-| [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1169](BG1169-mutation-py-s-drop-ignored-ignores-git-check.md) | mutation.py's _drop_ignored ignores git check-ignore's exit code, so one path git refuses leaves the rest partly filtered | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1170](BG1170-the-tsd-and-trd-refresh-tests-leave-low.md) | The TSD and TRD refresh tests leave low residual gaps their round-2 and BG1166 reviews named | Open | Low | 2026-11-01 | 2026-11-01 |
@@ -260,6 +260,7 @@
 | [BG1182](BG1182-test-agents-md-full-suite-rule-s-problems.md) | `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops early | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1184](BG1184-bg1176-s-re-pointed-criteria-leave-three-sub.md) | BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1185](BG1185-bg1167-s-rule-reads-a-light-approve-s.md) | BG1167's rule reads a light APPROVE's scope from git history, so three narrow orderings still count a unit whose own Affects widened as covered | Open | Low | 2026-11-03 | 2026-11-03 |
 
 ## Archived Releases
 
