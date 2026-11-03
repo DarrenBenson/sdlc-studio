@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 188 |
+| Open | 189 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1190** |
+| **Total** | **1191** |
 
 ## All Bugs
 
@@ -266,6 +266,7 @@
 | [BG1188](BG1188-one-lane-cap-test-took-695-s-on.md) | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
+| [BG1191](BG1191-the-batch-s-phase-plugin-reads-serial-only.md) | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker | Open | Low | 2026-11-03 | 2026-11-03 |
 
 ## Archived Releases
 

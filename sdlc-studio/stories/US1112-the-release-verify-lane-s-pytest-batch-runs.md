@@ -1,6 +1,6 @@
 # US1112: The release verify lane's pytest batch runs on every core under its own ceiling and states how many criteria it resolved
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0660
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given pytest-xdist is installed and a fixture workspace whose criteria name tests in two files, one carrying `serial_only` tests, when `pytest_batch_cache` runs, then the other tests run on xdist workers, the `serial_only` tests run afterwards in a process with no worker, and every node lands in the one returned cache
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_the_batch_runs_on_xdist_with_serial_only_tests_after
+  - **Verified:** yes (2026-11-03)
 - **AC2:** Given a batch that runs longer than the per-verifier ceiling and shorter than the batch ceiling, when the release verify lane runs, then every batched criterion resolves from the batch and no per-criterion pytest process is spawned for it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_the_batch_is_not_cut_off_at_one_verifiers_ceiling
+  - **Verified:** yes (2026-11-03)
 - **AC3:** Given a batch that times out or resolves nothing, when the lane renders, then its cost clause reads `batch resolved 0 of <n> pytest verifier(s)` with the reason, never the bare `(batched)`, and every criterion still runs on its own and keeps its verdict
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_an_empty_batch_is_named_and_falls_back
+  - **Verified:** yes (2026-11-03)
 - **AC4:** Given a batched node whose recorded duration exceeds the per-verifier ceiling, when the lane resolves it from the batch, then it reads red as a timeout, exactly as its own spawn would, and the batch ceiling's default is named in the lane's detail and in `gate.py --help`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::VerifyLaneBatchTests::test_a_batched_node_over_the_per_verifier_ceiling_reads_red
+  - **Verified:** yes (2026-11-03)
 
 ## Notes
 
