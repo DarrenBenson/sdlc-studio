@@ -14,13 +14,27 @@
 #       The same, but the host runs the commit's own `tools/run-suite.sh <suite>` in place of the
 #       gate (US1078): what tools/run-suite.sh sends when this clone names a host. 0 green, 1 red.
 #
+#   remote-gate.sh push --commit <sha> --release
+#       The same, but the host runs the commit's own `gate.py --release`, the pre-tag gate with its
+#       verify lane (US1114), so the release gate stops occupying this machine. 0 passed, 1 refused,
+#       3 and 4 as above. Only on 0 is <sha>, in full, recorded green here through
+#       `release_cut.py record-green`, which `tag-check` reads; a refusal or a failed connection
+#       leaves sdlc-studio/.local/release-gate-green.json as it was, and 2 also means the green
+#       could not be recorded. Four settings a local `gate.py --release` or its verifiers read
+#       from this shell go with it: SDLC_VERIFY_TIMEOUT, SDLC_VERIFY_BATCH_TIMEOUT and SDLC_VERIFY_WORKERS, each
+#       refused by name before anything connects unless it is a positive integer, and
+#       SDLC_STUDIO_BOUNDARY_SUITE, so a `boundary_only` verifier gets the verdict it gets here.
+#       One unset here is unset there, whatever the host's gate-env.sh sets.
+#       The host's lock holds every other run there for as long as this one runs.
+#
 #   remote-gate.sh doctor
 #       Whether the configured host can judge a push: git on its ssh PATH, Node and npm, and every
 #       Python distribution on this clone's one prerequisite list (`requirements-dev.txt`, read by
 #       tools/gate_prereqs.py) on the interpreter the gate would run. Exit 0 ready, 1 not, 3 when
 #       the host could not be reached. `tools/enable-hooks.sh` runs it when a host is configured.
 #
-#   remote-gate.sh remote --clone <id> --commit <sha> --boundary <b> --run <token>
+#   remote-gate.sh remote --clone <id> --commit <sha> --run <token>
+#                         (--boundary <b> [--suite <s>] | --release [--carry NAME=VALUE]...)
 #       The host side. Never installed on the host: `push` streams it from the PUSHED COMMIT's own
 #       copy of this file, so the host always runs the version being judged.
 #
@@ -46,24 +60,48 @@ DEFAULT_SSH="ssh -o BatchMode=yes -o ServerAliveInterval=60 -o ServerAliveCountM
 TRANSPORT_FAILED=3
 HOST_SETUP_FAILED=4
 SCRIPT_END="__REMOTE_GATE_SCRIPT_END__"
+# The settings of a release gate's environment that travel to the host with it (US1114).
+VERIFY_COUNTS=(SDLC_VERIFY_TIMEOUT SDLC_VERIFY_BATCH_TIMEOUT SDLC_VERIFY_WORKERS)
+BOUNDARY_SWITCHES=(SDLC_STUDIO_BOUNDARY_SUITE)
 
 die() { echo "remote-gate: $1" >&2; exit "${2:-2}"; }
 
+# carried_ok <name> <value>: whether this setting may travel to the host. A count must be a
+# positive integer. A switch may be empty, which a gate reads as unset, and holds only letters,
+# digits, '.', '-' and '_', so it cannot leave the quotes it travels in.
+carried_ok() {
+  case " ${VERIFY_COUNTS[*]} " in *" $1 "*) [[ $2 =~ ^[0-9]+$ && $2 =~ [1-9] ]]; return ;; esac
+  case " ${BOUNDARY_SWITCHES[*]} " in *" $1 "*) [[ $2 =~ ^[A-Za-z0-9._-]*$ ]]; return ;; esac
+  return 1
+}
+
 parse() {
-  commit="" boundary="push" clone="" run="" suite=""
+  commit="" boundary="push" clone="" run="" suite="" release="" named="" carry=()
   while [ $# -gt 0 ]; do
     case "$1" in
       --commit) commit="${2:-}"; shift 2 ;;
-      --boundary) boundary="${2:-}"; shift 2 ;;
+      --boundary) boundary="${2:-}" named=1; shift 2 ;;
       --clone) clone="${2:-}"; shift 2 ;;
       --run) run="${2:-}"; shift 2 ;;
       --suite) suite="${2:-}"; shift 2 ;;
+      --release) release=1; shift ;;
+      --carry) carry+=("${2:-}"); shift 2 ;;
       *) die "unknown argument: $1" ;;
     esac
   done
   case "$boundary" in push|release) ;; *) die "--boundary must be push or release, not '$boundary'" ;; esac
   case "$suite" in ""|scripts|tools|all) ;; *) die "--suite must be scripts, tools or all, not '$suite'" ;; esac
   [[ $commit =~ ^[0-9a-f]{7,64}$ ]] || die "--commit needs a commit id, not '$commit'"
+  if [ -n "$release" ] && [ -n "$suite$named" ]; then
+    die "--release runs gate.py --release, so it takes no --suite or --boundary"
+  fi
+  [ -z "$release" ] && [ "${#carry[@]}" -gt 0 ] && die "--carry goes only with --release"
+  local setting
+  for setting in "${carry[@]}"; do
+    if [[ $setting != *=* ]] || ! carried_ok "${setting%%=*}" "${setting#*=}"; then
+      die "--carry needs NAME=VALUE naming a setting the release gate reads, not '$setting'"
+    fi
+  done
 }
 
 transport_failed() {
@@ -71,6 +109,8 @@ transport_failed() {
   echo "  nothing ran locally in its place. Check that this clone reaches it: ssh $host true" >&2
   if [ -n "$suite" ]; then
     echo "  or run the suite on this machine: SDLC_GATE_LOCAL=1 tools/run-suite.sh $suite" >&2
+  elif [ -n "$release" ]; then
+    echo "  or run the release gate on this machine: python3 .claude/skills/sdlc-studio/scripts/gate.py --release" >&2
   else
     echo "  or run the gate on this machine for one push: SDLC_GATE_LOCAL=1 git push" >&2
   fi
@@ -79,6 +119,21 @@ transport_failed() {
 
 cmd_push() {
   parse "$@"
+  # The release gate's settings, judged before anything connects. One unset here is not sent.
+  [ "${#carry[@]}" -eq 0 ] || die "--carry is the host side's: set the variable in this shell instead"
+  local name
+  if [ -n "$release" ]; then
+    for name in "${VERIFY_COUNTS[@]}" "${BOUNDARY_SWITCHES[@]}"; do
+      [[ -v $name ]] || continue
+      if ! carried_ok "$name" "${!name}"; then
+        case " ${VERIFY_COUNTS[*]} " in
+          *" $name "*) die "$name must be a positive integer, not '${!name}': set a whole number above 0, or unset it for the gate's default" ;;
+          *) die "$name may hold only letters, digits, '.', '-' and '_' to reach the host, not '${!name}'" ;;
+        esac
+      fi
+      carry+=("$name=${!name}")
+    done
+  fi
   host="$(git config --get sdlc.gateHost || true)"
   [ -n "$host" ] || die "no gate host is configured: git config sdlc.gateHost <host>"
   [[ $host == -* ]] && die "sdlc.gateHost may not start with '-': '$host'"
@@ -142,10 +197,14 @@ while os.getppid() == parent:
 ')
   feeder_pid=$!
   trap 'kill "$feeder_pid" ${ssh_pid:+"$ssh_pid"} 2>/dev/null; exit 130' INT TERM HUP
-  local suite_arg=""
-  [ -n "$suite" ] && suite_arg=" --suite '$suite'"
+  local job_args=" --boundary '$boundary'" setting
+  [ -n "$suite" ] && job_args+=" --suite '$suite'"
+  if [ -n "$release" ]; then
+    job_args=" --release"
+    for setting in "${carry[@]}"; do job_args+=" --carry '$setting'"; done
+  fi
   $ssh_cmd -- "$host" \
-    "t=\$(mktemp) || exit 2; while IFS= read -r l; do [ \"\$l\" = $SCRIPT_END ] && break; printf '%s\n' \"\$l\"; done > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --boundary '$boundary' --run '$run'$suite_arg; rc=\$?; rm -f \"\$t\"; exit \$rc" \
+    "t=\$(mktemp) || exit 2; while IFS= read -r l; do [ \"\$l\" = $SCRIPT_END ] && break; printf '%s\n' \"\$l\"; done > \"\$t\"; bash \"\$t\" remote --clone '$id' --commit '$commit' --run '$run'$job_args; rc=\$?; rm -f \"\$t\"; exit \$rc" \
     <&"$feed_fd" 1>&2 &
   ssh_pid=$!
   exec {feed_fd}<&-
@@ -156,10 +215,21 @@ while os.getppid() == parent:
   [ "$rc" -eq 255 ] && transport_failed "the connection failed while it ran"
   local ran="the gate"
   [ -n "$suite" ] && ran="the $suite suite"
+  [ -n "$release" ] && ran="the release gate"
   if [ "$rc" -eq "$HOST_SETUP_FAILED" ]; then
     echo "remote-gate: $host did not run $ran for commit $commit - see the host's output above." >&2
   elif [ "$rc" -ne 0 ] && [ -n "$suite" ]; then
     echo "remote-gate: the $suite suite was red on $host for commit $commit - see the host's output above." >&2
+  elif [ "$rc" -ne 0 ] && [ -n "$release" ]; then
+    echo "remote-gate: $host's release gate refused commit $commit - see the host's output above. No green was recorded." >&2
+    echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --release" >&2
+  elif [ -n "$release" ]; then
+    # Green only here, on the pass the host's exit reports, and for the commit it judged.
+    local top
+    if ! top="$(git rev-parse --show-toplevel)" \
+        || ! python3 "$top/.claude/skills/sdlc-studio/scripts/release_cut.py" --root "$top" record-green --commit "$commit" 1>&2; then
+      die "$host's release gate passed commit $commit, but its green could not be recorded here"
+    fi
   elif [ "$rc" -ne 0 ]; then
     echo "remote-gate: $host refused commit $commit at the $boundary boundary - see the host's output above." >&2
     echo "  re-run it on the host: bash tools/remote-gate.sh push --commit $commit --boundary $boundary" >&2
@@ -240,7 +310,8 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   [ -n "$node_dir" ] && ln -s "$node_dir/node_modules" "$wt/node_modules"
   mkdir -p "$wt/sdlc-studio" && ln -s "$state" "$wt/sdlc-studio/.local"
   cd "$wt" || die "cannot enter $wt"
-  # What runs: the boundary gate, or with --suite the commit's own run-suite.sh (US1078).
+  # What runs: the boundary gate, with --suite the commit's own run-suite.sh (US1078), or with
+  # --release the commit's own release gate (US1114), its output all on the pusher's stderr.
   local what="the $boundary boundary gate" job_log="at $state/boundary-suite-last.log"
   local doing="judging $commit at --boundary $boundary"
   local -a job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --boundary "$boundary")
@@ -249,6 +320,9 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
     doing="running the $suite suite on $commit"
     job=(bash tools/run-suite.sh "$suite")
     export SDLC_GATE_LOCAL=1          # the suite runs HERE: never sent on to a host of its own
+  elif [ -n "$release" ]; then
+    what="the release gate" job_log="" doing="judging $commit with gate.py --release"
+    job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --release)
   fi
   echo "remote gate: $here $doing with $(python3 --version 2>&1), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
 
@@ -266,8 +340,18 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   # process it starts inherits that, so a suite test that interrupts a hook it runs could not; the
   # gate is execed with both back at their defaults. SIGPIPE and SIGXFSZ go back too: the Python
   # that execs the gate ignores both at its own start, and an ignored signal survives exec.
+  # A boundary gate or a suite runs its `boundary_only` tests. The release gate instead gets the
+  # four carried settings as the pusher has them, set or unset, so it reads them as a local
+  # `gate.py --release` there would.
+  if [ -n "$release" ]; then
+    unset "${VERIFY_COUNTS[@]}" "${BOUNDARY_SWITCHES[@]}"
+    local setting
+    for setting in "${carry[@]}"; do export "${setting?}"; done
+  else
+    export SDLC_STUDIO_BOUNDARY_SUITE=1
+  fi
   local t0=$SECONDS rc
-  SDLC_STUDIO_BOUNDARY_SUITE=1 setsid python3 -c 'import os, signal, sys
+  setsid python3 -c 'import os, signal, sys
 for sig in (signal.SIGINT, signal.SIGQUIT, signal.SIGPIPE, signal.SIGXFSZ):
     signal.signal(sig, signal.SIG_DFL)
 os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
@@ -276,10 +360,11 @@ os.execvp(sys.argv[1], sys.argv[1:])' "${job[@]}" &
   rc=$?
   gate_pid=""
   echo "remote gate: exit $rc after $((SECONDS - t0))s"
-  [ "$rc" -ne 0 ] && echo "remote gate: the full log is on $here $job_log"
-  # A suite run is green or red and nothing else: its own exit 4 (pytest's usage error) must not
-  # reach the pusher as 4, which there means this host's setup refused before anything ran.
-  [ -n "$suite" ] && [ "$rc" -ne 0 ] && rc=1
+  [ "$rc" -ne 0 ] && [ -n "$job_log" ] && echo "remote gate: the full log is on $here $job_log"
+  # A suite run or a release gate is green or red and nothing else: its own exit 4 (pytest's
+  # usage error) must not reach the pusher as 4, which there means this host's setup refused
+  # before anything ran, nor its 255 as a dropped connection.
+  [ -n "$suite$release" ] && [ "$rc" -ne 0 ] && rc=1
   exit "$rc"
 }
 
@@ -364,5 +449,5 @@ case "${1:-}" in
   doctor) shift; cmd_doctor "$@" ;;
   host-doctor) shift; cmd_host_doctor "$@" ;;
   remote) shift; cmd_remote "$@" ;;
-  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release | --suite scripts|tools|all] | doctor" >&2; exit 2 ;;
+  *) echo "usage: remote-gate.sh push --commit <sha> [--boundary push|release | --suite scripts|tools|all | --release] | doctor" >&2; exit 2 ;;
 esac
