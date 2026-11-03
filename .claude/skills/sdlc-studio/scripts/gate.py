@@ -1566,17 +1566,47 @@ VERIFY_TIMEOUT = 300
 #: timeout from a regression, so a runner that needs longer says so here rather than banking
 #: the difference into a baseline.
 VERIFY_TIMEOUT_ENV = "SDLC_VERIFY_TIMEOUT"
+#: The pytest batch's own ceiling in seconds, every phase of the release lane's one batch run
+#: together. Held apart from the per-verifier ceiling because the batch runs every verifier
+#: file: under the per-verifier 300 s the serial batch timed out and resolved nothing (measured
+#: 2026-11-02), and each criterion paid its own cold start. A criterion the batch timed at longer
+#: than the per-verifier ceiling still reads red, so raising this one does not raise that one.
+#: Set above the 2,261 s and 2,966 s the parallel batch took on an 8-core machine at load 2 to
+#: 26 (2026-11-03), and below the 4,447 s the whole 6.2.0 lane took.
+VERIFY_BATCH_TIMEOUT = 3600
+VERIFY_BATCH_TIMEOUT_ENV = "SDLC_VERIFY_BATCH_TIMEOUT"
 _MAX_NAMED = 10       # failing ACs listed by name before the detail is elided
 
 
-def _verify_timeout() -> int:
-    """The per-verifier ceiling in force for THIS run: the override when it is a positive
-    integer, else the default. Read when the lane runs, never when it is registered."""
+def _ceiling(env: str, default: int) -> int:
+    """The ceiling in force for THIS run: `env` when it is a positive integer, else `default`.
+    Read when the lane runs, never when it is registered."""
     try:
-        seconds = int(os.environ.get(VERIFY_TIMEOUT_ENV) or VERIFY_TIMEOUT)
+        seconds = int(os.environ.get(env) or default)
     except ValueError:
-        return VERIFY_TIMEOUT
-    return seconds if seconds > 0 else VERIFY_TIMEOUT
+        return default
+    return seconds if seconds > 0 else default
+
+
+def _verify_timeout() -> int:
+    """The per-verifier ceiling in force for THIS run."""
+    return _ceiling(VERIFY_TIMEOUT_ENV, VERIFY_TIMEOUT)
+
+
+def _pytest_batch_clause(cache, verifiers: int) -> str:
+    """The cost clause's batch half: how many pytest verifiers the batch answered, of the
+    `verifiers` it could, and why it answered none. Never a bare `(batched)`, which read the same
+    whether the batch resolved every criterion or timed out and resolved nothing."""
+    rest = verifiers - cache.resolved
+    how = ("in one serial run" if "parallel" not in cache.phases else "on xdist workers"
+           + (", then its serial_only tests with no worker" if "serial_only" in cache.phases
+              else ""))
+    what = (f": {cache.reason}, so each ran on its own" if cache.reason else
+            f" in {cache.seconds:.0f}s {how}"
+            + (f", the other {rest} on their own" if rest else ""))
+    return (f" (batch resolved {cache.resolved} of {verifiers} pytest verifier(s){what}; "
+            f"batch ceiling {cache.batch_ceiling:g}s ({VERIFY_BATCH_TIMEOUT_ENV}, default "
+            f"{VERIFY_BATCH_TIMEOUT}s))")
 
 
 def _elide(names: list[str]) -> str:
@@ -1661,8 +1691,11 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
                   f"lane does not walk, so this pass says nothing about them."
                   if skipped else "")
     started = time.time()
-    # One ceiling for every verifier this run executes - the batch runs and each per-criterion
-    # fallback alike - so a criterion cannot pass in the batch and time out on its own spawn.
+    # One ceiling for every verifier this run executes: a per-criterion spawn is killed at it,
+    # and a criterion the pytest batch timed at longer reads red as that timeout. The batch's
+    # JUnit time leaves out the start-up and collection a spawn also pays, so a criterion a few
+    # seconds under the ceiling there can still time out alone. The pytest batch itself, every
+    # verifier file at once, runs under its own ceiling; jest's batch still runs under this one.
     if timeout is None:
         timeout = _verify_timeout()
     jest_cache = verify_ac.jest_batch_cache(rr, timeout) if batch else None
@@ -1672,8 +1705,11 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
     # One scoped run replaces them. The cache is empty on any failure, and an absent node is
     # never resolved from it, so a verifier always falls back to its own authoritative
     # subprocess rather than being reported green by a batch that ran nothing.
+    pytest_targets = verify_ac.pytest_batch_targets(stories) if batch else []
     pytest_cache = (verify_ac.pytest_batch_cache(
-        rr, timeout, verify_ac.pytest_verifier_files(stories)) if batch else None)
+        rr, timeout, pytest_targets,
+        batch_timeout=_ceiling(VERIFY_BATCH_TIMEOUT_ENV, VERIFY_BATCH_TIMEOUT))
+        if batch else None)
     pytest_collected = (verify_ac.pytest_batch_collected(pytest_cache)
                         if pytest_cache else None)
     red: list[str] = []
@@ -1724,8 +1760,9 @@ def _verify_acs(root: str, timeout: int | None = None, allow_external: bool = Fa
     # State the cost and the scope. A `--release` run that got fast by judging less
     # is the exact defect `--release` exists to catch, so a reader must be able to tell the two
     # apart without rerunning it.
-    cost = (f"{len(stories)} story/stories, {executable} executable AC(s) in {elapsed}s"
-            f"{' (batched)' if batch else ' (per-AC subprocess)'}"
+    how = (_pytest_batch_clause(pytest_cache, len(pytest_targets)) if batch
+           else " (per-AC subprocess)")
+    cost = (f"{len(stories)} story/stories, {executable} executable AC(s) in {elapsed}s{how}"
             f"{f' - OVER the {VERIFY_LANE_BUDGET_S}s declared budget' if elapsed > VERIFY_LANE_BUDGET_S else ''}")
     parts = []
     if unspecified:
@@ -2822,7 +2859,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Pre-tag gate: also EXECUTE every story's Verify: expression and fail "
                         "on any red or unproven AC (read-only - no Verified: back-annotation, "
                         "no report rewrite). One command, one exit code, before you tag. "
-                        "Deselecting the `verify` lane under --release is refused")
+                        "Deselecting the `verify` lane under --release is refused. The bare "
+                        "`pytest <node>` verifiers run as one batch, on every core where "
+                        "pytest-xdist is installed, under its own ceiling "
+                        f"({VERIFY_BATCH_TIMEOUT_ENV}, default {VERIFY_BATCH_TIMEOUT}s); each "
+                        "criterion is still held to "
+                        f"{VERIFY_TIMEOUT_ENV} (default {VERIFY_TIMEOUT}s)")
     p.add_argument("--allow-external", dest="allow_external", action="store_true",
                    help="--release: run shell-backed verifiers on stories stamped "
                         "`Provenance: external` too (off by default - the trust boundary; "
