@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 203 |
+| Open | 204 |
 | In Progress | 0 |
 | Fixed | 842 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1219** |
+| **Total** | **1220** |
 
 ## All Bugs
 
@@ -286,7 +286,7 @@
 | [BG1208](BG1208-bg1122-s-meter-memo-leaves-the-unfinished-line.md) | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1209](BG1209-the-pre-commit-hook-s-payload-markdown-lane.md) | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Fixed | Medium | 2026-11-04 | 2026-11-04 |
-| [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator ('X is not None : msg') when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator (the spaced colon after an assertion's operands) when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
@@ -295,6 +295,7 @@
 | [BG1217](BG1217-gate-py-run-tests-still-reads-green-when.md) | gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1218](BG1218-a-critic-brief-spends-most-of-its-5.md) | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1219](BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md) | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Open | Medium | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
