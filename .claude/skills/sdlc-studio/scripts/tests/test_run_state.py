@@ -36,7 +36,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 # gitutil is the TESTS' confined-git helper, so it sits beside this module, not in scripts/.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
-from lib import run_state  # noqa: E402
+from lib import run_state, token_meters  # noqa: E402
+
+#: The process environment with no harness named or signalled, for the whole module: every
+#: fixture here that reads the meter means Claude's transcript, and the harness running the suite
+#: (Cursor, Copilot, OpenCode) must not choose another reader for it (US0986).
+_NO_HARNESS = mock.patch.dict(os.environ)
+
+
+def setUpModule() -> None:
+    _NO_HARNESS.start()
+    for name in token_meters.selection_variables():
+        os.environ.pop(name, None)
+
+
+def tearDownModule() -> None:
+    _NO_HARNESS.stop()
 
 
 class TokenBaselineTests(unittest.TestCase):

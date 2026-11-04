@@ -128,6 +128,17 @@ def _refusal(why: str, candidates: list[str], named: dict) -> dict:
         f"{HARNESS_ENV} to the harness running this session")}
 
 
+def selection_variables() -> list[str]:
+    """Every environment variable that signals or names a harness: `HARNESS_ENV`, each harness's
+    `SIGNALS`, and the further signals each installed reader module names. A test that must not
+    inherit the harness running it clears these."""
+    readers = _Readers(None)
+    names = [HARNESS_ENV]
+    for h in HARNESSES:
+        names += _signals(h, readers.get(h) if h != CLAUDE else None)
+    return list(dict.fromkeys(names))
+
+
 def select(repo_root: Path | str, claude, env: Mapping | None = None) -> dict:
     """The harness to read, `{"harness", "selected_by"}`, or `{"harness": None, "candidates",
     "reason"}` when none can be chosen. The order is this module's docstring's."""

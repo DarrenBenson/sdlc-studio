@@ -44,8 +44,7 @@ import retro  # noqa: E402
 
 #: Every variable the selection reads, scrubbed from each test's environment so the harness the
 #: suite itself runs under never chooses for it.
-SCRUB = (token_meters.HARNESS_ENV, "STUB_CURSOR_RUN_ID", run_state.TRANSCRIPTS_ENV,
-         *(v for vs in token_meters.SIGNALS.values() for v in vs))
+SCRUB = ("STUB_CURSOR_RUN_ID", run_state.TRANSCRIPTS_ENV, *token_meters.selection_variables())
 #: Two messages: tokens 1,000 + 200 + 3,000 + 500 + 100 = 4,800, and 57,000 cache reads beside.
 USAGES = ({"input_tokens": 1_000, "output_tokens": 200, "cache_creation_input_tokens": 3_000,
            "cache_read_input_tokens": 50_000},
@@ -201,6 +200,11 @@ class HarnessSelectionTests(_Fixture):
         """AC3. Mutants: a fixed precedence picking the first signalled or first stored
         harness, a store on disk outranking a signal, or the two readings added."""
         cursor = stub(cursor_reading(), signals=("STUB_CURSOR_RUN_ID",))
+        with installed(cursor=cursor):
+            named = token_meters.selection_variables()
+        self.assertEqual(named[:2], [token_meters.HARNESS_ENV, "CLAUDECODE"])
+        for v in ("CURSOR_AGENT", "STUB_CURSOR_RUN_ID", "COPILOT_HOME", "OPENCODE", "OPENCODE_DB"):
+            self.assertIn(v, named, "a test's scrub must clear every selection variable")
         for values in ({"CURSOR_AGENT": "1"}, {"STUB_CURSOR_RUN_ID": "bc-1"}):
             with self.subTest(signal=values), installed(cursor=cursor), self.env(**values), \
                     self.claude_spy() as spy:
@@ -257,8 +261,9 @@ class HarnessSelectionTests(_Fixture):
         self.assertIn("could not be probed (OSError)", got["reason"])
 
     def test_readings_and_stamps_name_the_harness(self) -> None:
-        """AC4. Mutants: a stamp without its harness, cache reads folded into `tokens`, or a
-        run total pairing readings by source alone."""
+        """AC4. Mutants: a stamp without its harness, cache reads folded into `tokens`, a run
+        total pairing readings by source alone, or a legacy baseline folded into another
+        harness's session of the same source."""
         with self.env(SDLC_STUDIO_HARNESS="claude"):
             got = run_state.session_tokens(self.root)
             run_state.open_run(self.root, batch=["BG0001"], goal="g")
@@ -291,6 +296,16 @@ class HarnessSelectionTests(_Fixture):
                                            at(2, tokens=500, kind="report", harness="claude")]}
         self.assertEqual(run_state.run_token_total(legacy)["tokens"], 400,
                          "a stamp naming no harness is Claude's, and pairs with Claude's")
+        # The legacy baseline folds only into its own harness's session of the same source.
+        for named in ({"harness": "claude"}, {}):
+            folded = {run_state.TOKEN_BASELINE: at(1, tokens=100, **named),
+                      run_state.TOKEN_STAMPS: [at(2, tokens=500, kind="report",
+                                                  harness="cursor")]}
+            self.assertIsNone(run_state.run_token_total(folded)["tokens"],
+                              f"a Claude legacy baseline {named} folded into a Cursor session")
+        folded[run_state.TOKEN_STAMPS][0]["harness"] = "claude"
+        self.assertEqual(run_state.run_token_total(folded)["tokens"], 400,
+                         "a Claude legacy baseline folds into Claude's session of its source")
         base = {run_state.TOKEN_BASELINE: at(1, tokens=100, harness="claude")}
         self.assertIsNone(run_state.run_token_total(
             base, current=at(2, tokens=500, harness="cursor"))["tokens"])
