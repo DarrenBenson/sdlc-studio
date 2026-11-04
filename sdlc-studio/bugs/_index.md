@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 205 |
 | In Progress | 0 |
-| Fixed | 842 |
+| Fixed | 843 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1221** |
+| **Total** | **1222** |
 
 ## All Bugs
 
@@ -296,7 +296,8 @@
 | [BG1218](BG1218-a-critic-brief-spends-most-of-its-5.md) | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1219](BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md) | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Open | Medium | 2026-11-04 | 2026-11-04 |
-| [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Fixed | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

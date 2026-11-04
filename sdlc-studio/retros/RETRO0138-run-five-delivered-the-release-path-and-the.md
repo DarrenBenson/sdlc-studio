@@ -120,3 +120,4 @@ Forecast by `TOKENS_PER_POINT=186252`, recorded at plan time. OUT-OF-SAMPLE: for
 
 Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
 <!-- accuracy:end -->
+| BG1222 | not-stop-ship | Claude Opus 5.5 (orchestrator, D0404) | 2026-11-04 |

@@ -1,6 +1,6 @@
 # BG1221: BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1221.md
@@ -26,6 +26,7 @@ Build the fixture list from its stems so the test names no three script literals
 
 - [ ] **AC1** The hand-copied-list census passes, and StampsCollectSideBySideTests still passes.
   - **Verify:** pytest tools/tests/test_test_census.py::HandCopiedMirrorTests .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampsCollectSideBySideTests
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 
