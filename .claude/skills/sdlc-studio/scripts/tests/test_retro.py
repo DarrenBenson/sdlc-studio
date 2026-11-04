@@ -1952,6 +1952,105 @@ class TheCaptureMeasuresTheMainThreadAndSaysSo(InteractiveSprintFixture):
         self.assertIn("cache reads excluded", cap["basis"])
 
 
+class HarnessBasisTests(InteractiveSprintFixture):
+    """US0991: the close states each reading's own basis, and adds a supplied delegated total
+    only when the run's readings leave delegated agents' spend out.
+
+    The other harness is an opencode reader stubbed in `sys.modules`, chosen by
+    `SDLC_STUDIO_HARNESS`; the run is opened and stamped through `open_run` and
+    `stamp_tokens`, so the stamps carry what the shipped path writes, not what a test says."""
+
+    BASIS = "opencode session usage: input + output + cache write"
+    SUPPLIED = 300_000   # 250,000 for a builder and 50,000 for a reviewer
+
+    def _opencode(self, includes: bool, basis: str = BASIS, supplied: bool = True) -> dict:
+        """An opencode run that read 100,000 at its open and 600,000 at its report stamp."""
+        import types
+        reading = {"tokens": 100_000, "cache_read": 0, "source": "opencode session ses-1",
+                   "basis": basis, "includes_subagents": includes, "model": "m"}
+        mod = types.ModuleType("stub_meter")
+        mod.read = lambda root, env: dict(reading)
+        for patch in (mock.patch.dict(sys.modules, {"lib.meter_opencode": mod}),
+                      mock.patch.dict(os.environ, {"SDLC_STUDIO_HARNESS": "opencode"})):
+            patch.start()
+            self.addCleanup(patch.stop)
+        self._open_run()
+        reading["tokens"] = 600_000
+        run_state.stamp_tokens(str(self.root), "report")
+        if supplied:
+            run_state.record_delegated_tokens(str(self.root), 250_000, agent="builder")
+            run_state.record_delegated_tokens(str(self.root), 50_000, agent="reviewer")
+        return retro.run_attributed_tokens(str(self.root), "RETRO9002")
+
+    def test_delegated_not_added_when_the_reading_includes_subagents(self) -> None:
+        """AC1. MUTANTS: add the supplied totals unconditionally (800,000, each agent twice);
+        stamp another harness's reading without its subagents flag, so the run's stamps cannot
+        say the reading held them (the same 800,000); a basis that drops the reason."""
+        cap = self._opencode(includes=True)
+        state = run_state.read(str(self.root))
+        self.assertEqual([s.get("subagents") for s in state[run_state.TOKEN_STAMPS]],
+                         [True, True], "the stamps carry the reader's own flag")
+        self.assertEqual(cap["tokens"], 500_000, "a supplied total was added to a reading that "
+                                                  "already holds delegated agents' spend")
+        self.assertEqual((cap["measured_tokens"], cap["delegated_tokens"]), (500_000, 0))
+        self.assertEqual(cap["delegated_records"], 2)
+        self.assertFalse(cap["lower_bound"])
+        basis = cap["basis"]
+        self.assertIn("opencode reading already holds delegated agents' spend", basis)
+        self.assertIn("the 2 delegated total(s) supplied are not added", basis)
+        self.assertIn("count that spend twice", basis)
+        self.assertIn(self.BASIS, basis, "the reader's own basis is not quoted")
+        self.assertNotIn("main thread", basis.lower().replace("-", " "))
+
+    def test_delegated_still_added_for_a_main_thread_reading(self) -> None:
+        """AC2. MUTANTS: drop the delegated path for every harness (500,000 or 400,000 with
+        nothing supplied added); decide "already in it" by the harness not being Claude rather
+        than by the reading's flag. A Claude reading of the main thread alone and an opencode
+        reading that leaves delegated spend out both add the totals and stay lower bounds."""
+        with mock.patch.dict(os.environ, {"SDLC_STUDIO_HARNESS": "claude"}):
+            self._session("s1.jsonl", {"input_tokens": 60_000})
+            self._open_run()
+            self._append("s1.jsonl", {"input_tokens": 400_000})
+            run_state.stamp_tokens(str(self.root), "report", self.transcripts)
+            run_state.record_delegated_tokens(str(self.root), 250_000, agent="builder")
+            run_state.record_delegated_tokens(str(self.root), 50_000, agent="reviewer")
+            cap = retro.run_attributed_tokens(str(self.root), "RETRO9002",
+                                              transcripts_dir=self.transcripts)
+        self.assertEqual(cap["tokens"], 700_000)
+        self.assertEqual((cap["measured_tokens"], cap["delegated_tokens"]), (400_000, 300_000))
+        self.assertTrue(cap["lower_bound"])
+        # The Claude sentence as it read before US0991, word for word.
+        rid = run_state.read(str(self.root))["run_id"]
+        self.assertEqual(cap["basis"], (
+            f"{rid} cost AT LEAST 700,000: 400,000 MEASURED on the main thread (the "
+            f"current-session total 460,000 less the 60,000 on the meter when the run opened "
+            f"(input + output + cache creation; cache reads excluded)), plus 300,000 SUPPLIED "
+            f"by 2 delegated agent(s), which is a figure they reported rather than one measured "
+            f"here. a LOWER BOUND, not the run's cost: the meter read the main thread's "
+            f"transcript and no subagent's, so any delegated work no one supplied a total for "
+            f"is missing from it"))
+        self.setUp()
+        other = self._opencode(includes=False)
+        self.assertEqual(other["tokens"], 500_000 + self.SUPPLIED)
+        self.assertEqual(other["delegated_tokens"], self.SUPPLIED)
+        self.assertTrue(other["lower_bound"])
+        self.assertIn("MEASURED by the opencode reader", other["basis"])
+        self.assertIn("the opencode reading leaves delegated agents' spend out", other["basis"])
+
+    def test_the_basis_says_main_thread_only_where_the_reader_does(self) -> None:
+        """AC3, at the close. MUTANT: keep the Claude transcript's "MAIN-THREAD spend" and "the
+        meter read the main thread's transcript" for every harness. The control: a reader whose
+        own basis says main thread is quoted saying it."""
+        cap = self._opencode(includes=False, supplied=False)
+        self.assertIn("as the opencode reader measured it", cap["basis"])
+        self.assertIn(self.BASIS, cap["basis"])
+        self.assertNotIn("main thread", cap["basis"].lower().replace("-", " "))
+        self.setUp()
+        said = "opencode usage, main thread only"
+        cap = self._opencode(includes=False, basis=said, supplied=False)
+        self.assertIn(said, cap["basis"], "the reader's basis is not quoted as it was given")
+
+
 class TheVelocityRecordReportsItsOwnGaps(InteractiveSprintFixture):
     """US0289 (CR0284): 65 retros on disk, 18 rows in the record, and nothing detected the
     difference. `velocity_history` reads the rows that exist and `cmd_velocity` prints them, so a

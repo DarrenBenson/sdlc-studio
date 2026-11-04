@@ -2018,7 +2018,10 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     only its legacy baseline, that baseline with this reading as its close, the inputs the
     report passes it for one): over a run whose stamps say their readings hold the subagent
     transcripts it is not added, and over one whose stamps carry no such flag it is, so the
-    retro and the report add the same totals. Same shape as `harness_tokens`: {"tokens",
+    retro and the report add the same totals. A harness other than Claude answers through the
+    flag its own reader gave, stamped with each reading, and the basis then names that harness
+    and quotes its reader's basis in place of the Claude transcript's wording, which is
+    unchanged. Same shape as `harness_tokens`: {"tokens",
     "source", "basis"} or {"tokens": None, "reason"}.
 
     `retro_id` is REQUIRED, and the units are read from that retro, because the delta is only
@@ -2128,17 +2131,34 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
     delegated = run_state.delegated_records(state)
     supplied = 0 if whole else run_state.delegated_total(state)
     total = delta + supplied
-    meter = (f"the current-session total {cap['tokens']:,} less the {baseline:,} on the meter "
-             f"when the run opened " + (
-                 "(input + output + cache write, once per message, over the main thread and "
-                 "its subagent transcripts)" if reads_agents else
-                 "(input + output + cache creation; cache reads excluded)") + rebased)
-    bound = (f"a LOWER BOUND, not the run's cost: the meter read the main thread's transcript "
-             f"and no subagent's, so any delegated work no one supplied a total for is missing "
-             f"from it")
+    # The sentences below are the Claude transcript's, kept word for word. Another harness's
+    # reading is stated in its reader's own words, and "main thread" appears only where they
+    # say it.
+    harness = run_state.harness_of(cap)
+    claude = harness == run_state.CLAUDE
+    if claude:
+        meter = (f"the current-session total {cap['tokens']:,} less the {baseline:,} on the "
+                 f"meter when the run opened " + (
+                     "(input + output + cache write, once per message, over the main thread "
+                     "and its subagent transcripts)" if reads_agents else
+                     "(input + output + cache creation; cache reads excluded)") + rebased)
+        bound = (f"a LOWER BOUND, not the run's cost: the meter read the main thread's "
+                 f"transcript and no subagent's, so any delegated work no one supplied a total "
+                 f"for is missing from it")
+        held, measured = "The subagents are already in the reading", "on the main thread"
+        spend = "its MAIN-THREAD spend"
+    else:
+        meter = (f"the {harness} reading {cap['tokens']:,} less the {baseline:,} it read when "
+                 f"the run opened, on its reader's own basis: {cap.get('basis')}" + rebased)
+        bound = (f"a LOWER BOUND, not the run's cost: the {harness} reading leaves delegated "
+                 f"agents' spend out, so any delegated work no one supplied a total for is "
+                 f"missing from it")
+        held = f"The {harness} reading already holds delegated agents' spend"
+        measured, spend = f"by the {harness} reader", f"as the {harness} reader measured it"
     if whole:
-        basis = (f"{rid} cost {total:,}: {meter}. The subagents are already in the reading"
+        basis = (f"{rid} cost {total:,}: {meter}. {held}"
                  + (f", so the {len(delegated)} delegated total(s) supplied are not added"
+                    + ("" if claude else ": adding them would count that spend twice")
                     if delegated else ""))
     elif reads_agents:
         # This reading holds the subagent transcripts and the run's stamps do not say theirs
@@ -2147,18 +2167,19 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
         basis = (f"{rid} cost {total:,}: {meter}"
                  + (f", plus {supplied:,} SUPPLIED by {len(delegated)} delegated agent(s)"
                     if supplied else "")
-                 + ". This reading holds the subagent transcripts, but the run's meter stamps "
-                   "do not say theirs did, so "
+                 + (". This reading holds the subagent transcripts" if claude else
+                    f". The {harness} reading holds delegated agents' spend")
+                 + ", but the run's meter stamps do not say theirs did, so "
                  + ("the delegated totals supplied are added, as the sprint report adds them, "
                     "and an agent that ran as a subagent of this session is counted in both"
                     if supplied else "no delegated total was supplied to add"))
     elif supplied:
-        basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED on the main thread "
+        basis = (f"{rid} cost AT LEAST {total:,}: {delta:,} MEASURED {measured} "
                  f"({meter}), plus {supplied:,} SUPPLIED by {len(delegated)} delegated "
                  f"agent(s), which is a figure they reported rather than one measured here. "
                  f"{bound}")
     else:
-        basis = (f"{rid} cost AT LEAST {delta:,}, its MAIN-THREAD spend: {meter}. No delegated "
+        basis = (f"{rid} cost AT LEAST {delta:,}, {spend}: {meter}. No delegated "
                  f"total was supplied, and {bound}. Record one with "
                  f"`accuracy --delegated-tokens N --delegated-agent NAME`")
     return {"tokens": total, "measured_tokens": delta, "delegated_tokens": supplied,

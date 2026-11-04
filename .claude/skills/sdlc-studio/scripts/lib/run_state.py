@@ -1133,6 +1133,16 @@ def _priced_fields(cap: dict) -> dict:
             "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS}
 
 
+def _reach_fields(cap: dict) -> dict:
+    """What a stamp carries of a reading another harness than Claude took: whether delegated
+    agents' spend is in it, and the sentence its reader gave for what it counted, so a total
+    formed from the stamps later states that reader's basis rather than Claude's. Nothing from a
+    Claude reading, whose stamp says it through `_priced_fields` and reads as it always did."""
+    if harness_of(cap) == CLAUDE:
+        return {}
+    return {"subagents": bool(cap.get("includes_subagents")), "basis": cap.get("basis")}
+
+
 def rederive(source: str, ats: list) -> dict:
     """`{at: row}`: the reading of the transcript `source`, and of its subagents, up to each of
     `ats`, under `METER_BASIS` - one pass over the files for every time asked.
@@ -1236,7 +1246,7 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
             "at": sdlc_md.now_iso8601(), HARNESS: cap.get(HARNESS),
-            CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap)}
+            CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap), **_reach_fields(cap)}
 
 
 def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None = None):
@@ -1253,7 +1263,8 @@ def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None 
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
             "at": sdlc_md.now_iso8601(), "kind": kind, "model": cap.get("model"),
-            HARNESS: cap.get(HARNESS), CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap)}
+            HARNESS: cap.get(HARNESS), CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap),
+            **_reach_fields(cap)}
 
 
 def stamp_tokens(repo_root: Path | str, kind: str,
@@ -1283,7 +1294,8 @@ def stamp_tokens(repo_root: Path | str, kind: str,
 #: What a run token total is, said once so every caller inherits the sentence. A reading of the
 #: main thread alone, which every reading before subagent transcripts were read was, and a
 #: session that wrote to the run without a closing stamp contributes nothing, so that figure can
-#: only ever be a floor.
+#: only ever be a floor. Both sentences are the Claude transcript's: a total another harness
+#: metered states its own reader's basis instead (`_total_basis`).
 TOKEN_TOTAL_BASIS = ("the sum of the per-session meter deltas - a LOWER BOUND: the transcript "
                      "records main-thread usage only, and a session with no closing stamp "
                      "contributes nothing")
@@ -1362,8 +1374,42 @@ def _opening(row: dict, opening: set) -> bool:
     return row.get("kind") in (OPEN_STAMP, TOKEN_BASELINE)
 
 
-def _total_basis(includes: bool, rebased: int) -> str:
-    text = TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
+def _meters(spans: list[list[dict]]) -> list[dict]:
+    """Each covered session's `harness`, its reader's own `basis` and whether delegated agents'
+    spend is in it (`includes_subagents`), read off its closing reading, once per distinct
+    answer; [] over a run Claude alone metered, whose basis `TOKEN_TOTAL_BASIS` and its sibling
+    state as they always did. A Claude session in a run another harness also metered is named
+    by its transcript's reach, since its stamps carry no sentence of their own."""
+    if all(harness_of(rows[0]) == CLAUDE for rows in spans):
+        return []
+    out: list[dict] = []
+    for rows in spans:
+        close = max(rows, key=lambda r: r["tokens"])
+        sub = bool(close.get("subagents"))
+        basis = (close.get("basis") if harness_of(rows[0]) != CLAUDE else
+                 "Claude transcript usage, " + ("the main thread and every subagent transcript"
+                                                if sub else "the main thread only"))
+        got = {HARNESS: harness_of(rows[0]), "includes_subagents": sub,
+               "basis": basis if isinstance(basis, str) and basis.strip()
+               else "its reader's basis was not recorded with the reading"}
+        if got not in out:
+            out.append(got)
+    return out
+
+
+def _total_basis(includes: bool, rebased: int, meters: list[dict] | None = None) -> str:
+    """The total's basis sentence: Claude's two as they always read, or, over a run another
+    harness metered (`meters`), each reader named with its own basis, and a LOWER BOUND only
+    when a reading leaves delegated agents' spend out."""
+    if meters:
+        read = "; ".join(f"{m[HARNESS]}: {m['basis']}" for m in meters)
+        text = (f"the sum of the per-session meter deltas, each as its harness's reader counted "
+                f"it ({read})" + ("; delegated agents' spend is in every reading" if includes
+                                  else " - a LOWER BOUND: delegated agents' spend is not in "
+                                       "every reading")
+                + "; a session with no closing stamp contributes nothing")
+    else:
+        text = TOKEN_TOTAL_BASIS_SUBAGENTS if includes else TOKEN_TOTAL_BASIS
     note = rebased_note({"rebased": rebased})
     return f"{text}; {note}" if note else text
 
@@ -1378,12 +1424,16 @@ def run_token_total(state: dict, current: dict | None = None,
     """What the run spent, from its stamps: the SUM of the per-session deltas.
 
     `{"tokens", "priced", "components", "priced_reason", "includes_subagents", "rebased",
-    "sessions", "session_count", "uncovered", "model", "shape", "basis", "reason"}`. `tokens` is None only
+    "sessions", "session_count", "uncovered", "model", "shape", "basis", "reason"}`, and over a
+    measured total `meters` (`_meters`), which is [] unless a harness other than Claude read a
+    covered session. `tokens` is None only
     when no reading can be had at all, and the `reason` then says why - it is never 0, because a
     run whose meter could not be read did not cost nothing. `priced` and `components` are the
     priced delta and each component's delta (`_priced_delta`); `includes_subagents` says every
     covered session closed on a reading that holds its subagents' spend, so a delegated total
-    supplied for them is already in it.
+    supplied for them is already in it. A run Claude alone metered answers by the priced rule
+    (`_priced_delta`); a run another harness metered answers by each session's closing reading's
+    `subagents` flag, which that harness's reader gave (`_reach_fields`).
 
     Each term is `last - first` WITHIN one transcript, so every subtraction is of two readings
     of the same meter, and on ONE counting basis (`_one_basis`). That is the rule
@@ -1469,11 +1519,16 @@ def run_token_total(state: dict, current: dict | None = None,
                     "includes_subagents": False, "rebased": 0, "sessions": [],
                     "session_count": 0, "uncovered": sorted(uncovered), "shape": shape,
                     "model": model, "basis": TOKEN_TOTAL_BASIS, "reason": why}
-        priced = _priced_delta(spans)
-        return {"tokens": total, **priced, "rebased": rebased, "sessions": sorted(covered),
+        priced, meters = _priced_delta(spans), _meters(spans)
+        # Another harness's reader says itself whether delegated agents' spend is in its
+        # reading, and its stamps carry that answer: it is read from them, not from the priced
+        # components, which a stamp carries only from a reading on `METER_BASIS`.
+        includes = (all(m["includes_subagents"] for m in meters) if meters
+                    else priced["includes_subagents"])
+        return {"tokens": total, **priced, "includes_subagents": includes, "meters": meters,
+                "rebased": rebased, "sessions": sorted(covered),
                 "session_count": len(covered), "uncovered": sorted(uncovered), "shape": shape,
-                "reason": None, "model": model,
-                "basis": _total_basis(priced["includes_subagents"], rebased)}
+                "reason": None, "model": model, "basis": _total_basis(includes, rebased, meters)}
     base = state.get(TOKEN_BASELINE)
     if isinstance(base, dict) and isinstance(base.get("tokens"), int):
         shape = f"the legacy single {TOKEN_BASELINE} (one reading, not a stamp list)"
@@ -1500,12 +1555,15 @@ def run_token_total(state: dict, current: dict | None = None,
                 rebased = 1
             ends = [{**base, "tokens": int(base["tokens"])}, {**current, "subagents": bool(
                 current.get("includes_subagents", current.get("subagents")))}]
-            priced = _priced_delta([ends])
+            priced, meters = _priced_delta([ends]), _meters([ends])
+            includes = (all(m["includes_subagents"] for m in meters) if meters
+                        else priced["includes_subagents"])
             return {"tokens": max(0, int(current["tokens"]) - int(base["tokens"])), **priced,
+                    "includes_subagents": includes, "meters": meters,
                     "rebased": rebased, "sessions": [str(base["source"])], "session_count": 1,
                     "uncovered": [],
                     "shape": shape, "model": current.get("model"), "reason": None,
-                    "basis": _total_basis(priced["includes_subagents"], rebased)}
+                    "basis": _total_basis(includes, rebased, meters)}
         why = (f"only an opening reading of {base['tokens']} is recorded, from "
                f"{base.get('source')}, and no closing reading of that same meter "
                f"is available - the difference of two meters is not a spend")

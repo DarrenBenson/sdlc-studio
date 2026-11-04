@@ -1924,17 +1924,19 @@ def _ck_cost(ctx: dict) -> tuple:
                 "an operator's figure from `retro.py accuracy --tokens`, overriding "
                 + (f"the run's measured {measured:,}" if measured else
                    "a run that measured no total"))
+    named = _meters_named(total)
     if measured:
         if total.get("includes_subagents"):
             return (ANSWERED, f"{measured:,} tokens, measured",
-                    "the run's meter, which reads the main thread and every subagent "
-                    "transcript, so the subagents are already in it, as the report's "
-                    "Estimates section states it" + rebased + priced)
+                    "the run's meter, "
+                    + (named or "which reads the main thread and every subagent transcript, "
+                                "so the subagents are already in it")
+                    + ", as the report's Estimates section states it" + rebased + priced)
         return (ANSWERED, f"{measured:,} tokens, measured",
                 "the run's meter" + (f" plus {agents} delegated agent(s)' reported totals"
                                      if agents else "")
                 + ", as the report's Estimates section states it - a lower bound" + rebased
-                + priced)
+                + priced + (f"; {named}" if named else ""))
     if not spend.get("measured_units"):
         return (UNMEASURABLE, "unattributed",
                 "no per-unit telemetry, no measured run total and no supplied sprint total, "
@@ -3651,7 +3653,18 @@ def _run_tokens_actual(state: dict, run_tokens: dict, delegated_rule: bool = Tru
     return tokens + delegated, agents
 
 
-def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
+def _meters_named(run_tokens: dict) -> str:
+    """Which harness metered the run and what its reader counted, as one clause: each of the
+    total's `meters` with its reader's own basis and whether delegated agents' spend is in it.
+    "" over a run Claude alone metered, whose page reads as it was filed."""
+    return "; ".join(
+        f"metered by {m['harness']}, whose reader counted {m['basis']}, with delegated agents' "
+        f"spend {'in' if m['includes_subagents'] else 'not in'} that reading"
+        for m in run_tokens.get("meters") or [])
+
+
+def _tokens_ratio_withheld(state: dict, live: list[dict], meter: str = "main-thread meter"
+                           ) -> str | None:
     """Why the Estimates tokens ratio is withheld, or None when it can be stated.
 
     The forecast sums every live unit (planned or added, not dropped), and the main-thread
@@ -3660,11 +3673,12 @@ def _tokens_ratio_withheld(state: dict, live: list[dict]) -> str | None:
     lane brief opens, so a unit briefed and returned blocked or never returned is one of them. A
     live unit nobody started spent nothing, so it owes none. Over a partial actual the ratio
     understates the run - RPT0014's 0.2x - and a ratio over the units that did supply would
-    compare a part of the actual with all of the forecast. Neither is stated."""
+    compare a part of the actual with all of the forecast. Neither is stated. `meter` names the
+    meter that cannot see that spend: Claude's main thread unless another harness metered it."""
     howto = "each lane records its builder's total with `sprint lane return --tokens N`"
     if not run_state.delegated_total(state):
-        return (f"withheld - no delegated spend was supplied, so the actual is the main-thread "
-                f"meter alone, which cannot see a delegated agent's spend; {howto}")
+        return (f"withheld - no delegated spend was supplied, so the actual is the {meter} "
+                f"alone, which cannot see a delegated agent's spend; {howto}")
     missing = [u["id"] for u in live
                if (u["delivered"] or u["spanned"]) and not u["agent_tokens"]]
     if missing:
@@ -3777,18 +3791,27 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     tokens, agents = _run_tokens_actual(state, run_tokens, delegated_rule)
     basis = f"{over}; actual is the run meter, a lower bound"
     whole = bool(run_tokens.get("includes_subagents"))
+    # Over a run another harness metered, its reader's own basis replaces the Claude meter's
+    # reach, and "main thread" is said only where that basis says it; a Claude run reads as filed.
+    named = _meters_named(run_tokens)
+    meter = "run meter" if named else "main-thread meter"
     if whole:
         supplied = len(run_state.delegated_records(state))
-        basis = (f"{over}; actual is the run meter, which reads the main thread and every "
+        basis = (f"{over}; actual is the run meter, {named}"
+                 + (f", so the {supplied} delegated total(s) supplied are not added"
+                    if supplied else "") if named else
+                 f"{over}; actual is the run meter, which reads the main thread and every "
                  f"subagent transcript, so the subagents are already in the reading"
                  + (f" and the {supplied} delegated total(s) supplied are not added"
                     if supplied else ""))
     elif agents and run_tokens.get("tokens") == 0:
         basis = (f"{over}; actual is {agents} delegated agent(s)' reported totals, split in the "
-                 f"appendix - the main-thread meter read 0, taken as unread, not as no spend")
+                 f"appendix - the {meter} read 0, taken as unread, not as no spend")
     elif agents:
-        basis = (f"{over}; actual is the main-thread meter plus {agents} delegated agent(s)' "
+        basis = (f"{over}; actual is the {meter} plus {agents} delegated agent(s)' "
                  f"reported totals, split in the appendix")
+    if named and not whole:
+        basis += f"; {named}"
     if rebased := run_state.rebased_note(run_tokens):
         basis += f"; {rebased}"
     head = (_priced_row(run_tokens, state_rel, (tokens or 0) - (run_tokens.get("tokens") or 0),
@@ -3801,7 +3824,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         run_tokens.get("reason") or ("the run meter read no spend between its readings"
                                      if tokens == 0 else "no token actual was recorded"),
         # A meter that reads the subagents holds the whole actual, so nothing is owed by them.
-        withheld=_tokens_ratio_withheld(state, live) if ratio_rule and not whole else None))
+        withheld=_tokens_ratio_withheld(state, live, meter) if ratio_rule and not whole
+        else None))
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -4059,9 +4083,11 @@ def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
         "tokens_total": fig("tokens_total", total["tokens"] + (
             0 if total.get("includes_subagents") else delegated), state_rel),
         "token_coverage": fig("token_coverage", coverage, state_rel),
+        # A run another harness metered names it and its reader's basis here, in the figure the
+        # page renders as the cost section's reading; a Claude run's figure reads as filed.
         "token_shape": fig("token_shape", f"read from {total['shape']}" + (
-            f"; {run_state.rebased_note(total)}" if run_state.rebased_note(total) else ""),
-            state_rel)})
+            f"; {run_state.rebased_note(total)}" if run_state.rebased_note(total) else "") + (
+            f"; {_meters_named(total)}" if _meters_named(total) else ""), state_rel)})
     return _section("cost", "Tokens by model", figures, rows)
 
 

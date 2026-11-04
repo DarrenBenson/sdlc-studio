@@ -4777,5 +4777,164 @@ class NonCeremonyVerbTests(ReportOfRecordBase):
         self.assertIn("1 discharged", summary)
 
 
+def _set_delegated(root: Path, tokens: int) -> None:
+    """The fixture run's supplied delegated totals, in the shape `delegated_records` reads: the
+    fixture run's outcome is goal-reached, and `record_delegated_tokens` records nothing on a run
+    that is not running."""
+    p = root / "sdlc-studio" / ".local" / "run-state.json"
+    state = json.loads(p.read_text(encoding="utf-8"))
+    state[run_state.DELEGATED] = ([{"tokens": tokens, "agent": "builder", "unit": "US0101",
+                                    "at": "2026-09-15T12:00:00Z"}] if tokens else [])
+    p.write_text(json.dumps(state), encoding="utf-8")
+
+
+#: What a Claude-metered fixture page's cost figures read when it was filed before US0991, taken
+#: from the tree at b8b7f417: the cost section's figures in page order, then the Estimates rows
+#: that state the cost, each as (measure, actual, ratio, basis). Keyed by whether the stamps
+#: read the main thread and every subagent transcript.
+_TOKENS_BASIS = "the whole run: the plan's run-level token forecast; actual is the "
+_FILED_BEFORE_US0991 = {
+    False: ([("tokens_delegated", 250_000), ("tokens_total", 6_709_675),
+             ("token_coverage", "1 session(s)"), ("token_shape", "read from stamps"),
+             ("model_name[0]", FIX_MODEL), ("model_tokens[0]", 6_459_675)],
+            [("Tokens", 6_709_675, "NOT MEASURED",
+              _TOKENS_BASIS + "main-thread meter plus 1 delegated agent(s)' reported totals, "
+                              "split in the appendix")]),
+    True: ([("tokens_delegated", 250_000), ("tokens_total", 6_459_675),
+            ("token_coverage", "1 session(s)"), ("token_shape", "read from stamps"),
+            ("model_name[0]", FIX_MODEL), ("model_tokens[0]", 6_459_675)],
+           [("Priced cost", 7_105_642, "no ratio",
+             "priced input-equivalent tokens, the run's headline cost, each component times its "
+             "weight: input + output + cache write 6,459,675 (input 6,459,675 x1, output 0 x5, "
+             "cache write 5m 0 x1.25, cache write 1h 0 x2, cache read 6,459,675 x0.1); the sum "
+             "is the Tokens row; read from the main thread and every subagent transcript, once "
+             "per message"),
+            ("Tokens", 6_459_675, "2.51x",
+             _TOKENS_BASIS + "run meter, which reads the main thread and every subagent "
+                             "transcript, so the subagents are already in the reading and the "
+                             "1 delegated total(s) supplied are not added")]),
+}
+
+
+class HarnessBasisReportTests(ReportOfRecordBase):
+    """US0991: the report's cost section names the harness that metered the run and its
+    reader's own basis, and a Claude-metered page reads as it was filed."""
+
+    BASIS = "opencode session usage: input + output + cache write"
+
+    def _opencode_run(self, includes: bool, basis: str = BASIS, delegated: int = 300_000):
+        """The fixture run, stamped at its open (100,000) and its report (600,000) by an opencode
+        reader through `stamp_tokens`, so the stamps carry what the shipped path writes."""
+        import types
+        fixture_run(self.root, stamps=False)
+        reading = {"tokens": 100_000, "cache_read": 0, "source": "opencode session ses-1",
+                   "basis": basis, "includes_subagents": includes, "model": FIX_MODEL}
+        mod = types.ModuleType("stub_meter")
+        mod.read = lambda root, env: dict(reading)
+        with mock.patch.dict(sys.modules, {"lib.meter_opencode": mod}), \
+                mock.patch.dict(os.environ, {"SDLC_STUDIO_HARNESS": "opencode"}):
+            run_state.stamp_tokens(self.root, run_state.OPEN_STAMP)
+            reading["tokens"] = 600_000
+            run_state.stamp_tokens(self.root, "report")
+        # Moved inside the fixture run's window, which closed in 2026-09: the page meters only
+        # the stamps taken in it. Nothing else the shipped path wrote is touched.
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(p.read_text(encoding="utf-8"))
+        for s, at in zip(state[run_state.TOKEN_STAMPS],
+                         ("2026-09-15T05:00:00Z", "2026-09-15T13:00:00Z")):
+            s["at"] = at
+        p.write_text(json.dumps(state), encoding="utf-8")
+        _set_delegated(self.root, delegated)
+        return sr.build_report(self.root, FIX_RETRO)
+
+    @staticmethod
+    def _stated(rep: dict) -> tuple[dict, dict, list[str]]:
+        """The cost section's figures, the Estimates Tokens row, and every sentence the page and
+        the close checklist's cost row state about the cost."""
+        cost = {s["key"]: s for s in rep["sections"]}["cost"]
+        est = {s["key"]: s for s in rep["sections"]}["estimates"]
+        row = next(r for r in est["rows"] if r["est_measure"]["value"] == "Tokens")
+        said = [str(f.get("value")) for s, _k, f in sr.leaf_figures(rep) if s == "cost"]
+        said += [row["est_basis"]["value"], str(row["est_ratio"].get("reason") or "")]
+        return cost["figures"], row, said
+
+    def test_cost_section_states_the_readings_basis(self) -> None:
+        """AC3. MUTANTS: the fixed main-thread prose kept for every harness - in the Estimates
+        Tokens row ("main-thread meter"), the withheld ratio's reason, the checklist's cost row
+        or `TOKEN_TOTAL_BASIS`; a cost section that names no harness or basis; the supplied total
+        added over a reading that holds delegated spend. The control: a reader whose own basis
+        says main thread is quoted saying it, in the rendered page too."""
+        for includes, delegated in ((True, 300_000), (False, 300_000), (False, 0)):
+            with self.subTest(includes=includes, delegated=delegated):
+                self.setUp()
+                rep = self._opencode_run(includes, delegated=delegated)
+                figures, row, said = self._stated(rep)
+                shape = figures["token_shape"]["value"]
+                self.assertIn(f"metered by opencode, whose reader counted {self.BASIS}", shape)
+                self.assertIn("spend in that reading" if includes else
+                              "spend not in that reading", shape)
+                self.assertEqual(figures["tokens_total"]["value"],
+                                 500_000 + (0 if includes else delegated))
+                self.assertIn("metered by opencode", row["est_basis"]["value"])
+                total = run_state.run_token_total(run_state.read(self.root))
+                self.assertIn(f"opencode: {self.BASIS}", total["basis"])
+                self.assertEqual("LOWER BOUND" in total["basis"], not includes)
+                _st, _summary, checklist = sr._ck_cost({"run": run_state.read(self.root)})
+                self.assertIn("metered by opencode", checklist)
+                for text in [*said, checklist, total["basis"]]:
+                    self.assertNotIn("main thread", text.lower().replace("-", " "), text)
+                page = sr.render_markdown(rep)
+                block = page.split("### Tokens by model", 1)[1].split("\n#", 1)[0]
+                self.assertIn(f"metered by opencode, whose reader counted {self.BASIS}", block)
+        self.setUp()
+        said = "opencode usage, main thread only"
+        rep = self._opencode_run(False, basis=said)
+        self.assertIn(said, self._stated(rep)[0]["token_shape"]["value"])
+        self.assertIn(said, sr.render_markdown(rep).split("### Tokens by model", 1)[1])
+
+    def _claude_run(self, whole: bool) -> None:
+        """The fixture run's Claude stamps with a supplied delegated total: as written before
+        stamps carried priced components (`whole` False), or on the current meter reading the
+        main thread and every subagent transcript."""
+        fixture_run(self.root)
+        p = self.root / "sdlc-studio" / ".local" / "run-state.json"
+        state = json.loads(p.read_text(encoding="utf-8"))
+        if whole:
+            for s, n in zip(state["session_token_stamps"], (FIX_OPEN_READING, FIX_REPORT_READING)):
+                s.update({run_state.METER: run_state.METER_BASIS, "subagents": True,
+                          "priced": 2 * n, "components": {
+                              "input": n, "output": 0, "cache_write_5m": 0,
+                              "cache_write_1h": 0, "cache_read": n}})
+        p.write_text(json.dumps(state), encoding="utf-8")
+        _set_delegated(self.root, 250_000)
+
+    def test_a_claude_report_rederives_unchanged(self) -> None:
+        """AC4. MUTANTS: reword the Claude basis anywhere it reaches the page (the Estimates
+        Tokens or Priced row, the cost section's shape), or add a harness figure to a Claude
+        page, so every earlier signed page re-derives differently. Each page is compared with
+        the figures it carried when filed before US0991, then filed and re-checked VALID; the
+        control, one cost figure reworded on the filed page, reads INVALIDATED, so the check
+        compares the figures this criterion is about."""
+        for whole in (False, True):
+            with self.subTest(whole=whole):
+                self.setUp()
+                self._claude_run(whole)
+                rep = sr.build_report(self.root, FIX_RETRO)
+                cost = [(k, f.get("value")) for s, k, f in sr.leaf_figures(rep) if s == "cost"]
+                est = {s["key"]: s for s in rep["sections"]}["estimates"]["rows"]
+                rows = [(r["est_measure"]["value"], r["est_actual"]["value"],
+                         r["est_ratio"]["value"], r["est_basis"]["value"]) for r in est
+                        if r["est_measure"]["value"] in ("Tokens", "Priced cost")]
+                self.assertEqual((cost, rows), _FILED_BEFORE_US0991[whole])
+                check = sr.revalidate(self.root, sr.file_report(self.root, rep))
+                self.assertTrue(check["valid"], check["changes"])
+                moved = json.loads(json.dumps(rep))
+                shape = {s["key"]: s for s in moved["sections"]}["cost"]["figures"]["token_shape"]
+                shape["value"] += "; metered by claude"
+                moved.pop("fingerprint", None)
+                check = sr.revalidate(self.root, sr.file_report(self.root, moved))
+                self.assertFalse(check["valid"], "the control moved no compared figure")
+
+
 if __name__ == "__main__":
     unittest.main()
