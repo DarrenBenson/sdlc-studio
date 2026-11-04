@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 202 |
+| Open | 203 |
 | In Progress | 0 |
 | Fixed | 834 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1210** |
+| **Total** | **1211** |
 
 ## All Bugs
 
@@ -286,6 +286,7 @@
 | [BG1208](BG1208-bg1122-s-meter-memo-leaves-the-unfinished-line.md) | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1209](BG1209-the-pre-commit-hook-s-payload-markdown-lane.md) | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator ('X is not None : msg') when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

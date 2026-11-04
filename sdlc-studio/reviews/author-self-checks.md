@@ -103,3 +103,6 @@
 | BG1122 | Claude Opus 5.5 (builder) | 2026-11-04 | TRUE 34, FALSE 0, UNVERIFIABLE 1 | killed 20, survived 2 | ee2efcde2579e376 at 7b18b011915c |
 | BG1147 | Claude Opus 5.5 (builder) | 2026-11-04 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 2 | 01bde3361fb93579 at c983c2113787 |
 | BG1163 | Claude Opus 5.5 (builder) | 2026-11-04 | TRUE 29, FALSE 0, UNVERIFIABLE 0 | killed 19, survived 0 | 45ec5d63a5166d5c at c983c2113787 |
+| BG1183 | Claude Opus 5.5 (builder) | 2026-11-04 | TRUE 48, FALSE 0, UNVERIFIABLE 1 | killed 40, survived 0 | cac88fca9ca759ad at 39243dc40ce4 |
+| BG1163 | Claude Opus 5.5 (builder) | 2026-11-04 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 22, survived 0 | 4eb67685dbcb85fb at cc7589844d84 |
+| BG1210 | Claude Opus 5.5 (orchestrator) | 2026-11-04 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | none - no test declared | 96586c531f63bc2e at 87c527de7251 |
