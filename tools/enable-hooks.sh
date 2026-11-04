@@ -8,7 +8,8 @@
 #                 whether this commit needs the unit suites.
 #   - commit-msg  REFUSES a commit whose subject names more than one work-item id
 #                 (US/BG/CR) without a `Refs: <id>` trailer per owning id, so the
-#                 engagement floor can attribute a shared commit per id. It prints the
+#                 engagement floor can attribute a shared commit per id, or a
+#                 `Mentions: <id>` trailer for an id it only mentions. It prints the
 #                 trailer lines to paste. A single-id subject, and a merge / revert /
 #                 rebase replay, pass untouched. It then runs the unit suites, which sit
 #                 here rather than in pre-commit because git writes the commit message
@@ -74,5 +75,5 @@ else
   echo "  (the pre-push gate runs for minutes; without a keepalive the connection is dropped"
   echo "   before the push starts and the gate is paid twice)"
 fi
-echo "A multi-id commit subject now needs a 'Refs: <id>' trailer per owning id."
+echo "A multi-id commit subject now needs a 'Refs: <id>' trailer per owning id, and a 'Mentions: <id>' trailer for an id it only mentions."
 echo "Bypass a single commit in an emergency with: git commit --no-verify; a single push with: git push --no-verify"

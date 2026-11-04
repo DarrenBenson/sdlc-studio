@@ -12,7 +12,8 @@
 # suites therefore run here, behind the message check, and a refused message costs neither.
 #
 # 1. THE MESSAGE RULES. REFUSES a commit whose subject names more than one work-item id
-# (US/BG/CR) without a `Refs: <id>` trailer per owning id. Such a shared commit is skipped
+# (US/BG/CR) without a `Refs: <id>` trailer per owning id, or a `Mentions: <id>` trailer for
+# an id it only mentions, which owns none of its files. Such a shared commit is skipped
 # by the engagement floor's git leg - it cannot attribute a file to one id among several -
 # so an understated `Affects` would go uncaught. The refusal is cheap to satisfy: the hook
 # prints the exact trailer lines to paste. The cost of enforcing is one retry; the cost of
@@ -163,7 +164,8 @@ message_lane() {
     printf '%s' "$out"
     return 0
   fi
-  # Paste-ready trailers for the ids the subject names but no `Refs:` line covers. Ids are
+  # Paste-ready trailers for the ids the subject names but no `Refs:` or `Mentions:` line
+  # accounts for, so the hint never asks for `Refs:` on an id already mentioned. Ids are
   # normalised (CR-0257 -> CR0257) on both sides so a dashed spelling does not read as a gap.
   # The SAME grammar the engagement floor reads: the v2 four-or-more digit form AND the v3
   # `-<short ULID>` form, matched case-sensitively so it stops at the lowercase `-slug`. A
@@ -172,7 +174,7 @@ message_lane() {
   ids() { grep -oE '(EP|US|PL|BG|TS|WF|RFC|CR|IS)(-[0-9A-HJKMNP-TV-Z]{8,}|-?[0-9]{4,})' \
             | sed -E 's/^([A-Z]+)-([0-9]+)$/\1\2/' | sort -u; }
   named="$(printf '%s\n' "$subject" | ids)"
-  covered="$(grep -iE '^[[:space:]]*Refs:' "$msg_file" | ids)"
+  covered="$(grep -iE '^[[:space:]]*(Refs|Mentions):' "$msg_file" | ids)"
   uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
   printf '%s\n' "$out" | grep -v 'blocked by strict mode'
   printf 'add these lines to the message body (after a blank line):\n\n'
@@ -181,14 +183,16 @@ message_lane() {
   else
     printf '  Refs: <id>   # one line per id the subject names\n'
   fi
+  printf '\nfor an id the commit only mentions, which owns none of its files, write in place of its Refs: line:\n\n'
+  printf '  Mentions: <id>\n'
   return 1
 }
 
 msg_out=""
 if [ "$check_message" -eq 1 ]; then
   run "message-refs" \
-    "a subject naming two or more work-item ids carries a Refs: <id> trailer per owning id, so the engagement floor can attribute the commit's files per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught)" \
-    "add the Refs: lines printed above to the message body, then commit again; a subject naming a single id needs no trailer" \
+    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them" \
+    "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, then commit again; a subject naming a single id needs no trailer" \
     -- message_lane
   msg_out="$last_run_out"
 fi
