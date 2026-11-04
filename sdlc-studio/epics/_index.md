@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 15 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 249 |
+| Done | 250 |
 | Superseded | 33 |
 | **Total** | **297** |
 
@@ -46,7 +46,7 @@
 | [EP0293](EP0293-the-prd-trd-and-tsd-describe-6-2.md) | The PRD, TRD and TSD describe 6.2, and the freshness census checks all three | Done | 7 | -- | 2026-10-31 | 2026-10-31 |
 | [EP0294](EP0294-every-open-project-lesson-is-judged-against-the.md) | Every open project lesson is judged against the current tree: closed with its reason, or extended after a check | Done | 5 | -- | 2026-10-31 | 2026-10-31 |
 | [EP0295](EP0295-v6-2-0-ships-with-paperwork-that-matches.md) | v6.2.0 ships with paperwork that matches the code | Done | 2 | -- | 2026-11-02 | 2026-11-02 |
-| [EP0296](EP0296-the-release-gate-s-verify-lane-costs-about.md) | The release gate's verify lane costs about one parallel suite run and can run on the gate host | Draft | 3 | -- | 2026-11-02 | 2026-11-02 |
+| [EP0296](EP0296-the-release-gate-s-verify-lane-costs-about.md) | The release gate's verify lane costs about one parallel suite run and can run on the gate host | Done | 3 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0297](EP0297-a-commit-subject-can-mention-a-work-item.md) | A commit subject can mention a work-item id without attributing the commit's files to it | Draft | 2 | -- | 2026-11-02 | 2026-11-02 |
 
 ## Archived Releases

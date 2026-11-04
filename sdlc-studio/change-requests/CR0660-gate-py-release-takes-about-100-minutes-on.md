@@ -1,6 +1,6 @@
 # CR-0660: gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0296
 > **Priority:** Medium
 > **Type:** Feature

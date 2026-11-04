@@ -1,6 +1,6 @@
 # US1114: remote-gate.sh runs one commit's release gate on the gate host and records it green only when the host passed it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0660
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a gate host, when `remote-gate.sh push --commit <sha> --release` runs, then the host runs `gate.py --release` in a checkout of exactly <sha>, and the local exit is 0 only for the host's pass and 1 for its refusal (3 and 4 keep their meanings)
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_host_runs_the_commits_own_release_gate
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given `SDLC_VERIFY_TIMEOUT` and `SDLC_VERIFY_WORKERS` set locally to positive integers, when the release gate runs on the host, then the host's gate reads the same values, and a value that is not a positive integer is refused by name before any connection is made
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_verify_settings_reach_the_host_and_a_bad_value_is_refused
+  - **Verified:** yes (2026-11-04)
 - **AC3:** Given the host's release gate passed on <sha>, then `sdlc-studio/.local/release-gate-green.json` names exactly <sha>; given it refused, or the connection failed, then the marker is byte-identical to before
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_green_is_recorded_only_for_the_sha_the_host_passed
+  - **Verified:** yes (2026-11-04)
 - **AC4:** Given a `boundary_only` verifier, when the release gate runs on the host and locally, then both routes set `SDLC_STUDIO_BOUNDARY_SUITE` the same way and the verifier gets the same verdict on both
   - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_host_and_local_routes_agree_on_boundary_only_verifiers
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 

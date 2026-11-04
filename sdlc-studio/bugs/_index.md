@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 193 |
+| Open | 194 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1195** |
+| **Total** | **1196** |
 
 ## All Bugs
 
@@ -271,6 +271,7 @@
 | [BG1193](BG1193-sdlc-md-corpus-cache-hands-later-callers-the.md) | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1194](BG1194-remote-gate-sh-s-release-route-does-not.md) | remote-gate.sh's release route does not send SDLC_GATE_BOUNDARY, so a value set in the shell changes the local release gate but not the host's | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1195](BG1195-four-test-modules-of-tools-remote-gate-sh.md) | Four test modules of tools/remote-gate.sh name no test-census-subject, so a commit to the script runs only one of the five | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1196](BG1196-no-test-pins-the-host-s-sdlc-studio.md) | No test pins the host's SDLC_STUDIO_BOUNDARY_SUITE=1 export for remote-gate.sh's push and suite jobs | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
