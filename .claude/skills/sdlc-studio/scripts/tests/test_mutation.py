@@ -730,6 +730,70 @@ class ChangedLinesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(mut.changed_lines(Path(d), "HEAD"), {})
 
+    # BG0958: git config can rename the `+++ b/` prefix the parser keys on. The fixture
+    # touches line 5 of a.py and line 2 of pkg/c.py; `changed_lines` runs under
+    # `gitutil.git_env`, whose global and system config are /dev/null unless a test names a
+    # global config, so the operator's own ~/.gitconfig cannot reach it.
+    def _two_file_edit(self, root: Path) -> dict:
+        root.mkdir(exist_ok=True)
+        (root / "pkg").mkdir()
+        gitutil.git(["init", "-q"], root)
+        (root / "a.py").write_text("\n".join(f"x = {i}" for i in range(10)) + "\n",
+                                   encoding="utf-8")
+        (root / "pkg" / "c.py").write_text("z = 1\nz = 2\nz = 3\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-qm", "base"], root)
+        lines = (root / "a.py").read_text(encoding="utf-8").splitlines()
+        lines[4] = "x = 999"
+        (root / "a.py").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (root / "pkg" / "c.py").write_text("z = 1\nz = 222\nz = 3\n", encoding="utf-8")
+        return {str(root / "a.py"): {5}, str(root / "pkg" / "c.py"): {2}}
+
+    def _changed_under(self, mut, root: Path, header: str = "", **env: str) -> dict:
+        """`changed_lines` under the fixture env plus `env`. With `header`, first proves the
+        Given under that same env: git itself writes `header`, not `+++ b/`.
+
+        `GIT_CONFIG_PARAMETERS` is emptied: a `git -c diff.mnemonicprefix=false commit`
+        exports it to the hook's suite, and it outranks every config file a test sets."""
+        fixture_env = gitutil.git_env(**env, GIT_CONFIG_PARAMETERS="")
+        if header:
+            out = gitutil.git(["diff", "HEAD"], root, text=True, env_extra=fixture_env).stdout
+            self.assertIn(header, out.splitlines())
+        with unittest.mock.patch.dict(os.environ, fixture_env, clear=True):
+            return mut.changed_lines(root, "HEAD")
+
+    def test_mnemonic_prefix_config_still_reports_lines(self) -> None:
+        """AC1: `diff.mnemonicPrefix` in the repo config writes `+++ w/`."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            expected = self._two_file_edit(root)
+            gitutil.git(["config", "diff.mnemonicPrefix", "true"], root)
+            self.assertEqual(self._changed_under(mut, root, "+++ w/pkg/c.py"), expected)
+
+    def test_noprefix_config_still_reports_lines(self) -> None:
+        """AC2: `diff.noprefix` in the repo config writes `+++ <path>`."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            expected = self._two_file_edit(root)
+            gitutil.git(["config", "diff.noprefix", "true"], root)
+            self.assertEqual(self._changed_under(mut, root, "+++ pkg/c.py"), expected)
+
+    def test_a_global_mnemonic_prefix_config_still_reports_lines(self) -> None:
+        """AC3: a global config, as on the operator's machine, gives the defaults' answer."""
+        mut = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "repo"
+            expected = self._two_file_edit(root)
+            cfg = Path(d) / "gitconfig"
+            cfg.write_text("[diff]\n\tmnemonicprefix = true\n", encoding="utf-8")
+            defaults = self._changed_under(mut, root, "+++ b/a.py")
+            self.assertEqual(defaults, expected)
+            self.assertEqual(
+                self._changed_under(mut, root, "+++ w/a.py", GIT_CONFIG_GLOBAL=str(cfg)),
+                defaults)
+
 
 class StaleBytecodeTests(unittest.TestCase):
     """BG0197: a mutant the interpreter never actually ran must not report SURVIVED.

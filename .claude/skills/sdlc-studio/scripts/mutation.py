@@ -227,11 +227,17 @@ def changed_lines(repo_root: Path | str, since: str) -> dict:
 
     Zero context lines, so the hunk headers name exactly the added/modified lines. An
     untracked file is entirely new, so every line counts. Returns {} when git cannot
-    answer - the caller then falls back to unbiased sampling rather than failing."""
+    answer - the caller then falls back to unbiased sampling rather than failing.
+
+    The prefixes are passed explicitly because git config can change them:
+    `diff.mnemonicPrefix` writes `+++ w/<path>` and `diff.noprefix` writes `+++ <path>`,
+    so neither matched `+++ b/` and the map came back empty. The command-line prefixes
+    override both settings."""
     root = Path(repo_root)
     out: dict = {}
     try:
-        diff = subprocess.run(["git", "diff", "-U0", since], cwd=root,
+        diff = subprocess.run(["git", "diff", "-U0", "--src-prefix=a/", "--dst-prefix=b/",
+                               since], cwd=root,
                               capture_output=True, text=True, check=True).stdout
     except (subprocess.CalledProcessError, OSError):
         return {}
