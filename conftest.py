@@ -20,10 +20,22 @@ the commit and writes into `.git` while the temporary directory is being removed
 green test on teardown (BG0711). The setting is appended through `GIT_CONFIG_COUNT`/`KEY`/`VALUE`,
 so every git process under the session reads it whatever `GIT_CONFIG_GLOBAL` a fixture sets, and
 an entry the caller already made stays in force.
+
+Each test also starts with no agent harness named or signalled (BG1197). The token meter reads
+the store of the harness the environment names, so a suite run inside Cursor, Copilot CLI or
+OpenCode chose that harness for tests whose fixture is a Claude transcript, and they failed. Before each test `_no_harness_selected` clears every variable
+`token_meters.selection_variables()` names, read afresh, so a harness or a reader's signal added
+later is cleared without an edit here, and puts back what it cleared after the test. A test that
+sets one in `setUp` or its body keeps it; one set in `setUpClass` or `setUpModule` is cleared.
 """
+import importlib
 import os
 import shutil
+import sys
 import tempfile
+from pathlib import Path
+
+import pytest
 
 #: The private directory's name, set by whichever run owns it. A session that finds TMPDIR already
 #: naming it - an xdist worker, or a pytest run nested in a confined run - uses it and leaves the
@@ -34,6 +46,33 @@ _owned = None   # (private dir, TMPDIR before, marker before, tempfile.tempdir b
 _git_config_before = None   # the GIT_CONFIG_* variables this session set, as they were
 
 MAINTENANCE_OFF = ("maintenance.auto", "false")
+
+#: The skill's scripts directory, whose `lib.token_meters` names the variables that choose a meter.
+SCRIPTS = Path(__file__).resolve().parent / ".claude" / "skills" / "sdlc-studio" / "scripts"
+METERS = "lib.token_meters"
+
+
+def harness_variables():
+    """The variables `token_meters.selection_variables()` names, read now. `lib` is imported as
+    the tests import it, from `SCRIPTS`, which is on `sys.path` only for that import. A copy of
+    this file with no `lib/token_meters.py` under its `SCRIPTS`, and none imported, names none."""
+    meters = sys.modules.get(METERS)
+    if meters is None:
+        if not (SCRIPTS / "lib" / "token_meters.py").is_file():
+            return []
+        sys.path.insert(0, str(SCRIPTS))
+        try:
+            meters = importlib.import_module(METERS)
+        finally:
+            sys.path.remove(str(SCRIPTS))
+    return meters.selection_variables()
+
+
+@pytest.fixture(autouse=True)
+def _no_harness_selected(monkeypatch):
+    """Clear each harness variable for one test; `monkeypatch` puts back what it cleared."""
+    for name in harness_variables():
+        monkeypatch.delenv(name, raising=False)
 
 
 def _git_config_entries():
