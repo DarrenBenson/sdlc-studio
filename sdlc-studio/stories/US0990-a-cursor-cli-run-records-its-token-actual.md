@@ -1,6 +1,6 @@
 # US0990: A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given fixtures derived from the real stores the current Cursor CLI writes (build 2026.10.22, `<config>/chats/<md5 of the resolved workspace>/<chat id>/store.db` or `meta.json`, with `<config>` from `CURSOR_CONFIG_DIR`, else `$XDG_CONFIG_HOME/cursor`, else `~/.cursor`), when the reader looks for this workspace's store, then it finds it where the CLI writes it, opens it read-only, and never reads it as usage. Re-groomed under D0406: the pinned store keeps no usage at all, as this story's Notes allowed. Fails on: a hard-coded `~/.cursor`, an ignored `CURSOR_CONFIG_DIR`, or a store read as a figure
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_the_store_is_found_where_the_cli_writes_it
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given a CLI session that persisted no usage (interactive or ACP mode, or a print run whose stdout has gone), then the reading is tokens None and the reason says the CLI kept no usage record, never zero, and no terminal output is scraped. Fails on: an absent record read as zero
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_no_persisted_usage_is_not_attributable
+  - **Verified:** yes (2026-11-04)
 - **AC3:** Given both a cloud key and run id and a CLI store, then the cloud reading alone is used; given only the CLI store, the CLI reading alone; the two surfaces are never added together. Fails on: summing the cloud total and the CLI store for the same run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_cloud_and_cli_surfaces_are_never_mixed
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 
