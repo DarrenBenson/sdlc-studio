@@ -15,6 +15,10 @@ Pinned here:
 * the key reaches neither the reading, the run state, a stamp nor the run total (AC3);
 * `sprint.py plan --write` stamps a baseline naming cursor and the agent id (AC4).
 
+US0990 adds the Cursor CLI's surface, pinned in `CursorCliTests`: the chat store is found where
+the CLI writes it, records no usage, so reads tokens None naming it, never zero, and the cloud
+and CLI surfaces are never added together.
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
 """
@@ -26,6 +30,7 @@ import http.server
 import json
 import os
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -49,8 +54,8 @@ TOKENS, CACHE_READS = 4_200, 50_000
 #: Every variable the selection or the call reads, scrubbed so the suite's own harness and any
 #: proxy never reach a test.
 SCRUB = (token_meters.HARNESS_ENV, run_state.TRANSCRIPTS_ENV, meter_cursor.KEY_ENV,
-         meter_cursor.AGENT_ENV, meter_cursor.API_ENV,
-         *(v for vs in token_meters.SIGNALS.values() for v in vs),
+         meter_cursor.AGENT_ENV, meter_cursor.API_ENV, meter_cursor.CONFIG_ENV,
+         meter_cursor.XDG_ENV, *(v for vs in token_meters.SIGNALS.values() for v in vs),
          "http_proxy", "https_proxy", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")
 
 
@@ -330,6 +335,170 @@ class CursorCloudLaneTests(_Fixture):
         self.assertEqual((base["tokens"], base[token_meters.CACHE_READ]), (TOKENS, CACHE_READS))
         self.assertIn(f"/v1/agents/{AGENT}/usage", [p for p, _ in stub.requests])
         self.assertNotIn(KEY, (self.root / run_state.REL).read_text("utf-8"))
+
+
+#: This repository's checkout on the development machine, and the chats directory names the
+#: Cursor CLI's 2026.10.22-27dcf5f build wrote there for it and for a sibling checkout.
+DEV_REPO = "/home/darren/code/DarrenBenson/sdlc-studio"
+DEV_CHATS = {DEV_REPO: "6e276e3188a9dbcce0e0ec6cbd9afdc1",
+             f"{DEV_REPO}-lens": "ef6664fffe2e4dc1c8c6faedd4d2c614"}
+#: A print run's last stdout line, in the shape that build writes, usage and all.
+PRINT_RESULT = json.dumps({
+    "type": "result", "subtype": "success", "is_error": False, "duration_ms": 9,
+    "duration_api_ms": 9, "result": "done", "session_id": "chat-run", "request_id": "r-1",
+    "usage": {"inputTokens": 1_000, "outputTokens": 200, "cacheReadTokens": 50_000,
+              "cacheWriteTokens": 3_000}})
+
+
+def cli_store(chats: Path, chat: str, conversation: bool = True, tables=()) -> Path:
+    """One chat in the shape the Cursor CLI's 2026.10.22-27dcf5f build wrote on the development
+    machine, every value synthetic: a `meta.json`, and for a chat with a conversation a
+    `store.db` of the same two tables, whose `meta` row is hex-encoded JSON and whose `blobs`
+    hold a message. `tables` adds further tables, a store of some other build."""
+    chat_dir = chats / chat
+    chat_dir.mkdir(parents=True)
+    (chat_dir / "meta.json").write_text(json.dumps({
+        "schemaVersion": 1, "createdAtMs": 1, "hasConversation": conversation,
+        "updatedAtMs": 2, "cwd": "/workspace"}), encoding="utf-8")
+    if conversation:
+        con = sqlite3.connect(chat_dir / "store.db")
+        with con:
+            con.execute("CREATE TABLE blobs (id TEXT PRIMARY KEY, data BLOB)")
+            con.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
+            meta = {"agentId": chat, "latestRootBlobId": "0" * 64, "name": "New Agent",
+                    "mode": "default", "isRunEverything": False, "createdAt": 1,
+                    "lastUsedModel": "auto", "blobEncryptionKey": "0" * 64}
+            con.execute("INSERT INTO meta VALUES ('0', ?)", (json.dumps(meta).encode().hex(),))
+            message = {"id": "m-1", "role": "assistant", "providerOptions": {"cursor": {}},
+                       "content": [{"type": "text", "text": "done"}]}
+            con.execute("INSERT INTO blobs VALUES (?, ?)", ("1" * 64, json.dumps(message)))
+            for table in tables:
+                con.execute(f"CREATE TABLE {table} (k TEXT)")
+        con.close()
+    return chat_dir
+
+
+class CursorCliTests(_Fixture):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.chats = meter_cursor.cli_chats(self.root, {"HOME": str(self.root / "home")})
+
+    def cli_reading(self, stub: Stub, **values) -> dict:
+        """The selector's reading with no API key, so the CLI's surface is the one read."""
+        return self.reading(stub, **{meter_cursor.KEY_ENV: None, **values})
+
+    def test_the_store_is_found_where_the_cli_writes_it(self) -> None:
+        """The CLI's own location rule. Mutants: a hard-coded path, `CURSOR_CONFIG_DIR` or
+        `XDG_CONFIG_HOME` ignored or taken when blank, the workspace path hashed unnormalised
+        (the trailing slash), or `realpath` (the symlink) where the CLI takes the path as
+        given; the store looked for in `~/.cursor/projects/<slug>/`, the guess the story's
+        notes made, where the CLI keeps transcripts and terminal output instead."""
+        for repo, name in DEV_CHATS.items():
+            self.assertEqual(meter_cursor.cli_chats(repo, {"HOME": "/h"}),
+                             Path("/h/.cursor/chats", name))
+        name = DEV_CHATS[DEV_REPO]
+        for env, want in (({"XDG_CONFIG_HOME": "/x"}, "/x/cursor"),
+                          ({"XDG_CONFIG_HOME": " "}, "/h/.cursor"),
+                          ({"XDG_CONFIG_HOME": "/x", "CURSOR_CONFIG_DIR": "/c"}, "/c"),
+                          ({"XDG_CONFIG_HOME": "/x", "CURSOR_CONFIG_DIR": " "}, "/x/cursor")):
+            self.assertEqual(meter_cursor.cli_chats(Path(DEV_REPO), {"HOME": "/h", **env}),
+                             Path(want, "chats", name), env)
+        self.assertEqual(meter_cursor.cli_chats(DEV_REPO + "/", {"HOME": "/h"}).name, name)
+        link = self.root / "link"
+        link.symlink_to(self.root / "home")
+        self.assertEqual(meter_cursor.cli_chats(link, {"HOME": "/h"}).name,
+                         meter_cursor.cli_chats(str(link), {"HOME": "/h"}).name)
+        self.assertNotEqual(meter_cursor.cli_chats(link, {"HOME": "/h"}).name,
+                            meter_cursor.cli_chats(self.root / "home", {"HOME": "/h"}).name)
+
+        stub = Stub(self)
+        slug = os.path.abspath(self.root).strip("/").replace("/", "-")
+        guessed = self.root / "home" / ".cursor" / "projects" / slug
+        cli_store(guessed, "chat-run")
+        got = self.cli_reading(stub)
+        self.assertIn(f"no Cursor CLI chat store sits at {self.chats}", got["reason"])
+        xdg = self.root / "xdg"
+        cli_store(meter_cursor.cli_chats(self.root, {"XDG_CONFIG_HOME": str(xdg)}), "chat-run")
+        got = self.cli_reading(stub, XDG_CONFIG_HOME=str(xdg))
+        self.assertIn(f"its chat store for this workspace, {xdg / 'cursor' / 'chats'}",
+                      got["reason"])
+
+    def test_no_persisted_usage_is_not_attributable(self) -> None:
+        """AC2. Mutants: a store keeping no usage read as 0 tokens, or with a reason not saying
+        the CLI kept no usage record; a print run's result line, usage and all, taken from the
+        CLI's terminal or transcript files; a request made with no key; the store written to;
+        the table check dropped or made a subset test, so a store with a usage table, or one
+        that is not SQLite, reads as keeping none."""
+        stub = Stub(self)
+        got = self.cli_reading(stub)
+        self.assertIsNone(got["tokens"], "the control: no store at all")
+        self.assertIn(f"no Cursor CLI chat store sits at {self.chats}", got["reason"])
+
+        # An interactive session left before its first prompt: the CLI's chat for this repo on
+        # the development machine held a meta.json alone.
+        cli_store(self.chats, "chat-idle", conversation=False)
+        got = self.cli_reading(stub)
+        self.assertIsNone(got["tokens"])
+        self.assertIn(f"the Cursor CLI kept no usage record: its chat store for this "
+                      f"workspace, {self.chats}, holds 1 chat and", got["reason"])
+        self.assertIn(f"{meter_cursor.KEY_ENV} is not set", got["reason"])
+
+        # A print run whose stdout has gone, though its result line sits in the files the CLI
+        # keeps beside the store.
+        db = cli_store(self.chats, "chat-run") / "store.db"
+        project = self.root / "home" / ".cursor" / "projects" / os.path.abspath(
+            self.root).strip("/").replace("/", "-")
+        for rel in ("terminals/1.txt", "agent-transcripts/chat-run/chat-run.jsonl"):
+            (project / rel).parent.mkdir(parents=True, exist_ok=True)
+            (project / rel).write_text(PRINT_RESULT + "\n", encoding="utf-8")
+        (db.parent / "stdout.jsonl").write_text(PRINT_RESULT + "\n", encoding="utf-8")
+        before = sorted((p.name, p.read_bytes()) for p in db.parent.iterdir())
+        got = self.cli_reading(stub)
+        self.assertIsNone(got["tokens"], "never zero, never the scraped figure")
+        self.assertIn("the Cursor CLI kept no usage record", got["reason"])
+        self.assertIn("holds 2 chats and", got["reason"])
+        self.assertEqual(sorted((p.name, p.read_bytes()) for p in db.parent.iterdir()), before)
+        self.assertEqual(stub.requests, [], "no key, no request")
+
+        cli_store(self.chats, "chat-other", tables=("usage",))
+        bad = self.chats / "chat-other" / "store.db"
+        for why in ("a further table", "not SQLite"):
+            got = self.cli_reading(stub)
+            self.assertIsNone(got["tokens"], why)
+            self.assertIn(f"the Cursor CLI chat store {bad} does not hold exactly the tables "
+                          f"blobs and meta", got["reason"], why)
+            self.assertNotIn("kept no usage record", got["reason"], why)
+            bad.write_bytes(b"not a database")
+
+    def test_cloud_and_cli_surfaces_are_never_mixed(self) -> None:
+        """AC3. Mutants: the CLI's reading added to the cloud's; the CLI store read, or
+        preferred, when the key and agent id are set; a failed cloud call falling back to the
+        CLI store; the cloud called with the key unset. A CLI reading carrying a figure stands
+        in for one, since the store the CLI writes has none."""
+        stub = Stub(self)
+        cli_store(self.chats, "chat-run")
+        cli = {"tokens": 999, token_meters.CACHE_READ: 1, "basis": "a CLI reading",
+               "source": f"the Cursor CLI chat store {self.chats}", "includes_subagents": False}
+        with mock.patch.object(self.reader, "read_cli", return_value=dict(cli)) as read_cli:
+            both = self.reading(stub)
+            self.assertEqual((both["tokens"], both[token_meters.CACHE_READ]),
+                             (TOKENS, CACHE_READS), "the cloud reading alone")
+            self.assertIn(AGENT, both["source"])
+            stub.reply = answer(500, {"error": {"code": "internal_error"}})
+            failed = self.reading(stub)
+            self.assertIsNone(failed["tokens"], "a failed cloud call is not the CLI's figure")
+            self.assertIn("it answered HTTP 500", failed["reason"])
+            read_cli.assert_not_called()
+            calls = len(stub.requests)
+            alone = self.cli_reading(stub)
+            self.assertEqual((alone["tokens"], alone[token_meters.CACHE_READ], alone["source"]),
+                             (999, 1, cli["source"]), "the CLI reading alone")
+            self.assertEqual(len(stub.requests), calls, "no cloud call without the key")
+            read_cli.assert_called_once()
+        got = self.cli_reading(stub)
+        self.assertIsNone(got["tokens"])
+        self.assertIn("the Cursor CLI kept no usage record", got["reason"])
 
 
 if __name__ == "__main__":
