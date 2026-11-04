@@ -1,6 +1,6 @@
 # BG1163: The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/BG1163.md
@@ -28,12 +28,16 @@ Give the lifecycle table the stop and file-and-close routes, with what each file
 
 - [ ] **AC1** The TRD's lifecycle names stop and close --file-and-close and says what each files, and a test fails if a close route that reaches `run_state.close_run` is unnamed.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_every_close_route_reaching_close_run_is_named_in_the_lifecycle
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** The pin fails when a documented writer exists but nothing calls it, and when the file moves out of the documented directory.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalWriterPinTests::test_an_uncalled_writer_or_a_moved_file_fails_the_pin
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC3** Swapping the Live and Tracked labels fails TrdStorageTests.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_swapped_live_and_tracked_labels_fail
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC4** A page line that negates a write ('does not write', 'never records') is not read as that page writing the file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalWriterPinTests::test_a_negated_write_line_is_not_a_writer
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

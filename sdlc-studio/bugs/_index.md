@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 203 |
 | In Progress | 0 |
-| Fixed | 834 |
+| Fixed | 835 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1211** |
+| **Total** | **1212** |
 
 ## All Bugs
 
@@ -238,7 +238,7 @@
 | [BG1160](BG1160-gate-py-run-tests-prints-no-tests-ran.md) | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails | Open | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1161](BG1161-a-clean-checkout-gate-py-run-judges-conformance.md) | A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Fixed | High | 2026-11-01 | 2026-11-01 |
@@ -287,6 +287,7 @@
 | [BG1209](BG1209-the-pre-commit-hook-s-payload-markdown-lane.md) | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator ('X is not None : msg') when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Open | Medium | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

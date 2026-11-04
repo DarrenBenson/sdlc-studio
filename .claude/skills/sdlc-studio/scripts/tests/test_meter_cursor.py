@@ -41,6 +41,8 @@ import urllib.error
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from lib import meter_cursor, run_state, token_meters  # noqa: E402
 
@@ -177,11 +179,12 @@ class CursorCloudTests(_Fixture):
         self.assertEqual(self.reading(stub)["tokens"], TOKENS, "totalTokens absent is no fault")
 
     def test_no_key_no_call_and_failures_not_attributable(self) -> None:
-        """AC2. Mutants: the key or agent-id check dropped (a request goes out), the worker
-        joined with no timeout (the dribbling stub holds it for seconds), the socket timeout
-        dropped (the held worker outlives the deadline), a socket timeout read as anything but
-        the deadline, an empty usage read as 0, or an HTTP error, a malformed field, a broken
-        status line or an oversized answer passed on as a figure."""
+        """AC2. Mutants: the key or agent-id check dropped (a request goes out), a socket timeout
+        read as anything but the deadline, an empty usage read as 0, or an HTTP error, a
+        malformed field, a broken status line or an oversized answer passed on as a figure. The
+        two that only a clock can see, the worker joined with no timeout and the socket timeout
+        dropped, are pinned by `test_a_held_or_dribbling_answer_is_cut_off_at_the_deadline`,
+        which bounds wall time and so runs serially at the boundary."""
         self.assertLessEqual(meter_cursor.TIMEOUT_SECONDS, 10, "the timeout is short")
         stub = Stub(self)
         for drop, blank in ((meter_cursor.KEY_ENV, None), (meter_cursor.KEY_ENV, "  "),
@@ -234,13 +237,9 @@ class CursorCloudTests(_Fixture):
         with mock.patch.object(self.reader, "TIMEOUT_SECONDS", 0.3):
             for reply in (hold, dribble):
                 stub.reply = reply
-                began = time.monotonic()
                 got = self.reading(stub)
-                self.assertLess(time.monotonic() - began, 2.0, reply.__name__)
                 self.assertIsNone(got["tokens"])
                 self.assertIn("did not answer within 0.3 seconds", got["reason"])
-                if reply is hold:
-                    self.assertTrue(worker_ends(2.0), "a held socket times out the worker too")
         for raised in (TimeoutError("timed out"), urllib.error.URLError(TimeoutError("t"))):
             with mock.patch.object(self.reader._OPENER, "open", side_effect=raised):
                 got = self.reading(stub)
@@ -253,6 +252,34 @@ class CursorCloudTests(_Fixture):
         got = self.reading(None, **{meter_cursor.API_ENV: closed})
         self.assertIsNone(got["tokens"])
         self.assertIn("could not be reached (ConnectionRefusedError)", got["reason"])
+
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
+    def test_a_held_or_dribbling_answer_is_cut_off_at_the_deadline(self) -> None:
+        """AC2's clock half, kept out of a parallel commit run because it bounds a duration its
+        own process measures (BG1212). Mutants: the worker joined with no timeout (the dribbling
+        stub holds it for seconds), the socket timeout dropped (the held worker outlives the
+        deadline)."""
+        stub = Stub(self)
+
+        def hold(h) -> None:
+            stub.release.wait(5)
+
+        def dribble(h) -> None:
+            for ch in b"HTTP/1.1 200 OK\r\nX-Slow: " + b"a" * 40:
+                if stub.release.wait(0.1):
+                    return
+                h.wfile.write(bytes([ch]))
+
+        with mock.patch.object(self.reader, "TIMEOUT_SECONDS", 0.3):
+            for reply in (hold, dribble):
+                stub.reply = reply
+                began = time.monotonic()
+                got = self.reading(stub)
+                self.assertLess(time.monotonic() - began, 2.0, reply.__name__)
+                self.assertIsNone(got["tokens"])
+                if reply is hold:
+                    self.assertTrue(worker_ends(2.0), "a held socket times out the worker too")
 
     def test_the_key_is_never_recorded(self) -> None:
         """AC3. Mutants: a reason built from the error's message (its reason phrase echoes the
