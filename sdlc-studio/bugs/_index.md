@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 201 |
 | In Progress | 0 |
-| Fixed | 832 |
+| Fixed | 834 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1207** |
+| **Total** | **1209** |
 
 ## All Bugs
 
@@ -197,7 +197,7 @@
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1120](BG1120-a-self-check-record-reads-an-author-s.md) | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that merges | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1121](BG1121-an-author-self-check-record-still-reads-stale.md) | An author self-check record still reads stale in landing orders the per-file own-change view cannot see through: work recorded before its own commit, a cherry-pick, or another unit's hunk in a file the author also changed | Open | Low | 2026-10-22 | 2026-10-22 |
-| [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1122](BG1122-each-meter-reading-now-re-reads-every-subagent.md) | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1123](BG1123-a-review-brief-now-carries-two-different-diffs.md) | A review brief now carries two different diffs of the unit: the scope line's `git diff <base> -- <Affects>` (the working tree) and US1094's UNIT DIFF section (base to HEAD) | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1124](BG1124-critic-py-brief-s-practice-and-claim-inventory.md) | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own commit removes a practice gets its brief issued | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1125](BG1125-the-review-brief-s-unit-diff-is-the.md) | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spent on other units' work and the unit's own hunks are cut | Open | Medium | 2026-10-22 | 2026-10-22 |
@@ -222,7 +222,7 @@
 | [BG1144](BG1144-the-commit-hook-s-unittest-fallback-ignores-pytest.md) | The commit hook's unittest fallback ignores pytest's serial_only and boundary_only marks, so a push-only test still runs on a commit there | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1145](BG1145-readiness-s-carry-note-names-a-re-review.md) | readiness's carry note names a re-review that critic.py record refuses for a unit at the cap with no filed carry bug; only a --ruling discharges it | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1146](BG1146-lessons-py-revalidate-close-appends-its-status-bullet.md) | lessons.py revalidate --close appends its Status bullet straight after a paragraph, so the lessons log fails markdownlint MD032 | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1147](BG1147-the-pre-commit-markdown-lane-skips-in-a.md) | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1147](BG1147-the-pre-commit-markdown-lane-skips-in-a.md) | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1148](BG1148-revalidate-s-real-date-guard-has-no-test.md) | revalidate's real-date guard has no test, its refusal prefix names --extend for any bad fields file, and the gate hint and four docs show --extend with no --reason | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1149](BG1149-rfc0048-s-resolved-d6-still-states-a-120s.md) | RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20 | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1150](BG1150-sprint-py-still-says-the-planner-reads-the.md) | sprint.py still says the planner reads the series 'the budget lane reads', though that lane was deleted in 315ec358 | Open | Low | 2026-11-01 | 2026-11-01 |
@@ -283,6 +283,8 @@
 | [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1206](BG1206-bg1116-s-pins-key-on-literal-wording-the.md) | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1207](BG1207-bg1197-s-harness-scrub-lives-in-the-root.md) | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1208](BG1208-bg1122-s-meter-memo-leaves-the-unfinished-line.md) | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1209](BG1209-the-pre-commit-hook-s-payload-markdown-lane.md) | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

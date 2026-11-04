@@ -1,6 +1,6 @@
 # BG1147: The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .githooks/pre-commit, tools/tests/test_lean_commit_lanes.py, changelog.d/BG1147.md
@@ -28,8 +28,10 @@ Also look for markdownlint in the main worktree's `node_modules` (resolve `git r
 
 - [ ] **AC1** A commit made in a linked worktree runs the markdown lane with the main worktree's markdownlint when its own `node_modules` is absent, and refuses a markdown error as the main tree does.
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::CommitLaneTests::test_markdown_lane_in_a_linked_worktree_uses_the_main_worktrees_markdownlint
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** With no markdownlint anywhere, the lane still prints SKIP naming what it looked for (the positive control).
   - **Verify:** pytest tools/tests/test_lean_commit_lanes.py::CommitLaneTests::test_markdown_skip_names_every_place_it_looked
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

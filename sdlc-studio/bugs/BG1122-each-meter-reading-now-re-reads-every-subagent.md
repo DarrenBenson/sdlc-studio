@@ -1,6 +1,6 @@
 # BG1122: Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long session instead of 22 s
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py, changelog.d/BG1122.md
@@ -28,8 +28,10 @@ Memoise per transcript by (path, size, mtime): keep each file's per-message comp
 
 - [ ] **AC1** Given a reading taken, then one message appended to a transcript, when the next reading is taken, then only the appended bytes are parsed and the result equals a full re-read
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py::IncrementalReadTests::test_a_second_reading_parses_only_appended_bytes
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** Given a transcript that shrank or was replaced, then it is re-read whole
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py::IncrementalReadTests::test_a_shrunk_or_replaced_transcript_is_read_whole
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 
