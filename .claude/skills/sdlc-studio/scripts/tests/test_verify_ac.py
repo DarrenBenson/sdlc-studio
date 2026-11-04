@@ -18,6 +18,7 @@ import stat
 import sys
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
 import unittest.mock
@@ -3382,6 +3383,194 @@ class StampResolutionTests(unittest.TestCase):
                 self.assertEqual(verify_ac.cmd_stamps(args), 0)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+class _FakeCollectionServer:
+    """Stands in for `verify_ac.CollectionServer`: answers each file from `answers`, stores the
+    answer under the key `_collect_nodes` reads, and logs the file."""
+
+    def __init__(self, cwd, answers, log, barrier=None) -> None:
+        self.cwd, self.answers, self.log, self.barrier = cwd, answers, log, barrier
+        self.closed = False
+
+    def collect(self, test_file):
+        if self.barrier is not None:
+            self.barrier.wait()
+        self.log.append(test_file)
+        nodes = self.answers.get(test_file, [])
+        verify_ac._COLLECT_CACHE[(test_file, str(self.cwd))] = nodes
+        return nodes
+
+    def close(self) -> None:
+        self.closed = True
+
+
+@unittest.skipUnless(shutil.which("pytest"), "stamps resolves only pytest selectors")
+class StampsCollectSideBySideTests(unittest.TestCase):
+    """BG1187: `stamps` collects each stamped file once, side by side, while it judges them, and
+    still names each dead stamp and exits 1."""
+
+    def setUp(self) -> None:
+        verify_ac._COLLECT_CACHE.clear()
+        self.addCleanup(verify_ac._COLLECT_CACHE.clear)
+        self.root = Path(tempfile.mkdtemp(prefix="verify_ac_bg1187_"))
+        self.addCleanup(shutil.rmtree, self.root, True)
+
+    def _unit(self, folder: str, name: str, acs: list[tuple[str, str]]) -> None:
+        d = self.root / "sdlc-studio" / folder
+        d.mkdir(parents=True, exist_ok=True)
+        body = f"# {name.split('-')[0]}: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+        for i, (verifier, stamped) in enumerate(acs, 1):
+            body += f"### AC{i}: a\n\n- **Verify:** {verifier}\n- **Verified:** {stamped}\n\n"
+        (d / name).write_text(body, encoding="utf-8")
+
+    def _stamps(self, *extra):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = verify_ac.main(["stamps", *extra, "--root", str(self.root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def _fakes(self, answers, barrier=None):
+        log, started = [], []
+
+        def start(cwd):
+            server = _FakeCollectionServer(cwd, answers, log, barrier)
+            started.append(server)
+            return server
+        return log, started, start
+
+    def test_each_stamped_file_is_collected_once_by_the_servers_before_it_is_judged(self) -> None:
+        """MUTANTS: queue nothing from `cmd_stamps`; queue a file already queued, or the held
+        file again (a file collected twice); drop the `yes` filter (an unstamped criterion's
+        file collected); drop the `_k_term_files` files (the second file of an or-joined `-k`
+        left to a fresh collection); servers started for another directory; stop no server."""
+        self._unit("stories", "US9101-a.md", [
+            ("pytest t/test_a.py::test_live", "yes"),
+            ("pytest t/test_a.py::test_gone", "yes"),
+            ("pytest t/test_b.py -k alpha", "yes"),
+            ("pytest t/test_unstamped.py::test_x", "no"),
+            ("manual check", "yes")])
+        self._unit("bugs", "BG9101-b.md", [
+            ("pytest t/test_c.py t/test_d.py -k \"alpha or beta\"", "yes")])
+        answers = {"t/test_a.py": ["t/test_a.py::test_live"],
+                   "t/test_b.py": ["t/test_b.py::test_alpha"],
+                   "t/test_c.py": ["t/test_c.py::test_alpha"],
+                   "t/test_d.py": ["t/test_d.py::test_beta"]}
+        log, started, start = self._fakes(answers)
+        fresh = []
+        with unittest.mock.patch.object(verify_ac.CollectionServer, "start", start), \
+             unittest.mock.patch.object(verify_ac, "_collect_fresh",
+                                        lambda f, cwd=None: fresh.append(f) or []):
+            rc, out, err = self._stamps("--bugs")
+        self.assertEqual(sorted(log), sorted(answers), log)
+        self.assertEqual(fresh, [], "a file the servers answered was collected again")
+        self.assertTrue(started and all(s.closed for s in started), "a server was left running")
+        self.assertEqual(rc, 1, out + err)
+        self.assertIn("US9101 AC2: stamped verified, but its verifier selects nothing", out)
+        self.assertNotIn("AC1", out)
+        self.assertNotIn("AC3", out)
+        self.assertNotIn("BG9101", out)
+
+    @staticmethod
+    def _no_fresh(test_file, cwd=None):
+        raise AssertionError(f"{test_file} was collected outside the servers")
+
+    def _side_by_side(self, files, start, fresh=None):
+        collections = verify_ac._SideBySideCollection(self.root)
+        with unittest.mock.patch.object(verify_ac.CollectionServer, "start", start), \
+             unittest.mock.patch.object(verify_ac, "_collect_fresh", fresh or self._no_fresh):
+            try:
+                for f in files:
+                    collections.submit(f)
+            finally:
+                collections.close()
+
+    def test_the_collections_run_side_by_side(self) -> None:
+        """MUTANT: one worker, or `max_workers=1`: two collections that each wait for the other
+        then never meet, the barrier breaks, and neither file is cached."""
+        if (os.cpu_count() or 1) < 2:
+            self.skipTest("needs two cores")
+        barrier = threading.Barrier(2, timeout=10)
+        _log, started, start = self._fakes({"a.py": ["a.py::t"], "b.py": ["b.py::t"]}, barrier)
+        self._side_by_side(["a.py", "b.py"], start)
+        key = str(self.root)
+        self.assertEqual(verify_ac._COLLECT_CACHE.get(("a.py", key)), ["a.py::t"])
+        self.assertEqual(verify_ac._COLLECT_CACHE.get(("b.py", key)), ["b.py::t"])
+        self.assertTrue(started and all(s.closed for s in started), "a server was left running")
+        self.assertEqual(verify_ac._COLLECT_PENDING, {}, "close left queued files behind")
+
+    def test_a_read_of_a_queued_file_waits_for_its_collection(self) -> None:
+        """MUTANT: drop the wait on `_COLLECT_PENDING` from `_collect_nodes`: the read finds no
+        answer yet and collects the file again in a process of its own."""
+        log, _started, start = self._fakes({"a.py": ["a.py::t"], "b.py": ["b.py::t"]})
+        slow = _FakeCollectionServer.collect
+
+        def collect(server, f):
+            time.sleep(0.5)
+            return slow(server, f)
+        fresh = []
+        collections = verify_ac._SideBySideCollection(self.root)
+        with unittest.mock.patch.object(_FakeCollectionServer, "collect", collect), \
+             unittest.mock.patch.object(verify_ac.CollectionServer, "start", start), \
+             unittest.mock.patch.object(verify_ac, "_collect_fresh",
+                                        lambda f, cwd=None: fresh.append(f) or []):
+            try:
+                collections.submit("a.py")
+                collections.submit("b.py")
+                got = verify_ac._collect_nodes("b.py", self.root)
+            finally:
+                collections.close()
+        self.assertEqual(got, ["b.py::t"])
+        self.assertEqual(fresh, [], "a queued file was collected again")
+
+    def test_with_no_server_each_file_gets_a_collection_of_its_own(self) -> None:
+        """MUTANTS: collect nothing when no server starts; send a lone file to a server; queue
+        a file already cached."""
+        verify_ac._COLLECT_CACHE[("cached.py", str(self.root))] = ["cached.py::t"]
+        fresh = []
+
+        def collect(f, cwd=None):
+            fresh.append(f)
+            return [f + "::t"]
+        self._side_by_side(["a.py", "b.py", "cached.py"], lambda cwd: None, collect)
+        self.assertEqual(sorted(fresh), ["a.py", "b.py"])
+        self.assertEqual(verify_ac._COLLECT_CACHE[("b.py", str(self.root))], ["b.py::t"])
+        started = []
+        self._side_by_side(["lone.py", "a.py"], lambda cwd: started.append(cwd))
+        self.assertEqual(started, [], "one uncached file was sent to a server")
+        self.assertNotIn(("lone.py", str(self.root)), verify_ac._COLLECT_CACHE)
+
+    def test_a_real_server_run_still_names_each_dead_stamp_and_exits_one(self) -> None:
+        """AC1's refusal through real `CollectionServer`s and real pytest, with the positive
+        control: repoint the dead stamp and the same tree exits 0. MUTANT: start the servers for
+        another directory, so their answers miss the key the check reads and every file is
+        collected again by `_collect_fresh`."""
+        probe = verify_ac.CollectionServer.start(self.root)
+        if probe is None:
+            self.skipTest("no fork, or a pytest no CollectionServer can run")
+        probe.close()
+        t = self.root / "t"
+        t.mkdir()
+        (t / "test_one.py").write_text("def test_live():\n    pass\n", encoding="utf-8")
+        (t / "test_two.py").write_text("def test_other():\n    pass\n", encoding="utf-8")
+        self._unit("stories", "US9102-a.md", [("pytest t/test_one.py::test_live", "yes"),
+                                               ("pytest t/test_two.py::test_renamed", "yes")])
+        fresh, real = [], verify_ac._collect_fresh
+        with unittest.mock.patch.object(verify_ac, "_collect_fresh",
+                                        lambda f, cwd=None: fresh.append(f) or real(f, cwd)):
+            rc, out, err = self._stamps()
+        self.assertEqual(rc, 1, out + err)
+        self.assertIn("US9102 AC2: stamped verified, but its verifier selects nothing", out)
+        self.assertIn("t/test_two.py::test_renamed", out)
+        self.assertNotIn("AC1", out)
+        self.assertIn("1 stamped AC(s) resting on a selector that resolves to nothing", err)
+        self.assertEqual(fresh, [], "the servers' answers missed the key the check reads")
+        verify_ac._COLLECT_CACHE.clear()
+        self._unit("stories", "US9102-a.md", [("pytest t/test_one.py::test_live", "yes"),
+                                               ("pytest t/test_two.py::test_other", "yes")])
+        rc, out, err = self._stamps()
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn("1 file(s) checked, every stamped verifier still resolves", out)
 
 
 class FenceInfoStringTests(unittest.TestCase):

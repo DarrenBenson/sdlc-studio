@@ -49,6 +49,7 @@ import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -802,11 +803,21 @@ _COLLECTABLE = {"pytest"}
 #: `pytest --collect-only` per stamped AC - 306 of them - and turned an 8s gate into 81s.
 _COLLECT_CACHE: dict = {}
 
+#: The collections a `_SideBySideCollection` has queued and not yet closed, keyed as
+#: `_COLLECT_CACHE` is, each a future of the worker collecting that file.
+_COLLECT_PENDING: dict = {}
+
 
 def _collect_nodes(test_file: str, cwd=None) -> list[str] | None:
     """Every node id `pytest` collects from `test_file`, or None if the file itself will not
-    collect (a syntax error, a missing import). Cached per (file, cwd)."""
+    collect (a syntax error, a missing import). Cached per (file, cwd). A file a
+    `_SideBySideCollection` has queued is waited for, then read from the cache; one whose
+    collection raised is collected here."""
     key = (test_file, str(cwd) if cwd else None)
+    pending = _COLLECT_PENDING.get(key)
+    if pending is not None:
+        from concurrent.futures import wait  # noqa: PLC0415 - needed only while one is queued
+        wait([pending])
     if key in _COLLECT_CACHE:
         return _COLLECT_CACHE[key]
     result = _collect_fresh(test_file, cwd)
@@ -1153,6 +1164,21 @@ def _k_or_terms(pattern: str) -> list[str]:
     return [" ".join(t) for t in terms]
 
 
+def _k_term_files(argv: list[str]) -> tuple[list[str], list[str]]:
+    """`(or-joined -k terms, test files)` that `dead_k_terms` judges for a built pytest argv, or
+    `([], [])` where it judges none: no `-k` with a value, fewer than two top-level `or` terms, no
+    `.py` file beside the `-k`, or a node address there."""
+    if "-k" not in argv[:-1]:
+        return [], []
+    k = argv.index("-k")
+    terms = _k_or_terms(argv[k + 1])
+    rest = argv[1:k] + argv[k + 2:]
+    files = [a for a in rest if a.endswith(".py")]
+    if len(terms) < 2 or not files or any("::" in a for a in rest):
+        return [], []
+    return terms, files
+
+
 def dead_k_terms(expr: str, cwd=None) -> list[str]:
     """The `or`-joined `-k` terms of a pytest selector that select nothing while another term
     selects something. Empty when every term is live, when there is no top-level `or`, when
@@ -1169,13 +1195,10 @@ def dead_k_terms(expr: str, cwd=None) -> list[str]:
         _kind, argv = _build_command(expr, cwd=cwd)
     except Exception:  # noqa: BLE001 - a selector that will not build has no terms to judge
         return []
-    if not isinstance(argv, list) or "-k" not in argv[:-1]:
+    if not isinstance(argv, list):
         return []
-    k = argv.index("-k")
-    terms = _k_or_terms(argv[k + 1])
-    rest = argv[1:k] + argv[k + 2:]
-    files = [a for a in rest if a.endswith(".py")]
-    if len(terms) < 2 or not files or any("::" in a for a in rest):
+    terms, files = _k_term_files(argv)
+    if not files:
         return []
     nodes: list[str] = []
     for test_file in files:
@@ -4179,6 +4202,102 @@ def staged_stamps(root) -> tuple:
     return 0, lines
 
 
+#: The most test files `stamps` collects at once. Measured on this 4-core, 8-thread workstation
+#: over the 445 files this repository's stamps name (2026-11-04): eight at a time took 85 s at
+#: load 7 to 14 on 648 s of worker time, four took 109 s at load 10 to 17 on 432 s. The check
+#: answers to a wall-clock ceiling on a shared machine, so it takes the shorter wall time.
+STAMPS_COLLECT_WORKERS = 8
+
+
+def _stamped_test_files(paths, cwd=None):
+    """Yield every test file `unresolvable_stamps` and `dead_k_term_stamps` can ask
+    `_collect_nodes` for over `paths`, in the order they read them and as often as the criteria
+    name it: for each criterion recorded `yes` whose first Verify line is a `pytest` selector,
+    the file `_selector_target` names and the files `_k_term_files` gives. Nothing where no
+    `pytest` is on PATH, as those checks then collect nothing."""
+    if not shutil.which("pytest"):
+        return
+    for path in paths:
+        for block in criteria_blocks(sdlc_md.read_text_safe(path)):
+            line = block.verifier or ""
+            if ((block.verified_state or "").strip().lower() != "yes" or not line.split()
+                    or line.split(None, 1)[0].lower() not in _COLLECTABLE or _is_manual(line)):
+                continue
+            named = [_selector_target(line, cwd)[1]]
+            try:
+                _kind, argv = _build_command(line, cwd=cwd)
+            except Exception:  # noqa: BLE001 - a selector that will not build names no more
+                argv = None
+            if isinstance(argv, list):
+                named += _k_term_files(argv)[1]
+            yield from (test_file for test_file in named if test_file)
+
+
+class _SideBySideCollection:
+    """Collects test files for one working directory ahead of the reads that need them, at most
+    `min(cores, workers)` at a time. Each worker thread asks its own `CollectionServer` for `cwd`,
+    which stores its answer under the key `_collect_nodes` reads, or runs `_collect_fresh` and
+    stores that where no server can start. `submit` queues a file not
+    already cached or queued. The first is held back and the workers start with the second, so a
+    run naming one file leaves it to `_collect_nodes`. While a file is queued, `_collect_nodes`
+    waits for its collection (`_COLLECT_PENDING`). `close` waits for every collection begun,
+    drops any not begun, stops every server and forgets the queued files."""
+
+    def __init__(self, cwd, workers: int = STAMPS_COLLECT_WORKERS) -> None:
+        self.cwd, self.workers = cwd, workers
+        self._key = str(cwd) if cwd else None
+        self._held: str | None = None
+        self._pool = None
+        self._queued: list = []
+        self._local, self._servers, self._lock = threading.local(), [], threading.Lock()
+
+    def submit(self, test_file: str) -> None:
+        key = (test_file, self._key)
+        if key in _COLLECT_CACHE or key in _COLLECT_PENDING or test_file == self._held:
+            return
+        if self._pool is None:
+            if self._held is None:
+                self._held = test_file
+                return
+            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415 - needed only here
+            self._pool = ThreadPoolExecutor(
+                max_workers=max(1, min(os.cpu_count() or 1, self.workers)))
+            held, self._held = self._held, None
+            self._queue(held)
+        self._queue(test_file)
+
+    def _queue(self, test_file: str) -> None:
+        key = (test_file, self._key)
+        self._queued.append(key)
+        _COLLECT_PENDING[key] = self._pool.submit(self._collect, test_file)
+
+    def _collect(self, test_file: str) -> list[str] | None:
+        local = self._local
+        if not hasattr(local, "server"):
+            local.server = CollectionServer.start(self.cwd)
+            if local.server is not None:
+                with self._lock:
+                    self._servers.append(local.server)
+        if local.server is not None:
+            return local.server.collect(test_file)
+        result = _collect_fresh(test_file, self.cwd)
+        _COLLECT_CACHE[(test_file, self._key)] = result
+        return result
+
+    def close(self) -> None:
+        try:
+            if self._pool is not None:
+                self._pool.shutdown(wait=True, cancel_futures=True)
+                self._pool = None
+        finally:
+            for server in self._servers:
+                server.close()
+            self._servers.clear()
+            for key in self._queued:
+                _COLLECT_PENDING.pop(key, None)
+            self._queued.clear()
+
+
 def cmd_stamps(args: argparse.Namespace) -> int:
     """Report stamped-green ACs whose verifier no longer selects anything.
 
@@ -4218,17 +4337,25 @@ def cmd_stamps(args: argparse.Namespace) -> int:
         bugs = under_root(repo_root, "sdlc-studio/bugs")
         if bugs.is_dir():
             paths += sorted(p for p in bugs.glob("*.md") if not p.name.startswith("_"))
+    # One collection per distinct file either way. Queuing each as it is found and judging beside
+    # the collections is what brings the whole corpus inside the release gate's ceiling.
+    collections = _SideBySideCollection(repo_root)
     dead = partial = 0
-    for p in paths:
-        for row in unresolvable_stamps(p, repo_root):
-            dead += 1
-            print(f"{row['record']} {row['ac']}: stamped verified, but its verifier selects "
-                  f"nothing\n    {row['verifier']}")
-        for row in dead_k_term_stamps(p, repo_root):
-            partial += 1
-            named = ", ".join(repr(t) for t in row["terms"])
-            print(f"{row['record']} {row['ac']}: stamped verified, but -k term(s) {named} "
-                  f"select nothing - a live term hides them\n    {row['verifier']}")
+    try:
+        for test_file in _stamped_test_files(paths, repo_root):
+            collections.submit(test_file)
+        for p in paths:
+            for row in unresolvable_stamps(p, repo_root):
+                dead += 1
+                print(f"{row['record']} {row['ac']}: stamped verified, but its verifier selects "
+                      f"nothing\n    {row['verifier']}")
+            for row in dead_k_term_stamps(p, repo_root):
+                partial += 1
+                named = ", ".join(repr(t) for t in row["terms"])
+                print(f"{row['record']} {row['ac']}: stamped verified, but -k term(s) {named} "
+                      f"select nothing - a live term hides them\n    {row['verifier']}")
+    finally:
+        collections.close()
     if dead:
         print(f"verify-stamps: {dead} stamped AC(s) resting on a selector that resolves to "
               f"nothing - the stamp is STALE, not green", file=sys.stderr)
