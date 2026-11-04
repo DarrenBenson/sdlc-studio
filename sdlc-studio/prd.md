@@ -497,8 +497,8 @@ The skill's scripts reach the network on these outbound, optional paths only:
 - an HTTPS GET to the Cursor cloud usage API (`https://api.cursor.com`, overridable
   with `SDLC_STUDIO_CURSOR_API`) from `meter_cursor.py`, made only when the Cursor
   token meter is selected and both `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID`
-  are set; the key travels only in its request header, a redirect is refused rather
-  than followed, and a 5s timeout or any failure reads the run as not measured;
+  are set, with the key only in its request header, a redirect refused rather
+  than followed, and a 5s timeout or any failure read as not measured;
 - the tools a project's Verify lines invoke, whose reachable hosts a project bounds
   with `SDLC_VERIFY_HTTP_HOSTS`.
 

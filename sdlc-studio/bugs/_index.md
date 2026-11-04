@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 203 |
+| Open | 205 |
 | In Progress | 0 |
 | Fixed | 837 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1214** |
+| **Total** | **1216** |
 
 ## All Bugs
 
@@ -290,6 +290,8 @@
 | [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1215](BG1215-verify-ac-s-fallback-for-a-queued-collection.md) | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1216](BG1216-bg1210-added-a-prd-security-line-with-no.md) | BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main | Open | Medium | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
