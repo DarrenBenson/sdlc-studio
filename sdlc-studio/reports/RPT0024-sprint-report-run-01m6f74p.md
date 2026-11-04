@@ -7,7 +7,7 @@
 **Verdict: Judged partial** - The release verify lane ran at default ceilings in 1,272 s on the gate host (6.2.0's took 4,447 to 6,582 s) and band drift and the commit frictions are fixed, but the one release gate on the closing commit did not pass first time: three criteria need Python 3.10 and pdftotext, which the gate host lacks (BG1220), one red came from a filed bug's own text, and the fragments lane refuses any commit before a cut.
 
 > **Run:** 2026-11-02T22:49:45Z to 2026-11-04T20:35:24Z (45.8h)
-> **Verified on:** 778187c1dfa62b9f1cfa113cbbf8c16ea42370e6   **Fingerprint:** 08b8c66ce7ccbe19
+> **Verified on:** 3207e8703e3c81bb5e85bfd4196525ce65a66435   **Fingerprint:** dd48acac19cd992b
 
 ## Estimates
 
@@ -99,7 +99,7 @@ size, plan and added together: 57.
 
 ## Known issues handed over
 
-33 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
+34 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
@@ -136,6 +136,8 @@ size, plan and added together: 57.
 | BG1215 | Low | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404) |
 | BG1218 | Low | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404) |
 | BG1219 | Low | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404) |
+| BG1222 | Low | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included |
+| checklist | close gap | known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s) |
 
 ## Sign-off
 
@@ -160,10 +162,10 @@ read from stamps, with the opening reading taken from the legacy session_token_b
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 1 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 41627174372 - 1 push-triggered run(s) on main in the run window |
-| Lead time for changes | 45h 6m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 60 commit(s) |
-| Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 41627174372 - 1 deployment(s); 0 failed on none |
-| Time to restore | no restore needed | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 41627174372 - no push-triggered run on main concluded failure |
+| Deployment frequency | 2 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 41911840410/41627174372 - 2 push-triggered run(s) on main in the run window |
+| Lead time for changes | 45h 56m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 63 commit(s) |
+| Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 41911840410/41627174372 - 2 deployment(s); 0 failed on none |
+| Time to restore | no restore needed | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 41911840410/41627174372 - no push-triggered run on main concluded failure |
 
 ### Calibration
 

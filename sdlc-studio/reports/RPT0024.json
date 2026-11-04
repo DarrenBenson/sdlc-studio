@@ -3,7 +3,7 @@
   "report_id": "RPT0024",
   "run_id": "RUN-01M6F74P",
   "retro_id": "RETRO0138",
-  "generated_at": "2026-11-04T20:35:24Z",
+  "generated_at": "2026-11-04T21:39:05Z",
   "window_end": "2026-11-04T20:35:24Z",
   "signature": null,
   "sections": [
@@ -48,7 +48,7 @@
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "778187c1dfa62b9f1cfa113cbbf8c16ea42370e6",
+          "value": "3207e8703e3c81bb5e85bfd4196525ce65a66435",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -1590,7 +1590,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "33 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "value": "34 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -2155,6 +2155,40 @@
             "value": "migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
             "source": "sdlc-studio/bugs/BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md"
           }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1222",
+            "source": "sdlc-studio/bugs/BG1222-the-hand-copied-list-census-runs-only-at.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1222-the-hand-copied-list-census-runs-only-at.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included",
+            "source": "sdlc-studio/bugs/BG1222-the-hand-copied-list-census-runs-only-at.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "checklist",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
         }
       ],
       "not_measured": null
@@ -2236,7 +2270,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 1,
+            "value": 2,
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -2251,7 +2285,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 41627174372 - 1 push-triggered run(s) on main in the run window",
+            "value": "forge runs 41911840410/41627174372 - 2 push-triggered run(s) on main in the run window",
             "source": "gh run list"
           }
         },
@@ -2263,7 +2297,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "45h 6m",
+            "value": "45h 56m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2278,7 +2312,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 60 commit(s)",
+            "value": "git history - first to last of 63 commit(s)",
             "source": "git log"
           }
         },
@@ -2305,7 +2339,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 41627174372 - 1 deployment(s); 0 failed on none",
+            "value": "forge runs 41911840410/41627174372 - 2 deployment(s); 0 failed on none",
             "source": "gh run list"
           }
         },
@@ -2332,7 +2366,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 41627174372 - no push-triggered run on main concluded failure",
+            "value": "forge runs 41911840410/41627174372 - no push-triggered run on main concluded failure",
             "source": "gh run list"
           }
         }
@@ -2734,6 +2768,7 @@
       "not_measured": null
     }
   ],
+  "findings_window_end": "2026-11-04T21:39:05Z",
   "record_paths": "portable",
   "token_ratio": "every-delivered-unit-delegated",
   "restore_pairing": "next-success-after-failure",
@@ -2744,5 +2779,5 @@
   "agent_minutes": "any-agent-supplied",
   "dora_failures": "failure-or-timed-out-only",
   "token_headline": "priced-input-equivalent",
-  "fingerprint": "08b8c66ce7ccbe19"
+  "fingerprint": "dd48acac19cd992b"
 }

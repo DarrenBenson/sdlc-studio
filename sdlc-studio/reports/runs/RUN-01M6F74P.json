@@ -1562,9 +1562,22 @@
       "stages": [
         "installed-copy"
       ]
+    },
+    {
+      "at": "2026-11-04T21:18:31Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
     }
   ],
-  "close_known_issues": [],
+  "close_known_issues": [
+    {
+      "source": "checklist",
+      "detail": "known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s)"
+    }
+  ],
   "close_not_measured": [],
   "goal_content_review": [
     {
@@ -1778,13 +1791,14 @@
           "BG1217",
           "BG1218",
           "BG1219",
-          "BG1220"
+          "BG1220",
+          "BG1222"
         ]
       },
-      "recorded_at": "2026-11-04T20:30:18Z"
+      "recorded_at": "2026-11-04T21:31:37Z"
     }
   ],
-  "close_tree": "746386d695aaef353bb06143e79951b579c19803",
+  "close_tree": "1efeb85ce89e41fc40c1a4fb52f01e26f0d35470",
   "report_gate_clear": [
     "BG0958",
     "BG1090",
@@ -1810,10 +1824,20 @@
     "US1115",
     "US1116"
   ],
-  "verified_sha": "778187c1dfa62b9f1cfa113cbbf8c16ea42370e6",
+  "verified_sha": "3207e8703e3c81bb5e85bfd4196525ce65a66435",
   "ci_runs": {
     "source": "gh run list",
     "runs": [
+      {
+        "conclusion": "",
+        "createdAt": "2026-11-04T20:59:46Z",
+        "databaseId": 41911840410,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "6c3209cb1e9e73c78576c5ea909367415dd13039",
+        "updatedAt": "2026-11-04T20:59:51Z",
+        "workflowName": "Lint"
+      },
       {
         "conclusion": "success",
         "createdAt": "2026-11-03T11:23:48Z",
@@ -1910,6 +1934,6 @@
   },
   "report_discharged": [],
   "report": "RPT0024",
-  "report_fingerprint": "08b8c66ce7ccbe19",
+  "report_fingerprint": "dd48acac19cd992b",
   "report_window_end": "2026-11-04T20:35:24Z"
 }
