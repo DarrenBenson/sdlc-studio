@@ -115,6 +115,12 @@ _JUDGED_NORM_ID_RE = re.compile(r"(?:US|BG|CR)(?:[0-9A-HJKMNP-TV-Z]{8,}|\d{4,})"
 # explicit statement of which id owns the change, so the git leg trusts it to attribute a shared
 # commit's files per id where a bare co-named subject cannot be apportioned.
 _REFS_LINE_RE = re.compile(r"^[ \t]*Refs:[ \t]*(.+)$", re.MULTILINE | re.IGNORECASE)
+# A `Mentions:` commit trailer line, in the `Refs:` grammar. It states that the commit names an id
+# without that id owning any of its files, so `check_commit_message` counts it as accounting for
+# the id. The git leg never reads it, so its attribution is what it was before the trailer
+# existed. A commit whose subject names one id still gives its files to every id the message
+# names, a mentioned one included: the trailer cannot lower a count (see `_git_touched_by_id`).
+_MENTIONS_LINE_RE = re.compile(r"^[ \t]*Mentions:[ \t]*(.+)$", re.MULTILINE | re.IGNORECASE)
 _REC = "\x1e"    # per-commit record separator in the git format
 _MSGEND = "\x1f"  # message/file-list separator within a record
 _GIT_TIMEOUT = 30
@@ -140,15 +146,26 @@ def _mode_and_cutoff(root: Path) -> tuple[str, int | None]:
     return mode, cutoff
 
 
+def _trailer_ids(message: str, line_re: re.Pattern[str]) -> set[str]:
+    """The judged-type ids named on the trailer lines `line_re` matches, normalised."""
+    ids: set[str] = set()
+    for m in line_re.finditer(message):
+        for i in _JUDGED_ID_RE.findall(m.group(1)):
+            ids.add(sdlc_md.norm_id(i))
+    return ids
+
+
 def _refs_ids(message: str) -> set[str]:
     """The judged-type ids named in a commit's `Refs:` trailer line(s), normalised. Empty when the
     message carries no such trailer. Both the comma-list and repeated-line spellings accumulate, so
     `Refs: US0301, US0302` and two `Refs:` lines mean the same set."""
-    ids: set[str] = set()
-    for m in _REFS_LINE_RE.finditer(message):
-        for i in _JUDGED_ID_RE.findall(m.group(1)):
-            ids.add(sdlc_md.norm_id(i))
-    return ids
+    return _trailer_ids(message, _REFS_LINE_RE)
+
+
+def _mentions_ids(message: str) -> set[str]:
+    """The judged-type ids named in a commit's `Mentions:` trailer line(s), normalised, read with
+    the `Refs:` grammar. Only `check_commit_message` reads these; the git leg does not."""
+    return _trailer_ids(message, _MENTIONS_LINE_RE)
 
 
 def _git_touched_source_files(root: Path, rid: str) -> set[str]:
@@ -641,9 +658,12 @@ def _strip_comments(message: str) -> str:
 def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, str | None]:
     """The commit-msg hook's decision, as pure logic (so it is unit-testable without a hook).
 
-    Warns when the subject names more than one judged id and a `Refs:` trailer does not cover them
-    all - the case where the engagement floor's git leg would otherwise skip the commit and an
-    understated `Affects` would stand. The nudge is to add `Refs: <id>` per owning id.
+    Warns when the subject names more than one judged id and a trailer does not account for each
+    one - the case where the engagement floor's git leg would otherwise skip the commit and an
+    understated `Affects` would stand. `Refs: <id>` accounts for an id that owns the commit's files
+    and `Mentions: <id>` for one that owns none of them; the warning offers both. The git leg reads
+    `Refs:` alone, so in a commit whose subject names several ids it attributes none of the files
+    to an id only `Mentions:` names.
 
     Returns (exit_code, warning). A clean message returns (0, None). A warning returns its text and
     exits 1 only under `strict` (an explicit opt-in); otherwise it exits 0 - the hook advises, it
@@ -662,17 +682,18 @@ def check_commit_message(message: str, *, strict: bool = False) -> tuple[int, st
         written.setdefault(sdlc_md.norm_id(i), i)
     if len(written) <= 1:
         return 0, None  # solo or no judged id: the floor handles it, nothing to nudge
-    uncovered = sorted(set(written) - _refs_ids(body))
+    uncovered = sorted(set(written) - _refs_ids(body) - _mentions_ids(body))
     if not uncovered:
-        return 0, None  # every co-named id has an explicit Refs trailer
+        return 0, None  # every co-named id has an explicit Refs or Mentions trailer
     names = [written[i] for i in uncovered]
     warning = (
         "commit subject names more than one work-item id but "
         + ("some lack" if len(uncovered) < len(written) else "none carry")
-        + " a Refs: trailer: " + ", ".join(names) + ". Without it the engagement floor cannot "
-        "attribute this commit's files per id (a shared commit is skipped), so an understated "
-        "Affects would go uncaught. Add a trailer line per owning id, e.g. `Refs: "
-        + names[0] + "`."
+        + " a Refs: or Mentions: trailer: " + ", ".join(names) + ". Without a Refs: trailer the "
+        "engagement floor cannot attribute this commit's files per id (a shared commit is "
+        "skipped), so an understated Affects would go uncaught. Add a trailer line per id: `Refs: "
+        + names[0] + "` if it owns the commit's files, or `Mentions: " + names[0]
+        + "` if it owns none of them."
     )
     return (1 if strict else 0), warning
 
@@ -846,8 +867,8 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
     if warning:
         print(f"engagement floor (commit-msg): {warning}", file=sys.stderr)
         if code != 0:
-            print("  (blocked by strict mode; commit with --no-verify to override, or add Refs:)",
-                  file=sys.stderr)
+            print("  (blocked by strict mode; commit with --no-verify to override, or add the "
+                  "Refs: or Mentions: lines)", file=sys.stderr)
     # The attribution advisory is REPORTED, never returned as the exit code - not even under
     # --strict. Ownership is inferred from a declared footprint, and a gate that refused on an
     # inference would be switched off within a week; the multi-id rule above is the only refusal.
@@ -947,7 +968,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "the violations THIS commit would create (the pre-commit lane).")
     c.set_defaults(func=cmd_check)
     m = sub.add_parser("check-commit-msg",
-                       help="Commit-msg hook: warn on a multi-id subject with no Refs: trailer.")
+                       help="Commit-msg hook: warn on a multi-id subject with an id no Refs: or "
+                            "Mentions: trailer accounts for.")
     m.add_argument("file", help="Path to the commit message file git passes the hook.")
     m.add_argument("--strict", action="store_true",
                    help="Block (exit 1) instead of warning - an explicit opt-in.")

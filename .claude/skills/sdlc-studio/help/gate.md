@@ -332,11 +332,12 @@ GitHub-specific.
 
 ### Opt-in commit-msg gate (engagement floor)
 
-A separate, opt-in `commit-msg` hook checks a commit subject that names more than
-one work-item id (US/BG/CR) for a `Refs: <id>` trailer disambiguating them.
-The trailer lets the engagement floor attribute a shared commit's files per id
+A separate, opt-in `commit-msg` hook checks that a commit subject naming more than
+one work-item id (US/BG/CR) accounts for each one with a trailer. `Refs: <id>` says
+the id owns the commit's files and lets the engagement floor attribute them per id
 (otherwise such a commit is skipped and an understated `Affects` goes uncaught).
-Add `--strict` and it refuses the commit, printing the trailer lines to paste -
+`Mentions: <id>` says the subject only mentions the id: the floor never reads it, so
+in such a commit that id is attributed none of the files. Add `--strict` and it refuses the commit, printing the trailer lines to paste -
 which is how this repo's own `.githooks/commit-msg` runs it, so the warning cannot
 be read as enforcement while the commit lands anyway. Without `--strict` it warns
 and exits 0. A single-id subject passes untouched either way. Wire it into any
