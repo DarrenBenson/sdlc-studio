@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 201 |
+| Open | 202 |
 | In Progress | 0 |
 | Fixed | 831 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1206** |
+| **Total** | **1207** |
 
 ## All Bugs
 
@@ -282,6 +282,7 @@
 | [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1206](BG1206-bg1116-s-pins-key-on-literal-wording-the.md) | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1207](BG1207-bg1197-s-harness-scrub-lives-in-the-root.md) | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
