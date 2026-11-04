@@ -350,11 +350,24 @@ PRINT_RESULT = json.dumps({
               "cacheWriteTokens": 3_000}})
 
 
-def cli_store(chats: Path, chat: str, conversation: bool = True, tables=()) -> Path:
+#: What that build runs on opening a chat store (`initializeDriver`): WAL first, then the tables.
+CLI_INIT = """PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA busy_timeout = 5000;
+PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS blobs (id TEXT PRIMARY KEY, data BLOB);
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);"""
+
+
+def cli_store(chats: Path, chat: str, conversation: bool = True, tables=(),
+              live: unittest.TestCase | None = None) -> Path:
     """One chat in the shape the Cursor CLI's 2026.10.22-27dcf5f build wrote on the development
     machine, every value synthetic: a `meta.json`, and for a chat with a conversation a
-    `store.db` of the same two tables, whose `meta` row is hex-encoded JSON and whose `blobs`
-    hold a message. `tables` adds further tables, a store of some other build."""
+    `store.db` opened as that build opens it, whose `meta` row is hex-encoded JSON and whose
+    `blobs` hold a message. `tables` adds further tables, a store of some other build. Closed,
+    the store is checkpointed into a WAL-mode `store.db` alone. Given a test as `live`, its
+    connection stays open until that test's cleanup, as a chat the CLI holds open: the `-wal`
+    and `-shm` sit beside it, and the tables are in the `-wal` alone."""
     chat_dir = chats / chat
     chat_dir.mkdir(parents=True)
     (chat_dir / "meta.json").write_text(json.dumps({
@@ -362,9 +375,8 @@ def cli_store(chats: Path, chat: str, conversation: bool = True, tables=()) -> P
         "updatedAtMs": 2, "cwd": "/workspace"}), encoding="utf-8")
     if conversation:
         con = sqlite3.connect(chat_dir / "store.db")
+        con.executescript(CLI_INIT)
         with con:
-            con.execute("CREATE TABLE blobs (id TEXT PRIMARY KEY, data BLOB)")
-            con.execute("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
             meta = {"agentId": chat, "latestRootBlobId": "0" * 64, "name": "New Agent",
                     "mode": "default", "isRunEverything": False, "createdAt": 1,
                     "lastUsedModel": "auto", "blobEncryptionKey": "0" * 64}
@@ -374,8 +386,18 @@ def cli_store(chats: Path, chat: str, conversation: bool = True, tables=()) -> P
             con.execute("INSERT INTO blobs VALUES (?, ?)", ("1" * 64, json.dumps(message)))
             for table in tables:
                 con.execute(f"CREATE TABLE {table} (k TEXT)")
-        con.close()
+        if live is None:
+            con.close()
+        else:
+            live.addCleanup(con.close)
     return chat_dir
+
+
+def snapshot(chat_dir: Path) -> tuple:
+    """The chat directory's own mtime and each file's name and bytes, which a file written,
+    created or removed, even one removed again, changes."""
+    return (chat_dir.stat().st_mtime_ns,
+            sorted((p.name, p.read_bytes()) for p in chat_dir.iterdir()))
 
 
 class CursorCliTests(_Fixture):
@@ -393,7 +415,10 @@ class CursorCliTests(_Fixture):
         `XDG_CONFIG_HOME` ignored or taken when blank, the workspace path hashed unnormalised
         (the trailing slash), or `realpath` (the symlink) where the CLI takes the path as
         given; the store looked for in `~/.cursor/projects/<slug>/`, the guess the story's
-        notes made, where the CLI keeps transcripts and terminal output instead."""
+        notes made, where the CLI keeps transcripts and terminal output instead. The open is
+        read-only: a plain `sqlite3.connect`, or a `mode=ro` open without `immutable=1`, of a
+        closed WAL store or of one held open with its `-wal` and `-shm` changes the chat
+        directory's bytes or mtime."""
         for repo, name in DEV_CHATS.items():
             self.assertEqual(meter_cursor.cli_chats(repo, {"HOME": "/h"}),
                              Path("/h/.cursor/chats", name))
@@ -424,12 +449,24 @@ class CursorCliTests(_Fixture):
         self.assertIn(f"its chat store for this workspace, {xdg / 'cursor' / 'chats'}",
                       got["reason"])
 
+        closed = cli_store(self.chats, "chat-closed")
+        live = cli_store(self.chats, "chat-live", live=self)
+        self.assertEqual((closed / "store.db").read_bytes()[18:20], b"\x02\x02", "WAL mode")
+        self.assertFalse((closed / "store.db-wal").exists())
+        self.assertTrue((live / "store.db-wal").stat().st_size, "a -wal holding the tables")
+        self.assertTrue((live / "store.db-shm").is_file())
+        before = [snapshot(d) for d in (closed, live)]
+        got = self.cli_reading(stub)
+        self.assertIn("the Cursor CLI kept no usage record", got["reason"])
+        self.assertEqual([snapshot(d) for d in (closed, live)], before, "never written")
+
     def test_no_persisted_usage_is_not_attributable(self) -> None:
         """AC2. Mutants: a store keeping no usage read as 0 tokens, or with a reason not saying
         the CLI kept no usage record; a print run's result line, usage and all, taken from the
         CLI's terminal or transcript files; a request made with no key; the store written to;
         the table check dropped or made a subset test, so a store with a usage table, or one
-        that is not SQLite, reads as keeping none."""
+        that is not SQLite, reads as keeping none; the `-wal` ignored, so a chat held open
+        before its first checkpoint reads as a store of unknown shape."""
         stub = Stub(self)
         got = self.cli_reading(stub)
         self.assertIsNone(got["tokens"], "the control: no store at all")
@@ -460,6 +497,17 @@ class CursorCliTests(_Fixture):
         self.assertIn("holds 2 chats and", got["reason"])
         self.assertEqual(sorted((p.name, p.read_bytes()) for p in db.parent.iterdir()), before)
         self.assertEqual(stub.requests, [], "no key, no request")
+
+        # An interactive session still open and not yet checkpointed: its tables sit in its
+        # -wal alone, which an immutable open of store.db does not see.
+        live = cli_store(self.chats, "chat-live", live=self) / "store.db"
+        con = sqlite3.connect(f"{live.as_uri()}?mode=ro&immutable=1", uri=True)
+        self.addCleanup(con.close)
+        self.assertEqual(con.execute("SELECT count(*) FROM sqlite_master").fetchone(), (0,))
+        got = self.cli_reading(stub)
+        self.assertIsNone(got["tokens"])
+        self.assertIn("the Cursor CLI kept no usage record", got["reason"])
+        self.assertIn("holds 3 chats and", got["reason"])
 
         cli_store(self.chats, "chat-other", tables=("usage",))
         bad = self.chats / "chat-other" / "store.db"

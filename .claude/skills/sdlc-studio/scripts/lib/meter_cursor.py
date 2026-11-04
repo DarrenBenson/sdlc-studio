@@ -25,14 +25,19 @@ when both variables are set, else the Cursor CLI's chat store for this workspace
 under its config directory, each chat a `store.db` (SQLite, tables `blobs` and `meta`), a
 `meta.json` or both, and records no usage in it; a print run reports its usage on its stdout.
 So a CLI reading is tokens None with the reason, never zero; only the chat directory's listing
-and each `store.db`'s table names are read, and no terminal output.
+and each `store.db`'s table names are read, and no terminal output. The store is never written:
+a `store.db` whose `-wal` is empty or absent is read in place with SQLite's immutable read-only
+open, and one with a `-wal` (a chat whose tables may sit in the WAL alone) through a copy of the
+two in a temporary directory, since a read-only open of the store itself writes its `-shm`.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import shutil
 import sqlite3
+import tempfile
 import threading
 import urllib.error
 import urllib.parse
@@ -141,17 +146,31 @@ def read_cli(repo_root: Path, env: Mapping) -> dict:
 
 
 def _tables(db: Path) -> set[str] | None:
-    """The table names in the SQLite file `db`, opened read-only and never written, or None
-    when it cannot be read as SQLite."""
+    """The table names in the SQLite store `db`, WAL included, or None when it cannot be read
+    as SQLite. The CLI opens its store in WAL mode before creating its tables, so a chat not yet
+    checkpointed holds them in its `-wal` alone, which an immutable open ignores; that store is
+    read from a copy, and `db`, its `-wal` and its `-shm` are never written."""
+    wal = db.with_name(db.name + "-wal")
     try:
-        con = sqlite3.connect(f"{db.absolute().as_uri()}?mode=ro&immutable=1", uri=True)
-        try:
-            return {row[0] for row in con.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table'")}
-        finally:
-            con.close()
-    except sqlite3.Error:
+        if not (wal.is_file() and wal.stat().st_size):
+            return _schema(f"{db.absolute().as_uri()}?mode=ro&immutable=1")
+        with tempfile.TemporaryDirectory(prefix="sdlc-cursor-") as tmp:
+            copy = Path(tmp).absolute() / db.name
+            shutil.copyfile(db, copy)
+            shutil.copyfile(wal, copy.with_name(wal.name))
+            return _schema(f"{copy.as_uri()}?mode=ro")
+    except (sqlite3.Error, OSError):
         return None
+
+
+def _schema(uri: str) -> set[str]:
+    """The table names of the SQLite database at `uri`."""
+    con = sqlite3.connect(uri, uri=True)
+    try:
+        return {row[0] for row in con.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'")}
+    finally:
+        con.close()
 
 
 def read_cloud(key: str, agent: str, base: str = API_BASE) -> dict:
