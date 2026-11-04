@@ -134,9 +134,11 @@ claims and mutants, against the unit's current diff with `critic.py self-check r
 its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
 
 **The push gate is the full-suite check.** A commit runs only the test modules its change
-selects; the pre-push hook runs the whole suite on each pushed commit, on the gate host when
-`sdlc.gateHost` is set (D0382). `tools/run-suite.sh all` runs it on demand against the working
-tree, on that host too, and `run-suite.sh --check` reads its verdict.
+selects; the pre-push hook runs the whole suite on the commit each pushed ref points at, on
+the gate host when `sdlc.gateHost` is set (D0382). It reads one commit per ref, so a commit
+the push carries beneath a ref's tip is not judged by the full suite. `tools/run-suite.sh all`
+runs it on demand against the working tree, on that host too, and `run-suite.sh --check` reads
+its verdict.
 
 ## Project overview
 
