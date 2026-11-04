@@ -347,7 +347,11 @@ class CollectionPrimerTests(unittest.TestCase):
 
     FILES = [f"tests/test_{n}.py" for n in (1, 2, 3, 4)]
 
-    def _run(self, apply: bool) -> tuple[list[dict], Path]:
+    def _run(self, apply: bool, between=None) -> tuple[list[dict], Path]:
+        """The fixture through `migrate.migrate`, with `conformance` and `verify_ac` imported
+        afresh for the call and dropped after it, so what an earlier test left in `sys.modules`
+        cannot decide which module the primer and the lane collect with. `between` runs at the
+        signed-records step, after a dry run's collections start and before the lane."""
         import json  # noqa: PLC0415
         import os  # noqa: PLC0415
         import shutil  # noqa: PLC0415
@@ -381,7 +385,17 @@ class CollectionPrimerTests(unittest.TestCase):
                if k not in ("PYTEST_ADDOPTS", "PYTHONPYCACHEPREFIX")}
         env.update(PATH=f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
                    FAKE_PYTEST_LOG=str(log))
-        with mock.patch.dict(os.environ, env, clear=True):
+        records = migrate._signed_records
+
+        def recorded(*args, **kwargs):
+            if between is not None:
+                between()
+            return records(*args, **kwargs)
+
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch.dict(sys.modules), \
+                mock.patch.object(migrate, "_signed_records", recorded):
+            for name in ("conformance", "verify_ac"):
+                sys.modules.pop(name, None)
             migrate.migrate(root, apply=apply)
             self.assertNotIn("PYTEST_ADDOPTS", os.environ, "the guard leaked past the call")
             self.assertNotIn("PYTHONPYCACHEPREFIX", os.environ, "the guard leaked past the call")
@@ -410,19 +424,31 @@ class CollectionPrimerTests(unittest.TestCase):
             self.assertNotIn(str(root), row["prefix"], "the bytecode went into the project")
             self.assertFalse(Path(row["prefix"]).exists(), "the bytecode directory was left")
 
-    def test_a_second_verify_ac_module_does_not_split_the_cache(self) -> None:
-        """A process can hold two `verify_ac` modules, as a test runner that loads it again
-        under its name does. Fails on a primer that collects with `import verify_ac` rather
-        than the module `conformance` collects with: it fills the other module's cache, and
-        the lane collects every file a second time."""
+    def test_a_lane_on_another_verify_ac_module_reads_the_primed_answers(self) -> None:
+        """A process can hold two `verify_ac` modules, as a test runner that loads it again under
+        its name does, and the lane's can change after the collections start. Here the lane's
+        module is swapped between the primer's start and the lane. Fails on a `serving` bound
+        only to the module `start` collected with: the lane reads a cache nothing filled, and
+        collects every file a second time."""
         import importlib.util  # noqa: PLC0415
         from unittest import mock  # noqa: PLC0415
-        import conformance  # noqa: PLC0415,F401 - imported with the first module, as the lane is
         spec = importlib.util.spec_from_file_location("verify_ac", _SCRIPTS / "verify_ac.py")
         other = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(other)
-        with mock.patch.dict(sys.modules, {"verify_ac": other}):
-            rows, _root = self._run(apply=False)
+        with mock.patch.dict(sys.modules, {"verify_ac": other}):   # a dataclass looks it up
+            spec.loader.exec_module(other)
+        swaps = []
+
+        def swap():
+            patcher = mock.patch.object(sys.modules["conformance"], "verify_ac", other)
+            patcher.start()
+            swaps.append(patcher)
+
+        try:
+            rows, _root = self._run(apply=False, between=swap)
+        finally:
+            for patcher in swaps:
+                patcher.stop()
+        self.assertEqual(1, len(swaps))
         self.assertEqual(self.FILES, sorted(r["file"] for r in rows))
 
     def test_a_guard_turned_on_inside_another_changes_nothing(self) -> None:
@@ -611,19 +637,59 @@ class CollectionServerTests(unittest.TestCase):
         self.assertEqual(served["tests/test_ok.py"],
                          self.va._COLLECT_CACHE[("tests/test_ok.py", str(root))])
 
+    def test_a_project_that_turns_warnings_into_errors_reads_as_a_fresh_run_does(self) -> None:
+        """Fails on a server that imports an installed `pytest11` plugin before it forks: each
+        child then draws PytestAssertRewriteWarning, the project's error filter fails its
+        collection, and the file reads as not collecting where a fresh run lists its nodes. A
+        machine with no such plugin cannot draw the warning, so the case only passes there."""
+        for config in ("[pytest]\nfilterwarnings =\n    error\n", "[pytest]\naddopts = -W error\n"):
+            with self.subTest(config=config):
+                root = self._project()
+                (root / "pytest.ini").write_text(config, encoding="utf-8")
+                server = self.va.CollectionServer.start(root)
+                self.addCleanup(server.close)
+                expected = ["tests/test_ok.py::test_a", "tests/test_ok.py::test_b"]
+                self.assertEqual(expected, self.va._collect_fresh("tests/test_ok.py", root))
+                self.assertEqual(expected, server.collect("tests/test_ok.py"))
+
+    def test_stamps_on_a_project_that_turns_warnings_into_errors_reads_live_selectors_live(
+            self) -> None:
+        """The same fix pinned on `verify_ac.py stamps --bugs`, which collects its files through
+        these servers. Fails on a server that imports an installed `pytest11` plugin before it
+        forks: under `filterwarnings = error` both live selectors then read STALE and the
+        command exits 1, where fresh collections find both."""
+        import os  # noqa: PLC0415
+        import shutil  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "t").mkdir()
+        (root / "t" / "test_one.py").write_text("def test_alpha():\n    pass\n", "utf-8")
+        (root / "t" / "test_two.py").write_text("def test_gamma():\n    pass\n", "utf-8")
+        (root / "pytest.ini").write_text("[pytest]\nfilterwarnings =\n    error\n", "utf-8")
+        _w(root, "stories/US0001-x.md",
+           "# US0001: x\n\n> **Status:** Done\n\n## Acceptance Criteria\n\n"
+           "### AC1: a\n\n- **Verify:** pytest t/test_one.py::test_alpha\n- **Verified:** yes\n\n"
+           "### AC2: b\n\n- **Verify:** pytest t/test_two.py::test_gamma\n- **Verified:** yes\n")
+        env = {k: v for k, v in os.environ.items() if k != "PYTEST_DISABLE_PLUGIN_AUTOLOAD"}
+        cp = subprocess.run([sys.executable, str(_SCRIPTS / "verify_ac.py"), "stamps", "--bugs",
+                             "--root", str(root)], capture_output=True, text=True, env=env,
+                            cwd=str(root), timeout=300)
+        self.assertEqual(0, cp.returncode, cp.stdout + cp.stderr)
+        self.assertNotIn("STALE", cp.stdout + cp.stderr)
+
     def test_a_collection_past_the_timeout_reads_as_not_collecting(self) -> None:
         """Fails on a server that waits past `COLLECT_TIMEOUT`, or that cannot answer the next
-        file after it killed a child."""
+        file after it killed a child. No clock is read: a server that waits lets the file's
+        30 s import finish, and the file, which holds no test, then reads as collecting
+        nothing (`[]`) rather than as not collecting (None)."""
         from unittest import mock  # noqa: PLC0415
         root = self._project()
         (root / "tests" / "test_slow.py").write_text("import time\ntime.sleep(30)\n", "utf-8")
         server = self.va.CollectionServer.start(root)
         self.addCleanup(server.close)
         with mock.patch.object(self.va, "COLLECT_TIMEOUT", 2):
-            import time  # noqa: PLC0415
-            start = time.monotonic()
             self.assertIsNone(server.collect("tests/test_slow.py"))
-            self.assertLess(time.monotonic() - start, 20)
         self.assertEqual(["tests/test_ok.py::test_a", "tests/test_ok.py::test_b"],
                          server.collect("tests/test_ok.py"))
 

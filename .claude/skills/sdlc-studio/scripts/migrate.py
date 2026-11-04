@@ -515,24 +515,36 @@ class _CollectionPrimer:
     @contextlib.contextmanager
     def serving(self):
         """While open, the lane's `verify_ac._collect_nodes` waits for the submitted collection
-        of the file it is asked for before it reads the cache."""
+        of the file it is asked for, then reads that answer. The lane's module is looked up as
+        it opens (`conformance.verify_ac` as `sys.modules` holds it then), because it need not
+        be the one `start` collected with: a module loaded again since, under the same name,
+        has a cache of its own, so the answer is copied into it."""
         if not self._futures:
             yield
             return
-        verify_ac = self._verify_ac
-        collect = verify_ac._collect_nodes
+        primed = self._verify_ac
+        lane = getattr(sys.modules.get("conformance"), "verify_ac", None) or primed
+        modules = {id(m): m for m in (primed, lane)}.values()
+        originals = [(m, m._collect_nodes) for m in modules]
 
-        def waiting(test_file, cwd=None):
-            future = self._futures.get((test_file, str(cwd) if cwd else None))
-            if future is not None:
-                future.exception()      # wait; a raised collection is the lane's to redo
-            return collect(test_file, cwd)
+        def waiting_for(module, collect):
+            def waiting(test_file, cwd=None):
+                key = (test_file, str(cwd) if cwd else None)
+                future = self._futures.get(key)
+                if future is not None:
+                    future.exception()  # wait; a raised collection is the lane's to redo
+                    if key in primed._COLLECT_CACHE and key not in module._COLLECT_CACHE:
+                        module._COLLECT_CACHE[key] = primed._COLLECT_CACHE[key]
+                return collect(test_file, cwd)
+            return waiting
 
-        verify_ac._collect_nodes = waiting
+        for module, collect in originals:
+            module._collect_nodes = waiting_for(module, collect)
         try:
             yield
         finally:
-            verify_ac._collect_nodes = collect
+            for module, collect in originals:
+                module._collect_nodes = collect
 
     def wait(self, cancel: bool = False) -> None:
         """Join the collections (dropping the ones not yet begun when `cancel`), stop the servers,

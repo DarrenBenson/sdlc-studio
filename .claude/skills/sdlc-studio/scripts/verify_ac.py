@@ -878,9 +878,10 @@ def pytest_launcher() -> tuple[list[str], str] | None:
 
 #: The program a `CollectionServer` runs under the `pytest` script's own interpreter. It imports,
 #: once, the modules every pytest session imports before it collects: pytest, its own plugin
-#: modules, `pdb` (which `_pytest.debugging` imports as it configures) and, unless
-#: `PYTEST_DISABLE_PLUGIN_AUTOLOAD` is set, each installed `pytest11` plugin's module. Importing a
-#: plugin module does not register it, so `-p no:<name>` still blocks it. Then for each requested
+#: modules and `pdb` (which `_pytest.debugging` imports as it configures). An installed `pytest11`
+#: plugin is left for each child to import: pytest marks such a module for assertion rewriting,
+#: and one already imported draws PytestAssertRewriteWarning, which a project's
+#: `filterwarnings = error` turns into a failed collection. Then for each requested
 #: file it forks a child that runs the `pytest` script itself as a fresh
 #: `pytest --collect-only -q <file>` would: the same argv, working directory and environment,
 #: `sys.path[0]` the script's directory, standard input empty and standard error discarded, the
@@ -899,15 +900,6 @@ except ImportError:
     default_plugins = essential_plugins = ()
 modules = ["_pytest." + name for name in (*essential_plugins, *default_plugins)]
 modules.append("pdb")   # `_pytest.debugging` imports it as each session is configured
-if not os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD"):
-    try:
-        from importlib import metadata
-        found = metadata.entry_points()
-        found = (found.select(group="pytest11") if hasattr(found, "select")
-                 else found.get("pytest11", ()))
-        modules += [ep.value.split(":")[0].strip() for ep in found]
-    except Exception:
-        pass
 for module in modules:
     try:
         importlib.import_module(module)
