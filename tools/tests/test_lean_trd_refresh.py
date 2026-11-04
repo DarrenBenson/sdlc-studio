@@ -22,6 +22,7 @@ import argparse
 import ast
 import contextlib
 import fnmatch
+import functools
 import io
 import re
 import subprocess
@@ -315,32 +316,118 @@ def _spans(cell: str) -> set[str]:
     return set(re.findall(r"`([^`]+)`", cell))
 
 
-def _sprint_verbs_reaching(target: str) -> set[str]:
-    """The `sprint.py` verbs whose handler calls `run_state.<target>`, in its own body or in a
-    function of `sprint.py` that it, or one such function, calls by name."""
-    tree = ast.parse(_read(SCRIPTS / "sprint.py"))
-    funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+def _sprint_verbs() -> dict[str, argparse.ArgumentParser]:
+    parser = sprint.build_parser()
+    return next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
 
-    def reaches(name: str, seen: set[str]) -> bool:
-        if name in seen or name not in funcs:
-            return False
-        seen.add(name)
-        for c in ast.walk(funcs[name]):
+
+@functools.lru_cache(maxsize=None)
+def _sprint_funcs() -> dict[str, ast.FunctionDef]:
+    tree = ast.parse(_read(SCRIPTS / "sprint.py"))
+    return {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+
+
+def _reaches(nodes, target: str, seen: set[str]) -> bool:
+    """Whether a call among `nodes`, or in what they hold, is `run_state.<target>` or a call by
+    name to a `sprint.py` function that, by the same rule, reaches it."""
+    funcs = _sprint_funcs()
+    for node in nodes:
+        for c in ast.walk(node):
             f = getattr(c, "func", None)
             if (isinstance(f, ast.Attribute) and f.attr == target
                     and isinstance(f.value, ast.Name) and f.value.id == "run_state"):
                 return True
-            if isinstance(f, ast.Name) and reaches(f.id, seen):
-                return True
-        return False
+            if isinstance(f, ast.Name) and f.id in funcs and f.id not in seen:
+                seen.add(f.id)
+                if _reaches([funcs[f.id]], target, seen):
+                    return True
+    return False
 
-    return {verb for verb, p in _sprint_verbs().items()
-            if (fn := p.get_default("func")) is not None and reaches(fn.__name__, set())}
+
+def _flag_read(test: ast.expr) -> str | None:
+    """The dest an `if` test reads off `args` and nothing else: `args.x` or `getattr(args, "x"...)`."""
+    if isinstance(test, ast.Attribute) and isinstance(test.value, ast.Name) \
+            and test.value.id == "args":
+        return test.attr
+    if (isinstance(test, ast.Call) and isinstance(test.func, ast.Name)
+            and test.func.id == "getattr" and len(test.args) >= 2
+            and isinstance(test.args[0], ast.Name) and test.args[0].id == "args"
+            and isinstance(test.args[1], ast.Constant)):
+        return test.args[1].value
+    return None
 
 
-def _sprint_verbs() -> dict[str, argparse.ArgumentParser]:
-    parser = sprint.build_parser()
-    return next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
+@functools.lru_cache(maxsize=None)
+def _routes() -> dict[tuple[str, str | None], tuple[ast.AST, ...]]:
+    """BG1163: each route through a `sprint.py` verb, to the statements it runs. A verb's handler
+    has a route per `if args.<flag>:` branch that ends in a `return`, keyed `(verb, '--flag')`,
+    and its plain route `(verb, None)`: the calls it makes outside those branches."""
+    funcs, out = _sprint_funcs(), {}
+    for verb, parser in _sprint_verbs().items():
+        fn = parser.get_default("func")
+        if fn is None or fn.__name__ not in funcs:
+            continue
+        handler = funcs[fn.__name__]
+        options = {a.dest: max(a.option_strings, key=len)
+                   for a in parser._actions if a.option_strings}
+        branched: set[int] = set()
+        for node in ast.walk(handler):
+            if (isinstance(node, ast.If) and (dest := _flag_read(node.test)) in options
+                    and isinstance(node.body[-1], ast.Return)):
+                out[(verb, options[dest])] = tuple(node.body)
+                branched |= {id(n) for b in node.body for n in ast.walk(b)}
+        out[(verb, None)] = tuple(n for n in ast.walk(handler)
+                                  if isinstance(n, ast.Call) and id(n) not in branched)
+    return out
+
+
+def _routes_reaching(target: str) -> set[tuple[str, str | None]]:
+    """The routes `_routes` reads whose statements reach `run_state.<target>` (`_reaches`)."""
+    return {route for route, nodes in _routes().items() if _reaches(nodes, target, set())}
+
+
+#: A backticked `sprint.py` command, its verb and the words after it.
+_SPRINT_COMMAND_RE = re.compile(r"`sprint\.py ([\w-]+)([^`]*)`")
+
+
+def _named_routes(text: str) -> set[tuple[str, str | None]]:
+    """The routes `text` names: a backticked `sprint.py <verb>` names `(verb, '--flag')` for each
+    route flag it carries, and the plain `(verb, None)` when it carries none."""
+    out = set()
+    for verb, rest in _SPRINT_COMMAND_RE.findall(text):
+        flags = {f for f in rest.split() if (verb, f) in _routes()}
+        out |= {(verb, f) for f in flags} or {(verb, None)}
+    return out
+
+
+def _unnamed_close_routes(body: str) -> set[tuple[str, str | None]]:
+    """The routes reaching `run_state.close_run` that the TRD's run lifecycle does not name."""
+    return _routes_reaching("close_run") - _named_routes(_section(body, "The run lifecycle"))
+
+
+#: BG1163: each Run state row by its label, to the `run_state` path it must give.
+_RUN_STATE_LABELS = {"Live record": run_state.REL.as_posix(),
+                     "Archive": run_state.archive_path("", "*").as_posix(),
+                     "Tracked record": run_state.tracked_path("", "*").as_posix()}
+
+
+def _run_state_failures(body: str) -> list[str]:
+    """One line per Run state row that is missing, gives another path than `run_state` keeps for
+    its label, or a tier git's ignore rules contradict; the tracked one must track a file."""
+    state = _one_table(_section(body, "Run state"), "Run state")
+    path, kept = state[0].index("Path"), state[0].index("Kept in")
+    rows = {r[0]: (sorted(_spans(r[path])), r[kept]) for r in state[1:]}
+    out = [f"the table has a row {label!r}, which `run_state` keeps no path for"
+           for label in sorted(set(rows) - set(_RUN_STATE_LABELS))]
+    for label, p in _RUN_STATE_LABELS.items():
+        spans, where = rows.get(label, ([], ""))
+        if spans != [p]:
+            out.append(f"{label}: the TRD gives {spans or 'no row'}, `run_state` keeps {p}")
+        elif where.startswith("`.local`") != _ignored(p):
+            out.append(f"{label}: kept in {where!r}, which git's ignore rules contradict")
+        elif not _ignored(p) and (where != "tracked" or not _tracked(p)):
+            out.append(f"{label}: kept in {where!r} and git tracks {len(_tracked(p))} file(s)")
+    return out
 
 
 class TrdStorageTests(unittest.TestCase):
@@ -388,42 +475,81 @@ class TrdStorageTests(unittest.TestCase):
     def test_the_run_lifecycle_reaches_sign(self) -> None:
         """Mutants: the run state shown as `.local` only (the tracked record dropped, or kept in
         `.local`); a path the TRD gives that `run_state` does not keep; the sign step left out or
-        not last, or close not before it; a step naming the tracked record whose `sprint.py` verb
-        does not file it, or a verb that files it on a step that does not say so. The paths are
-        `run_state`'s, the tiers are git's, and which verbs open the run or file the tracked
-        record is read from `sprint.py`'s handlers."""
+        not last, or close not before it; a step naming the tracked record whose `sprint.py`
+        route does not file it, or a route that files it on a step that does not say so. The
+        paths are `run_state`'s, the tiers are git's, and which routes open the run or file the
+        tracked record is read from `sprint.py`'s handlers. BG1163 reads the routes a flag branch
+        takes (`close --file-and-close` files none), and the Run state rows by label."""
         body, live = _trd_body(), run_state.REL.as_posix()
         tracked_record = run_state.tracked_path("", "*").as_posix()
         self.assertIn(".local", run_state.REL.parts)
         self.assertNotIn(".local", run_state.TRACKED_REL.parts)
-        state = _one_table(_section(body, "Run state"), "Run state")
-        path, kept = state[0].index("Path"), state[0].index("Kept in")
-        rows = {next(iter(_spans(r[path]))): r[kept] for r in state[1:]}
-        self.assertEqual({live, run_state.archive_path("", "*").as_posix(), tracked_record},
-                         set(rows))
-        for p, where in rows.items():
-            with self.subTest(path=p):
-                self.assertEqual(where.startswith("`.local`"), _ignored(p), where)
-                if not _ignored(p):
-                    self.assertEqual("tracked", where)
-                    self.assertTrue(_tracked(p), f"git tracks no {p}")
+        self.assertEqual([], _run_state_failures(body))
 
         life = _one_table(_section(body, "The run lifecycle"), "Step")
         cmd, says = life[0].index("Command"), life[0].index("Run state")
         steps = [r[0] for r in life[1:]]
         self.assertEqual(("plan", "sign"), (steps[0], steps[-1]))
         self.assertLess(steps.index("close"), steps.index("sign"))
-        verbs = [set(re.findall(r"`sprint\.py ([\w-]+)", r[cmd])) for r in life[1:]]
-        openers, filers = _sprint_verbs_reaching("open_run"), _sprint_verbs_reaching("file_tracked")
-        self.assertIn("plan", openers)
-        self.assertIn("sign", filers)
-        for row, named in zip(life[1:], verbs):
+        routes = [_named_routes(r[cmd]) for r in life[1:]]
+        openers, filers = _routes_reaching("open_run"), _routes_reaching("file_tracked")
+        self.assertIn(("plan", None), openers)
+        self.assertIn(("sign", None), filers)
+        self.assertNotIn(("close", "--file-and-close"), filers)
+        for row, named in zip(life[1:], routes):
             with self.subTest(step=row[0]):
-                self.assertLessEqual(named, set(_sprint_verbs()))
+                self.assertLessEqual({verb for verb, _ in named}, set(_sprint_verbs()))
                 self.assertEqual(bool(named & filers), tracked_record in row[says], row)
-        self.assertLessEqual(filers, set().union(*verbs))
-        self.assertTrue(verbs[0] & openers and live in life[1][says], life[1])
-        self.assertTrue(verbs[-1] & filers, life[-1])
+        self.assertLessEqual(filers, set().union(*routes))
+        self.assertTrue(routes[0] & openers and live in life[1][says], life[1])
+        self.assertTrue(routes[-1] & filers, life[-1])
+
+    def test_every_close_route_reaching_close_run_is_named_in_the_lifecycle(self) -> None:
+        """BG1163 AC1. The lifecycle showed only the route that ends in a signature, and its close
+        row said the close files the tracked record, which `close --file-and-close` returns
+        before doing; `stop` and `boundary` close the run too. MUTANTS: drop the stop row, or
+        `--file-and-close` from its row, or the boundary note; read the routes by verb alone, so
+        `sprint.py close` names the file-and-close exit. The control is the TRD as committed; then
+        each route's naming spans are taken out, alone, and the check names that route."""
+        routes = _routes_reaching("close_run")
+        self.assertLessEqual({("stop", None), ("close", "--file-and-close"), ("close", None),
+                              ("sign", None), ("boundary", None)}, routes,
+                             "premise: the close routes moved in sprint.py")
+        body = _trd_body()
+        self.assertEqual(set(), _unnamed_close_routes(body))
+        for verb, flag in sorted(routes, key=str):
+            with self.subTest(route=(verb, flag)):
+                pruned = _SPRINT_COMMAND_RE.sub(
+                    lambda m: "" if _named_routes(m.group(0)) == {(verb, flag)} else m.group(0),
+                    body)
+                self.assertNotEqual(body, pruned)
+                self.assertEqual({(verb, flag)}, _unnamed_close_routes(pruned))
+        # What each files: a lifecycle row naming a close route that files no tracked record
+        # says so, beside the route-level tracked-path check above.
+        life = _one_table(_section(body, "The run lifecycle"), "Step")
+        cmd, says = life[0].index("Command"), life[0].index("Run state")
+        quiet = routes - _routes_reaching("file_tracked")
+        rows = [r for r in life[1:] if _named_routes(r[cmd]) & quiet]
+        self.assertEqual({"stop", "file and close"}, {r[0] for r in rows})
+        for row in rows:
+            with self.subTest(step=row[0]):
+                self.assertIn("creates no tracked record", row[says])
+
+    def test_swapped_live_and_tracked_labels_fail(self) -> None:
+        """BG1163 AC3. The Run state rows were keyed by path and their label never read, so the
+        Live and Tracked labels could swap with every test green. MUTANT: `_run_state_failures`
+        keying the rows by path alone. The control is the TRD as committed."""
+        body = _trd_body()
+        self.assertEqual([], _run_state_failures(body))
+        swapped = (body.replace("| Live record |", "| @@swap@@ |")
+                   .replace("| Tracked record |", "| Live record |")
+                   .replace("| @@swap@@ |", "| Tracked record |"))
+        self.assertIn(f"| Tracked record | `{run_state.REL.as_posix()}` |", swapped,
+                      "premise: the swap missed the Live record row")
+        failures = _run_state_failures(swapped)
+        for label in ("Live record", "Tracked record"):
+            with self.subTest(label=label):
+                self.assertTrue(any(f.startswith(f"{label}: ") for f in failures), failures)
 
     def test_the_tier_does_not_depend_on_what_local_is(self) -> None:
         """BG1166. Each Run state path gets the same tier from `_ignored` whether `.local` is a

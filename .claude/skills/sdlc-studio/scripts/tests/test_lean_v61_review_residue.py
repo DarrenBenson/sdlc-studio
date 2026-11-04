@@ -63,8 +63,11 @@ def _local_rows(text: str) -> list[tuple[str, str]]:
 # A script writes it when one of its calls `_is_write` passes a path expression for the file
 # (`_Writes._path`), or calls a function that does, in its own module or, as `module.func` or an
 # imported name, in a module it imports that also spells the file. A path expression starts from
-# a seed: a string constant whose last `/` segment is the file name. A page
-# writes it when one of its lines names the file beside a word `_PAGE_WRITE_RE` matches.
+# a seed: a string constant whose last `/` segment is the file name, and, when the pin names a
+# directory, whose own text or `/` join puts that directory directly above it (BG1163). A page
+# writes it when one of its lines names the file beside a word `_PAGE_WRITE_RE` matches, in a
+# clause `_PAGE_NEGATION_RE` does not negate. The pin counts a script's write only where it runs
+# (`_Writes.live_calls`): at module level, or in a def shipped code refers to.
 #: Path methods that write the path they are called on.
 _PATH_WRITE_METHODS = ("write_text", "write_bytes")
 #: `src.replace(dst)` and `src.rename(dst)` write their one argument; `os.replace(src, dst)` and
@@ -82,6 +85,14 @@ _PATH_CALLS = frozenset({"Path", "PurePath", "PurePosixPath", "str", "fspath", "
                          "with_name", "with_suffix", "resolve", "absolute", "expanduser"})
 #: A word that, on a page line naming the file, tells the agent to write it.
 _PAGE_WRITE_RE = re.compile(r"\b(?:writes?|written|updates?|saves?|appends?|records?)\b", re.I)
+#: BG1163: a word that, in the clause holding the write word, says the page does NOT write it
+#: ('does not write', 'never records', "doesn't save", 'no longer updates', 'writes nothing').
+_PAGE_NEGATION_RE = re.compile(r"\b(?:not|never|no|nor|cannot|nothing)\b|n't\b", re.I)
+#: Where a page line's clauses part: a semicolon, a sentence stop, a colon or a spaced hyphen.
+_PAGE_CLAUSE_RE = re.compile(r";|[.!?:](?=\s)|\s-\s")
+#: BG1163: the directory the `.local` table documents. A row's file is matched by its path, so a
+#: file moved out of `.local/` is not read as the row's file.
+LOCAL_DIR = ".local"
 
 
 def _imports(nodes: list[ast.AST]) -> tuple[dict[str, str], dict[str, tuple[str, str]]]:
@@ -118,12 +129,12 @@ def _compound_write(callee: str) -> bool:
 
 @functools.lru_cache(maxsize=None)
 def _index(source: str) -> tuple:
-    """(scopes, imports) for a module's source, read in one walk. A scope, the
+    """(scopes, imports, joins) for a module's source, read in one walk. A scope, the
     module first and then each def, is [node, its `_READ` nodes, the names and attributes it
     uses, its string constants]; a def's body is its own scope, and the nodes a lambda or a class
-    holds outside a def belong to none."""
+    holds outside a def belong to none. `joins` is every `/` join whose right side is a string."""
     tree = ast.parse(source)
-    scopes, imports = {id(tree): [tree, [], set(), []]}, []
+    scopes, imports, joins = {id(tree): [tree, [], set(), []]}, [], []
     stack = [(tree, scopes[id(tree)])]
     while stack:
         node, scope = stack.pop()
@@ -139,6 +150,9 @@ def _index(source: str) -> tuple:
                     scope[3].append(child)
             if isinstance(child, (ast.Import, ast.ImportFrom)):
                 imports.append(child)
+            elif (isinstance(child, ast.BinOp) and isinstance(child.op, ast.Div)
+                  and isinstance(child.right, ast.Constant) and isinstance(child.right.value, str)):
+                joins.append(child)
             if isinstance(child, _DEFS):
                 inner = scopes[id(child)] = [child, [], set(), []]
             elif isinstance(child, (ast.Lambda, ast.ClassDef)):
@@ -146,7 +160,7 @@ def _index(source: str) -> tuple:
             else:
                 inner = scope
             stack.append((child, inner))
-    return list(scopes.values()), _imports(imports)
+    return list(scopes.values()), _imports(imports), joins
 
 
 class _Writes:
@@ -154,8 +168,8 @@ class _Writes:
     using none of the names the analysis has bound, and holding no seed, is skipped: nothing in it
     can be a path expression or a call to a writer."""
 
-    def __init__(self, sources: dict[str, str], name: str) -> None:
-        self.sources, self.name = sources, name
+    def __init__(self, sources: dict[str, str], name: str, under: str | None = None) -> None:
+        self.sources, self.name, self.under = sources, name, under
         self.mods: dict[str, dict] = {}
 
     def _modules(self, start: str) -> list[str]:
@@ -173,12 +187,11 @@ class _Writes:
         return out
 
     def _setup(self, m: str) -> None:
-        scopes, imports = _index(self.sources[m])
-        seeds = {id(n) for _s, _r, _u, strings in scopes for n in strings
-                 if n.value.rsplit("/", 1)[-1] == self.name}
+        scopes, imports, _joins = _index(self.sources[m])
+        seeds = _seeds(self.sources[m], self.name, self.under)
         self.mods[m] = {
-            "seeds": seeds, "imports": imports, "glob": set(), "dests": set(), "paths": set(),
-            "writers": set(), "calls": [],
+            "seeds": seeds, "imports": imports, "glob": set(),
+            "dests": set(), "paths": set(), "writers": set(), "calls": [], "scope_of": {},
             "scopes": [(s, read, used, set(), any(id(n) in seeds for n in strings))
                        for s, read, used, strings in scopes]}
 
@@ -303,6 +316,7 @@ class _Writes:
                         st["dests"].add(dest or flag.lstrip("-").replace("-", "_"))
                     if self._is_write(m, n, names):
                         calls.append(n)
+                        st["scope_of"][id(n)] = scope
                         if not isinstance(scope, ast.Module):
                             st["writers"].add(scope.name)
                     continue
@@ -328,10 +342,86 @@ class _Writes:
             pass
         return self.mods[module]["calls"] if module in self.mods else []
 
+    def live_calls(self, module: str) -> list[ast.Call]:
+        """BG1163: the `write_calls` of `module` that run - at module level, or in a def that some
+        `.py` source refers to outside the def's own body: a call, a `func=` a parser dispatches
+        to, a table entry. In `module` itself a bare name or an attribute (`self.save`) refers
+        to it; elsewhere `alias.name` of an import of `module`, or a name imported from it."""
+        calls = self.write_calls(module)
+        scope_of = self.mods[module]["scope_of"] if module in self.mods else {}
+        live = {id(s): isinstance(s, ast.Module) or self._referred_to(module, s)
+                for s in {id(s): s for s in scope_of.values()}.values()}
+        return [c for c in calls if live[id(scope_of[id(c)])]]
+
+    def _referred_to(self, module: str, fn: ast.AST) -> bool:
+        inside = range(fn.lineno, fn.end_lineno + 1)
+        for n in _refs(self.sources[module]).get(fn.name, ()):
+            if n.lineno not in inside:
+                return True
+        for other, text in self.sources.items():
+            if other == module or not other.endswith(".py") or fn.name not in text:
+                continue
+            mods, names = _index(text)[1]
+            aliases = {a for a, f in mods.items() if f == module}
+            imported = {a for a, (f, n) in names.items() if f == module and n == fn.name}
+            for n in _refs(text).get(fn.name, ()):
+                if isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name) \
+                        and n.value.id in aliases:
+                    return True
+            if any(_refs(text).get(a) for a in imported):
+                return True
+        return False
+
+
+@functools.lru_cache(maxsize=None)
+def _seeds(source: str, name: str, under: str | None) -> frozenset[int]:
+    """The ids, in `_index`'s tree of `source`, of the string constants that spell the file: its
+    name as the last `/` segment, and, under a directory, that directory as the segment above it
+    in the constant's own text (`'sdlc-studio/.local/x.json'`) or as the last segment of the `/`
+    join's left side (`root / '.local' / 'x.json'`, `Path('.local') / 'x.json'`)."""
+    if name not in source:
+        return frozenset()
+    scopes, _imports, joins = _index(source)
+    out = {id(n) for _s, _r, _u, strings in scopes for n in strings
+           if (segments := n.value.split("/"))[-1] == name
+           and (under is None or segments[-2:-1] == [under])}
+    if under is not None:
+        out |= {id(j.right) for j in joins
+                if j.right.value == name and _last_segment(j.left) == under}
+    return frozenset(out)
+
+
+def _last_segment(e: ast.AST) -> str | None:
+    """The last path segment a `/` join's left side ends in, when its text says: a string, the
+    right side of a join, or the last argument of a `Path` call; None for anything else."""
+    if isinstance(e, ast.Constant) and isinstance(e.value, str):
+        return e.value.rstrip("/").rsplit("/", 1)[-1]
+    if isinstance(e, ast.BinOp) and isinstance(e.op, ast.Div):
+        return _last_segment(e.right)
+    if (isinstance(e, ast.Call) and isinstance(e.func, ast.Name)
+            and e.func.id in ("Path", "PurePath", "PurePosixPath") and e.args):
+        return _last_segment(e.args[-1])
+    return None
+
+
+@functools.lru_cache(maxsize=None)
+def _refs(source: str) -> dict[str, list[ast.AST]]:
+    """{name: the nodes that load it}: each `Name` read and each attribute taken, by its name."""
+    out: dict[str, list[ast.AST]] = {}
+    for n in ast.walk(ast.parse(source)):
+        if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load):
+            out.setdefault(n.id, []).append(n)
+        elif isinstance(n, ast.Attribute) and isinstance(n.ctx, ast.Load):
+            out.setdefault(n.attr, []).append(n)
+    return out
+
 
 def _page_writes(text: str, name: str) -> bool:
-    """Whether a line of the page names `name` beside a word `_PAGE_WRITE_RE` matches."""
-    return any(name in line and _PAGE_WRITE_RE.search(line) for line in text.splitlines())
+    """Whether a line of the page names `name` and has a clause holding a word `_PAGE_WRITE_RE`
+    matches and none `_PAGE_NEGATION_RE` matches: 'does not write `x`' is no write (BG1163)."""
+    return any(name in line and any(_PAGE_WRITE_RE.search(c) and not _PAGE_NEGATION_RE.search(c)
+                                    for c in _PAGE_CLAUSE_RE.split(line))
+               for line in text.splitlines())
 
 
 def _shipped_sources() -> dict[str, str]:
@@ -349,10 +439,11 @@ def _cited(writer: str) -> list[str]:
 def _pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[str]:
     """One line per `.local` row whose writer cell names no shipped script or page, names one
     `sources` lacks, or names one that does not write the row's file. Every cited writer must
-    write it, so a row naming a caller beside the library holds the caller too."""
+    write it, so a row naming a caller beside the library holds the caller too. The file is the
+    one under `LOCAL_DIR`, and a script's write counts only where it runs (BG1163)."""
     out = []
     for name, writer in rows:
-        cited, writes = _cited(writer), _Writes(sources, name)
+        cited, writes = _cited(writer), _Writes(sources, name, LOCAL_DIR)
         if not cited:
             out.append(f"{name}: the writer cell {writer.strip()!r} names no script or page")
         for c in cited:
@@ -362,16 +453,16 @@ def _pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[
                 out.append(f"{name}: `{c}` has no line telling the agent to write it")
             elif c.endswith(".py") and not writes.write_calls(c):
                 out.append(f"{name}: `{c}` does not write it")
+            elif c.endswith(".py") and not writes.live_calls(c):
+                defs = sorted({s.name for s in map(writes.mods[c]["scope_of"].get,
+                                                   map(id, writes.write_calls(c)))})
+                out.append(f"{name}: `{c}` writes it only in {', '.join(defs)}, which nothing "
+                           f"calls")
     return out
 
 
-def _stopped(writes: _Writes, writer: str) -> str:
-    """`writer`'s text edited so it no longer writes the file `writes` reads: the source of each
-    outermost call `writes` reads as writing it replaced by `None`, or, for a page, each line
-    `_page_writes` reads dropped."""
-    text, name = writes.sources[writer], writes.name
-    if writer.endswith(".md"):
-        return "\n".join(line for line in text.splitlines() if not _page_writes(line, name))
+def _blank(text: str, calls: list[ast.Call]) -> str:
+    """`text` with the source of each outermost of `calls` replaced by `None`."""
     starts = [0]
     for line in text.splitlines(keepends=True):
         starts.append(starts[-1] + len(line))
@@ -381,12 +472,22 @@ def _stopped(writes: _Writes, writer: str) -> str:
         return starts[line - 1] + len(text[starts[line - 1]:starts[line]].encode()[:col].decode())
 
     spans = sorted({(at(c.lineno, c.col_offset), at(c.end_lineno, c.end_col_offset))
-                    for c in writes.write_calls(writer)})
+                    for c in calls})
     outer = [s for i, s in enumerate(spans) if not any(o[0] <= s[0] and s[1] <= o[1]
                                                        for o in spans[:i])]
     for start, end in reversed(outer):
         text = text[:start] + "None" + text[end:]
     return text
+
+
+def _stopped(writes: _Writes, writer: str) -> str:
+    """`writer`'s text edited so it no longer writes the file `writes` reads: the source of each
+    outermost call `writes` reads as writing it replaced by `None`, or, for a page, each line
+    `_page_writes` reads dropped."""
+    text, name = writes.sources[writer], writes.name
+    if writer.endswith(".md"):
+        return "\n".join(line for line in text.splitlines() if not _page_writes(line, name))
+    return _blank(text, writes.write_calls(writer))
 
 
 class V61ReviewResidueTests(unittest.TestCase):
@@ -565,7 +666,7 @@ class LocalWriterPinTests(unittest.TestCase):
         self.assertTrue(_pin_failures([("telemetry.jsonl", "`telemetry.py`")], sources),
                         "the pin passes the legacy name, which telemetry.py only reads")
         for name, writer in rows:
-            writes = _Writes(sources, name)
+            writes = _Writes(sources, name, LOCAL_DIR)
             for cited in dict.fromkeys(_cited(writer)):
                 with self.subTest(file=name, writer=cited):
                     stopped = {**sources, cited: _stopped(writes, cited)}
@@ -589,6 +690,80 @@ class LocalWriterPinTests(unittest.TestCase):
                                (f"Update `{PROBE}` with the step.", True)):
             with self.subTest(page=line):
                 self.assertEqual(expected, _page_writes(line, PROBE))
+
+    def test_an_uncalled_writer_or_a_moved_file_fails_the_pin(self) -> None:
+        """BG1163 AC2. qa-seat-US1100-r1 removed both `note_brief(...)` calls from critic.py, and
+        moved sprint.py's `GOAL_REVIEW_REL` out of `.local`: the pin stayed green, because it
+        counted a def that writes the file whether or not anything calls it, and matched the
+        file by its last path segment. MUTANTS: `_pin_failures` reading `write_calls` where it
+        reads `live_calls`; `_Writes` built with no directory; `_seeds` taking the last segment
+        alone; `_referred_to` counting a def's own recursive call. Each edit below is checked
+        against its unedited control."""
+        sources = _shipped_sources()
+        for row, writer, edit in (
+                ("briefs.jsonl", "critic.py", lambda t: _blank(t, [
+                    c for c in ast.walk(ast.parse(t)) if isinstance(c, ast.Call)
+                    and isinstance(c.func, ast.Name) and c.func.id == "note_brief"])),
+                ("goal-review.json", "sprint.py", lambda t: t.replace(
+                    'GOAL_REVIEW_REL = Path("sdlc-studio") / ".local" / "goal-review.json"',
+                    'GOAL_REVIEW_REL = Path("sdlc-studio") / "goal-review.json"'))):
+            with self.subTest(row=row, writer=writer):
+                pin = [(row, f"`{writer}`")]
+                self.assertEqual([], _pin_failures(pin, sources))
+                edited = {**sources, writer: edit(sources[writer])}
+                self.assertNotEqual(sources[writer], edited[writer], "premise: the edit missed")
+                failures = _pin_failures(pin, edited)
+                self.assertTrue(any(f"`{writer}`" in f for f in failures), failures)
+        self.assertIn("which nothing calls", "\n".join(_pin_failures(
+            [("briefs.jsonl", "`critic.py`")],
+            {**sources, "critic.py": _blank(sources["critic.py"], [
+                c for c in ast.walk(ast.parse(sources["critic.py"])) if isinstance(c, ast.Call)
+                and isinstance(c.func, ast.Name) and c.func.id == "note_brief"])})))
+        writer = (f"def save(root):\n    (root / '{LOCAL_DIR}' / '{PROBE}').write_text('x')\n")
+        for case, files, writes in (
+                ("an uncalled def", {"w.py": writer}, False),
+                ("a def calling only itself", {"w.py": writer + "    save(root)\n"}, False),
+                ("called at module level", {"w.py": writer + "save(None)\n"}, True),
+                ("a parser dispatches to it", {"w.py": writer + "def main(ap):\n"
+                                               "    ap.set_defaults(func=save)\n"
+                                               "main(None)\n"}, True),
+                ("called from another module", {"w.py": writer, "c.py": "import w\n"
+                                                "w.save(None)\n"}, True),
+                ("a written module-level path", {"w.py": f"from pathlib import Path\n"
+                                                 f"Path('{LOCAL_DIR}/{PROBE}').write_text('x')\n"},
+                 True),
+                ("outside the directory", {"w.py": f"from pathlib import Path\n"
+                                           f"(Path('sdlc-studio') / '{PROBE}').write_text('x')\n"},
+                 False),
+                ("a directory below it", {"w.py": f"from pathlib import Path\n"
+                                          f"Path('{LOCAL_DIR}/sub/{PROBE}').write_text('x')\n"},
+                 False),
+                ("under a directory named like it", {"w.py": f"from pathlib import Path\n"
+                                                     f"Path('x{LOCAL_DIR}/{PROBE}')"
+                                                     f".write_text('x')\n"}, False)):
+            with self.subTest(case=case):
+                self.assertEqual(writes, not _pin_failures([(PROBE, "`w.py`")], files),
+                                 _pin_failures([(PROBE, "`w.py`")], files))
+
+    def test_a_negated_write_line_is_not_a_writer(self) -> None:
+        """BG1163 AC4. A page line naming the file beside a write word read as an instruction to
+        write it, 'does not write' and 'never records' included. MUTANT: `_page_writes` without
+        the `_PAGE_NEGATION_RE` test. The control: a write word in a clause of its own still
+        counts, beside a negated one."""
+        for line, writes in ((f"This page does not write `{PROBE}`.", False),
+                             (f"It never records `{PROBE}`.", False),
+                             (f"The agent doesn't save `{PROBE}` here.", False),
+                             (f"`{PROBE}` is no longer updated by hand.", False),
+                             (f"It writes nothing to `{PROBE}`.", False),
+                             (f"Update `{PROBE}` with the step.", True),
+                             (f"Never edit it by hand; record the step in `{PROBE}`.", True),
+                             (f"`{PROBE}` is not read here - the agent writes it.", True)):
+            with self.subTest(line=line):
+                self.assertEqual(writes, _page_writes(line, PROBE))
+        page = {"reference-probe.md": f"# Probe\n\nThis workflow does not write `{PROBE}`.\n"
+                                      f"It never records `{PROBE}` either.\n"}
+        self.assertEqual([f"{PROBE}: `reference-probe.md` has no line telling the agent to "
+                          f"write it"], _pin_failures([(PROBE, "`reference-probe.md`")], page))
 
 
 if __name__ == "__main__":

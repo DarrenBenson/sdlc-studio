@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.2.0
 **Status:** Draft
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-04
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -539,7 +539,7 @@ every tracked file under `sdlc-studio/retros/evidence/` and `sdlc-studio/reports
 | Unit actuals | `sdlc-studio/retros/evidence/actuals-*.jsonl` | `telemetry.py` | What each unit cost, one record per unit close, sharded by UTC day. `latest_actuals()` takes the last **non-null** context value per field, so a bare close record after an instrumented one cannot erase the measurement. |
 | Forecasts | `sdlc-studio/retros/evidence/forecasts-*.jsonl` | `telemetry.py` | What the planner predicted a unit would cost, recorded when it predicted it, so `retro accuracy` judges that number (§10). |
 | Audit cost | `sdlc-studio/retros/evidence/audit-cost-*.jsonl` | `audit_cost.py` | Each finished audit run's scope, estimate and measured actuals, appended by `audit_cost.py record`; `audit_cost.py run` seeds its estimate from them. |
-| Claim-drift study | `sdlc-studio/retros/evidence/claim-drift-*.json` | none: last written by US0577 and US0597 | The claim-drift lane's yield count and a premise replay over 40 commits, kept as that study's evidence. |
+| Claim-drift study | `sdlc-studio/retros/evidence/claim-drift-*.json` | none: both last written by US0577 (c906e153) | The claim-drift lane's yield count and a premise replay over 40 commits, kept as that study's evidence. |
 | Lessons class store | `sdlc-studio/lessons.jsonl` | `lessons.py` | One row per failure class, fed by the retro's classed Try items. |
 | Delivery verdicts | `sdlc-studio/reviews/critic-verdicts.md` | `critic.py record` | The verdict ledger: whether a unit was reviewed is read from it. |
 | Plan-review verdicts | `sdlc-studio/reviews/plan-review-verdicts.md` | none: plan review is retired | The historical plan ledger, kept readable. |
@@ -558,7 +558,7 @@ is closed and awaits its signature, and what lets any full clone re-derive the s
 | --- | --- | --- | --- |
 | Live record | `sdlc-studio/.local/run-state.json` | `.local`, this clone only | `sprint.py plan --write` opens it; the scripts its `.local` row names record fields on it |
 | Archive | `sdlc-studio/.local/run-archive/*.json` | `.local`, this clone only | A copy of each run's record keyed by run id, taken when it closes, so a closed run stays readable after the next one opens |
-| Tracked record | `sdlc-studio/reports/runs/*.json` | tracked | `sprint.py close` files it still running and `sprint.py sign` files it sealed, each with its absolute paths made portable |
+| Tracked record | `sdlc-studio/reports/runs/*.json` | tracked | `sprint.py close` files it still running and `sprint.py sign` files it sealed, each with its absolute paths made portable; `sprint.py close --file-and-close` files none |
 
 #### The run lifecycle
 
@@ -566,11 +566,15 @@ is closed and awaits its signature, and what lets any full clone re-derive the s
 | --- | --- | --- |
 | plan | `sprint.py plan --write` | Opens the live record, `sdlc-studio/.local/run-state.json`, with the run id and the approved batch. It refuses while a tracked record awaits its signature for a run this clone does not hold open. |
 | deliver | `critic.py record`, `transition.py` | Record each unit's review base and actuals on the live record. |
+| stop | `sprint.py stop` | Ends an open run without a signature: the live record closes `stopped` and is archived. It files no run report and creates no tracked record; one a close already filed is filed again with the stopped outcome, so a clone that pulls it no longer reads the run as awaiting its signature. |
 | close | `sprint.py close` | Files the run report and the tracked record, `sdlc-studio/reports/runs/*.json`, still running: a clone that pulls it sees the run awaits its signature, and `sign` takes it up from there. |
+| file and close | `sprint.py close --file-and-close` | The bounded exit: files its deferrable blockers as CRs, one per cause, notes them in the retro and, when there is one, the review anchor, and closes the live record `closed-outstanding` and archives it. It prints the close report, files no run report and creates no tracked record. |
 | sign | `sprint.py sign` | One principal seals the run: the live record closes with its outcome and is archived, the signature is written onto the report, and the tracked record, `sdlc-studio/reports/runs/*.json`, is filed again, sealed. |
 
 A rolling run (`sprint.py plan --write --cycles N`) also passes `sprint.py boundary` between
-cycles, which closes one cycle's live record and opens the next.
+cycles, which runs `sprint.py close` for the cycle, so files what a close files, then closes and
+archives one cycle's live record and opens the next. A stop predicate ends the run there instead,
+closing a record still running `blocked`; `sprint.py boundary --strict` adds origin drift to them.
 
 #### JSON state files (under `.local/`)
 
@@ -590,8 +594,10 @@ cycles, which closes one cycle's live record and opens the next.
 | `mutation-series.jsonl` | `mutation.py` | One row appended per run: what it cost and what it found, read back by `mutation.py yield --run <id>`. No per-target ledger is kept. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
 
-Each writer a row names writes its file, which `test_lean_v61_review_residue.py` checks by reading
-each script's code and each page's instructions. The gate's own `.local/` files are listed under the gate tier (§3). A
+Each writer a row names writes its file under `.local/`, which `test_lean_v61_review_residue.py`
+checks by reading each script's code, where a write counts only at module level or in a function
+shipped code refers to, and each page's instructions, where a line saying it does not write the
+file is not read as writing it. The gate's own `.local/` files are listed under the gate tier (§3). A
 `.local/telemetry.jsonl` or `.local/forecasts.jsonl` an older release wrote is read before the
 committed shards until `telemetry.py migrate` moves it into them.
 
@@ -1325,6 +1331,7 @@ touches the component. The constraints below span components.
 | 2026-11-01 | 6.1.0 | US1100: §6 Storage Strategy lists the committed evidence and records with their paths, adds the Run state and run lifecycle sections (live and archived in `.local`, tracked under `sdlc-studio/reports/runs/`, from plan through close to sign), drops `telemetry.jsonl` from the `.local` table and adds `sprint-plan.json`, `goal-review.json` and `briefs.jsonl` |
 | 2026-11-01 | 6.1.0 | US1101: §6's type registry gains `charter` and its vocabulary, the epic's `Superseded` and a `META_TYPES` table; §5 gives the network paths as a table holding all three `gh` callers, the version check's GET and `git fetch`, and ADR-004 records the GET as its exception; ADR-003 adds `reconcile.py settle` at commit; ADR-009 says `persona_gen.py` writes no card and the default seats ship; ADR-012 says it is not yet built; §10's gate row cites `GATE_BUDGET_MEASURED`; the coverage line reads v6.1.0 plus 6.2 on `main` |
 | 2026-11-02 | 6.2.0 | US1111: the release cut. The Coverage line reads v6.2.0 as cut, plus the 6.3 work on `main` |
+| 2026-11-04 | 6.2.0 | BG1163: §6's run lifecycle names `sprint.py stop` and `sprint.py close --file-and-close` and what each files; the Run state's tracked row says `--file-and-close` files none; the boundary note says it runs a close; the claim-drift writer cell names US0577 alone, from git; the `.local` paragraph says how the pin reads a writer |
 
 ---
 
