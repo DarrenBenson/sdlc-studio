@@ -3532,7 +3532,7 @@ class StampsCollectSideBySideTests(unittest.TestCase):
         def collect(f, cwd=None):
             fresh.append(f)
             return [f + "::t"]
-        self._side_by_side(["a.py", "b.py", "cached.py"], lambda cwd: None, collect)
+        self._side_by_side([f"{n}.py" for n in ("a", "b", "cached")], lambda cwd: None, collect)
         self.assertEqual(sorted(fresh), ["a.py", "b.py"])
         self.assertEqual(verify_ac._COLLECT_CACHE[("b.py", str(self.root))], ["b.py::t"])
         started = []
