@@ -37,6 +37,9 @@ SKILL = ".claude/skills/sdlc-studio/scripts"
 #: How long a stubbed lane takes to stop once it is sent SIGTERM, the way a real lane finishes
 #: a write before it exits. Long enough that a hook which does not wait for it exits first.
 STOP_SECONDS = 0.5
+#: How long a stubbed lane waits for the lane it is told to finish after. Far past any
+#: start delay a test injects, so only a lane that never starts runs it out.
+AFTER_SECONDS = 20
 
 
 def _load_gitutil():
@@ -162,8 +165,10 @@ class ParallelLaneTests(unittest.TestCase):
                               text=True, env=_clean_env(), check=False)
 
     def _behave(self, key: str, *, sleep: float = 0.0, rc: int = 0,
-                kill_lane: bool = False, ignore_term: bool = False) -> None:
-        """Lane `key` records its start and pid, sleeps, prints two lines naming itself,
+                kill_lane: bool = False, ignore_term: bool = False,
+                start_delay: float = 0.0, after: str | None = None) -> None:
+        """Lane `key` waits `start_delay`, records its start and pid, sleeps, waits until
+        lane `after` has finished (AFTER_SECONDS at most), prints two lines naming itself,
         records its finish, exits `rc`. Sent SIGTERM, it takes STOP_SECONDS to stop and
         records when it did; with `ignore_term` it ignores SIGTERM altogether.
 
@@ -178,6 +183,9 @@ class ParallelLaneTests(unittest.TestCase):
                  else [f"detail-1 <<{key}>>", f"detail-2 <<{key}>>"])
         (self.stubs / f"{key}.py").write_text(
             "import os, signal, sys, time\n"
+            "t0 = time.monotonic()\n"
+            f"time.sleep({start_delay})\n"
+            "late = time.monotonic() - t0\n"
             "start = time.time()\n"
             "def stop(*_):\n"
             f"    time.sleep({STOP_SECONDS})\n"
@@ -191,11 +199,15 @@ class ParallelLaneTests(unittest.TestCase):
             + (f"if os.getpgid(0) != {os.getpgid(0)}:\n"
                "    os.kill(os.getpgid(0), signal.SIGKILL)\n" if kill_lane else "")
             + f"time.sleep({sleep})\n"
-            f"print({lines[0]!r})\nprint({lines[1]!r})\n"
+            + (f"deadline = time.time() + {AFTER_SECONDS}\n"
+               f"while time.time() < deadline and not (os.path.exists({str(self.finished)!r})\n"
+               f"        and {after!r} in open({str(self.finished)!r}).read().split()):\n"
+               "    time.sleep(0.02)\n" if after else "")
+            + f"print({lines[0]!r})\nprint({lines[1]!r})\n"
             f"with open({str(self.finished)!r}, 'a') as fh:\n"
             f"    fh.write({key!r} + '\\n')\n"
             f"with open({str(self.finished)!r} + '.spans', 'a') as fh:\n"
-            f"    fh.write('%s %f %f\\n' % ({key!r}, start, time.time()))\n"
+            f"    fh.write('%s %f %f %f\\n' % ({key!r}, start, time.time(), late))\n"
             f"sys.exit({rc})\n", encoding="utf-8")
 
     def _select(self, selectors: list[str] | None) -> None:
@@ -309,7 +321,12 @@ class ParallelLaneTests(unittest.TestCase):
     def _spans(self) -> dict[str, tuple[float, float]]:
         """When each lane started and finished, by key."""
         rows = (ln.split() for ln in self._spans_log().read_text(encoding="utf-8").splitlines())
-        return {key: (float(start), float(end)) for key, start, end in rows}
+        return {key: (float(start), float(end)) for key, start, end, _late in rows}
+
+    def _late(self) -> dict[str, float]:
+        """How long each lane waited before it started, by key, timed inside the lane."""
+        rows = (ln.split() for ln in self._spans_log().read_text(encoding="utf-8").splitlines())
+        return {key: float(late) for key, _start, _end, late in rows}
 
     def _handoff(self) -> Path:
         return self.root / ".git" / "sdlc-gate-suites"
@@ -346,28 +363,55 @@ class ParallelLaneTests(unittest.TestCase):
         self.assertLess(last_start, first_end,
                         f"the five slow lanes were never all running at once: {spans}")
 
+    def _finish_in_reverse(self, start_delay: float = 0.0) -> set:
+        """Stub every lane to finish only once the lane declared after it has, so the lanes
+        finish in the reverse of their declared order by construction rather than by how long
+        each sleeps. Lane i first waits `start_delay * (i + 1)` seconds, as a loaded machine
+        starts a lane late. Every other lane fails; returns the failing keys."""
+        failing = set(self.keys[::2])
+        for i, key in enumerate(self.keys):
+            after = self.keys[i + 1] if i + 1 < len(self.keys) else None
+            self._behave(key, rc=1 if key in failing else 0, after=after,
+                         start_delay=start_delay * (i + 1))
+        return failing
+
+    def _assert_declared_order(self, failing: set) -> None:
+        rc, out, _ = self._commit()
+        self.assertNotEqual(rc, 0, out)
+        # The Given held: they finished in the reverse of their declared order.
+        self.assertEqual(self._finish_order(), list(reversed(self.keys)), out)
+        verdicts = [m.groups() for m in map(_VERDICT.match, out.splitlines()) if m]
+        self.assertEqual([k for _, k in verdicts], self.keys,
+                         f"the verdicts did not print in declared order:\n{out}")
+        self.assertEqual({k for v, k in verdicts if v == "FAIL"}, failing, out)
+        self._assert_blocks_whole(out, failing)
+
     def test_output_prints_in_declared_order_whatever_finishes_first(self) -> None:
         """US0891 AC2. MUTANT: print each lane's block as it finishes rather than in declared
         order; or let every lane write straight to the terminal, so blocks interleave.
 
-        Each lane sleeps longer the earlier it is declared, so they finish in reverse. Every
-        other lane fails, so the output carries whole FAIL blocks (verdict, enforces, the
+        Each lane finishes only after the lane declared after it, so they finish in reverse
+        (BG1090: the Given once rested on sleeps 0.25 s apart, which lanes started late reorder).
+        Every other lane fails, so the output carries whole FAIL blocks (verdict, enforces, the
         lane's own two detail lines, fix) as well as one-line ok blocks."""
-        n = len(self.keys)
-        failing = set(self.keys[::2])
-        for i, key in enumerate(self.keys):
-            self._behave(key, sleep=0.25 * (n - i), rc=1 if key in failing else 0)
+        failing = self._finish_in_reverse()
         for attempt in range(3):
             with self.subTest(run=attempt + 1):
-                rc, out, _ = self._commit()
-                self.assertNotEqual(rc, 0, out)
-                # The Given held: they finished in the reverse of their declared order.
-                self.assertEqual(self._finish_order(), list(reversed(self.keys)))
-                verdicts = [m.groups() for m in map(_VERDICT.match, out.splitlines()) if m]
-                self.assertEqual([k for _, k in verdicts], self.keys,
-                                 f"the verdicts did not print in declared order:\n{out}")
-                self.assertEqual({k for v, k in verdicts if v == "FAIL"}, failing, out)
-                self._assert_blocks_whole(out, failing)
+                self._assert_declared_order(failing)
+
+    def test_declared_order_holds_when_lanes_start_late(self) -> None:
+        """BG1090 AC1. Lane i waits 0.3 s x (i + 1) before it starts, so each waits 0.3 s
+        longer than the lane declared before it, more than the 0.25 s step the declared sleeps
+        once stood apart: those sleeps would now finish the lanes in declared order. They still
+        finish in reverse, because each waits for the next, and the verdicts still print in
+        declared order. MUTANTS: print the slots in the reverse of their declared order; drop
+        the start delay, which the lanes' own timing then refuses."""
+        step = 0.3
+        self._assert_declared_order(self._finish_in_reverse(start_delay=step))
+        late = self._late()
+        for i, key in enumerate(self.keys):
+            self.assertGreaterEqual(late[key], step * (i + 1),
+                                    f"the {key} lane did not start late: {late}")
 
     def _assert_blocks_whole(self, out: str, failing: set) -> None:
         """Every line naming a lane sits inside that lane's own block."""
