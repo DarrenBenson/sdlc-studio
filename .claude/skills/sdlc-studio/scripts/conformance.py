@@ -22,6 +22,7 @@ exactly when it is needed. Read-only; pure stdlib.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import re
 import sys
@@ -445,11 +446,50 @@ def _owed_half(root, rid) -> str:
     return HALF_TIER if approve_but_shallow else HALF_VERDICT
 
 
+#: The frozen sprint-review index of the census running now, or None outside one: the root it was
+#: armed for and, once first asked, each covered unit's latest covering row.
+#: `critic.sprint_review_for` reads and parses the whole ledger on every call, and the census asks
+#: once per Done unit, 845 times on this repository.
+_SPRINT_INDEX: dict | None = None
+
+
+def _sprint_review_for(root, rid):
+    """`critic.sprint_review_for(root, rid)`, answered from the census's index while one is armed
+    for this root. The index is built on the first ask, as `sprint_review_for` reads the ledger:
+    `critic.sprint_reviews` in ledger order, each row recorded against every unit it covers
+    (`critic._covered_ids`), so a later covering row replaces an earlier one."""
+    memo = _SPRINT_INDEX
+    if memo is None or memo["root"] != str(Path(root).resolve()):
+        return critic.sprint_review_for(root, rid)
+    if memo["rows"] is None:
+        rows: dict = {}
+        for row in critic.sprint_reviews(root):
+            for unit in critic._covered_ids(row):
+                rows[unit] = row
+        memo["rows"] = rows
+    return memo["rows"].get(sdlc_md.norm_id(rid))
+
+
+def _with_sprint_index(census):
+    """Arm `_SPRINT_INDEX` for the root of one `census` call and disarm it when the call returns
+    or raises. A census called inside another keeps the outer one's index."""
+    @functools.wraps(census)
+    def run(repo_root, *args, **kwargs):
+        global _SPRINT_INDEX  # noqa: PLW0603 - the index IS module state; the call is its scope
+        if _SPRINT_INDEX is not None:
+            return census(repo_root, *args, **kwargs)
+        _SPRINT_INDEX = {"root": str(Path(repo_root).resolve()), "rows": None}
+        try:
+            return census(repo_root, *args, **kwargs)
+        finally:
+            _SPRINT_INDEX = None
+    return run
+
+
 def critiqued_unmet(root, rid, critic_required: bool = True) -> list[str]:
     """What `critiqued` still owes for `rid`, in this module's own vocabulary: nothing, the
     independent APPROVE, or a review at the depth the unit's risk band demands."""
-    sprint_covers = critic.sprint_covers_independently(
-        root, rid, critic.sprint_review_for(root, rid))
+    sprint_covers = critic.sprint_covers_independently(root, rid, _sprint_review_for(root, rid))
     verdict_ok = verdict_half_ok(root, rid, sprint_covers)
     return [_owed_half(root, rid)] if critic_required and not verdict_ok else []
 
@@ -474,7 +514,7 @@ def _done_stages(root, rid, verified_states, no_index, drift_ids, doc_ok,
     # `critic.sprint_reviews` applies) covers every unit in its range at once. It satisfies
     # `critiqued` for a unit that had no INDIVIDUAL verdict - but never overrides a per-unit
     # REJECT, which is answered per unit. No verb writes the ledger now.
-    sprint_rev = critic.sprint_review_for(root, rid)
+    sprint_rev = _sprint_review_for(root, rid)
     sprint_covers = critic.sprint_covers_independently(root, rid, sprint_rev)
     # The verdict half: an APPROVE AND proven author != reviewer independence - a
     # self-review (or a verdict with no recorded author) never clears the Done gate. The floor
@@ -520,6 +560,7 @@ def changed_story_ids(root: Path) -> set[str] | None:
     return out
 
 
+@_with_sprint_index
 def detect_conformance(repo_root: Path | str, changed: bool = False,
                        scope_ids: "set[str] | None" = None) -> dict:
     """Per-story lifecycle conformance.

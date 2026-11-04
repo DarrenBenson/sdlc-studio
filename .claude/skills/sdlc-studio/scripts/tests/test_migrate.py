@@ -334,7 +334,7 @@ time.sleep(1)
 row = {{"file": sys.argv[-1], "start": start, "end": time.time(), "sized": sized,
         "addopts": os.environ.get("PYTEST_ADDOPTS", ""),
         "prefix": os.environ.get("PYTHONPYCACHEPREFIX"),
-        "dontwrite": os.environ.get("PYTHONDONTWRITEBYTECODE")}}
+        "dontwrite": os.environ.get("PYTHONDONTWRITEBYTECODE"), "parent": os.getppid()}}
 with open(os.environ["FAKE_PYTEST_LOG"], "a", encoding="utf-8") as log:
     log.write(json.dumps(row) + "\\n")
 print(sys.argv[-1] + "::test_ok")
@@ -388,7 +388,8 @@ class CollectionPrimerTests(unittest.TestCase):
         return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()], root
 
     def test_a_dry_run_collects_each_file_once_side_by_side_under_the_guard(self) -> None:
-        """Fails on: no priming, or one worker (no two collections overlap); a primer whose
+        """Fails on: no priming, or one worker (no two collections overlap); collections run
+        as processes of migrate's own rather than by a `CollectionServer`; a primer whose
         cache key the lane does not read, or a lane that does not wait for a collection in
         flight (a file collected twice); a primer that collects a file the lane does not (an
         unstamped line, a story not Done); a guard that keeps `PYTHONDONTWRITEBYTECODE`, sets
@@ -402,11 +403,27 @@ class CollectionPrimerTests(unittest.TestCase):
                                 for a, b in itertools.combinations(rows, 2)),
                             "the collections ran one after another")
         for row in rows:
+            self.assertNotEqual(os.getpid(), row["parent"], "collected without a server")
             self.assertEqual("-p no:cacheprovider", row["addopts"], "one guard, not two")
             self.assertIsNone(row["dontwrite"], "bytecode writes off: nothing is shared")
             self.assertTrue(row["prefix"], "no private bytecode directory")
             self.assertNotIn(str(root), row["prefix"], "the bytecode went into the project")
             self.assertFalse(Path(row["prefix"]).exists(), "the bytecode directory was left")
+
+    def test_a_second_verify_ac_module_does_not_split_the_cache(self) -> None:
+        """A process can hold two `verify_ac` modules, as a test runner that loads it again
+        under its name does. Fails on a primer that collects with `import verify_ac` rather
+        than the module `conformance` collects with: it fills the other module's cache, and
+        the lane collects every file a second time."""
+        import importlib.util  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        import conformance  # noqa: PLC0415,F401 - imported with the first module, as the lane is
+        spec = importlib.util.spec_from_file_location("verify_ac", _SCRIPTS / "verify_ac.py")
+        other = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(other)
+        with mock.patch.dict(sys.modules, {"verify_ac": other}):
+            rows, _root = self._run(apply=False)
+        self.assertEqual(self.FILES, sorted(r["file"] for r in rows))
 
     def test_a_guard_turned_on_inside_another_changes_nothing(self) -> None:
         """The lane turns its guard on while the primer's collections may still be starting.
@@ -426,6 +443,33 @@ class CollectionPrimerTests(unittest.TestCase):
         finally:
             outer.off()
         self.assertFalse(Path(before["PYTHONPYCACHEPREFIX"]).exists())
+
+    def test_seed_puts_beside_source_bytecode_where_the_guard_reads_it(self) -> None:
+        """Fails on a seed that copies nothing, or copies to a place other than where Python
+        looks under `PYTHONPYCACHEPREFIX` (`importlib.util.cache_from_source`), which keeps an
+        earlier run's bytecode from being read."""
+        import importlib.util  # noqa: PLC0415
+        import os  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            src = Path(d) / "tests"
+            (src / "__pycache__").mkdir(parents=True)
+            (src / "test_a.py").write_text("x = 1\n", encoding="utf-8")
+            tag = sys.implementation.cache_tag
+            (src / "__pycache__" / f"test_a.{tag}.pyc").write_bytes(b"compiled")
+            guard = migrate._QuietCollection()
+            guard.on()
+            try:
+                guard.seed([src])
+                prefix, saved = os.environ["PYTHONPYCACHEPREFIX"], sys.pycache_prefix
+                sys.pycache_prefix = prefix
+                try:
+                    where = Path(importlib.util.cache_from_source(str(src / "test_a.py")))
+                finally:
+                    sys.pycache_prefix = saved
+                self.assertEqual(b"compiled", where.read_bytes())
+            finally:
+                guard.off()
+            self.assertFalse(Path(prefix).exists())
 
     def test_a_relative_root_reads_the_cached_corpus(self) -> None:
         """A dry run reads the corpus through `sdlc_md.corpus_cache`, which hands every caller
@@ -480,11 +524,145 @@ class CollectionPrimerTests(unittest.TestCase):
         self.assertEqual([], [p.name for p in tmp.glob("sdlc-migrate-pyc-*")])
 
     def test_apply_collects_only_after_the_steps_that_write(self) -> None:
-        """Fails on a primer started before the steps under --apply: it collects while CR0001
-        still carries its Effort, so its rows read the tree before the migration."""
-        rows, _root = self._run(apply=True)
+        """Fails on a primer started before the steps under --apply. The order is read from the
+        calls themselves, the last writing step's (`_signed_records`) before the primer's
+        `start`, because a collection server's start-up can outlast this fixture's writes; and
+        every collection then reads CR0001 sized."""
+        from unittest import mock  # noqa: PLC0415
+        events: list[str] = []
+        start, records = migrate._CollectionPrimer.start, migrate._signed_records
+
+        def started(primer):
+            events.append("start")
+            return start(primer)
+
+        def recorded(*args, **kwargs):
+            events.append("records")
+            return records(*args, **kwargs)
+
+        with mock.patch.object(migrate._CollectionPrimer, "start", started), \
+                mock.patch.object(migrate, "_signed_records", recorded):
+            rows, _root = self._run(apply=True)
+        self.assertEqual("records", events[0], events)
+        self.assertIn("start", events)
         self.assertEqual(self.FILES, sorted(r["file"] for r in rows))
         self.assertTrue(all(r["sized"] for r in rows), rows)
+
+
+#: The test files `CollectionServerTests` collects both ways: a pass, a parametrised class, an
+#: empty file (pytest exits 5), a syntax error and a missing import (both exit 2), a test named
+#: outside ASCII, and one whose test is named from `sys.path` as it is imported. The conftest writes a node-shaped line to standard error
+#: once pytest has stopped capturing it.
+_COLLECT_FIXTURES = {
+    "test_ok.py": "def test_a():\n    pass\n\n\ndef test_b():\n    pass\n",
+    "test_param.py": ("import pytest\n\n\nclass TestP:\n    @pytest.mark.parametrize('n', [1, 2])\n"
+                      "    def test_n(self, n):\n        pass\n"),
+    "test_empty.py": "",
+    "test_syntax.py": "def broken(:\n",
+    "test_import.py": "import nosuchmodule_bg1183  # noqa: F401\n",
+    "test_unicode.py": "def test_caf\u00e9():\n    pass\n",
+    "test_path.py": ("import hashlib, sys\n\n"
+                     "globals()['test_' + hashlib.md5(repr(sys.path).encode()).hexdigest()[:8]] = "
+                     "lambda: None\n"),
+    "conftest.py": ("import sys\n\n\ndef pytest_unconfigure(config):\n"
+                    "    sys.stderr.write('tests/test_ok.py::stderr\\n')\n"),
+}
+
+
+class CollectionServerTests(unittest.TestCase):
+    """BG1183 AC2: a `verify_ac.CollectionServer` answers each file as `_collect_fresh`, a fresh
+    `pytest --collect-only -q` of its own, answers it."""
+
+    def setUp(self) -> None:
+        import os  # noqa: PLC0415
+        import verify_ac  # noqa: PLC0415
+        self.va = verify_ac
+        if not hasattr(os, "fork") or verify_ac.pytest_launcher() is None:
+            self.skipTest("no fork, or a pytest no CollectionServer can run")
+
+    def _project(self) -> Path:
+        import shutil  # noqa: PLC0415
+        root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root, True)
+        (root / "tests").mkdir()
+        for name, text in _COLLECT_FIXTURES.items():
+            (root / "tests" / name).write_text(text, encoding="utf-8")
+        return root
+
+    def test_a_server_answers_each_file_as_a_fresh_collection_does(self) -> None:
+        """Fails on a server that reads its children's standard error as output, reports every
+        exit as a pass, leaves `sys.path[0]` as `-c` sets it (`test_path.py` then names its test
+        from another `sys.path`), drops a parametrised id, or decodes
+        its children's output other than as `subprocess.run(text=True)` does."""
+        root = self._project()
+        files = [f"tests/{name}" for name in _COLLECT_FIXTURES
+                 if name != "conftest.py"] + ["tests/test_absent.py"]
+        server = self.va.CollectionServer.start(root)
+        self.addCleanup(server.close)
+        served = {f: server.collect(f) for f in files}
+        fresh = {f: self.va._collect_fresh(f, root) for f in files}
+        self.assertEqual(fresh, served)
+        self.assertIsNone(served["tests/test_syntax.py"])
+        self.assertEqual([], served["tests/test_empty.py"])
+        self.assertIn("tests/test_param.py::TestP::test_n[2]", served["tests/test_param.py"])
+        self.assertNotIn("tests/test_ok.py::stderr", served["tests/test_ok.py"])
+        self.assertEqual(1, len(served["tests/test_path.py"]))
+        self.assertEqual(["tests/test_unicode.py::test_caf\u00e9"], served["tests/test_unicode.py"])
+        self.assertEqual(served["tests/test_ok.py"],
+                         self.va._COLLECT_CACHE[("tests/test_ok.py", str(root))])
+
+    def test_a_collection_past_the_timeout_reads_as_not_collecting(self) -> None:
+        """Fails on a server that waits past `COLLECT_TIMEOUT`, or that cannot answer the next
+        file after it killed a child."""
+        from unittest import mock  # noqa: PLC0415
+        root = self._project()
+        (root / "tests" / "test_slow.py").write_text("import time\ntime.sleep(30)\n", "utf-8")
+        server = self.va.CollectionServer.start(root)
+        self.addCleanup(server.close)
+        with mock.patch.object(self.va, "COLLECT_TIMEOUT", 2):
+            import time  # noqa: PLC0415
+            start = time.monotonic()
+            self.assertIsNone(server.collect("tests/test_slow.py"))
+            self.assertLess(time.monotonic() - start, 20)
+        self.assertEqual(["tests/test_ok.py::test_a", "tests/test_ok.py::test_b"],
+                         server.collect("tests/test_ok.py"))
+
+    def test_a_server_that_stops_answering_hands_the_file_to_a_fresh_collection(self) -> None:
+        """Fails on a dead server's file read as not collecting, or asked again."""
+        root = self._project()
+        server = self.va.CollectionServer.start(root)
+        self.addCleanup(server.close)
+        server._proc.kill()
+        server._proc.wait()
+        self.assertEqual(self.va._collect_fresh("tests/test_ok.py", root),
+                         server.collect("tests/test_ok.py"))
+        self.assertIsNone(server._proc)
+
+    def test_the_launcher_runs_only_a_pytest_whose_first_line_names_python(self) -> None:
+        """Fails on a launcher that runs a shell shim, a binary or an `env -S` line as Python,
+        or that drops the one argument a shebang may carry."""
+        import os  # noqa: PLC0415
+        import shutil  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+        python = shutil.which("python3") or sys.executable
+        cases = {
+            f"#!{python}\n": [python],
+            f"#!{python} -s\n": [python, "-s"],
+            "#!/usr/bin/env python3\n": [shutil.which("python3")],
+            "#!/bin/sh\n": None,
+            "#!/usr/bin/env -S python3 -X dev\n": None,
+            "\x7fELF\x02": None,
+        }
+        for first, argv in cases.items():
+            with self.subTest(first=first), tempfile.TemporaryDirectory() as d:
+                script = Path(d) / "pytest"
+                script.write_text(first + "import sys\n", encoding="utf-8")
+                script.chmod(0o755)
+                with mock.patch.dict(os.environ, {"PATH": f"{d}{os.pathsep}{os.path.dirname(python)}"}):
+                    got = self.va.pytest_launcher()
+                self.assertEqual(argv, got and got[0])
+                if argv:
+                    self.assertEqual(str(script), got[1])
 
 
 class EngagementFloorCutoffTests(unittest.TestCase):

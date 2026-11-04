@@ -809,19 +809,227 @@ def _collect_nodes(test_file: str, cwd=None) -> list[str] | None:
     key = (test_file, str(cwd) if cwd else None)
     if key in _COLLECT_CACHE:
         return _COLLECT_CACHE[key]
-    result: list[str] | None = None
-    try:
-        cp = subprocess.run(["pytest", "--collect-only", "-q", test_file],
-                            capture_output=True, text=True, timeout=120,
-                            cwd=str(cwd) if cwd else None)
-        if cp.returncode in (0, 5):
-            # -q collect lists one node id per line, then a blank line and a summary.
-            result = [ln.strip() for ln in cp.stdout.splitlines()
-                      if "::" in ln and not ln.startswith(" ")]
-    except (OSError, subprocess.SubprocessError):
-        result = None
+    result = _collect_fresh(test_file, cwd)
     _COLLECT_CACHE[key] = result
     return result
+
+
+def _collect_fresh(test_file: str, cwd=None) -> list[str] | None:
+    """One `pytest --collect-only -q test_file` in its own process, read by `_collected_nodes`;
+    None when it cannot start or runs past `COLLECT_TIMEOUT`. Uncached: `_collect_nodes` caches."""
+    try:
+        cp = subprocess.run(["pytest", "--collect-only", "-q", test_file],
+                            capture_output=True, text=True, timeout=COLLECT_TIMEOUT,
+                            cwd=str(cwd) if cwd else None)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return _collected_nodes(cp.returncode, cp.stdout)
+
+
+#: The seconds one `pytest --collect-only` may take before its file reads as not collecting.
+COLLECT_TIMEOUT = 120
+
+
+def _collected_nodes(returncode: int, stdout: str) -> list[str] | None:
+    """The node ids one `pytest --collect-only -q` run lists, or None when it exited other than
+    0 (collected) or 5 (collected nothing)."""
+    if returncode not in (0, 5):
+        return None
+    # -q collect lists one node id per line, then a blank line and a summary.
+    return [ln.strip() for ln in stdout.splitlines() if "::" in ln and not ln.startswith(" ")]
+
+
+def pytest_launcher() -> tuple[list[str], str] | None:
+    """`(interpreter argv, script)` for the `pytest` on PATH, when it is a Python script whose
+    first line names its interpreter as an absolute path to a `python` with at most one argument,
+    or as `env python...` with nothing after the name; None for any other `pytest` (a binary, a
+    shell shim, no `pytest` at all), which a `CollectionServer` cannot stand in for."""
+    script = shutil.which("pytest")
+    if not script:
+        return None
+    try:
+        with open(script, "rb") as fh:
+            first = fh.readline(512)
+        words = first[2:].decode("utf-8").split() if first.startswith(b"#!") else []
+    except (OSError, UnicodeDecodeError):
+        return None
+    if len(words) == 2 and os.path.basename(words[0]) == "env":
+        found = shutil.which(words[1])
+        argv = [found] if found else []
+    elif words and os.path.isabs(words[0]) and len(words) <= 2:
+        argv = words
+    else:
+        argv = []
+    if not argv or not re.fullmatch(r"python[\d.]*", os.path.basename(argv[0])):
+        return None
+    return argv, script
+
+
+#: The program a `CollectionServer` runs under the `pytest` script's own interpreter. It imports,
+#: once, the modules every pytest session imports before it collects: pytest, its own plugin
+#: modules, `pdb` (which `_pytest.debugging` imports as it configures) and, unless
+#: `PYTEST_DISABLE_PLUGIN_AUTOLOAD` is set, each installed `pytest11` plugin's module. Importing a
+#: plugin module does not register it, so `-p no:<name>` still blocks it. Then for each requested
+#: file it forks a child that runs the `pytest` script itself as a fresh
+#: `pytest --collect-only -q <file>` would: the same argv, working directory and environment,
+#: `sys.path[0]` the script's directory, standard input empty and standard error discarded, the
+#: exit status Python gives the script's `SystemExit`. A child still running at the request's
+#: timeout is killed and reported with no status. Written to run under Python 3.5 or later.
+_COLLECT_SERVER = r"""
+import json, os, runpy, select, signal, sys, time, traceback
+script = sys.argv[1]
+if not getattr(sys.flags, "safe_path", False):
+    sys.path[0] = os.path.dirname(os.path.realpath(script))
+import importlib
+import pytest  # noqa: F401 - imported once, so each child starts with it
+try:
+    from _pytest.config import default_plugins, essential_plugins
+except ImportError:
+    default_plugins = essential_plugins = ()
+modules = ["_pytest." + name for name in (*essential_plugins, *default_plugins)]
+modules.append("pdb")   # `_pytest.debugging` imports it as each session is configured
+if not os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD"):
+    try:
+        from importlib import metadata
+        found = metadata.entry_points()
+        found = (found.select(group="pytest11") if hasattr(found, "select")
+                 else found.get("pytest11", ()))
+        modules += [ep.value.split(":")[0].strip() for ep in found]
+    except Exception:
+        pass
+for module in modules:
+    try:
+        importlib.import_module(module)
+    except Exception:
+        pass
+requests, replies = sys.stdin, sys.stdout
+for line in requests:
+    req = json.loads(line)
+    sys.stdout.flush()
+    r, w = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+        os.close(r)
+        null = os.open(os.devnull, os.O_RDWR)
+        os.dup2(null, 0)
+        os.dup2(w, 1)
+        os.dup2(null, 2)
+        sys.argv = [script, "--collect-only", "-q", req["file"]]
+        code = 0
+        try:
+            runpy.run_path(script, run_name="__main__")
+        except SystemExit as exc:
+            code = exc.code
+        except BaseException:
+            traceback.print_exc()
+            code = 1
+        if code is None:
+            code = 0
+        elif not isinstance(code, int):
+            print(code, file=sys.stderr)
+            code = 1
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        finally:
+            os._exit(code & 0xFF)
+    os.close(w)
+    out, deadline, timed_out = [], time.monotonic() + req["timeout"], False
+    while True:
+        left = deadline - time.monotonic()
+        if left <= 0 or not select.select([r], [], [], left)[0]:
+            timed_out = True
+            os.kill(pid, signal.SIGKILL)
+            break
+        chunk = os.read(r, 65536)
+        if not chunk:
+            break
+        out.append(chunk)
+    os.close(r)
+    status = os.waitpid(pid, 0)[1]
+    if timed_out:
+        rc = None
+    elif os.WIFSIGNALED(status):
+        rc = -os.WTERMSIG(status)
+    else:
+        rc = os.WEXITSTATUS(status)
+    replies.write(json.dumps({"rc": rc, "out": b"".join(out).decode("latin-1")}) + "\n")
+    replies.flush()
+"""
+
+
+class CollectionServer:
+    """A process that answers `_collect_nodes` for one working directory faster than a fresh
+    `pytest` per file: it imports pytest once and forks a child per file (`_COLLECT_SERVER`). Each
+    answer is read as `_collect_nodes` reads its own run (`_collected_nodes`, the output decoded as
+    `subprocess.run(text=True)` decodes it) and stored in `_COLLECT_CACHE` under the key
+    `_collect_nodes` uses. Its children run under the environment the server started with. A
+    server that stops answering is not asked again, and its file is collected in a process of
+    its own (`_collect_fresh`), as `_collect_nodes` collects it."""
+
+    def __init__(self, cwd, launcher: tuple[list[str], str]) -> None:
+        argv, script = launcher
+        self.cwd = cwd
+        self._proc = subprocess.Popen([*argv, "-c", _COLLECT_SERVER, script],
+                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                      stderr=subprocess.DEVNULL, cwd=str(cwd))
+
+    @classmethod
+    def start(cls, cwd) -> "CollectionServer | None":
+        """A server for `cwd`, or None where none can stand in for `pytest`: no `os.fork`, or a
+        `pytest` that `pytest_launcher` cannot run."""
+        launcher = pytest_launcher() if hasattr(os, "fork") else None
+        if launcher is None:
+            return None
+        try:
+            return cls(cwd, launcher)
+        except OSError:
+            return None
+
+    def collect(self, test_file: str) -> list[str] | None:
+        """`_collect_nodes(test_file, self.cwd)`, answered by this server where it can be."""
+        key = (test_file, str(self.cwd) if self.cwd else None)
+        if key in _COLLECT_CACHE:
+            return _COLLECT_CACHE[key]
+        reply = None
+        if self._proc is not None:
+            try:
+                self._proc.stdin.write((json.dumps({"file": test_file,
+                                                    "timeout": COLLECT_TIMEOUT}) + "\n").encode())
+                self._proc.stdin.flush()
+                line = self._proc.stdout.readline()
+                reply = json.loads(line) if line else None
+            except (OSError, ValueError):
+                reply = None
+            if reply is None:
+                self.close()
+        if reply is None:
+            result = _collect_fresh(test_file, self.cwd)
+            _COLLECT_CACHE[key] = result
+            return result
+        result = None
+        if reply["rc"] is not None:
+            import locale  # noqa: PLC0415 - the codec `subprocess.run(text=True)` reads with
+            raw = reply["out"].encode("latin-1")
+            stdout = raw.decode(locale.getpreferredencoding(False))
+            result = _collected_nodes(reply["rc"], stdout.replace("\r\n", "\n").replace("\r", "\n"))
+        _COLLECT_CACHE[key] = result
+        return result
+
+    def close(self) -> None:
+        """Stop the server; a later `collect` runs a process of its own (`_collect_fresh`)."""
+        proc, self._proc = self._proc, None
+        if proc is None:
+            return
+        with contextlib.suppress(OSError):
+            proc.stdin.close()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        with contextlib.suppress(OSError):
+            proc.stdout.close()
 
 
 def _selector_target(expr: str, cwd=None) -> tuple[str | None, str | None]:

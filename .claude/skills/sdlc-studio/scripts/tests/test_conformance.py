@@ -504,6 +504,78 @@ class SprintReviewCritiquedTests(unittest.TestCase):
             self.assertIn("critiqued", u["missing"])
 
 
+class SprintIndexTests(unittest.TestCase):
+    """BG1183: the census answers `critic.sprint_review_for` from one read of the frozen
+    sprint-review ledger. US0102 is covered by an APPROVE and then by a later REJECT, so the
+    latest covering row decides it; US0103's only row is dated after `REPAIR_VERB_RETIRED`, so
+    nothing covers it."""
+
+    LEDGER = ("| Base | Reviewer | Author | Verdict | Date | Units | Findings |\n"
+              "| --- | --- | --- | --- | --- | --- | --- |\n"
+              "| - | qa-seat | builder | APPROVE | 2026-07-10 | US0101, US0102 | none blocking |\n"
+              "| - | qa-seat | builder | REJECT | 2026-07-18 | US0102 | a real defect |\n"
+              "| - | qa-seat | builder | APPROVE | 2026-10-01 | US0103 | none blocking |\n")
+
+    def _repo(self, root: Path) -> None:
+        for num in (101, 102, 103):
+            _story(root, num, status="Done")
+        path = root / "sdlc-studio" / "reviews" / "sprint-review-record.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(self.LEDGER, encoding="utf-8")
+
+    def test_the_census_reads_the_ledger_once_and_answers_as_critic_does(self) -> None:
+        """Fails on a census with no index (the ledger read once per Done unit, three times),
+        and on an index that keeps the first covering row: US0102 then reads its APPROVE and
+        its `critiqued` stage turns true, where `critic.sprint_review_for` answers the REJECT."""
+        conf = _load()
+        critic = conf.critic
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            ledger = critic.sprint_review_path(root)
+            reads = []
+            real = critic._read_rows
+            with mock.patch.object(critic, "_read_rows",
+                                   lambda path, cols: (reads.append(path), real(path, cols))[1]):
+                indexed = conf.detect_conformance(root)["units"]
+            self.assertEqual(1, reads.count(ledger))
+            with mock.patch.object(conf, "_sprint_review_for", critic.sprint_review_for):
+                direct = conf.detect_conformance(root)["units"]
+            self.assertEqual(direct, indexed)
+            stages = {u["id"]: u["stages"]["critiqued"] for u in indexed}
+            self.assertEqual({"US0101": True, "US0102": False, "US0103": False}, stages)
+
+    def test_the_index_is_disarmed_after_the_census_returns_or_raises(self) -> None:
+        """Fails on an index left armed after a census, which would answer a later caller from
+        a ledger read before that caller's writes."""
+        conf = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            conf.detect_conformance(root)
+            self.assertIsNone(conf._SPRINT_INDEX)
+            with mock.patch.object(conf.reconcile, "detect_type", side_effect=ValueError("x")):
+                with self.assertRaises(ValueError):
+                    conf.detect_conformance(root)
+            self.assertIsNone(conf._SPRINT_INDEX)
+
+    def test_an_index_armed_for_another_root_is_not_read(self) -> None:
+        """Fails on an index answered for any root: a census over one tree would hand its rows
+        to a caller asking about another."""
+        conf = _load()
+        critic = conf.critic
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            conf._SPRINT_INDEX = {"root": str(root / "elsewhere"), "rows": {"US0102": {"x": 1}}}
+            try:
+                got = conf._sprint_review_for(root, "US0102")
+            finally:
+                conf._SPRINT_INDEX = None
+            self.assertEqual(critic.sprint_review_for(root, "US0102"), got)
+            self.assertEqual("REJECT", got["verdict"])
+
+
 class GlobalAttributionTests(unittest.TestCase):
     """US0217: a repo-GLOBAL failure is one fact about the repo, not a defect in each unit.
 

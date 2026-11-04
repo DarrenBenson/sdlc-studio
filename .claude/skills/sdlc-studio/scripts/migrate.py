@@ -32,6 +32,7 @@ import re
 import signal
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -373,6 +374,26 @@ class _QuietCollection:
         os.environ.pop("PYTHONDONTWRITEBYTECODE", None)
         os.environ["PYTHONPYCACHEPREFIX"] = self._prefix
 
+    def seed(self, directories) -> None:
+        """Copy the bytecode already beside the sources in each directory (its `__pycache__`)
+        to where a collection under this guard looks for it, so a module an earlier run
+        compiled there, a test module above all, is read rather than compiled again. Python
+        and pytest both check a bytecode file against its source before using it."""
+        if self._prefix is None:
+            return
+        import shutil  # noqa: PLC0415 - needed only here
+        for directory in directories:
+            cache = Path(directory) / "__pycache__"
+            if not cache.is_dir():
+                continue
+            mirror = Path(self._prefix, *Path(os.path.abspath(directory)).parts[1:])
+            try:
+                mirror.mkdir(parents=True, exist_ok=True)
+                for pyc in cache.glob("*.pyc"):
+                    shutil.copyfile(pyc, mirror / pyc.name)
+            except OSError:
+                continue
+
     def off(self) -> None:
         if self._prefix is None:
             return
@@ -394,9 +415,12 @@ class _QuietCollection:
         self.off()
 
 
-#: The most test-file collections `_CollectionPrimer` runs at once, the cap the release verify
-#: lane puts on its story pool.
-_PRIME_WORKERS_CAP = 8
+#: The most test-file collections `_CollectionPrimer` runs at once. Measured with the collection
+#: server on this repository's 4-core, 8-thread workstation (2026-11-04, load 2 to 10): 4 at a
+#: time took 55 to 104 s for the whole dry run on 227 to 394 s of CPU, and 8 took 55 to 103 s on
+#: 329 to 416 s, so the eight bought no time and cost about a quarter more CPU, which a loaded
+#: machine pays for in time.
+_PRIME_WORKERS_CAP = 4
 
 
 class _CollectionPrimer:
@@ -404,19 +428,24 @@ class _CollectionPrimer:
 
     The lane resolves each stamped `pytest` selector on a Done story by collecting its test file
     with `verify_ac._collect_nodes`, one `pytest --collect-only` per distinct file and one after
-    another, caching each file's node list. On this repository that was 266 files and most of a
-    dry run's wall time. `start` reads the files off the Done stories and submits each to that
-    same function, with the same root, `min(cores, 8)` at a time and under `_QuietCollection`.
-    While `serving`, the lane's call for a submitted file waits for that collection and then
-    reads the cache, so the lane runs beside the collections and repeats none that returned. A
-    file the primer did not submit, or whose collection raised, is collected by the lane itself.
-    `wait` joins every collection and restores the environment."""
+    another, caching each file's node list. On this repository that was 268 files and most of a
+    dry run's wall time. `start` reads the files off the Done stories and collects each for the
+    same root, `min(cores, _PRIME_WORKERS_CAP)` at a time and under `_QuietCollection`: each
+    worker thread asks its own `verify_ac.CollectionServer`, which answers as `_collect_nodes`
+    would and fills its cache, or calls `_collect_nodes` where no server can start. While
+    `serving`, the lane's call for a submitted file waits for that collection and then reads the
+    cache, so the lane runs beside the collections and repeats none that returned. A file the
+    primer did not submit, or whose collection raised, is collected by the lane itself. `wait`
+    joins every collection, stops the servers and restores the environment."""
 
     def __init__(self, root: Path) -> None:
         self.root = root
         self._started = False
         self._pool = None
         self._futures: dict = {}
+        self._verify_ac = None
+        self._servers: list = []
+        self._lock = threading.Lock()
         self._quiet = _QuietCollection()
 
     def _files(self, verify_ac) -> list[str]:
@@ -446,9 +475,15 @@ class _CollectionPrimer:
         if self._started:
             return
         self._started = True
+        # The `verify_ac` the lane collects with is the one `conformance` imported, which is
+        # not always the one `import verify_ac` finds here: a process that loaded the module
+        # again under its name (a test runner can) holds two, each with its own cache.
         try:
-            import verify_ac  # noqa: PLC0415 - the lane's collector, needed only here
+            import conformance  # noqa: PLC0415 - the lane itself, needed only here
         except ImportError:
+            return
+        verify_ac = self._verify_ac = conformance.verify_ac
+        if verify_ac is None:
             return
         from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
         try:
@@ -458,21 +493,33 @@ class _CollectionPrimer:
         if not files:
             return
         self._quiet.on()
+        self._quiet.seed(sorted({(self.root / f).parent for f in files}))
         self._pool = ThreadPoolExecutor(
             max_workers=max(1, min(os.cpu_count() or 1, _PRIME_WORKERS_CAP)))
-        collect = verify_ac._collect_nodes
+        fresh, local = verify_ac._collect_nodes, threading.local()
+
+        def collect(test_file: str):
+            # Each worker thread asks its own server, started on its first file under the guard.
+            if not hasattr(local, "server"):
+                local.server = verify_ac.CollectionServer.start(self.root)
+                if local.server is not None:
+                    with self._lock:
+                        self._servers.append(local.server)
+            if local.server is None:
+                return fresh(test_file, self.root)
+            return local.server.collect(test_file)
+
         for test_file in files:
-            self._futures[(test_file, str(self.root))] = self._pool.submit(
-                collect, test_file, self.root)
+            self._futures[(test_file, str(self.root))] = self._pool.submit(collect, test_file)
 
     @contextlib.contextmanager
     def serving(self):
-        """While open, `verify_ac._collect_nodes` waits for the submitted collection of the
-        file it is asked for before it reads the cache."""
+        """While open, the lane's `verify_ac._collect_nodes` waits for the submitted collection
+        of the file it is asked for before it reads the cache."""
         if not self._futures:
             yield
             return
-        import verify_ac  # noqa: PLC0415 - the lane's collector, needed only here
+        verify_ac = self._verify_ac
         collect = verify_ac._collect_nodes
 
         def waiting(test_file, cwd=None):
@@ -488,11 +535,14 @@ class _CollectionPrimer:
             verify_ac._collect_nodes = collect
 
     def wait(self, cancel: bool = False) -> None:
-        """Join the collections (dropping the ones not yet begun when `cancel`), then restore
-        the environment `start` changed."""
+        """Join the collections (dropping the ones not yet begun when `cancel`), stop the servers,
+        then restore the environment `start` changed."""
         if self._pool is not None:
             self._pool.shutdown(wait=True, cancel_futures=cancel)
             self._pool = None
+        for server in self._servers:
+            server.close()
+        self._servers.clear()
         self._quiet.off()
 
 
