@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-04
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 13 |
+| Proposed | 14 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 531 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **660** |
+| **Total** | **661** |
 
 ## All Changes
 
@@ -72,6 +72,7 @@
 | [CR-0658](CR0658-the-author-self-check-s-claim-surfaces-have.md) | The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes | Proposed | Low | Feature | 2026-11-02 | -- |
 | [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | In Progress | Low | Feature | 2026-11-02 | EP0297 |
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
+| [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Proposed | High | Improvement | 2026-11-04 | -- |
 
 ## Archived Releases
 
