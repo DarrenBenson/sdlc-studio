@@ -1,6 +1,6 @@
 # BG1210: The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, changelog.d/BG1210.md
@@ -26,6 +26,7 @@ Add the Cursor usage call to the Security NFR's list of outbound paths, with whe
 
 - [ ] **AC1** The PRD's Security NFR names `meter_cursor.py` and the call it makes, and the PRD refresh test passes.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

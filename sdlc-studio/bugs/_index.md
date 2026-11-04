@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 203 |
 | In Progress | 0 |
-| Fixed | 835 |
+| Fixed | 837 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1212** |
+| **Total** | **1214** |
 
 ## All Bugs
 
@@ -285,9 +285,11 @@
 | [BG1207](BG1207-bg1197-s-harness-scrub-lives-in-the-root.md) | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1208](BG1208-bg1122-s-meter-memo-leaves-the-unfinished-line.md) | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1209](BG1209-the-pre-commit-hook-s-payload-markdown-lane.md) | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator ('X is not None : msg') when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Fixed | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

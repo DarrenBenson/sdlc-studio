@@ -1,6 +1,6 @@
 # BG1212: US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, changelog.d/BG1212.md
@@ -26,6 +26,7 @@ Move the clock half of AC2's test into its own test marked `serial_only` and `bo
 
 - [ ] **AC1** The wall-clock census names no test in `test_meter_cursor.py`, and the worker-joined-with-no-timeout mutant still fails a test.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 
