@@ -1,6 +1,6 @@
 # US0991: The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a reading whose basis says it includes subagent spend and a supplied delegated total on the run, when `run_attributed_tokens` forms the run's figure, then the delegated total is not added and the basis says why. Fails on: adding `delegated_tokens` unconditionally, which counts subagent spend twice
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessBasisTests::test_delegated_not_added_when_the_reading_includes_subagents
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given a Claude reading (main thread only) and a supplied delegated total, then the delegated total is still added and the figure is still a lower bound, as today. Fails on: dropping the delegated path for every harness
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::HarnessBasisTests::test_delegated_still_added_for_a_main_thread_reading
+  - **Verified:** yes (2026-11-04)
 - **AC3:** Given a report filed for a run metered by a non-Claude harness, then the cost section names the harness and the reading's own basis, and says "main thread" only when the reading does. Fails on: the fixed main-thread prose in `run_attributed_tokens`, `TOKEN_TOTAL_BASIS` or the report's cost section
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::HarnessBasisReportTests::test_cost_section_states_the_readings_basis
+  - **Verified:** yes (2026-11-04)
 - **AC4:** Given a report filed before this change for a Claude-metered run, then it still re-derives to its filed fingerprint and checks VALID. Fails on: rewording the Claude basis so every earlier signed page re-derives differently
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::HarnessBasisReportTests::test_a_claude_report_rederives_unchanged
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 

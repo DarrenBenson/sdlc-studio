@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 199 |
+| Open | 201 |
 | In Progress | 0 |
-| Fixed | 828 |
+| Fixed | 830 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1201** |
+| **Total** | **1205** |
 
 ## All Bugs
 
@@ -33,7 +33,7 @@
 | [BG0955](BG0955-test-lean-backlog-sweep-reads-only-the-live.md) | `test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Open | Medium | 2026-10-06 | 2026-10-06 |
-| [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0960](BG0960-a-plan-refused-for-a-missing-verify-line.md) | A plan refused for a missing Verify line tells you to add Affects and Points | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0961](BG0961-a-verify-line-cannot-name-the-skill-skill.md) | A Verify line cannot name the skill: <skill> is a shell redirect, not a path | Open | Medium | 2026-10-07 | 2026-10-07 |
@@ -165,7 +165,7 @@
 | [BG1087](BG1087-mutation-py-s-changed-line-scope-finds-no.md) | mutation.py's changed-line scope finds no lines on a machine whose git config sets diff.mnemonicprefix or diff.noprefix | Superseded | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1088](BG1088-a-setup-fault-on-a-gate-host-s.md) | A setup fault on a gate host's suite run is named as 'did not run the all suite' with no test that fails without it | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1089](BG1089-us1078-ac3-s-verify-test-does-not-exercise.md) | US1078 AC3's Verify test does not exercise the verdict's binding to the tree sent; only a sibling test does | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
-| [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Open | Medium | 2026-10-19 | 2026-10-19 |
+| [BG1090](BG1090-test-output-prints-in-declared-order-whatever-finishes.md) | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1091](BG1091-us1084-s-document-tests-still-pass-three-phrasings.md) | US1084's document tests still pass three phrasings they exist to refuse | Won't Fix | Low | 2026-10-19 | 2026-10-19 |
 | [BG1092](BG1092-the-tsd-says-the-commit-msg-hook-falls.md) | The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
@@ -277,6 +277,10 @@
 | [BG1199](BG1199-us1115-s-reference-and-fragment-say-a-commit.md) | US1115's reference and fragment say a commit whose every id is a mention is attributed no files, but a one-id subject whose only id is a Mentions: id is attributed its files | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1200](BG1200-mutation-changed-lines-reports-no-lines-when-git.md) | mutation.changed_lines reports no lines when git's color.ui or color.diff is always, because the +++ b/ header arrives wrapped in ANSI codes | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1201](BG1201-us0989-s-cursor-usage-reader-takes-its-variable.md) | US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1202](BG1202-us0989-s-cursor-reader-leaves-two-guards-unpinned.md) | US0989's Cursor reader leaves two guards unpinned and names an empty usage for a malformed answer | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1203](BG1203-us0991-ac3-s-verify-line-cannot-fail-on.md) | US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

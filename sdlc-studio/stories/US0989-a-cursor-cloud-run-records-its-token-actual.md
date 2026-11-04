@@ -1,6 +1,6 @@
 # US0989: A Cursor cloud run records its token actual from the usage API when a key is present
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a Cursor API key and a run id in the environment and a stub endpoint returning `totalUsage` with `inputTokens`, `outputTokens`, `cacheWriteTokens`, `cacheReadTokens` and `totalTokens`, when the Cursor reader runs, then `tokens` is input + output + cache write, cache reads are reported apart, and the source names the agent id. Fails on: taking `totalTokens`, which includes cache reads (D0346)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCloudTests::test_usage_payload_counts_one_basis
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given no key or no run id, then no request is made; given an HTTP error, a timeout or a run with no usage recorded yet, then the reading is tokens None with a named reason, never zero, and the request is bounded by a short timeout so the close is never held. Fails on: a request issued without a key, an unbounded wait, or an empty usage read as zero
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCloudTests::test_no_key_no_call_and_failures_not_attributable
+  - **Verified:** yes (2026-11-04)
 - **AC3:** Given a successful or failed call, then the key never appears in the reading, a stamp, the run state, a reason string or the report. Fails on: an error message that echoes the request headers, or a source built from the authenticated URL
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCloudTests::test_the_key_is_never_recorded
+  - **Verified:** yes (2026-11-04)
 - **AC4:** Given a fixture repository, a local stub server and `SDLC_STUDIO_HARNESS=cursor`, when `sprint.py plan --write` opens a run, then the baseline it stamps names cursor and the agent id. Fails on: the reader passing its unit tests while the plan path never reaches it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCloudLaneTests::test_plan_write_stamps_a_cursor_baseline
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 

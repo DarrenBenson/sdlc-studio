@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 81 |
-| Ready | 4 |
+| Ready | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 848 |
+| Done | 850 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -26,9 +26,9 @@
 | [US0986](US0986-the-token-meter-reads-the-running-harness-s.md) | The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0987](US0987-a-copilot-cli-run-records-its-token-actual.md) | A Copilot CLI run records its token actual from the session events | Draft | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0988](US0988-an-opencode-run-records-its-token-actual-from.md) | An OpenCode run records its token actual from the read-only OpenCode database, child sessions included | Draft | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0989](US0989-a-cursor-cloud-run-records-its-token-actual.md) | A Cursor cloud run records its token actual from the usage API when a key is present | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
+| [US0989](US0989-a-cursor-cloud-run-records-its-token-actual.md) | A Cursor cloud run records its token actual from the usage API when a key is present | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0990](US0990-a-cursor-cli-run-records-its-token-actual.md) | A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
+| [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |

@@ -21,7 +21,7 @@
 
 ## Proposed Fix
 
-Pass `--no-color` to the diff `changed_lines` runs.
+Pass `--no-color --no-ext-diff` to the diff `changed_lines` runs, as critic.py:3401 already does. BG0958's review found `diff.external` empties the map the same way.
 
 ## Acceptance Criteria
 
@@ -37,3 +37,4 @@ A mutation run on a machine with colour forced on finds nothing to mutate and re
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-04 | Claude Opus 5.5 (orchestrator) | BG0958's review: diff.external empties the map too; the fix adds --no-ext-diff |

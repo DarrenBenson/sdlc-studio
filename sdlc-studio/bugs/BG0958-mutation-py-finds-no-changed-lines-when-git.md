@@ -1,6 +1,6 @@
 # BG0958: `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate
 
-> **Status:** Open
+> **Status:** Fixed
 > **Supersedes:** BG1087
 > **Severity:** Medium
 > **Points:** 1
@@ -27,10 +27,13 @@ Pass explicit prefixes to that `git diff` (`--src-prefix=a/ --dst-prefix=b/`, wh
 
 - [ ] **AC1** With `diff.mnemonicPrefix` set in the repository's config, `changed_lines` reports the touched lines of each changed file
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_mnemonic_prefix_config_still_reports_lines
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** With `diff.noprefix` set, `changed_lines` reports the same lines
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_noprefix_config_still_reports_lines
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC3** With a global git config (GIT_CONFIG_GLOBAL) setting diff.mnemonicprefix, the changed-line scope names the same lines as under git's defaults, so the changed-line tests no longer depend on the operator's config
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ChangedLinesTests::test_a_global_mnemonic_prefix_config_still_reports_lines
+  - **Verified:** yes (2026-11-04)
 
 ## Revision History
 

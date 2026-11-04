@@ -1,6 +1,6 @@
 # BG1090: test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_precommit_parallel.py, changelog.d/BG1090.md
@@ -26,6 +26,7 @@ Read the failing subtest's assertion under load (capture its output), and either
 
 - [ ] **AC1** Given each lane started later than the 0.25 s step between the declared sleeps (a start delay the fixture injects, as load does), when the declared-order test's commit runs, then the verdicts still print in declared order, and the test's own Given does not depend on sleep ordering
   - **Verify:** pytest tools/tests/test_lean_precommit_parallel.py::ParallelLaneTests::test_declared_order_holds_when_lanes_start_late
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 
