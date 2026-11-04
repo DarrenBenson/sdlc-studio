@@ -3437,7 +3437,19 @@ def brief(repo_root: Path | str, unit: str, seat: str, tier: str = "full") -> st
     Verify lines, its diff since the run's base, and the exact return contract -
     so no reviewer starts from a hand-typed, drift-prone brief. The optional
     sections are the ones `TIER_SECTIONS[tier]` lists. Refuses an unknown unit,
-    seat or tier loudly."""
+    seat or tier loudly.
+
+    Assembled inside `sdlc_md.corpus_cache()`, which `sprint.py lane brief` already holds around
+    the same file-history call, so the unit's `find_by_id` and the file history's corpus walk
+    share one read of each artefact type. The brief writes nothing, so the cache cannot serve it
+    a stale view; it closes as the brief returns or raises, and a cache the caller holds stays
+    open."""
+    with sdlc_md.corpus_cache():
+        return _brief(repo_root, unit, seat, tier)
+
+
+def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
+    """`brief`'s body, run with the corpus cache open."""
     if tier not in TIERS:
         raise ValueError(f"unknown review tier {tier!r} - one of {', '.join(TIERS)}")
     sections = TIER_SECTIONS[tier]
