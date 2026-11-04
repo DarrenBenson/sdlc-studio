@@ -1092,6 +1092,36 @@ class RunTokenStampTests(unittest.TestCase):
         self.assertEqual(partial["uncovered"], ["/t/s3.jsonl"],
                          "a session with one reading is not named as covering no delta")
 
+    def test_a_run_holding_two_harnesses_reads_each_on_its_own_terms(self) -> None:
+        """US0986 AC4. MUTANTS: the counting-basis rebase applied to another harness's session,
+        which refuses the whole total as "an earlier counting basis"; or another harness's
+        stamp or baseline handed to the Claude transcript re-derivation.
+
+        The counting bases, and the re-derivation that reconciles them, are the Claude reader's;
+        a Cursor reading carries none of them and is read as its stamps stand."""
+        def claude(tokens: int, at: str, kind: str) -> dict:
+            parts = dict.fromkeys(run_state.TOKEN_COMPONENTS, 0) | {"input": tokens}
+            return {"tokens": tokens, "source": "/t/s1.jsonl", "kind": kind, "at": at,
+                    "harness": "claude", "priced": tokens, "components": parts,
+                    "subagents": True, run_state.METER: run_state.METER_BASIS}
+
+        def cursor(tokens: int, at: str, kind: str) -> dict:
+            return {"tokens": tokens, "source": "cursor agent bc-1", "kind": kind, "at": at,
+                    "harness": "cursor", "cache_read": 10}
+        state = {run_state.TOKEN_STAMPS: [
+            cursor(500, "2026-11-04T09:00:00Z", "open"),
+            cursor(900, "2026-11-04T10:00:00Z", "handoff"),
+            claude(1_000, "2026-11-04T11:00:00Z", "resume"),
+            claude(3_000, "2026-11-04T12:00:00Z", "report")]}
+        total = run_state.run_token_total(state)
+        self.assertEqual(total["tokens"], 2_400, total["reason"])
+        self.assertEqual(total["sessions"], ["/t/s1.jsonl", "cursor agent bc-1 (cursor)"])
+        only_cursor = {run_state.TOKEN_STAMPS: state[run_state.TOKEN_STAMPS][:2],
+                       run_state.TOKEN_BASELINE: cursor(500, "2026-11-04T09:00:00Z", "open")}
+        self.assertEqual(run_state._rederivations(  # noqa: SLF001
+            only_cursor, claude(1_000, "2026-11-04T11:00:00Z", "resume")), [],
+            "a Cursor reading is not re-derived from a Claude transcript")
+
 
 if __name__ == "__main__":
     unittest.main()

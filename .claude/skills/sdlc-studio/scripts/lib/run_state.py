@@ -45,9 +45,11 @@ import math
 import os
 import re
 import sys
+import types
 from pathlib import Path
 
-from . import sdlc_md
+from . import sdlc_md, token_meters
+from .token_meters import CACHE_READ, CLAUDE, HARNESS, harness_of
 
 REL = Path("sdlc-studio") / ".local" / "run-state.json"
 SCHEMA = 1
@@ -1039,8 +1041,35 @@ def _aggregate(collected: dict, until=None) -> dict:
 
 
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
-    """The CURRENT session's harness-tracked token reading, from its transcript and from the
-    transcript of every subagent it ran.
+    """The CURRENT session's token reading, from the store of the harness running it, and from
+    that one store alone (`token_meters`, whose docstring gives the selection order).
+
+    The reading names its `harness` and carries cache reads as `cache_read`, outside `tokens`;
+    `transcripts_dir` reaches Claude's reader and its store probe only. {"tokens": None,
+    "reason"} when no reading can be had, and the caller must SAY which it got.
+
+    It lives in this module rather than in `retro` because `open_run` has to stamp the baseline
+    itself: `open_run` is the only place that knows a fresh run is being minted, and `retro`
+    imports this module, so the reader has to sit at the lower layer. `retro.harness_tokens`
+    wraps it, so both the baseline and the close read one definition, and one selection.
+    """
+    claude = types.SimpleNamespace(
+        read=lambda root, env: claude_tokens(root, transcripts_dir, env),
+        store=lambda root, env: _claude_store(root, transcripts_dir, env))
+    return token_meters.read(repo_root, claude)
+
+
+def _claude_store(repo_root: Path | str, transcripts_dir, env) -> str | None:
+    """The directory holding this repo's Claude Code transcripts, when it holds one."""
+    d = Path(transcripts_dir or env.get(TRANSCRIPTS_ENV) or _harness_transcript_dir(repo_root))
+    return str(d) if d.is_dir() and _newest_transcript(d) is not None else None
+
+
+def claude_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None,
+                  env=None) -> dict:
+    """Claude Code's reader: the CURRENT session's reading, from its transcript and from the
+    transcript of every subagent it ran. `env` is where `TRANSCRIPTS_ENV` is read from, the
+    process environment by default.
 
     The harness records usage per message; the most recently modified session file is the one
     running this call, and its subagents' files sit beside it (`SUBAGENTS_DIR`). Each message is
@@ -1051,15 +1080,11 @@ def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = N
     absent or reshaped reads the main thread alone, `subagents` None, and its basis says so.
 
     Returns {"tokens", "priced", "components", "main", "subagents", "includes_subagents",
-    "source", "model", "basis", ...} on success, {"tokens": None, "reason"} when no reading can
-    be had - and the caller must SAY which it got.
-
-    It lives in this module rather than in `retro` because `open_run` has to stamp the baseline
-    itself: `open_run` is the only place that knows a fresh run is being minted, and `retro`
-    imports this module, so the reader has to sit at the lower layer. `retro.harness_tokens`
-    wraps it, so both the baseline and the close read one definition.
+    "source", "model", "basis", "cache_read", ...} on success, {"tokens": None, "reason"} when
+    no reading can be had.
     """
-    d = transcripts_dir or os.environ.get(TRANSCRIPTS_ENV)
+    env = os.environ if env is None else env
+    d = transcripts_dir or env.get(TRANSCRIPTS_ENV)
     if not d:
         d = _harness_transcript_dir(repo_root)
     d = Path(d)
@@ -1095,7 +1120,8 @@ def _reading(agg: dict, src: Path, note: str | None) -> dict:
         basis = (f"current-session transcript usage, once per message, MAIN THREAD only: "
                  f"{note}, so a subagent the session ran is not in this reading and it is a "
                  f"LOWER BOUND on what the session cost; {counted}")
-    return {**agg, METER: METER_BASIS, "source": str(src), "model": model, "basis": basis}
+    return {**agg, METER: METER_BASIS, "source": str(src), "model": model, "basis": basis,
+            CACHE_READ: agg["components"]["cache_read"]}
 
 
 def _priced_fields(cap: dict) -> dict:
@@ -1137,11 +1163,14 @@ def rederive(source: str, ats: list) -> dict:
 
 
 def _session_rows(state: dict, source: str) -> list[dict]:
-    """Every reading `state` holds of the meter `source`: its stamps and its legacy baseline."""
+    """Every reading `state` holds of Claude's meter `source`: its stamps and its legacy
+    baseline. Only a Claude transcript is re-derived, so no other harness's reading is here."""
     rows = [s for s in state.get(TOKEN_STAMPS) or []
-            if isinstance(s, dict) and str(s.get("source") or "") == source]
+            if isinstance(s, dict) and str(s.get("source") or "") == source
+            and harness_of(s) == CLAUDE]
     legacy = state.get(TOKEN_BASELINE)
-    if isinstance(legacy, dict) and str(legacy.get("source") or "") == source:
+    if (isinstance(legacy, dict) and str(legacy.get("source") or "") == source
+            and harness_of(legacy) == CLAUDE):
         rows.append(legacy)
     return rows
 
@@ -1206,7 +1235,8 @@ def _session_baseline(repo_root: Path | str) -> dict | None:
     if not cap.get("tokens"):
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
-            "at": sdlc_md.now_iso8601(), **_priced_fields(cap)}
+            "at": sdlc_md.now_iso8601(), HARNESS: cap.get(HARNESS),
+            CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap)}
 
 
 def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None = None):
@@ -1223,7 +1253,7 @@ def _stamp(repo_root: Path | str, kind: str, transcripts_dir: Path | str | None 
         return None
     return {"tokens": int(cap["tokens"]), "source": cap.get("source"),
             "at": sdlc_md.now_iso8601(), "kind": kind, "model": cap.get("model"),
-            **_priced_fields(cap)}
+            HARNESS: cap.get(HARNESS), CACHE_READ: cap.get(CACHE_READ), **_priced_fields(cap)}
 
 
 def stamp_tokens(repo_root: Path | str, kind: str,
@@ -1338,6 +1368,11 @@ def _total_basis(includes: bool, rebased: int) -> str:
     return f"{text}; {note}" if note else text
 
 
+def _meter_key(row: dict) -> tuple[str, str]:
+    """The meter a reading was taken from: its harness and its source."""
+    return harness_of(row), str(row.get("source") or "")
+
+
 def run_token_total(state: dict, current: dict | None = None,
                     current_path: str | None = None) -> dict:
     """What the run spent, from its stamps: the SUM of the per-session deltas.
@@ -1373,9 +1408,11 @@ def run_token_total(state: dict, current: dict | None = None,
     rebase = any(s.get(METER) == METER_BASIS for s in every)
     stamps = [s for s in every if s.get("source") and isinstance(s.get("tokens"), int)]
     if stamps:
-        by_session: dict[str, list[dict]] = {}
+        # A session is ONE harness's one store: two harnesses' readings are never paired, even
+        # under one source string, and a reading naming no harness is Claude's (`harness_of`).
+        by_session: dict[tuple[str, str], list[dict]] = {}
         for s in stamps:
-            by_session.setdefault(str(s["source"]), []).append(s)
+            by_session.setdefault(_meter_key(s), []).append(s)
         # A run OPENED before stamping shipped, and stamped later, records its opening reading
         # in the legacy baseline and nowhere else. That reading is of the SAME meter as the
         # session's stamps - `open_run` took it from the same transcript - so it belongs in that
@@ -1385,20 +1422,23 @@ def run_token_total(state: dict, current: dict | None = None,
         # spend.
         legacy = state.get(TOKEN_BASELINE)
         folded = (isinstance(legacy, dict) and isinstance(legacy.get("tokens"), int)
-                  and str(legacy.get("source") or "") in by_session)
+                  and _meter_key(legacy) in by_session)
         if folded:
-            by_session[str(legacy["source"])].append({**legacy, "tokens": int(legacy["tokens"]),
-                                                      "source": str(legacy["source"]),
-                                                      "kind": TOKEN_BASELINE})
+            by_session[_meter_key(legacy)].append({**legacy, "tokens": int(legacy["tokens"]),
+                                                   "source": str(legacy["source"]),
+                                                   "kind": TOKEN_BASELINE})
         models = sorted({s["model"] for s in stamps if s.get("model")})
         model = models[0] if len(models) == 1 else (SESSION_MODEL_MIXED if models else None)
         shape = ("stamps" if not folded else
                  f"stamps, with the opening reading taken from the legacy {TOKEN_BASELINE} "
                  f"this run predates the open stamp")
         total, covered, uncovered, spans, rebased = 0, [], [], [], 0
-        for src, rows in by_session.items():
+        for (harness, src), rows in by_session.items():
             opening = {r.get("at") for r in rows if r.get("kind") in (OPEN_STAMP, TOKEN_BASELINE)}
-            rows, redone, why = _one_basis(src, rows, failed, rebase)
+            # The counting bases are the Claude reader's: another harness's session is read as
+            # its stamps stand.
+            rows, redone, why = _one_basis(src, rows, failed, rebase and harness == CLAUDE)
+            src = src if harness == CLAUDE else f"{src} ({harness})"
             if why:
                 return {"tokens": None, "priced": None, "components": None,
                         "priced_reason": why, "includes_subagents": False, "rebased": 0,
@@ -1438,7 +1478,8 @@ def run_token_total(state: dict, current: dict | None = None,
     if isinstance(base, dict) and isinstance(base.get("tokens"), int):
         shape = f"the legacy single {TOKEN_BASELINE} (one reading, not a stamp list)"
         if (isinstance(current, dict) and isinstance(current.get("tokens"), int)
-                and current.get("source") == base.get("source")):
+                and current.get("source") == base.get("source")
+                and harness_of(current) == harness_of(base)):
             rebased = 0
             if current.get(METER) == METER_BASIS and base.get(METER) != METER_BASIS:
                 # The closing reading is on the current basis and the opening one is not: the
