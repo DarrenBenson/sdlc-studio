@@ -2655,6 +2655,14 @@ def run_tests_plan(selectors: list[str], parallel: bool, root: str = ".", *,
     return plan
 
 
+def missing_test_paths(selectors: list[str], root: str = ".") -> list[str]:
+    """The selectors, in order, whose path (the part before any `::`) names no file or
+    directory under `root`. `os.path.exists` answers a name too long to stat, or one carrying a
+    NUL byte, as absent rather than raising."""
+    return [s for s in selectors
+            if not os.path.exists(os.path.join(root, s.split("::", 1)[0]))]
+
+
 def cmd_run_tests(args: argparse.Namespace) -> int:
     """Run the selected test modules; exit non-zero when any test fails.
 
@@ -2663,13 +2671,22 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     push's own plan, so they run: CI and the push then give one verdict on the same tests.
 
     pytest's exit 5 (nothing collected) is a pass here: a module whose every test is
-    `serial_only` leaves the parallel phase empty, and the serial phase then runs them."""
+    `serial_only` leaves the parallel phase empty, and the serial phase then runs them. So a
+    selector whose path (the part before any `::`) names nothing under `--root` is refused by
+    name, exit 2, before pytest starts: under pytest-xdist a missing path beside a real one
+    exits 5 having run nothing, which read as a pass over a failing module."""
     import importlib.util
     import subprocess
     try:
         boundary = resolve_boundary(args)
     except BoundaryError as exc:
         print(f"unit-tests: refused - {exc}", file=sys.stderr)
+        return 2
+    missing = missing_test_paths(args.run_tests, args.root)
+    if missing:
+        print(f"unit-tests: refused - {len(missing)} of {len(args.run_tests)} selected path(s) "
+              f"do not exist under {args.root}, so no test ran: {', '.join(missing)}",
+              file=sys.stderr)
         return 2
     if importlib.util.find_spec("pytest") is None:
         print("unit-tests: pytest is not installed, so the selection cannot run here",
