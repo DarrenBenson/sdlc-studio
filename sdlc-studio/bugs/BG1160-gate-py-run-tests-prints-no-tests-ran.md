@@ -1,6 +1,6 @@
 # BG1160: gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py, changelog.d/BG1160.md
@@ -28,8 +28,10 @@ Refuse a --run-tests path that does not exist by name before running anything, a
 
 - [ ] **AC1** A --run-tests path that does not exist is refused by name, non-zero, before any test runs.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py::RunTestsPathTests::test_a_missing_path_is_refused_by_name_before_any_test_runs
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** With every path real, a failing test fails the run (the positive control).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py::RunTestsPathTests::test_a_failing_test_fails_the_run_when_every_path_is_real
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

@@ -1,6 +1,6 @@
 # BG1114: critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_corpus_cache.py, changelog.d/BG1114.md
@@ -28,6 +28,7 @@ Hold `sdlc_md.corpus_cache()` open for the read-only part of `critic.brief`, as 
 
 - [ ] **AC1** When `critic.brief` reads the unit's file history, the corpus cache is open: with `reconcile.file_history_section` patched to record whether `sdlc_md._CORPUS_CACHE` is not None, a brief records True, and it is None again once the brief returns
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_corpus_cache.py::CriticBriefCorpusCacheTests::test_the_brief_reads_history_inside_the_corpus_cache
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

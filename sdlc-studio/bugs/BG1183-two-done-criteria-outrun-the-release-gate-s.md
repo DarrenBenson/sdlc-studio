@@ -1,6 +1,6 @@
 # BG1183: Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 5
 > **Affects:** tools/tests/test_lean_release_verify.py, .claude/skills/sdlc-studio/scripts/migrate.py, changelog.d/BG1183.md, .claude/skills/sdlc-studio/scripts/tests/test_migrate.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, sdlc-studio/stories/US0940-every-criterion-on-a-done-story-passes-when.md
@@ -28,8 +28,10 @@ Widened under D0403 (2026-11-04) after the first build, 791c5107, took the dry r
 
 - [ ] **AC1** US0940 AC1's verifier, `tools/tests/test_lean_release_verify.py`, finishes inside the release gate's default 300 s ceiling, and still fails on each measured criterion it re-runs when that criterion is red.
   - **Verify:** shell timeout 300 python3 -m pytest -q tools/tests/test_lean_release_verify.py
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** US0926 AC1's `migrate.py` dry run on this repository finishes inside verify_ac's default 120 s ceiling.
   - **Verify:** shell timeout 120 python3 .claude/skills/sdlc-studio/scripts/migrate.py
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

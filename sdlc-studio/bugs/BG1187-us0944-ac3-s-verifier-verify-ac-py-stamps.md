@@ -1,6 +1,6 @@
 # BG1187: US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1187.md
@@ -27,6 +27,7 @@ Find where `cmd_stamps` spends its time (a collection per stamp is the likely sh
 
 - [ ] **AC1** `verify_ac.py stamps --bugs` on this repository exits 0 inside 120 s, and still exits 1 naming each stamp that resolves to nothing.
   - **Verify:** shell timeout 120 python3 .claude/skills/sdlc-studio/scripts/verify_ac.py stamps --bugs
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

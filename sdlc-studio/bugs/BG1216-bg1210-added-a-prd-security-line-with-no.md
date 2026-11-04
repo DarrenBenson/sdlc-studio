@@ -1,6 +1,6 @@
 # BG1216: BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, sdlc-studio/tsd.md, changelog.d/BG1216.md
@@ -26,6 +26,7 @@ Make the PRD bullet one clause and add a TSD Security row naming the test that p
 
 - [ ] **AC1** Every PRD NFR clause, the Cursor usage call among them, maps to a TSD row, and the PRD refresh test still passes.
   - **Verify:** pytest tools/tests/test_lean_tsd_refresh.py tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

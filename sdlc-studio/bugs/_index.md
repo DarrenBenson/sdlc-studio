@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 205 |
+| Open | 203 |
 | In Progress | 0 |
-| Fixed | 837 |
+| Fixed | 842 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1216** |
+| **Total** | **1219** |
 
 ## All Bugs
 
@@ -189,7 +189,7 @@
 | [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Fixed | High | 2026-10-22 | 2026-10-22 |
-| [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Fixed | Medium | 2026-10-22 | 2026-10-22 |
@@ -235,7 +235,7 @@
 | [BG1157](BG1157-no-test-pins-that-a-host-prerequisite-check.md) | No test pins that a --host prerequisite check still names a missing markdownlint, so widening PUSHER_ONLY to it stays green | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1158](BG1158-the-trd-verifier-authority-scan-misses-some-story.md) | The TRD verifier-authority scan misses some story-only rewordings and fails true sentences about a story-only run | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1159](BG1159-supersede-s-reference-omits-brief-and-row-brief.md) | supersede's reference omits --brief and row-brief, two of its new guarantees are unpinned, and a no-match refusal contradicts itself | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1160](BG1160-gate-py-run-tests-prints-no-tests-ran.md) | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails | Open | Medium | 2026-11-01 | 2026-11-01 |
+| [BG1160](BG1160-gate-py-run-tests-prints-no-tests-ran.md) | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1161](BG1161-a-clean-checkout-gate-py-run-judges-conformance.md) | A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Fixed | Medium | 2026-11-01 | 2026-11-01 |
@@ -258,11 +258,11 @@
 | [BG1180](BG1180-the-prd-s-section-8-says-git-fetch.md) | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1181](BG1181-gate-prereqs-py-check-reports-every-prerequisite-present.md) | gate_prereqs.py check reports every prerequisite present on a machine with no Python 3.10, which the release gate's US0908 lane needs | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1182](BG1182-test-agents-md-full-suite-rule-s-problems.md) | `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops early | Open | Low | 2026-11-02 | 2026-11-02 |
-| [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Fixed | Low | 2026-11-02 | 2026-11-02 |
 | [BG1184](BG1184-bg1176-s-re-pointed-criteria-leave-three-sub.md) | BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1185](BG1185-bg1167-s-rule-reads-a-light-approve-s.md) | BG1167's rule reads a light APPROVE's scope from git history, so three narrow orderings still count a unit whose own Affects widened as covered | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1186](BG1186-the-release-verify-lane-s-declared-budget-is.md) | The release verify lane's declared budget is 600 s against a measured 3,340 s, so every release run prints OVER and the pin keeps it there | Open | Low | 2026-11-03 | 2026-11-03 |
-| [BG1187](BG1187-us0944-ac3-s-verifier-verify-ac-py-stamps.md) | US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1187](BG1187-us0944-ac3-s-verifier-verify-ac-py-stamps.md) | US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling | Fixed | Low | 2026-11-03 | 2026-11-03 |
 | [BG1188](BG1188-one-lane-cap-test-took-695-s-on.md) | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
@@ -291,7 +291,10 @@
 | [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1215](BG1215-verify-ac-s-fallback-for-a-queued-collection.md) | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1216](BG1216-bg1210-added-a-prd-security-line-with-no.md) | BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1216](BG1216-bg1210-added-a-prd-security-line-with-no.md) | BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main | Fixed | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1217](BG1217-gate-py-run-tests-still-reads-green-when.md) | gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1218](BG1218-a-critic-brief-spends-most-of-its-5.md) | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1219](BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md) | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
