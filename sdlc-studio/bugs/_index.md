@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 197 |
+| Open | 199 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1199** |
+| **Total** | **1201** |
 
 ## All Bugs
 
@@ -275,6 +275,8 @@
 | [BG1197](BG1197-existing-token-meter-tests-set-sdlc-studio-transcripts.md) | Existing token-meter tests set SDLC_STUDIO_TRANSCRIPTS but leave the harness variables, so a suite run under Cursor, Copilot or OpenCode selects another meter and fails | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1198](BG1198-reference-config-md-says-the-commit-msg-hook.md) | reference-config.md says the commit-msg hook refuses a commit without a Refs: trailer per owning id, and does not name the Mentions: trailer US1115 added | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1199](BG1199-us1115-s-reference-and-fragment-say-a-commit.md) | US1115's reference and fragment say a commit whose every id is a mention is attributed no files, but a one-id subject whose only id is a Mentions: id is attributed its files | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1200](BG1200-mutation-changed-lines-reports-no-lines-when-git.md) | mutation.changed_lines reports no lines when git's color.ui or color.diff is always, because the +++ b/ header arrives wrapped in ANSI codes | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1201](BG1201-us0989-s-cursor-usage-reader-takes-its-variable.md) | US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

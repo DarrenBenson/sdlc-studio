@@ -11,6 +11,10 @@ user journey
 # --- British-spelling pass exceptions (each a literal identifier or quotation) ---
 # gh CLI label flag, not prose.
 --color
+# git config keys and git's diff flag, literal identifiers (BG1200).
+color.ui
+color.diff
+--no-color
 # PostgreSQL keyword.
 EXPLAIN ANALYZE
 # PIL/Pillow API keyword argument.
