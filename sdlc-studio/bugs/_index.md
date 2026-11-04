@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-03
+**Last Updated:** 2026-11-04
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 190 |
+| Open | 193 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1192** |
+| **Total** | **1195** |
 
 ## All Bugs
 
@@ -268,6 +268,9 @@
 | [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
 | [BG1191](BG1191-the-batch-s-phase-plugin-reads-serial-only.md) | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1192](BG1192-us1113-ac3-s-one-at-a-time-pin.md) | US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other | Open | Low | 2026-11-03 | 2026-11-03 |
+| [BG1193](BG1193-sdlc-md-corpus-cache-hands-later-callers-the.md) | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1194](BG1194-remote-gate-sh-s-release-route-does-not.md) | remote-gate.sh's release route does not send SDLC_GATE_BOUNDARY, so a value set in the shell changes the local release gate but not the host's | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1195](BG1195-four-test-modules-of-tools-remote-gate-sh.md) | Four test modules of tools/remote-gate.sh name no test-census-subject, so a commit to the script runs only one of the five | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
