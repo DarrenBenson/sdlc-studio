@@ -289,9 +289,24 @@ run "gate" \
 # Markdown mechanics (markdownlint-cli, a devDependency). Prefer the npm-local
 # binary so `npm install` is enough - no global install needed. If Node is absent
 # entirely, say so loudly: it is the one guard CI enforces that cannot run here.
-md_cmd=""
+#
+# A linked worktree (`git worktree add`) has no node_modules of its own, so the hook also looks
+# in the main worktree's: the parent of `git rev-parse --git-common-dir`, which is the main
+# worktree when the git dir is `<main>/.git`, as `git clone` makes it (BG1147). Looking only here
+# and on PATH put a worktree commit on SKIP wherever markdownlint is a devDependency and not a
+# global install.
+md_cmd=""; md_main=""; md_here="$(pwd -P)"
+md_common="$(git rev-parse --git-common-dir 2>/dev/null)" \
+  && md_main="$(cd "$md_common/.." 2>/dev/null && pwd -P)"
+[ "$md_main" = "$md_here" ] && md_main=""
+md_looked="$md_here/node_modules/.bin/markdownlint"
+[ -n "$md_main" ] && md_looked="$md_looked, $md_main/node_modules/.bin/markdownlint (the main worktree's)"
 if [ -x node_modules/.bin/markdownlint ]; then
   md_cmd="node_modules/.bin/markdownlint"
+elif [ -n "$md_main" ] && [ -x "$md_main/node_modules/.bin/markdownlint" ]; then
+  md_cmd="$md_main/node_modules/.bin/markdownlint"
+  lane markdown printf '  %snote%s markdown - no node_modules/.bin/markdownlint in this worktree, so the markdown lanes run %s\n' \
+    "$Y" "$N" "$md_cmd"
 elif command -v markdownlint >/dev/null 2>&1; then
   md_cmd="markdownlint"
 fi
@@ -329,7 +344,7 @@ if [ -n "$md_cmd" ]; then
     run "markdown" \
       "markdown mechanics: blank lines around lists (MD032), heading levels, fenced blocks" \
       "auto-fix most with: npm run lint:fix" \
-      -- $md_cmd "${md_root[@]}"
+      -- "$md_cmd" "${md_root[@]}"
   else
     lane markdown printf '  %sSKIP%s markdown - no tracked markdown outside the payload.\n' "$Y" "$N"
   fi
@@ -337,7 +352,7 @@ if [ -n "$md_cmd" ]; then
     run "markdown-payload" \
       "markdown mechanics of the SHIPPED skill payload (.claude/), under its own config" \
       "auto-fix most with: npm run lint:fix" \
-      -- $md_cmd --config .claude/skills/sdlc-studio/.markdownlint.json "${md_payload[@]}"
+      -- "$md_cmd" --config .claude/skills/sdlc-studio/.markdownlint.json "${md_payload[@]}"
   else
     lane markdown-payload printf '  %sSKIP%s markdown-payload - no tracked markdown under .claude/.\n' "$Y" "$N"
   fi
@@ -345,6 +360,7 @@ else
   # No markdown lane starts, so every verdict above is printed before this note.
   collect
   printf '  %sSKIP%s markdown - markdownlint not found. Run %snpm install%s to enable it locally.\n' "$Y" "$N" "$B" "$N"
+  printf '       Looked in %s, then on PATH.\n' "$md_looked"
   printf '       CI enforces most of it, so a markdown-mechanics error can pass here and fail on push -\n'
   printf '       but not all: `npm run lint:md` still globs, so it cannot see tracked dot-directory\n'
   printf '       markdown (.github/) that the lanes above do. For those files this SKIP is total.\n'

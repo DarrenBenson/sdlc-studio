@@ -140,13 +140,65 @@ def _write(root: Path, rel: str, body: str, mode: int | None = None) -> None:
         path.chmod(mode)
 
 
-def _commit(root: Path, files: dict, message: str = "docs: paperwork") -> tuple[int, str]:
+def _commit(root: Path, files: dict, message: str = "docs: paperwork",
+            env: dict | None = None) -> tuple[int, str]:
     for rel, body in files.items():
         _write(root, rel, body)
     _wg._git(root, "add", "-A")
     out = subprocess.run(["git", "-C", str(root), "commit", "-m", message],
-                         capture_output=True, text=True, env=_wg._clean_env())
+                         capture_output=True, text=True, env=env or _wg._clean_env())
     return out.returncode, out.stdout + out.stderr
+
+
+#: BG1147: a staged list with no blank line above it, the MD032 error the stand-in below refuses.
+MD032_DEFECT = "# Note\n\nText.\n- a list with no blank line above it\n"
+
+
+def _logging_markdownlint(log: Path) -> str:
+    """A markdownlint stand-in that logs the path it ran from and refuses MD032_DEFECT, so a
+    test can read which binary a lane ran as well as its verdict."""
+    return ("#!/usr/bin/env bash\n"
+            f"printf '%s\\n' \"$0\" >> {str(log)!r}\n"
+            'for f in "$@"; do\n'
+            '  if [ -f "$f" ] && grep -q "^- a list with no blank line above it" "$f"; then\n'
+            '    echo "$f:4 MD032/blanks-around-lists"; exit 1\n'
+            "  fi\n"
+            "done\n")
+
+
+def _no_markdownlint_env() -> dict:
+    """The clean env with every PATH directory holding a markdownlint dropped, so the hook's
+    PATH fallback cannot stand in for the node_modules it is meant to find."""
+    env = _wg._clean_env()
+    env["PATH"] = os.pathsep.join(d for d in env.get("PATH", "").split(os.pathsep)
+                                  if not (Path(d) / "markdownlint").exists())
+    return env
+
+
+def _linked_worktree(tmp: Path, linter: str | None) -> tuple[Path, Path]:
+    """BG1147: the hermetic fixture as a MAIN tree with a linked worktree (`git worktree add`).
+    node_modules is untracked, as `npm install` leaves it, so the worktree has none; the main
+    tree's `node_modules/.bin/markdownlint` holds `linter`, or is absent when that is None.
+    Returns `(main, worktree)`, both resolved."""
+    main = _fixture(tmp)
+    _wg._git(main, "rm", "-r", "-q", "--cached", "node_modules")
+    _write(main, ".gitignore", "sdlc-studio/.local/\nnode_modules/\n")
+    _wg._git(main, "add", "-A")
+    _wg._git(main, "commit", "-q", "--no-verify", "-m", "node_modules is local state")
+    md = main / "node_modules" / ".bin" / "markdownlint"
+    if linter is None:
+        md.unlink()
+    else:
+        _write(main, "node_modules/.bin/markdownlint", linter, mode=0o755)
+    wt = tmp / "wt"
+    added = _wg._git(main, "worktree", "add", "-q", str(wt))
+    if added.returncode != 0:
+        raise AssertionError(f"git worktree add failed:\n{added.stderr}")
+    if (wt / "node_modules").exists():
+        raise AssertionError("the linked worktree carries a node_modules of its own")
+    # Gitignored, so not checked out, and the fixture's gate stand-in logs into it.
+    (wt / "sdlc-studio" / ".local").mkdir(parents=True)
+    return main.resolve(), wt.resolve()
 
 
 def _tripwire_py(name: str, when: str = "True") -> str:
@@ -301,6 +353,73 @@ class CommitLaneTests(unittest.TestCase):
         if not linter:
             self.skipTest("markdownlint not installed (npm install): the style and links "
                           "cases ran, the markdown case did not")
+
+    def test_markdown_lane_in_a_linked_worktree_uses_the_main_worktrees_markdownlint(
+            self) -> None:
+        """BG1147 AC1. A linked worktree has no node_modules, and the lane looked only there
+        and on PATH, so on a host with no global markdownlint a worktree commit printed SKIP
+        and landed unlinted markdown.
+
+        MUTANTS: look only in this worktree's node_modules (delete the main-worktree branch of
+        the hook's markdownlint resolution), and the worktree commit SKIPs and lands; prefer the
+        main tree's binary to the worktree's own; leave `$md_cmd` unquoted, which splits the
+        main tree's path at the space this fixture puts in it."""
+        with tempfile.TemporaryDirectory() as d:
+            log = Path(d) / "markdownlint.log"
+            main, wt = _linked_worktree(Path(d) / "a space", _logging_markdownlint(log))
+            main_linter = str(main / "node_modules" / ".bin" / "markdownlint")
+            env = _no_markdownlint_env()
+            # The main tree refuses the defect through its own node_modules.
+            rc, out = _commit(main, {"docs/note.md": MD032_DEFECT}, env=env)
+            self.assertNotEqual(0, rc, f"the main tree committed an MD032 error:\n{out}")
+            self.assertRegex(out, r"FAIL\S*\s+\S*markdown\b", out)
+            self.assertNotIn("markdown lanes run", out, "the main tree named a borrowed linter")
+            log.unlink()
+            # The worktree refuses the same defect, through the main tree's binary, and says so.
+            rc, out = _commit(wt, {"docs/note.md": MD032_DEFECT}, env=env)
+            self.assertNotEqual(0, rc, f"the worktree committed an MD032 error:\n{out}")
+            self.assertRegex(out, r"FAIL\S*\s+\S*markdown\b",
+                             f"the refusal is not the markdown lane's:\n{out}")
+            self.assertNotIn("markdownlint not found", out)
+            self.assertIn(f"so the markdown lanes run {main_linter}", out)
+            self.assertIn(main_linter, log.read_text(encoding="utf-8").splitlines())
+            # The control: a clean file lands, so the refusal above was the defect's.
+            _wg._git(wt, "reset", "-q")
+            rc, out = _commit(wt, {"docs/note.md": "# Note\n\nPlain text.\n"}, env=env)
+            self.assertEqual(0, rc, f"the worktree refused a clean commit:\n{out}")
+            self.assertRegex(out, r"\bok\b\s+markdown\b", out)
+            # A worktree that has its own markdownlint runs that one, and borrows nothing.
+            own = Path(d) / "own.log"
+            _write(wt, "node_modules/.bin/markdownlint", _logging_markdownlint(own), mode=0o755)
+            log.unlink()
+            rc, out = _commit(wt, {"docs/note.md": MD032_DEFECT}, env=env)
+            self.assertNotEqual(0, rc, f"the worktree's own linter let MD032 through:\n{out}")
+            self.assertNotIn("markdown lanes run", out, "a worktree with its own linter borrowed")
+            self.assertTrue(own.exists(), f"the worktree's own markdownlint never ran:\n{out}")
+            self.assertFalse(log.exists(), "the main tree's markdownlint ran as well")
+
+    def test_markdown_skip_names_every_place_it_looked(self) -> None:
+        """BG1147 AC2, the positive control: with no markdownlint in the worktree, the main
+        tree or on PATH, the lane still SKIPs, and the note names each place it looked.
+
+        MUTANT: print the SKIP note without the `Looked in` line, or drop a place from it."""
+        with tempfile.TemporaryDirectory() as d:
+            main, wt = _linked_worktree(Path(d), None)
+            rc, out = _commit(wt, {"docs/note.md": MD032_DEFECT}, env=_no_markdownlint_env())
+            self.assertEqual(0, rc, f"a SKIPped lane refused the commit:\n{out}")
+            self.assertIn("SKIP markdown - markdownlint not found", out)
+            looked = next((ln for ln in out.splitlines() if "Looked in " in ln), "")
+            for place in (str(wt / "node_modules" / ".bin" / "markdownlint"),
+                          str(main / "node_modules" / ".bin" / "markdownlint"),
+                          "on PATH"):
+                with self.subTest(place=place):
+                    self.assertIn(place, looked, f"the SKIP note does not name it:\n{out}")
+            self.assertRegex(out, r"\bok\b\s+style\b", f"the other lanes never ran:\n{out}")
+            # In the main tree its own node_modules IS the main worktree's: named once.
+            rc, out = _commit(main, {"docs/note.md": MD032_DEFECT}, env=_no_markdownlint_env())
+            looked = next((ln for ln in out.splitlines() if "Looked in " in ln), "")
+            self.assertEqual(1, looked.count(str(main / "node_modules")), out)
+            self.assertNotIn("the main worktree's", looked, out)
 
     def test_there_is_one_window_claim_implementation(self) -> None:
         """AC4. MUTANT: restore the inline window guard in the pre-commit hook.
