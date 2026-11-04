@@ -19,8 +19,8 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given a fixture derived from the session store the current Cursor CLI writes for this repo, when it records usage, then the reader returns input + output + cache write with cache reads apart, and the source names the store. Fails on: a hard-coded guessed path with no fixture taken from a real store
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_persisted_usage_counts_one_basis
+- **AC1:** Given fixtures derived from the real stores the current Cursor CLI writes (build 2026.10.22, `<config>/chats/<md5 of the resolved workspace>/<chat id>/store.db` or `meta.json`, with `<config>` from `CURSOR_CONFIG_DIR`, else `$XDG_CONFIG_HOME/cursor`, else `~/.cursor`), when the reader looks for this workspace's store, then it finds it where the CLI writes it, opens it read-only, and never reads it as usage. Re-groomed under D0406: the pinned store keeps no usage at all, as this story's Notes allowed. Fails on: a hard-coded `~/.cursor`, an ignored `CURSOR_CONFIG_DIR`, or a store read as a figure
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_the_store_is_found_where_the_cli_writes_it
 - **AC2:** Given a CLI session that persisted no usage (interactive or ACP mode, or a print run whose stdout has gone), then the reading is tokens None and the reason says the CLI kept no usage record, never zero, and no terminal output is scraped. Fails on: an absent record read as zero
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::CursorCliTests::test_no_persisted_usage_is_not_attributable
 - **AC3:** Given both a cloud key and run id and a CLI store, then the cloud reading alone is used; given only the CLI store, the CLI reading alone; the two surfaces are never added together. Fails on: summing the cloud total and the CLI store for the same run
@@ -44,3 +44,4 @@ Kept (D0387). To plan it:
 | 2026-10-06 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-06 | Claude Opus 5.5 (engineering seat) | Groomed for the next skill sprint from CR0611 and D0346: the store the Cursor CLI persists, pinned from a real store, never mixed with the cloud API |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-04 | Claude Opus 5.5 (orchestrator) | AC1 re-groomed under D0406, as the Notes allowed: the build pinned the CLI's real store (build 2026.10.22) and it keeps no usage, so AC1 now pins where the store is found and that it is never read as usage |

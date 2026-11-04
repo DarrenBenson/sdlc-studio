@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 24 |
 | Complete | 532 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **661** |
+| **Total** | **662** |
 
 ## All Changes
 
@@ -73,6 +73,7 @@
 | [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | Complete | Low | Feature | 2026-11-02 | EP0297 |
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Proposed | High | Improvement | 2026-11-04 | -- |
+| [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | Proposed | High | Feature | 2026-11-04 | -- |
 
 ## Archived Releases
 
