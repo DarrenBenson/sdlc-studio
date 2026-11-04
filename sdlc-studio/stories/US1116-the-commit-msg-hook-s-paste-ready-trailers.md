@@ -1,6 +1,6 @@
 # US1116: The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0659
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
@@ -20,8 +20,10 @@
 
 - **AC1:** Given a commit whose subject names US1110, BG0989 and BG1000 with `Mentions: BG0989`, when the commit-msg hook refuses, then it prints `Refs: US1110` and `Refs: BG1000`, prints no `Refs: BG0989`, and offers `Mentions: <id>` for an id the commit only mentions
   - **Verify:** pytest tools/tests/test_commit_msg_mentions.py::CommitMsgMentionsTests::test_the_hint_skips_an_id_a_mentions_line_covers
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given `.githooks/commit-msg --list`, then the message-refs lane's rule names `Mentions:` as the way to account for an id that owns none of the commit's files
   - **Verify:** pytest tools/tests/test_commit_msg_mentions.py::CommitMsgMentionsTests::test_the_lane_rule_names_mentions
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 

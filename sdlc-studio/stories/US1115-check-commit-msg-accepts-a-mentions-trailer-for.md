@@ -1,6 +1,6 @@
 # US1115: check-commit-msg accepts a Mentions: trailer for an id the subject only mentions, and the engagement floor attributes no files to it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0659
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given a subject naming US1110 and BG0989 with `Refs: US1110` and `Mentions: BG0989`, when `engagement_floor.py check-commit-msg --strict` reads it, then it exits 0, and with the `Mentions:` line removed it exits 1 naming BG0989
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mentions_trailer.py::MentionsTrailerTests::test_a_mentions_trailer_accounts_for_a_mentioned_id
+  - **Verified:** yes (2026-11-04)
 - **AC2:** Given that commit in a fixture repository, when the git leg attributes files through both `_git_touched_by_id` and `_git_touched_source_files`, then US1110 receives the commit's source files and BG0989 receives none
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mentions_trailer.py::MentionsTrailerTests::test_a_mentioned_id_is_attributed_no_files
+  - **Verified:** yes (2026-11-04)
 - **AC3:** Given a subject naming three ids, with `Refs:` for one, `Mentions:` for one and nothing for the third, when `check-commit-msg --strict` runs, then it refuses naming only the third, and the warning offers both `Refs: <id>` (it owns the files) and `Mentions: <id>` (it owns none)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mentions_trailer.py::MentionsTrailerTests::test_an_unaccounted_id_is_named_with_both_remedies
+  - **Verified:** yes (2026-11-04)
 
 ## Notes
 

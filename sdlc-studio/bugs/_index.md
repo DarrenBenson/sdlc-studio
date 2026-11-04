@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 196 |
+| Open | 197 |
 | In Progress | 0 |
 | Fixed | 828 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1198** |
+| **Total** | **1199** |
 
 ## All Bugs
 
@@ -274,6 +274,7 @@
 | [BG1196](BG1196-no-test-pins-the-host-s-sdlc-studio.md) | No test pins the host's SDLC_STUDIO_BOUNDARY_SUITE=1 export for remote-gate.sh's push and suite jobs | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1197](BG1197-existing-token-meter-tests-set-sdlc-studio-transcripts.md) | Existing token-meter tests set SDLC_STUDIO_TRANSCRIPTS but leave the harness variables, so a suite run under Cursor, Copilot or OpenCode selects another meter and fails | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1198](BG1198-reference-config-md-says-the-commit-msg-hook.md) | reference-config.md says the commit-msg hook refuses a commit without a Refs: trailer per owning id, and does not name the Mentions: trailer US1115 added | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1199](BG1199-us1115-s-reference-and-fragment-say-a-commit.md) | US1115's reference and fragment say a commit whose every id is a mention is attributed no files, but a one-id subject whose only id is a Mentions: id is attributed its files | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 

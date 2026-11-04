@@ -1,6 +1,6 @@
 # CR-0659: The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0297
 > **Priority:** Low
 > **Type:** Feature

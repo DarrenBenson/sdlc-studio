@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 14 |
 | Approved | 0 |
-| In Progress | 25 |
-| Complete | 531 |
+| In Progress | 24 |
+| Complete | 532 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -70,7 +70,7 @@
 | [CR-0656](CR0656-a-command-to-amend-a-planned-unit-s.md) | A command to amend a planned unit's Affects or a criterion in flight, recording why, so a builder's scope finding is not a hand edit | Proposed | Medium | Enhancement | 2026-10-31 | -- |
 | [CR-0657](CR0657-lesson-revalidated-reasons-cite-file-line-evidence-that.md) | Lesson Revalidated reasons cite file:line evidence that drifts as code lands; check and re-anchor it | Proposed | Medium | Enhancement | 2026-11-01 | -- |
 | [CR-0658](CR0658-the-author-self-check-s-claim-surfaces-have.md) | The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes | Proposed | Low | Feature | 2026-11-02 | -- |
-| [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | In Progress | Low | Feature | 2026-11-02 | EP0297 |
+| [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | Complete | Low | Feature | 2026-11-02 | EP0297 |
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Proposed | High | Improvement | 2026-11-04 | -- |
 

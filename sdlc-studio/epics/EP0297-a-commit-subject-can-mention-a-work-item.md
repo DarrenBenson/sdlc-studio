@@ -1,6 +1,6 @@
 # EP0297: A commit subject can mention a work-item id without attributing the commit's files to it
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 3
 > **Parent:** CR0659
 > **Created:** 2026-11-02
@@ -14,8 +14,8 @@ Decomposed from CR0659. Delivers the work CR0659 requested.
 
 ## Story Breakdown
 
-- [ ] [US1115: check-commit-msg accepts a Mentions: trailer for an id the subject only mentions, and the engagement floor attributes no files to it](../stories/US1115-check-commit-msg-accepts-a-mentions-trailer-for.md)
-- [ ] [US1116: The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for](../stories/US1116-the-commit-msg-hook-s-paste-ready-trailers.md)
+- [x] [US1115: check-commit-msg accepts a Mentions: trailer for an id the subject only mentions, and the engagement floor attributes no files to it](../stories/US1115-check-commit-msg-accepts-a-mentions-trailer-for.md)
+- [x] [US1116: The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for](../stories/US1116-the-commit-msg-hook-s-paste-ready-trailers.md)
 
 ## Revision History
 
