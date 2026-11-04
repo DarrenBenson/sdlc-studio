@@ -1,6 +1,6 @@
 # BG1116: Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** AGENTS.md, .claude/skills/sdlc-studio/reference-agentic-lessons.md, tools/tests/test_agentic_lessons_full_suite.py, changelog.d/BG1116.md
@@ -28,8 +28,10 @@ Restate the habit as: a commit runs the modules its change selects, and the full
 
 - [ ] **AC1** Given the habits list under the post-review lesson, when its bold lead sentences are read from the source as a set, then none tells the reader to run the full suite before every commit, one names the full suite at the push boundary, and the count the lead-in states equals the list's length
   - **Verify:** pytest tools/tests/test_agentic_lessons_full_suite.py::AgenticLessonsFullSuiteTests::test_the_habit_runs_the_full_suite_at_the_boundary
+  - **Verified:** yes (2026-11-04)
 - [ ] **AC2** AGENTS.md's push-gate paragraph says the pre-push hook judges the commit each pushed ref points at, not each pushed commit: the hook collects one commit per stdin ref line (.githooks/pre-push:27-35), so the intermediate commits of a push are not judged by the full suite
   - **Verify:** pytest tools/tests/test_agentic_lessons_full_suite.py::AgenticLessonsFullSuiteTests::test_agents_md_names_the_commit_each_ref_points_at
+  - **Verified:** yes (2026-11-04)
 
 ## Impact
 

@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 201 |
 | In Progress | 0 |
-| Fixed | 830 |
+| Fixed | 831 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1205** |
+| **Total** | **1206** |
 
 ## All Bugs
 
@@ -191,7 +191,7 @@
 | [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Open | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
-| [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Open | Medium | 2026-10-22 | 2026-10-22 |
+| [BG1116](BG1116-shipped-guidance-tells-a-consuming-project-s-agent.md) | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and push-boundary suite exist to avoid | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1117](BG1117-an-author-self-check-record-binds-the-content.md) | An author self-check record binds the content of the unit's whole Affects, so a later unit's commit to a shared file makes it stale and, under block, refuses the earlier unit's brief | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1118](BG1118-six-behaviours-the-self-check-record-its-brief.md) | Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews) | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1119](BG1119-two-behaviours-bg1000-s-repair-states-for-per.md) | Two behaviours BG1000's repair states for per-commit selection are pinned loosely or not at all: the census header's 40-line window, and the rewritten run reason | Open | Low | 2026-10-22 | 2026-10-22 |
@@ -281,6 +281,7 @@
 | [BG1203](BG1203-us0991-ac3-s-verify-line-cannot-fail-on.md) | US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1206](BG1206-bg1116-s-pins-key-on-literal-wording-the.md) | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions | Open | Low | 2026-11-04 | 2026-11-04 |
 
 ## Archived Releases
 
