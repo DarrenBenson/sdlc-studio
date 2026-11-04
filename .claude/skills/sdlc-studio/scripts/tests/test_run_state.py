@@ -394,6 +394,22 @@ class MalformedTranscriptTests(unittest.TestCase):
         self.assertIsNone(cap["tokens"])
         self.assertNotIn("900000", json.dumps(cap))
 
+    def test_a_malformed_record_appended_after_a_memoised_reading_still_refuses(self) -> None:
+        """BG1122: a reading resumed from the meter's memo parses the appended bytes by the same
+        rule as a whole read, so a malformed value there refuses the total, and the refused
+        reading leaves the memo as it was. Mutant: the appended bytes parsed by a rule that
+        skips a malformed record, so the 900,000 already held comes back as the total."""
+        self._write(json.dumps({"message": {"usage": {"input_tokens": 900000}}}))
+        self.assertEqual(run_state.session_tokens(str(self.root))["tokens"], 900000)
+        memo = self.root / run_state.METER_MEMO_REL
+        held = memo.read_bytes()
+        with (self.transcripts / "s1.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"message": {"usage": {"input_tokens": ["oops"]}}}) + "\n")
+        cap = run_state.session_tokens(str(self.root))
+        self.assertIsNone(cap["tokens"])
+        self.assertIn("malformed", cap["reason"])
+        self.assertEqual(memo.read_bytes(), held)
+
     def test_the_plan_still_mints_a_run_and_stamps_no_baseline(self) -> None:
         """The consequence that made this MAJOR: `sprint plan --write` could not open a run."""
         self._write(json.dumps({"message": {"usage": {"input_tokens": ["oops"]}}}))

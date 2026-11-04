@@ -39,7 +39,9 @@ A library, not a command: `sprint.py` opens, closes and seals the run, and `crit
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
+import io
 import json
 import math
 import os
@@ -188,6 +190,11 @@ REDERIVES = "of"
 #: in `<session-id>/subagents/agent-*.jsonl`, a depth-2 agent in the same flat directory.
 SUBAGENTS_DIR = "subagents"
 SUBAGENT_GLOB = "agent-*.jsonl"
+#: The meter's memo: what each transcript of the last reading held, so the next reading parses
+#: only the bytes appended since. Runtime state; deleting it costs one whole re-read.
+METER_MEMO_REL = Path("sdlc-studio") / ".local" / "meter-reads.json"
+#: How many bytes at each end of a memoised span must match before the span is taken as unchanged.
+MEMO_PROBE_BYTES = 4096
 
 
 # --- lean loop: unit actuals (EP0260) ---
@@ -930,63 +937,185 @@ class _MeterError(Exception):
     """Why a transcript gives no reading. Its text is the reason the caller reports."""
 
 
-def _file_records(path: Path, side: str, out: list) -> None:
+def _line_record(line: str, path: Path):
+    """The `(message id, timestamp, components, model)` of one transcript line carrying usage,
+    or None for a line that is not JSON or carries none. RAISES `_MeterError` naming the file
+    on a malformed usage value, and AttributeError on JSON that is not an object."""
+    try:
+        rec = json.loads(line)
+    except ValueError:
+        return None
+    msg = rec.get("message")
+    usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
+    if not isinstance(usage, dict):
+        return None
+    model = (msg.get("model") if isinstance(msg, dict) else None) or rec.get("model")
+    try:
+        parts = _usage_components(usage)
+    except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
+        # A malformed usage value REFUSES the whole read rather than skipping the
+        # record. Skipping would return a total that is quietly short, and a short
+        # baseline inflates the delta measured against it - a wrong number, which is
+        # the expensive failure here. Not-attributable is the cheap one.
+        raise _MeterError(
+            f"transcript {path.name} carries a malformed usage record "
+            f"({type(exc).__name__}: {exc}) - the total cannot be trusted, so no "
+            f"figure is reported") from exc
+    msg_id = msg.get("id") if isinstance(msg, dict) else None
+    return (msg_id if isinstance(msg_id, str) and msg_id else None, rec.get("timestamp"), parts,
+            model.strip() if isinstance(model, str) and model.strip() else None)
+
+
+def _lines_records(chunk: bytes, path: Path) -> list:
+    """The usage records of the transcript lines in `chunk`, split and decoded as a file opened
+    as UTF-8 text splits and decodes them."""
+    lines = io.TextIOWrapper(io.BytesIO(chunk), encoding="utf-8")
+    return [r for r in (_line_record(line, path) for line in lines) if r is not None]
+
+
+def _probe(fh, end: int) -> str:
+    """The digest of the first and the last `MEMO_PROBE_BYTES` bytes of `fh` before `end`."""
+    fh.seek(0)
+    head = fh.read(min(end, MEMO_PROBE_BYTES))
+    fh.seek(max(0, end - MEMO_PROBE_BYTES))
+    return hashlib.sha256(head + b"\0" + fh.read(min(end, MEMO_PROBE_BYTES))).hexdigest()
+
+
+def _held_groups(fh, st, entry: dict) -> dict | None:
+    """`{(message id, model): components}`, what the memo `entry` holds for the file open as
+    `fh` (`st` its stat), when it is the file the entry was read from, grown or unchanged.
+    None, and the file is read whole, when its device or inode differ, it is shorter than the
+    bytes last read, the bytes at either end of the span last parsed differ (`_probe`), or the
+    entry is malformed."""
+    try:
+        if ((entry["dev"], entry["ino"]) != (st.st_dev, st.st_ino)
+                or entry["size"] > st.st_size or _probe(fh, entry["offset"]) != entry["probe"]):
+            return None
+        groups = {}
+        for msg_id, model, row in entry["records"]:
+            if len(row) != len(TOKEN_COMPONENTS):
+                return None
+            groups[(msg_id, model)] = [int(v) for v in row]
+        return groups
+    except (KeyError, OSError, TypeError, ValueError):
+        return None
+
+
+def _file_records(path: Path, side: str, out: list, memo: dict | None = None) -> dict | None:
     """Append one `(side, message id, timestamp, components, model)` per usage record of the
     transcript at `path`. RAISES `_MeterError` naming the file on a malformed or unreadable one.
+
+    `memo` is None for a whole read, which returns None. Otherwise it maps each path the last
+    reading parsed to what that file held then (`_held_groups`), only the bytes after the last
+    newline that reading parsed are parsed now, and this file's entry for the next reading is
+    returned. The records are then collapsed: one per message id and model, its components the
+    largest of its records', and one per model for the records with no id, their sum, each
+    with no timestamp. `_aggregate` reads them as it reads the records they collapse, given no
+    `until`. A last line with no newline is appended as itself and parsed again next time,
+    since the harness may still be writing it.
 
     No `cwd` check is applied, and none may be: a subagent run in a worktree records the
     worktree as its `cwd`, and its spend is the session's all the same."""
     try:
-        with path.open(encoding="utf-8") as fh:
-            for line in fh:
-                try:
-                    rec = json.loads(line)
-                except ValueError:
-                    continue
-                msg = rec.get("message")
-                usage = (msg.get("usage") if isinstance(msg, dict) else None) or rec.get("usage")
-                if not isinstance(usage, dict):
-                    continue
-                model = (msg.get("model") if isinstance(msg, dict) else None) or rec.get("model")
-                try:
-                    parts = _usage_components(usage)
-                except (ArithmeticError, AttributeError, TypeError, ValueError) as exc:
-                    # A malformed usage value REFUSES the whole read rather than skipping the
-                    # record. Skipping would return a total that is quietly short, and a short
-                    # baseline inflates the delta measured against it - a wrong number, which is
-                    # the expensive failure here. Not-attributable is the cheap one.
-                    raise _MeterError(
-                        f"transcript {path.name} carries a malformed usage record "
-                        f"({type(exc).__name__}: {exc}) - the total cannot be trusted, so no "
-                        f"figure is reported") from exc
-                msg_id = msg.get("id") if isinstance(msg, dict) else None
-                out.append((side, msg_id if isinstance(msg_id, str) and msg_id else None,
-                            rec.get("timestamp"), parts,
-                            model.strip() if isinstance(model, str) and model.strip() else None))
+        with path.open("rb") as fh:
+            entry = memo.get(str(path)) if memo is not None else None
+            st = os.fstat(fh.fileno())
+            held = _held_groups(fh, st, entry) if isinstance(entry, dict) else None
+            start = entry["offset"] if held is not None else 0
+            fh.seek(start)
+            data = fh.read()
+            cut = data.rfind(b"\n") + 1
+            parsed = _lines_records(data[:cut], path)
+            tail = _lines_records(data[cut:], path)
+            if memo is None:
+                out.extend((side, *r) for r in parsed + tail)
+                return None
+            groups = dict(held or {})
+            for msg_id, _at, parts, model in parsed:
+                row = [parts[c] for c in TOKEN_COMPONENTS]
+                was = groups.get((msg_id, model))
+                groups[(msg_id, model)] = row if was is None else [
+                    a + b if msg_id is None else max(a, b) for a, b in zip(was, row)]
+            if held is None or cut or start + len(data) != entry["size"]:
+                entry = {"dev": st.st_dev, "ino": st.st_ino, "size": start + len(data),
+                         "offset": start + cut, "probe": _probe(fh, start + cut),
+                         "records": [[m, model, row] for (m, model), row in groups.items()]}
     except (ArithmeticError, AttributeError, OSError, TypeError, ValueError) as exc:
         # The whole family, not the shapes seen so far. This transcript format is the harness's,
         # not this project's, and it has already moved once (hence the two-shape probe above).
         # `archived()._index` in this same file records the same lesson from its own repairs.
         raise _MeterError(f"transcript {path} unreadable ({type(exc).__name__}: {exc})") from exc
+    out.extend((side, m, None, dict(zip(TOKEN_COMPONENTS, row)), model)
+               for (m, model), row in groups.items())
+    out.extend((side, *r) for r in tail)
+    return entry
 
 
-def _collect(main: Path) -> dict:
+def _collect(main: Path, memo: dict | None = None) -> dict:
     """Every usage record of the session whose transcript is `main`, and of its subagents.
 
     `note` is None when the subagent transcripts were read, and otherwise says why none were:
     the directory is absent, or holds no file in the layout this reader knows. Either way the
-    reading is the main thread's alone and says so; it is never a zero for the subagents."""
+    reading is the main thread's alone and says so; it is never a zero for the subagents.
+
+    `memo` is the last reading's memo, or None for a whole read. Given one, the records are
+    collapsed (`_file_records`), and the result's `memo` is this reading's: an entry for each
+    file it read, and for no other."""
     records: list = []
-    _file_records(main, "main", records)
+    fresh = {str(main): _file_records(main, "main", records, memo)}
     folder = main.parent / main.stem / SUBAGENTS_DIR
     files = sorted(folder.glob(SUBAGENT_GLOB)) if folder.is_dir() else []
     for f in files:
-        _file_records(f, "subagents", records)
+        fresh[str(f)] = _file_records(f, "subagents", records, memo)
     note = (None if files else
             f"no subagents directory at {folder}" if not folder.is_dir() else
             f"the subagents directory {folder} holds no {SUBAGENT_GLOB} transcript, a layout "
             f"this reader does not know")
-    return {"source": main, "records": records, "files": len(files), "note": note}
+    return {"source": main, "records": records, "files": len(files), "note": note,
+            "memo": fresh if memo is not None else None}
+
+
+@functools.cache
+def _reader_key() -> str | None:
+    """The digest of this module's source, which a memo is bound to: a memo another version of
+    the reader wrote is discarded, since that version may read a line differently. None when
+    the source cannot be read, and then nothing is memoised."""
+    try:
+        return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _memo_path(repo_root: Path | str) -> Path | None:
+    """Where `repo_root`'s meter memo lives (`METER_MEMO_REL`), or None, and nothing is
+    memoised, when the root has no `sdlc-studio/` directory or `_reader_key` is None."""
+    root = Path(repo_root)
+    return root / METER_MEMO_REL if (root / "sdlc-studio").is_dir() and _reader_key() else None
+
+
+def _load_memo(path: Path | None) -> dict | None:
+    """The memo at `path` as `_file_records` takes it: {} when it is absent, unreadable, or
+    written by another version of the reader; None when `path` is None."""
+    if path is None:
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    ours = isinstance(doc, dict) and doc.get("reader") == _reader_key()
+    return doc["files"] if ours and isinstance(doc.get("files"), dict) else {}
+
+
+def _save_memo(path: Path | None, before: dict | None, after: dict | None) -> None:
+    """Write `after`, the memo of the reading just taken, when it differs from `before`, the
+    memo it started from. One that cannot be written is skipped, and the reading stands."""
+    if path is None or after is None or after == before:
+        return
+    try:
+        sdlc_md.atomic_write(path, json.dumps({"reader": _reader_key(), "files": after},
+                                              separators=(",", ":")))
+    except OSError:
+        pass
 
 
 def _aggregate(collected: dict, until=None) -> dict:
@@ -1078,6 +1207,9 @@ def claude_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = No
     `subagents`. `tokens` is input + output + cache write; `priced` weighs every component,
     cache reads included, from `TOKEN_WEIGHTS` (D0390). A session whose subagents directory is
     absent or reshaped reads the main thread alone, `subagents` None, and its basis says so.
+    A reading that gives a figure, under a `repo_root` holding `sdlc-studio/`, leaves its memo
+    at `METER_MEMO_REL` there, and the next parses only the bytes appended since
+    (`_file_records`).
 
     Returns {"tokens", "priced", "components", "main", "subagents", "includes_subagents",
     "source", "model", "basis", "cache_read", ...} on success, {"tokens": None, "reason"} when
@@ -1093,11 +1225,14 @@ def claude_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = No
     src = _newest_transcript(d)     # a dangling or self-looping link is skipped, not raised
     if src is None:
         return {"tokens": None, "reason": f"no session transcript (*.jsonl) in {d}"}
+    memo_path = _memo_path(repo_root)
+    memo = _load_memo(memo_path)
     try:
-        collected = _collect(src)
+        collected = _collect(src, memo)
         reading = _aggregate(collected)
     except _MeterError as exc:
         return {"tokens": None, "reason": str(exc)}
+    _save_memo(memo_path, memo, collected["memo"])
     return _reading(reading, src, collected["note"])
 
 
