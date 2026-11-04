@@ -1,0 +1,1915 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M6F74P",
+  "started_at": "2026-11-02T22:49:45Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": null,
+  "batch": [
+    "BG0958",
+    "BG1090",
+    "BG1114",
+    "BG1116",
+    "BG1122",
+    "BG1147",
+    "BG1160",
+    "BG1163",
+    "BG1167",
+    "US1112",
+    "US1113",
+    "US1114",
+    "US1115",
+    "US1116",
+    "BG1183",
+    "BG1187",
+    "US0989",
+    "US0990",
+    "US0991",
+    "BG1197",
+    "BG1210",
+    "BG1212",
+    "BG1216"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 116124213,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-11-02T22:50:07Z",
+    "priced": 608397992,
+    "components": {
+      "input": 38724,
+      "output": 6368512,
+      "cache_write_5m": 88741345,
+      "cache_write_1h": 20975632,
+      "cache_read": 4236387632
+    },
+    "subagents": true,
+    "meter": "once-per-message, main thread and subagent transcripts, priced components"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 116124213,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-02T22:50:43Z",
+      "kind": "open",
+      "model": "mixed",
+      "priced": 608397992,
+      "components": {
+        "input": 38724,
+        "output": 6368512,
+        "cache_write_5m": 88741345,
+        "cache_write_1h": 20975632,
+        "cache_read": 4236387632
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 116126451,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-02T22:53:37Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 608455911,
+      "components": {
+        "input": 38726,
+        "output": 6369726,
+        "cache_write_5m": 88741345,
+        "cache_write_1h": 20976654,
+        "cache_read": 4236885657
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 116581356,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-02T23:29:37Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 610968409,
+      "components": {
+        "input": 38956,
+        "output": 6408287,
+        "cache_write_5m": 89142225,
+        "cache_write_1h": 20991888,
+        "cache_read": 4254764612
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 122337411,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T03:22:19Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 624877554,
+      "components": {
+        "input": 39670,
+        "output": 6561174,
+        "cache_write_5m": 94678891,
+        "cache_write_1h": 21057676,
+        "cache_read": 4315680484
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 124916776,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T08:32:22Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 632427354,
+      "components": {
+        "input": 40144,
+        "output": 6659930,
+        "cache_write_5m": 97038407,
+        "cache_write_1h": 21178295,
+        "cache_read": 4354329611
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 126980406,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T10:10:55Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 641561814,
+      "components": {
+        "input": 40854,
+        "output": 6850504,
+        "cache_write_5m": 98884006,
+        "cache_write_1h": 21205042,
+        "cache_read": 4412533490
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 127015231,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T10:14:09Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "priced": 642159169,
+      "components": {
+        "input": 40902,
+        "output": 6861091,
+        "cache_write_5m": 98900095,
+        "cache_write_1h": 21213143,
+        "cache_read": 4417614070
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 127033353,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T10:17:31Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "priced": 642718041,
+      "components": {
+        "input": 40934,
+        "output": 6867578,
+        "cache_write_5m": 98911698,
+        "cache_write_1h": 21213143,
+        "cache_read": 4422733083
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 129013874,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T11:28:07Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "priced": 652108398,
+      "components": {
+        "input": 41438,
+        "output": 6948042,
+        "cache_write_5m": 100788796,
+        "cache_write_1h": 21235598,
+        "cache_read": 4488695594
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 129015835,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-03T11:31:35Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 652132802,
+      "components": {
+        "input": 41440,
+        "output": 6948841,
+        "cache_write_5m": 100788796,
+        "cache_write_1h": 21236758,
+        "cache_read": 4488876459
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130659252,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T09:09:29Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "priced": 657746699,
+      "components": {
+        "input": 41750,
+        "output": 7057997,
+        "cache_write_5m": 102109096,
+        "cache_write_1h": 21450409,
+        "cache_read": 4518777763
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130827858,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:05:14Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661392736,
+      "components": {
+        "input": 41900,
+        "output": 7102090,
+        "cache_write_5m": 102199905,
+        "cache_write_1h": 21483963,
+        "cache_read": 4551225792
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130830382,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:07:07Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661518185,
+      "components": {
+        "input": 41904,
+        "output": 7102106,
+        "cache_write_5m": 102202409,
+        "cache_write_1h": 21483963,
+        "cache_read": 4552448139
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130830382,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:08:03Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661518185,
+      "components": {
+        "input": 41904,
+        "output": 7102106,
+        "cache_write_5m": 102202409,
+        "cache_write_1h": 21483963,
+        "cache_read": 4552448139
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130830382,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:08:32Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661518185,
+      "components": {
+        "input": 41904,
+        "output": 7102106,
+        "cache_write_5m": 102202409,
+        "cache_write_1h": 21483963,
+        "cache_read": 4552448139
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130830382,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:08:52Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661518185,
+      "components": {
+        "input": 41904,
+        "output": 7102106,
+        "cache_write_5m": 102202409,
+        "cache_write_1h": 21483963,
+        "cache_read": 4552448139
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 130837759,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T10:09:13Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "priced": 661650342,
+      "components": {
+        "input": 41908,
+        "output": 7102134,
+        "cache_write_5m": 102209754,
+        "cache_write_1h": 21483963,
+        "cache_read": 4553676451
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 134963791,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:11:48Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4654643707,
+      "priced": 677603508,
+      "components": {
+        "input": 42706,
+        "output": 7285208,
+        "cache_write_5m": 106135150,
+        "cache_write_1h": 21500727,
+        "cache_read": 4654643707
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 134963791,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:12:45Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4654643707,
+      "priced": 677603508,
+      "components": {
+        "input": 42706,
+        "output": 7285208,
+        "cache_write_5m": 106135150,
+        "cache_write_1h": 21500727,
+        "cache_read": 4654643707
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 135770589,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:22:11Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4677491387,
+      "priced": 681366582,
+      "components": {
+        "input": 43014,
+        "output": 7408376,
+        "cache_write_5m": 106807798,
+        "cache_write_1h": 21511401,
+        "cache_read": 4677491387
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 135777800,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:22:44Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4678291449,
+      "priced": 681455738,
+      "components": {
+        "input": 43024,
+        "output": 7408413,
+        "cache_write_5m": 106814962,
+        "cache_write_1h": 21511401,
+        "cache_read": 4678291449
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 137565334,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:44:35Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4698553797,
+      "priced": 685910053,
+      "components": {
+        "input": 43200,
+        "output": 7456841,
+        "cache_write_5m": 108537757,
+        "cache_write_1h": 21527536,
+        "cache_read": 4698553797
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 138538354,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:51:11Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4704386980,
+      "priced": 687747727,
+      "components": {
+        "input": 43248,
+        "output": 7466999,
+        "cache_write_5m": 109500571,
+        "cache_write_1h": 21527536,
+        "cache_read": 4704386980
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 138552906,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T11:53:59Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4706605972,
+      "priced": 687993129,
+      "components": {
+        "input": 43266,
+        "output": 7468417,
+        "cache_write_5m": 109513687,
+        "cache_write_1h": 21527536,
+        "cache_read": 4706605972
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 140477688,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T12:16:02Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4715851556,
+      "priced": 691389608,
+      "components": {
+        "input": 43352,
+        "output": 7482769,
+        "cache_write_5m": 111407838,
+        "cache_write_1h": 21543729,
+        "cache_read": 4715851556
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 141988685,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T12:30:47Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4741701096,
+      "priced": 696186805,
+      "components": {
+        "input": 43648,
+        "output": 7564677,
+        "cache_write_5m": 112814744,
+        "cache_write_1h": 21565616,
+        "cache_read": 4741701096
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 142006184,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T12:34:22Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4742688456,
+      "priced": 696314899,
+      "components": {
+        "input": 43666,
+        "output": 7566674,
+        "cache_write_5m": 112830228,
+        "cache_write_1h": 21565616,
+        "cache_read": 4742688456
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 142270564,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T12:35:27Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4745888615,
+      "priced": 696994017,
+      "components": {
+        "input": 43702,
+        "output": 7573396,
+        "cache_write_5m": 113083278,
+        "cache_write_1h": 21570188,
+        "cache_read": 4745888615
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 142317448,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T12:38:18Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4750356163,
+      "priced": 697539362,
+      "components": {
+        "input": 43750,
+        "output": 7584062,
+        "cache_write_5m": 113119448,
+        "cache_write_1h": 21570188,
+        "cache_read": 4750356163
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 143299745,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T13:00:56Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4767959658,
+      "priced": 700828155,
+      "components": {
+        "input": 43912,
+        "output": 7659336,
+        "cache_write_5m": 114001863,
+        "cache_write_1h": 21594634,
+        "cache_read": 4767959658
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 146304975,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T13:38:00Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4796013171,
+      "priced": 707808351,
+      "components": {
+        "input": 44268,
+        "output": 7767239,
+        "cache_write_5m": 116880487,
+        "cache_write_1h": 21612981,
+        "cache_read": 4796013171
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 147335347,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T13:47:33Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4801364973,
+      "priced": 709734629,
+      "components": {
+        "input": 44330,
+        "output": 7793984,
+        "cache_write_5m": 117880246,
+        "cache_write_1h": 21616787,
+        "cache_read": 4801364973
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 148271432,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T13:54:18Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4806572444,
+      "priced": 711444709,
+      "components": {
+        "input": 44374,
+        "output": 7798024,
+        "cache_write_5m": 118806796,
+        "cache_write_1h": 21622238,
+        "cache_read": 4806572444
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 148985589,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T14:19:46Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4832961735,
+      "priced": 715441985,
+      "components": {
+        "input": 44690,
+        "output": 7918620,
+        "cache_write_5m": 119382049,
+        "cache_write_1h": 21640230,
+        "cache_read": 4832961735
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 149433491,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T14:32:46Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4845434248,
+      "priced": 717471449,
+      "components": {
+        "input": 44820,
+        "output": 7976679,
+        "cache_write_5m": 119765567,
+        "cache_write_1h": 21646425,
+        "cache_read": 4845434248
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 150630274,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T15:18:47Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4878862894,
+      "priced": 722677064,
+      "components": {
+        "input": 45138,
+        "output": 8071137,
+        "cache_write_5m": 120850729,
+        "cache_write_1h": 21663270,
+        "cache_read": 4878862894
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 151265823,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T15:49:07Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4896968846,
+      "priced": 725528354,
+      "components": {
+        "input": 45348,
+        "output": 8134530,
+        "cache_write_5m": 121411225,
+        "cache_write_1h": 21674720,
+        "cache_read": 4896968846
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 153326737,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T16:45:10Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 4939473220,
+      "priced": 732946168,
+      "components": {
+        "input": 45782,
+        "output": 8282595,
+        "cache_write_5m": 123275508,
+        "cache_write_1h": 21722852,
+        "cache_read": 4939473220
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160065811,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T19:11:03Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5030768514,
+      "priced": 751122558,
+      "components": {
+        "input": 46324,
+        "output": 8436093,
+        "cache_write_5m": 129797161,
+        "cache_write_1h": 21786233,
+        "cache_read": 5030768514
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160085624,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T19:14:26Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5032013146,
+      "priced": 751299860,
+      "components": {
+        "input": 46336,
+        "output": 8443340,
+        "cache_write_5m": 129808515,
+        "cache_write_1h": 21787433,
+        "cache_read": 5032013146
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160092412,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T19:15:18Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5032576899,
+      "priced": 751378942,
+      "components": {
+        "input": 46338,
+        "output": 8446384,
+        "cache_write_5m": 129808515,
+        "cache_write_1h": 21791175,
+        "cache_read": 5032576899
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160092412,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T19:15:26Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5032576899,
+      "priced": 751378942,
+      "components": {
+        "input": 46338,
+        "output": 8446384,
+        "cache_write_5m": 129808515,
+        "cache_write_1h": 21791175,
+        "cache_read": 5032576899
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160143617,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-04T20:35:24Z",
+      "kind": "report",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5049484808,
+      "priced": 753228673,
+      "components": {
+        "input": 46400,
+        "output": 8465248,
+        "cache_write_5m": 129808515,
+        "cache_write_1h": 21823454,
+        "cache_read": 5049484808
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 392430,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1167 Fixed on a round-2 APPROVE; verify_ac 4 of 4)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-03T10:14:09Z",
+      "unit": "BG1167",
+      "minutes": 108.0
+    },
+    {
+      "tokens": 673741,
+      "agent": "build lane",
+      "note": "sprint lane return (US1112 Done on a round-2 APPROVE; verify_ac 4 of 4)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-03T10:17:31Z",
+      "unit": "US1112",
+      "minutes": 308.0
+    },
+    {
+      "tokens": 538957,
+      "agent": "build lane",
+      "note": "sprint lane return (US1113 Done on a round-2 APPROVE; verify_ac 4 of 4)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-03T11:28:07Z",
+      "unit": "US1113",
+      "minutes": 198.0
+    },
+    {
+      "tokens": 284697,
+      "agent": "build lane",
+      "note": "sprint lane return (US1114 Done on a round-1 APPROVE; verify_ac 4 of 4)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T09:09:29Z",
+      "unit": "US1114",
+      "minutes": 41.0
+    },
+    {
+      "tokens": 134418,
+      "agent": "build lane",
+      "note": "sprint lane return (US1115 Done on an APPROVE)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T11:22:11Z",
+      "unit": "US1115",
+      "minutes": 38.0
+    },
+    {
+      "tokens": 67209,
+      "agent": "build lane",
+      "note": "sprint lane return (US1116 Done on an APPROVE)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T11:22:44Z",
+      "unit": "US1116",
+      "minutes": 18.0
+    },
+    {
+      "tokens": 83830,
+      "agent": "build lane",
+      "note": "sprint lane return (BG0958 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T12:30:47Z",
+      "unit": "BG0958",
+      "minutes": 26.0
+    },
+    {
+      "tokens": 83830,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1090 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T12:34:22Z",
+      "unit": "BG1090",
+      "minutes": 26.0
+    },
+    {
+      "tokens": 195820,
+      "agent": "build lane",
+      "note": "sprint lane return (US0989 Done on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T12:35:27Z",
+      "unit": "US0989",
+      "minutes": 48.0
+    },
+    {
+      "tokens": 261486,
+      "agent": "build lane",
+      "note": "sprint lane return (US0991 Done on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T12:38:18Z",
+      "unit": "US0991",
+      "minutes": 57.0
+    },
+    {
+      "tokens": 111044,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1116 Fixed on an independent APPROVE (round 2))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T13:38:00Z",
+      "unit": "BG1116",
+      "minutes": 35.0
+    },
+    {
+      "tokens": 165230,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1197 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T14:19:46Z",
+      "unit": "BG1197",
+      "minutes": 48.0
+    },
+    {
+      "tokens": 238716,
+      "agent": "build lane",
+      "note": "sprint lane return (US0990 Done on an independent APPROVE (round 2))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T14:32:46Z",
+      "unit": "US0990",
+      "minutes": 45.0
+    },
+    {
+      "tokens": 228245,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1122 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T15:18:47Z",
+      "unit": "BG1122",
+      "minutes": 70.0
+    },
+    {
+      "tokens": 91977,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1147 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T15:49:07Z",
+      "unit": "BG1147",
+      "minutes": 26.0
+    },
+    {
+      "tokens": 243379,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1163 Fixed on an independent APPROVE (round 2))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T16:45:10Z",
+      "unit": "BG1163",
+      "minutes": 75.0
+    },
+    {
+      "tokens": 885575,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1183 Fixed on an independent APPROVE (round 2))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T19:11:03Z",
+      "unit": "BG1183",
+      "minutes": 380.0
+    },
+    {
+      "tokens": 196516,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1187 Fixed on an independent APPROVE)",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T19:14:26Z",
+      "unit": "BG1187",
+      "minutes": 83.0
+    },
+    {
+      "tokens": 120941,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1160 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T19:15:18Z",
+      "unit": "BG1160",
+      "minutes": 101.0
+    },
+    {
+      "tokens": 120941,
+      "agent": "build lane",
+      "note": "sprint lane return (BG1114 Fixed on an independent APPROVE (round 1))",
+      "provenance": "supplied",
+      "recorded_at": "2026-11-04T19:15:26Z",
+      "unit": "BG1114",
+      "minutes": 101.0
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG1187",
+      "at": "2026-11-03T08:17:00Z"
+    },
+    {
+      "action": "add",
+      "id": "US0986",
+      "at": "2026-11-04T09:59:54Z"
+    },
+    {
+      "action": "add",
+      "id": "US0989",
+      "at": "2026-11-04T10:00:04Z"
+    },
+    {
+      "action": "add",
+      "id": "US0990",
+      "at": "2026-11-04T10:00:13Z"
+    },
+    {
+      "action": "add",
+      "id": "US0991",
+      "at": "2026-11-04T10:00:20Z"
+    },
+    {
+      "action": "drop",
+      "id": "US0986",
+      "reason": "carried at the review cap: BG1205",
+      "at": "2026-11-04T12:47:18Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1197",
+      "at": "2026-11-04T12:48:35Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1210",
+      "at": "2026-11-04T16:27:04Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1212",
+      "at": "2026-11-04T16:48:43Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1216",
+      "at": "2026-11-04T18:04:02Z"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0401",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0402",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0403",
+      "by": "operator",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "00525efa54afe9be044dc71e96111815dcb96647",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-11-02T22:48:23Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "`gate.py --release` passes first time at default ceilings in about one suite run; band drift and commit frictions fixed.",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "product",
+        "achievable": "partly",
+        "done_means": "At close: (1) all 14 units Fixed/Done with their executable ACs green under verify_ac and one independent review each; (2) ONE release-boundary gate on the closing sha, run on the gate host by remote-gate.sh push --commit <sha> --release (US1114), passes first time at the default SDLC_VERIFY_TIMEOUT of 300 s: no raised ceiling (D0398 needed 900), no waiver, no re-run, and sdlc-studio/.local/release-gate-green.json names exactly that sha; (3) that run's verify lane reads 'batch resolved <n> of <n>' with n>0 and names its worker count (US1112, US1113), with its seconds recorded beside 6.2.0's 4,447-6,582 s; (4) the frictions are gone when exercised through the shipped entry points: check-commit-msg --strict passes a mention-only id carried by Mentions: and the hint never asks Refs: for it (US1115, US1116), the pre-commit markdown lane runs in a linked worktree (BG1147), mutation.py finds changed lines with diff.mnemonicPrefix=true (BG0958), gate.py --run-tests exits non-zero when a real module fails beside a missing one (BG1160); (5) a light APPROVE stays conformant after a later unit's edit raises a shared file's band (BG1167). The 6.3 cut itself happens after the run, so (2) is the checkable proxy for 'costs one run'. Serves O5 (Maya End goal 5, shipped scripts) and Rowan End goal 3 (release boundary green).",
+        "one_increment": "yes",
+        "note": "Serves O5 / Maya End goal 5 ('every check earns its keep'; a repeated failure fixed in the code path): most Affects are shipped scripts (gate.py, verify_ac.py, conformance.py, critic.py, run_state.py, engagement_floor.py, mutation.py), so Maya is the Primary; US1114, BG1090 and BG1163 sit in tools/ and serve Rowan End goal 3. Achievable only partly: 'slow verifiers fixed' is the goal's own clause, and BG1183 (US0940 AC1 at up to 535 s, US0926 AC1 at 180 s) is Open and outside the batch, though D0399 traced the 6.2.0 cost to 'CR0660, BG1183'. US1112-US1114 change the lane, not those verifiers; US1113 AC2 keeps a ceiling timeout red, so unless US1112's batch happens to absorb US0940's module, a release gate at the default 300 s still goes red on a passing test, which is the 6.2.0 re-run pattern the goal promises away. Fix: add BG1183 (1 point, Low) or drop 'slow verifiers'. Second, 'suite run' names the wrong thing: 6.2.0 paid three runs of the ~100-minute release gate, not three suite runs, so say release-gate run. One increment: yes, D0399's release path. BG1163 (5 points: TRD lifecycle wording plus a writer pin) is the loosest fit. It is a D0394 Medium that serves O4 (Maya End goal 4), not a 6.2.0 friction, and it stays only because D0399 ruled it in. BG1114 and BG1122 (5 points between them) cut per-command cost rather than the cost of the cut. Reframe (18 words): '6.3 cuts on one release-gate run at default ceilings: band drift, slow verifiers and 6.2.0's commit frictions fixed.'",
+        "carried_from": "The 6.3 cut costs one suite run: band drift, slow verifiers and the commit frictions 6.2.0 hit are fixed."
+      },
+      {
+        "seat": "engineering",
+        "achievable": "partly",
+        "done_means": "Serves Maya End goal 5 (O5) and Rowan End goal 3. On the close commit, one `gate.py --release` run at the default 300 s per-verifier ceiling, with no SDLC_VERIFY_TIMEOUT override, exits 0 on its first attempt. Its verify clause reads `batch resolved N of M` with N near the ~2,095 bare-node pytest verifiers, and carries no `OVER the 600s declared budget` note, with VERIFY_LANE_BUDGET_S not raised to make that true. Its measured wall-clock is about one suite run: at most ~2,960 s on the workstation (local boundary-push median 2,957 s) against 6.2.0's 4,608/6,217/6,975 s, and at most ~1,100 s on devserver1 via US1114's route (boundary-push@devserver1 ~605 s, boundary-release 1,077 s). `conformance.py check` reads US1082, US1103 and US1090 conformant, so D0397's waiver can retire. A mention-only commit subject passes commit-msg with a Mentions: trailer and no Refs:. All 14 units are Done or Fixed on independent APPROVEs.",
+        "one_increment": "yes",
+        "note": "One increment as D0399's 'what made the 6.2.0 cut expensive', with EP0296 as the spine. But BG1163 (5), BG1122 (3) and BG1116 (1), 9 of 34 points, sit outside the goal's three named items. Partly achievable, for three reasons. (1) The headline rests on US1112's diagnosis, which its own Notes call 'read from the code, not yet measured', and no unit AC measures the end-to-end wall-clock, so the done check is a run-level measurement at the close that no unit owns. (2) BG1183, the slow-verifier bug, is NOT in the batch: US0940 AC1 took 534.65 s alone against the 300 s default, and US0926 AC1 took 180 s. Under US1113's pool load they read red (US1113's own Risks say so), so 'slow verifiers fixed' is not delivered. Add BG1183 (1 pt) or drop the phrase. (3) 'The 6.3 cut' also includes the tag push's --boundary release (full suite plus release-rehearsal plus module-alone, 1,077 s on devserver1). EP0296 only claims the verify lane costs one suite run. Top technical risk, US1112 then US1113: US1112 AC2 gives the batch its own ceiling (SDLC_VERIFY_BATCH_TIMEOUT, whose default it never names). That reverses the invariant at gate.py:1664 ('one ceiling for every verifier ... so a criterion cannot pass in the batch and time out on its own spawn'). Unless junit per-node durations are checked against SDLC_VERIFY_TIMEOUT, a 534 s criterion resolves green from the batch. That contradicts US1112's Must-not-change ('a verifier past its ceiling reads red') and masks BG1183 as a false green (LL0008). Add an AC, with a mutant, that a batched node over the per-verifier ceiling reads red, and name the batch ceiling's default. Related: test_lean_release_verify.py (US0940 AC1's verifier) carries boundary_only, so US1114's SDLC_STUDIO_BOUNDARY_SUITE parity choice decides that criterion's verdict per route. Serialise the gate.py cluster US1112 -> US1113 -> BG1160, and BG1114 with BG1167 on critic.py. BG1167 (5 pts) changes a review gate's judgement: AC3 must keep a unit's own widened Affects owing full depth. Reframe (17 words): `gate.py --release` runs green in about one suite run: band drift, slow verifiers and commit frictions fixed.",
+        "carried_from": "The 6.3 cut costs one suite run: band drift, slow verifiers and the commit frictions 6.2.0 hit are fixed."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partly",
+        "done_means": "Every unit's named test node is green under verify_ac, and transition.py has set each bug to Fixed and each story to Done. Done for the cost clause is a command, but no criterion holds it yet: one `tools/remote-gate.sh push --commit <close sha> --release` passes first time on the gate host, writes release-gate-green.json naming that sha, and prints a verify-lane line with no 'OVER the <N>s declared budget' clause and no 'batch resolved 0 of' clause. VERIFY_LANE_BUDGET_S (600 today) must first be re-derived from a measured run, against `tools/gate_timing.py estimate --suite boundary-release`. That makes the cost a run-time check, not a prediction about 6.3. It serves O5 (Maya, End goal 5) and Rowan, End goal 3.",
+        "one_increment": "no",
+        "note": "The cost clause is the one nothing can prove, for three reasons. (1) Every criterion in US1112, US1113 and US1114 is a fixture behaviour: xdist is used, the batch is not cut off, the pool is bounded, the host runs the right sha. None measures the release gate's wall time. US1112's own diagnosis says it was 'read from the code, not yet measured', and the budget re-derivation sits only in its Notes. (2) Read literally, 'one suite run' is false even if every unit works. The tag push runs the full suite at boundary release, and the --release verify batch reruns the 350 verifier test files, which is about another suite (US1112 Notes). The best case is about two suite-sized runs. (3) BG1183 is missing from the batch, though D0399 names it as the slow-verifier cause: US0940's 535 s test and US0926's 180 s dry run, which forced 900 s ceilings at 6.2.0. US1113's own risks say pool load pushes such criteria red, which is the 6.2.0 rerun cost again. Also, 'the 6.3 cut' happens after this run closes, so no in-run check can confirm it. Fixes: add BG1183 (1 pt), or exclude it by name; give US1112 a measured-budget AC (or a close step) that runs the command above; and pin US1114's SDLC_STUDIO_BOUNDARY_SUITE parity in an AC, since its Risks leave the choice open and the host and local routes could then give different verdicts. On increment: BG1163 (5 pts, TRD lifecycle and pin hardening), BG1160 (vacuous green), BG1122 and BG1114 (meter and brief speed) make 12 of 34 points that fit none of the goal's three clauses. Drop them or accept them as named riders. Reframe (20 words): 'The release gate runs on the gate host inside a measured budget; band drift and 6.2.0's commit frictions are fixed.' Every other unit's criteria name nodes with stated mutants. Nothing was executed here: this is a read-only review.",
+        "carried_from": "The 6.3 cut costs one suite run: band drift, slow verifiers and the commit frictions 6.2.0 hit are fixed."
+      }
+    ],
+    "goal": "`gate.py --release` passes first time at default ceilings in about one suite run; band drift and commit frictions fixed.",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 10,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-11-02T22:42:56Z",
+    "change_type": "amendment",
+    "amended_from": "The 6.3 cut costs one suite run: band drift, slow verifiers and the commit frictions 6.2.0 hit are fixed.",
+    "requesting_seat": "qa",
+    "requested_by": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "qa",
+        "one_increment": "no",
+        "note": "The cost clause is the one nothing can prove, for three reasons. (1) Every criterion in US1112, US1113 and US1114 is a fixture behaviour: xdist is used, the batch is not cut off, the pool is bounded, the host runs the right sha. None measures the release gate's wall time. US1112's own diagnosis says it was 'read from the code, not yet measured', and the budget re-derivation sits only in its Notes. (2) Read literally, 'one suite run' is false even if every unit works. The tag push runs the full suite at boundary release, and the --release verify batch reruns the 350 verifier test files, which is about another suite (US1112 Notes). The best case is about two suite-sized runs. (3) BG1183 is missing from the batch, though D0399 names it as the slow-verifier cause: US0940's 535 s test and US0926's 180 s dry run, which forced 900 s ceilings at 6.2.0. US1113's own risks say pool load pushes such criteria red, which is the 6.2.0 rerun cost again. Also, 'the 6.3 cut' happens after this run closes, so no in-run check can confirm it. Fixes: add BG1183 (1 pt), or exclude it by name; give US1112 a measured-budget AC (or a close step) that runs the command above; and pin US1114's SDLC_STUDIO_BOUNDARY_SUITE parity in an AC, since its Risks leave the choice open and the host and local routes could then give different verdicts. On increment: BG1163 (5 pts, TRD lifecycle and pin hardening), BG1160 (vacuous green), BG1122 and BG1114 (meter and brief speed) make 12 of 34 points that fit none of the goal's three clauses. Drop them or accept them as named riders. Reframe (20 words): 'The release gate runs on the gate host inside a measured budget; band drift and 6.2.0's commit frictions are fixed.' Every other unit's criteria name nodes with stated mutants. Nothing was executed here: this is a read-only review."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "BG0958": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1090": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1114": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1116": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1122": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1147": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1160": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1163": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "BG1167": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1112": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1113": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1114": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1115": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1116": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1183": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1187": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "US0986": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": true
+      },
+      "US0989": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": true
+      },
+      "US0990": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "US0991": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1197": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1210": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": true
+      },
+      "BG1212": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": true
+      },
+      "BG1216": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 186252,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 6705072,
+  "lanes_in_flight": [
+    {
+      "unit": "US0986",
+      "started_at": "2026-11-04T10:04:53Z"
+    }
+  ],
+  "unit_actuals": {
+    "BG1167": {
+      "minutes": 680.53,
+      "tokens": 10888780,
+      "started_at": "2026-11-02T22:53:37Z",
+      "start_tokens": 2238,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1112": {
+      "minutes": 647.9,
+      "tokens": 10451997,
+      "started_at": "2026-11-02T23:29:37Z",
+      "start_tokens": 457143,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1113": {
+      "minutes": 485.8,
+      "tokens": 6676463,
+      "started_at": "2026-11-03T03:22:19Z",
+      "start_tokens": 6213198,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1183": {
+      "minutes": 2078.68,
+      "tokens": 35149035,
+      "started_at": "2026-11-03T08:32:22Z",
+      "start_tokens": 8792563,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1187": {
+      "minutes": 1983.52,
+      "tokens": 33105218,
+      "started_at": "2026-11-03T10:10:55Z",
+      "start_tokens": 10856193,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1114": {
+      "minutes": 1297.9,
+      "tokens": 1643417,
+      "started_at": "2026-11-03T11:31:35Z",
+      "start_tokens": 12891622,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US0986": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-11-04T10:05:14Z",
+      "start_tokens": 14703645,
+      "open": true,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1115": {
+      "minutes": 75.07,
+      "tokens": 4940207,
+      "started_at": "2026-11-04T10:07:07Z",
+      "start_tokens": 14706169,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1116": {
+      "minutes": 74.68,
+      "tokens": 4947418,
+      "started_at": "2026-11-04T10:08:03Z",
+      "start_tokens": 14706169,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG0958": {
+      "minutes": 142.25,
+      "tokens": 11158303,
+      "started_at": "2026-11-04T10:08:32Z",
+      "start_tokens": 14706169,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1116": {
+      "minutes": 209.13,
+      "tokens": 15474593,
+      "started_at": "2026-11-04T10:08:52Z",
+      "start_tokens": 14706169,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1090": {
+      "minutes": 145.15,
+      "tokens": 11168425,
+      "started_at": "2026-11-04T10:09:13Z",
+      "start_tokens": 14713546,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US0989": {
+      "minutes": 83.65,
+      "tokens": 7306773,
+      "started_at": "2026-11-04T11:11:48Z",
+      "start_tokens": 18839578,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US0991": {
+      "minutes": 85.55,
+      "tokens": 7353657,
+      "started_at": "2026-11-04T11:12:45Z",
+      "start_tokens": 18839578,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1147": {
+      "minutes": 244.53,
+      "tokens": 13700489,
+      "started_at": "2026-11-04T11:44:35Z",
+      "start_tokens": 21441121,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1160": {
+      "minutes": 444.12,
+      "tokens": 21554058,
+      "started_at": "2026-11-04T11:51:11Z",
+      "start_tokens": 22414141,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1114": {
+      "minutes": 441.45,
+      "tokens": 21539506,
+      "started_at": "2026-11-04T11:53:59Z",
+      "start_tokens": 22428693,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US0990": {
+      "minutes": 136.73,
+      "tokens": 8955803,
+      "started_at": "2026-11-04T12:16:02Z",
+      "start_tokens": 24353475,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1197": {
+      "minutes": 78.83,
+      "tokens": 5685844,
+      "started_at": "2026-11-04T13:00:56Z",
+      "start_tokens": 27175532,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1163": {
+      "minutes": 177.62,
+      "tokens": 5991390,
+      "started_at": "2026-11-04T13:47:33Z",
+      "start_tokens": 31211134,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1122": {
+      "minutes": 84.48,
+      "tokens": 2358842,
+      "started_at": "2026-11-04T13:54:18Z",
+      "start_tokens": 32147219,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  },
+  "review_base": {
+    "BG1167": 0,
+    "US1112": 0,
+    "US1113": 0,
+    "US1114": 0,
+    "US1115": 0,
+    "US1116": 0,
+    "US0986": 0,
+    "BG0958": 0,
+    "BG1090": 0,
+    "BG1116": 0,
+    "US0989": 0,
+    "US0991": 0,
+    "US0990": 0,
+    "BG1197": 0,
+    "BG1122": 0,
+    "BG1147": 0,
+    "BG1163": 0,
+    "BG1183": 0,
+    "BG1210": 0,
+    "BG1212": 0,
+    "BG1187": 0,
+    "BG1216": 0,
+    "BG1160": 0,
+    "BG1114": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "partial",
+    "note": "The release verify lane ran at default ceilings in 1,272 s on the gate host (6.2.0's took 4,447 to 6,582 s) and band drift and the commit frictions are fixed, but the one release gate on the closing commit did not pass first time: three criteria need Python 3.10 and pdftotext, which the gate host lacks (BG1220), one red came from a filed bug's own text, and the fragments lane refuses any commit before a cut."
+  },
+  "close_attempts": [
+    {
+      "at": "2026-11-04T20:16:44Z",
+      "outstanding": 1,
+      "stages": [
+        "installed-copy"
+      ]
+    }
+  ],
+  "close_known_issues": [],
+  "close_not_measured": [],
+  "goal_content_review": [
+    {
+      "phase": "close",
+      "goal": "`gate.py --release` passes first time at default ceilings in about one suite run; band drift and commit frictions fixed.",
+      "answer": "partial",
+      "missing": "A first-time release-gate pass on the gate host (BG1220), and US0986, carried as BG1205 at the review cap.",
+      "shortfall": {
+        "undelivered": [],
+        "defects": [
+          "BG0946",
+          "BG0947",
+          "BG0948",
+          "BG0949",
+          "BG0952",
+          "BG0953",
+          "BG0954",
+          "BG0956",
+          "BG0957",
+          "BG0959",
+          "BG0960",
+          "BG0961",
+          "BG0964",
+          "BG0965",
+          "BG0966",
+          "BG0967",
+          "BG0968",
+          "BG0969",
+          "BG0970",
+          "BG0971",
+          "BG0972",
+          "BG0973",
+          "BG0974",
+          "BG0975",
+          "BG0977",
+          "BG0979",
+          "BG0980",
+          "BG0981",
+          "BG0982",
+          "BG0983",
+          "BG0984",
+          "BG0985",
+          "BG0986",
+          "BG0987",
+          "BG0988",
+          "BG0990",
+          "BG0991",
+          "BG0992",
+          "BG0995",
+          "BG0996",
+          "BG0997",
+          "BG0998",
+          "BG0999",
+          "BG1001",
+          "BG1002",
+          "BG1004",
+          "BG1005",
+          "BG1006",
+          "BG1008",
+          "BG1009",
+          "BG1010",
+          "BG1011",
+          "BG1012",
+          "BG1013",
+          "BG1014",
+          "BG1015",
+          "BG1016",
+          "BG1017",
+          "BG1018",
+          "BG1019",
+          "BG1020",
+          "BG1021",
+          "BG1022",
+          "BG1023",
+          "BG1024",
+          "BG1026",
+          "BG1027",
+          "BG1028",
+          "BG1030",
+          "BG1033",
+          "BG1034",
+          "BG1035",
+          "BG1037",
+          "BG1038",
+          "BG1040",
+          "BG1041",
+          "BG1042",
+          "BG1043",
+          "BG1049",
+          "BG1050",
+          "BG1051",
+          "BG1055",
+          "BG1058",
+          "BG1059",
+          "BG1060",
+          "BG1062",
+          "BG1063",
+          "BG1064",
+          "BG1067",
+          "BG1068",
+          "BG1069",
+          "BG1070",
+          "BG1071",
+          "BG1072",
+          "BG1073",
+          "BG1074",
+          "BG1075",
+          "BG1079",
+          "BG1080",
+          "BG1081",
+          "BG1082",
+          "BG1083",
+          "BG1084",
+          "BG1085",
+          "BG1086",
+          "BG1092",
+          "BG1093",
+          "BG1094",
+          "BG1096",
+          "BG1097",
+          "BG1098",
+          "BG1100",
+          "BG1101",
+          "BG1103",
+          "BG1104",
+          "BG1106",
+          "BG1107",
+          "BG1108",
+          "BG1110",
+          "BG1112",
+          "BG1115",
+          "BG1118",
+          "BG1119",
+          "BG1120",
+          "BG1121",
+          "BG1123",
+          "BG1124",
+          "BG1125",
+          "BG1126",
+          "BG1128",
+          "BG1129",
+          "BG1130",
+          "BG1131",
+          "BG1132",
+          "BG1133",
+          "BG1134",
+          "BG1141",
+          "BG1142",
+          "BG1143",
+          "BG1144",
+          "BG1145",
+          "BG1146",
+          "BG1148",
+          "BG1149",
+          "BG1150",
+          "BG1151",
+          "BG1152",
+          "BG1153",
+          "BG1154",
+          "BG1155",
+          "BG1156",
+          "BG1157",
+          "BG1158",
+          "BG1159",
+          "BG1161",
+          "BG1162",
+          "BG1164",
+          "BG1165",
+          "BG1168",
+          "BG1169",
+          "BG1170",
+          "BG1171",
+          "BG1172",
+          "BG1173",
+          "BG1174",
+          "BG1175",
+          "BG1177",
+          "BG1178",
+          "BG1179",
+          "BG1180",
+          "BG1181",
+          "BG1182",
+          "BG1184",
+          "BG1185",
+          "BG1186",
+          "BG1188",
+          "BG1189",
+          "BG1190",
+          "BG1191",
+          "BG1192",
+          "BG1193",
+          "BG1194",
+          "BG1195",
+          "BG1196",
+          "BG1198",
+          "BG1199",
+          "BG1200",
+          "BG1201",
+          "BG1202",
+          "BG1203",
+          "BG1204",
+          "BG1205",
+          "BG1206",
+          "BG1207",
+          "BG1208",
+          "BG1209",
+          "BG1211",
+          "BG1213",
+          "BG1214",
+          "BG1215",
+          "BG1217",
+          "BG1218",
+          "BG1219",
+          "BG1220"
+        ]
+      },
+      "recorded_at": "2026-11-04T20:30:18Z"
+    }
+  ],
+  "close_tree": "746386d695aaef353bb06143e79951b579c19803",
+  "report_gate_clear": [
+    "BG0958",
+    "BG1090",
+    "BG1114",
+    "BG1116",
+    "BG1122",
+    "BG1147",
+    "BG1160",
+    "BG1163",
+    "BG1167",
+    "BG1183",
+    "BG1187",
+    "BG1197",
+    "BG1210",
+    "BG1212",
+    "BG1216",
+    "US0989",
+    "US0990",
+    "US0991",
+    "US1112",
+    "US1113",
+    "US1114",
+    "US1115",
+    "US1116"
+  ],
+  "verified_sha": "778187c1dfa62b9f1cfa113cbbf8c16ea42370e6",
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-11-03T11:23:48Z",
+        "databaseId": 41627174372,
+        "event": "push",
+        "headBranch": "main",
+        "headSha": "a062cf7a552ee12602f120b59f51839cbfe97ae2",
+        "updatedAt": "2026-11-03T11:57:07Z",
+        "workflowName": "Lint"
+      }
+    ]
+  },
+  "review_rows": {
+    "BG0958": [
+      "34cde7c2873a8fd4"
+    ],
+    "BG1090": [
+      "64fbf88355121733"
+    ],
+    "BG1114": [
+      "f45f3648ff26f485"
+    ],
+    "BG1116": [
+      "05e4731d57a922f5",
+      "b98e90ec15121f3f"
+    ],
+    "BG1122": [
+      "a5cf7815581b1bee"
+    ],
+    "BG1147": [
+      "6a19392e7764984c"
+    ],
+    "BG1160": [
+      "ec460175eda4812f"
+    ],
+    "BG1163": [
+      "f4f5b4d7d0c73ad2",
+      "9a4eb52c53a5cd0e"
+    ],
+    "BG1167": [
+      "8473b7faaf139ab2",
+      "5f4f2e4a84d15269"
+    ],
+    "US1112": [
+      "bdae7970034a8f07",
+      "276ec09a763a45a7"
+    ],
+    "US1113": [
+      "5443b40c346362e8",
+      "e50bf5413ac08160"
+    ],
+    "US1114": [
+      "8a8ffb4a9974e594"
+    ],
+    "US1115": [
+      "b10816093367b47b"
+    ],
+    "US1116": [
+      "7e9fecb4ff493ba7"
+    ],
+    "BG1183": [
+      "6e28f651d17767fc",
+      "74f2f37ef9c7aec1"
+    ],
+    "BG1187": [
+      "b028545aa4737ff8"
+    ],
+    "US0986": [
+      "da95a804542ca3a2",
+      "14ee02a6ab709522"
+    ],
+    "US0989": [
+      "9bc358d1059f32a6"
+    ],
+    "US0990": [
+      "e4788b613b2aae72",
+      "b1959f73135bfde7"
+    ],
+    "US0991": [
+      "6abd83a3ed18c8f8"
+    ],
+    "BG1197": [
+      "cc982f6416ca260f"
+    ],
+    "BG1210": [
+      "84d37bfc98f48240"
+    ],
+    "BG1212": [
+      "611d2b8172f9b64b"
+    ],
+    "BG1216": [
+      "bb2d16d6b08845aa"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0024",
+  "report_fingerprint": "08b8c66ce7ccbe19",
+  "report_window_end": "2026-11-04T20:35:24Z"
+}

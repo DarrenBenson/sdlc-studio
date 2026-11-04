@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-04
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0456: Measure the run's priced cost at each wave, not only at the close: the operator's 1M-per-point norm was missed by three times before anyone…
+
+- **Added:** 2026-11-04
+- **Review-by:** 2027-02-02
+
+Measure the run's priced cost at each wave, not only at the close: the operator's 1M-per-point norm was missed by three times before anyone measured it.
+
+Recorded from retro RETRO0138.
+
+## L-0455: Before landing any change to a PRD or TSD NFR, run tools/tests/test_lean_prd_refresh.py and test_lean_tsd_refresh.py together: a…
+
+- **Added:** 2026-11-04
+- **Review-by:** 2027-02-02
+
+Before landing any change to a PRD or TSD NFR, run tools/tests/test_lean_prd_refresh.py and test_lean_tsd_refresh.py together: a one-paragraph PRD fix (BG1210) broke the TSD test (BG1216).
+
+Recorded from retro RETRO0138.
+
+## L-0454: Run builders' test passes and commit hooks on the gate host (CR0661), so parallel lanes stop competing for four local cores
+
+- **Added:** 2026-11-04
+- **Review-by:** 2027-02-02
+
+Run builders' test passes and commit hooks on the gate host (CR0661), so parallel lanes stop competing for four local cores.
+
+Recorded from retro RETRO0138.
 
 ## L-0453: Start `sprint.py close --dry-run` as soon as the last unit enters review: the first one here was stopped at 20 minutes without printing a…
 

@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0456: Measure the run's priced cost at each wave, not only at the close: the operator's 1M-per-point norm was missed by three times before anyone…**
+- **L-0455: Before landing any change to a PRD or TSD NFR, run tools/tests/test_lean_prd_refresh.py and test_lean_tsd_refresh.py together: a…**
+- **L-0454: Run builders' test passes and commit hooks on the gate host (CR0661), so parallel lanes stop competing for four local cores**
 - **L-0453: Start `sprint.py close --dry-run` as soon as the last unit enters review: the first one here was stopped at 20 minutes without printing a…**
 - **L-0452: Until BG1167 is fixed, re-derive `critic.tier_for` for every closed light-tier unit that declares a file the landing unit changes, and…**
 - **L-0451: Before landing a unit that adds a test module or a git call, run test_gitutil.py's sweep and the modules that enumerate tests, in a clone…**
