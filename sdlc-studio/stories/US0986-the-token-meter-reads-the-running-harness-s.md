@@ -1,6 +1,6 @@
 # US0986: The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new

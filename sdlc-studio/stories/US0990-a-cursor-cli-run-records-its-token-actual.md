@@ -1,6 +1,6 @@
 # US0990: A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new

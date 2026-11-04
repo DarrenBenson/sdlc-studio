@@ -1,6 +1,6 @@
 # US0991: The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new

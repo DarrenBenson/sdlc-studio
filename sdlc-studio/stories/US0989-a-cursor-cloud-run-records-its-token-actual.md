@@ -1,6 +1,6 @@
 # US0989: A Cursor cloud run records its token actual from the usage API when a key is present
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
