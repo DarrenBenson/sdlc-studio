@@ -400,6 +400,19 @@ def _named_routes(text: str) -> set[tuple[str, str | None]]:
     return out
 
 
+def _strict_stop_follows_the_close(source: str) -> bool:
+    """BG1163 r2: whether `cmd_boundary` in `source` reads its `--strict` branch only below every
+    `run_state.close_run` it makes, so a drift stop meets a record the cycle's close has closed
+    and `_boundary_stop`, which closes only a record still running, leaves its outcome."""
+    fn = next(n for n in ast.parse(source).body
+              if isinstance(n, ast.FunctionDef) and n.name == "cmd_boundary")
+    closes = [c.lineno for c in ast.walk(fn) if isinstance(c, ast.Call)
+              and isinstance(c.func, ast.Attribute) and c.func.attr == "close_run"]
+    strict = [n.lineno for n in ast.walk(fn)
+              if isinstance(n, ast.If) and _flag_read(n.test) == "strict"]
+    return bool(closes and strict) and max(closes) < min(strict)
+
+
 def _unnamed_close_routes(body: str) -> set[tuple[str, str | None]]:
     """The routes reaching `run_state.close_run` that the TRD's run lifecycle does not name."""
     return _routes_reaching("close_run") - _named_routes(_section(body, "The run lifecycle"))
@@ -550,6 +563,21 @@ class TrdStorageTests(unittest.TestCase):
         for label in ("Live record", "Tracked record"):
             with self.subTest(label=label):
                 self.assertTrue(any(f.startswith(f"{label}: ") for f in failures), failures)
+
+    def test_a_strict_drift_stop_keeps_the_cycle_close_outcome(self) -> None:
+        """BG1163 r2. The fragment said origin drift under `--strict` ends the run `blocked`;
+        the drift check runs after the cycle's close has closed the record, so the run keeps
+        that close's outcome, and the TRD says a stop closes `blocked` only a record still
+        running. MUTANT: the `--strict` branch read above the cycle's `close_run`. The control
+        is `sprint.py`; the near miss a handler checking drift first."""
+        self.assertTrue(_strict_stop_follows_the_close(_read(SCRIPTS / "sprint.py")))
+        first = ("def cmd_boundary(args):\n"
+                 "    if getattr(args, 'strict', False):\n"
+                 "        return _boundary_stop(root, 'origin-drift', '', '')\n"
+                 "    run_state.close_run(root, run_state.STOPPED)\n")
+        self.assertFalse(_strict_stop_follows_the_close(first))
+        self.assertIn("closing a record still running `blocked`",
+                      " ".join(_section(_trd_body(), "The run lifecycle").split()))
 
     def test_the_tier_does_not_depend_on_what_local_is(self) -> None:
         """BG1166. Each Run state path gets the same tier from `_ignored` whether `.local` is a
