@@ -267,9 +267,9 @@ built to avoid.
 Three habits go with it, each cheap and each learned the expensive way:
 
 - **Run the full suite at the push boundary, never push on a filtered subset.** Let a commit
-  run the test modules its change selects, and run the whole suite before each push
-  (`gate.py --boundary push`, or the project's own pre-push hook). Two commits in one sprint
-  would otherwise have landed 17 and 27 failures.
+  run the tests its change reaches, and run the project's own full test command before each
+  push, from a pre-push hook or by hand. Two commits in one sprint would otherwise have landed
+  17 and 27 failures.
 - **A test that has not been seen red is not evidence.** See
   `best-practices/testing.md#name-the-mutant-first`.
 - **On a REPAIR, the review asks to see it red.** A fix's author is not sufficient evidence
