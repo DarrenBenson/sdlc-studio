@@ -2813,13 +2813,24 @@ def _lane_hand_in_files(uid: str) -> tuple[str, str]:
 
 def _hand_in_self_check(text: str | None, uid: str) -> str | None:
     """`critic.author_self_check`'s section with every line naming `self-check record` replaced
-    by the hand-in files: the builder writes its two passes there and does not record them, so
-    the brief never tells it to. Every other line is critic's own, so the steps cannot drift."""
+    by the hand-in files, its "Record both" step read as handing both in, and its CLAIMS.json and
+    MUTANTS.json placeholders named as the hand-in files: the builder writes its two passes there
+    and does not record them, so the brief never tells it to. Every other line is critic's own."""
     if not text:
         return text
     claims, mutants = _lane_hand_in_files(uid)
     note = f"   Write them to {claims} and {mutants}; do not record them yourself."
-    return "\n".join(note if "self-check record" in ln else ln for ln in text.splitlines())
+    names = {"CLAIMS.json": claims.rsplit("/", 1)[-1], "MUTANTS.json": mutants.rsplit("/", 1)[-1]}
+    out = []
+    for ln in text.splitlines():
+        if "self-check record" in ln:
+            out.append(note)
+            continue
+        ln = ln.replace("Record both", "Hand both in", 1)
+        for placeholder, name in names.items():
+            ln = ln.replace(placeholder, name)
+        out.append(ln)
+    return "\n".join(out)
 
 
 def _lane_budget_line(uid: str, points: int | None) -> str:
@@ -8971,13 +8982,26 @@ def cmd_lane(args: argparse.Namespace) -> int:
     whose acceptance criteria cannot be read. `return` runs a unit's own criteria and prints the
     outcome, which is `blocked` whenever a criterion is red, unresolved or unspecified, whatever
     the lane claimed. Exit 2 on a refusal, 1 on a blocked return - so a wrapper script cannot
-    treat either as a delivery. `land` commits a builder's staged worktree and lands it; its
-    steps and exit statuses are `lib/lanes.py`'s.
+    treat either as a delivery. `land` commits a builder's staged worktree and lands it, and
+    `accept` records its reviewer's verdict and on an APPROVE verifies, moves and returns it;
+    the steps and exit statuses of both are `lib/lanes.py`'s.
     """
     if args.action == "land":
         from lib import lanes  # noqa: PLC0415 - only the landing needs it
         return lanes.land(args.root, getattr(args, "worktree", None),
                           getattr(args, "units", None) or [], getattr(args, "author", None))
+    if args.action == "accept":
+        from lib import lanes  # noqa: PLC0415 - only the accept needs it
+        # handed to the `lane return` an APPROVE ends with, exactly as given here
+        passthrough = [arg for flag, value in (("--agent", args.agent), ("--tokens", args.tokens),
+                                               ("--minutes", args.minutes))
+                       if value is not None for arg in (flag, str(value))]
+        for flag, values in (("--proof", args.proof), ("--gap", args.gap)):
+            passthrough += [arg for value in values or [] for arg in (flag, value)]
+        return lanes.accept(args.root, getattr(args, "unit", None),
+                            getattr(args, "verdict", None), getattr(args, "reviewer", None),
+                            _SIGNOFF_TERMINAL, author=getattr(args, "author", None),
+                            timeout=args.timeout, passthrough=passthrough)
     root = Path(args.root)
     units = _lane_unit_ids(args)
     if not units:
@@ -12510,40 +12534,50 @@ def build_parser() -> argparse.ArgumentParser:
         help="Dispatch and close ONE delegated unit of delivery. `brief` prints what each lane "
              "is held to (its acceptance criteria, its Affects, the engineering seat card, the "
              "history of its files, the proof its unit owes, the standing obligations, the "
-             "carried lessons, the author self-check and the commands that run its criteria, "
-             "record the self-check and commit it) and REFUSES a unit whose criteria are absent "
+             "carried lessons, the author self-check, the commands that run its criteria and "
+             "the hand-in it stages for `land`) and REFUSES a unit whose criteria are absent "
              "or a placeholder. `return` runs the unit's own criteria and reports blocked on a "
              "red, unresolved or unspecified one, carrying the verifier's own output. `land` "
              "commits a builder's staged worktree through the hooks, rebases it onto the root's "
              "branch, fast-forwards that branch, removes the worktree, then records each unit's "
-             "self-check and writes its QA brief.")
-    ln.add_argument("action", choices=("brief", "return", "land"))
+             "self-check and writes its QA brief. `accept` records the reviewer's verdict "
+             "against that brief and, on an APPROVE, runs the criteria, moves the unit to Done "
+             "or Fixed and returns its lane.")
+    ln.add_argument("action", choices=("brief", "return", "land", "accept"))
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
     ln.add_argument("--claimed", default="fixed",
                     help="(return) what the lane believes it achieved; the criteria may refuse it")
     ln.add_argument("--proof", action="append", default=None, metavar="BAND=EVIDENCE",
-                    help="(return) evidence discharging an assigned proof obligation; repeatable")
+                    help="(return, accept) evidence discharging an assigned proof obligation; repeatable")
     ln.add_argument("--gap", action="append", default=None, metavar="BAND=WHY",
-                    help="(return) why an assigned obligation could NOT be discharged; repeatable")
+                    help="(return, accept) why an assigned obligation could NOT be discharged; repeatable")
     ln.add_argument("--tokens", type=_lane_positive_int, default=None, metavar="N",
-                    help="(return) the builder agent's OWN reported token total, recorded as a "
+                    help="(return, accept) the builder agent's OWN reported token total, recorded as a "
                          "delegated total tagged to the unit; optional")
     ln.add_argument("--minutes", type=_lane_positive_minutes, default=None, metavar="M",
-                    help="(return) the builder agent's own reported minutes, recorded with "
+                    help="(return, accept) the builder agent's own reported minutes, recorded with "
                          "--tokens; optional")
     ln.add_argument("--agent", default=None, metavar="ID",
-                    help="(return) the builder agent's id: its transcript agent-ID.jsonl in this "
+                    help="(return, accept) the builder agent's id: its transcript agent-ID.jsonl in this "
                          "session's subagents directory is read once per message and its priced "
                          "cost recorded on the unit's delegated record; optional")
     ln.add_argument("--timeout", type=int, default=300,
-                    help="(return) per-verifier timeout in seconds (default: 300)")
+                    help="(return, accept) per-verifier timeout in seconds (default: 300)")
     ln.add_argument("--worktree", default=None,
                     help="(land) the builder's worktree, holding its staged change and the "
                          "hand-in files under sdlc-studio/.local/lane/")
     ln.add_argument("--author", default=None,
                     help="(land) the author each self-check is recorded under (default: the "
-                         "worktree's directory name)")
+                         "worktree's directory name); (accept) the author the verdict names (default: "
+                         "the author of the unit's latest recorded self-check)")
+    ln.add_argument("--unit", default=None,
+                    help="(accept) the unit whose verdict is recorded; its QA brief is the one "
+                         "lane land wrote to sdlc-studio/.local/briefs/<unit>-qa.txt")
+    ln.add_argument("--verdict", default=None, metavar="FILE",
+                    help="(accept) the reviewer's returned VERDICT/ISSUES/BLOCKING block")
+    ln.add_argument("--reviewer", default=None,
+                    help="(accept) the reviewer the verdict is recorded under")
     ln.add_argument("--format", choices=("text", "json"), default="text")
     ln.add_argument("--root", default=".", help="Repo root (default: .)")
     ln.set_defaults(func=cmd_lane)

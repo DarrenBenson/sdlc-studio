@@ -14,6 +14,7 @@ lane's script is a stub that passes, so the only lane that can refuse is the one
 gate stub notes each `--suite-decision` call in a marker file: the suites are decided after the
 cheap lanes, so a refusal that leaves no marker was made before any suite was decided or run.
 """
+# test-census-subject: .githooks/pre-commit
 from __future__ import annotations
 
 import os

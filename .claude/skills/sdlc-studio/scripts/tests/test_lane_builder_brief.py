@@ -154,9 +154,10 @@ class BuilderBriefTests(_Isolated):
         root = _project(self._tmp.name)
         real = critic.author_self_check(root, "US0102")
         out = _brief(root, "US0102")
-        # Verbatim but for the record line: US1120 hands the record to `sprint lane land`.
+        # Verbatim but for the hand-in rewrite: US1120 hands the record to `sprint lane land`.
         after = 0
-        for ln in (ln for ln in real.splitlines() if "self-check record" not in ln):
+        for ln in (ln for ln in sprint._hand_in_self_check(real, "US0102").splitlines()
+                   if "do not record them yourself" not in ln):
             after = out.index(ln, after) + len(ln)
         self.assertNotIn("self-check record", out)
         record = "sdlc-studio/.local/lane/US0102-claims.json"

@@ -21,6 +21,8 @@ import tempfile
 import time
 import unittest
 import unittest.mock
+
+import pytest
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent.parent
@@ -163,6 +165,8 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertEqual(probes, [pgid] * 3)
         self.assertReaped()
 
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_the_group_is_killed_outright_and_the_verdict_follows_at_once(self) -> None:
         """A verifier that ignores SIGTERM still dies at its ceiling, and the verdict does not
         wait out the 2 s grace. Mutants: SIGTERM sent in place of SIGKILL (the shell and its
@@ -175,6 +179,8 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertEqual((res.ok, res.exit_code, res.stderr), (False, 124, "timeout"))
         self.assertLess(elapsed, 2.5)
 
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_without_killpg_the_timeout_still_reads_red(self) -> None:
         """Where `os.killpg` does not exist the verifier alone is killed. Mutant: the
         `hasattr(os, "killpg")` branch removed; the AttributeError then escapes as a crash

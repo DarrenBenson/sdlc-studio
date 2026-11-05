@@ -585,6 +585,21 @@ and its files named. Exit 2 is a refusal before anything was committed, 1 a land
 stopped or a unit left unbriefed. Re-run it after a repair: a committed branch is not committed
 twice.
 
+Once the reviewer answers that brief, one command finishes the unit:
+
+```bash
+python3 <skill>/scripts/sprint.py lane accept --unit US0123 --verdict <file> --reviewer <name> --agent <id>
+```
+
+`lane accept` records the verdict with `critic.py record` against the saved brief's fingerprint
+and the tier `critic.py brief` noted for it, under the author of the unit's latest self-check
+unless `--author` names one. On an APPROVE it runs `verify_ac.py run`, moves a story to Done or a
+bug to Fixed, and calls `lane return`, passing `--agent`, `--tokens`, `--minutes`, `--proof` and
+`--gap` through. A REJECT moves nothing and prints the round and the BLOCKING findings, plus the
+carrying bug's id at the review cap. A red criterion leaves the unit where it was, named in the
+verifier's output. Exit 2 is a refusal before anything was recorded, 1 a unit not moved or a
+non-zero return, 0 a unit moved and returned.
+
 The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress
 keeps the span it has) and a passing `lane return` closes it, so the sprint report states the
 unit's minutes and tokens over that span. A blocked return leaves the span open. A lane briefed

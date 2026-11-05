@@ -35,6 +35,7 @@ Read this at plan time. `sprint plan` prints it.
 | Wait for the builder | its completion notification | polling its output or sleeping |
 | Accept its return | `sprint.py lane return --units <id>` | reading the builder's diff or transcript into the orchestrating context |
 | Land a builder's staged worktree | `sprint.py lane land --worktree <path> --units <id>`: commits through the hooks, rebases, fast-forwards, removes the worktree, records each self-check and writes each QA brief | committing, rebasing and briefing by hand, or paying the hook's minutes in an agent's context |
+| Finish a reviewed unit | `sprint.py lane accept --unit <id> --verdict <file> --reviewer <name>`: records the verdict against the saved brief; on an APPROVE runs the criteria, moves the unit to Done or Fixed and returns its lane | four hand-run commands, or a script reading the fingerprint and tier out of the brief's footer |
 | Allocate an id | `next_id.py allocate --type <type>` | reading `_index.md` for the highest |
 | Create an artefact | `artifact.py new --type <t> --fields-file <doc>` | writing the markdown by hand |
 | Run the criteria | `verify_ac.py run --id <id>` | claiming they pass |

@@ -247,7 +247,7 @@ inference.
 
 So the obligations travel with the DISPATCH. The dispatch attaches them to every brief it issues,
 from one shared definition, with nowhere in its signature for a caller to substitute its own -
-every lane is held to the same four whoever wrote that sprint's brief. A project writing its own
+every lane is held to the same five whoever wrote that sprint's brief. A project writing its own
 harness inherits them by carrying this list into its dispatch, rather than by rediscovering them
 through the incident that bought each one:
 
@@ -263,6 +263,9 @@ through the incident that bought each one:
 4. **Bound the repair.** A repair answering a REJECT carries only the blocking findings and the
    pins that kill them, and files the rest. A repair that widens past its findings breaks what the
    first build got right.
+5. **Land on main.** Land the unit on `main`: open no PR and push no branch, fast-forwarding a
+   local worktree onto `main` within the lane, unless `release_strategy` is `pr-required`.
+   sdlc-studio integrates continuously; the review and push gates replace a PR's review.
 
 The dispatch enforces the first of them itself rather than passing the judgement down: a unit
 whose contract cannot be READ never reaches a lane, and the refusal names the unit and what is

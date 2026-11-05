@@ -244,6 +244,12 @@ grep -qE '^\.claude/skills/sdlc-studio/(reference-[^/]*\.md$|help/)' <<<"$docgen
 if [ -n "$docgen_verbs" ] && [ ! -f "$skill/docgen.py" ]; then
   docgen_verbs=""
   docgen_skip="no $skill/docgen.py in this tree"
+elif [[ " $docgen_verbs " == *" surface "* ]] && [ ! -f "$skill/../reference-scripts-surface.md" ]; then
+  # a tree with docgen.py but no generated surface page, such as a hook-test fixture, has no page
+  # for `surface --check` to compare; the other checks still run
+  docgen_verbs="${docgen_verbs/surface/}"
+  docgen_skip="no reference-scripts-surface.md in this tree"
+  docgen_partial=1
 fi
 # budgets_lane -- COMMAND...: the budget check, then each docgen check the staged paths call for.
 budgets_lane() {
@@ -263,7 +269,7 @@ run "budgets" \
   "each reference-*.md stays under its declared line ceiling (keeps load cost bounded), and the generated docs match the tree: docgen surface --check when a skill script is staged, docgen references --check and reading-guides --check when a reference-*.md or help/ file is staged" \
   "for a ceiling, shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment); for docgen drift, regenerate, then stage what it rewrote: python3 $skill/docgen.py surface && python3 $skill/docgen.py references && python3 $skill/docgen.py reading-guides" \
   -- budgets_lane -- python3 tools/check_budgets.py
-[ -n "$docgen_verbs" ] \
+{ [ -n "${docgen_verbs// /}" ] && [ -z "${docgen_partial:-}" ]; } \
   || lane budgets printf '  %snote%s budgets - docgen checks skipped: %s\n' "$Y" "$N" "$docgen_skip"
 
 run "neutrality" \

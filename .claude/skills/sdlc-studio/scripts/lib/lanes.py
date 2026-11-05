@@ -24,9 +24,17 @@ place, and a unit whose self-check or brief is refused is named while the others
 
 Exit 2 is a refusal before anything was committed, 1 a landing that stopped part way or a unit
 whose self-check or brief was not written, 0 a landed lane with every unit briefed.
+
+`sprint lane accept` finishes the unit once its reviewer has answered that brief: it records the
+verdict file with `critic.py record` against the brief's fingerprint and tier, and on an APPROVE
+runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its lane with
+`sprint.py lane return`, each through its own entry point. Exit 2 is a refusal before anything
+was recorded, 1 a verdict recorded and the unit not moved (a REJECT, a red criterion or a
+refused transition) or a return that exited non-zero, 0 a unit moved and its lane returned.
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -39,7 +47,8 @@ HAND_IN = Path("sdlc-studio") / ".local" / "lane"
 LANDED = HAND_IN / "landed"
 BRIEFS = Path("sdlc-studio") / ".local" / "briefs"
 COMMIT_MSG = "commit-msg.txt"
-CRITIC = Path(__file__).resolve().parent.parent / "critic.py"
+SCRIPTS = Path(__file__).resolve().parent.parent
+CRITIC = SCRIPTS / "critic.py"
 #: The commit runs the repository's hooks, which may run test suites: minutes, not seconds.
 COMMIT_TIMEOUT = 1800
 GIT_TIMEOUT = 120
@@ -243,4 +252,142 @@ def land(root: Path | str, worktree: Path | str | None, units: list[str],
         return _land(Path(root), Path(worktree), units, author)
     except LandError as exc:
         _say(f"sprint lane land: {exc}", err=True)
+        return exc.code
+
+
+def _script(root: Path, script: str, *args: str,
+            timeout: int = COMMIT_TIMEOUT) -> subprocess.CompletedProcess:
+    """A sibling script through its own entry point, the command an operator would run by hand.
+    A run past `timeout` is a LandError: what it did by then is unknown, so nothing follows."""
+    try:
+        return subprocess.run([sys.executable, str(SCRIPTS / script), *args, "--root", str(root)],
+                              cwd=str(root), capture_output=True, text=True, timeout=timeout,
+                              check=False)
+    except subprocess.TimeoutExpired:
+        raise LandError(f"`{script} {' '.join(args[:2])}` ran past {timeout}s and was stopped, "
+                        f"so nothing after it ran") from None
+
+
+def _brief_of(root: Path, unit: str) -> tuple[str, str]:
+    """The fingerprint and tier of the QA brief `lane land` wrote for `unit`. The fingerprint is
+    hashed from the saved text as `critic.py record --brief-file` hashes a first-round brief; the
+    tier is the one `critic.py brief` noted beside that fingerprint when it printed the brief."""
+    import critic  # noqa: PLC0415 - sibling; only accept needs it
+    rel = BRIEFS / f"{unit}-qa.txt"
+    try:
+        fp = critic.brief_fingerprint((root / rel).read_text(encoding="utf-8"))
+    except OSError:
+        raise LandError(f"no QA brief at {rel}: `sprint lane land` writes it when it lands the "
+                        f"unit, and the verdict is recorded against that brief", 2) from None
+    uid, tier = sdlc_md.norm_id(unit), None
+    try:
+        notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        notes = ""
+    for line in notes.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get("unit") == uid and row.get("fp") == fp:
+            tier = row.get("tier") or tier
+    if not fp or not tier:
+        raise LandError(f"{rel} hashes to fingerprint {fp or 'NONE'}, and no note in "
+                        f"{critic.BRIEF_NOTES_REL} records the review tier of a brief with that "
+                        f"fingerprint, so the verdict would be recorded at no known depth. "
+                        f"Re-run `critic.py brief --unit {unit} --seat qa` and save it there", 2)
+    return fp, tier
+
+
+def _blocking(verdict_text: str) -> list[str]:
+    """The findings the verdict's BLOCKING section names, as `critic.py record` folds them."""
+    import critic  # noqa: PLC0415 - sibling; only accept needs it
+    try:
+        _, issues = critic.parse_verdict_block(verdict_text)
+    except ValueError:
+        return []
+    return [item.strip() for item in critic.split_items(issues)
+            if re.match(r"\s*BLOCKING\s*:", item, re.I)]
+
+
+def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | None,
+            terminal: dict[str, str], timeout: int, passthrough: list[str]) -> int:
+    import critic  # noqa: PLC0415 - sibling; only accept needs it
+    found = sdlc_md.find_by_id(root, unit)
+    if not found:
+        raise LandError(f"no artefact with id {unit}", 2)
+    target = terminal.get(found[1])
+    if not target:
+        raise LandError(f"{unit} is a {found[1]}: lane accept moves only a "
+                        f"{' or a '.join(sorted(terminal))}", 2)
+    try:
+        said = verdict.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise LandError(f"the verdict file cannot be read: {exc}", 2) from None
+    fp, tier = _brief_of(root, unit)
+    if not author:
+        # the author lane land recorded the unit's self-check under, the latest one
+        uid = sdlc_md.norm_id(unit)
+        author = next((row["author"] for row in reversed(critic.read_self_checks(root))
+                       if sdlc_md.norm_id(row["unit"]) == uid
+                       and row["author"].strip() not in ("", "-")), None)
+    if not author:
+        raise LandError(f"name --author: {unit} has no recorded self-check to name its author, "
+                        f"and a verdict is recorded against the author it reviews", 2)
+    rec = _script(root, "critic.py", "record", "--unit", unit, "--from-verdict", str(verdict),
+                  "--reviewer", reviewer, "--author", author, "--brief", fp, "--tier", tier, timeout=CRITIC_TIMEOUT)
+    if rec.returncode:
+        raise LandError(f"`critic.py record` exited {rec.returncode}, so {unit} was not moved:"
+                        f"\n{_tail(rec.stderr + rec.stdout)}", rec.returncode)
+    row = re.search(r"^recorded \S+ (APPROVE|REJECT) \[delivery\](?: round (\d+))?",
+                    rec.stdout, re.M)
+    if not row:
+        raise LandError(f"`critic.py record` printed no recorded row, so {unit} was not "
+                        f"moved:\n{_tail(rec.stdout)}")
+    rnd = row.group(2) or "UNKNOWN"
+    if row.group(1) == critic.REJECT:
+        _say(f"{unit}: REJECT recorded, round {rnd}; nothing was moved")
+        for item in _blocking(said) or ["no finding is marked BLOCKING"]:
+            _say(f"  {item}")
+        carried = re.search(re.escape(critic.CARRIED_REASON) + r": (\S+)", rec.stdout)
+        if carried:
+            _say(f"  {unit} {critic.CARRIED_REASON}: {carried.group(1)} carries it")
+        return 1
+    _say(f"{unit}: APPROVE recorded, round {rnd}, against brief {fp} at the {tier} tier")
+    ran = _script(root, "verify_ac.py", "run", "--id", unit, "--timeout", str(timeout))
+    if ran.returncode:
+        _say(f"{unit}: NOT moved to {target}: `verify_ac.py run` exited {ran.returncode}, so a "
+             f"criterion is not green:\n{_tail(ran.stdout + ran.stderr)}", err=True)
+        return 1
+    moved = _script(root, "transition.py", "set", "--id", unit, "--status", target)
+    if moved.returncode:
+        _say(f"{unit}: NOT moved to {target}: `transition.py set` exited {moved.returncode}:"
+             f"\n{_tail(moved.stderr + moved.stdout)}", err=True)
+        return 1
+    _say(f"{unit}: moved to {target}")
+    back = _script(root, "sprint.py", "lane", "return", "--units", unit, "--claimed",
+                   f"{target} on an independent APPROVE (round {rnd})", "--timeout",
+                   str(timeout), *passthrough)
+    if back.stdout.strip():
+        _say(back.stdout.rstrip())
+    if back.stderr.strip():
+        _say(back.stderr.rstrip(), err=True)
+    return 1 if back.returncode else 0
+
+
+def accept(root: Path | str, unit: str | None, verdict: Path | str | None,
+           reviewer: str | None, terminal: dict[str, str], author: str | None = None,
+           timeout: int = 300, passthrough: list[str] | None = None) -> int:
+    """Record one unit's verdict and, on an APPROVE, verify, move and return it; the exit status.
+    `terminal` maps each type lane accept moves to its status; `passthrough` is the argv handed
+    to `sprint.py lane return` as given."""
+    try:
+        for flag, value in (("--unit", unit), ("--verdict", verdict), ("--reviewer", reviewer)):
+            if not value or not str(value).strip():
+                raise LandError(f"name {flag}: the verdict is recorded against the unit, from "
+                                f"the reviewer's returned block, under the reviewer's name", 2)
+        return _accept(Path(root).resolve(), str(unit).strip(), Path(verdict).resolve(),
+                       str(reviewer).strip(), author, terminal, timeout, passthrough or [])
+    except LandError as exc:
+        _say(f"sprint lane accept: {exc}", err=True)
         return exc.code

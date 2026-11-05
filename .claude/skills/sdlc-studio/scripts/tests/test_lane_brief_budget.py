@@ -20,6 +20,7 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -36,6 +37,7 @@ from lib import run_state, sdlc_md  # noqa: E402
 # parents: [0] tests [1] scripts [2] the shipped skill.
 SKILL = Path(__file__).resolve().parents[2]
 TEMPLATE = SKILL / "reference-agent-prompt-template.md"
+SPRINT = SKILL / "scripts" / "sprint.py"
 BATCH = ("US0101", "US0102")
 POINTS = {"US0101": 1, "US0102": 5}
 AFFECTS = {"US0101": "src/other.py, tests/test_other.py, changelog.d/US0101.md",
@@ -115,10 +117,11 @@ class LaneBriefBudgetTests(unittest.TestCase):
         self.assertIn("sprint lane land", stops[0])
         for sweep in ("git add -A", "git add .", "git add --all"):
             self.assertNotIn(sweep, out)
-        # The self-check stays critic's own text, every line but the record command kept.
-        real = critic.author_self_check(self.root, "US0102").splitlines()
-        self.assertTrue(any("self-check record" in ln for ln in real), "premise: critic says it")
-        kept = [ln for ln in real if "self-check record" not in ln]
+        # The self-check stays critic's own text, but for the hand-in rewrite of its record step.
+        real = critic.author_self_check(self.root, "US0102")
+        self.assertIn("self-check record", real, "premise: critic says it")
+        kept = [ln for ln in _live("sprint")._hand_in_self_check(real, "US0102").splitlines()
+                if "do not record them yourself" not in ln]
         at = 0
         for ln in kept:
             at = out.index(ln, at) + len(ln)
@@ -155,9 +158,25 @@ class LaneBriefBudgetTests(unittest.TestCase):
         rule = " ".join(paras[0].split())
         self.assertRegex(rule, r"(?i)\brepair\b")
         self.assertRegex(rule, r"(?i)second build")
-        self.assertRegex(rule, r"(?i)resumes? (its|the) builder only (while|below)[^.]*\d+k")
+        self.assertRegex(rule, r"(?i)resumes? (its|the) builder only (while [^.]*?)?below \d+k")
+        self.assertNotRegex(rule, r"(?i)\b(above|exceeds|over) \d+k")
         self.assertRegex(rule, r"(?i)otherwise[^.]*fresh builder[^.]*hand-off note")
 
+
+    def test_the_self_check_section_hands_in_rather_than_records(self) -> None:
+        """MUTANTS: the hand-in rewrite leaves critic's "Record both" step, or the CLAIMS.json and
+        MUTANTS.json placeholders, so the section tells the builder to record what it must only
+        hand in; `lane --help` still says the brief carries the record and commit commands."""
+        out = _brief(self.root, "US0101")
+        section = out[out.index("AUTHOR SELF-CHECK"):out.index("Then, for US0101")]
+        self.assertNotIn("Record both", section)
+        self.assertNotIn("CLAIMS.json", section)
+        self.assertNotIn("MUTANTS.json", section)
+        self.assertIn("US0101-claims.json", section)
+        self.assertIn("US0101-mutants.json", section)
+        lane_help = subprocess.run([sys.executable, str(SPRINT), "lane", "--help"],
+                                   capture_output=True, text=True, check=False).stdout
+        self.assertNotIn("record the self-check and commit it", " ".join(lane_help.split()))
 
 if __name__ == "__main__":
     unittest.main()
