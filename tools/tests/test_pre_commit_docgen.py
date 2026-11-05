@@ -17,7 +17,6 @@ cheap lanes, so a refusal that leaves no marker was made before any suite was de
 # test-census-subject: .githooks/pre-commit
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
 import tempfile
@@ -47,20 +46,25 @@ def _tiny(verbs: tuple[str, ...]) -> str:
             f"{adds}    return p\n")
 
 
-#: See tools/tests/test_skill_tests_env.py - every fixture module that shells out to git
-#: carries this list, and that module holds them all to one definition.
-_GIT_ENV_VARS = (
-    "GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_INDEX_VERSION",
-    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE",
-    "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_PREFIX",
-)
+def _load_gitutil():
+    """The shipped git-fixture helper, whose `git_env` confines every git call here to the
+    fixture. Loaded rather than re-implemented, so this module carries no second copy of the
+    repo-locating list for `tools/tests/test_skill_tests_env.py` to pin."""
+    import importlib.util
+    import sys
+    path = REPO / ".claude/skills/sdlc-studio/scripts/tests/gitutil.py"
+    spec = importlib.util.spec_from_file_location("_pre_commit_docgen_gitutil", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+gitutil = _load_gitutil()
 
 
 def _clean_env() -> dict:
-    env = dict(os.environ)
-    for var in _GIT_ENV_VARS:
-        env.pop(var, None)
-    return env
+    return gitutil.git_env()
 
 
 def _git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
@@ -250,7 +254,7 @@ class DocgenLaneTests(unittest.TestCase):
     def test_list_names_both_checks_under_budgets(self) -> None:
         """MUTANT: the budgets rule text is left naming only the line ceiling."""
         r = subprocess.run([str(HOOK), "--list"], capture_output=True, text=True,
-                           env=_clean_env())
+                           cwd=self.root, env=_clean_env())
         rules = dict(line.split("\t", 1) for line in r.stdout.splitlines() if "\t" in line)
         self.assertNotIn("docgen", rules, "docgen is its own lane again, over the lane cap")
         self.assertIn("line ceiling", rules.get("budgets", ""), r.stdout)

@@ -15,6 +15,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402 - confined git, so an inherited GIT_DIR cannot steer the lookup
+
 SCRIPT = Path(__file__).resolve().parent.parent / "file_finding.py"
 SKILL = SCRIPT.parent.parent
 CONFIG = SKILL / ".markdownlint.json"
@@ -34,8 +37,8 @@ def _markdownlint() -> str | None:
     if found:
         return found
     roots = [SKILL.parents[1]]
-    common = subprocess.run(["git", "-C", str(SKILL), "rev-parse", "--path-format=absolute",
-                             "--git-common-dir"], capture_output=True, text=True, check=False)
+    common = gitutil.git(["rev-parse", "--path-format=absolute", "--git-common-dir"], SKILL,
+                         check=False, text=True)
     if common.returncode == 0 and common.stdout.strip():
         roots.append(Path(common.stdout.strip()).parent)
     for root in roots:

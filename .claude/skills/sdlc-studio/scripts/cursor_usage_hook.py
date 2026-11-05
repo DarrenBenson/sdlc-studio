@@ -5,9 +5,10 @@ the Cursor token reader (`lib/meter_cursor.py`) reads a Cursor CLI run's tokens 
 The CLI pipes the hook a JSON payload on stdin, and its 2026.10.22-27dcf5f build sets
 `input_tokens`, `output_tokens`, `cache_read_tokens` and `cache_write_tokens` on it. For each
 payload that is a JSON object, one line is appended to `meter_cursor.LEDGER_REL` under the
-workspace root (`--root`, else the working directory): the time, the event, the conversation and
-generation ids and the model, each a string of at most `MAX_TEXT` characters or null, and the
-four counts, each a number as the payload gave it or null. The response's text is not written.
+workspace root (`--root` verbatim, else the workspace `sdlc_md.resolve_root` discovers at or
+above the working directory, which is the working directory itself when none is found): the
+time, the event, the conversation and generation ids and the model, each a string of at most
+`MAX_TEXT` characters or null, and the four counts, each a number as the payload gave it or null. The response's text is not written.
 The reader, not the hook, judges each count: a line it cannot read is skipped and counted there.
 
 Nothing is appended when the payload is not a JSON object, or when the root holds no
@@ -76,15 +77,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=(
         "Append the token usage of the afterAgentResponse payload on stdin to the workspace's "
         "Cursor usage ledger."))
-    parser.add_argument("--root", type=Path, default=".",
-                        help="the workspace root (default: the working directory)")
+    # A string, not a `Path`: `sdlc_md.resolve_root` reads the family default `.` as "discover
+    # it", and `Path(".")` would compare unequal to it and be honoured as a named root.
+    parser.add_argument("--root", default=".",
+                        help="the workspace root (default: the workspace discovered at or above "
+                             "the working directory)")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    root = args.root if args.root != Path(".") else Path.cwd()
-    why = append(root, sys.stdin.buffer.read())
+    # Anchored before the payload is read: a hook fired from a subdirectory of the workspace
+    # writes the ledger at the workspace root, where the meter reads it.
+    args.root = sdlc_md.resolve_root(args)
+    why = append(args.root, sys.stdin.buffer.read())
     if why:
         print(f"cursor_usage_hook: {why}", file=sys.stderr)
     return 0

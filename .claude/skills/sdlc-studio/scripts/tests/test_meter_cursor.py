@@ -646,15 +646,29 @@ class CursorHookLedgerTests(_Fixture):
         self.ledger = self.root / "sdlc-studio" / ".local" / "cursor-usage.jsonl"
 
     def hook(self, payload, root: Path | None = None, cwd: Path | None = None):
-        """The hook as the CLI runs it: the payload on stdin, from the workspace's root."""
+        """The hook as the CLI runs it: the payload on stdin, from the workspace's root, under
+        the fixture's own environment rather than whatever the test process inherited."""
         raw = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
-        return subprocess.run([sys.executable, str(HOOK), *(["--root", str(root)] if root else [])],
-                              input=raw, capture_output=True, cwd=cwd or self.root, timeout=60,
-                              check=False)
+        named = ["--root", str(root)] if root else []
+        return subprocess.run([sys.executable, str(HOOK), *named], cwd=cwd or self.root,
+                              env=self.environment(None), input=raw, capture_output=True,
+                              timeout=60, check=False)
 
     def cli_reading(self, root: Path | None = None) -> dict:
         with self.env(None, **{meter_cursor.KEY_ENV: None}):
             return run_state.session_tokens(root or self.root)
+
+    def test_a_hook_fired_below_the_workspace_appends_to_the_workspace_ledger(self) -> None:
+        """BG1236. Mutants: the `--root` default parsed as `Path(".")`, which `resolve_root`
+        honours as a named root, or the anchor dropped; either way the subdirectory is read as
+        the root, and the hook keeps no ledger and says so on stderr."""
+        (self.root / "sdlc-studio" / "stories").mkdir()
+        below = self.root / "deep" / "sub"
+        below.mkdir(parents=True)
+        done = self.hook(response(1, 54_000, 200, 50_000, 3_000), cwd=below)
+        self.assertEqual((done.returncode, done.stdout, done.stderr), (0, b"", b""))
+        self.assertEqual(len(self.ledger.read_text(encoding="utf-8").splitlines()), 1)
+        self.assertFalse((below / "sdlc-studio").exists(), "a stray workspace beside the cwd")
 
     def test_the_ledger_is_read_as_measured(self) -> None:
         """AC1. Mutants: the ledger not read, so the reading stays None; a count dropped from

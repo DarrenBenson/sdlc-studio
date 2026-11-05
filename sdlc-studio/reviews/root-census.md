@@ -51,10 +51,10 @@ script joins the family classified rather than silently.
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 64 |
+| anchored | 65 |
 | unanchored | 1 |
 | non-root | 4 |
-| **total** | **69** |
+| **total** | **70** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -90,6 +90,7 @@ re-export.
 | `conformance.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `constitution.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `critic.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `cursor_usage_hook.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main` before the payload is read, so a hook fired from a subdirectory appends to the workspace's ledger |
 | `decisions.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `deploy.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `digest.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
