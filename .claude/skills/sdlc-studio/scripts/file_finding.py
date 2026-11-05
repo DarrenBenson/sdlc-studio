@@ -1664,10 +1664,38 @@ def _md_safe(text) -> str:
     lint-red artefacts. Only text OUTSIDE existing code spans is touched, so an
     already-backticked token is left alone. A leading-underscore name with no second underscore
     (`_check`) is a token too: two on one line read as emphasis (MD037). (Reversed-link shapes
-    like `)[1]` are a rarer residual, noted in the CR.)"""
-    parts = str(text).split("`")
+    like `)[1]` are a rarer residual, noted in the CR.)
+
+    A bare http(s) URL is code-spanned first (`_code_urls`), so the token pass below sees it
+    inside a span and leaves its underscores alone."""
+    parts = _code_urls(text).split("`")
     for i in range(0, len(parts), 2):  # even indices are outside backtick spans
         parts[i] = _MD_TOKEN_RE.sub(r"`\1`", parts[i])
+    return "`".join(parts)
+
+
+#: A bare http(s) URL: not after a letter or digit (no autolink starts there), not inside
+#: `<...>` (already an autolink) and not as a `](...)` link destination, where a backtick would
+#: break the link. It stops at whitespace, `<`, `>` and a backtick.
+_BARE_URL_RE = re.compile(r"(?<![A-Za-z0-9<])(?<!\]\()https?://[^\s<>`]+", re.IGNORECASE)
+
+
+def _code_url(m: re.Match) -> str:
+    """One bare URL as a code span, its trailing sentence punctuation and any unbalanced `)`
+    left outside, where they were punctuation rather than part of the address."""
+    url, tail = m.group(0), ""
+    while url[-1] in ".,;:!?*_~'\"" or (url[-1] == ")" and url.count(")") > url.count("(")):
+        url, tail = url[:-1], url[-1] + tail
+    return f"`{url}`{tail}"
+
+
+def _code_urls(text) -> str:
+    """Code-span each bare http(s) URL outside an existing code span, because markdownlint's
+    MD034 (no bare URLs) refuses one left bare. A URL already in backticks, in `<...>` or a
+    link destination is left as written."""
+    parts = str(text).split("`")
+    for i in range(0, len(parts), 2):  # even indices are outside backtick spans
+        parts[i] = _BARE_URL_RE.sub(_code_url, parts[i])
     return "`".join(parts)
 
 
@@ -1715,8 +1743,8 @@ def _evidence_line(f: dict) -> str:
     reads, so a filer who wrote the evidence location into it declared a footprint that is not
     where any code will change: the collision analysis then groups the unit by the wrong surface.
     Losing the trace instead would be no better, so it is recorded here, where nothing reads it as
-    a file the fix will touch."""
-    val = str(f.get("evidence") or "").strip()
+    a file the fix will touch. A bare URL in it is code-spanned (`_code_urls`), as in the prose."""
+    val = _code_urls(str(f.get("evidence") or "").strip())
     return f"> **Evidence:** {val}\n" if val else ""
 
 
