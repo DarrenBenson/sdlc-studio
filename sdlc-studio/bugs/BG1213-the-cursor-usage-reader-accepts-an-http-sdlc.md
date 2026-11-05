@@ -1,6 +1,6 @@
 # BG1213: The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, changelog.d/BG1213.md
@@ -27,6 +27,7 @@ Refuse a base whose scheme is not https, except a loopback host for tests, with 
 
 - [ ] **AC1** An http:// base on a non-loopback host is refused before any request, naming `SDLC_STUDIO_CURSOR_API.`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 

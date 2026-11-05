@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 207 |
 | In Progress | 0 |
-| Fixed | 843 |
+| Fixed | 844 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1224** |
+| **Total** | **1225** |
 
 ## All Bugs
 
@@ -288,7 +288,7 @@
 | [BG1210](BG1210-the-prd-s-security-nfr-does-not-name.md) | The PRD's Security NFR does not name meter_cursor.py, which US0989 made reach the network, so the PRD refresh test fails at push | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1211](BG1211-the-shell-hazard-check-flags-unittest-s-own.md) | The shell-hazard check flags unittest's own assertion separator (the spaced colon after an assertion's operands) when a reviewer's finding quoting it is carried into a bug | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1212](BG1212-us0989-s-ac2-test-bounds-a-duration-its.md) | US0989's AC2 test bounds a duration its own process measured, so the push gate's wall-clock census fails on it | Fixed | Medium | 2026-11-04 | 2026-11-04 |
-| [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1213](BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md) | The Cursor usage reader accepts an http:// SDLC_STUDIO_CURSOR_API base, so an override would send the bearer key in cleartext | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1215](BG1215-verify-ac-s-fallback-for-a-queued-collection.md) | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1216](BG1216-bg1210-added-a-prd-security-line-with-no.md) | BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main | Fixed | Medium | 2026-11-04 | 2026-11-04 |
@@ -300,6 +300,7 @@
 | [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Open | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1225](BG1225-an-http-loopback-cursor-api-base-still-goes.md) | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it | Open | Low | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
