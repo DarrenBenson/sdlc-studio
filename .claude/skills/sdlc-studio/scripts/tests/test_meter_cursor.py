@@ -629,7 +629,8 @@ REFERENCE = Path(__file__).resolve().parents[2] / "reference-sprint.md"
 def response(n: int, inp, out, read, write, **over) -> dict:
     """An `afterAgentResponse` payload in the shape the CLI's 2026.10.22-27dcf5f build sends:
     its ids, model and text, and the four counts, a None one left out as the CLI leaves an
-    undefined one out of the JSON."""
+    undefined one out of the JSON. `inp` is the payload's `input_tokens`, which holds the
+    response's cache reads and writes, so a response of that build has it at least their sum."""
     doc = {"conversation_id": "conv-1", "generation_id": f"gen-{n}", "model": "gpt-5",
            "text": f"RESPONSE-TEXT-{n}", "hook_event_name": "afterAgentResponse",
            "input_tokens": inp, "output_tokens": out, "cache_read_tokens": read,
@@ -662,16 +663,29 @@ class CursorHookLedgerTests(_Fixture):
         the cache writes at the one-hour weight; a basis or source not naming the ledger; the
         hook and the meter on different paths; `--root` ignored; the response's text written
         to the ledger; a reading that is not cumulative, so the run window's delta between the
-        open stamp and the close is not the window's lines summed."""
-        for n, counts in enumerate(((7, 11, 13, 17),)):
-            self.assertEqual(self.hook(response(n, *counts)).returncode, 0)
+        open stamp and the close is not the window's lines summed. Round 2: `input_tokens`
+        booked as uncached input, though it holds the cache reads and writes, or less them
+        without the CLI's clamp at zero; a stamp of a Cursor reading keeping no price or
+        components (`_priced_fields` for Claude alone), so the window's priced cost is None."""
+        # One realistic response: 1,000 uncached input, 200 output, 50,000 cache reads and
+        # 3,000 cache writes, which the payload carries as input_tokens 54,000.
+        self.assertEqual(self.hook(response(0, 54_000, 200, 50_000, 3_000)).returncode, 0)
+        got = self.cli_reading()
+        one = {"input": 1_000, "output": 200, "cache_write_5m": 3_000, "cache_write_1h": 0,
+               "cache_read": 50_000}
+        self.assertEqual((got["tokens"], got["components"]), (4_200, one))
+        # 1,000 + 200 x 5 + 3,000 x 1.25 + 50,000 x 0.1.
+        self.assertEqual((got["priced"], run_state.price(one)), (10_750, 10_750))
         with self.env(None, **{meter_cursor.KEY_ENV: None}):
             run_state.open_run(self.root, batch=["BG0001"], goal="g")
-        # The run window: two responses after the open stamp, each count distinct and non-zero.
+        opening = run_state.read(self.root)[run_state.TOKEN_STAMPS][0]
+        self.assertEqual((opening["priced"], opening["components"]), (10_750, one))
+        # The run window: a realistic response, then one whose input_tokens falls short of its
+        # cache counts, which the CLI's own usage line clamps at zero.
         elsewhere = self.root / "elsewhere"
         elsewhere.mkdir()
-        done = [self.hook(response(1, 1_000, 200, 50_000, 3_000)),
-                self.hook(response(2, 2_000, 300, 70_000, 4_000), root=self.root, cwd=elsewhere)]
+        done = [self.hook(response(1, 76_000, 300, 70_000, 4_000)),
+                self.hook(response(2, 100, 50, 600, 400), root=self.root, cwd=elsewhere)]
         self.assertEqual([(p.returncode, p.stdout) for p in done], [(0, b"")] * 2)
         self.assertFalse((elsewhere / "sdlc-studio").exists(), "--root, not the cwd")
         text = self.ledger.read_text(encoding="utf-8")
@@ -679,13 +693,13 @@ class CursorHookLedgerTests(_Fixture):
         self.assertNotIn("RESPONSE-TEXT", text)
 
         got = self.cli_reading()
-        comps = {"input": 3_007, "output": 511, "cache_write_5m": 7_017, "cache_write_1h": 0,
-                 "cache_read": 120_013}
+        comps = {"input": 3_000, "output": 550, "cache_write_5m": 7_400, "cache_write_1h": 0,
+                 "cache_read": 120_600}
         self.assertEqual((got["harness"], got["tokens"], got[token_meters.CACHE_READ]),
-                         ("cursor", 10_535, 120_013))
+                         ("cursor", 10_950, 120_600))
         self.assertEqual(got["components"], comps)
-        # 3,007 + 511 x 5 + 7,017 x 1.25 + 120,013 x 0.1 = 26,334.55.
-        self.assertEqual(got["priced"], 26_335)
+        # 3,000 + 550 x 5 + 7,400 x 1.25 + 120,600 x 0.1.
+        self.assertEqual(got["priced"], 27_060)
         self.assertEqual(got["priced"], run_state.price(comps))
         self.assertEqual((got["responses"], got["skipped"]), (3, 0))
         self.assertEqual(got["source"], f"the Cursor CLI hook ledger {self.ledger}")
@@ -695,9 +709,14 @@ class CursorHookLedgerTests(_Fixture):
 
         with self.env(None, **{meter_cursor.KEY_ENV: None}):
             closing = run_state.stamp_tokens(self.root, "report")
-        self.assertEqual(closing["tokens"], 10_535)
+        self.assertEqual((closing["tokens"], closing["priced"]), (10_950, 27_060))
         total = run_state.run_token_total(run_state.read(self.root))
-        self.assertEqual(total["tokens"], 3_000 + 500 + 7_000, "the window's lines alone")
+        window = {"input": 2_000, "output": 350, "cache_write_5m": 4_400, "cache_write_1h": 0,
+                  "cache_read": 70_600}
+        self.assertEqual(total["tokens"], 2_000 + 350 + 4_400, "the window's lines alone")
+        self.assertEqual(total["components"], window)
+        # 2,000 + 350 x 5 + 4,400 x 1.25 + 70,600 x 0.1.
+        self.assertEqual((total["priced"], total["priced_reason"]), (16_310, None))
         self.assertEqual([m["harness"] for m in total["meters"]], ["cursor"])
         self.assertIn(str(self.ledger), total["meters"][0]["basis"])
 
@@ -734,12 +753,12 @@ class CursorHookLedgerTests(_Fixture):
         self.assertIn(b"holds no sdlc-studio/ directory", done.stderr)
         self.assertEqual(list(bare.iterdir()), [])
 
-        self.hook(response(1, 1_000, 200, 50_000, 3_000))
+        self.hook(response(1, 54_000, 200, 50_000, 3_000))
         self.hook(response(2, 900_000, 900_000, 900_000, None))     # the CLI left one undefined
         self.hook(response(3, -5, 900_000, 900_000, 900_000))
         with self.ledger.open("ab") as fh:                           # a write cut short
             fh.write(b'{"input_tokens": 900000, "output_tok\n')
-        self.hook(response(4, 2_000, 300, 70_000, 4_000))
+        self.hook(response(4, 76_000, 300, 70_000, 4_000))
         got = self.cli_reading()
         self.assertEqual((got["tokens"], got[token_meters.CACHE_READ]),
                          (3_000 + 500 + 7_000, 120_000), "the two good lines alone")

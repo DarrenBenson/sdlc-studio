@@ -71,14 +71,20 @@ def append(root: Path, raw: bytes) -> str | None:
     return None
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The hook's command line: `--root` alone."""
     parser = argparse.ArgumentParser(description=(
         "Append the token usage of the afterAgentResponse payload on stdin to the workspace's "
         "Cursor usage ledger."))
-    parser.add_argument("--root", type=Path, default=None,
+    parser.add_argument("--root", type=Path, default=".",
                         help="the workspace root (default: the working directory)")
-    args = parser.parse_args(argv)
-    why = append(args.root or Path.cwd(), sys.stdin.buffer.read())
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    root = args.root if args.root != Path(".") else Path.cwd()
+    why = append(root, sys.stdin.buffer.read())
     if why:
         print(f"cursor_usage_hook: {why}", file=sys.stderr)
     return 0

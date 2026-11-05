@@ -1,8 +1,9 @@
 """US1093: `sprint.py lane brief` hands a fresh builder agent everything it needs for one unit.
 
 The brief carries the unit's Affects, one path per line, and a commit step that stages exactly
-those paths; the author self-check `critic.author_self_check` prints, verbatim; the self-check
-record command and the command that runs the unit's criteria; and the engineering seat card's
+those paths; the author self-check `critic.author_self_check` prints, verbatim but for its record
+line, which names the hand-in files instead (US1120); the hand-in files and the command that runs
+the unit's criteria; and the engineering seat card's
 work render to adopt. The toolchain runbook's delivery table builds each unit that way: a fresh
 agent per unit (a fresh session where the harness has no subagents), waited on by its completion
 notification and accepted back through `sprint.py lane return`.
@@ -153,14 +154,17 @@ class BuilderBriefTests(_Isolated):
         root = _project(self._tmp.name)
         real = critic.author_self_check(root, "US0102")
         out = _brief(root, "US0102")
-        self.assertIn(real, out, "the self-check, verbatim")
-        after = out.index(real) + len(real)
-        record = "critic.py self-check record --unit US0102 "
+        # Verbatim but for the record line: US1120 hands the record to `sprint lane land`.
+        after = 0
+        for ln in (ln for ln in real.splitlines() if "self-check record" not in ln):
+            after = out.index(ln, after) + len(ln)
+        self.assertNotIn("self-check record", out)
+        record = "sdlc-studio/.local/lane/US0102-claims.json"
         verify = "verify_ac.py run --id US0102"
         self.assertGreater(out.find(record, after), -1, "the record command after the self-check")
         self.assertGreater(out.find(verify, after), -1, "the verify command after the self-check")
         named = [ln for ln in out[after:].splitlines()
-                 if "self-check record" in ln or "verify_ac.py" in ln]
+                 if "-claims.json" in ln or "verify_ac.py" in ln]
         self.assertTrue(named and all("US0101" not in ln for ln in named), named)
 
         stub = "STUB SELF-CHECK for {unit}\nsecond line of the stub"

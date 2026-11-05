@@ -120,11 +120,11 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="lede">Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The actual on the Minutes row above sums these minutes over the units that also carry a forecast; spans of units open at the same time overlap, so that sum can exceed the wall-clock span.</p>
 <!-- end -->
   <div class="scroll"><table>
-    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens</th></tr></thead>
+    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens</th><!-- when: priced_unit_rule --><th scope="col" class="num">Priced</th><!-- end --></tr></thead>
     <tbody>
 <!-- repeat: estimates_units -->
       <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><td class="num">{{eu_forecast_minutes}}</td><td class="num">{{eu_minutes}}</td>
-        <td class="num">{{eu_forecast_tokens}}</td><td class="num">{{eu_tokens}}</td></tr>
+        <td class="num">{{eu_forecast_tokens}}</td><td class="num">{{eu_tokens}}</td><!-- when: priced_unit_rule --><td class="num">{{eu_priced}}</td><!-- end --></tr>
 <!-- end -->
     </tbody>
   </table></div>

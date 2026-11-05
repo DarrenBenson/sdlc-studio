@@ -6,6 +6,7 @@ harness store (`test_meter_reads_true`), and reads the record the command wrote 
 `build_report` derives from it. The expected prices are formed from the fixture's own weight
 table, typed in that module and nowhere in the code under test.
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
 
 import json
@@ -97,7 +98,10 @@ class LanePricedTests(meter._Case):
         them (the row reads the repair alone); the row's label not `priced`; the cell dropped
         from the unit row; the per-point row dividing by the planned points (4) instead of the
         delivered (2), or dividing the Tokens row instead of the Priced cost row; the per-point
-        row left out of the page `render_markdown` writes."""
+        row left out of the page `render_markdown` writes; the Priced column left out of either
+        template, so the page a reader reads shows no unit's priced cost; a unit no agent was
+        priced for given no cell under the rule, so the page refuses its unfilled placeholder."""
+        sr = meter._live("sprint_report")
         ws = self._priced_run()
         page = ws.page()
         units = next(s for s in page["sections"] if s["key"] == "estimates")["unit_rows"]
@@ -107,7 +111,21 @@ class LanePricedTests(meter._Case):
         self.assertEqual(build + repair, row["eu_priced"]["value"])
         self.assertEqual("priced", row["eu_priced"]["label"])
         other = next(u for u in units if u["unit_id"]["value"] == "US0102")
-        self.assertNotIn("eu_priced", other, "a unit no agent was priced for carries no cell")
+        self.assertEqual(sr.NOT_MEASURED, other["eu_priced"]["value"],
+                         "a unit no agent was priced for reads NOT MEASURED, as its neighbours do")
+        self.assertIn("lane return --units US0102 --agent", other["eu_priced"]["reason"])
+        # The page a reader reads: the cell in a column headed Priced, in both renders.
+        shown = f"{build + repair:,} priced"
+        md = sr.render_markdown(page)
+        self.assertIn("| Forecast tokens | Tokens | Priced |", md)
+        line = next(ln for ln in md.splitlines() if ln.startswith("| US0101 |"))
+        self.assertTrue(line.endswith(f" agent tokens | {shown} |"), line)
+        line = next(ln for ln in md.splitlines() if ln.startswith("| US0102 |"))
+        self.assertIn(f"| {sr.NOT_MEASURED} - no agent returned for it was priced", line)
+        html = sr.render_html(page)
+        self.assertIn('<th scope="col" class="num">Tokens</th>'
+                      '<th scope="col" class="num">Priced</th>', html)
+        self.assertIn(f'<td class="num">{shown}</td></tr>', html)
         priced = ws.row(page, "Priced cost")["est_actual"]["value"]
         self.assertIsInstance(priced, int, "premise: the run's priced cost is measured")
         per_point = ws.row(page, "Priced per point")
@@ -159,8 +177,10 @@ class LanePricedTests(meter._Case):
     def test_the_priced_unit_mark_round_trips(self) -> None:
         """LC-017. MUTANTS: the mark dropped from the envelope (`build_report`), so a page filed
         under the rule re-derives with it off and reads INVALIDATED; the rule hard-wired on in
-        `revalidate`, so a page filed before it re-derives with rows it never carried. The
-        control: the page with its mark removed by hand reads INVALIDATED, not edited."""
+        `revalidate`, so a page filed before it re-derives with rows it never carried; either
+        gated output built without its rule check (the per-point row, or the unit's priced
+        cell), or the Priced column shown on a page without the mark. The control: the page
+        with its mark removed by hand reads INVALIDATED, not edited."""
         sr = meter._live("sprint_report")
         ws = self._priced_run()
         page = sr.build_report(ws.root, meter.RETRO)
@@ -171,6 +191,21 @@ class LanePricedTests(meter._Case):
         self.assertNotIn(sr.PRICED_UNIT_RULE, before)
         check = sr.revalidate(ws.root, sr.file_report(ws.root, before))
         self.assertTrue(check["valid"], check["changes"])
+        # Each gated output, one by one: a page filed without the mark carries and renders
+        # neither, so an output leaking past its gate is caught here and not first by a signed
+        # page reading INVALIDATED.
+        est = next(s for s in before["sections"] if s["key"] == "estimates")
+        self.assertNotIn("Priced per point", [r["est_measure"]["value"] for r in est["rows"]])
+        self.assertEqual([], [u["unit_id"]["value"] for u in est["unit_rows"] if "eu_priced" in u])
+        ruled = next(s for s in page["sections"] if s["key"] == "estimates")["unit_rows"]
+        shown = sr._cell(next(u for u in ruled if u["unit_id"]["value"] == "US0101")["eu_priced"])
+        for name, render in (("markdown", sr.render_markdown), ("html", sr.render_html)):
+            self.assertIn(shown, render(page), f"premise: the {name} page shows the cell")
+            text = render(before)
+            self.assertNotIn("Priced per point", text, name)
+            self.assertNotIn(shown, text, name)
+            self.assertNotIn("| Priced |", text, name)
+            self.assertNotIn('class="num">Priced</th>', text, name)
         dropped = {k: v for k, v in page.items() if k not in (sr.PRICED_UNIT_RULE, "fingerprint")}
         check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
         self.assertFalse(check["valid"], "the rule moves no figure on this fixture")

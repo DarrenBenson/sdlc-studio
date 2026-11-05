@@ -39,6 +39,8 @@ Resolve one for any review: `scripts/persona_resolve.py resolve --seat <role> --
 
 > **Operating Doctrine – onboarding to a project? Read `reference-doctrine.md` first.** It is the project-*agnostic* working discipline (the skill is the operating system; RFC/CR/ADR choice; files-are-truth + reconcile-from-census; reconcile/verify/review cadence; ship-paperwork-in-the-same-commit; consult gates; TDD; cross-repo numbering; **recall cross-project `lessons/` before substantive decisions**). A project's own agent-instructions file (`AGENTS.md`; Claude Code's `CLAUDE.md` can import it with `@AGENTS.md`) = this doctrine + that project's specifics; start from `templates/agent-instructions.md`. The cross-project lessons-learned folder is `lessons/` (see `help/lessons.md`).
 
+**Integrate continuously.** Commit each unit to `main` when its gate passes and push `main`; open no PR and push no branch unless `release_strategy` is `pr-required` (`reference-config.md#release-strategy`).
+
 ## Quick Start
 
 ```bash

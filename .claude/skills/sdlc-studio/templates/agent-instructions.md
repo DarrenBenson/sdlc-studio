@@ -65,6 +65,8 @@ the unit. The run is then signed once, with `sprint sign`, by its **reviewer of
 record** - the operator, or a named delegate in a separate trust boundary, never a
 unit's author or a reviewer recorded on it.
 
+**Integrate continuously.** Commit each unit to `main` when its gate passes and push `main`; open no PR and push no branch unless `release_strategy` is `pr-required`.
+
 **Index & verification conventions.** Keep **one canonical status summary** per `_index.md` - the
 `| Status | Count |` table with a `**Total**` row, which `reconcile` maintains. Per-section / per-epic
 count tables are author-maintained; do not give them a `Total` row (reconcile would treat them as the

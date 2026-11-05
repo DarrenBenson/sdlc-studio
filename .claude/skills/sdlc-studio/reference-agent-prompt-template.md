@@ -336,3 +336,14 @@ Dispatch a lane with `sprint lane brief --units <id>` and accept it back with
 the lessons injected at build; the return runs the unit's own acceptance criteria and refuses
 to report a unit fixed whose criteria did not pass. A hand-written prompt that omits them is how
 a unit with no contract reaches a terminal status.
+
+The brief leaves the commit to `sprint lane land`: the builder stages exactly its Affects, writes
+the commit message and its claims and mutants files to `sdlc-studio/.local/lane/`, and stops, so
+no builder waits on a commit hook. The brief states a tool-call budget, a fixed share plus one
+per-point constant times the unit's points; at the budget the builder writes `HANDOFF.md` there
+(what is done, the criteria left, the next step) and returns.
+
+A repair or second build resumes its builder only while that builder's context is below 100k
+tokens; otherwise it starts a fresh builder from the hand-off note. Every call re-reads the whole
+context, so a resumed builder at 462k tokens pays about fifteen times per call what a fresh one
+starting near 30k pays.

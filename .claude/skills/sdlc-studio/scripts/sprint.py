@@ -2517,6 +2517,8 @@ LANE_OBLIGATIONS = (
     "could not discharge and why.",
     "A repair answering a REJECT carries only the blocking findings and the pins that kill "
     "them, and files the rest.",
+    "Land the unit on `main`: open no PR and push no branch, fast-forwarding a local worktree "
+    "onto `main` within the lane, unless `release_strategy` is `pr-required`.",
 )
 
 #: Opens the brief's file-history section. The lane meets the prior work and the defects its
@@ -2648,7 +2650,9 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "seams": [s for s in seams if contract["id"] in s["units"]],
                        "lessons": injected,
                        "affects": sdlc_md.affects_files(contract["text"]),
-                       "self_check": critic.author_self_check(root, contract["id"]),
+                       "self_check": _hand_in_self_check(
+                           critic.author_self_check(root, contract["id"]), contract["id"]),
+                       "points": sdlc_md.read_points(contract["text"]),
                        "seat_card": str(seat) if seat else None})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
@@ -2725,8 +2729,8 @@ def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
     criteria it is held to, its Affects, the seat card to adopt, the history of the files it
     touches, the proof its unit owes, the standing obligations, the lessons injected at build,
-    the author self-check, and the commands that run its criteria, record the self-check and
-    commit it. Composed purely from the brief record, so the same dispatch renders
+    the author self-check, and the commands that run its criteria, hand its work in and stage it,
+    within its call budget. Composed purely from the brief record, so the same dispatch renders
     identically."""
     lines = [f"Unit: {brief['id']} ({brief.get('path') or 'path unknown'})",
              f"Acceptance criteria ({len(brief['criteria'])}) - these are the contract:"]
@@ -2777,24 +2781,86 @@ def lane_brief_text(brief: dict) -> str:
     lines.extend(lessons.render_phase(brief.get("lessons") or {"phase": "build"}))
     if brief.get("self_check"):
         lines += ["", brief["self_check"]]
-    lines += ["", *_lane_builder_commands(brief["id"], affects)]
+    lines += ["", *_lane_builder_commands(brief["id"], affects, brief.get("points"))]
     return "\n".join(lines)
 
 
-def _lane_builder_commands(uid: str, affects: list[str]) -> list[str]:
-    """The builder's closing commands for `uid`: run its criteria, record its self-check, and
-    commit it by staging exactly its Affects. The commit message's shape is the project's own,
-    so only the unit id is asked of the subject."""
+#: Where a lane hands its work in, relative to the project root: the commit message and the
+#: unit's self-check passes, beside its staged change, for `sprint lane land` to commit.
+LANE_HAND_IN = "sdlc-studio/.local/lane"
+#: The note a builder writes at its budget, so a fresh builder continues from it.
+LANE_HAND_OFF = "HANDOFF.md"
+#: A lane's tool-call budget is LANE_CALLS_FIXED + points x LANE_CALLS_PER_POINT: the fixed share
+#: reads the brief and hands in, the per-point share builds. Run six's builder brief held about
+#: 45 calls for 1 or 2 points, 65 for 3 and 90 for 5; this gives 38, 51, 64 and 90. Every call
+#: re-reads the builder's whole context, so a context carried past its budget is paid again on
+#: each call that follows.
+LANE_CALLS_FIXED = 25
+LANE_CALLS_PER_POINT = 13
+
+
+def lane_call_budget(points: int | None) -> int | None:
+    """The tool calls a lane of `points` is budgeted, or None for a unit that declares no size."""
+    if points is None:
+        return None
+    return LANE_CALLS_FIXED + points * LANE_CALLS_PER_POINT
+
+
+def _lane_hand_in_files(uid: str) -> tuple[str, str]:
+    """The claims and mutants files `uid` hands in, under LANE_HAND_IN."""
+    return f"{LANE_HAND_IN}/{uid}-claims.json", f"{LANE_HAND_IN}/{uid}-mutants.json"
+
+
+def _hand_in_self_check(text: str | None, uid: str) -> str | None:
+    """`critic.author_self_check`'s section with every line naming `self-check record` replaced
+    by the hand-in files: the builder writes its two passes there and does not record them, so
+    the brief never tells it to. Every other line is critic's own, so the steps cannot drift."""
+    if not text:
+        return text
+    claims, mutants = _lane_hand_in_files(uid)
+    note = f"   Write them to {claims} and {mutants}; do not record them yourself."
+    return "\n".join(note if "self-check record" in ln else ln for ln in text.splitlines())
+
+
+def _lane_budget_line(uid: str, points: int | None) -> str:
+    """The lane's call budget and the hand-off rule that holds at it."""
+    rule = (f"at the budget, stop: write {LANE_HAND_IN}/{LANE_HAND_OFF} with what is done, the "
+            f"criteria left, the next step and the files touched, stage what you have, and "
+            f"return")
+    budget = lane_call_budget(points)
+    if budget is None:
+        return (f"  Budget: NONE DERIVED - {uid} declares no Points, so no call budget follows; "
+                f"size it before building it.")
+    unit = "point" if points == 1 else "points"
+    return (f"  Budget: {budget} tool calls ({LANE_CALLS_FIXED} + {points} {unit} x "
+            f"{LANE_CALLS_PER_POINT} per point); {rule}.")
+
+
+def _lane_builder_commands(uid: str, affects: list[str], points: int | None = None) -> list[str]:
+    """The builder's closing commands for `uid`: run its criteria, write the hand-in files,
+    stage exactly its Affects and stop, within the call budget its points give. The builder
+    neither commits nor records its self-check; `sprint lane land` commits from the hand-in
+    path. The commit message's shape is the project's own, so only the unit id is asked of the
+    subject."""
+    claims, mutants = _lane_hand_in_files(uid)
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
              f"  Run its criteria: verify_ac.py run --id {uid}",
-             f"  Record the self-check: critic.py self-check record --unit {uid} --author <you> "
-             f"--claims CLAIMS.json --mutants MUTANTS.json"]
+             f"  Hand in, under {LANE_HAND_IN}/ at the project root:",
+             f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
+             f"    {mutants} - the mutation pass above, each as "
+             f"{{mutant, test, result, answer}}",
+             f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
+             f"subject, written last"]
     if not affects:
-        return [*lines, f"  Commit: {uid} declares no Affects, so there is no path to stage - "
-                        f"declare them first."]
-    return [*lines, f"  Commit: stage exactly the Affects above, and name {uid} in the commit "
-                    f"subject:",
-            f"    git add -- {' '.join(shlex.quote(p) for p in affects)}"]
+        lines.append(f"  Stage: {uid} declares no Affects, so there is no path to stage - "
+                     f"declare them first.")
+    else:
+        lines += [f"  Stage exactly the Affects above, and stop - `sprint lane land` commits "
+                  f"them, with {uid} in the commit subject:",
+                  f"    git add -- {' '.join(shlex.quote(p) for p in affects)}"]
+    return [*lines, f"  Do not commit and do not record the self-check: `sprint lane land` "
+                    f"commits from {LANE_HAND_IN}/.",
+            _lane_budget_line(uid, points)]
 
 
 #: Criterion states that stop a lane returning `fixed`. Derived by SUBTRACTION from the states
@@ -8899,14 +8965,19 @@ def _at_terminal_status(root: Path, uid: str) -> bool:
 
 
 def cmd_lane(args: argparse.Namespace) -> int:
-    """`sprint lane brief|return`: the two ends of a delegated unit of delivery.
+    """`sprint lane brief|return|land`: the two ends of a delegated unit, and its landing.
 
     `brief` dispatches lanes onto the units and prints what each is held to, refusing any unit
     whose acceptance criteria cannot be read. `return` runs a unit's own criteria and prints the
     outcome, which is `blocked` whenever a criterion is red, unresolved or unspecified, whatever
     the lane claimed. Exit 2 on a refusal, 1 on a blocked return - so a wrapper script cannot
-    treat either as a delivery.
+    treat either as a delivery. `land` commits a builder's staged worktree and lands it; its
+    steps and exit statuses are `lib/lanes.py`'s.
     """
+    if args.action == "land":
+        from lib import lanes  # noqa: PLC0415 - only the landing needs it
+        return lanes.land(args.root, getattr(args, "worktree", None),
+                          getattr(args, "units", None) or [], getattr(args, "author", None))
     root = Path(args.root)
     units = _lane_unit_ids(args)
     if not units:
@@ -12442,8 +12513,11 @@ def build_parser() -> argparse.ArgumentParser:
              "carried lessons, the author self-check and the commands that run its criteria, "
              "record the self-check and commit it) and REFUSES a unit whose criteria are absent "
              "or a placeholder. `return` runs the unit's own criteria and reports blocked on a "
-             "red, unresolved or unspecified one, carrying the verifier's own output.")
-    ln.add_argument("action", choices=("brief", "return"))
+             "red, unresolved or unspecified one, carrying the verifier's own output. `land` "
+             "commits a builder's staged worktree through the hooks, rebases it onto the root's "
+             "branch, fast-forwards that branch, removes the worktree, then records each unit's "
+             "self-check and writes its QA brief.")
+    ln.add_argument("action", choices=("brief", "return", "land"))
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
     ln.add_argument("--claimed", default="fixed",
@@ -12464,6 +12538,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "cost recorded on the unit's delegated record; optional")
     ln.add_argument("--timeout", type=int, default=300,
                     help="(return) per-verifier timeout in seconds (default: 300)")
+    ln.add_argument("--worktree", default=None,
+                    help="(land) the builder's worktree, holding its staged change and the "
+                         "hand-in files under sdlc-studio/.local/lane/")
+    ln.add_argument("--author", default=None,
+                    help="(land) the author each self-check is recorded under (default: the "
+                         "worktree's directory name)")
     ln.add_argument("--format", choices=("text", "json"), default="text")
     ln.add_argument("--root", default=".", help="Repo root (default: .)")
     ln.set_defaults(func=cmd_lane)

@@ -199,13 +199,14 @@ contract_tables:
 # emits for `code implement` and `epic implement`. See reference-config.md
 # and reference-decisions.md.
 #
-#   solo-dev       — direct commits to main; branches for isolation only.
-#                    Ship via `git merge --ff-only` + `git push`. No PR.
-#   pr-required    — every change goes through a PR. Ship via `gh pr create`
-#                    + review + merge. (default)
-#   staged-rollout — tagged-deploy + soak gate. Ship via tag + deploy +
+#   trunk          - commit each unit to main when its gate passes and push
+#                    main. No branch, no PR. (default)
+#   solo-dev       - the earlier name for trunk; read as trunk.
+#   pr-required    - opt-in: every change goes through a PR. Ship via
+#                    `gh pr create` + review + merge.
+#   staged-rollout - tagged-deploy + soak gate. Ship via tag + deploy +
 #                    soak window before promoting to "live".
-release_strategy: pr-required
+release_strategy: trunk
 
 # Artifact provenance. `new` stamps tool-created artifacts; `provenance check`
 # flags un-stamped ones past adopt_after (advisory unless enforce). `remake` backfills the

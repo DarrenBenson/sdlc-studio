@@ -174,13 +174,15 @@ def read_ledger(ledger: Path) -> dict:
     """The reading the hook ledger `ledger` holds: every line's counts summed, or tokens None
     with the reason when no line can be read. A line that is not a JSON object whose
     `LEDGER_FIELDS` are each a count is skipped and counted as `skipped`; the figure is then a
-    lower bound, and the basis says so. The payload does not split a cache write by duration,
-    so each is booked at five minutes, as an unsplit Claude write is, and priced from
+    lower bound, and the basis says so. The payload's `input_tokens` holds the response's cache
+    reads and writes, so its uncached input is `input_tokens` less both, never below zero, as
+    the CLI's own print-mode usage line forms it. The payload does not split a cache write by
+    duration, so each is booked at five minutes, as an unsplit Claude write is, and priced from
     `run_state.TOKEN_WEIGHTS` as the figure is formed."""
     from . import run_state  # noqa: PLC0415 - lazy: run_state loads this reader
 
     sums = dict.fromkeys(LEDGER_FIELDS, 0)
-    read = skipped = 0
+    read = skipped = uncached = 0
     try:
         with ledger.open("rb") as fh:
             for raw in fh:
@@ -196,6 +198,8 @@ def read_ledger(ledger: Path) -> dict:
                 read += 1
                 for f in LEDGER_FIELDS:
                     sums[f] += row[f]
+                uncached += max(row["input_tokens"] - row["cache_read_tokens"]
+                                - row["cache_write_tokens"], 0)
     except OSError as exc:
         return {"tokens": None, "reason": f"the Cursor CLI hook ledger {ledger} could not be "
                                           f"read ({type(exc).__name__}), so this run's tokens "
@@ -205,13 +209,14 @@ def read_ledger(ledger: Path) -> dict:
         return {"tokens": None, "reason": f"the Cursor CLI hook ledger {ledger} holds no line "
                                           f"that can be read ({lines}), so this run's tokens "
                                           f"cannot be read"}
-    comps = {"input": sums["input_tokens"], "output": sums["output_tokens"],
+    comps = {"input": uncached, "output": sums["output_tokens"],
              "cache_write_5m": sums["cache_write_tokens"], "cache_write_1h": 0,
              "cache_read": sums["cache_read_tokens"]}
     basis = (f"the Cursor CLI {HOOK_EVENT} hook ledger {ledger}, {read} "
-             f"response{'' if read == 1 else 's'} summed: tokens is input + output + cache "
-             f"write, cache reads apart, and the priced figure weighs every component, each "
-             f"cache write at the five-minute weight since the payload does not split it")
+             f"response{'' if read == 1 else 's'} summed: input is each response's input_tokens "
+             f"less its cache reads and writes, never below zero; tokens is input + output + "
+             f"cache write, cache reads apart, and the priced figure weighs every component, "
+             f"each cache write at the five-minute weight since the payload does not split it")
     if skipped:
         basis += f"; {lines}, so it is a LOWER BOUND on what the run cost"
     return {"tokens": comps["input"] + comps["output"] + comps["cache_write_5m"],

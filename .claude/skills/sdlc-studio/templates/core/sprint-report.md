@@ -49,10 +49,19 @@ actual on the Minutes row above sums these minutes over the units that also carr
 spans of units open at the same time overlap, so that sum can exceed the wall-clock span.
 <!-- end -->
 
+<!-- unless: priced_unit_rule -->
 | Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |
 | --- | --- | --- | --- | --- |
 <!-- repeat: estimates_units -->
 | {{unit_id}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} |
+<!-- end -->
+<!-- end -->
+<!-- when: priced_unit_rule -->
+| Unit | Forecast minutes | Minutes | Forecast tokens | Tokens | Priced |
+| --- | --- | --- | --- | --- | --- |
+<!-- repeat: estimates_units -->
+| {{unit_id}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} | {{eu_priced}} |
+<!-- end -->
 <!-- end -->
 <!-- end -->
 

@@ -565,6 +565,26 @@ reach a shell through this path either.
 An orchestrator should call `lane brief` before dispatching and `lane return` before accepting a
 lane's work. Skipping them is how a unit with no contract reaches Fixed.
 
+A builder working in its own git worktree stages its Affects and stops, leaving
+`commit-msg.txt`, `<unit>-claims.json` and `<unit>-mutants.json` under
+`sdlc-studio/.local/lane/`. One command then lands it, so the commit hook's minutes are paid in
+no agent's context:
+
+```bash
+python3 <skill>/scripts/sprint.py lane land --worktree <path> --units US0123
+```
+
+`lane land` copies the hand-in files to `sdlc-studio/.local/lane/landed/<worktree>/`, commits
+through the repository's hooks (never a bypass), rebases the branch onto the one the root has
+checked out, fast-forwards that, and removes the worktree and its branch. It then records each
+unit's self-check on the root and writes its QA brief to
+`sdlc-studio/.local/briefs/<unit>-qa.txt`, one line per unit naming the review tier and brief
+fingerprint. A hook refusal prints the hook's output and the worktree to resume in, leaving the
+staged change, the worktree and the root's branch as they were; a rebase conflict is aborted
+and its files named. Exit 2 is a refusal before anything was committed, 1 a landing that
+stopped or a unit left unbriefed. Re-run it after a repair: a committed branch is not committed
+twice.
+
 The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress
 keeps the span it has) and a passing `lane return` closes it, so the sprint report states the
 unit's minutes and tokens over that span. A blocked return leaves the span open. A lane briefed

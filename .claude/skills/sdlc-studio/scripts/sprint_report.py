@@ -3894,9 +3894,13 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                                              "not in the plan"),
                   "eu_tokens": cell("eu_tokens", u["tokens"], why(u),
                                     "agent tokens" if u["agent_tokens"] else None),
-                  # Only on a unit whose agents were priced: a row without it reads as filed.
-                  **({"eu_priced": cell("eu_priced", u["priced"], "", "priced")}
-                     if priced_unit_rule and _num(u["priced"]) else {})}
+                  # Only under the rule, so a page filed before it reads as filed; a unit no
+                  # agent was priced for reads NOT MEASURED, as its neighbours do.
+                  **({"eu_priced": cell(
+                      "eu_priced", u["priced"],
+                      f"no agent returned for it was priced from its own transcript - "
+                      f"price one with `sprint.py lane return --units {u['id']} --agent A`",
+                      "priced")} if priced_unit_rule else {})}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
     if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",
                                                     "forecast_tokens", "tokens")):
@@ -4971,6 +4975,9 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
     # The Estimates prose follows the page's own minutes rule: a page filed before it keeps the
     # span wording it was signed with, a page under it says the actual sums the units' minutes.
     flags["minutes_measured_rule"] = report.get(MINUTES_RULE) == MINUTES_MEASURED
+    # The unit table's Priced column follows the page's own mark: a page filed before it keeps
+    # the five columns it was signed with.
+    flags["priced_unit_rule"] = report.get(PRICED_UNIT_RULE) == PRICED_PER_POINT
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):

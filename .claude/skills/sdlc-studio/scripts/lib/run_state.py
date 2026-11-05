@@ -1299,11 +1299,24 @@ def _reading(agg: dict, src: Path, note: str | None) -> dict:
 
 
 def _priced_fields(cap: dict) -> dict:
-    """The fields a stamp carries from a reading on `METER_BASIS`: none from a reading that
-    lacks them (a reader stubbed in a test, or another harness's), which is then a legacy one."""
-    if cap.get(METER) != METER_BASIS or not isinstance(cap.get("components"), dict):
+    """The fields a stamp carries from a priced reading: from a Claude reading on `METER_BASIS`,
+    its price, components and basis mark; from another harness's reading that prices every
+    component, its price and components, and no `METER` mark, which names Claude's transcript
+    counting. None from a reading lacking them (a Claude reader stubbed in a test, or another
+    harness's unpriced one), whose stamp is then read as a legacy one."""
+    comps = cap.get("components")
+    if not isinstance(comps, dict):
         return {}
-    return {"priced": cap.get("priced"), "components": dict(cap["components"]),
+    if harness_of(cap) != CLAUDE:
+        def count(v) -> bool:
+            return isinstance(v, int) and not isinstance(v, bool) and v >= 0
+        if not (count(cap.get("priced")) and all(count(comps.get(c)) for c in TOKEN_COMPONENTS)):
+            return {}
+        return {"priced": cap["priced"], "components": dict(comps),
+                "subagents": bool(cap.get("includes_subagents"))}
+    if cap.get(METER) != METER_BASIS:
+        return {}
+    return {"priced": cap.get("priced"), "components": dict(comps),
             "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS}
 
 
@@ -1696,7 +1709,7 @@ def run_token_total(state: dict, current: dict | None = None,
         priced, meters = _priced_delta(spans), _meters(spans)
         # Another harness's reader says itself whether delegated agents' spend is in its
         # reading, and its stamps carry that answer: it is read from them, not from the priced
-        # components, which a stamp carries only from a reading on `METER_BASIS`.
+        # components, which a stamp carries only from a priced reading (`_priced_fields`).
         includes = (all(m["includes_subagents"] for m in meters) if meters
                     else priced["includes_subagents"])
         return {"tokens": total, **priced, "includes_subagents": includes, "meters": meters,

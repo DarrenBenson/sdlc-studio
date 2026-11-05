@@ -67,7 +67,7 @@ class LaneBriefRepairScopeTests(unittest.TestCase):
             self.assertIn("files the rest", scope[0])
             self.assertTrue(any(r.startswith("Refuse a unit that carries no authored") for r in rows),
                             rows)
-            self.assertEqual(4, len(rows), rows)
+            self.assertEqual(5, len(rows), rows)
 
 
 if __name__ == "__main__":

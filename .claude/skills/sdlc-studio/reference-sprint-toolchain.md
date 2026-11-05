@@ -34,6 +34,7 @@ Read this at plan time. `sprint plan` prints it.
 | Build a unit | `sprint.py lane brief --units <id>`, handed to a fresh agent; a harness without subagents starts a fresh session per unit from the same brief | building it in the orchestrating context |
 | Wait for the builder | its completion notification | polling its output or sleeping |
 | Accept its return | `sprint.py lane return --units <id>` | reading the builder's diff or transcript into the orchestrating context |
+| Land a builder's staged worktree | `sprint.py lane land --worktree <path> --units <id>`: commits through the hooks, rebases, fast-forwards, removes the worktree, records each self-check and writes each QA brief | committing, rebasing and briefing by hand, or paying the hook's minutes in an agent's context |
 | Allocate an id | `next_id.py allocate --type <type>` | reading `_index.md` for the highest |
 | Create an artefact | `artifact.py new --type <t> --fields-file <doc>` | writing the markdown by hand |
 | Run the criteria | `verify_ac.py run --id <id>` | claiming they pass |
