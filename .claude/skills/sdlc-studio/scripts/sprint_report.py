@@ -3588,6 +3588,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "open_since": act.get("started_at") if still_open else None,
             "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
             "timed_minutes": agent.get("minutes"),
+            "priced": agent.get("priced"), "priced_agents": agent.get("priced_agents", 0),
             "in_plan": bool(plan), "measured": bool(act) or bool(agent),
             "rounds": (None if not ledger_found else
                        _frozen_rounds(frozen.get(uid) or [], present)
@@ -3722,9 +3723,35 @@ def _priced_row(run_tokens: dict, state_rel: str, supplied: int = 0,
                          f"{run_state.PRICED_LABEL}, the run's headline cost", state_rel)}
 
 
+def _priced_point_row(run_tokens: dict, delivered: list[dict], state_rel: str) -> dict:
+    """The Estimates row beneath the Tokens row: the Priced cost row's figure over the points
+    the run delivered, rounded to a whole token, so a run of any size reads on one scale. NOT
+    MEASURED, with the reason, when the run has no priced cost or no delivered unit carries
+    Points."""
+    priced = run_tokens.get("priced")
+    points = sum(u["points"] for u in delivered if _num(u["points"]))
+    if not _num(priced):
+        actual = unmeasured("est_actual", state_rel, run_tokens.get("priced_reason")
+                            or run_tokens.get("reason") or "no priced reading")
+    elif not points:
+        actual = unmeasured("est_actual", state_rel, "no delivered unit carries Points")
+    else:
+        actual = fig("est_actual", round(priced / points), state_rel)
+    return {
+        "est_measure": fig("est_measure", "Priced per point", state_rel),
+        "est_forecast": fig("est_forecast", "not forecast", state_rel),
+        "est_actual": actual,
+        "est_ratio": fig("est_ratio", "no ratio", state_rel),
+        "est_basis": fig("est_basis",
+                         f"the Priced cost row over the {points:g} point(s) of the "
+                         f"{len(delivered)} delivered unit(s), in {run_state.PRICED_LABEL} per "
+                         f"point", state_rel)}
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
-                       delegated_rule: bool = True, priced_rule: bool = True) -> dict:
+                       delegated_rule: bool = True, priced_rule: bool = True,
+                       priced_unit_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -3733,7 +3760,11 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     so the actual is the units' measured minutes (spans or agent minutes), both summed over the
     units carrying the two, and the run's wall-clock span, which counts waiting, stands on its
     own line with no ratio. Without the rule (a page filed before it) the actual is the
-    span."""
+    span.
+
+    Under `priced_unit_rule` (`PRICED_UNIT_RULE`) the Tokens row is followed by the run's
+    priced cost per delivered point (`_priced_point_row`), and a unit whose agents' transcripts
+    were priced carries their summed priced cost on its row, labelled priced."""
     delivered = [u for u in ledger if u["delivered"]]
     no_plan = "no plan snapshot is recorded"
     f, a, basis = _paired(delivered, "planned_points", "points")
@@ -3826,6 +3857,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         # A meter that reads the subagents holds the whole actual, so nothing is owed by them.
         withheld=_tokens_ratio_withheld(state, live, meter) if ratio_rule and not whole
         else None))
+    # Beneath the Tokens row, so the Priced cost row still leads the token rows.
+    if head and priced_unit_rule:
+        rows.append(_priced_point_row(run_tokens, delivered, state_rel))
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -3859,7 +3893,10 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                   "eu_forecast_tokens": cell("eu_forecast_tokens", u["forecast_tokens"],
                                              "not in the plan"),
                   "eu_tokens": cell("eu_tokens", u["tokens"], why(u),
-                                    "agent tokens" if u["agent_tokens"] else None)}
+                                    "agent tokens" if u["agent_tokens"] else None),
+                  # Only on a unit whose agents were priced: a row without it reads as filed.
+                  **({"eu_priced": cell("eu_priced", u["priced"], "", "priced")}
+                     if priced_unit_rule and _num(u["priced"]) else {})}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
     if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",
                                                     "forecast_tokens", "tokens")):
@@ -4180,6 +4217,12 @@ DELEGATED_OVER_ZERO_METER = "counted-over-a-zero-meter"
 PRICED_RULE = "token_headline"
 PRICED_HEADLINE = "priced-input-equivalent"
 
+#: The envelope mark of a page whose Estimates state the run's priced cost per delivered point
+#: and whose unit rows carry their agents' priced cost (`_estimates_section`). A page filed
+#: before it re-derives as signed.
+PRICED_UNIT_RULE = "priced_units"
+PRICED_PER_POINT = "unit-priced-and-per-point"
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4205,7 +4248,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  findings_rule: bool = True, minutes_rule: bool = True,
                  delegated_rule: bool = True, agent_minutes_rule: bool = True,
                  cancelled_rule: bool = True, findings_end: str | None = None,
-                 priced_rule: bool = True) -> dict:
+                 priced_rule: bool = True, priced_unit_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4229,7 +4272,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     a unit's supplied agent minutes when any agent supplied them (`AGENT_MINUTES_RULE`), and
     `cancelled_rule` reads a cancelled or skipped CI run as no failed deployment
     (`CANCELLED_RULE`), and `priced_rule` leads the token rows with the priced cost
-    (`PRICED_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
+    (`PRICED_RULE`), and `priced_unit_rule` adds the priced cost per delivered point and each
+    unit's agents' priced cost (`PRICED_UNIT_RULE`); a re-derivation passes what the page
+    carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
@@ -4305,7 +4350,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         _estimates_section(state, state_rel, ledger, tokens,
                            round((end - start).total_seconds() / 60, 1) if start and end
                            else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
-                           delegated_rule=delegated_rule, priced_rule=priced_rule),
+                           delegated_rule=delegated_rule, priced_rule=priced_rule,
+                           priced_unit_rule=priced_unit_rule),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(f_end), readings["findings"],
@@ -4342,7 +4388,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({DELEGATED_RULE: DELEGATED_OVER_ZERO_METER} if delegated_rule else {}),
               **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {}),
               **({CANCELLED_RULE: CANCELLED_NOT_FAILED} if cancelled_rule else {}),
-              **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {})}
+              **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {}),
+              **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5393,7 +5440,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          delegated_rule=basis.get(DELEGATED_RULE) == DELEGATED_OVER_ZERO_METER,
                          agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY,
                          cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED,
-                         priced_rule=basis.get(PRICED_RULE) == PRICED_HEADLINE)
+                         priced_rule=basis.get(PRICED_RULE) == PRICED_HEADLINE,
+                         priced_unit_rule=basis.get(PRICED_UNIT_RULE) == PRICED_PER_POINT)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)

@@ -148,8 +148,12 @@ OPEN_STAMP = "open"
 # and the meter now reads them. A run whose readings hold them (`includes_subagents`) has its
 # agents' spend measured already, so a supplied total is kept on the record and NOT added to it.
 DELEGATED = "delegated_tokens"
-#: The provenance every delegated record carries. Never `measured`: nothing here read a meter.
+#: The provenance of a delegated record whose total an agent reported. Never `measured`:
+#: nothing here read a meter.
 SUPPLIED = "supplied"
+#: The provenance of a delegated record whose total was read from the agent's own transcript
+#: (`agent_transcript_tokens`), because no total was supplied beside it.
+READ_FROM_TRANSCRIPT = "transcript"
 
 #: Where the harness keeps its per-session transcripts, overridable for tests and non-standard
 #: installs. The default is Claude Code's layout: one directory per project (the absolute path
@@ -1236,6 +1240,41 @@ def claude_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = No
     return _reading(reading, src, collected["note"])
 
 
+def agent_transcript_tokens(repo_root: Path | str, agent_id: str,
+                            transcripts_dir: Path | str | None = None, env=None) -> dict:
+    """ONE subagent's reading: its own transcript, `agent-<agent_id>.jsonl` in the CURRENT
+    session's subagents directory (the session `claude_tokens` reads), each message counted once
+    and each component priced from `TOKEN_WEIGHTS` (`_aggregate`).
+
+    Returns {"tokens", "priced", "components", "source"}, or {"priced": None, "reason",
+    "searched"} when no reading can be had: `searched` is the directory looked in, and `reason`
+    names the agent id and that directory. An id that is not a plain name (letters, digits, `_`
+    and `-`) names no transcript, so no path is built from it."""
+    env = os.environ if env is None else env
+    d = Path(transcripts_dir or env.get(TRANSCRIPTS_ENV) or _harness_transcript_dir(repo_root))
+    main = _newest_transcript(d) if d.is_dir() else None
+    if main is None:
+        return {"priced": None, "searched": str(d),
+                "reason": f"no session transcript (*.jsonl) in {d}, so agent {agent_id!r} has "
+                          f"no subagents directory to be read from"}
+    folder = main.parent / main.stem / SUBAGENTS_DIR
+    plain = bool(re.fullmatch(r"[A-Za-z0-9_-]+", agent_id or ""))
+    path = folder / f"agent-{agent_id}.jsonl" if plain else None
+    if path is None or not path.is_file():
+        return {"priced": None, "searched": str(folder),
+                "reason": f"agent {agent_id!r} has no transcript agent-{agent_id}.jsonl in "
+                          f"{folder}"}
+    records: list = []
+    try:
+        _file_records(path, "subagents", records)
+        agg = _aggregate({"source": path, "records": records, "files": 1, "note": None})
+    except _MeterError as exc:
+        return {"priced": None, "searched": str(folder),
+                "reason": f"agent {agent_id!r}'s transcript in {folder} gives no reading: {exc}"}
+    return {"tokens": agg["tokens"], "priced": agg["priced"],
+            "components": dict(agg["components"]), "source": str(path)}
+
+
 def _reading(agg: dict, src: Path, note: str | None) -> dict:
     """An `_aggregate` result as the meter reports it: its model and its basis sentence."""
     models = agg.pop("models")
@@ -2246,7 +2285,8 @@ def delegated_total(state: dict) -> int:
 
 def unit_agent_totals(state: dict) -> dict[str, dict]:
     """Per unit, the delegated totals tagged to it: `{unit: {"tokens", "minutes", "agents",
-    "timed"}}`.
+    "timed", "priced", "priced_agents"}}`. `priced` sums the priced cost of the `priced_agents`
+    records read from an agent's transcript, None when none was.
 
     A unit's own agents' reported spend, never a span on the main-thread meter, which counts the
     traffic of every unit open beside it. `minutes` sums the `timed` records that carried minutes,
@@ -2261,9 +2301,14 @@ def unit_agent_totals(state: dict) -> dict[str, dict]:
         if not isinstance(uid, str) or not uid.strip():
             continue
         t = out.setdefault(sdlc_md.norm_id(uid),
-                           {"tokens": 0, "minutes": None, "agents": 0, "timed": 0})
+                           {"tokens": 0, "minutes": None, "agents": 0, "timed": 0,
+                            "priced": None, "priced_agents": 0})
         t["tokens"] += r["tokens"]
         t["agents"] += 1
+        p = r.get("priced")
+        if isinstance(p, int) and not isinstance(p, bool) and p >= 0:
+            t["priced"] = (t["priced"] or 0) + p
+            t["priced_agents"] += 1
         m = r.get("minutes")
         if isinstance(m, (int, float)) and not isinstance(m, bool) and math.isfinite(m) and m > 0:
             t["minutes"] = (t["minutes"] or 0) + m
@@ -2291,7 +2336,9 @@ def _page_filed(state: dict) -> bool:
 
 
 def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
-                            note: str = "", unit: str = "", minutes=None) -> dict | None:
+                            note: str = "", unit: str = "", minutes=None,
+                            reading: dict | None = None,
+                            provenance: str = SUPPLIED) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
@@ -2306,6 +2353,12 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     added into a published total as though a delegated agent had cost nothing. `unit` tags the
     record to the unit the agent worked on and `minutes` is the agent's own reported duration,
     a positive number when given; `unit_agent_totals` reads them as that unit's actuals.
+
+    `reading` is the agent's own transcript reading (`agent_transcript_tokens`): its priced cost,
+    its components and its file land on the record beside the total, and `provenance` says
+    whether the total was supplied or read from that transcript. A transcript is read whole, so a
+    later reading of the same file for the same unit REPLACES the earlier record rather than
+    adding to it, which would count the earlier messages twice.
     """
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
@@ -2328,16 +2381,23 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
               f"late total would move the page before it is signed", file=sys.stderr)
         return None
     entry = {"tokens": tokens, "agent": agent, "note": note,
-             "provenance": SUPPLIED, "recorded_at": sdlc_md.now_iso8601()}
+             "provenance": provenance, "recorded_at": sdlc_md.now_iso8601()}
     if unit:
         entry["unit"] = sdlc_md.norm_id(unit)
     if minutes is not None:
         entry["minutes"] = float(minutes)
+    if reading:
+        entry.update(priced=reading["priced"], components=dict(reading["components"]),
+                     transcript=reading["source"])
+
+    def superseded(r: dict) -> bool:
+        return (bool(reading) and r.get("transcript") == entry["transcript"]
+                and r.get("unit") == entry.get("unit"))
 
     def apply(state: dict) -> dict:
         state = state or _blank()
         existing = state.get(DELEGATED)
-        state[DELEGATED] = ([r for r in existing if isinstance(r, dict)]
+        state[DELEGATED] = ([r for r in existing if isinstance(r, dict) and not superseded(r)]
                             if isinstance(existing, list) else []) + [entry]
         return state
 

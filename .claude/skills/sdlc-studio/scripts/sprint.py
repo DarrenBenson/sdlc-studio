@@ -8476,27 +8476,48 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
 
     Optional and never a refusal. Recorded whatever the outcome: a blocked lane spent its
     tokens too. Two cases record nothing and say so, because the figure cannot be placed:
-    `--minutes` with no `--tokens` (a delegated record IS a token total), and a total given for
-    several units at once (it cannot be split between them)."""
+    `--minutes` with no `--tokens` or `--agent` (a delegated record IS a token total), and a
+    total given for several units at once (it cannot be split between them).
+
+    `--agent` names the builder's own transcript (`run_state.agent_transcript_tokens`): its
+    priced cost and components land on the record, and its token sum is the total when no
+    `--tokens` is given. An agent with no readable transcript is warned about, naming the id and
+    the directory searched, and the return records no priced cost."""
     tokens, minutes = getattr(args, "tokens", None), getattr(args, "minutes", None)
-    if tokens is None and minutes is None:
+    agent = getattr(args, "agent", None)
+    if tokens is None and minutes is None and agent is None:
         return
-    if tokens is None:
+    if tokens is None and agent is None:
         print("WARNING --minutes was not recorded: an agent's minutes are recorded with its "
               "token total, so pass the builder's --tokens beside them", file=sys.stderr)
         return
     if len(results) != 1:
-        print(f"WARNING --tokens was not recorded: one total cannot be split between "
-              f"{len(results)} units - return each unit with its own builder's total",
-              file=sys.stderr)
+        print(f"WARNING {'--tokens' if tokens is not None else '--agent'} was not recorded: "
+              f"one total cannot be split between {len(results)} units - return each unit with "
+              f"its own builder's total", file=sys.stderr)
         return
     res = results[0]
+    reading = None
+    if agent is not None:
+        reading = run_state.agent_transcript_tokens(root, agent)
+        if reading.get("priced") is None:
+            print(f"WARNING --agent {agent} was not priced: {reading['reason']}, so "
+                  f"{res['unit']}'s return records no priced cost", file=sys.stderr)
+            reading = None
+    if tokens is None and reading is None:
+        if minutes is not None:
+            print("WARNING --minutes was not recorded: no token total was supplied or read "
+                  "beside them", file=sys.stderr)
+        return
     unreadable = object()
     got = _lane_run_state(
         "record_agent_total",
         lambda: run_state.record_delegated_tokens(
-            root, tokens, agent="build lane", note=f"sprint lane return ({res['outcome']})",
-            unit=res["unit"], minutes=minutes),
+            root, tokens if tokens is not None else reading["tokens"],
+            agent=f"agent-{agent}" if agent is not None else "build lane",
+            note=f"sprint lane return ({res['outcome']})", unit=res["unit"], minutes=minutes,
+            reading=reading, provenance=(run_state.SUPPLIED if tokens is not None
+                                         else run_state.READ_FROM_TRANSCRIPT)),
         unreadable,
         f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), so "
         f"its tokens and minutes will not reach the page")
@@ -8996,8 +9017,13 @@ def cmd_lane(args: argparse.Namespace) -> int:
             print(f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})")
             if got := res.get("agent_total"):
                 timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
-                print(f"  agent total recorded (supplied, not measured): "
-                      f"{got['tokens']:,} tokens{timed}")
+                read_from = Path(got.get("transcript") or "").name
+                how = ("supplied, not measured" if got.get("provenance") == run_state.SUPPLIED
+                       else f"read from {read_from}")
+                print(f"  agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
+                if got.get("priced") is not None:
+                    print(f"  agent priced cost recorded (read from {read_from}): "
+                          f"{got['priced']:,} {run_state.PRICED_LABEL}")
             for crit in res["verification"]["criteria"]:
                 print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
                       f"<- {crit['verifier']}")
@@ -12432,6 +12458,10 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--minutes", type=_lane_positive_minutes, default=None, metavar="M",
                     help="(return) the builder agent's own reported minutes, recorded with "
                          "--tokens; optional")
+    ln.add_argument("--agent", default=None, metavar="ID",
+                    help="(return) the builder agent's id: its transcript agent-ID.jsonl in this "
+                         "session's subagents directory is read once per message and its priced "
+                         "cost recorded on the unit's delegated record; optional")
     ln.add_argument("--timeout", type=int, default=300,
                     help="(return) per-verifier timeout in seconds (default: 300)")
     ln.add_argument("--format", choices=("text", "json"), default="text")
