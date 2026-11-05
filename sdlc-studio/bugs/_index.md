@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 206 |
+| Open | 207 |
 | In Progress | 0 |
 | Fixed | 843 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1223** |
+| **Total** | **1224** |
 
 ## All Bugs
 
@@ -299,6 +299,7 @@
 | [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Open | Medium | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
