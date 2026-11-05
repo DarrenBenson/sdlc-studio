@@ -6,6 +6,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures.thread
 import contextlib
 import importlib.util
 import io
@@ -3476,12 +3477,16 @@ class StampsCollectSideBySideTests(unittest.TestCase):
         raise AssertionError(f"{test_file} was collected outside the servers")
 
     def _side_by_side(self, files, start, fresh=None):
+        """Submit `files`, wait for every queued collection, then close. `close` drops a
+        collection no worker has begun, so without the wait the test would judge how soon a
+        worker thread starts rather than what is collected (BG1223)."""
         collections = verify_ac._SideBySideCollection(self.root)
         with unittest.mock.patch.object(verify_ac.CollectionServer, "start", start), \
              unittest.mock.patch.object(verify_ac, "_collect_fresh", fresh or self._no_fresh):
             try:
                 for f in files:
                     collections.submit(f)
+                concurrent.futures.wait(list(verify_ac._COLLECT_PENDING.values()))
             finally:
                 collections.close()
 
@@ -3539,6 +3544,53 @@ class StampsCollectSideBySideTests(unittest.TestCase):
         self._side_by_side(["lone.py", "a.py"], lambda cwd: started.append(cwd))
         self.assertEqual(started, [], "one uncached file was sent to a server")
         self.assertNotIn(("lone.py", str(self.root)), verify_ac._COLLECT_CACHE)
+
+    def test_with_every_collection_begun_late_each_file_is_still_collected(self) -> None:
+        """BG1223: every worker thread waits 0.5 s before it takes a collection. The control:
+        closed at once, `close` drops both queued files, as documented, and nothing is collected. The no-server test above then passes under the same delay. MUTANT:
+        drop `_side_by_side`'s wait on `_COLLECT_PENDING`, so close collects nothing and the
+        no-server test reads [] against ['a.py', 'b.py']."""
+        real = concurrent.futures.thread._worker
+
+        def late(*args, **kwargs):
+            time.sleep(0.5)
+            return real(*args, **kwargs)
+        fresh = []
+        with unittest.mock.patch.object(concurrent.futures.thread, "_worker", late):
+            collections = verify_ac._SideBySideCollection(self.root)
+            with unittest.mock.patch.object(verify_ac.CollectionServer, "start", lambda cwd: None), \
+                 unittest.mock.patch.object(verify_ac, "_collect_fresh",
+                                            lambda f, cwd=None: fresh.append(f) or [f + "::t"]):
+                collections.submit("a.py")
+                collections.submit("b.py")
+                collections.close()
+            self.assertEqual(fresh, [], "a worker took a file before close: the delay is not in force")
+            self.test_with_no_server_each_file_gets_a_collection_of_its_own()
+
+    def test_close_waits_for_every_collection_begun(self) -> None:
+        """BG1223: `_side_by_side` waits before close, so this pins close's own wait. Both
+        collections have begun when close is called, and each takes 0.2 s more. MUTANT:
+        `shutdown(wait=False)` in `close`, so close collects nothing: it returns before either
+        collection ends."""
+        if (os.cpu_count() or 1) < 2:
+            self.skipTest("needs two cores")
+        barrier, fresh = threading.Barrier(3, timeout=10), []
+
+        def collect(f, cwd=None):
+            barrier.wait()
+            time.sleep(0.2)
+            fresh.append(f)
+            return [f + "::t"]
+        collections = verify_ac._SideBySideCollection(self.root)
+        with unittest.mock.patch.object(verify_ac.CollectionServer, "start", lambda cwd: None), \
+             unittest.mock.patch.object(verify_ac, "_collect_fresh", collect):
+            try:
+                collections.submit("a.py")
+                collections.submit("b.py")
+                barrier.wait()
+            finally:
+                collections.close()
+        self.assertEqual(sorted(fresh), ["a.py", "b.py"], "close returned before a begun collection ended")
 
     def test_a_real_server_run_still_names_each_dead_stamp_and_exits_one(self) -> None:
         """AC1's refusal through real `CollectionServer`s and real pytest, with the positive
