@@ -345,6 +345,11 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
         raise LandError(f"`critic.py record` printed no recorded row, so {unit} was not "
                         f"moved:\n{_tail(rec.stdout)}")
     rnd = row.group(2) or "UNKNOWN"
+    # A verdict can be recorded with a caveat (taken against an earlier scope, say). Nothing
+    # later reads record's output, so every warning it printed is passed on here.
+    for line in (rec.stderr + rec.stdout).splitlines():
+        if re.search(r"(?i)\bwarn", line):
+            _say(f"  critic.py record: {line.strip()}", err=True)
     if row.group(1) == critic.REJECT:
         _say(f"{unit}: REJECT recorded, round {rnd}; nothing was moved")
         for item in _blocking(said) or ["no finding is marked BLOCKING"]:

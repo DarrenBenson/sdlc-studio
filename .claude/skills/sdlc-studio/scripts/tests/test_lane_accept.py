@@ -157,6 +157,24 @@ class LaneAcceptTests(unittest.TestCase):
             self.assertIn(pair, list(zip(back, back[1:])))
         self.assertNotIn("--agent", back)
 
+    def test_an_approve_passes_on_every_warning_the_record_printed(self) -> None:
+        """MUTANT: lane accept drops record's output once it has found the recorded row, so a
+        verdict recorded with a caveat (taken against an earlier scope) moves the unit with no
+        word of it."""
+        real = lanes._script
+        caveat = "WARNING the verdict was taken against an earlier Affects scope"
+
+        def warned(root, script, *args, **kw):
+            if script != "critic.py":
+                return real(root, script, *args, **kw)
+            said = f"recorded {GREEN} APPROVE [delivery] round 1 -> verdicts.md\n"
+            return subprocess.CompletedProcess([script, *args], 0, said, caveat + "\n")
+
+        rc, out, err = self._accept(GREEN, APPROVE, stub=warned)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(caveat, err)
+        self.assertEqual(_status(self.root, GREEN), "Done")
+
     def test_a_reject_records_and_prints_only_the_blocking_findings(self) -> None:
         rc, out, err = self._accept(GREEN, REJECT)
         self.assertEqual(rc, 1, out + err)
