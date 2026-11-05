@@ -368,5 +368,118 @@ class HostScopeTests(_Fixture):
         self.assertNotIn("gh is not found", r.stderr, "the host doctor named the pusher's gh")
 
 
+class ReleaseScopeTests(_Fixture):
+    """BG1220: the release gate's criteria run Python 3.10 and pdftotext, so the release route's
+    preflight names each one missing and refuses before the gate starts.
+
+    MUTANTS, each failing a test here: `--release` ignored by the checker; a missing release
+    prerequisite printed as a note, not refusing; only the first missing one named; a
+    `python3.10` trusted by its name, not asked its version; `uv python find` not consulted; the
+    release prerequisites added to the push's scope too (AC1, the checker); remote-gate.sh's
+    release preflight run without `--release`, or every route's preflight run with it; the
+    preflight run after the release gate rather than before it (AC1, the route)."""
+
+    _RELEASE = "the release gate reads red without it"
+
+    def _check(self, clone: Path, *flags: str, path: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["python3", "tools/gate_prereqs.py", "check", *flags], cwd=clone,
+                              capture_output=True, text=True, timeout=120,
+                              env=self._env(PATH=path))
+
+    @staticmethod
+    def _python(at: Path, version: str) -> Path:
+        """A stand-in interpreter that answers the version probe with `version` ("3 10")."""
+        at.write_text(f"#!/bin/sh\necho {version}\n", encoding="utf-8")
+        at.chmod(0o755)
+        return at
+
+    def _release_path(self, *, floor: str = "", uv: str = "", pdftotext: bool = False) -> str:
+        """`_stub_path` with markdownlint and rg, plus a `python3.10` answering `floor`, a `uv`
+        whose `python find --no-project 3.10` prints a Python answering `uv`, and a pdftotext."""
+        d = Path(self._stub_path("markdownlint", "rg", *(("pdftotext",) if pdftotext else ())))
+        if floor:
+            self._python(d / "python3.10", floor)
+        if uv:
+            found = self._python(self._tmp("prereqs_uv_") / "python", uv)
+            (d / "uv").write_text(
+                '#!/bin/sh\n[ "$*" = "python find --no-project 3.10" ] || exit 2\n'
+                f"echo {found}\n", encoding="utf-8")
+            (d / "uv").chmod(0o755)
+        return str(d)
+
+    def test_the_release_check_names_each_missing_release_prerequisite_and_refuses(self) -> None:
+        clone = self._clone("")
+        r = self._check(clone, "--refusing", "--host", "--release", path=self._release_path())
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("REFUSES: Python 3.10 is not found (no python3.10 on PATH, and `uv python "
+                      f"find 3.10` finds none) - {self._RELEASE}: the criteria that compile and "
+                      "start every shipped script at the 3.10 floor cannot run. Install: uv python "
+                      "install 3.10", r.stdout)
+        self.assertIn(f"REFUSES: pdftotext is not found - {self._RELEASE}: the criterion that "
+                      "reads docs/whitepaper.pdf cannot run. Install: the package `poppler-utils`",
+                      r.stdout)
+        for present, absent in (("pdftotext", "Python 3.10"), ("Python 3.10", "pdftotext")):
+            with self.subTest(present=present):
+                path = self._release_path(floor="3 10" if present == "Python 3.10" else "",
+                                          pdftotext=present == "pdftotext")
+                r = self._check(clone, "--refusing", "--host", "--release", path=path)
+                self.assertEqual(1, r.returncode, r.stdout)
+                self.assertIn(f"REFUSES: {absent} is not found", r.stdout)
+                self.assertNotIn(f"{present} is not found", r.stdout, "a present one was named")
+        r = self._check(clone, "--host", "--release", path=self._release_path(floor="3 10", pdftotext=True))
+        self.assertEqual((0, "gate prerequisites: every one present"),
+                         (r.returncode, r.stdout.strip()), r.stderr)
+
+    def test_python_3_10_is_asked_its_version_and_looked_for_through_uv(self) -> None:
+        clone = self._clone("")
+        r = self._check(clone, "--host", "--release", path=self._release_path(floor="3 12", pdftotext=True))
+        self.assertIn("Python 3.10 is not found", r.stdout, "a python3.10 that is 3.12 counted")
+        r = self._check(clone, "--host", "--release", path=self._release_path(uv="3 10", pdftotext=True))
+        self.assertEqual(0, r.returncode, "the 3.10 `uv python find` names was not found: "
+                         + r.stdout + r.stderr)
+        r = self._check(clone, "--host", "--release", path=self._release_path(uv="3 11", pdftotext=True))
+        self.assertIn("Python 3.10 is not found", r.stdout, "uv's 3.11 counted as 3.10")
+
+    def test_the_push_scope_is_unchanged(self) -> None:
+        r = self._check(self._clone(""), "--refusing", "--host", path=self._release_path())
+        self.assertEqual((0, "gate prerequisites: every one present"),
+                         (r.returncode, r.stdout.strip()), "the push's check gained the release's")
+
+    def test_the_release_route_refuses_before_the_gate_starts(self) -> None:
+        """AC1 through the shipped route: `remote-gate.sh push --release` on a fixture host whose
+        PATH has no python3.10, uv or pdftotext, then the same host given both."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from test_remote_gate_doctor import _DoctorClone  # noqa: PLC0415 - its fixture, not its tests
+        fx = _DoctorClone()
+        self.addCleanup(fx.cleanup)
+        sha = fx.commit("a release the stub gate refuses", verdict="1\n")
+        bare = os.pathsep.join([fx.host().split(os.pathsep)[0],
+                                HostScopeTests._path_without(fx.tmp, "python3.10", "uv", "pdftotext")])
+
+        def release(host: str) -> subprocess.CompletedProcess:
+            return subprocess.run(["bash", "tools/remote-gate.sh", "push", "--commit", sha,
+                                   "--release"], cwd=fx.clone, env=fx.env(host),
+                                  capture_output=True, text=True, timeout=300)
+
+        r = release(bare)
+        self.assertEqual(4, r.returncode, r.stderr)
+        self.assertIn("REFUSES: Python 3.10 is not found", r.stderr)
+        self.assertIn("REFUSES: pdftotext is not found", r.stderr)
+        self.assertIn("refused before the release gate runs", r.stderr)
+        self.assertEqual([], fx.gate_runs(), "the release gate started before its preflight refused")
+        stubs = self._tmp("prereqs_release_host_")
+        self._python(stubs / "python3.10", "3 10")
+        self._python(stubs / "pdftotext", "")
+        r = release(os.pathsep.join([str(stubs), bare]))
+        self.assertEqual(1, r.returncode, r.stderr)
+        for name in ("Python 3.10", "pdftotext"):
+            self.assertNotIn(f"{name} is not found", r.stderr, r.stderr)
+        self.assertEqual([["--release"]], [run["argv"] for run in fx.gate_runs()], r.stderr)
+        r = fx.push(host_path=bare)
+        for name in ("Python 3.10", "pdftotext"):
+            self.assertNotIn(f"{name} is not found", r.stderr, "a push's preflight checked it")
+        self.assertEqual(["--boundary", "push"], fx.gate_runs()[-1]["argv"], r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

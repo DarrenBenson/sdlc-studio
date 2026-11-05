@@ -16,6 +16,8 @@ Subcommands:
           printed as a note - the pre-push hook's preflight)
           (`--host`: leave out gh, whose red-CI read runs in the pushing clone's own hook, for a
           check on a gate host - remote-gate.sh's preflight)
+          (`--release`: add what the release gate's own criteria run, Python 3.10 and pdftotext,
+          each refusing under `--refusing` - the preflight before a host's release gate)
 """
 from __future__ import annotations
 
@@ -56,6 +58,16 @@ TOOLS = (
 #: its own pre-push hook before anything is sent to a gate host, so a check on the host
 #: (`check --host`) leaves them out.
 PUSHER_ONLY = frozenset({"gh"})
+
+#: What the release gate needs beyond the push's list (`check --release`): its criteria run these,
+#: so without one they read red on code that passes. `(name, consequence, route)`.
+RELEASE_REFUSES = "the release gate reads red without it"
+RELEASE_TOOLS = (
+    ("Python 3.10", "the criteria that compile and start every shipped script at the 3.10 floor "
+                    "cannot run", "uv python install 3.10"),
+    ("pdftotext", "the criterion that reads docs/whitepaper.pdf cannot run",
+     "the package `poppler-utils` (`poppler` on some systems)"),
+)
 
 #: One requirement line: a name, optional extras, a specifier set, an optional environment marker.
 _REQ = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(\[[^\]]*\])?\s*([^;#]*?)\s*(;[^#]*)?(#.*)?$")
@@ -146,9 +158,40 @@ def _other_route(python: str, dist: str, floor: tuple[int, ...] | None) -> str:
     return f"{python} -m pip install '{spec}' (the interpreter SDLC_COVERAGE_PYTHON names)"
 
 
-def gaps(root: Path, host: bool = False) -> list[str]:
+def _interpreter_version(python: str) -> tuple[int, ...] | None:
+    """The `(major, minor)` that `python` reports when asked, or None when it cannot answer."""
+    try:
+        r = subprocess.run([python, "-c", "import sys; print(*sys.version_info[:2])"],
+                           capture_output=True, text=True, timeout=30, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    parts = r.stdout.split()
+    if r.returncode != 0 or len(parts) != 2 or not all(p.isdigit() for p in parts):
+        return None
+    return tuple(int(p) for p in parts)
+
+
+def floor_interpreter() -> str | None:
+    """A Python at exactly the floor, looked for where US0908's lane looks: `python3.10` on
+    PATH, then `uv python find --no-project 3.10`. Each candidate is asked its version, so a
+    `python3.10` that is another Python does not count."""
+    floor = ".".join(map(str, PYTHON_FLOOR))
+    candidates = [shutil.which(f"python{floor}")]
+    uv = shutil.which("uv")
+    if uv:
+        try:
+            r = subprocess.run([uv, "python", "find", "--no-project", floor],
+                               capture_output=True, text=True, timeout=60, check=False)
+            candidates.append(r.stdout.strip() if r.returncode == 0 else None)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return next((c for c in candidates if c and _interpreter_version(c) == PYTHON_FLOOR), None)
+
+
+def gaps(root: Path, host: bool = False, release: bool = False) -> list[str]:
     """One line per missing or too-old prerequisite, each with its consequence and route.
-    `host` leaves out the PUSHER_ONLY tools, for a check run on a gate host."""
+    `host` leaves out the PUSHER_ONLY tools, for a check run on a gate host; `release` adds the
+    RELEASE_TOOLS."""
     out = []
     if sys.version_info[:2] < PYTHON_FLOOR:
         out.append(f"python3 {sys.version.split()[0]} is older than "
@@ -188,17 +231,28 @@ def gaps(root: Path, host: bool = False) -> list[str]:
         if shutil.which(exe) or (name == "markdownlint" and os.access(local, os.X_OK)):
             continue
         out.append(f"{name} is not found - {consequence}. Install: {how}")
+    for name, consequence, how in RELEASE_TOOLS if release else ():
+        if name == "pdftotext":
+            if shutil.which(name):
+                continue
+            problem = f"{name} is not found"
+        else:
+            if floor_interpreter():
+                continue
+            problem = (f"{name} is not found (no python3.10 on PATH, and `uv python find 3.10` "
+                       f"finds none)")
+        out.append(f"{problem} - {RELEASE_REFUSES}: {consequence}. Install: {how}")
     return out
 
 
 def cmd_check(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
-    found = gaps(root, host=args.host)
+    found = gaps(root, host=args.host, release=args.release)
     if not found:
         print("gate prerequisites: every one present")
         return 0
     if getattr(args, "refusing", False):
-        refusing = [g for g in found if REFUSES in g]
+        refusing = [g for g in found if REFUSES in g or RELEASE_REFUSES in g]
         for line in found:
             print(f"  {'REFUSES' if line in refusing else 'note'}: {line}")
         return 1 if refusing else 0
@@ -219,6 +273,9 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--host", action="store_true",
                        help="a check on a gate host: leave out gh, whose red-CI read runs in "
                             "the pushing clone's own hook")
+    check.add_argument("--release", action="store_true",
+                       help="add what the release gate's criteria run (Python 3.10, pdftotext), "
+                            "each refusing under --refusing")
     args = ap.parse_args(argv)
     return cmd_check(args)
 

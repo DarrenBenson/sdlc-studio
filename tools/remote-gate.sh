@@ -25,7 +25,9 @@
 #       refused by name before anything connects unless it is a positive integer, and
 #       SDLC_STUDIO_BOUNDARY_SUITE, so a `boundary_only` verifier gets the verdict it gets here.
 #       One unset here is unset there, whatever the host's gate-env.sh sets.
-#       The host's lock holds every other run there for as long as this one runs.
+#       The host's lock holds every other run there for as long as this one runs. The host's
+#       preflight refuses with 4, before the gate starts, naming each missing release prerequisite
+#       (Python 3.10, pdftotext: `gate_prereqs.py check --release`).
 #
 #   remote-gate.sh doctor
 #       Whether the configured host can judge a push: git on its ssh PATH, Node and npm, and every
@@ -326,10 +328,13 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   fi
   echo "remote gate: $here $doing with $(python3 --version 2>&1), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
 
-  # US1005's preflight, on THIS host's interpreter: the one that will run the suite.
+  # US1005's preflight, on THIS host's interpreter: the one that will run the suite. Before the
+  # release gate it also checks what that gate's criteria run, Python 3.10 and pdftotext (BG1220).
+  local -a prereq_scope=(--refusing --host)
+  [ -n "$release" ] && prereq_scope+=(--release)
   if [ -f tools/gate_prereqs.py ]; then
-    if ! python3 tools/gate_prereqs.py check --refusing --host; then
-      echo "remote gate: refused before $what runs: $here's interpreter lacks a prerequisite marked REFUSES above"
+    if ! python3 tools/gate_prereqs.py check "${prereq_scope[@]}"; then
+      echo "remote gate: refused before $what runs: $here lacks a prerequisite marked REFUSES above"
       exit "$HOST_SETUP_FAILED"
     fi
   fi
