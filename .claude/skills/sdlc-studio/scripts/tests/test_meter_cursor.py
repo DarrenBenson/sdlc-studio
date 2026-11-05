@@ -803,6 +803,11 @@ class CursorHookLedgerTests(_Fixture):
                      f"`{meter_cursor.HOOK_EVENT}` entry of the project's `.cursor/hooks.json`",
                      f"`{meter_cursor.LEDGER_REL.as_posix()}`"):
             self.assertIn(want, para)
+        # BG1236: the hook resolves the workspace, so the page must not say it writes under
+        # its working directory
+        flat = " ".join(para.split())
+        self.assertIn("under the workspace it resolves", flat)
+        self.assertNotIn("under its working directory", flat)
         self.assertTrue(HOOK.is_file())
         override = [" ".join(p.split()) for p in paras if f"`{meter_cursor.API_ENV}`" in p]
         self.assertEqual(len(override), 1)
