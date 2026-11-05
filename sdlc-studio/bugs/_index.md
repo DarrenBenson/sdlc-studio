@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 207 |
+| Open | 209 |
 | In Progress | 0 |
 | Fixed | 844 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1225** |
+| **Total** | **1227** |
 
 ## All Bugs
 
@@ -301,6 +301,8 @@
 | [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Open | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Open | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1225](BG1225-an-http-loopback-cursor-api-base-still-goes.md) | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1226](BG1226-generated-doc-drift-is-found-only-by-unit.md) | Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1227](BG1227-file-finding-py-writes-a-bare-url-from.md) | file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane | Open | Low | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
