@@ -1,6 +1,6 @@
 # BG1226: Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .githooks/pre-commit, tools/tests/test_pre_commit_docgen.py, changelog.d/BG1226.md
@@ -27,6 +27,7 @@ Add a cheap pre-commit lane that runs the three `docgen.py ... --check` lanes (s
 
 - [ ] **AC1** Given a staged script change whose CLI surface drifts from reference-scripts-surface.md, the pre-commit hook refuses in its cheap guards before any suite runs, naming docgen and the regenerate command; with the regenerated file staged the lane passes, and a commit staging no script, reference or help file skips the lane.
   - **Verify:** pytest tools/tests/test_pre_commit_docgen.py
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 

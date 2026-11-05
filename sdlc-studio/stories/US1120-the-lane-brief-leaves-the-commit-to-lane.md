@@ -1,6 +1,6 @@
 # US1120: The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0661
 > **Created:** 2026-11-05
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given `sprint.py lane brief --units <id>`, then its closing commands tell the builder to stage exactly its Affects, write the commit message and each unit's claims and mutants files to the hand-in path, and stop without committing, naming `sprint lane land` as what commits; the brief prints no `git commit` and no `self-check record` command for the builder
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_the_brief_hands_the_commit_to_lane_land
+  - **Verified:** yes (2026-11-05)
 - **AC2:** Given lanes of 1 and 5 points, then each brief states a tool-call budget formed from one per-point constant, and the hand-off rule: at the budget, write a hand-off note of what is done, the criteria left and the next step to the hand-in path, and return
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_the_budget_scales_with_points_and_names_the_hand_off
+  - **Verified:** yes (2026-11-05)
 - **AC3:** Given `reference-agent-prompt-template.md`, then it says a repair or second build resumes its builder only below a stated context size, and otherwise starts a fresh builder from the hand-off note
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py::LaneBriefBudgetTests::test_the_prompt_template_names_the_fresh_builder_rule
+  - **Verified:** yes (2026-11-05)
 
 ## Revision History
 

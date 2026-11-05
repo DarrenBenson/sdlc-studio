@@ -148,3 +148,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0136](RETRO0136-reviewers-see-only-self-checked-work-and-a.md) | Reviewers see only self-checked work, and a run's real cost is measured and held to budget | 2026-10-27 | -- | -- |
 | [RETRO-0137](RETRO0137-6-2-is-releasable-its-documents-and-personas.md) | 6.2 is releasable: its documents and personas match the code, every lesson is judged, and gates cost less | 2026-11-01 | -- | -- |
 | [RETRO-0138](RETRO0138-run-five-delivered-the-release-path-and-the.md) | Run five delivered the release path and the Cursor meters, at a cost the operator ruled too high | 2026-11-04 | -- | -- |
+| [RETRO-0139](RETRO0139-run-six-cut-the-cost-per-point-and.md) | Run six cut the cost per point and landed the efficiency tooling | 2026-11-05 | -- | -- |

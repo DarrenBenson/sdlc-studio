@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 81 |
-| Ready | 3 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 854 |
+| Done | 856 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -156,8 +156,8 @@
 | [US1116](US1116-the-commit-msg-hook-s-paste-ready-trailers.md) | The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for | Done | EP0297 | 2026-11-02 | 2026-11-02 |
 | [US1117](US1117-sprint-lane-return-agent-prices-a-lane-from.md) | sprint lane return --agent prices a lane from its builder's own transcript, and the report's unit row shows that priced cost | Done | EP0298 | 2026-11-05 | 2026-11-05 |
 | [US1118](US1118-sprint-lane-land-commits-a-builder-s-staged.md) | sprint lane land commits a builder's staged lane through the hooks, lands it on main and records each unit's self-check and review brief | Done | EP0298 | 2026-11-05 | 2026-11-05 |
-| [US1119](US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md) | sprint lane accept records a reviewer's verdict and, on APPROVE, runs the criteria, moves the unit to its terminal status and returns its lane | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
-| [US1120](US1120-the-lane-brief-leaves-the-commit-to-lane.md) | The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1119](US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md) | sprint lane accept records a reviewer's verdict and, on APPROVE, runs the criteria, moves the unit to its terminal status and returns its lane | Done | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1120](US1120-the-lane-brief-leaves-the-commit-to-lane.md) | The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context | Done | EP0298 | 2026-11-05 | 2026-11-05 |
 | [US1121](US1121-a-cursor-cli-run-is-metered-from-an.md) | A Cursor CLI run is metered from an afterAgentResponse hook ledger, and the meter reads it as measured | Done | EP0274 | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases

@@ -6,3 +6,9 @@
 {"id": "US1117", "type": "story", "project": "sdlc-studio"}
 {"id": "US1121", "type": "story", "project": "sdlc-studio"}
 {"id": "US1118", "type": "story", "project": "sdlc-studio"}
+{"id": "US1120", "type": "story", "project": "sdlc-studio"}
+{"id": "BG1224", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG1226", "type": "bug", "project": "sdlc-studio"}
+{"id": "US1119", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0298", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0661", "type": "cr", "project": "sdlc-studio"}

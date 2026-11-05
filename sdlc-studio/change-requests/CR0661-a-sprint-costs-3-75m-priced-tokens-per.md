@@ -1,6 +1,6 @@
 # CR-0661: A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0298
 > **Priority:** High
 > **Type:** Improvement

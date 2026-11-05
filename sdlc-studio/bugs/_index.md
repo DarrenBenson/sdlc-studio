@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 205 |
+| Open | 212 |
 | In Progress | 0 |
-| Fixed | 848 |
+| Fixed | 850 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1227** |
+| **Total** | **1236** |
 
 ## All Bugs
 
@@ -299,10 +299,19 @@
 | [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Fixed | Medium | 2026-11-05 | 2026-11-05 |
-| [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Fixed | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1225](BG1225-an-http-loopback-cursor-api-base-still-goes.md) | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it | Open | Low | 2026-11-05 | 2026-11-05 |
-| [BG1226](BG1226-generated-doc-drift-is-found-only-by-unit.md) | Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1226](BG1226-generated-doc-drift-is-found-only-by-unit.md) | Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane | Fixed | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1227](BG1227-file-finding-py-writes-a-bare-url-from.md) | file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane | Fixed | Low | 2026-11-05 | 2026-11-05 |
+| [BG1228](BG1228-bg1190-did-not-converge-in-review-round-2.md) | BG1190 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1229](BG1229-critic-py-s-self-check-and-verdict-records.md) | critic.py's self-check and verdict records refuse shapes authors and reviewers write naturally, and record has no dry run | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1230](BG1230-lane-return-agent-one-agent-priced-onto-two.md) | lane return --agent: one agent priced onto two units, stale --tokens wording, and undocumented help | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1231](BG1231-lane-land-exit-1-documented-too-narrowly-two.md) | lane land: exit 1 documented too narrowly, two test gaps, a false --units help line, and an unscrubbed git environment | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1232](BG1232-the-lane-brief-s-budget-and-hand-in.md) | The lane brief's budget and hand-in: no-Points untested, one shared hand-in for a multi-unit lane, and US1093's stale story text | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1233](BG1233-the-cursor-hook-ledger-mid-run-creation-or.md) | The Cursor hook ledger: mid-run creation or deletion misreads the run, deep nesting is fatal, and the text cut is untested | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1234](BG1234-small-follow-ups-from-run-six-s-approved.md) | Small follow-ups from run six's approved bug fixes: BG1217, BG1220, BG1223, BG1224 and BG1227 | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1235](BG1235-run-six-s-round-2-and-lane-accept.md) | Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1236](BG1236-run-six-s-landings-left-five-repo-wide.md) | Run six's landings left five repo-wide census tests red, which the push gate's full suite refused | Open | High | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
