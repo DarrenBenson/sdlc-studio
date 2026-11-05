@@ -2663,6 +2663,30 @@ def missing_test_paths(selectors: list[str], root: str = ".") -> list[str]:
             if not os.path.exists(os.path.join(root, s.split("::", 1)[0]))]
 
 
+def unresolved_node_ids(selectors: list[str], root: str = ".") -> list[str]:
+    """The selectors, in order, carrying a `::` node id that pytest refuses to collect under
+    `root` (exit 4, a usage error such as "not found"): a file that exists, naming a test that
+    does not. Under pytest-xdist such a node id beside a failing module exits 5 having run
+    nothing, as a missing path did.
+
+    A selection with no `::` (the commit hook's whole modules) spawns nothing. Otherwise one
+    `pytest --collect-only` reads every node id at once, and only when that one is refused does
+    each node id get its own, so the refusal names the ones at fault. Any exit but 4 (5 for a
+    node id that collects nothing, say) is left to the run, whose own verdict reads it."""
+    import subprocess  # noqa: PLC0415
+    nodes = [s for s in selectors if "::" in s]
+
+    def refused(batch: list[str]) -> bool:
+        return subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q",
+                               "-p", "no:cacheprovider", *batch],
+                              cwd=root, capture_output=True, text=True,
+                              check=False).returncode == 4
+
+    if not nodes or not refused(nodes):
+        return []
+    return [n for n in nodes if refused([n])]
+
+
 def cmd_run_tests(args: argparse.Namespace) -> int:
     """Run the selected test modules; exit non-zero when any test fails.
 
@@ -2674,7 +2698,9 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     `serial_only` leaves the parallel phase empty, and the serial phase then runs them. So a
     selector whose path (the part before any `::`) names nothing under `--root` is refused by
     name, exit 2, before pytest starts: under pytest-xdist a missing path beside a real one
-    exits 5 having run nothing, which read as a pass over a failing module."""
+    exits 5 having run nothing, which read as a pass over a failing module. A node id whose
+    file exists but whose test pytest refuses to collect does the same, so it is refused by name
+    too, exit 2, after pytest's own `--collect-only` and before any test runs."""
     import importlib.util
     import subprocess
     try:
@@ -2690,6 +2716,13 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
         return 2
     if importlib.util.find_spec("pytest") is None:
         print("unit-tests: pytest is not installed, so the selection cannot run here",
+              file=sys.stderr)
+        return 2
+    unresolved = unresolved_node_ids(args.run_tests, args.root)
+    if unresolved:
+        print(f"unit-tests: refused - {len(unresolved)} of {len(args.run_tests)} selector(s) "
+              f"name a test pytest cannot collect under {args.root} (pytest --collect-only "
+              f"exited 4), so no test ran: {', '.join(unresolved)}",
               file=sys.stderr)
         return 2
     parallel = importlib.util.find_spec("xdist") is not None

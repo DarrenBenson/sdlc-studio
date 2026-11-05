@@ -6,6 +6,9 @@ exits 4 on the same argv. Each case below drives the shipped CLI against a throw
 with pytest-xdist and once with it hidden, and a test that runs leaves a file behind, so "no test
 ran" is observed rather than inferred from an exit code; a conftest leaves another when pytest
 starts at all.
+
+BG1217: a node id whose file exists but whose test does not did the same under pytest-xdist, so
+it is refused by name too, after a `pytest --collect-only` and before any test runs.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/gate.py
 from __future__ import annotations
@@ -16,6 +19,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import loader  # noqa: E402
@@ -48,10 +52,12 @@ def _env() -> dict:
             and k not in ("SDLC_GATE_BOUNDARY", "SDLC_STUDIO_BOUNDARY_SUITE")}
 
 
-#: A conftest that leaves `started.flag` when pytest starts in the root, whatever it runs.
+#: A conftest that leaves `started.flag` when pytest starts a run in the root, whatever it runs;
+#: a `--collect-only` (BG1217's resolution) leaves none.
 STARTED = ('from pathlib import Path\n\n\n'
            'def pytest_configure(config):\n'
-           '    (Path(__file__).parent / "started.flag").write_text("started")\n')
+           '    if not config.option.collectonly:\n'
+           '        (Path(__file__).parent / "started.flag").write_text("started")\n')
 
 
 def _fixture(root: Path) -> None:
@@ -91,7 +97,8 @@ class RunTestsPathTests(unittest.TestCase):
     def test_a_failing_test_fails_the_run_when_every_path_is_real(self) -> None:
         """AC2, the positive control: a file, a directory and a node id under `--root` all pass the
         check, the red test runs and the run exits 1. MUTANTS: keep the `::test_red` suffix in the
-        existence check; test the path against the cwd; treat pytest's 1 as a pass."""
+        existence check; test the path against the cwd; treat pytest's 1 as a pass; collect a node
+        id against the cwd rather than `--root` (BG1217)."""
         for runner in RUNNERS:
             with self.subTest(runner=runner), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
@@ -128,6 +135,56 @@ class RunTestsPathTests(unittest.TestCase):
             got = gate.select_tests(d, ["tools/tests/test_gone.py", "tools/tests/test_kept.py"])
         self.assertTrue(got["resolved"], got)
         self.assertEqual(["tools/tests/test_kept.py"], got["selectors"])
+
+
+class RunTestsNodeIdTests(unittest.TestCase):
+    """BG1217: a node id naming no test in a file that exists is refused by name."""
+
+    def test_a_node_id_naming_no_test_is_refused_by_name_beside_a_failing_module(self) -> None:
+        """AC1. MUTANTS: drop the refusal (xdist exits 5, read as a pass); refuse with exit 0 or 4;
+        name every node id once the batch is refused; refuse after the run (no test runs either
+        way, so the conftest's `started.flag` tells them apart); collect against the cwd rather
+        than `--root`."""
+        cases = ((["sub/test_ok.py::nope"], ["sub/test_ok.py::nope"]),
+                 (["sub/test_ok.py::test_ok", "sub/test_ok.py::nope", "test_red.py::gone"],
+                  ["sub/test_ok.py::nope", "test_red.py::gone"]))
+        for runner in RUNNERS:
+            for nodes, named in cases:
+                with self.subTest(runner=runner, nodes=nodes), \
+                        tempfile.TemporaryDirectory() as d:
+                    root = Path(d)
+                    _fixture(root)
+                    proc = _run(runner, root, "test_red.py", *nodes)
+                    self.assertEqual(2, proc.returncode, proc.stdout + proc.stderr)
+                    self.assertIn("refused", proc.stderr)
+                    listed = proc.stderr.rsplit("no test ran: ", 1)[-1].strip().split(", ")
+                    self.assertEqual(named, listed, proc.stderr)
+                    self.assertFalse((root / "ran.flag").exists(), "a test ran before the refusal")
+                    self.assertFalse((root / "started.flag").exists(), "a run started")
+
+    def test_the_collect_costs_nothing_without_a_node_id_and_one_run_when_all_resolve(self) -> None:
+        """The performance proof, counted in spawned pytest runs: none for whole modules and
+        directories (the commit hook's selection), one for any number of resolving node ids, and
+        one more per node id only once that one is refused. A node id pytest finds but that
+        collects nothing (an empty class, exit 5) is left to the run. MUTANTS: collect whatever the
+        selection; collect each node id alone every time; skip the per-node pass; refuse on any
+        non-zero collect exit rather than on 4."""
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, _env(), clear=True), \
+                mock.patch("subprocess.run", wraps=subprocess.run) as spawned:
+            _fixture(Path(d))
+            (Path(d) / "sub" / "test_empty.py").write_text("class TestEmpty:\n    pass\n",
+                                                           encoding="utf-8")
+            for selectors, unresolved, runs in (
+                    (["test_red.py", "sub", "sub/test_ok.py"], [], 0),
+                    (["test_red.py::test_red", "sub/test_ok.py::test_ok", "sub"], [], 1),
+                    (["test_red.py", "sub/test_empty.py::TestEmpty"], [], 1),
+                    (["test_red.py::test_red", "sub/test_ok.py::nope"],
+                     ["sub/test_ok.py::nope"], 3)):
+                with self.subTest(selectors=selectors):
+                    spawned.reset_mock()
+                    self.assertEqual(unresolved, gate.unresolved_node_ids(selectors, d))
+                    self.assertEqual(runs, spawned.call_count)
 
 
 if __name__ == "__main__":

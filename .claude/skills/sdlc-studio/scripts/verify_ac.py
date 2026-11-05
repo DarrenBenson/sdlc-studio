@@ -458,6 +458,47 @@ _SKIPPED_MSG = ("verifier exited 0 but every selected test was SKIPPED - a skipp
                 "Verify line at a test that runs in this environment.")
 
 
+def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
+    """SIGKILL `proc`'s whole process group, reap `proc`, then wait up to `grace` seconds until
+    no member of the group is left, so nothing it spawned outlives the verdict.
+
+    The group is `proc`'s pid (`start_new_session`). Its other members are reparented when
+    `proc` dies and reaped by init, which is why the wait polls the group rather than `proc`.
+    Where `os.killpg` does not exist, only `proc` is killed."""
+    if not hasattr(os, "killpg"):
+        with contextlib.suppress(OSError):
+            proc.kill()
+        proc.wait()
+        return
+    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+        os.killpg(proc.pid, signal.SIGKILL)
+    proc.wait()
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(proc.pid, 0)
+        except (ProcessLookupError, PermissionError, OSError):
+            return
+        time.sleep(0.01)
+
+
+def _run_in_group(cmd: str | list[str], timeout: float, cwd: Path) -> subprocess.CompletedProcess:
+    """Run a verifier's command, a string under the shell, in its own session and return what
+    `subprocess.run(..., capture_output=True, text=True)` would. On a timeout, or any exit
+    that interrupts the wait, its whole process group is killed and reaped before the
+    exception propagates: `subprocess.run` kills only the shell, so the shell's children ran on
+    and loaded every verifier after them."""
+    with subprocess.Popen(cmd, shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                          cwd=str(cwd), start_new_session=True) as proc:
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except BaseException:
+            _kill_group(proc)
+            raise
+    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
+
+
 def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResult:
     """Graded verifier: `eval <command> --threshold <float>`.
 
@@ -475,7 +516,7 @@ def _run_eval(expr: str, timeout: int, cwd: Path, start: float) -> VerifierResul
         return VerifierResult(False, "eval", 2, "", f"eval: non-numeric threshold {m.group(1)!r}", 0)
     command = body[:m.start()].strip()
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout, cwd=str(cwd))  # nosec B602 - project-authored AC verifier, trusted input (reference-verify.md trust boundary)
+        result = _run_in_group(command, timeout, cwd)  # project-authored AC verifier, trusted input (reference-verify.md trust boundary)
     except subprocess.TimeoutExpired:
         return VerifierResult(False, "eval", 124, "", "timeout", int((time.time() - start) * 1000))
     except FileNotFoundError as e:
@@ -519,14 +560,7 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
         return VerifierResult(False, "blocked", 2, "", _SHELL_DISABLED_MSG, 0)
 
     try:
-        result = subprocess.run(
-            cmd,
-            shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=str(cwd),
-        )
+        result = _run_in_group(cmd, timeout, cwd)
         duration = int((time.time() - start) * 1000)
         stdout, stderr = result.stdout[-4000:], result.stderr[-4000:]
         # A clean exit that ran nothing is vacuous. So is a pytest run whose named
