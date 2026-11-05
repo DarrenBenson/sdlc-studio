@@ -482,20 +482,69 @@ def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
         time.sleep(0.01)
 
 
+# The process group of every verifier running now, each led by a pid `_run_in_group` started in
+# its own session. That session puts the verifier outside its caller's process group, so a
+# signal sent to that group (a Ctrl-C at the terminal, `kill -TERM -- -<pgid>` from a cancel)
+# no longer reaches it, and `_reap_on_signal` passes the kill on.
+_LIVE_GROUPS: set[int] = set()
+_PRIOR_HANDLERS: dict = {}
+
+
+def _reap_on_signal(signum, frame):
+    """SIGKILL every live verifier group, those worker threads wait on included, then let the
+    signal do what it did before: call the handler this one replaced (SIGINT's raises
+    `KeyboardInterrupt`), or, under the default disposition, die by it."""
+    for pgid in _LIVE_GROUPS.copy():
+        with contextlib.suppress(OSError):
+            os.killpg(pgid, signal.SIGKILL)
+    prior = _PRIOR_HANDLERS.get(signum, signal.SIG_DFL)
+    if callable(prior):
+        return prior(signum, frame)
+    signal.signal(signum, signal.SIG_DFL)
+    os.kill(os.getpid(), signum)
+    return None
+
+
+def _install_reaper() -> None:
+    """Put `_reap_on_signal` in front of SIGTERM, SIGINT and SIGHUP. Only the main thread may
+    set a handler, and a worker thread's verifier is reached only from there, so this runs at
+    import; off the main thread it does nothing. A signal that is ignored, or whose handler was
+    not set from Python, is left as it is."""
+    if not hasattr(os, "killpg"):
+        return
+    for name in ("SIGTERM", "SIGINT", "SIGHUP"):
+        sig = getattr(signal, name, None)
+        prior = signal.getsignal(sig) if sig is not None else None
+        if prior is None or prior == signal.SIG_IGN:
+            continue
+        try:
+            signal.signal(sig, _reap_on_signal)
+        except (ValueError, OSError, RuntimeError):
+            continue  # not the main thread
+        _PRIOR_HANDLERS[sig] = prior
+
+
+_install_reaper()
+
+
 def _run_in_group(cmd: str | list[str], timeout: float, cwd: Path) -> subprocess.CompletedProcess:
     """Run a verifier's command, a string under the shell, in its own session and return what
     `subprocess.run(..., capture_output=True, text=True)` would. On a timeout, or any exit
     that interrupts the wait, its whole process group is killed and reaped before the
     exception propagates: `subprocess.run` kills only the shell, so the shell's children ran on
-    and loaded every verifier after them."""
+    and loaded every verifier after them. While it runs, its group is in `_LIVE_GROUPS`, so a
+    signal to the caller kills it too."""
     with subprocess.Popen(cmd, shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                           cwd=str(cwd), start_new_session=True) as proc:
+        _LIVE_GROUPS.add(proc.pid)
         try:
             stdout, stderr = proc.communicate(timeout=timeout)
         except BaseException:
             _kill_group(proc)
             raise
+        finally:
+            _LIVE_GROUPS.discard(proc.pid)
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 

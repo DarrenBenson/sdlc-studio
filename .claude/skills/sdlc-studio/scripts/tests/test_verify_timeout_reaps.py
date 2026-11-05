@@ -40,6 +40,14 @@ def _spawning(d: Path) -> str:
             f"(sleep {_SLEEP}; echo late) & echo $! > {q}/child; wait")
 
 
+def _recorded_in(d: Path) -> tuple[int, int] | None:
+    """The (child pid, process group) a `_spawning(d)` shell wrote, or None until both read."""
+    try:
+        return int((d / "child").read_text().strip()), int((d / "pgid").read_text().strip())
+    except (OSError, ValueError):
+        return None
+
+
 def _stat(pid: int) -> list[str] | None:
     """The fields of `/proc/<pid>/stat` after the command name, or None once the pid is gone."""
     try:
@@ -155,6 +163,18 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertEqual(probes, [pgid] * 3)
         self.assertReaped()
 
+    def test_the_group_is_killed_outright_and_the_verdict_follows_at_once(self) -> None:
+        """A verifier that ignores SIGTERM still dies at its ceiling, and the verdict does not
+        wait out the 2 s grace. Mutants: SIGTERM sent in place of SIGKILL (the shell and its
+        sleep ignore it, so the verdict waits for the sleep), or the reap `proc.wait()` removed
+        (the zombie leader keeps the group probe answering until the grace runs out); either
+        fails the bound."""
+        started = time.monotonic()
+        res = verify_ac.run_verifier("shell trap '' TERM; sleep 4; echo late", timeout=1, cwd=self.d)
+        elapsed = time.monotonic() - started
+        self.assertEqual((res.ok, res.exit_code, res.stderr), (False, 124, "timeout"))
+        self.assertLess(elapsed, 2.5)
+
     def test_without_killpg_the_timeout_still_reads_red(self) -> None:
         """Where `os.killpg` does not exist the verifier alone is killed. Mutant: the
         `hasattr(os, "killpg")` branch removed; the AttributeError then escapes as a crash
@@ -168,12 +188,130 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
 
     def test_a_verifier_inside_its_ceiling_returns_its_own_output(self) -> None:
         """The control: the in-time path through the same helper. Mutant: `_run_in_group`
-        returning empty streams, or a fixed return code; either fails the exact result here."""
+        returning empty streams, or a fixed return code; either fails the exact result here.
+        Mutant: `_LIVE_GROUPS.discard` removed; the finished verifier's pid then stays where a
+        signal handler would kill whatever group reuses it, and fails the empty registry."""
         res = verify_ac.run_verifier("shell echo out; echo err >&2; exit 3", timeout=_CEILING, cwd=self.d)
         self.assertEqual((res.ok, res.kind, res.exit_code, res.stdout, res.stderr),
                          (False, "shell", 3, "out\n", "err\n"))
         green = verify_ac.run_verifier("shell echo fine", timeout=_CEILING, cwd=self.d)
         self.assertEqual((green.ok, green.exit_code, green.stdout), (True, 0, "fine\n"))
+        self.assertEqual(verify_ac._LIVE_GROUPS, set())
+
+
+# A caller of `run_verifier`: one command runs on the main thread, several run on a thread pool
+# that an interrupt cancels and re-raises from, as `gate.py`'s verify pool does.
+_DRIVER = """
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import verify_ac
+ceiling, commands = int(sys.argv[2]), sys.argv[3:]
+if len(commands) == 1:
+    verify_ac.run_verifier(commands[0], timeout=ceiling, cwd=Path.cwd())
+else:
+    pool = ThreadPoolExecutor(max_workers=len(commands))
+    try:
+        for command in commands:
+            pool.submit(verify_ac.run_verifier, command, ceiling, Path.cwd())
+        pool.shutdown(wait=True)
+    except BaseException:
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise
+"""
+_CALLER_CEILING = 30  # far beyond the fixture's sleep, so only the signal can end the verifier
+_PROMPT = 3           # seconds the caller and its verifiers get to be gone after the signal
+
+
+@unittest.skipUnless((_PROC / "self" / "stat").is_file(), "reads process state from /proc")
+class SignalToTheCallerReapsTests(unittest.TestCase):
+    """A verifier leads its own session, outside its caller's process group, so a signal sent to
+    that group (`remote-gate.sh` cancelling with `kill -TERM -- -<pgid>`, a Ctrl-C at the
+    terminal) does not reach it. Each test runs a caller in a session of its own, signals the
+    caller's group the way those do, and requires every verifier group gone promptly after."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.d = Path(tmp.name)
+        self.dirs: list[Path] = []
+        self.addCleanup(self._sweep)
+
+    def _sweep(self) -> None:
+        """Kill whatever a red run left behind, never this test process's own group."""
+        for d in self.dirs:
+            rec = _recorded_in(d)
+            if rec and rec[1] != os.getpgrp():
+                with contextlib.suppress(OSError):
+                    os.killpg(rec[1], signal.SIGKILL)
+
+    def _caller(self, n: int) -> subprocess.Popen:
+        """Start a caller running `n` spawning verifiers, and return once each has recorded."""
+        self.dirs = [self.d / str(i) for i in range(n)]
+        for d in self.dirs:
+            d.mkdir()
+        caller = subprocess.Popen(
+            [sys.executable, "-c", _DRIVER, str(SCRIPTS), str(_CALLER_CEILING),
+             *(f"shell {_spawning(d)}" for d in self.dirs)],
+            cwd=self.d, start_new_session=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.addCleanup(self._end, caller)
+        deadline = time.monotonic() + 20
+        while not all(_recorded_in(d) for d in self.dirs):
+            if caller.poll() is not None or time.monotonic() > deadline:
+                self.fail("the caller's verifiers never recorded their groups")
+            time.sleep(0.05)
+        return caller
+
+    @staticmethod
+    def _end(caller: subprocess.Popen) -> None:
+        if caller.poll() is None:
+            with contextlib.suppress(OSError):
+                os.killpg(caller.pid, signal.SIGKILL)
+            caller.wait()
+
+    def assertCallerAndGroupsGone(self, caller: subprocess.Popen, sig: int) -> None:
+        try:
+            caller.wait(timeout=_PROMPT)
+        except subprocess.TimeoutExpired:
+            self.fail(f"the caller was still running {_PROMPT} s after its group was sent {sig!r}")
+        self.assertEqual(caller.returncode, -sig, "the caller did not die by the signal it was sent")
+        groups = [rec[1] for rec in map(_recorded_in, self.dirs) if rec]
+        deadline = time.monotonic() + _PROMPT
+        while any(_live_members(g) for g in groups) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual({g: _live_members(g) for g in groups}, {g: [] for g in groups},
+                         "a verifier group outlived its caller")
+
+    def test_sigterm_to_the_callers_group_kills_its_verifier(self) -> None:
+        """Mutants: the handler not installed for SIGTERM, `_LIVE_GROUPS.add` removed, or the
+        handler's `os.killpg` removed (the verifier then outlives its caller); or the handler
+        not re-raising the signal (the caller then exits 0, not by SIGTERM)."""
+        caller = self._caller(1)
+        os.killpg(caller.pid, signal.SIGTERM)
+        self.assertCallerAndGroupsGone(caller, signal.SIGTERM)
+
+    def test_sigint_to_the_callers_group_kills_its_worker_threads_verifiers(self) -> None:
+        """Ctrl-C reaches the main thread only; the verifiers run on two pool threads. Mutants:
+        the handler not installed for SIGINT (the caller waits for the verifiers to finish), or
+        the prior handler not called (no `KeyboardInterrupt`, so the caller exits 0)."""
+        caller = self._caller(2)
+        os.killpg(caller.pid, signal.SIGINT)
+        self.assertCallerAndGroupsGone(caller, signal.SIGINT)
+
+    def test_an_ignored_signal_is_left_ignored(self) -> None:
+        """A caller started under `nohup`, or in the background of a script, ignores SIGHUP or
+        SIGINT, and importing `verify_ac` must not make that signal fatal. Mutant: the reaper
+        installed over `SIG_IGN` too (the import then replaces it, and fails here); the
+        SIGTERM half is the control that the reaper is installed at all."""
+        probe = ("import signal, sys; signal.signal(signal.SIGHUP, signal.SIG_IGN); "
+                 "sys.path.insert(0, sys.argv[1]); import verify_ac; "
+                 "print(signal.getsignal(signal.SIGHUP) == signal.SIG_IGN, "
+                 "signal.getsignal(signal.SIGTERM) == verify_ac._reap_on_signal)")
+        out = subprocess.run([sys.executable, "-c", probe, str(SCRIPTS)], capture_output=True,
+                             text=True, timeout=60, check=True).stdout
+        self.assertEqual(out.split(), ["True", "True"])
 
 
 if __name__ == "__main__":
