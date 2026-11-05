@@ -1,0 +1,1603 @@
+{
+  "schema": 1,
+  "run_id": "RUN-01M6NH7W",
+  "started_at": "2026-11-05T09:43:16Z",
+  "ended_at": null,
+  "outcome": "running",
+  "goal": null,
+  "batch": [
+    "US1117",
+    "US1118",
+    "US1120",
+    "US1119",
+    "BG1224",
+    "BG1223",
+    "BG1213",
+    "US1121",
+    "BG1220",
+    "BG1217",
+    "BG1226",
+    "BG1227",
+    "BG1236"
+  ],
+  "plan": "sdlc-studio/.local/sprint-plan.json",
+  "handoff": null,
+  "session_token_baseline": {
+    "tokens": 160708957,
+    "source": "sha256:7dc733d4cecb",
+    "at": "2026-11-05T09:43:18Z",
+    "harness": "claude",
+    "cache_read": 5082551662,
+    "priced": 757878098,
+    "components": {
+      "input": 46684,
+      "output": 8568019,
+      "cache_write_5m": 129936473,
+      "cache_write_1h": 22157781,
+      "cache_read": 5082551662
+    },
+    "subagents": true,
+    "meter": "once-per-message, main thread and subagent transcripts, priced components"
+  },
+  "session_token_stamps": [
+    {
+      "tokens": 160708957,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T09:43:18Z",
+      "kind": "open",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5082551662,
+      "priced": 757878098,
+      "components": {
+        "input": 46684,
+        "output": 8568019,
+        "cache_write_5m": 129936473,
+        "cache_write_1h": 22157781,
+        "cache_read": 5082551662
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160710945,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T09:47:05Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5082733704,
+      "priced": 757903262,
+      "components": {
+        "input": 46686,
+        "output": 8569014,
+        "cache_write_5m": 129936473,
+        "cache_write_1h": 22158772,
+        "cache_read": 5082733704
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160710945,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T09:47:19Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5082733704,
+      "priced": 757903262,
+      "components": {
+        "input": 46686,
+        "output": 8569014,
+        "cache_write_5m": 129936473,
+        "cache_write_1h": 22158772,
+        "cache_read": 5082733704
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 160710945,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T09:47:34Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5082733704,
+      "priced": 757903262,
+      "components": {
+        "input": 46686,
+        "output": 8569014,
+        "cache_write_5m": 129936473,
+        "cache_write_1h": 22158772,
+        "cache_read": 5082733704
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 161176731,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T09:59:11Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5094576270,
+      "priced": 759961167,
+      "components": {
+        "input": 46932,
+        "output": 8644186,
+        "cache_write_5m": 130314064,
+        "cache_write_1h": 22171549,
+        "cache_read": 5094576270
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 161477539,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T10:19:45Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5110839350,
+      "priced": 762186840,
+      "components": {
+        "input": 47196,
+        "output": 8699353,
+        "cache_write_5m": 130537381,
+        "cache_write_1h": 22193609,
+        "cache_read": 5110839350
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 161477539,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T10:20:00Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5110839350,
+      "priced": 762186840,
+      "components": {
+        "input": 47196,
+        "output": 8699353,
+        "cache_write_5m": 130537381,
+        "cache_write_1h": 22193609,
+        "cache_read": 5110839350
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 161477539,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T10:20:14Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5110839350,
+      "priced": 762186840,
+      "components": {
+        "input": 47196,
+        "output": 8699353,
+        "cache_write_5m": 130537381,
+        "cache_write_1h": 22193609,
+        "cache_read": 5110839350
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 162032490,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T11:12:22Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5130851307,
+      "priced": 765317370,
+      "components": {
+        "input": 47562,
+        "output": 8808707,
+        "cache_write_5m": 130948399,
+        "cache_write_1h": 22227822,
+        "cache_read": 5130851307
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 162032490,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T11:12:40Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5130851307,
+      "priced": 765317370,
+      "components": {
+        "input": 47562,
+        "output": 8808707,
+        "cache_write_5m": 130948399,
+        "cache_write_1h": 22227822,
+        "cache_read": 5130851307
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 162455858,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T11:32:59Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5141205141,
+      "priced": 767145088,
+      "components": {
+        "input": 47752,
+        "output": 8875933,
+        "cache_write_5m": 131289585,
+        "cache_write_1h": 22242588,
+        "cache_read": 5141205141
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163120838,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:04:56Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5158152570,
+      "priced": 770102166,
+      "components": {
+        "input": 48086,
+        "output": 8985717,
+        "cache_write_5m": 131818442,
+        "cache_write_1h": 22268593,
+        "cache_read": 5158152570
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163160624,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:05:48Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5159716817,
+      "priced": 770350185,
+      "components": {
+        "input": 48118,
+        "output": 8996732,
+        "cache_write_5m": 131846430,
+        "cache_write_1h": 22269344,
+        "cache_read": 5159716817
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163182886,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:07:49Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5160578250,
+      "priced": 770486516,
+      "components": {
+        "input": 48136,
+        "output": 9002696,
+        "cache_write_5m": 131862710,
+        "cache_write_1h": 22269344,
+        "cache_read": 5160578250
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163848337,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:31:26Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5178236389,
+      "priced": 773400590,
+      "components": {
+        "input": 48414,
+        "output": 9081763,
+        "cache_write_5m": 132422131,
+        "cache_write_1h": 22296029,
+        "cache_read": 5178236389
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163856729,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:33:25Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5179068190,
+      "priced": 773507860,
+      "components": {
+        "input": 48422,
+        "output": 9084828,
+        "cache_write_5m": 132424638,
+        "cache_write_1h": 22298841,
+        "cache_read": 5179068190
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 163859343,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T12:34:25Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5179261228,
+      "priced": 773530487,
+      "components": {
+        "input": 48426,
+        "output": 9084843,
+        "cache_write_5m": 132427233,
+        "cache_write_1h": 22298841,
+        "cache_read": 5179261228
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 164763267,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T14:29:44Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5214977532,
+      "priced": 778971921,
+      "components": {
+        "input": 49024,
+        "output": 9267032,
+        "cache_write_5m": 133072584,
+        "cache_write_1h": 22374627,
+        "cache_read": 5214977532
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 165000817,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T14:30:10Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5216174658,
+      "priced": 779404353,
+      "components": {
+        "input": 49064,
+        "output": 9269979,
+        "cache_write_5m": 133300826,
+        "cache_write_1h": 22380948,
+        "cache_read": 5216174658
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 165540763,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T14:46:33Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5244523404,
+      "priced": 783363913,
+      "components": {
+        "input": 49524,
+        "output": 9384225,
+        "cache_write_5m": 133697472,
+        "cache_write_1h": 22409542,
+        "cache_read": 5244523404
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 165549922,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T14:48:36Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5245606516,
+      "priced": 783497187,
+      "components": {
+        "input": 49534,
+        "output": 9387298,
+        "cache_write_5m": 133700892,
+        "cache_write_1h": 22412198,
+        "cache_read": 5245606516
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 165559548,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T14:50:18Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5247518288,
+      "priced": 783715508,
+      "components": {
+        "input": 49548,
+        "output": 9390289,
+        "cache_write_5m": 133702315,
+        "cache_write_1h": 22417396,
+        "cache_read": 5247518288
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166082880,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:04:19Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5283478045,
+      "priced": 788315524,
+      "components": {
+        "input": 49868,
+        "output": 9469694,
+        "cache_write_5m": 134076340,
+        "cache_write_1h": 22486978,
+        "cache_read": 5283478045
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166082880,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:04:22Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5283478045,
+      "priced": 788315524,
+      "components": {
+        "input": 49868,
+        "output": 9469694,
+        "cache_write_5m": 134076340,
+        "cache_write_1h": 22486978,
+        "cache_read": 5283478045
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166086153,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:04:56Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5284502906,
+      "priced": 788427060,
+      "components": {
+        "input": 49872,
+        "output": 9470530,
+        "cache_write_5m": 134076340,
+        "cache_write_1h": 22489411,
+        "cache_read": 5284502906
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166171430,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:10:28Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5292714094,
+      "priced": 789403853,
+      "components": {
+        "input": 49940,
+        "output": 9480853,
+        "cache_write_5m": 134137380,
+        "cache_write_1h": 22503257,
+        "cache_read": 5292714094
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166240091,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:12:03Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5296039248,
+      "priced": 789851244,
+      "components": {
+        "input": 49990,
+        "output": 9487776,
+        "cache_write_5m": 134194935,
+        "cache_write_1h": 22507390,
+        "cache_read": 5296039248
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166547879,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T16:45:15Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5320336596,
+      "priced": 792881431,
+      "components": {
+        "input": 50244,
+        "output": 9539675,
+        "cache_write_5m": 134422357,
+        "cache_write_1h": 22535603,
+        "cache_read": 5320336596
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    {
+      "tokens": 166592934,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-05T18:20:40Z",
+      "kind": "report",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 5337145121,
+      "priced": 794699092,
+      "components": {
+        "input": 50320,
+        "output": 9556514,
+        "cache_write_5m": 134427347,
+        "cache_write_1h": 22558753,
+        "cache_read": 5337145121
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  ],
+  "delegated_tokens": [
+    {
+      "tokens": 120366,
+      "agent": "agent-aaee571fba9d695be",
+      "note": "sprint lane return (BG1213 Fixed on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T12:04:56Z",
+      "unit": "BG1213",
+      "minutes": 9.0,
+      "priced": 514178,
+      "components": {
+        "input": 66,
+        "output": 27651,
+        "cache_write_5m": 92649,
+        "cache_write_1h": 0,
+        "cache_read": 2600458
+      },
+      "transcript": "sha256:142567447e4c"
+    },
+    {
+      "tokens": 118083,
+      "agent": "agent-acbf1052f69b5f0d4",
+      "note": "sprint lane return (BG1223 Fixed on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T12:05:49Z",
+      "unit": "BG1223",
+      "minutes": 11.0,
+      "priced": 518946,
+      "components": {
+        "input": 70,
+        "output": 28318,
+        "cache_write_5m": 89695,
+        "cache_write_1h": 0,
+        "cache_read": 2651669
+      },
+      "transcript": "sha256:483c0fbded28"
+    },
+    {
+      "tokens": 156693,
+      "agent": "agent-a8ebd3f39ed4dd24c",
+      "note": "sprint lane return (BG1220 Fixed on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T12:07:49Z",
+      "unit": "BG1220",
+      "minutes": 19.0,
+      "priced": 783023,
+      "components": {
+        "input": 106,
+        "output": 23913,
+        "cache_write_5m": 132674,
+        "cache_write_1h": 0,
+        "cache_read": 4975098
+      },
+      "transcript": "sha256:152ade5021e3"
+    },
+    {
+      "tokens": 140945,
+      "agent": "agent-a36c53dca4efbace8",
+      "note": "sprint lane return (BG1227 Fixed on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T12:31:26Z",
+      "unit": "BG1227",
+      "minutes": 17.0,
+      "priced": 544106,
+      "components": {
+        "input": 70,
+        "output": 24430,
+        "cache_write_5m": 116445,
+        "cache_write_1h": 0,
+        "cache_read": 2763302
+      },
+      "transcript": "sha256:171c43885b3c"
+    },
+    {
+      "tokens": 147501,
+      "agent": "agent-a35561ee20179bf26",
+      "note": "sprint lane return (BG1217 Fixed on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T14:29:44Z",
+      "unit": "BG1217",
+      "minutes": 22.0,
+      "priced": 596941,
+      "components": {
+        "input": 74,
+        "output": 29436,
+        "cache_write_5m": 117991,
+        "cache_write_1h": 0,
+        "cache_read": 3021980
+      },
+      "transcript": "sha256:b48968e340e4"
+    },
+    {
+      "tokens": 206014,
+      "agent": "agent-a69ea4b36f5190586",
+      "note": "sprint lane return (US1117 Done on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T14:46:34Z",
+      "unit": "US1117",
+      "minutes": 19.0,
+      "priced": 1127641,
+      "components": {
+        "input": 126,
+        "output": 28278,
+        "cache_write_5m": 177610,
+        "cache_write_1h": 0,
+        "cache_read": 7641128
+      },
+      "transcript": "sha256:765d14a76e17"
+    },
+    {
+      "tokens": 127021,
+      "agent": "agent-a42c724051da019f3",
+      "note": "sprint lane return (US1117 Done on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T14:47:23Z",
+      "unit": "US1117",
+      "minutes": 23.0,
+      "priced": 603913,
+      "components": {
+        "input": 86,
+        "output": 32546,
+        "cache_write_5m": 94389,
+        "cache_write_1h": 0,
+        "cache_read": 3231106
+      },
+      "transcript": "sha256:29cb11fbccd9"
+    },
+    {
+      "tokens": 379986,
+      "agent": "agent-ac065be31dda5e2b1",
+      "note": "sprint lane return (US1121 Done on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T14:48:37Z",
+      "unit": "US1121",
+      "minutes": 35.0,
+      "priced": 1605060,
+      "components": {
+        "input": 162,
+        "output": 42141,
+        "cache_write_5m": 337683,
+        "cache_write_1h": 0,
+        "cache_read": 9720893
+      },
+      "transcript": "sha256:d2b75e4c6751"
+    },
+    {
+      "tokens": 211319,
+      "agent": "agent-a0ab9c236f6824134",
+      "note": "sprint lane return (US1118 Done on an independent APPROVE (round 1))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T14:50:19Z",
+      "unit": "US1118",
+      "minutes": 23.0,
+      "priced": 1360603,
+      "components": {
+        "input": 166,
+        "output": 25035,
+        "cache_write_5m": 186118,
+        "cache_write_1h": 0,
+        "cache_read": 10026144
+      },
+      "transcript": "sha256:2fbbbebb01fa"
+    },
+    {
+      "tokens": 140840,
+      "agent": "agent-a60d5bf8371b2bb6a",
+      "note": "sprint lane return (BG1190 carried at the review cap as BG1228 (round 2 REJECT))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T15:35:44Z",
+      "unit": "BG1190",
+      "minutes": 18.0,
+      "priced": 713743,
+      "components": {
+        "input": 90,
+        "output": 39494,
+        "cache_write_5m": 101256,
+        "cache_write_1h": 0,
+        "cache_read": 3896130
+      },
+      "transcript": "sha256:bb122eb4dce8"
+    },
+    {
+      "tokens": 123155,
+      "agent": "agent-ae0588b49091755a2",
+      "note": "sprint lane return (BG1190 carried at the review cap as BG1228 (round 2 REJECT))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T15:36:05Z",
+      "unit": "BG1190",
+      "minutes": 13.0,
+      "priced": 514650,
+      "components": {
+        "input": 70,
+        "output": 17000,
+        "cache_write_5m": 106085,
+        "cache_write_1h": 0,
+        "cache_read": 2969733
+      },
+      "transcript": "sha256:aa498987b8dd"
+    },
+    {
+      "tokens": 139364,
+      "agent": "agent-a8e771328a976db65",
+      "note": "sprint lane return (US1120 Done on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:04:19Z",
+      "unit": "US1120",
+      "minutes": 19.0,
+      "priced": 601798,
+      "components": {
+        "input": 70,
+        "output": 33789,
+        "cache_write_5m": 105505,
+        "cache_write_1h": 0,
+        "cache_read": 3009018
+      },
+      "transcript": "sha256:32c68fdc938a"
+    },
+    {
+      "tokens": 139963,
+      "agent": "agent-a4f4ad3a0c17b3870",
+      "note": "sprint lane return (BG1224 Fixed on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:04:22Z",
+      "unit": "BG1224",
+      "minutes": 20.0,
+      "priced": 816826,
+      "components": {
+        "input": 120,
+        "output": 30041,
+        "cache_write_5m": 109802,
+        "cache_write_1h": 0,
+        "cache_read": 5292485
+      },
+      "transcript": "sha256:cc791915098f"
+    },
+    {
+      "tokens": 442353,
+      "agent": "agent-a35882b581701f9cd",
+      "note": "sprint lane return (BG1226 Fixed on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:04:56Z",
+      "unit": "BG1226",
+      "minutes": 23.0,
+      "priced": 1497171,
+      "components": {
+        "input": 140,
+        "output": 56019,
+        "cache_write_5m": 386194,
+        "cache_write_1h": 0,
+        "cache_read": 7341931
+      },
+      "transcript": "sha256:b56df258e103"
+    },
+    {
+      "tokens": 96759,
+      "agent": "agent-ad858665cefa4b97e",
+      "note": "sprint lane return (BG1226 Fixed on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:05:23Z",
+      "unit": "BG1226",
+      "minutes": 10.0,
+      "priced": 441263,
+      "components": {
+        "input": 72,
+        "output": 17396,
+        "cache_write_5m": 79291,
+        "cache_write_1h": 0,
+        "cache_read": 2550974
+      },
+      "transcript": "sha256:aae758f6d117"
+    },
+    {
+      "tokens": 194520,
+      "agent": "agent-a75c3248692160ec1",
+      "note": "sprint lane return (US1119 Done on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:12:04Z",
+      "unit": "US1119",
+      "minutes": 19.0,
+      "priced": 1078646,
+      "components": {
+        "input": 114,
+        "output": 50872,
+        "cache_write_5m": 143534,
+        "cache_write_1h": 0,
+        "cache_read": 6447547
+      },
+      "transcript": "sha256:06d7043aa1bb"
+    },
+    {
+      "tokens": 133290,
+      "agent": "agent-ac6d893ce37f49747",
+      "note": "sprint lane return (BG1236 Fixed on an independent APPROVE (round 2))",
+      "provenance": "transcript",
+      "recorded_at": "2026-11-05T16:45:15Z",
+      "unit": "BG1236",
+      "minutes": 10.0,
+      "priced": 787928,
+      "components": {
+        "input": 120,
+        "output": 22369,
+        "cache_write_5m": 110801,
+        "cache_write_1h": 0,
+        "cache_read": 5374621
+      },
+      "transcript": "sha256:d2ed466a8517"
+    }
+  ],
+  "reopened": [],
+  "batch_changes": [
+    {
+      "action": "add",
+      "id": "BG1226",
+      "at": "2026-11-05T11:08:27Z",
+      "reason": "D0408: an efficiency fix found in run six's own landings"
+    },
+    {
+      "action": "add",
+      "id": "BG1227",
+      "at": "2026-11-05T11:08:27Z",
+      "reason": "D0408: an efficiency fix found in run six's own landings"
+    },
+    {
+      "action": "drop",
+      "id": "BG1190",
+      "reason": "carried at the review cap: BG1228",
+      "at": "2026-11-05T15:27:27Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1236",
+      "at": "2026-11-05T16:09:58Z",
+      "reason": "D0404: the push gate's full suite found five census tests red after run six's landings"
+    }
+  ],
+  "rulings": [
+    {
+      "id": "D0408",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0409",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    },
+    {
+      "id": "D0410",
+      "by": "persona",
+      "seat": null,
+      "subject": null,
+      "kind": "ruling"
+    }
+  ],
+  "base_ref": "13b1d56034c5f0650cc6a316def237637a985992",
+  "preplan_reconcile": {
+    "drift": 0,
+    "kinds": [],
+    "at": "2026-11-05T09:39:59Z"
+  },
+  "appetite": {
+    "units": 64,
+    "minutes": 5760.0,
+    "standing_units": 64,
+    "standing_minutes": 5760.0,
+    "over_appetite": false
+  },
+  "sprint_goal": "A sprint costs at most 1.5M priced tokens per point, each lane priced from its builder's own transcript",
+  "sprint_goal_review": {
+    "reviewed": true,
+    "status": "read",
+    "skipped": null,
+    "seats": [
+      {
+        "seat": "engineering",
+        "achievable": "partial",
+        "done_means": "lane land, the stage-and-stop brief with its call budget, lane accept and --agent pricing ship green and carry every lane built after them, and the close's priced cost divided by delivered points is at most 1.5M, about 42M for all 28 points against run five's 2.54M per point (2.06M for builders alone).",
+        "one_increment": "yes",
+        "note": "The savings land mid-run while 21 of 28 points sit in one serial shared-file cluster, so most of the batch is built under the old process with no parallel waves, the lever that cut run five's later cost. Land US1120 and US1118 first, put every later lane on stage-and-stop with a fresh builder, and never resume a builder for a repair (BG1205 above all) past the context threshold."
+      },
+      {
+        "seat": "product",
+        "achievable": "partial",
+        "done_means": "Maya (O5, her End goal 5, and the adoption risk CR0661 records) closes a sprint whose report shows priced cost per delivered point at or below 1.5M with a priced figure on each unit row, so the cost the operator ruled too high to adopt is cut and attributed per unit.",
+        "one_increment": "no",
+        "note": "Only EP0298's 12 points serve the goal (US1121's 3 meter Cursor, not this Claude Code run), and 13 points are hygiene riders, BG1205's 5 a twice-rejected carry-over; name O5 in the goal and treat the riders as declared riders. The run mostly measures the old process, so record the priced cost per point of lanes built after lane land lands as the adoption evidence beside the headline."
+      },
+      {
+        "seat": "qa",
+        "achievable": "partial",
+        "done_means": "The close report states the run's priced cost per delivered point at or below 1,500,000 on the priced basis, every unit row carries a priced figure taken from its builder's transcript with none NOT MEASURED, and each unit's executable criteria pass through verify_ac.",
+        "one_increment": "yes",
+        "note": "RPT0024 prints the priced cost with no per-point ratio, and in the planned order US1118's lane is built before US1117 exists, so the 'each lane' clause fails on the first lane unless its return is held until US1117 lands. BG1205's six criteria are manual-only after two REJECT rounds, so its 5 points can drop from the denominator while its cost stays; give it executable Verify lines or take it out."
+      }
+    ],
+    "goal": "A sprint costs at most 1.5M priced tokens per point, each lane priced from its builder's own transcript",
+    "shipped_seats": false,
+    "available_seats": [
+      "engineering",
+      "product",
+      "qa"
+    ],
+    "rounds": 11,
+    "objected": false,
+    "objections": [],
+    "reviewed_at": "2026-11-05T07:34:40Z",
+    "change_type": null,
+    "amended_from": null,
+    "requesting_seat": null,
+    "requested_by": null,
+    "needs_reconsult": [],
+    "themed": [
+      {
+        "seat": "product",
+        "one_increment": "no",
+        "note": "Only EP0298's 12 points serve the goal (US1121's 3 meter Cursor, not this Claude Code run), and 13 points are hygiene riders, BG1205's 5 a twice-rejected carry-over; name O5 in the goal and treat the riders as declared riders. The run mostly measures the old process, so record the priced cost per point of lanes built after lane land lands as the adoption evidence beside the headline."
+      }
+    ],
+    "discharged": [],
+    "reason": null
+  },
+  "reachable_end_state": {
+    "state": "Fixed (bug), Done (story)",
+    "types": [
+      "bug",
+      "story"
+    ],
+    "basis": "the `done` rung's own terminal for each type present is: Fixed (bug), Done (story)"
+  },
+  "plan_snapshot": {
+    "units": {
+      "US1117": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "US1118": {
+        "planned_points": 5,
+        "forecast_tokens": 931260,
+        "forecast_minutes": 29.2,
+        "added": false
+      },
+      "US1120": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "US1119": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1224": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1223": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "BG1213": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": false
+      },
+      "US1121": {
+        "planned_points": 3,
+        "forecast_tokens": 558756,
+        "forecast_minutes": 17.5,
+        "added": false
+      },
+      "BG1220": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1190": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1217": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": false
+      },
+      "BG1226": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
+        "added": true
+      },
+      "BG1227": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
+        "added": true
+      },
+      "BG1236": {
+        "planned_points": null,
+        "forecast_tokens": null,
+        "forecast_minutes": null,
+        "added": true
+      }
+    },
+    "rates": {
+      "tokens_per_point": {
+        "value": 186252,
+        "source": "velocity-record"
+      },
+      "minutes_per_point": {
+        "value": 5.84,
+        "source": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133"
+      }
+    }
+  },
+  "token_forecast": 4842552,
+  "lanes_in_flight": [],
+  "unit_actuals": {
+    "US1117": {
+      "minutes": 299.47,
+      "tokens": 4829818,
+      "started_at": "2026-11-05T09:47:05Z",
+      "start_tokens": 1988,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1118": {
+      "minutes": 302.98,
+      "tokens": 4848603,
+      "started_at": "2026-11-05T09:47:19Z",
+      "start_tokens": 1988,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1213": {
+      "minutes": 137.37,
+      "tokens": 2409893,
+      "started_at": "2026-11-05T09:47:34Z",
+      "start_tokens": 1988,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1223": {
+      "minutes": 126.62,
+      "tokens": 1983893,
+      "started_at": "2026-11-05T09:59:11Z",
+      "start_tokens": 467774,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1121": {
+      "minutes": 268.85,
+      "tokens": 4072383,
+      "started_at": "2026-11-05T10:19:45Z",
+      "start_tokens": 768582,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1220": {
+      "minutes": 107.82,
+      "tokens": 1705347,
+      "started_at": "2026-11-05T10:20:00Z",
+      "start_tokens": 768582,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1217": {
+      "minutes": 249.5,
+      "tokens": 3285728,
+      "started_at": "2026-11-05T10:20:14Z",
+      "start_tokens": 768582,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1226": {
+      "minutes": 292.57,
+      "tokens": 4053663,
+      "started_at": "2026-11-05T11:12:22Z",
+      "start_tokens": 1323533,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1227": {
+      "minutes": 78.77,
+      "tokens": 1815847,
+      "started_at": "2026-11-05T11:12:40Z",
+      "start_tokens": 1323533,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1190": {
+      "minutes": 0.0,
+      "tokens": 0,
+      "started_at": "2026-11-05T11:32:59Z",
+      "start_tokens": 1746901,
+      "open": true,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1120": {
+      "minutes": 210.9,
+      "tokens": 2226151,
+      "started_at": "2026-11-05T12:33:25Z",
+      "start_tokens": 3147772,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1224": {
+      "minutes": 209.95,
+      "tokens": 2223537,
+      "started_at": "2026-11-05T12:34:25Z",
+      "start_tokens": 3150386,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "US1119": {
+      "minutes": 101.88,
+      "tokens": 1239274,
+      "started_at": "2026-11-05T14:30:10Z",
+      "start_tokens": 4291860,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1236": {
+      "minutes": 34.78,
+      "tokens": 376449,
+      "started_at": "2026-11-05T16:10:28Z",
+      "start_tokens": 5462473,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    }
+  },
+  "review_base": {
+    "BG1213": 0,
+    "BG1223": 0,
+    "BG1220": 0,
+    "US1121": 0,
+    "US1117": 0,
+    "BG1227": 0,
+    "BG1190": 0,
+    "BG1217": 0,
+    "US1120": 0,
+    "US1118": 0,
+    "BG1224": 0,
+    "BG1226": 0,
+    "US1119": 0,
+    "BG1236": 0
+  },
+  "sprint_goal_verdict": {
+    "verdict": "achieved",
+    "note": "36.3M priced for 29 delivered points before the close, about 1.25M a point against the 1.5M goal and run five's 2.54M; every delegated lane is priced from its builder's transcript"
+  },
+  "close_attempts": [
+    {
+      "at": "2026-11-05T17:31:21Z",
+      "outstanding": 1,
+      "stages": [
+        "installed-copy"
+      ]
+    },
+    {
+      "at": "2026-11-05T18:01:41Z",
+      "outstanding": 2,
+      "stages": [
+        "checklist",
+        "installed-copy"
+      ]
+    }
+  ],
+  "close_known_issues": [
+    {
+      "source": "checklist",
+      "detail": "known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s)"
+    }
+  ],
+  "close_not_measured": [],
+  "goal_content_review": [
+    {
+      "phase": "close",
+      "goal": "A sprint costs at most 1.5M priced tokens per point, each lane priced from its builder's own transcript",
+      "answer": "yes",
+      "missing": "",
+      "shortfall": {
+        "undelivered": [],
+        "defects": [
+          "BG0946",
+          "BG0947",
+          "BG0948",
+          "BG0949",
+          "BG0952",
+          "BG0953",
+          "BG0954",
+          "BG0956",
+          "BG0957",
+          "BG0959",
+          "BG0960",
+          "BG0961",
+          "BG0964",
+          "BG0965",
+          "BG0966",
+          "BG0967",
+          "BG0968",
+          "BG0969",
+          "BG0970",
+          "BG0971",
+          "BG0972",
+          "BG0973",
+          "BG0974",
+          "BG0975",
+          "BG0977",
+          "BG0979",
+          "BG0980",
+          "BG0981",
+          "BG0982",
+          "BG0983",
+          "BG0984",
+          "BG0985",
+          "BG0986",
+          "BG0987",
+          "BG0988",
+          "BG0990",
+          "BG0991",
+          "BG0992",
+          "BG0995",
+          "BG0996",
+          "BG0997",
+          "BG0998",
+          "BG0999",
+          "BG1001",
+          "BG1002",
+          "BG1004",
+          "BG1005",
+          "BG1006",
+          "BG1008",
+          "BG1009",
+          "BG1010",
+          "BG1011",
+          "BG1012",
+          "BG1013",
+          "BG1014",
+          "BG1015",
+          "BG1016",
+          "BG1017",
+          "BG1018",
+          "BG1019",
+          "BG1020",
+          "BG1021",
+          "BG1022",
+          "BG1023",
+          "BG1024",
+          "BG1026",
+          "BG1027",
+          "BG1028",
+          "BG1030",
+          "BG1033",
+          "BG1034",
+          "BG1035",
+          "BG1037",
+          "BG1038",
+          "BG1040",
+          "BG1041",
+          "BG1042",
+          "BG1043",
+          "BG1049",
+          "BG1050",
+          "BG1051",
+          "BG1055",
+          "BG1058",
+          "BG1059",
+          "BG1060",
+          "BG1062",
+          "BG1063",
+          "BG1064",
+          "BG1067",
+          "BG1068",
+          "BG1069",
+          "BG1070",
+          "BG1071",
+          "BG1072",
+          "BG1073",
+          "BG1074",
+          "BG1075",
+          "BG1079",
+          "BG1080",
+          "BG1081",
+          "BG1082",
+          "BG1083",
+          "BG1084",
+          "BG1085",
+          "BG1086",
+          "BG1092",
+          "BG1093",
+          "BG1094",
+          "BG1096",
+          "BG1097",
+          "BG1098",
+          "BG1100",
+          "BG1101",
+          "BG1103",
+          "BG1104",
+          "BG1106",
+          "BG1107",
+          "BG1108",
+          "BG1110",
+          "BG1112",
+          "BG1115",
+          "BG1118",
+          "BG1119",
+          "BG1120",
+          "BG1121",
+          "BG1123",
+          "BG1124",
+          "BG1125",
+          "BG1126",
+          "BG1128",
+          "BG1129",
+          "BG1130",
+          "BG1131",
+          "BG1132",
+          "BG1133",
+          "BG1134",
+          "BG1141",
+          "BG1142",
+          "BG1143",
+          "BG1144",
+          "BG1145",
+          "BG1146",
+          "BG1148",
+          "BG1149",
+          "BG1150",
+          "BG1151",
+          "BG1152",
+          "BG1153",
+          "BG1154",
+          "BG1155",
+          "BG1156",
+          "BG1157",
+          "BG1158",
+          "BG1159",
+          "BG1161",
+          "BG1162",
+          "BG1164",
+          "BG1165",
+          "BG1168",
+          "BG1169",
+          "BG1170",
+          "BG1171",
+          "BG1172",
+          "BG1173",
+          "BG1174",
+          "BG1175",
+          "BG1177",
+          "BG1178",
+          "BG1179",
+          "BG1180",
+          "BG1181",
+          "BG1182",
+          "BG1184",
+          "BG1185",
+          "BG1186",
+          "BG1188",
+          "BG1189",
+          "BG1190",
+          "BG1191",
+          "BG1192",
+          "BG1193",
+          "BG1194",
+          "BG1195",
+          "BG1196",
+          "BG1198",
+          "BG1199",
+          "BG1200",
+          "BG1201",
+          "BG1202",
+          "BG1203",
+          "BG1204",
+          "BG1205",
+          "BG1206",
+          "BG1207",
+          "BG1208",
+          "BG1209",
+          "BG1211",
+          "BG1214",
+          "BG1215",
+          "BG1218",
+          "BG1219",
+          "BG1222",
+          "BG1225",
+          "BG1228",
+          "BG1229",
+          "BG1230",
+          "BG1231",
+          "BG1232",
+          "BG1233",
+          "BG1234",
+          "BG1235",
+          "BG1237"
+        ]
+      },
+      "recorded_at": "2026-11-05T18:15:33Z"
+    }
+  ],
+  "close_tree": "937f9453a6e3470284b9880910d4943a497e56e0",
+  "report_gate_clear": [
+    "BG1213",
+    "BG1217",
+    "BG1220",
+    "BG1223",
+    "BG1224",
+    "BG1226",
+    "BG1227",
+    "BG1236",
+    "US1117",
+    "US1118",
+    "US1119",
+    "US1120",
+    "US1121"
+  ],
+  "verified_sha": "8c7db8dee71c0e9c9f3bdca20e2d4945ccfdca71",
+  "ci_runs": {
+    "source": "gh run list",
+    "runs": []
+  },
+  "review_rows": {
+    "US1117": [
+      "6947bf17146eb363",
+      "0f8abd0d36da92aa"
+    ],
+    "US1118": [
+      "546cba4acc7a75a9"
+    ],
+    "US1120": [
+      "7031101d72c2f9b5",
+      "f9e08ff45e80bb4f"
+    ],
+    "US1119": [
+      "d06f2709056a8b97",
+      "ace999961fe18a5b"
+    ],
+    "BG1224": [
+      "761290e025e4c387",
+      "198f5de2fa8ca54e"
+    ],
+    "BG1223": [
+      "0f4ce0d835537ccf"
+    ],
+    "BG1213": [
+      "04d37ea6997f7511"
+    ],
+    "US1121": [
+      "4f4b9be4db419c8e",
+      "95b93775d2ddc652"
+    ],
+    "BG1220": [
+      "5b0e00b64af45d6e"
+    ],
+    "BG1190": [
+      "83f8fa7320fd9dd7",
+      "b4da378501b4cd6c"
+    ],
+    "BG1217": [
+      "0006ae63cb3ec0ac"
+    ],
+    "BG1226": [
+      "19e39a4be7698f3a",
+      "d0856bf389bed20c"
+    ],
+    "BG1227": [
+      "750a7d7672fb15f7"
+    ],
+    "BG1236": [
+      "f01edcb60a5e2869",
+      "a6c3642e31e7c003"
+    ]
+  },
+  "report_discharged": [],
+  "report": "RPT0025",
+  "report_fingerprint": "695c0b4a97bb1ccf",
+  "report_window_end": "2026-11-05T18:20:40Z"
+}

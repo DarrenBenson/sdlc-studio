@@ -1,0 +1,1852 @@
+{
+  "schema": 2,
+  "report_id": "RPT0025",
+  "run_id": "RUN-01M6NH7W",
+  "retro_id": "RETRO0139",
+  "generated_at": "2026-11-05T18:20:40Z",
+  "window_end": "2026-11-05T18:20:40Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "goal",
+      "title": "Goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "A sprint costs at most 1.5M priced tokens per point, each lane priced from its builder's own transcript",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged achieved",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "36.3M priced for 29 delivered points before the close, about 1.25M a point against the 1.5M goal and run five's 2.54M; every delegated lane is priced from its builder's transcript",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M6NH7W",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-11-05T09:43:16Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "2026-11-05T18:20:40Z",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "8.6h",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "8c7db8dee71c0e9c9f3bdca20e2d4945ccfdca71",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "estimates",
+      "title": "Estimates",
+      "figures": {},
+      "rows": [
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Points",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 27,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 27,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.0x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "12 of 13 delivered unit(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Minutes",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 157.6,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 269.0,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.71x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 12 of 13 unit(s) planned or added and not dropped that carry both",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Wall-clock span",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 517.4,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Priced cost",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 36820993,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "priced input-equivalent tokens, the run's headline cost, each component times its weight: input + output + cache write 5,883,977 (input 3,636 x1, output 988,495 x5, cache write 5m 4,490,874 x1.25, cache write 1h 400,972 x2, cache read 254,593,459 x0.1); the sum is the Tokens row; read from the main thread and every subagent transcript, once per message",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Tokens",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 5028804,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 5883977,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.17x",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: forecast over 12 of 13 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 17 delegated total(s) supplied are not added",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Priced per point",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 1269689,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the Priced cost row over the 29 point(s) of the 13 delivered unit(s), in priced input-equivalent tokens per point",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null,
+      "unit_rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1117",
+            "source": "sdlc-studio/stories/US1117-sprint-lane-return-agent-prices-a-lane-from.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 42.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 333035,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 1731554,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1118",
+            "source": "sdlc-studio/stories/US1118-sprint-lane-land-commits-a-builder-s-staged.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 29.2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 23.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 931260,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 211319,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 1360603,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1120",
+            "source": "sdlc-studio/stories/US1120-the-lane-brief-leaves-the-commit-to-lane.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 19.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 139364,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 601798,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1119",
+            "source": "sdlc-studio/stories/US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 19.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 194520,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 1078646,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1224",
+            "source": "sdlc-studio/bugs/BG1224-the-shipped-default-sends-every-change-through-a.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 20.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 139963,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 816826,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1223",
+            "source": "sdlc-studio/bugs/BG1223-a-side-by-side-collection-test-races-close.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 11.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 118083,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 518946,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1213",
+            "source": "sdlc-studio/bugs/BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 9.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 120366,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 514178,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1121",
+            "source": "sdlc-studio/stories/US1121-a-cursor-cli-run-is-metered-from-an.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 35.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 379986,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 1605060,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1220",
+            "source": "sdlc-studio/bugs/BG1220-the-gate-host-lacks-python-3-10-and.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 19.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 156693,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 783023,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1217",
+            "source": "sdlc-studio/bugs/BG1217-gate-py-run-tests-still-reads-green-when.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 22.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 147501,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 596941,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1226",
+            "source": "sdlc-studio/bugs/BG1226-generated-doc-drift-is-found-only-by-unit.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 33.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 539112,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 1938434,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1227",
+            "source": "sdlc-studio/bugs/BG1227-file-finding-py-writes-a-bare-url-from.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 17.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 140945,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 544106,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1236",
+            "source": "sdlc-studio/bugs/BG1236-run-six-s-landings-left-five-repo-wide.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "not in the plan"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 10.0,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent minutes"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "not in the plan"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 133290,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "agent tokens"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": 787928,
+            "source": "sdlc-studio/.local/run-state.json",
+            "label": "priced"
+          }
+        }
+      ]
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered to plan",
+      "figures": {
+        "planned_units": {
+          "key": "planned_units",
+          "value": 11,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "planned_points": {
+          "key": "planned_points",
+          "value": 26,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_units": {
+          "key": "plan_delivered_units",
+          "value": 10,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "plan_delivered_points": {
+          "key": "plan_delivered_points",
+          "value": 24,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_delivered_units": {
+          "key": "added_delivered_units",
+          "value": 3,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_points": {
+          "key": "added_points",
+          "value": "NOT MEASURED",
+          "source": "sdlc-studio/.local/run-state.json",
+          "reason": "not in the plan snapshot: BG1236"
+        },
+        "dropped_units": {
+          "key": "dropped_units",
+          "value": 1,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "dropped_points": {
+          "key": "dropped_points",
+          "value": 2,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_units": {
+          "key": "carried_units",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "carried_points": {
+          "key": "carried_points",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "added_units": {
+          "key": "added_units",
+          "value": 3,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 29,
+          "source": "sdlc-studio/stories/US1117-sprint-lane-return-agent-prices-a-lane-from.md, sdlc-studio/stories/US1118-sprint-lane-land-commits-a-builder-s-staged.md, sdlc-studio/stories/US1120-the-lane-brief-leaves-the-commit-to-lane.md, sdlc-studio/stories/US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md, sdlc-studio/bugs/BG1224-the-shipped-default-sends-every-change-through-a.md, sdlc-studio/bugs/BG1223-a-side-by-side-collection-test-races-close.md, sdlc-studio/bugs/BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md, sdlc-studio/stories/US1121-a-cursor-cli-run-is-metered-from-an.md, sdlc-studio/bugs/BG1220-the-gate-host-lacks-python-3-10-and.md, sdlc-studio/bugs/BG1217-gate-py-run-tests-still-reads-green-when.md, sdlc-studio/bugs/BG1226-generated-doc-drift-is-found-only-by-unit.md, sdlc-studio/bugs/BG1227-file-finding-py-writes-a-bare-url-from.md, sdlc-studio/bugs/BG1236-run-six-s-landings-left-five-repo-wide.md"
+        }
+      },
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1117",
+            "source": "sdlc-studio/stories/US1117-sprint-lane-return-agent-prices-a-lane-from.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1117-sprint-lane-return-agent-prices-a-lane-from.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1118",
+            "source": "sdlc-studio/stories/US1118-sprint-lane-land-commits-a-builder-s-staged.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 5,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 5,
+            "source": "sdlc-studio/stories/US1118-sprint-lane-land-commits-a-builder-s-staged.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1120",
+            "source": "sdlc-studio/stories/US1120-the-lane-brief-leaves-the-commit-to-lane.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US1120-the-lane-brief-leaves-the-commit-to-lane.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1119",
+            "source": "sdlc-studio/stories/US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/stories/US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1224",
+            "source": "sdlc-studio/bugs/BG1224-the-shipped-default-sends-every-change-through-a.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1224-the-shipped-default-sends-every-change-through-a.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1223",
+            "source": "sdlc-studio/bugs/BG1223-a-side-by-side-collection-test-races-close.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1223-a-side-by-side-collection-test-races-close.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1213",
+            "source": "sdlc-studio/bugs/BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1213-the-cursor-usage-reader-accepts-an-http-sdlc.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "US1121",
+            "source": "sdlc-studio/stories/US1121-a-cursor-cli-run-is-metered-from-an.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/stories/US1121-a-cursor-cli-run-is-metered-from-an.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1220",
+            "source": "sdlc-studio/bugs/BG1220-the-gate-host-lacks-python-3-10-and.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1220-the-gate-host-lacks-python-3-10-and.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1190",
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "dropped - carried at the review cap: BG1228",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1217",
+            "source": "sdlc-studio/bugs/BG1217-gate-py-run-tests-still-reads-green-when.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1217-gate-py-run-tests-still-reads-green-when.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1226",
+            "source": "sdlc-studio/bugs/BG1226-generated-doc-drift-is-found-only-by-unit.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1226-generated-doc-drift-is-found-only-by-unit.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - D0408: an efficiency fix found in run six's own landings; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1227",
+            "source": "sdlc-studio/bugs/BG1227-file-finding-py-writes-a-bare-url-from.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1227-file-finding-py-writes-a-bare-url-from.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - D0408: an efficiency fix found in run six's own landings; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1236",
+            "source": "sdlc-studio/bugs/BG1236-run-six-s-landings-left-five-repo-wide.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "not in the plan snapshot"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1236-run-six-s-landings-left-five-repo-wide.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - D0404: the push gate's full suite found five census tests red after run six's landings; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "known_issues",
+      "title": "Known issues handed over",
+      "figures": {
+        "findings_scan": {
+          "key": "findings_scan",
+          "value": "12 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "CR0663",
+            "source": "sdlc-studio/change-requests/CR0663-run-the-commit-time-suites-on-the-gate.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "High",
+            "source": "sdlc-studio/change-requests/CR0663-run-the-commit-time-suites-on-the-gate.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Run the commit-time suites on the gate host, as the push already does - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/change-requests/CR0663-run-the-commit-time-suites-on-the-gate.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1228",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1190 did not converge in review: round 2 REJECT findings - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1229",
+            "source": "sdlc-studio/bugs/BG1229-critic-py-s-self-check-and-verdict-records.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1229-critic-py-s-self-check-and-verdict-records.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "critic.py's self-check and verdict records refuse shapes authors and reviewers write naturally, and record has no dry run - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1229-critic-py-s-self-check-and-verdict-records.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "CR0664",
+            "source": "sdlc-studio/change-requests/CR0664-prevent-or-retire-lesson-lc-017-a-page.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/change-requests/CR0664-prevent-or-retire-lesson-lc-017-a-page.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips)",
+            "source": "sdlc-studio/change-requests/CR0664-prevent-or-retire-lesson-lc-017-a-page.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1225",
+            "source": "sdlc-studio/bugs/BG1225-an-http-loopback-cursor-api-base-still-goes.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1225-an-http-loopback-cursor-api-base-still-goes.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1225-an-http-loopback-cursor-api-base-still-goes.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1230",
+            "source": "sdlc-studio/bugs/BG1230-lane-return-agent-one-agent-priced-onto-two.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1230-lane-return-agent-one-agent-priced-onto-two.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane return --agent: one agent priced onto two units, stale --tokens wording, and undocumented help - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1230-lane-return-agent-one-agent-priced-onto-two.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1231",
+            "source": "sdlc-studio/bugs/BG1231-lane-land-exit-1-documented-too-narrowly-two.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1231-lane-land-exit-1-documented-too-narrowly-two.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane land: exit 1 documented too narrowly, two test gaps, a false --units help line, and an unscrubbed git environment - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1231-lane-land-exit-1-documented-too-narrowly-two.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1232",
+            "source": "sdlc-studio/bugs/BG1232-the-lane-brief-s-budget-and-hand-in.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1232-the-lane-brief-s-budget-and-hand-in.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The lane brief's budget and hand-in: no-Points untested, one shared hand-in for a multi-unit lane, and US1093's stale story text - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1232-the-lane-brief-s-budget-and-hand-in.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1233",
+            "source": "sdlc-studio/bugs/BG1233-the-cursor-hook-ledger-mid-run-creation-or.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1233-the-cursor-hook-ledger-mid-run-creation-or.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The Cursor hook ledger: mid-run creation or deletion misreads the run, deep nesting is fatal, and the text cut is untested - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1233-the-cursor-hook-ledger-mid-run-creation-or.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1234",
+            "source": "sdlc-studio/bugs/BG1234-small-follow-ups-from-run-six-s-approved.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1234-small-follow-ups-from-run-six-s-approved.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Small follow-ups from run six's approved bug fixes: BG1217, BG1220, BG1223, BG1224 and BG1227 - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1234-small-follow-ups-from-run-six-s-approved.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1235",
+            "source": "sdlc-studio/bugs/BG1235-run-six-s-round-2-and-lane-accept.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1235-run-six-s-round-2-and-lane-accept.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1235-run-six-s-round-2-and-lane-accept.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1237",
+            "source": "sdlc-studio/bugs/BG1237-orchestration-frictions-batch-add-takes-an-id-with.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1237-orchestration-frictions-batch-add-takes-an-id-with.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item - not-stop-ship, ruled by Claude Opus 5.5 (orchestrator, D0404)",
+            "source": "sdlc-studio/bugs/BG1237-orchestration-frictions-batch-add-takes-an-id-with.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "checklist",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s)",
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Tokens by model",
+      "figures": {
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": 3018172,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 5883977,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [
+        {
+          "model_name": {
+            "key": "model_name",
+            "value": "mixed",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "model_tokens": {
+            "key": "model_tokens",
+            "value": 5883977,
+            "source": "sdlc-studio/.local/run-state.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 21,
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - 21 commit(s) on main inside the run window",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "7h 10m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 21 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "gh run list",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "gh run list",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red",
+            "source": "gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "gh run list"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "calibration",
+      "title": "Calibration",
+      "figures": {
+        "cal_tokens_per_point": {
+          "key": "cal_tokens_per_point",
+          "value": 186252,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_tokens_source": {
+          "key": "cal_tokens_source",
+          "value": "velocity-record",
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_per_point": {
+          "key": "cal_minutes_per_point",
+          "value": 5.84,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cal_minutes_source": {
+          "key": "cal_minutes_source",
+          "value": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133",
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "rulings",
+      "title": "Rulings",
+      "figures": {
+        "persona_rulings": {
+          "key": "persona_rulings",
+          "value": 3,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "cited_rulings": {
+          "key": "cited_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        },
+        "operator_rulings": {
+          "key": "operator_rulings",
+          "value": 0,
+          "source": "sdlc-studio/.local/run-state.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "lane_yield",
+      "title": "Lane yield",
+      "figures": {
+        "lane_yield_note": {
+          "key": "lane_yield_note",
+          "value": "6 refusal(s) in this run. A refusal is a candidate catch when the next commit changed code or a test from what was refused, paperwork when it changed only artefacts, baselines, indexes or docs, and pending until a commit follows it.",
+          "source": "sdlc-studio/.local/refusals.jsonl, git log"
+        }
+      },
+      "rows": [
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "gate",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 1,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 6 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "markdown",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 3,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 3,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 7 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "message-refs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 2,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 2,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 7 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "style",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 0,
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "1 candidate catch(es) over 3 runs",
+            "source": "sdlc-studio/.local/refusals.jsonl, git log"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "lessons",
+      "title": "Lessons",
+      "figures": {
+        "lessons_note": {
+          "key": "lessons_note",
+          "value": "3 lesson class(es) in force at this close.",
+          "source": "sdlc-studio/lessons.jsonl"
+        }
+      },
+      "rows": [
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-015",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a retirement outruns the deletion",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-017",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a page-format rule mark nothing round-trips",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0664)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 1,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 2,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-018",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a doc claim checked by reading",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0643)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 3,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 27,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        }
+      ],
+      "not_measured": null
+    }
+  ],
+  "record_paths": "portable",
+  "token_ratio": "every-delivered-unit-delegated",
+  "restore_pairing": "next-success-after-failure",
+  "discharged_carry": "delivered",
+  "findings_scan": "delivered-batch-units-excluded",
+  "minutes_ratio": "measured-unit-minutes",
+  "delegated_tokens": "counted-over-a-zero-meter",
+  "agent_minutes": "any-agent-supplied",
+  "dora_failures": "failure-or-timed-out-only",
+  "token_headline": "priced-input-equivalent",
+  "priced_units": "unit-priced-and-per-point",
+  "fingerprint": "695c0b4a97bb1ccf"
+}

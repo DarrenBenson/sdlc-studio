@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 14 |
+| Proposed | 15 |
 | Approved | 0 |
 | In Progress | 25 |
 | Complete | 533 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **663** |
+| **Total** | **664** |
 
 ## All Changes
 
@@ -75,6 +75,7 @@
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Complete | High | Improvement | 2026-11-04 | EP0298 |
 | [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | In Progress | High | Feature | 2026-11-04 | EP0274 |
 | [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Proposed | High | Feature | 2026-11-05 | -- |
+| [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Proposed | Medium | Improvement | 2026-11-05 | -- |
 
 ## Archived Releases
 

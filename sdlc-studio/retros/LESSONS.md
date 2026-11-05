@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-04
+**Last Updated:** 2026-11-05
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0459: Start each run in a fresh orchestrator session: the main thread was a third of this run's cost at an average context near 400k
+
+- **Added:** 2026-11-05
+- **Review-by:** 2027-02-03
+
+Start each run in a fresh orchestrator session: the main thread was a third of this run's cost at an average context near 400k.
+
+Recorded from retro RETRO0139.
+
+## L-0458: Run each batch's repo-wide census sweeps (test_test_census, test_root_census, test_gitutil's sweep, test_skill_tests_env…
+
+- **Added:** 2026-11-05
+- **Review-by:** 2027-02-03
+
+Run each batch's repo-wide census sweeps (test_test_census, test_root_census, test_gitutil's sweep, test_skill_tests_env, test_commit_msg_hook's hermeticity test, docgen checks) once before landing it, rather than learning of them at push.
+
+Recorded from retro RETRO0139.
+
+## L-0457: Run the commit-time suites on the gate host (CR0663): the hooks, not the agents, were this run's wall-clock
+
+- **Added:** 2026-11-05
+- **Review-by:** 2027-02-03
+
+Run the commit-time suites on the gate host (CR0663): the hooks, not the agents, were this run's wall-clock.
+
+Recorded from retro RETRO0139.
 
 ## L-0456: Measure the run's priced cost at each wave, not only at the close: the operator's 1M-per-point norm was missed by three times before anyone…
 

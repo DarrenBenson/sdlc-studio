@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0459: Start each run in a fresh orchestrator session: the main thread was a third of this run's cost at an average context near 400k**
+- **L-0458: Run each batch's repo-wide census sweeps (test_test_census, test_root_census, test_gitutil's sweep, test_skill_tests_env…**
+- **L-0457: Run the commit-time suites on the gate host (CR0663): the hooks, not the agents, were this run's wall-clock**
 - **L-0456: Measure the run's priced cost at each wave, not only at the close: the operator's 1M-per-point norm was missed by three times before anyone…**
 - **L-0455: Before landing any change to a PRD or TSD NFR, run tools/tests/test_lean_prd_refresh.py and test_lean_tsd_refresh.py together: a…**
 - **L-0454: Run builders' test passes and commit hooks on the gate host (CR0661), so parallel lanes stop competing for four local cores**
