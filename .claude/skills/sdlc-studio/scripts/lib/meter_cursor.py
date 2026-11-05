@@ -17,7 +17,10 @@ The call never holds the close: it runs on a worker thread joined for at most
 run with no usage recorded yet is tokens None with the reason, never zero. A redirect is
 refused, not followed, so the key is never sent where a redirect points. The key is sent in one
 request header and nowhere else: no reason quotes an exception's message, an error's body or
-its headers, and `source` is built from the agent id, never from the URL.
+its headers, and `source` is built from the agent id, never from the URL. A URL that is not
+https is refused before any request, unless it is http on a loopback address, as a test's
+local stub is, so an http override does not send the key in cleartext to the host it names;
+the reason names `API_ENV`, never its value.
 
 `read` decides which surface a reading comes from, and takes it from one alone: the cloud API
 when both variables are set, else the Cursor CLI's chat store for this workspace. The CLI's
@@ -33,6 +36,7 @@ two in a temporary directory, since a read-only open of the store itself writes 
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import os
 import shutil
@@ -52,7 +56,8 @@ from .token_meters import CACHE_READ
 KEY_ENV = "CURSOR_API_KEY"
 #: The Cursor cloud agent's id, the usage API's path parameter.
 AGENT_ENV = "SDLC_STUDIO_CURSOR_AGENT_ID"
-#: The API's base URL, overridable so a test reaches a local stub and never the network.
+#: The API's base URL, overridable so a test reaches a local stub and never the network: an
+#: https URL, or an http one on a loopback address, and any other is refused.
 API_ENV = "SDLC_STUDIO_CURSOR_API"
 API_BASE = "https://api.cursor.com"
 #: The longest the close waits for the usage API, connect and answer together.
@@ -174,12 +179,37 @@ def _schema(uri: str) -> set[str]:
 
 
 def read_cloud(key: str, agent: str, base: str = API_BASE) -> dict:
-    """Agent `agent`'s reading from the usage API at `base`, or tokens None with the reason."""
+    """Agent `agent`'s reading from the usage API at `base`, or tokens None with the reason. A
+    URL neither https nor http on a loopback address is refused before any request is made."""
     url = f"{base.rstrip('/')}/v1/agents/{urllib.parse.quote(agent, safe='')}/usage"
+    if not _private(url):
+        return {"tokens": None, "reason": (
+            f"the Cursor cloud usage API, for agent {agent}: {API_ENV} is neither an https URL "
+            f"nor an http one on a loopback address, so no request is made")}
     got = _get(url, key)
     if isinstance(got, str):
         return {"tokens": None, "reason": f"the Cursor cloud usage API, for agent {agent}: {got}"}
     return _reading(got, agent)
+
+
+def _private(url: str) -> bool:
+    """Whether `url` may carry the key: its scheme is https, or it is http and its host is a
+    loopback IP address. A host name, `localhost` among them, is refused rather than resolved,
+    since what a name resolves to is not this check's to know, and so is a URL `urlsplit`
+    cannot parse."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname
+    except ValueError:
+        return False
+    if parts.scheme == "https":
+        return True
+    if parts.scheme != "http" or not host:
+        return False
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def _get(url: str, key: str) -> bytes | str:

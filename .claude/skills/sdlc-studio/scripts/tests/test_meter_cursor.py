@@ -19,6 +19,9 @@ US0990 adds the Cursor CLI's surface, pinned in `CursorCliTests`: the chat store
 the CLI writes it, records no usage, so reads tokens None naming it, never zero, and the cloud
 and CLI surfaces are never added together.
 
+BG1213: a base that would send the key in cleartext, one neither https nor http on a loopback
+address, is refused before any request, the reason naming `SDLC_STUDIO_CURSOR_API`.
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
 """
@@ -329,6 +332,44 @@ class CursorCloudTests(_Fixture):
         for what, row in (("reading", got), ("stamp", stamped), ("run total", total),
                           ("run state", (self.root / run_state.REL).read_text("utf-8"))):
             self.assertNotIn(KEY, row if isinstance(row, str) else json.dumps(row), what)
+
+    def test_a_cleartext_base_is_refused_before_any_request(self) -> None:
+        """BG1213 AC1. Mutants: the scheme check dropped, or made after the request (an http
+        base on a remote host is called with the key on it); the loopback exemption granted by a
+        text match on the base (`127.0.0.1.example.net`, a userinfo of `127.0.0.1@`), to a host
+        name (`localhost`), to a private address (`10.0.0.7`) or to any scheme (a loopback
+        `ftp://`); the exemption dropped (the local stub and its IPv6 and 127/8 neighbours are
+        refused); a base urlsplit cannot parse raised rather than refused; and the reason
+        quoting the base, whose userinfo may hold a secret, or not naming the variable."""
+        stub = Stub(self)
+        self.assertEqual(self.reading(stub)["tokens"], TOKENS, "the loopback stub is read")
+        port = stub.base.rsplit(":", 1)[1]
+        refused = ("http://api.cursor.com", "http://10.0.0.7:8080",
+                   f"http://127.0.0.1.example.net:{port}", f"http://127.0.0.1@example.net:{port}",
+                   "http://user:s3cret@example.net", f"http://localhost:{port}",
+                   f"ftp://127.0.0.1:{port}", "api.cursor.com", "http://[::1")
+        allowed = (None, "https://api.example.net", f"http://[::1]:{port}",
+                   f"http://127.0.0.2:{port}")
+        why = (f"{meter_cursor.API_ENV} is neither an https URL nor an http one on a loopback "
+               f"address, so no request is made")
+        unreachable = urllib.error.URLError(ConnectionRefusedError())
+        for base in refused + allowed:
+            with mock.patch.object(self.reader._OPENER, "open", side_effect=unreachable) as call:
+                got = self.reading(None, **{meter_cursor.API_ENV: base})
+            self.assertIsNone(got["tokens"], base)
+            if base in refused:
+                call.assert_not_called()
+                self.assertIn("SDLC_STUDIO_CURSOR_API", got["reason"], base)
+                self.assertIn(why, got["reason"], base)
+                self.assertNotIn(base, got["reason"])
+                self.assertNotIn("s3cret", got["reason"])
+            else:
+                self.assertEqual(call.call_count, 1, base)
+                self.assertTrue(call.call_args.args[0].full_url.startswith(
+                    base or meter_cursor.API_BASE), base)
+                self.assertIn("could not be reached (ConnectionRefusedError)", got["reason"])
+                self.assertNotIn(meter_cursor.API_ENV, got["reason"], base)
+        self.assertEqual(len(stub.requests), 1, "only the positive control reached the stub")
 
 
 def _bug(root: Path) -> None:
