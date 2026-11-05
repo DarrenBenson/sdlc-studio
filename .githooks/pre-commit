@@ -221,10 +221,50 @@ run "changelog-shape" \
   "rewrite each fragment named above - first line '<!-- section: Added|Changed|Fixed -->', the entry below it - and stage it again; the staged bytes are what is judged, not the working tree" \
   -- python3 "$skill/changelog.py" shape --staged
 
+# The budgets lane also judges GENERATED-DOC DRIFT, here rather than in the suites (BG1226), folded
+# in so the commit's lane count stays at the cap. The unit suites already refuse that drift (they
+# assert `docgen ... 0 drift item(s)`), but only after the whole selected run: 1,016 s and over
+# 1,500 s on two run-six commits that added a verb without regenerating its page. Measured once on this
+# repo, `surface --check` took 7.3 s and the other two under 1 s each, beside the gate lane they
+# run alongside. Each check runs only when the commit stages what it derives from: `surface` for a
+# skill script, `references` and `reading-guides` for a `reference-*.md` or a `help/` file.
+# `docgen.py --check` EXITS 0 on drift by design, so the lane reads each check's count and refuses
+# on anything but `: 0 drift item(s)`, a count it cannot read included. It reads the working tree,
+# as `check_budgets.py` does, so a regenerated page left unstaged passes here. A tree with no
+# `docgen.py`, such as a hook-test fixture, has nothing to run the checks with, so they are noted
+# as skipped there, as `settle` skips in a tree with no `reconcile.py`.
+docgen_staged="$(git diff --cached --name-only)"
+docgen_verbs=""
+docgen_skip="no skill script, reference-*.md or help/ file staged"
+# A here-string, not a pipe: under `pipefail` a `grep -q` that exits early can SIGPIPE the writer
+# and turn a match into a miss.
+grep -qE '^\.claude/skills/sdlc-studio/scripts/' <<<"$docgen_staged" && docgen_verbs="surface"
+grep -qE '^\.claude/skills/sdlc-studio/(reference-[^/]*\.md$|help/)' <<<"$docgen_staged" \
+  && docgen_verbs="$docgen_verbs references reading-guides"
+if [ -n "$docgen_verbs" ] && [ ! -f "$skill/docgen.py" ]; then
+  docgen_verbs=""
+  docgen_skip="no $skill/docgen.py in this tree"
+fi
+# budgets_lane -- COMMAND...: the budget check, then each docgen check the staged paths call for.
+budgets_lane() {
+  local verb out rc=0
+  [ "$1" = "--" ] && shift
+  "$@" || rc=1
+  for verb in $docgen_verbs; do
+    out="$(python3 "$skill/docgen.py" "$verb" --check 2>&1)" || rc=1
+    case "$out" in
+      *": 0 drift item(s)"*) ;;
+      *) printf '%s\n' "$out"; rc=1 ;;
+    esac
+  done
+  return "$rc"
+}
 run "budgets" \
-  "each reference-*.md stays under its declared line ceiling (keeps load cost bounded)" \
-  "shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment)" \
-  -- python3 tools/check_budgets.py
+  "each reference-*.md stays under its declared line ceiling (keeps load cost bounded), and the generated docs match the tree: docgen surface --check when a skill script is staged, docgen references --check and reading-guides --check when a reference-*.md or help/ file is staged" \
+  "for a ceiling, shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment); for docgen drift, regenerate, then stage what it rewrote: python3 $skill/docgen.py surface && python3 $skill/docgen.py references && python3 $skill/docgen.py reading-guides" \
+  -- budgets_lane -- python3 tools/check_budgets.py
+[ -n "$docgen_verbs" ] \
+  || lane budgets printf '  %snote%s budgets - docgen checks skipped: %s\n' "$Y" "$N" "$docgen_skip"
 
 run "neutrality" \
   "no private consuming-project name leaks into a tracked file (the skill repo is domain-neutral)" \
