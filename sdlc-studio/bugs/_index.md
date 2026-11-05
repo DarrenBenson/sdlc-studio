@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-04
+**Last Updated:** 2026-11-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 205 |
+| Open | 206 |
 | In Progress | 0 |
 | Fixed | 843 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1222** |
+| **Total** | **1223** |
 
 ## All Bugs
 
@@ -298,6 +298,7 @@
 | [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
+| [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Open | Medium | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
