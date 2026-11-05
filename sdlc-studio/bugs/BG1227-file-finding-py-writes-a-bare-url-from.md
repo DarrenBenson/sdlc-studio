@@ -1,6 +1,6 @@
 # BG1227: file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, changelog.d/BG1227.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
@@ -27,6 +27,7 @@ Wrap a bare http or https URL in backticks when the filer renders prose fields, 
 
 - [ ] **AC1** A finding whose prose holds a bare http URL is written so markdownlint's MD034 passes on the filed file, and a URL already in backticks is left as it is.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 

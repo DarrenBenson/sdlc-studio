@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 209 |
+| Open | 206 |
 | In Progress | 0 |
-| Fixed | 844 |
+| Fixed | 847 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -295,14 +295,14 @@
 | [BG1217](BG1217-gate-py-run-tests-still-reads-green-when.md) | gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist | Open | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1218](BG1218-a-critic-brief-spends-most-of-its-5.md) | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1219](BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md) | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1221](BG1221-bg1187-s-side-by-side-test-hand-lists.md) | BG1187's side-by-side test hand-lists three .py names, so the push gate's hand-copied-list census fails | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1222](BG1222-the-hand-copied-list-census-runs-only-at.md) | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1223](BG1223-a-side-by-side-collection-test-races-close.md) | A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI | Fixed | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1224](BG1224-the-shipped-default-sends-every-change-through-a.md) | The shipped default sends every change through a PR, and nothing an agent loads says sdlc-studio integrates continuously to main | Open | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1225](BG1225-an-http-loopback-cursor-api-base-still-goes.md) | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1226](BG1226-generated-doc-drift-is-found-only-by-unit.md) | Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane | Open | Medium | 2026-11-05 | 2026-11-05 |
-| [BG1227](BG1227-file-finding-py-writes-a-bare-url-from.md) | file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1227](BG1227-file-finding-py-writes-a-bare-url-from.md) | file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane | Fixed | Low | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG1223: A side-by-side collection test races close against the pool's pickup and reds main on GitHub CI
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1223.md
@@ -27,6 +27,7 @@ In the `_side_by_side` helper, wait for every queued collection (the futures in 
 
 - [ ] **AC1** The test passes when every collection is delayed by 0.5 s before it begins, and still fails when close collects nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::StampsCollectSideBySideTests
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 

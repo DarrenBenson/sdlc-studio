@@ -1,6 +1,6 @@
 # BG1220: The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** tools/gate_prereqs.py, tools/remote-gate.sh, tools/tests/test_gate_prereqs.py, changelog.d/BG1220.md
@@ -27,6 +27,7 @@ Name Python 3.10 and pdftotext as release-route prerequisites in `gate_prereqs`,
 
 - [ ] **AC1** The release route refuses before the gate starts, naming each missing release prerequisite, on a host without Python 3.10 or pdftotext.
   - **Verify:** pytest tools/tests/test_gate_prereqs.py
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 
