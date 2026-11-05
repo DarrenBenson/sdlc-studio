@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 212 |
 | In Progress | 0 |
-| Fixed | 850 |
+| Fixed | 851 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1236** |
+| **Total** | **1237** |
 
 ## All Bugs
 
@@ -311,7 +311,8 @@
 | [BG1233](BG1233-the-cursor-hook-ledger-mid-run-creation-or.md) | The Cursor hook ledger: mid-run creation or deletion misreads the run, deep nesting is fatal, and the text cut is untested | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1234](BG1234-small-follow-ups-from-run-six-s-approved.md) | Small follow-ups from run six's approved bug fixes: BG1217, BG1220, BG1223, BG1224 and BG1227 | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1235](BG1235-run-six-s-round-2-and-lane-accept.md) | Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals | Open | Low | 2026-11-05 | 2026-11-05 |
-| [BG1236](BG1236-run-six-s-landings-left-five-repo-wide.md) | Run six's landings left five repo-wide census tests red, which the push gate's full suite refused | Open | High | 2026-11-05 | 2026-11-05 |
+| [BG1236](BG1236-run-six-s-landings-left-five-repo-wide.md) | Run six's landings left five repo-wide census tests red, which the push gate's full suite refused | Fixed | High | 2026-11-05 | 2026-11-05 |
+| [BG1237](BG1237-orchestration-frictions-batch-add-takes-an-id-with.md) | Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item | Open | Low | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 

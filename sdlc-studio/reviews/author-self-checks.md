@@ -133,3 +133,5 @@
 | BG1224 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 8c5a24bbc33597f6 at c824c438a511 |
 | BG1226 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 85ee628d0a528d25 at c824c438a511 |
 | US1119 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 7284fd9456cf374b at 329fad161849 |
+| BG1236 | Claude Opus 5.5 (builder) | 2026-11-05 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | 24c9f630a0b765a0 at 17ee4997094e |
+| BG1236 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 6a8ab6ad0fd6d476 at 67f3cfa4edb6 |

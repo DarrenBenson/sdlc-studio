@@ -6,6 +6,7 @@ Each finding is filed through the shipped CLI into a throwaway fixture repo (`--
 Run from the repo root:
     python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests -p test_file_finding_bare_url.py
 """
+# test-census-subject: .claude/skills/sdlc-studio/scripts/file_finding.py
 from __future__ import annotations
 
 import shutil

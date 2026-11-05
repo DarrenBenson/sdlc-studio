@@ -1,9 +1,9 @@
 # BG1236: Run six's landings left five repo-wide census tests red, which the push gate's full suite refused
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/cursor_usage_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py, tools/tests/test_pre_commit_docgen.py, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, tools/tests/test_skill_tests_env.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, sdlc-studio/reviews/root-census.md, changelog.d/BG1236.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/cursor_usage_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py, tools/tests/test_pre_commit_docgen.py, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, tools/tests/test_skill_tests_env.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_bare_url.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, sdlc-studio/reviews/root-census.md, .claude/skills/sdlc-studio/scripts/tests/test_root_anchor_contract.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1236.md
 > **Evidence:** push gate on devserver1, log /home/ops/sdlc-gate/local/0a5547c617a649df/boundary-suite-last.log
 > **Created:** 2026-11-05
 > **Created-by:** sdlc-studio file
@@ -27,14 +27,19 @@ Confine the git calls through the shared helper, classify the new script in the 
 
 - [ ] **AC1** No module calls git without a confined environment (the gitutil sweep passes on main).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_no_module_calls_git_without_a_confined_environment
+  - **Verified:** yes (2026-11-05)
 - [ ] **AC2** The root census's summary counts are the measured counts.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_root_census.py::RootCensusTests::test_the_summary_counts_are_the_measured_counts
+  - **Verified:** yes (2026-11-05)
 - [ ] **AC3** Every root-declaring script, the new `cursor_usage_hook.py` included, is classified with a reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_root_census.py::RootCensusTests::test_every_root_declaring_script_is_classified_with_a_reason
+  - **Verified:** yes (2026-11-05)
 - [ ] **AC4** No test file invokes the commit hook bare.
   - **Verify:** pytest tools/tests/test_commit_msg_hook.py::HookInvocationHermeticityTests::test_no_other_test_file_invokes_the_hook_bare
+  - **Verified:** yes (2026-11-05)
 - [ ] **AC5** Every environment scrub site is registered, or uses the shared scrub.
   - **Verify:** pytest tools/tests/test_skill_tests_env.py::ScrubSiteSweepTests::test_every_scrub_site_is_registered
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 
