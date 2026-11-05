@@ -1,6 +1,7 @@
 # CR-0662: Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0274
 > **Priority:** High
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py

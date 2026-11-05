@@ -1,7 +1,8 @@
 # EP0274: Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode
 
 > **Status:** Draft
-> **Derived Point Total:** 26
+> **Parent:** CR0662
+> **Derived Point Total:** 29
 > **Parent:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -20,6 +21,7 @@ Decomposed from CR0611. Delivers the work CR0611 requested.
 - [x] [US0989: A Cursor cloud run records its token actual from the usage API when a key is present](../stories/US0989-a-cursor-cloud-run-records-its-token-actual.md)
 - [x] [US0990: A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot](../stories/US0990-a-cursor-cli-run-records-its-token-actual.md)
 - [x] [US0991: The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend](../stories/US0991-the-close-and-the-report-state-each-reading.md)
+- [ ] [US1121: A Cursor CLI run is metered from an afterAgentResponse hook ledger, and the meter reads it as measured](../stories/US1121-a-cursor-cli-run-is-metered-from-an.md)
 
 ## Acceptance Criteria (Epic Level)
 

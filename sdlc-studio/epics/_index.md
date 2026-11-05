@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-05
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 14 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 251 |
 | Superseded | 33 |
-| **Total** | **297** |
+| **Total** | **298** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -24,7 +24,7 @@
 
 | ID | Title | Status | Stories | Deps | Created | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Draft | 6 | -- | 2026-10-06 | 2026-10-06 |
+| [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Draft | 7 | -- | 2026-10-06 | 2026-10-06 |
 | [EP0275](EP0275-a-versioned-evidence-annex-that-consumers-of-the.md) | A versioned evidence annex that consumers of the committed sprint records can parse against | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0276](EP0276-the-report-of-record-is-reviewable-from-the.md) | The report of record is reviewable from the committed tree and states its cost in money | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0277](EP0277-a-finding-filed-into-the-skill-source-is.md) | A finding filed into the skill source is held to the neutrality rule when it is filed, not first at commit | Draft | 1 | -- | 2026-10-09 | 2026-10-09 |
@@ -48,6 +48,7 @@
 | [EP0295](EP0295-v6-2-0-ships-with-paperwork-that-matches.md) | v6.2.0 ships with paperwork that matches the code | Done | 2 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0296](EP0296-the-release-gate-s-verify-lane-costs-about.md) | The release gate's verify lane costs about one parallel suite run and can run on the gate host | Done | 3 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0297](EP0297-a-commit-subject-can-mention-a-work-item.md) | A commit subject can mention a work-item id without attributing the commit's files to it | Done | 2 | -- | 2026-11-02 | 2026-11-02 |
+| [EP0298](EP0298-a-sprint-costs-about-a-million-priced-tokens.md) | A sprint costs about a million priced tokens per point | Draft | 4 | -- | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 

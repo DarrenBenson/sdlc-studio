@@ -1,6 +1,7 @@
 # CR-0661: A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0298
 > **Priority:** High
 > **Type:** Improvement
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

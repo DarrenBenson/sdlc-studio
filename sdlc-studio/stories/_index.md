@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-11-02
+**Last Updated:** 2026-11-05
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 81 |
-| Ready | 1 |
+| Ready | 6 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1116** |
+| **Total** | **1121** |
 
 ## All Stories
 
@@ -154,6 +154,11 @@
 | [US1114](US1114-remote-gate-sh-runs-one-commit-s-release.md) | remote-gate.sh runs one commit's release gate on the gate host and records it green only when the host passed it | Done | EP0296 | 2026-11-02 | 2026-11-02 |
 | [US1115](US1115-check-commit-msg-accepts-a-mentions-trailer-for.md) | check-commit-msg accepts a Mentions: trailer for an id the subject only mentions, and the engagement floor attributes no files to it | Done | EP0297 | 2026-11-02 | 2026-11-02 |
 | [US1116](US1116-the-commit-msg-hook-s-paste-ready-trailers.md) | The commit-msg hook's paste-ready trailers never ask for Refs: on an id a Mentions: line already accounts for | Done | EP0297 | 2026-11-02 | 2026-11-02 |
+| [US1117](US1117-sprint-lane-return-agent-prices-a-lane-from.md) | sprint lane return --agent prices a lane from its builder's own transcript, and the report's unit row shows that priced cost | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1118](US1118-sprint-lane-land-commits-a-builder-s-staged.md) | sprint lane land commits a builder's staged lane through the hooks, lands it on main and records each unit's self-check and review brief | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1119](US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md) | sprint lane accept records a reviewer's verdict and, on APPROVE, runs the criteria, moves the unit to its terminal status and returns its lane | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1120](US1120-the-lane-brief-leaves-the-commit-to-lane.md) | The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context | Ready | EP0298 | 2026-11-05 | 2026-11-05 |
+| [US1121](US1121-a-cursor-cli-run-is-metered-from-an.md) | A Cursor CLI run is metered from an afterAgentResponse hook ledger, and the meter reads it as measured | Ready | EP0274 | 2026-11-05 | 2026-11-05 |
 
 ## Archived Releases
 
