@@ -104,6 +104,12 @@ hours at the measured elapsed-hours-per-sprint median (minimum three sprints of 
 unmeasured hours named, never zeroed). The refusal guards (min-history, all-zero,
 non-positive batch, horizon) hold in every bucket.
 
+### `cursor_usage_hook.py`
+
+The Cursor CLI's `afterAgentResponse` hook. Registered in the project's `.cursor/hooks.json`, it appends each
+response's token counts to the ledger `lib/meter_cursor.py` reads a Cursor CLI run's tokens from. It always
+exits 0 and prints nothing on stdout; a payload it cannot record is named on stderr.
+
 ### `telemetry.py`
 
 Run telemetry recorder. `record` appends a per-unit run outcome

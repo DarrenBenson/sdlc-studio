@@ -27,8 +27,13 @@ when both variables are set, else the Cursor CLI's chat store for this workspace
 2026.10.22 build keeps that store at `chats/<md5 of the workspace's absolute path>/<chat id>/`
 under its config directory, each chat a `store.db` (SQLite, tables `blobs` and `meta`), a
 `meta.json` or both, and records no usage in it; a print run reports its usage on its stdout.
-So a CLI reading is tokens None with the reason, never zero; only the chat directory's listing
-and each `store.db`'s table names are read, and no terminal output. The store is never written:
+So the CLI's figure comes from the ledger `LEDGER_REL` under the workspace, a line per response
+that `cursor_usage_hook.py`, run as the CLI's `HOOK_EVENT` hook, appends from the counts its
+payload carries (`LEDGER_FIELDS`). A ledger is read as measured: each line's four counts are
+summed and priced (`read_ledger`), and a line that is not a JSON object carrying the four as
+counts is skipped and counted, never fatal. With no ledger, a CLI reading is tokens None with
+the reason, never zero; only the chat directory's listing and each `store.db`'s table names
+are read, and no terminal output. The store is never written:
 a `store.db` whose `-wal` is empty or absent is read in place with SQLite's immutable read-only
 open, and one with a `-wal` (a chat whose tables may sit in the WAL alone) through a copy of the
 two in a temporary directory, since a read-only open of the store itself writes its `-shm`.
@@ -79,6 +84,12 @@ XDG_ENV = "XDG_CONFIG_HOME"
 #: settings, and `blobs`, its messages and conversation state. A store with other tables is not
 #: read as one keeping no usage.
 STORE_TABLES = ("blobs", "meta")
+#: The ledger the CLI's hook appends to and this reader sums, relative to the workspace root.
+LEDGER_REL = Path("sdlc-studio") / ".local" / "cursor-usage.jsonl"
+#: The CLI hook entry whose payload carries each response's usage.
+HOOK_EVENT = "afterAgentResponse"
+#: That payload's counts, as the 2026.10.22-27dcf5f build names them, and each line keeps them.
+LEDGER_FIELDS = ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -124,8 +135,12 @@ def cli_chats(repo_root: Path, env: Mapping) -> Path:
 
 def read_cli(repo_root: Path, env: Mapping) -> dict:
     """The Cursor CLI's reading for the workspace `repo_root`: tokens None, since its chat store
-    records no usage. The reason names the store, or says none is there, or that a `store.db`
+    records no usage, unless the hook ledger `LEDGER_REL` is there, which is then the reading
+    (`read_ledger`). The reason names the store, or says none is there, or that a `store.db`
     holds other tables than the pinned build's, and is then not read as keeping no usage."""
+    ledger = ledger_path(repo_root)
+    if ledger.is_file():
+        return read_ledger(ledger)
     chats = cli_chats(repo_root, env)
 
     def none(why: str) -> dict:
@@ -148,6 +163,62 @@ def read_cli(repo_root: Path, env: Mapping) -> dict:
     return none(f"the Cursor CLI kept no usage record: its chat store for this workspace, "
                 f"{chats}, holds {len(found)} chat{'' if len(found) == 1 else 's'} and records "
                 f"no tokens spent, and the usage a print run reports on its stdout is not read")
+
+
+def ledger_path(repo_root: Path) -> Path:
+    """Where the hook appends the workspace `repo_root`'s ledger, and this reader reads it."""
+    return Path(repo_root) / LEDGER_REL
+
+
+def read_ledger(ledger: Path) -> dict:
+    """The reading the hook ledger `ledger` holds: every line's counts summed, or tokens None
+    with the reason when no line can be read. A line that is not a JSON object whose
+    `LEDGER_FIELDS` are each a count is skipped and counted as `skipped`; the figure is then a
+    lower bound, and the basis says so. The payload does not split a cache write by duration,
+    so each is booked at five minutes, as an unsplit Claude write is, and priced from
+    `run_state.TOKEN_WEIGHTS` as the figure is formed."""
+    from . import run_state  # noqa: PLC0415 - lazy: run_state loads this reader
+
+    sums = dict.fromkeys(LEDGER_FIELDS, 0)
+    read = skipped = 0
+    try:
+        with ledger.open("rb") as fh:
+            for raw in fh:
+                if not raw.strip():
+                    continue
+                try:
+                    row = json.loads(raw)
+                except ValueError:
+                    row = None
+                if not (isinstance(row, dict) and all(_count(row.get(f)) for f in LEDGER_FIELDS)):
+                    skipped += 1
+                    continue
+                read += 1
+                for f in LEDGER_FIELDS:
+                    sums[f] += row[f]
+    except OSError as exc:
+        return {"tokens": None, "reason": f"the Cursor CLI hook ledger {ledger} could not be "
+                                          f"read ({type(exc).__name__}), so this run's tokens "
+                                          f"cannot be read"}
+    lines = f"{skipped} malformed line{'' if skipped == 1 else 's'} skipped"
+    if not read:
+        return {"tokens": None, "reason": f"the Cursor CLI hook ledger {ledger} holds no line "
+                                          f"that can be read ({lines}), so this run's tokens "
+                                          f"cannot be read"}
+    comps = {"input": sums["input_tokens"], "output": sums["output_tokens"],
+             "cache_write_5m": sums["cache_write_tokens"], "cache_write_1h": 0,
+             "cache_read": sums["cache_read_tokens"]}
+    basis = (f"the Cursor CLI {HOOK_EVENT} hook ledger {ledger}, {read} "
+             f"response{'' if read == 1 else 's'} summed: tokens is input + output + cache "
+             f"write, cache reads apart, and the priced figure weighs every component, each "
+             f"cache write at the five-minute weight since the payload does not split it")
+    if skipped:
+        basis += f"; {lines}, so it is a LOWER BOUND on what the run cost"
+    return {"tokens": comps["input"] + comps["output"] + comps["cache_write_5m"],
+            CACHE_READ: comps["cache_read"], "components": comps,
+            "priced": run_state.price(comps), "responses": read, "skipped": skipped,
+            "source": f"the Cursor CLI hook ledger {ledger}", "basis": basis,
+            "includes_subagents": False}
 
 
 def _tables(db: Path) -> set[str] | None:

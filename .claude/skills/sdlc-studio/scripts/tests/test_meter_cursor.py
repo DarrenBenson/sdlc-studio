@@ -22,6 +22,11 @@ and CLI surfaces are never added together.
 BG1213: a base that would send the key in cleartext, one neither https nor http on a loopback
 address, is refused before any request, the reason naming `SDLC_STUDIO_CURSOR_API`.
 
+US1121 (CR0662), pinned in `CursorHookLedgerTests`: `cursor_usage_hook.py`, run as the CLI's
+`afterAgentResponse` hook, appends each response's counts to a ledger the CLI reading sums and
+prices as measured; with no ledger the reading is the store's, as before, and a malformed line
+is skipped and counted.
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
 """
@@ -615,6 +620,161 @@ class CursorCliTests(_Fixture):
         got = self.cli_reading(stub)
         self.assertIsNone(got["tokens"])
         self.assertIn("the Cursor CLI kept no usage record", got["reason"])
+
+
+HOOK = Path(__file__).resolve().parents[1] / "cursor_usage_hook.py"
+REFERENCE = Path(__file__).resolve().parents[2] / "reference-sprint.md"
+
+
+def response(n: int, inp, out, read, write, **over) -> dict:
+    """An `afterAgentResponse` payload in the shape the CLI's 2026.10.22-27dcf5f build sends:
+    its ids, model and text, and the four counts, a None one left out as the CLI leaves an
+    undefined one out of the JSON."""
+    doc = {"conversation_id": "conv-1", "generation_id": f"gen-{n}", "model": "gpt-5",
+           "text": f"RESPONSE-TEXT-{n}", "hook_event_name": "afterAgentResponse",
+           "input_tokens": inp, "output_tokens": out, "cache_read_tokens": read,
+           "cache_write_tokens": write, **over}
+    return {k: v for k, v in doc.items() if v is not None}
+
+
+class CursorHookLedgerTests(_Fixture):
+
+    def setUp(self) -> None:
+        super().setUp()
+        (self.root / "sdlc-studio").mkdir()
+        self.ledger = self.root / "sdlc-studio" / ".local" / "cursor-usage.jsonl"
+
+    def hook(self, payload, root: Path | None = None, cwd: Path | None = None):
+        """The hook as the CLI runs it: the payload on stdin, from the workspace's root."""
+        raw = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+        return subprocess.run([sys.executable, str(HOOK), *(["--root", str(root)] if root else [])],
+                              input=raw, capture_output=True, cwd=cwd or self.root, timeout=60,
+                              check=False)
+
+    def cli_reading(self, root: Path | None = None) -> dict:
+        with self.env(None, **{meter_cursor.KEY_ENV: None}):
+            return run_state.session_tokens(root or self.root)
+
+    def test_the_ledger_is_read_as_measured(self) -> None:
+        """AC1. Mutants: the ledger not read, so the reading stays None; a count dropped from
+        the sum, the cache reads summed into `tokens`, the cache writes left out of it, one
+        line read rather than every line; the priced figure formed from `tokens` alone or with
+        the cache writes at the one-hour weight; a basis or source not naming the ledger; the
+        hook and the meter on different paths; `--root` ignored; the response's text written
+        to the ledger; a reading that is not cumulative, so the run window's delta between the
+        open stamp and the close is not the window's lines summed."""
+        for n, counts in enumerate(((7, 11, 13, 17),)):
+            self.assertEqual(self.hook(response(n, *counts)).returncode, 0)
+        with self.env(None, **{meter_cursor.KEY_ENV: None}):
+            run_state.open_run(self.root, batch=["BG0001"], goal="g")
+        # The run window: two responses after the open stamp, each count distinct and non-zero.
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+        done = [self.hook(response(1, 1_000, 200, 50_000, 3_000)),
+                self.hook(response(2, 2_000, 300, 70_000, 4_000), root=self.root, cwd=elsewhere)]
+        self.assertEqual([(p.returncode, p.stdout) for p in done], [(0, b"")] * 2)
+        self.assertFalse((elsewhere / "sdlc-studio").exists(), "--root, not the cwd")
+        text = self.ledger.read_text(encoding="utf-8")
+        self.assertEqual(len(text.splitlines()), 3)
+        self.assertNotIn("RESPONSE-TEXT", text)
+
+        got = self.cli_reading()
+        comps = {"input": 3_007, "output": 511, "cache_write_5m": 7_017, "cache_write_1h": 0,
+                 "cache_read": 120_013}
+        self.assertEqual((got["harness"], got["tokens"], got[token_meters.CACHE_READ]),
+                         ("cursor", 10_535, 120_013))
+        self.assertEqual(got["components"], comps)
+        # 3,007 + 511 x 5 + 7,017 x 1.25 + 120,013 x 0.1 = 26,334.55.
+        self.assertEqual(got["priced"], 26_335)
+        self.assertEqual(got["priced"], run_state.price(comps))
+        self.assertEqual((got["responses"], got["skipped"]), (3, 0))
+        self.assertEqual(got["source"], f"the Cursor CLI hook ledger {self.ledger}")
+        self.assertIn(f"afterAgentResponse hook ledger {self.ledger}, 3 responses summed",
+                      got["basis"])
+        self.assertNotIn("LOWER BOUND", got["basis"])
+
+        with self.env(None, **{meter_cursor.KEY_ENV: None}):
+            closing = run_state.stamp_tokens(self.root, "report")
+        self.assertEqual(closing["tokens"], 10_535)
+        total = run_state.run_token_total(run_state.read(self.root))
+        self.assertEqual(total["tokens"], 3_000 + 500 + 7_000, "the window's lines alone")
+        self.assertEqual([m["harness"] for m in total["meters"]], ["cursor"])
+        self.assertIn(str(self.ledger), total["meters"][0]["basis"])
+
+    def test_no_ledger_stays_unattributable_and_a_bad_line_is_counted(self) -> None:
+        """AC2. Mutants: no ledger read as zero, or with a reason other than the store's as
+        before; a malformed line raising, so the reading is lost; a malformed line not counted,
+        counted as read, or partly summed (its other counts added); a negative, absent or
+        truncated count read as a count; a ledger of malformed lines alone read as zero; the
+        hook raising, or writing, on a payload that is not a JSON object, or creating a ledger
+        in a root with no `sdlc-studio/`."""
+        chats = meter_cursor.cli_chats(self.root, {"HOME": str(self.root / "home")})
+        unset = (f"the cursor reader: {meter_cursor.KEY_ENV} is not set, so the Cursor cloud "
+                 f"usage API is not called, and ")
+        got = self.cli_reading()
+        self.assertEqual((got["tokens"], got["reason"]), (None, (
+            f"{unset}no Cursor CLI chat store sits at {chats}, so this run's tokens cannot be "
+            f"read")))
+        cli_store(chats, "chat-run")
+        got = self.cli_reading()
+        self.assertEqual((got["tokens"], got["reason"]), (None, (
+            f"{unset}the Cursor CLI kept no usage record: its chat store for this workspace, "
+            f"{chats}, holds 1 chat and records no tokens spent, and the usage a print run "
+            f"reports on its stdout is not read, so this run's tokens cannot be read")))
+
+        for bad in (b"not json", b"[1, 2]"):
+            done = self.hook(bad)
+            self.assertEqual((done.returncode, done.stdout), (0, b""), bad)
+            self.assertIn(b"not a JSON object", done.stderr, bad)
+        self.assertFalse(self.ledger.exists(), "nothing appended for a payload not an object")
+        bare = self.root / "bare"
+        bare.mkdir()
+        done = self.hook(response(0, 1, 1, 1, 1), cwd=bare)
+        self.assertEqual(done.returncode, 0)
+        self.assertIn(b"holds no sdlc-studio/ directory", done.stderr)
+        self.assertEqual(list(bare.iterdir()), [])
+
+        self.hook(response(1, 1_000, 200, 50_000, 3_000))
+        self.hook(response(2, 900_000, 900_000, 900_000, None))     # the CLI left one undefined
+        self.hook(response(3, -5, 900_000, 900_000, 900_000))
+        with self.ledger.open("ab") as fh:                           # a write cut short
+            fh.write(b'{"input_tokens": 900000, "output_tok\n')
+        self.hook(response(4, 2_000, 300, 70_000, 4_000))
+        got = self.cli_reading()
+        self.assertEqual((got["tokens"], got[token_meters.CACHE_READ]),
+                         (3_000 + 500 + 7_000, 120_000), "the two good lines alone")
+        self.assertEqual((got["responses"], got["skipped"]), (2, 3))
+        self.assertIn("2 responses summed", got["basis"])
+        self.assertIn("; 3 malformed lines skipped, so it is a LOWER BOUND", got["basis"])
+
+        other = self.root / "other"
+        (other / "sdlc-studio").mkdir(parents=True)
+        self.hook(response(5, 1, 1, 1, None), root=other)
+        got = self.cli_reading(other)
+        ledger = other / "sdlc-studio" / ".local" / "cursor-usage.jsonl"
+        self.assertIsNone(got["tokens"], "never zero")
+        self.assertIn(f"the Cursor CLI hook ledger {ledger} holds no line that can be read "
+                      f"(1 malformed line skipped)", got["reason"])
+
+    def test_the_reference_names_the_hook_and_ledger(self) -> None:
+        """AC3. Mutants: the hook, its `afterAgentResponse` entry, `.cursor/hooks.json` or the
+        ledger's path left out of the paragraph that registers the hook, or named only
+        elsewhere in the file; a ledger path in the reference that is not `LEDGER_REL`; a hook
+        named that the skill does not ship; the BG1213 rule on `SDLC_STUDIO_CURSOR_API` left
+        out of the paragraph naming the override."""
+        paras = REFERENCE.read_text(encoding="utf-8").split("\n\n")
+        hook = [p for p in paras if "cursor_usage_hook.py" in p]
+        self.assertEqual(len(hook), 1, "one paragraph registers the hook")
+        para = " ".join(hook[0].split())
+        for want in (f"python3 <skill>/scripts/{HOOK.name}",
+                     f"`{meter_cursor.HOOK_EVENT}` entry of the project's `.cursor/hooks.json`",
+                     f"`{meter_cursor.LEDGER_REL.as_posix()}`"):
+            self.assertIn(want, para)
+        self.assertTrue(HOOK.is_file())
+        override = [" ".join(p.split()) for p in paras if f"`{meter_cursor.API_ENV}`" in p]
+        self.assertEqual(len(override), 1)
+        self.assertIn(f"`{meter_cursor.API_ENV}` overrides the base URL, and must be https or "
+                      f"http on a loopback IP address, else no request is made", override[0])
 
 
 if __name__ == "__main__":
