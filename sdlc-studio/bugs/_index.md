@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 206 |
+| Open | 205 |
 | In Progress | 0 |
-| Fixed | 847 |
+| Fixed | 848 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -292,7 +292,7 @@
 | [BG1214](BG1214-bg1212-s-ac2-docstring-says-only-a-clock.md) | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1215](BG1215-verify-ac-s-fallback-for-a-queued-collection.md) | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1216](BG1216-bg1210-added-a-prd-security-line-with-no.md) | BG1210 added a PRD Security line with no TSD row, so the TSD refresh test fails on main | Fixed | Medium | 2026-11-04 | 2026-11-04 |
-| [BG1217](BG1217-gate-py-run-tests-still-reads-green-when.md) | gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1217](BG1217-gate-py-run-tests-still-reads-green-when.md) | gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1218](BG1218-a-critic-brief-spends-most-of-its-5.md) | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1219](BG1219-migrate-s-dry-run-leaves-its-private-bytecode.md) | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s default | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1220](BG1220-the-gate-host-lacks-python-3-10-and.md) | The gate host lacks Python 3.10 and pdftotext, so the release route reads three passing criteria red | Fixed | Medium | 2026-11-04 | 2026-11-04 |

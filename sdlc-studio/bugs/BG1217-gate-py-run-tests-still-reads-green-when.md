@@ -1,6 +1,6 @@
 # BG1217: gate.py --run-tests still reads green when a selector names a test that does not exist in a file that does, beside a failing module, under xdist
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py, changelog.d/BG1217.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -27,6 +27,7 @@ Treat pytest's exit 4 or 5 with any named module collected as a refusal naming t
 
 - [ ] **AC1** `--run-tests` beside a failing module with a node id naming no test exits non-zero and names the node.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_run_tests_paths.py
+  - **Verified:** yes (2026-11-05)
 
 ## Impact
 

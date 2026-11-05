@@ -5,7 +5,7 @@
 > **Created:** 2026-11-05
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, changelog.d/US1120.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_brief_budget.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, changelog.d/US1120.md
 > **Epic:** EP0298
 > **Points:** 2
 > **Persona:** Maya Okafor

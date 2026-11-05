@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-code.md, .claude/skills/sdlc-studio/reference-decisions.md, .claude/skills/sdlc-studio/SKILL.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_trunk_integration.py, changelog.d/BG1224.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-code.md, .claude/skills/sdlc-studio/reference-decisions.md, .claude/skills/sdlc-studio/SKILL.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_trunk_integration.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, changelog.d/BG1224.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** templates/config-defaults.yaml:208; reference-code.md lines 748-770; reference-config.md lines 372-384.
 > **Created:** 2026-11-05
 > **Created-by:** sdlc-studio file
