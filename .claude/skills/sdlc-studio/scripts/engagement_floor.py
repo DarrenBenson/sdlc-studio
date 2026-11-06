@@ -439,9 +439,12 @@ def _declared_file_tokens(text: str) -> list[str]:
 
 
 def _declared_tokens(text: str) -> list[str]:
-    """Every token the unit's `Affects` field declares, stripped as above, before the file-token
-    filter: an extension-less path such as `.githooks/commit-msg` is kept, so a staged file can be
-    matched against exactly what the unit wrote even where the footprint counter does not count it."""
+    """Every comma-separated token of the unit's `Affects` field, each stripped of a trailing
+    `(parenthetical)` and backticks, an unfilled placeholder dropped, before the file-token filter.
+    It feeds only the footprint count and the declared boolean (`_declared_file_tokens`). It splits
+    on every comma, so a bracketed note holding one yields fragments `_is_file_token` then drops.
+    Staged-file ownership does not read it: the hook and the close guard read declarations
+    through `declared_keys`."""
     val = sdlc_md.extract_field(text, "Affects")
     if val is None:
         return []
