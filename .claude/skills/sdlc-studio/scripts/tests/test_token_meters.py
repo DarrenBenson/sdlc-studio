@@ -50,7 +50,7 @@ USAGES = ({"input_tokens": 1_000, "output_tokens": 200, "cache_creation_input_to
            "cache_read_input_tokens": 50_000},
           {"input_tokens": 500, "output_tokens": 100, "cache_read_input_tokens": 7_000})
 TOKENS, CACHE_READS = 4_800, 57_000
-OTHERS = (token_meters.CURSOR, token_meters.COPILOT, token_meters.OPENCODE)
+OTHERS = (token_meters.CURSOR, token_meters.COPILOT, token_meters.OPENCODE, token_meters.CODEX)
 
 
 def stub(reading=None, store=None, signals=None, raises=None) -> types.ModuleType:
@@ -203,7 +203,8 @@ class HarnessSelectionTests(_Fixture):
         with installed(cursor=cursor):
             named = token_meters.selection_variables()
         self.assertEqual(named[:2], [token_meters.HARNESS_ENV, "CLAUDECODE"])
-        for v in ("CURSOR_AGENT", "STUB_CURSOR_RUN_ID", "COPILOT_HOME", "OPENCODE", "OPENCODE_DB"):
+        for v in ("CURSOR_AGENT", "STUB_CURSOR_RUN_ID", "COPILOT_HOME", "OPENCODE", "OPENCODE_DB",
+                  "CODEX_THREAD_ID"):
             self.assertIn(v, named, "a test's scrub must clear every selection variable")
         for values in ({"CURSOR_AGENT": "1"}, {"STUB_CURSOR_RUN_ID": "bc-1"}):
             with self.subTest(signal=values), installed(cursor=cursor), self.env(**values), \
@@ -319,7 +320,7 @@ class HarnessSelectionTests(_Fixture):
             got = run_state.session_tokens(self.root)
         self.assertIsNone(got["tokens"])
         self.assertIn("'gemini'", got["reason"])
-        self.assertIn("claude, cursor, copilot, opencode", got["reason"])
+        self.assertIn("claude, cursor, copilot, opencode, codex", got["reason"])
         self.assert_claude_untouched(spy)
         with self.env(SDLC_STUDIO_HARNESS="  "):
             self.assertEqual(run_state.session_tokens(self.root)["tokens"], TOKENS)

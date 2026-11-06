@@ -3,7 +3,8 @@
 reading is ever formed from two.
 
 A sprint's token cost is read off the store the running harness keeps: Claude Code writes a
-transcript per session, and Cursor, Copilot CLI and OpenCode each persist usage elsewhere.
+transcript per session, and Cursor, Copilot CLI, OpenCode and Codex CLI each persist usage
+elsewhere.
 A leftover store of another harness is not this run's meter, and booking it onto the run is
 worse than reporting no figure. So one harness is chosen, and only its reader is consulted:
 
@@ -49,13 +50,14 @@ from pathlib import Path
 
 #: The environment variable that names the harness outright.
 HARNESS_ENV = "SDLC_STUDIO_HARNESS"
-CLAUDE, CURSOR, COPILOT, OPENCODE = "claude", "cursor", "copilot", "opencode"
+CLAUDE, CURSOR, COPILOT, OPENCODE, CODEX = "claude", "cursor", "copilot", "opencode", "codex"
 #: Every harness a reading can be taken for, in the order a refusal names them.
-HARNESSES = (CLAUDE, CURSOR, COPILOT, OPENCODE)
+HARNESSES = (CLAUDE, CURSOR, COPILOT, OPENCODE, CODEX)
 #: The environment variables that signal each harness is the one running this process. A
-#: reader module adds to its own harness's with a `SIGNALS` tuple.
+#: reader module adds to its own harness's with a `SIGNALS` tuple. Codex's is the thread id a
+#: codex-cli 0.160.0 session set in the shell its command ran in, read from a captured session.
 SIGNALS = {CLAUDE: ("CLAUDECODE",), CURSOR: ("CURSOR_AGENT",), COPILOT: ("COPILOT_HOME",),
-           OPENCODE: ("OPENCODE", "OPENCODE_DB")}
+           OPENCODE: ("OPENCODE", "OPENCODE_DB"), CODEX: ("CODEX_THREAD_ID",)}
 #: The key a reading, and each stamp taken from one, names its harness under.
 HARNESS = "harness"
 #: The key a reading and a stamp carry the cache reads under, outside `tokens`.
