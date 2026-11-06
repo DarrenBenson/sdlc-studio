@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 238 |
 | In Progress | 0 |
-| Fixed | 865 |
+| Fixed | 866 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1277** |
+| **Total** | **1278** |
 
 ## All Bugs
 
@@ -353,6 +353,7 @@
 | [BG1275](BG1275-two-statements-from-run-eight-s-last-repairs.md) | Two statements from run eight's last repairs claim more than the code or its tests show | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1276](BG1276-the-footprint-counter-splits-affects-on-every-comma.md) | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1277](BG1277-the-close-s-closing-review-row-does-not.md) | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1278](BG1278-bg1274-s-parity-test-fixture-names-the-retired.md) | BG1274's parity-test fixture names the retired module audit.py, so the push gate's rename guard is red | Fixed | High | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 

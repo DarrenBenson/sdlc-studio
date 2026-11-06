@@ -176,3 +176,4 @@
 | BG1273 | orchestrator-BG1273 | 2026-11-06 | TRUE 1, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 6b32bf3925b31a3f at 7a6bbb987d04 |
 | BG1274 | builder-BG1274 | 2026-11-06 | TRUE 9, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 0 | a08c77653d09b5d3 at ffe55071fc17 |
 | BG1274 | orchestrator-BG1274-repair | 2026-11-06 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 0 | 078900b732cda17f at f0a276aaf814 |
+| BG1278 | orchestrator-BG1278 | 2026-11-06 | TRUE 2, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | e2b57430a322b8fd at eb647a98bd76 |
