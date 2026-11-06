@@ -633,12 +633,12 @@ layout and its rule for each count and each malformed record; this page keeps wh
 
 ### Cost anatomy {#cost-anatomy}
 
-`sprint.py cost --anatomy` says where the current session's tokens went. It reads the transcripts
-the meter reads, through the meter's reader, so each message counts once at its largest usage
-record and the whole equals the meter's priced reading. Per role it prints agents, calls, priced
-tokens and share, the cache-read, cache-write and output shares of that priced cost, the first
-call's context (averaged over the role's agents) and the average context per call; context is
-input + cache write + cache read.
+`sprint.py cost --anatomy` says where the open run's tokens went: the records after its `started_at`
+in the transcripts the meter reads, so each message counts once at its largest usage record and the
+whole equals the meter's delta over the run. `--session`, no open run, or a usage record with no
+timestamp reads the whole session, and the header says which. Per role: agents, calls, priced tokens
+and share, the cache-read, cache-write and output shares, the first call's context (over the role's
+agents) and the average per call; context is input + cache write + cache read.
 
 | Role | From |
 | --- | --- |
@@ -659,22 +659,22 @@ the close's meter reading (`run_state.stamp_cost_roles`), never the growing live
 re-derives at sign and a signed page replays its own. It is NOT MEASURED when no reading in the
 window recorded one, or the anatomy could not be had or read a session other than the meter's.
 
-The header names the main thread's start context, its first call's context. A project
-`.claude/settings.json` that disables the plugins and connectors a delivery session does not use
-is recommended, not enforced; a claude.ai connector may not be switchable per project.
+The header names the main thread's start context, the session's first call's, whatever the window. A
+project `.claude/settings.json` that disables the plugins and connectors a delivery session does not
+use is recommended, not enforced; a claude.ai connector may not be switchable per project.
 
 ### Dollar cost {#dollar-cost}
 
-The report states estimated US dollars beside the priced tokens - Dollar cost and Dollars per
-point rows, and each unit row's dollars, in the HTML page and its Markdown twin - priced per model
+The report states estimated US dollars beside the priced tokens - Dollar cost and Dollars per point
+rows, and each unit row's dollars, in the HTML page and its Markdown twin - priced per model
 (`run_state.usd` over `lib/prices.py`) from the components the meter keeps by model, so a `mixed`
-reading is never priced at one model's rate. A `sprint lane run` unit is priced per session at the
-model its lane record names (the one with most tokens where the CLI reported several); a session
+reading is never priced at one model's rate. A `sprint lane run` unit is priced per session, each
+model at its own rate from the split its lane record keeps where the CLI names several; a session
 naming none reads NOT MEASURED. A model the table does not list is named with its share of the
 priced tokens, never summed in as $0. The row states the table's effective date, marked STALE when
-`prices.stale` says so on the run's end date. A signed page re-derives at the table it carries, so
-a price revision cannot invalidate it; an unsigned page re-derives at the table in force. Premium
-requests are their own row, never converted into tokens or dollars. The retro's priced line states
+`prices.stale` says so on the run's end date. A signed page re-derives at the table it carries, so a
+price revision cannot invalidate it; an unsigned page re-derives at the table in force. Premium
+requests are their own row, priced per request, never in Dollar cost. The retro's priced line states
 dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
 
 ## Cost regression at the close {#cost-regression}

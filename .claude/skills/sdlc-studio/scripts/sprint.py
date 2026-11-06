@@ -9041,9 +9041,10 @@ def _at_terminal_status(root: Path, uid: str) -> bool:
 
 
 def cmd_cost(args: argparse.Namespace) -> int:
-    """`sprint cost --anatomy`: the current session's spend by role and its heaviest tool outputs
-    (`lib/cost_anatomy.py`). Exit 2 with no `--anatomy`, the one view this command prints; 1 when
-    no reading can be had, with the reason.
+    """`sprint cost --anatomy`: the open run's spend by role and its heaviest tool outputs, read
+    from the current session's records after the run's start, or the whole session's under
+    `--session` or with no run open (`lib/cost_anatomy.py`). Exit 2 with no `--anatomy`, the one
+    view this command prints; 1 when no reading can be had, with the reason.
 
     With no Claude Code session transcript and no `--transcripts`, the harness meter's own
     reading (`run_state.session_tokens`) is printed as one total under `other`, its counts and
@@ -9054,7 +9055,7 @@ def cmd_cost(args: argparse.Namespace) -> int:
     from lib import cost_anatomy  # noqa: PLC0415 - only this command needs it
     root = Path(args.root)
     try:
-        got = cost_anatomy.anatomy(root, args.transcripts)
+        got = cost_anatomy.anatomy(root, args.transcripts, session=args.session)
     except cost_anatomy.AnatomyError as exc:
         reading = (run_state.session_tokens(root)
                    if not exc.store and not args.transcripts else {"tokens": None})
@@ -12721,14 +12722,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     co = sub.add_parser(
         "cost",
-        help="`--anatomy`: break the current session's spend down by role (orchestrator, "
+        help="`--anatomy`: break the open run's spend down by role (orchestrator, "
              "builder, reviewer, repair, other) and name the ten tool outputs that cost most. "
              "Reads the transcripts the token meter reads, each message once at its largest "
-             "usage; a subagent's role comes from the open run's lane returns and the recorded "
-             "verdicts, never its prompt, and one no record names is other. A context no "
-             "per-call record gives prints as not available, never 0.")
+             "usage, counting only the records after the run's start; a subagent's role comes "
+             "from the open run's lane returns and the recorded verdicts, never its prompt, and "
+             "one no record names is other. A context no per-call record gives prints as not "
+             "available, never 0.")
     co.add_argument("--anatomy", action="store_true",
                     help="print the per-role table and the heaviest tool outputs")
+    co.add_argument("--session", action="store_true",
+                    help="read the whole session, not the open run's window (the default with "
+                         "no run open)")
     co.add_argument("--transcripts", default=None, metavar="DIR",
                     help="the harness transcript directory (default: the one the meter reads)")
     co.add_argument("--format", choices=("text", "json"), default="text")

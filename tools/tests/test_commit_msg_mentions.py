@@ -106,5 +106,46 @@ class CommitMsgMentionsTests(unittest.TestCase):
         self.assertIn("'Mentions: <id>'", line)
 
 
+class DerivedMentionsTests(unittest.TestCase):
+    """US1133 AC2: an id the subject names but whose `Affects` declares none of the staged files
+    gets a `Mentions:` line written for it, never `Refs:`."""
+
+    def test_a_non_owning_id_gets_mentions(self):
+        # Must fail on: writing `Refs:` for every id the subject names.
+        with tempfile.TemporaryDirectory() as d:
+            repo = Path(d)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True, env=_env())
+            skill = repo / ".claude" / "skills" / "sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "scripts").symlink_to(REPO / ".claude/skills/sdlc-studio/scripts")
+            # US1110 owns the staged file; BG0989 is a unit whose Affects names another file;
+            # BG1000 has no artefact here at all, so nothing can make it an owner.
+            for rel, rid, owned in (("stories", "US1110", "src/lane.py"),
+                                    ("bugs", "BG0989", "src/elsewhere.py")):
+                folder = repo / "sdlc-studio" / rel
+                folder.mkdir(parents=True)
+                (folder / f"{rid}-sample.md").write_text(
+                    f"# {rid}: sample\n\n> **Status:** In Progress\n> **Affects:** {owned}\n",
+                    encoding="utf-8")
+            # Committed first, so the one staged change is the source file, not an artefact
+            # whose own filename would make its unit an owner.
+            subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=_env())
+            subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=repo, check=True,
+                           env=_env())
+            (repo / "src").mkdir()
+            (repo / "src" / "lane.py").write_text("x = 1\n", encoding="utf-8")
+            subprocess.run(["git", "add", "-A"], cwd=repo, check=True, env=_env())
+            msg = repo / "COMMIT_EDITMSG"
+            msg.write_text(f"{SUBJECT}\n", encoding="utf-8")
+            r = subprocess.run(["bash", str(HOOK), str(msg)], cwd=repo, capture_output=True,
+                               text=True, env=_env(), timeout=120)
+            after = msg.read_text(encoding="utf-8")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(
+            after, f"{SUBJECT}\n\nRefs: US1110\nMentions: BG0989\nMentions: BG1000\n")
+        self.assertNotIn("Refs: BG0989", after)
+        self.assertNotIn("Refs: BG1000", after)
+
+
 if __name__ == "__main__":
     unittest.main()

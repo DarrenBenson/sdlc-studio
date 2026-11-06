@@ -30,7 +30,7 @@ import loader  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
-from lib import harness_usage, lanes  # noqa: E402
+from lib import harness_usage, lanes, prices  # noqa: E402
 
 sprint = loader.load_script("sprint")
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "harness_usage"
@@ -52,6 +52,12 @@ HARNESSES = {
 #: The claude capture's one call, typed from `fixtures/harness_usage/claude.json`.
 CLAUDE = {"session": "4052faf6-ae92-4245-a560-c2c9534b3cec", "model": "claude-haiku-5-5",
           "input": 2, "output": 35, "cache_read": 11382, "cache_write_1h": 17126}
+#: The capture's haiku share as the delegated record books it, and its list price per million
+#: tokens typed from `templates/model-prices.json`: 0.10 input, 0.50 output, 0.20 one-hour write,
+#: 0.01 cache read.
+HAIKU_PARTS = {"input": 2, "output": 35, "cache_write_5m": 0, "cache_write_1h": 17126,
+               "cache_read": 11382}
+HAIKU_USD = (2 * 0.10 + 35 * 0.50 + 17126 * 0.20 + 11382 * 0.01) / 1e6
 
 FAKE = r'''#!{python}
 import json, os, subprocess, sys
@@ -304,6 +310,86 @@ class LaneRunTests(unittest.TestCase):
             self.assertEqual(sorted(map(str, records)), sorted(r["transcript"] for r in got))
         self.assertIn("19,163 tokens", out)
         self.assertIn("17,163 tokens", out)
+
+    # -- BG1252: a session's per-model split --------------------------------------------------
+    def _unit_usd(self) -> float | None:
+        """The unit's dollars as the page prices them: its delegated split, by `run_state.usd`."""
+        totals = _rs().unit_agent_totals(_rs().read(self.root))[UNIT]
+        return _rs().usd(totals[_rs().BY_MODEL], prices.load(self.root))["usd"]
+
+    def test_a_two_model_session_is_priced_per_model(self) -> None:
+        """BG1252 AC2. The claude capture with claude-opus-5-5 beside its haiku: 1,000 input,
+        2,000 output and a 500-token five-minute write, so haiku still carries the most tokens.
+        MUTANTS: the lane record keeping no `by_model`, or `run_reading` carrying none, so the
+        whole session is booked under haiku (US$0.0047, not US$0.0501); one model's counts booked
+        under the other; the one-hour write booked as a five-minute write; the split's models
+        summed into one; a split that does not sum to the session priced anyway; the
+        reference still saying a session is priced at its largest model."""
+        doc = json.loads((FIXTURES / "claude.json").read_text("utf-8"))
+        haiku = doc["modelUsage"]["claude-haiku-5-5"]
+        doc["modelUsage"]["claude-opus-5-5"] = dict(
+            haiku, inputTokens=1000, outputTokens=2000, thinkingTokens=0,
+            cacheReadInputTokens=0, cacheCreationInputTokens=500,
+            cacheCreationEphemeral1hInputTokens=0)
+        _write(self.log, "two-model.json", json.dumps(doc))
+        self._open_run()
+        with unittest.mock.patch.dict(os.environ,
+                                      {"FAKE_OUT_CLAUDE": str(self.log / "two-model.json")}):
+            rc, out = self._run("claude")
+        self.assertEqual(0, rc, out)
+        self.assertEqual("claude-haiku-5-5", self._record()["usage_model"])
+        rc, out = self._lane("return", "--units", UNIT)
+        self.assertEqual(0, rc, out)
+        [got] = self._delegated()
+        opus = {"input": 1000, "output": 2000, "cache_write_5m": 500, "cache_write_1h": 0,
+                "cache_read": 0}
+        self.assertEqual({"claude-haiku-5-5": HAIKU_PARTS, "claude-opus-5-5": opus},
+                         got[_rs().BY_MODEL])
+        self.assertEqual({k: HAIKU_PARTS[k] + opus[k] for k in opus}, got["components"])
+        # opus at its own rate, per million: 4.00 input, 20.00 output, 5.00 five-minute write
+        self.assertAlmostEqual(HAIKU_USD + (1000 * 4.00 + 2000 * 20.00 + 500 * 5.00) / 1e6,
+                               self._unit_usd(), places=10)
+        section = (SCRIPTS.parent / "reference-sprint.md").read_text("utf-8").split(
+            "### Dollar cost {#dollar-cost}", 1)[1].split("\n## ", 1)[0]
+        self.assertNotIn("most tokens", section)
+        self.assertIn("each model at its own rate", " ".join(section.split()))
+        # a split that does not sum to the session's own usage is refused, never priced
+        [path] = self._records()
+        rec = json.loads(path.read_text("utf-8"))
+        rec["by_model"]["claude-opus-5-5"]["output"] += 1
+        path.write_text(json.dumps(rec), "utf-8")
+        _rs().update(self.root, **{_rs().DELEGATED: []})
+        rc, out = self._lane("return", "--units", UNIT)
+        self.assertEqual(0, rc, out)
+        self.assertEqual([], self._delegated())
+        self.assertIn("does not sum to the session's usage", out)
+
+    def test_a_record_without_a_split_prices_at_its_one_model(self) -> None:
+        """BG1252 AC3. A single-model session, then the same lane record as one written before the
+        split (`by_model` null, then absent), each returned in turn: every return books the
+        session under its one named model at the capture's own US$0.0036. MUTANTS: a record
+        without a split read as unreadable or unpriced (no delegated record, no dollars); one
+        booked under no model, so the page prices none of it; the one-model fallback dropped
+        from `record_delegated_tokens`."""
+        self._open_run()
+        rc, out = self._run("claude")
+        self.assertEqual(0, rc, out)
+        [path] = self._records()
+        self.assertEqual({CLAUDE["model"]}, set(self._record()["by_model"]))
+        for shape in ("split", "null", "absent"):
+            with self.subTest(record=shape):
+                rec = json.loads(path.read_text("utf-8"))
+                if shape == "null":
+                    rec["by_model"] = None
+                elif shape == "absent":
+                    rec.pop("by_model", None)
+                path.write_text(json.dumps(rec), "utf-8")
+                rc, out = self._lane("return", "--units", UNIT)
+                self.assertEqual(0, rc, out)
+                [got] = self._delegated()
+                self.assertEqual({CLAUDE["model"]: HAIKU_PARTS}, got[_rs().BY_MODEL])
+                self.assertAlmostEqual(HAIKU_USD, self._unit_usd(), places=10)
+                self.assertIn("lane run cost: US$0.0036 (claude-haiku-5-5)", out)
 
     # -- AC3 --------------------------------------------------------------------------------
     def test_a_failed_or_silent_cli_leaves_the_lane_unmetered(self) -> None:

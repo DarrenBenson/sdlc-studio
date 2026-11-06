@@ -86,3 +86,4 @@ Fill these in: this is the part an agent cannot infer.
 - Grow this file with per-ship narrative: `git log` and `LATEST.md` hold it.
 - Use a library from memory: query its current API docs first.
 - Mark a generated spec Done without tests.
+- Share a temp path: name it per agent or run, or keep it in your worktree.

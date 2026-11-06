@@ -230,5 +230,96 @@ class PriceTableTests(unittest.TestCase):
         self.assertEqual(int(row.group(1)), prices.DEFAULT_STALE_AFTER_DAYS)
 
 
+#: US1135. Each non-Claude provider's own published price page, by the prefix of the model ids it
+#: prices: OpenAI's for the models behind Codex CLI, OpenCode's for its Zen (Console) models,
+#: which the OpenCode reader names `opencode/<model>`. GitHub's prices Copilot premium requests.
+PROVIDER_PAGES = (("gpt-", "https://developers.openai.com/api/docs/pricing"),
+                  ("opencode/", "https://opencode.ai/docs/"))
+COPILOT_PAGE = "https://docs.github.com/en/copilot/"
+READ_ON = re.compile(r"\bread (\d{4}-\d{2}-\d{2})\b")
+#: The free model of OpenCode's captured session (`fixtures/harness_usage/opencode.jsonl`), as
+#: the OpenCode reader names it, and a paid OpenCode model the table does not list.
+FREE = "opencode/deepseek-v4.1-flash-free"
+OPENCODE_UNLISTED = "opencode/deepseek-v4.1-flash"
+
+
+class NonClaudePriceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.doc = json.loads(SHIPPED.read_text(encoding="utf-8"))
+        self.table = prices.load(path=SHIPPED, pricing={})
+
+    def _sourced(self, entry: dict, page: str) -> None:
+        """`entry` carries an effective date and a source on `page` naming the day it was read,
+        no earlier than the effective date."""
+        effective = dt.date.fromisoformat(entry["effective"])
+        source = entry.get("source") or ""
+        self.assertTrue(source.startswith(page), f"{source!r} is not the provider's page {page}")
+        read = READ_ON.search(source)
+        self.assertIsNotNone(read, f"{source!r} names no day it was read")
+        self.assertGreaterEqual(dt.date.fromisoformat(read.group(1)), effective)
+
+    def test_every_non_claude_price_is_sourced_and_dated(self) -> None:
+        """AC1. MUTANTS: a non-Claude entry's source emptied (refused by the loader), undated, or
+        another provider's page (OpenCode's page lists the OpenAI models too); a model no
+        provider page prices listed; the premium-request price undated, unsourced or dropped by
+        the loader. The control: every Claude entry is held by US1122's own test."""
+        others = [e for e in self.doc["models"] if not e["model"].startswith("claude-")]
+        priced_from = {page: [] for _prefix, page in PROVIDER_PAGES}
+        for entry in others:
+            with self.subTest(model=entry["model"]):
+                page = next((p for prefix, p in PROVIDER_PAGES
+                             if entry["model"].startswith(prefix)), None)
+                self.assertIsNotNone(page, "a model no provider's own page prices is not listed")
+                self._sourced(entry, page)
+                priced_from[page].append(entry["model"])
+        for page, models in priced_from.items():
+            self.assertTrue(models, f"premise: the table lists a model priced from {page}")
+        request = self.doc.get(prices.PREMIUM_REQUEST)
+        self.assertIsInstance(request, dict, "the table carries no premium-request price")
+        self._sourced(request, COPILOT_PAGE)
+        got = self.table.premium_request
+        self.assertIsNotNone(got, "the loader dropped the premium-request price")
+        self.assertEqual((request["usd"], request["effective"], request["source"]),
+                         (got.usd, got.effective.isoformat(), got.source))
+        # A request price with no price, date or source is refused by name, never read as $0.
+        for missing in ("usd", "effective", "source"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "prices.json"
+                path.write_text(json.dumps({"models": [], prices.PREMIUM_REQUEST: {
+                    k: v for k, v in request.items() if k != missing}}), encoding="utf-8")
+                with self.assertRaisesRegex(prices.PriceTableError,
+                                            f"{prices.PREMIUM_REQUEST}.*{missing}"):
+                    prices.load(path=path, pricing={})
+
+    def test_a_free_opencode_model_prices_at_zero_not_unpriced(self) -> None:
+        """AC3. MUTANTS: the free model left unlisted (not priced) or listed under another id
+        than the reader's; a paid model entered at zero; the free model's $0 counted as not
+        covered. The control: an unlisted OpenCode model reads not priced, never $0."""
+        harness_usage = __import__("lib.harness_usage", fromlist=["parse"])
+        text = (SCRIPTS / "tests" / "fixtures" / "harness_usage" / "opencode.jsonl").read_text(
+            encoding="utf-8")
+        reading = harness_usage.parse("opencode", text, model=FREE)
+        self.assertEqual(FREE, reading.model, "premise: the reader names the model so")
+        free = prices.cost(reading.model, {"input": 9_896, "cache_read": 1_792, "output": 3},
+                           self.table)
+        self.assertEqual((0.0, None), (free.usd, free.unpriced))
+        unlisted = prices.cost(OPENCODE_UNLISTED, {"input": 9_896}, self.table)
+        self.assertIsNone(unlisted.usd)
+        self.assertIn(OPENCODE_UNLISTED, unlisted.unpriced)
+        tokens = {"input": 1_000, "output": 0, "cache_read": 0, "cache_write_5m": 0,
+                  "cache_write_1h": 0}
+        got = run_state.usd({FREE: tokens, OPENCODE_UNLISTED: dict(tokens, input=3_000)},
+                            self.table)
+        self.assertEqual(0.0, got["usd"], "the free model is priced, at $0")
+        self.assertEqual(0.25, got["covered"], "its share is covered")
+        self.assertEqual([OPENCODE_UNLISTED], [u["model"] for u in got["unpriced"]])
+        # Only a model its provider's page calls free is entered at zero.
+        for entry in self.doc["models"]:
+            if not any(entry[c] for c in PRICE_FIELDS):
+                with self.subTest(model=entry["model"]):
+                    self.assertTrue(entry["model"].endswith("-free"), entry["model"])
+                    self.assertIn("free", entry.get("note", "").lower())
+
+
 if __name__ == "__main__":
     unittest.main()

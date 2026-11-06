@@ -545,6 +545,109 @@ class MessageAbsentTests(unittest.TestCase):
                          "message:\n" + without_identity.stdout + without_identity.stderr)
 
 
+def _load_gitutil():
+    """The shipped git-fixture helper, loaded rather than re-implemented, so every fixture git
+    call below is confined to its fixture by the same list the skill's own tests use."""
+    import importlib.util
+    import sys
+    path = REPO / ".claude/skills/sdlc-studio/scripts/tests/gitutil.py"
+    spec = importlib.util.spec_from_file_location("_commit_msg_hook_gitutil", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+gitutil = _load_gitutil()
+
+
+class DerivedTrailerTests(unittest.TestCase):
+    """US1133: the hook WRITES the trailers the staged files' `Affects` already attribute, so a
+    multi-id commit lands at its first attempt, and still refuses a `Refs:` line that contradicts
+    them. The BG1213 landing is the replay: a subject naming two units, each owning a staged file,
+    refused once for a trailer the units' own declarations could have written."""
+
+    def _fixture(self, d: str, *, stage: tuple[str, ...]) -> Path:
+        """US0001 owns src/a.py and BG0002 owns bin/gate, each by its Affects; the files in
+        `stage` are modified and staged, and the hook is installed the way git runs it. The
+        extension-less `bin/gate` is the shape of `.githooks/commit-msg`, which the footprint
+        counter does not count as a file and which a unit still owns by declaring it."""
+        repo = Path(d)
+        gitutil.git(["init", "-q"], cwd=repo)
+        skill = repo / ".claude" / "skills" / "sdlc-studio"
+        skill.mkdir(parents=True)
+        (skill / "scripts").symlink_to(REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
+        for rel, rid, owned in (("stories", "US0001", "src/a.py"), ("bugs", "BG0002", "bin/gate")):
+            folder = repo / "sdlc-studio" / rel
+            folder.mkdir(parents=True)
+            (folder / f"{rid}-sample.md").write_text(
+                f"# {rid}: sample\n\n> **Status:** In Progress\n> **Affects:** {owned}\n",
+                encoding="utf-8")
+        for rel in ("src/a.py", "bin/gate"):
+            (repo / rel).parent.mkdir(exist_ok=True)
+            (repo / rel).write_text("x = 1\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=repo)
+        gitutil.git(["commit", "-q", "-m", "seed"], cwd=repo)
+        for rel in stage:
+            (repo / rel).write_text("x = 2\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=repo)
+        hooks = repo / "hooks"
+        hooks.mkdir()
+        (hooks / "commit-msg").symlink_to(HOOK)
+        gitutil.git(["config", "core.hooksPath", str(hooks)], cwd=repo)
+        return repo
+
+    def _hook(self, repo: Path, message: str):
+        msg = repo / "COMMIT_EDITMSG"
+        msg.write_text(message, encoding="utf-8")
+        env = gitutil.git_env()
+        r = subprocess.run(["bash", str(HOOK), str(msg)], capture_output=True, text=True,
+                           cwd=repo, env=env, timeout=120)
+        return r, msg.read_text(encoding="utf-8")
+
+    def test_owning_ids_get_refs_written_and_the_commit_lands(self):
+        # AC1. Must fail on: `message-refs` still refusing a message the staged-file map can
+        # attribute, or the trailers written outside the message's own trailer block.
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=("src/a.py", "bin/gate"))
+            message = "fix(US0001, BG0002): the pair\n\nCo-Authored-By: t <t@t>\n"
+            r = gitutil.git(["commit", "-q", "-m", message], cwd=repo, check=False, text=True)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            body = gitutil.git(["log", "-1", "--format=%B"], cwd=repo, text=True).stdout
+            self.assertEqual(body.count("Refs: US0001"), 1, body)
+            self.assertEqual(body.count("Refs: BG0002"), 1, body)
+            self.assertNotIn("Mentions:", body)
+            # git reads them as trailers, in the block the message already carried
+            refs = gitutil.git(["log", "-1", "--format=%(trailers:key=Refs,valueonly)"],
+                               cwd=repo, text=True).stdout.split()
+            self.assertEqual(sorted(refs), ["BG0002", "US0001"], body)
+            self.assertIn("Co-Authored-By: t <t@t>\nRefs: ", body)
+
+    def test_a_trailer_that_contradicts_ownership_is_refused(self):
+        # AC3. Must fail on: the lane deleted outright, or a correct trailer written twice.
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=("src/a.py",))
+            subject = "fix(US0001, BG0002): only a.py moved"
+            wrong = f"{subject}\n\nRefs: US0001\nRefs: BG0002\n"
+            r, after = self._hook(repo, wrong)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertIn("FAIL message-refs", re.sub(r"\s+", " ", out))
+            self.assertRegex(out, r"Refs: BG0002[^\n]*owns none of the staged files", out)
+            self.assertNotRegex(out, r"Refs: US0001[^\n]*owns none", out)
+            self.assertEqual(after, wrong, "a refused message is not rewritten")
+            # A trailer that matches ownership passes unchanged ...
+            right = f"{subject}\n\nRefs: US0001\nMentions: BG0002\n"
+            r, after = self._hook(repo, right)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, right)
+            self.assertEqual((r.stdout + r.stderr).strip(), "ok   message-refs")
+            # ... and is never written a second time beside the one derived for the other id.
+            r, after = self._hook(repo, f"{subject}\n\nRefs: US0001\n")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n")
+
+
 class HookInvocationHermeticityTests(unittest.TestCase):
     """BG0595 AC4/AC5. No test may invoke the hook against the repository under development."""
 

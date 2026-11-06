@@ -27,6 +27,9 @@ never an `AttributeError` (AC1); an absent reasoning count is None and unreporte
 (AC2); a session that used two models is named for the one that carried the most tokens (AC3);
 and the Codex reading of `input_tokens` cites the evidence that decides it (AC4).
 
+BG1252 adds: a session that used two models carries each model's own counts in
+`Usage.by_model`, summing to the session's (AC1).
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py -q
 """
@@ -363,6 +366,41 @@ class HarnessUsageTests(unittest.TestCase):
                 self._expect(got, model="claude-opus-5-5", model_source="output",
                              input=3, cache_read=51382, cache_write=17126, output=36,
                              reasoning=31)
+
+    def test_a_two_model_session_carries_its_split(self):
+        """BG1252 AC1. Two models in one Claude Code session: the `Usage` carries each model's own
+        counts, typed here, and every count of the session is the two summed. MUTANTS: the split
+        dropped (`by_model` None) or cut to `_largest`'s model alone; one model's counts booked
+        under the other; a model's one-hour write or reasoning left off its counts; Copilot's
+        split not carried; a split keyed None for a CLI that names no model."""
+        haiku = json.loads(_text("claude.json"))["modelUsage"]["claude-haiku-5-5"]
+        opus = dict(haiku, inputTokens=1000, outputTokens=2000, thinkingTokens=0,
+                    cacheReadInputTokens=0, cacheCreationInputTokens=500,
+                    cacheCreationEphemeral1hInputTokens=0)
+        doc = json.loads(_text("claude.json"))
+        doc["modelUsage"] = {"claude-haiku-5-5": haiku, "claude-opus-5-5": opus}
+        got = parse("claude", json.dumps(doc))
+        self.assertEqual({
+            "claude-haiku-5-5": {"input": 2, "cache_read": 11382, "cache_write": 17126,
+                                 "cache_write_1h": 17126, "output": 35, "reasoning": 31},
+            "claude-opus-5-5": {"input": 1000, "cache_read": 0, "cache_write": 500,
+                                "cache_write_1h": 0, "output": 2000, "reasoning": 0}},
+            got.by_model)
+        self.assertEqual("claude-haiku-5-5", got.model)
+        for k in COUNTS + ("cache_write_1h",):
+            self.assertEqual(getattr(got, k), sum(m[k] for m in got.by_model.values()), k)
+        # a single-model session carries its one model, Copilot's as Claude Code's
+        for harness, name in (("claude", "claude.json"), ("copilot", "copilot.jsonl")):
+            with self.subTest(harness=harness):
+                one = parse(harness, _text(name))
+                self.assertEqual([one.model], list(one.by_model))
+                self.assertEqual({k: getattr(one, k) for k in COUNTS + ("cache_write_1h",)},
+                                 one.by_model[one.model])
+        # a CLI that names no model, or a Claude Code result with no modelUsage, carries none
+        self.assertIsNone(parse("cursor", _cursor(0), model="m").by_model)
+        bare = json.loads(_text("claude.json"))
+        del bare["modelUsage"]
+        self.assertIsNone(parse("claude", json.dumps(bare), model="m").by_model)
 
     def test_the_codex_docstring_names_the_total_tokens_evidence(self):
         """14524 input beside 12288 cached fits either reading; the rollout's `total_tokens`,

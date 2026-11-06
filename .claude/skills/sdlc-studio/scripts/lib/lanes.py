@@ -35,8 +35,9 @@ refused transition) or a return that exited non-zero, 0 a unit moved and its lan
 `sprint lane run` runs one lane's brief headless in a supported CLI (`headless_command`), in the
 lane's worktree and under a timeout, and keeps one lane record per session under
 `RUN_RECORDS/<unit>/`: the session id, model and usage `harness_usage.parse` normalised from what
-the CLI printed, or the reason the lane is unmetered. `run_readings` is what `lane return` prices
-the lane from, one reading per session, so a repair's session adds to the builder's.
+the CLI printed, with each model's own counts where the CLI names its models, or the reason
+the lane is unmetered. `run_readings` is what `lane return` prices the lane from, one reading per
+session, so a repair's session adds to the builder's.
 """
 from __future__ import annotations
 
@@ -663,6 +664,8 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
         "reason": usage.reason, "session_id": usage.session_id, "usage_model": usage.model,
         "model_source": usage.model_source,
         "usage": {k: getattr(usage, k) for k in USAGE_COUNTS},
+        "by_model": ({m: {k: c[k] for k in USAGE_COUNTS} for m, c in usage.by_model.items()}
+                     if usage.by_model else None),
         "unreported": list(usage.unreported), "disagreements": list(usage.disagreements),
         "first_call_context": first, "first_call_reason": first_why, "staged": staged,
         "output": str(out_path)}
@@ -709,8 +712,14 @@ def run_readings(root: Path | str, unit: str,
 
 def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None, str | None]:
     """One session's reading from its lane record at `path`: its usage, as
-    {"tokens", "components", "source", "harness", "model"}, or (None, why) where the record is
-    unreadable, another run's or unmetered."""
+    {"tokens", "components", "source", "harness", "model"}, with the session's per-model
+    components under `run_state.BY_MODEL` where the record keeps a `by_model` split, or
+    (None, why) where the record is unreadable, another run's or unmetered. A record with no
+    split, one written before the split was kept among them, carries none, and
+    `record_delegated_tokens` books it under the one model it names. A split that does not sum
+    to the session's own usage is refused with the record, so the unit's dollars and its priced
+    tokens are never read from two different counts."""
+    from lib import run_state  # noqa: PLC0415 - only a lane return prices a reading
     try:
         rec = json.loads(path.read_text(encoding="utf-8"))
         if rec.get("run_id") != run_id:
@@ -720,11 +729,9 @@ def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None,
             return None, (f"{unit}'s lane run recorded at {path} is unmetered "
                           f"({rec.get('unmetered')}): "
                           f"{rec.get('reason')}, so its return records no priced cost")
-        u = rec["usage"]
-        hour = u.get("cache_write_1h") or 0
-        parts = {"input": int(u["input"]), "output": int(u["output"]),
-                 "cache_write_5m": int(u["cache_write"]) - hour, "cache_write_1h": hour,
-                 "cache_read": int(u["cache_read"])}
+        parts = _components(rec["usage"])
+        split = rec.get("by_model")
+        by_model = {str(m): _components(c) for m, c in split.items()} if split else None
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
         return None, (f"{unit}'s lane run record {path} cannot be read ({exc}), so its return "
                       f"records no priced cost")
@@ -732,5 +739,19 @@ def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None,
     if tokens <= 0:
         return None, (f"{unit}'s lane run reports no input, output or cache write, so its "
                       f"return records no priced cost")
+    if by_model and any(sum(c[k] for c in by_model.values()) != v for k, v in parts.items()):
+        return None, (f"{unit}'s lane run record {path} cannot be read (its per-model split "
+                      f"does not sum to the session's usage), so its return records no priced "
+                      f"cost")
     return {"tokens": tokens, "components": parts, "source": str(path),
-            "harness": rec.get("harness"), "model": rec.get("usage_model")}, None
+            "harness": rec.get("harness"), "model": rec.get("usage_model"),
+            **({run_state.BY_MODEL: by_model} if by_model else {})}, None
+
+
+def _components(u) -> dict:
+    """One usage's counts as the priced components: its cache write split into the five-minute
+    and one-hour parts."""
+    hour = u.get("cache_write_1h") or 0
+    return {"input": int(u["input"]), "output": int(u["output"]),
+            "cache_write_5m": int(u["cache_write"]) - hour, "cache_write_1h": hour,
+            "cache_read": int(u["cache_read"])}

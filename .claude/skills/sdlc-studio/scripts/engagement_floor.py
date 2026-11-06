@@ -434,13 +434,20 @@ def _declared_file_tokens(text: str) -> list[str]:
     as a real footprint. Each token is stripped of a trailing `(parenthetical)` and
     backticks; an unfilled `{{placeholder}}` and any token `_is_file_token` rejects as prose
     (`n/a`, `various`) or a version string (`v1.2`) is dropped."""
+    return [tok for tok in _declared_tokens(text) if _is_file_token(tok)]
+
+
+def _declared_tokens(text: str) -> list[str]:
+    """Every token the unit's `Affects` field declares, stripped as above, before the file-token
+    filter: an extension-less path such as `.githooks/commit-msg` is kept, so a staged file can be
+    matched against exactly what the unit wrote even where the footprint counter does not count it."""
     val = sdlc_md.extract_field(text, "Affects")
     if val is None:
         return []
     out: list[str] = []
     for tok in val.split(","):
         tok = re.sub(r"\s*\(.*\)\s*$", "", tok.strip()).strip().strip("`").strip()
-        if tok and "{{" not in tok and _is_file_token(tok):
+        if tok and "{{" not in tok:
             out.append(tok)
     return out
 
@@ -714,7 +721,8 @@ def _repo_relative(root: Path, p: str) -> str:
     return p.strip().lstrip("./")
 
 
-def affects_owners(repo_root: Path | str) -> dict[str, set[str]]:
+def affects_owners(repo_root: Path | str,
+                   footprints: dict[str, set[str]] | None = None) -> dict[str, set[str]]:
     """{repo-relative path -> the judged-type unit ids whose `Affects` declares it}.
 
     Every file in a commit already has a candidate owner, because every unit declares what it
@@ -725,16 +733,30 @@ def affects_owners(repo_root: Path | str) -> dict[str, set[str]]:
     Every judged-type unit is read, whatever its status: the unit being swept in is by definition
     still in flight, so scoping this to shipped units would miss exactly the case it exists for."""
     owners: dict[str, set[str]] = {}
+    fp = unit_footprints(repo_root) if footprints is None else footprints
+    for rid, paths in fp.items():
+        for f in paths:
+            if _is_file_token(f):
+                owners.setdefault(f, set()).add(rid)
+    return owners
+
+
+def unit_footprints(repo_root: Path | str) -> dict[str, set[str]]:
+    """{normalised judged-type unit id -> the repo-relative paths its `Affects` declares}, one
+    entry for every unit artefact found, a unit declaring nothing included with an empty set, and
+    every declared token kept (`_declared_tokens`). `affects_owners` is this map inverted and
+    narrowed to file tokens; the trailer derivation reads it the right way round, whole."""
+    footprints: dict[str, set[str]] = {}
     root = Path(repo_root)
     for type_ in SHIPPED_STATUS:
         for p in sdlc_md.artifact_files(type_, root):
             rid = sdlc_md.extract_record_id(p.stem)
             if not rid:
                 continue
-            norm = sdlc_md.norm_id(rid)
-            for f in _declared_file_tokens(sdlc_md.read_text_safe(p)):
-                owners.setdefault(_repo_relative(root, f), set()).add(norm)
-    return owners
+            paths = footprints.setdefault(sdlc_md.norm_id(rid), set())
+            for f in _declared_tokens(sdlc_md.read_text_safe(p)):
+                paths.add(_repo_relative(root, f))
+    return footprints
 
 
 def _link_graph(repo_root: Path | str) -> dict[str, set[str]]:
@@ -792,7 +814,8 @@ def _path_owner(path: str) -> str | None:
 
 
 def unnamed_unit_attribution(repo_root: Path | str, message: str,
-                             staged: list[str] | None = None) -> list[dict]:
+                             staged: list[str] | None = None,
+                             footprints: dict[str, set[str]] | None = None) -> list[dict]:
     """Staged files belonging to a judged unit that this commit's message never names.
 
     A commit whose files belong to one unit while its subject and `Refs:` trailers name a different
@@ -825,7 +848,7 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
     if not paths:
         return []      # nothing staged, or git could not be asked: report nothing, claim nothing
     named = _reachable(_link_graph(root), declared)
-    owners = affects_owners(root)
+    owners = affects_owners(root, footprints)
     found: dict[str, dict[str, set[str]]] = {}
     for f in paths:
         if Path(f).name == "_index.md":
@@ -854,16 +877,119 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
     return out
 
 
+#: A trailer line as git reads one: a token, a colon, then the value.
+_TRAILER_LINE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*:[ \t]")
+#: The line below which a verbose commit's message file carries git's diff, never the author's.
+_SCISSORS_RE = re.compile(r"^# -+ >8 -+$")
+
+
+def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | None = None,
+                    footprints: dict[str, set[str]] | None = None) -> dict:
+    """The `Refs:` and `Mentions:` lines the staged files' ownership already states, for a
+    subject naming two or more judged ids.
+
+    An id OWNS a staged file when its `Affects` declares the file or the file carries its id in
+    its own name (its artefact, its changelog fragment). Each named id no trailer accounts for gets
+    `Refs:` when it owns one and `Mentions:` when it owns none. Nothing is derived when no id the
+    message names owns a staged file, nothing is staged, or git cannot be asked: the map then
+    attributes the commit to nobody, and the author states it as before.
+
+    `contradicted` lists the ids a written `Refs:` line names that are units of this workspace
+    owning none of the staged files: a statement of ownership the declarations deny. Returns
+    {"refs": [...], "mentions": [...], "contradicted": [...]}, each id as the message wrote it."""
+    root = Path(repo_root)
+    body = _strip_comments(message)
+    written: dict[str, str] = {}
+    for i in _JUDGED_ID_RE.findall(_subject_line(message)):
+        written.setdefault(sdlc_md.norm_id(i), i)
+    result: dict[str, list[str]] = {"refs": [], "mentions": [], "contradicted": []}
+    paths = _staged_paths(root) if staged is None else staged
+    if len(written) <= 1 or not paths:
+        return result
+    fp = unit_footprints(root) if footprints is None else footprints
+    keys = {f: _repo_relative(root, f) for f in paths}
+
+    def owns(rid: str) -> bool:
+        return any(k in fp.get(rid, ()) or _path_owner(f) == rid for f, k in keys.items())
+
+    refs, mentions = _refs_ids(body), _mentions_ids(body)
+    for m in _REFS_LINE_RE.finditer(body):
+        for i in _JUDGED_ID_RE.findall(m.group(1)):
+            written.setdefault(sdlc_md.norm_id(i), i)
+    result["contradicted"] = [written[i] for i in sorted(refs) if i in fp and not owns(i)]
+    uncovered = [i for i in sorted(written) if i not in refs and i not in mentions]
+    if not any(owns(i) for i in set(uncovered) | refs):
+        return result
+    result["refs"] = [written[i] for i in uncovered if owns(i)]
+    result["mentions"] = [written[i] for i in uncovered if not owns(i)]
+    return result
+
+
+def with_trailers(message: str, lines: list[str]) -> str:
+    """`message` with `lines` added as trailers: joined to the closing paragraph when that is
+    already a trailer block (so git reads one block, not two), else after a blank line, and in
+    either case above git's comment scaffolding and any verbose diff."""
+    all_lines = message.splitlines()
+    cut = next((n for n, ln in enumerate(all_lines) if _SCISSORS_RE.match(ln)), len(all_lines))
+    head, tail = all_lines[:cut], all_lines[cut:]
+    last = max((n for n, ln in enumerate(head)
+                if ln.strip() and not ln.lstrip().startswith("#")), default=-1)
+    body, rest = head[:last + 1], head[last + 1:]
+    start = max((n + 1 for n, ln in enumerate(body) if not ln.strip()), default=0)
+    joins = start > 0 and all(_TRAILER_LINE_RE.match(ln) for ln in body[start:])
+    return "\n".join(body + ([] if joins else [""]) + lines + rest + tail) + "\n"
+
+
+def _write_derived(args: argparse.Namespace, message: str,
+                   footprints: dict[str, set[str]] | None) -> tuple[str, list[str]]:
+    """`--write-trailers`: write the derived lines into the message file and return the message
+    as it now stands, with the ids whose written `Refs:` line contradicts ownership. Writes
+    nothing when a line is contradicted (the commit is refused) or nothing is owed."""
+    root = getattr(args, "root", ".") or "."
+    derived = derive_trailers(root, message, footprints=footprints)
+    if derived["contradicted"]:
+        return message, derived["contradicted"]
+    lines = ([f"Refs: {i}" for i in derived["refs"]]
+             + [f"Mentions: {i}" for i in derived["mentions"]])
+    if lines:
+        message = with_trailers(message, lines)
+        sdlc_md.atomic_write(Path(args.file), message)
+        print(f"engagement floor (trailers): wrote {', '.join(lines)} from the staged files' "
+              "Affects", file=sys.stderr)
+    return message, []
+
+
 def cmd_check_commit_msg(args: argparse.Namespace) -> int:
     """Read a commit message file (the argument git passes a commit-msg hook) and apply
-    `check_commit_message`. Degrades honestly: an unreadable file is not the author's fault, so it
-    warns to stderr and exits 0 (never blocks) regardless of strict."""
+    `check_commit_message`, first writing the trailers ownership derives under `--write-trailers`.
+    Degrades honestly: an unreadable file is not the author's fault, so it warns to stderr and
+    exits 0 (never blocks) regardless of strict."""
     try:
         message = Path(args.file).read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
         print(f"engagement floor (commit-msg): could not read {args.file}: {exc}", file=sys.stderr)
         return 0
+    root = getattr(args, "root", ".") or "."
+    contradicted: list[str] = []
+    # Read once and shared with the advisory below, and only for a subject the derivation judges:
+    # every unit artefact is read to build it, so a second read doubles the hook's cost.
+    footprints: dict[str, set[str]] | None = None
+    if getattr(args, "write_trailers", False):
+        try:
+            several = {sdlc_md.norm_id(i) for i in _JUDGED_ID_RE.findall(_subject_line(message))}
+            if len(several) > 1:
+                footprints = unit_footprints(root)
+            message, contradicted = _write_derived(args, message, footprints)
+        except Exception as exc:  # noqa: BLE001 - a failed derivation leaves the check as it was
+            sdlc_md.debug("engagement_floor.derive_trailers", exc)
+    for rid in contradicted:
+        print(f"engagement floor (commit-msg): Refs: {rid} names a unit that owns none of the "
+              f"staged files (its Affects declares none of them and none carries its id). Add "
+              f"the file to {rid}'s Affects if the work is its, or write Mentions: {rid} in "
+              "place of that Refs: line.", file=sys.stderr)
     code, warning = check_commit_message(message, strict=args.strict)
+    if contradicted and args.strict:
+        code = 1
     if warning:
         print(f"engagement floor (commit-msg): {warning}", file=sys.stderr)
         if code != 0:
@@ -871,9 +997,11 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
                   "Refs: or Mentions: lines)", file=sys.stderr)
     # The attribution advisory is REPORTED, never returned as the exit code - not even under
     # --strict. Ownership is inferred from a declared footprint, and a gate that refused on an
-    # inference would be switched off within a week; the multi-id rule above is the only refusal.
+    # inference would be switched off within a week. The refusals are the multi-id rule and,
+    # under --write-trailers, a Refs: line naming a unit that owns none of the staged files: an
+    # explicit statement the declarations deny, which Mentions: or an amended Affects answers.
     try:
-        for note in unnamed_unit_attribution(getattr(args, "root", ".") or ".", message):
+        for note in unnamed_unit_attribution(root, message, footprints=footprints):
             print(f"engagement floor (attribution): {note['note']}", file=sys.stderr)
     except Exception as exc:  # noqa: BLE001 - an advisory never blocks a commit
         sdlc_md.debug("engagement_floor.unnamed_unit_attribution", exc)
@@ -973,6 +1101,10 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("file", help="Path to the commit message file git passes the hook.")
     m.add_argument("--strict", action="store_true",
                    help="Block (exit 1) instead of warning - an explicit opt-in.")
+    m.add_argument("--write-trailers", action="store_true",
+                   help="Write into the file the Refs: and Mentions: lines the staged files' "
+                        "Affects attribute to the ids the subject names, and refuse a Refs: line "
+                        "naming a unit that owns none of the staged files.")
     m.add_argument("--root", default=".",
                    help="Repo root, for the staged-file attribution advisory (default: .)")
     m.set_defaults(func=cmd_check_commit_msg)

@@ -20,7 +20,7 @@ rule that matters is gated in the command people run (LL0027); one stated here a
 
 | Gate | Refuses |
 | --- | --- |
-| pre-commit + commit-msg hooks | any lane `.githooks/pre-commit --list` or `.githooks/commit-msg --list` prints |
+| pre-commit + commit-msg hooks | any lane `.githooks/pre-commit --list` or `.githooks/commit-msg --list` prints; commit-msg writes the `Refs:` and `Mentions:` trailers the staged files' `Affects` attribute to a multi-id subject, refusing a commit they cannot attribute or a `Refs:` line they deny |
 | pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag); `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints its cost |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed |

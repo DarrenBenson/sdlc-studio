@@ -20,6 +20,13 @@ first call's context, which the header names: what the session paid before any t
 A tool output is costed as its size in characters times the later calls of its own transcript,
 each of which re-reads it as context. The transcript records no token count per tool output, so
 the size is stated in characters rather than converted at a guessed ratio.
+
+The anatomy is the open run's (`run_window`): only the records timestamped after its `started_at`
+count, each message, tool output and later call among them, and a subagent with no call in that
+window is not one of its agents. It is the whole session under `--session`, when no run is open,
+and when a usage record carries no timestamp, since such a record cannot be placed against the
+start and a window that dropped it would understate the run. The header names which, and why.
+The start context alone is read over the whole session: it is what the session paid first.
 """
 from __future__ import annotations
 
@@ -94,14 +101,48 @@ def _context(parts: dict) -> int:
 
 
 def _records_of(path: Path, side: str) -> list:
-    """One transcript's usage records through the meter's reader (`run_state._file_records`),
-    collapsed per message at its largest. RAISES `AnatomyError` on a malformed or unreadable
-    transcript, as the meter refuses one."""
+    """One transcript's usage records through the meter's reader (`run_state._file_records`), a
+    whole read, so each record keeps its timestamp for the window (`_after`); `_largest` and
+    `_aggregate` read a message's repeats once, at its largest. RAISES `AnatomyError` on a
+    malformed or unreadable transcript, as the meter refuses one."""
     out: list = []
     try:
-        run_state._file_records(path, side, out, memo={})  # collapsed per message, at its largest
+        run_state._file_records(path, side, out)
     except run_state._MeterError as exc:
         raise AnatomyError(str(exc)) from exc
+    return out
+
+
+def _whole(reason: str | None) -> dict:
+    return {"run_id": None, "since": None, "whole_session": True, "reason": reason}
+
+
+def run_window(state: dict, session: bool = False) -> dict:
+    """The window the anatomy reads: the open run's, every record after its `started_at`, or the
+    whole session, with the reason, under `session` (`--session`) or when no run is open (a
+    closed run, or none recorded)."""
+    if session:
+        return _whole("--session names the whole session")
+    if (state or {}).get("outcome") == run_state.RUNNING and state.get("started_at"):
+        return {"run_id": state.get("run_id"), "since": state["started_at"],
+                "whole_session": False, "reason": None}
+    return _whole("no run is open")
+
+
+def _after(readings: list[list], since) -> list[list] | None:
+    """Each transcript's records timestamped after `since` (a datetime), as the meter's opening
+    reading holds the ones at or before it; None when any record carries no timestamp, which no
+    window can place."""
+    out = []
+    for records in readings:
+        kept = []
+        for rec in records:
+            moment = sdlc_md.parse_iso8601(rec[2]) if rec[2] else None
+            if moment is None:
+                return None
+            if moment > since:
+                kept.append(rec)
+        out.append(kept)
     return out
 
 
@@ -165,8 +206,9 @@ def _size(content) -> int:
     return 0
 
 
-def _outputs_of(path: Path, role: str, agent: str) -> list[dict]:
-    """Every tool output of one transcript, each with the later calls of that transcript."""
+def _outputs_of(path: Path, role: str, agent: str, since=None) -> list[dict]:
+    """Every tool output of one transcript, each with the later calls of that transcript; given
+    `since` (a datetime), only the records timestamped after it, a record with none outside."""
     producers: dict[str, str] = {}
     call_lines: list[int] = []
     ids: set = set()
@@ -181,6 +223,11 @@ def _outputs_of(path: Path, role: str, agent: str) -> list[dict]:
                 msg = rec.get("message") if isinstance(rec, dict) else None
                 if not isinstance(msg, dict):
                     continue
+                if since is not None:
+                    at = rec.get("timestamp")
+                    moment = sdlc_md.parse_iso8601(at) if isinstance(at, str) else None
+                    if moment is None or moment <= since:
+                        continue
                 if isinstance(msg.get("usage") or rec.get("usage"), dict):
                     msg_id = msg.get("id")
                     if not (isinstance(msg_id, str) and msg_id) or msg_id not in ids:
@@ -235,24 +282,39 @@ def _finish(rows: dict) -> list[dict]:
     return out
 
 
-def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
+def build(main: Path, subagents: list[Path], roles: dict[str, str],
+          window: dict | None = None) -> dict:
     """The anatomy of the session whose transcript is `main`, its subagents' transcripts
-    `subagents`, each subagent's role read from `roles` (`agent_roles`) and `other` when absent.
-    RAISES `AnatomyError` on a transcript the meter would refuse."""
+    `subagents`, each subagent's role read from `roles` (`agent_roles`) and `other` when absent,
+    over `window` (`run_window`; the whole session when None). RAISES `AnatomyError` on a
+    transcript the meter would refuse."""
     rows = {r: _row(r) for r in ROLES}
     seen: set = set()
-    start = None
     outputs: list[dict] = []
     sources = [(main, "main")] + [(f, "subagents") for f in subagents]
-    readings = [_records_of(path, side) for path, side in sources]
+    whole = [_records_of(path, side) for path, side in sources]
+    # the session's first call, whatever the window: in the order the calls first appear
+    firsts = _usage_of(main, whole[0], set(), _largest(whole))[1]
+    start = firsts[0] if firsts else None
+    window, since, readings = dict(window or _whole(None)), None, whole
+    if window["since"] is not None:
+        since = sdlc_md.parse_iso8601(window["since"])
+        cut = _after(whole, since) if since is not None else None
+        if cut is None:
+            why = ("a usage record carries no timestamp" if since is not None
+                   else f"its start {window['since']!r} does not parse")
+            window, since = _whole(f"the open run {window['run_id']}'s window cannot be applied: "
+                                   f"{why}"), None
+        else:
+            readings = cut
     largest = _largest(readings)
     for (path, side), records in zip(sources, readings):
+        if since is not None and side == "subagents" and not records:
+            continue  # no call in the run's window: not one of its agents
         key = agent_key(path.stem) if side == "subagents" else None
         role = ORCHESTRATOR if side == "main" else roles.get(key or "", OTHER)
         agent = path.stem if side == "subagents" else "session"
         comps, contexts = _usage_of(path, records, seen, largest)
-        if side == "main" and contexts:
-            start = contexts[0]  # the first call, in the order the calls first appear
         row = rows[role]
         row["agents"] += 1
         row["agent_ids"].append(agent)
@@ -264,7 +326,7 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
             row["calls"] += len(contexts)
             row["contexts"].extend(contexts)
             row["firsts"].extend(contexts[:1])
-        outputs.extend(_outputs_of(path, role, agent))
+        outputs.extend(_outputs_of(path, role, agent, since))
     outputs.sort(key=lambda o: (-o["cost"], -o["size"]))
     total = run_state._zero()
     for row in rows.values():
@@ -272,8 +334,8 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
             total[c] += row["components"][c]
     finished = _finish(rows)
     return {"source": str(main), "subagent_files": len(subagents), "start_context": start,
-            "roles": finished, "total": _total(finished, total), "outputs": outputs[:TOP_OUTPUTS],
-            "note": None}
+            "window": window, "roles": finished, "total": _total(finished, total),
+            "outputs": outputs[:TOP_OUTPUTS], "note": None}
 
 
 def _total(finished: list[dict], comps: dict) -> dict:
@@ -301,7 +363,9 @@ def from_reading(reading: dict) -> dict:
             if isinstance(reading.get("priced"), int):
                 row["priced"] = reading["priced"]
     harness = reading.get("harness") or "harness"
-    return {"source": harness, "subagent_files": None, "start_context": None, "roles": finished,
+    return {"source": harness, "subagent_files": None, "start_context": None,
+            "window": _whole(f"the {harness} reading is one session total, which no window "
+                             f"divides"), "roles": finished,
             "total": _total(finished, comps) | {"priced": finished[-1]["priced"]},
             "outputs": [],
             "note": f"the {harness} reading is one session total with no per-call records, so no "
@@ -309,11 +373,12 @@ def from_reading(reading: dict) -> dict:
 
 
 def anatomy(repo_root: Path | str, transcripts_dir: Path | str | None = None,
-            env=None) -> dict:
+            env=None, session: bool = False) -> dict:
     """The CURRENT session's anatomy, from the directory the meter reads (`transcripts_dir`,
-    else `run_state.TRANSCRIPTS_ENV`, else the harness's folder for this repo), with roles from
-    the open run's records and the recorded verdicts. RAISES `AnatomyError`, `store` False when
-    that directory holds no session transcript."""
+    else `run_state.TRANSCRIPTS_ENV`, else the harness's folder for this repo), over the open
+    run's window (`run_window`; the whole session under `session`), with roles from the open
+    run's records and the recorded verdicts. RAISES `AnatomyError`, `store` False when that
+    directory holds no session transcript."""
     import critic  # noqa: PLC0415 - sibling script; only the roles need its verdict reader
     env = os.environ if env is None else env
     d = Path(transcripts_dir or env.get(run_state.TRANSCRIPTS_ENV)
@@ -323,8 +388,9 @@ def anatomy(repo_root: Path | str, transcripts_dir: Path | str | None = None,
         raise AnatomyError(f"no session transcript (*.jsonl) in {d}", store=False)
     folder = main.parent / main.stem / run_state.SUBAGENTS_DIR
     files = sorted(folder.glob(run_state.SUBAGENT_GLOB)) if folder.is_dir() else []
-    roles = agent_roles(run_state.read(repo_root), critic.read_verdicts(repo_root))
-    return build(main, files, roles)
+    state = run_state.read(repo_root)
+    roles = agent_roles(state, critic.read_verdicts(repo_root))
+    return build(main, files, roles, run_window(state, session))
 
 
 def _cell(value, kind: str = "int") -> str:
@@ -333,6 +399,13 @@ def _cell(value, kind: str = "int") -> str:
     if kind == "pct":
         return f"{100 * value:.1f}%"
     return f"{round(value):,}"
+
+
+def _window_text(window: dict) -> str:
+    if not window["whole_session"]:
+        return (f"the open run {window['run_id']}, the records after its start "
+                f"{window['since']}; --session reads the whole session")
+    return "the whole session" + (f" ({window['reason']})" if window["reason"] else "")
 
 
 def render(got: dict) -> str:
@@ -348,6 +421,7 @@ def render(got: dict) -> str:
              "context is input + cache write + cache read per call",
              "  roles from the open run's lane returns and the recorded verdicts; an agent no "
              "record names is other",
+             "  window: " + _window_text(got.get("window") or _whole(None)),
              "  main thread start context: "
              + (f"{got['start_context']:,} tokens (its first call's input + cache write + cache "
                 "read: what the session paid before any tool output)"

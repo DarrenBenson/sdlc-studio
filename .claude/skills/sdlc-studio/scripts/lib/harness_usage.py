@@ -10,7 +10,10 @@ Copilot CLI (`-p --output-format json`) or OpenCode (`run --format json`) and re
   the part of `cache_write` held for an hour, where the CLI splits it;
 * `output` - generated tokens, reasoning included; `reasoning` - the part of `output` that was
   reasoning;
-* `model` and `session_id`.
+* `model` and `session_id`;
+* `by_model` - each model's own counts, on the same basis, where the CLI names its models
+  (Claude Code's `modelUsage`, Copilot's `modelMetrics`): they sum to the session's counts, so
+  a session that used two models is priced per model. None where the output names none.
 
 A reasoning count or a model the output does not carry is None and named in `unreported`,
 never zero; `cache_write_1h` is None where the CLI does not split its writes.
@@ -103,6 +106,7 @@ class Usage:
     session_id: str | None = None
     unreported: tuple[str, ...] = ()
     checks: tuple[Check, ...] = field(default_factory=tuple)
+    by_model: Mapping[str, Mapping[str, int | None]] | None = field(default=None, hash=False)
 
     @property
     def prompt(self) -> int | None:
@@ -219,7 +223,7 @@ def _claude(events, prices):
     total = result.get("total_cost_usd")
     if isinstance(total, (int, float)) and not isinstance(total, bool):
         checks = (_cost_check(total, per_model, prices or {}),)
-    return counts, model, result.get("session_id"), checks
+    return counts, model, result.get("session_id"), checks, _split(per_model)
 
 
 def _cost_check(total: float, per_model: dict, prices: Mapping) -> Check:
@@ -253,7 +257,7 @@ def _cursor(events, _prices):
               "cache_write": _need(u, "cacheWriteTokens", "usage"),
               "cache_write_1h": None, "output": _need(u, "outputTokens", "usage"),
               "reasoning": None}
-    return counts, None, result.get("session_id"), ()
+    return counts, None, result.get("session_id"), (), None
 
 
 def _codex(events, _prices):
@@ -271,7 +275,7 @@ def _codex(events, _prices):
                          "output": _need(u, "output_tokens", "turn.completed.usage"),
                          "reasoning": _opt(u, "reasoning_output_tokens", "turn.completed.usage")})
     started = _last(events, "thread.started") or {}
-    return _sum(per_turn), None, started.get("thread_id"), ()
+    return _sum(per_turn), None, started.get("thread_id"), (), None
 
 
 def _uncached(total: int, read: int, write: int, name: str) -> int:
@@ -314,7 +318,8 @@ def _copilot(events, _prices):
             checks = (Check("session accounting", None, _token_total(counts), "unchecked",
                             "accountingSnapshot.tokenDetails holds a count that does not "
                             "parse"),)
-    return counts, _largest(per_model), (result or {}).get("sessionId"), checks
+    return (counts, _largest(per_model), (result or {}).get("sessionId"), checks,
+            _split(per_model))
 
 
 def _opencode(events, _prices):
@@ -338,7 +343,7 @@ def _opencode(events, _prices):
     if all(x is not None for x in totals):
         checks = (_check("total", sum(totals), _token_total(counts)),)
     session = steps[-1].get("sessionID") or (steps[-1].get("part") or {}).get("sessionID")
-    return counts, None, session, checks
+    return counts, None, session, checks, None
 
 
 def _token_total(c: Mapping) -> int:
@@ -355,6 +360,14 @@ def _sum(records) -> dict:
 def _largest(per_model: dict) -> str | None:
     """The model that carried the most tokens, the session's model where it used several."""
     return max(per_model, key=lambda m: _token_total(per_model[m])) if per_model else None
+
+
+def _split(per_model: dict) -> dict | None:
+    """Each named model's own counts, a copy, or None where a model is unnamed (Claude Code's
+    `usage` with no `modelUsage`), so a split never books a session under no model."""
+    if not per_model or None in per_model:
+        return None
+    return {name: dict(counts) for name, counts in per_model.items()}
 
 
 _READERS = {"claude": _claude, "cursor": _cursor, "codex": _codex, "copilot": _copilot,
@@ -374,7 +387,7 @@ def parse(harness: str, text: str, *, exit_code: int | None = None, model: str |
     try:
         if exit_code not in (None, 0):
             raise _Refused(NONZERO_EXIT, f"the CLI exited with status {exit_code}")
-        counts, named, session, checks = _READERS[harness](_events(text), prices)
+        counts, named, session, checks, split = _READERS[harness](_events(text), prices)
     except _Refused as refused:
         return Usage(harness, False, unmetered=refused.kind, reason=refused.reason)
     source = "output" if named else ("caller" if model else None)
@@ -382,4 +395,4 @@ def parse(harness: str, text: str, *, exit_code: int | None = None, model: str |
     if not (named or model):
         unreported += ("model",)
     return Usage(harness, True, model=named or model, model_source=source, session_id=session,
-                 unreported=unreported, checks=checks, **counts)
+                 unreported=unreported, checks=checks, by_model=split, **counts)

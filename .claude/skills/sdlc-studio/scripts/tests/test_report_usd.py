@@ -40,6 +40,19 @@ MAIN_HAIKU = meter._usage(1_000, 20_000, 50_000, 0, 2_000_000)
 BUILD_1 = meter._usage(500, 9_000, 40_000, 0, 900_000)
 BUILD_2 = meter._usage(200, 3_000, 10_000, 0, 300_000)
 MAIN_UNPRICED = meter._usage(400, 6_000, 0, 30_000, 1_000_000)
+#: US dollars per Copilot premium request, typed here.
+REQUEST_USD = 0.04
+#: OpenAI's Standard, short-context rates for two models behind Codex CLI, as its published
+#: price page states them (developers.openai.com/api/docs/pricing, read 2026-11-06), typed here
+#: and never read from the code under test: gpt-6.1-sol bills its 30-minute and 12-hour cache
+#: writes; gpt-5.3-codex lists no cache-write price, so a written prompt token bills as input.
+OPENAI = {"gpt-6.1-sol": {"input": 2.0, "output": 10.0, "cache_read": 0.1,
+                          "cache_write_5m": 2.5, "cache_write_1h": 5.0},
+          "gpt-5.3-codex": {"input": 1.75, "output": 14.0, "cache_read": 0.175,
+                            "cache_write_5m": 1.75, "cache_write_1h": 1.75}}
+#: A Codex lane session's usage: every component non-zero but the 1-hour write, which the Codex
+#: reader does not split out.
+CODEX = meter._usage(1_000, 20_000, 50_000, 0, 2_000_000)
 
 
 def _dollars(model: str, parts: dict) -> float:
@@ -63,14 +76,19 @@ class ReportUsdTests(meter._Case):
         self.prices = meter._live("lib.prices")
         self.table(dt.date.today())
 
-    def table(self, effective: dt.date, scale: float = 1.0) -> None:
+    def table(self, effective: dt.date, scale: float = 1.0,
+              request: float | None = REQUEST_USD) -> None:
         """Lay the typed table in place of the shipped one, every entry dated `effective` and
-        every price times `scale` (a revision of the table)."""
-        path = self.tmp / f"prices-{effective.isoformat()}-{scale:g}.json"
+        every price times `scale` (a revision of the table), with a premium-request price of
+        `request` times `scale`, or none when `request` is None."""
+        path = self.tmp / f"prices-{effective.isoformat()}-{scale:g}-{request}.json"
         path.write_text(json.dumps({"models": [
             {"model": m, **{c: v * scale for c, v in p.items()},
              "effective": effective.isoformat(), "source": "typed in the test"}
-            for m, p in PRICES.items()]}), encoding="utf-8")
+            for m, p in PRICES.items()], **({"premium_request": {
+                "usd": request * scale, "effective": effective.isoformat(),
+                "source": "typed in the test"}} if request is not None else {})}),
+            encoding="utf-8")
         patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", path)
         patch.start()
         self.addCleanup(patch.stop)
@@ -267,14 +285,15 @@ class ReportUsdTests(meter._Case):
                      if s["key"] == "cost_roles")
         self.assertNotEqual(sec["rows"], moved["rows"], "the growth moves a closing reading")
 
-    def _lane_session(self, ws, session: str, usage: dict, model: str | None) -> None:
+    def _lane_session(self, ws, session: str, usage: dict, model: str | None,
+                      harness: str = "claude") -> None:
         """A metered `sprint lane run` session record of US0102, in the shape `lanes._run`
         writes it: the CLI's summed usage and the one model it names (`usage_model`)."""
         parts = meter._parts(usage)
         path = ws.root / meter._live("lib.lanes").RUN_RECORDS / "US0102" / f"{session}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({
-            "unit": "US0102", "run_id": ws.state()["run_id"], "harness": "claude",
+            "unit": "US0102", "run_id": ws.state()["run_id"], "harness": harness,
             "metered": True, "usage_model": model,
             "usage": {"input": parts["input"], "output": parts["output"],
                       "cache_write": parts["cache_write_5m"] + parts["cache_write_1h"],
@@ -472,6 +491,98 @@ class ReportUsdTests(meter._Case):
         dropped = {k: v for k, v in page.items() if k != sr.TABLE_RULE}
         check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
         self.assertFalse(check["valid"], "the mark is under the fingerprint it changes")
+
+    def test_a_codex_lane_is_priced_at_its_openai_rate(self) -> None:
+        """US1135 AC2, on the shipped table. MUTANTS: a Codex model priced at a Claude rate, at
+        zero, or at another OpenAI model's rate; gpt-5.3-codex's cache writes entered at 0 rather
+        than the input rate it bills them at, or its note silent on it; an OpenAI model with no
+        published price read as $0. The control: that model reads NOT MEASURED, naming it."""
+        shipped = Path(self.prices.__file__).resolve().parents[2] / "templates" / \
+            "model-prices.json"
+        patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", shipped)
+        patch.start()
+        self.addCleanup(patch.stop)
+        notes = {e["model"]: e.get("note", "") for e in json.loads(
+            shipped.read_text(encoding="utf-8"))["models"]}
+        self.assertIn("billed as input", notes["gpt-5.3-codex"])
+        ws = self._run()
+        parts = meter._parts(CODEX)
+        want = {m: sum(parts[c] * r[c] for c in meter.COMPONENTS) / 1_000_000
+                for m, r in OPENAI.items()}
+        claude = sum(parts[c] * PRICES[OPUS][c] for c in meter.COMPONENTS) / 1_000_000
+        unbilled = sum(parts[c] * OPENAI["gpt-5.3-codex"][c] for c in meter.COMPONENTS
+                       if not c.startswith("cache_write")) / 1_000_000
+        self.assertEqual(4, len({_money(v) for v in (*want.values(), claude, unbilled)}),
+                         "premise: each wrong rate moves the figure")
+        for model, usd in want.items():
+            with self.subTest(model=model):
+                self._lane_session(ws, "s1-builder", CODEX, model, harness="codex")
+                rc, out = ws.lane("return", "--units", "US0102")
+                self.assertEqual(0, rc, out)
+                got = self._unit(ws.page(), "US0102")["eu_usd"]
+                self.assertEqual(_money(usd), got["value"], got)
+        self._lane_session(ws, "s1-builder", CODEX, "gpt-5.5-codex", harness="codex")
+        rc, out = ws.lane("return", "--units", "US0102")
+        self.assertEqual(0, rc, out)
+        got = self._unit(ws.page(), "US0102")["eu_usd"]
+        self.assertEqual(self.sr.NOT_MEASURED, got["value"], got)
+        self.assertIn("gpt-5.5-codex", got["reason"])
+
+    def _ask_premium(self, ws) -> None:
+        """Stamp 3 premium requests on the run's first reading and 10 on every later one."""
+        def asked(state: dict) -> dict:
+            for n, s in enumerate(state[self.rs.TOKEN_STAMPS]):
+                s[self.rs.PREMIUM_REQUESTS] = 3 if n == 0 else 10
+            return state
+        self.rs._mutate(ws.root, asked)
+
+    def test_premium_requests_are_priced_on_their_own_row(self) -> None:
+        """US1135 AC4. MUTANTS: the premium dollars summed into the Dollar cost row; the row
+        priced at another price than the table's, or without its date; an absent request price
+        read as $0. The control: with no request price the row reads not priced and still
+        states the count."""
+        ws = self._run()
+        before = ws.page()
+        self._ask_premium(ws)
+        after = ws.page()
+        row = ws.row(after, "Premium requests")
+        self.assertEqual(7, row["est_actual"]["value"])
+        basis = row["est_basis"]["value"]
+        self.assertIn(f"{_money(7 * REQUEST_USD)} at {_money(REQUEST_USD)} per request", basis)
+        self.assertIn(f"effective {dt.date.today().isoformat()}", basis)
+        for measure in ("Dollar cost", "Dollars per point"):
+            self.assertEqual(ws.row(before, measure)["est_actual"]["value"],
+                             ws.row(after, measure)["est_actual"]["value"], measure)
+        self.table(dt.date.today(), request=None)
+        row = ws.row(ws.page(), "Premium requests")
+        self.assertEqual(7, row["est_actual"]["value"])
+        self.assertIn("not priced", row["est_basis"]["value"])
+        self.assertNotIn("$0", row["est_basis"]["value"])
+
+    def test_the_premium_price_mark_round_trips(self) -> None:
+        """LC-017, US1135. MUTANTS: the mark dropped from the envelope, so a page filed under it
+        re-derives with it off; the rule hard-wired on in `revalidate`; the request price left
+        out of the page's table, so a revision of the table re-prices a filed page. The control:
+        the page with its mark removed reads INVALIDATED."""
+        sr = self.sr
+        ws = self._run()
+        self._ask_premium(ws)
+        page = sr.build_report(ws.root, meter.RETRO)
+        self.assertEqual(sr.PREMIUM_PRICED, page[sr.PREMIUM_USD_RULE])
+        self.assertEqual(REQUEST_USD, page[sr.PRICE_TABLE][self.prices.PREMIUM_REQUEST]["usd"])
+        filed = sr.file_report(ws.root, page)
+        self.table(dt.date.today(), scale=2.0)
+        check = sr.revalidate(ws.root, filed)
+        self.assertTrue(check["valid"], check["changes"])
+        before = sr.build_report(ws.root, meter.RETRO, premium_usd_rule=False)
+        self.assertNotIn(sr.PREMIUM_USD_RULE, before)
+        self.assertNotIn(self.prices.PREMIUM_REQUEST, before[sr.PRICE_TABLE])
+        self.assertNotIn("per request", ws.row(before, "Premium requests")["est_basis"]["value"])
+        check = sr.revalidate(ws.root, sr.file_report(ws.root, before))
+        self.assertTrue(check["valid"], check["changes"])
+        dropped = {k: v for k, v in page.items() if k not in (sr.PREMIUM_USD_RULE, "fingerprint")}
+        check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
+        self.assertFalse(check["valid"], "the rule moves no figure on this fixture")
 
     def test_premium_requests_are_their_own_unit(self) -> None:
         """AC5. MUTANTS: premium requests dropped from the page, added into the tokens or the

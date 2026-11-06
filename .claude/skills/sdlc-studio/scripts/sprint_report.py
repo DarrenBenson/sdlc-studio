@@ -27,6 +27,7 @@ Two honesty rules it will not bend:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import difflib
 import hashlib
 import importlib
@@ -41,7 +42,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import run_state, sdlc_md  # noqa: E402
+from lib import prices, run_state, sdlc_md  # noqa: E402
 import retro  # noqa: E402
 
 
@@ -3829,9 +3830,36 @@ def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict
     premium = run_tokens.get(run_state.PREMIUM_REQUESTS)
     if _num(premium):
         out.append(row("Premium requests", fig("est_actual", premium, state_rel),
+                       _premium_basis(premium, usd) if usd.get("premium_rule") else
                        "premium requests the harness bills as their own unit, beside the "
                        "priced tokens and the dollars above, never converted into either"))
     return out
+
+
+def _table_record(table, premium_rule: bool) -> dict:
+    """The price table as the page carries it (`run_state.table_record`), with its request
+    price under `PREMIUM_USD_RULE` (None when it has none), so a re-derivation replays it."""
+    out = run_state.table_record(table)
+    if premium_rule:
+        price = table.premium_request
+        out[prices.PREMIUM_REQUEST] = None if price is None else {
+            "usd": price.usd, "effective": price.effective.isoformat(), "source": price.source}
+    return out
+
+
+def _premium_basis(count, usd: dict) -> str:
+    """The Premium requests row's basis under `PREMIUM_USD_RULE`: the count's dollars at the
+    table's per-request price and its date, never summed into the Dollar cost row; not priced,
+    and never $0, when the table carries no request price or cannot be read."""
+    tail = "; in their own unit, never summed into the Dollar cost row or the priced tokens"
+    if usd["error"]:
+        return f"not priced: the price table cannot be read: {usd['error']}{tail}"
+    price = usd["table"].premium_request
+    if price is None:
+        return f"not priced: the price table carries no {prices.PREMIUM_REQUEST} price{tail}"
+    return (f"estimated {_usd_text(count * price.usd)} at {_usd_text(price.usd)} per request, "
+            f"the price table's {prices.PREMIUM_REQUEST} price effective "
+            f"{price.effective.isoformat()}{tail}")
 
 
 def _unit_usd(u: dict, usd: dict) -> dict:
@@ -4402,6 +4430,13 @@ PRICE_TABLE = "price_table"
 TABLE_RULE = "price_table_rule"
 TABLE_REPLAYED = "replayed-and-digested"
 
+#: The envelope mark of a page whose Premium requests row states their estimated dollars at the
+#: price table's per-request price (`_premium_basis`), whose price table carries that price
+#: (`_table_record`) so a re-derivation replays it, and which never sums them into the Dollar
+#: cost row. A page filed before it re-derives with the count alone.
+PREMIUM_USD_RULE = "premium_usd"
+PREMIUM_PRICED = "per-request-dollars"
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4429,7 +4464,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  cancelled_rule: bool = True, findings_end: str | None = None,
                  priced_rule: bool = True, priced_unit_rule: bool = True,
                  usd_rule: bool = True, table_rule: bool = True,
-                 filed_prices: dict | None = None) -> dict:
+                 filed_prices: dict | None = None, premium_usd_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4529,9 +4564,20 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     if usd_rule:
         # A signed page's table is its anchor's; an unsigned page's is the one it was filed
         # with (`filed_prices`, handed in by `revalidate` under `TABLE_RULE`); none, the live one.
-        table, error = run_state.price_table(
-            root, readings["price_table"] if filed is not None else filed_prices)
-        usd = {"table": table, "error": error, "today": end.date() if end else None}
+        record = readings["price_table"] if filed is not None else filed_prices
+        table, error = run_state.price_table(root, record)
+        if table is not None and isinstance(record, dict) and isinstance(
+                record.get("models"), dict):
+            # A filed table's request price is the page's own (`_table_record`), none if absent.
+            try:
+                table = dataclasses.replace(table, premium_request=None if record.get(
+                    prices.PREMIUM_REQUEST) is None else prices.request_price(
+                        record[prices.PREMIUM_REQUEST],
+                        f"the page's price table, {prices.PREMIUM_REQUEST}"))
+            except prices.PriceTableError as exc:
+                table, error = None, str(exc)
+        usd = {"table": table, "error": error, "today": end.date() if end else None,
+               "premium_rule": premium_usd_rule}
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
                           agent_minutes_rule)
@@ -4582,10 +4628,11 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {}),
               **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {}),
               **({USD_RULE: USD_PER_MODEL} if usd_rule else {}),
-              **({PRICE_TABLE: run_state.table_record(usd["table"])}
+              **({PRICE_TABLE: _table_record(usd["table"], premium_usd_rule)}
                  if usd and usd["table"] is not None else {}),
               **({TABLE_RULE: TABLE_REPLAYED}
-                 if table_rule and usd and usd["table"] is not None else {})}
+                 if table_rule and usd and usd["table"] is not None else {}),
+              **({PREMIUM_USD_RULE: PREMIUM_PRICED} if premium_usd_rule and usd_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5646,6 +5693,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          priced_unit_rule=basis.get(PRICED_UNIT_RULE) == PRICED_PER_POINT,
                          usd_rule=basis.get(USD_RULE) == USD_PER_MODEL,
                          table_rule=replays,
+                         premium_usd_rule=basis.get(PREMIUM_USD_RULE) == PREMIUM_PRICED,
                          # Unsigned, the page's own table is the one its digest covers.
                          filed_prices=stored.get(PRICE_TABLE)
                          if replays and anchor is None else None)

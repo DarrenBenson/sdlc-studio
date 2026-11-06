@@ -15,9 +15,12 @@
 # (US/BG/CR) without a `Refs: <id>` trailer per owning id, or a `Mentions: <id>` trailer for
 # an id it only mentions, which owns none of its files. Such a shared commit is skipped
 # by the engagement floor's git leg - it cannot attribute a file to one id among several -
-# so an understated `Affects` would go uncaught. The refusal is cheap to satisfy: the hook
-# prints the exact trailer lines to paste. The cost of enforcing is one retry; the cost of
-# not enforcing is an unattributable commit the floor cannot check.
+# so an understated `Affects` would go uncaught. The hook WRITES those trailers first, from
+# the staged files' ownership: `Refs:` for each named id whose `Affects` declares a staged file
+# (or whose id a staged filename carries), `Mentions:` for each that owns none. It refuses only
+# what that map cannot attribute - no named id owns a staged file - and a `Refs:` line naming a
+# unit that owns none of them, printing the lines to paste. A refusal costs one retry; not
+# enforcing costs an unattributable commit the floor cannot check.
 #
 # It used to print that reasoning and then exit 0, letting the commit land without the
 # trailer - a guard that named the hole it was leaving, and left it. Now the behaviour
@@ -160,7 +163,10 @@ fi
 # reaches the block below through `last_run_out`.
 message_lane() {
   local out
-  if out="$(python3 "$script" check-commit-msg --strict "$msg_file" 2>&1)"; then
+  # --write-trailers: the script first writes the Refs: and Mentions: lines the staged files'
+  # Affects attribute, so a commit whose ownership the declarations already state lands at its
+  # first attempt; what it cannot attribute, or a Refs: line ownership denies, still refuses.
+  if out="$(python3 "$script" check-commit-msg --strict --write-trailers "$msg_file" 2>&1)"; then
     printf '%s' "$out"
     return 0
   fi
@@ -177,6 +183,11 @@ message_lane() {
   covered="$(grep -iE '^[[:space:]]*(Refs|Mentions):' "$msg_file" | ids)"
   uncovered="$(comm -23 <(printf '%s\n' "$named") <(printf '%s\n' "$covered"))"
   printf '%s\n' "$out" | grep -v 'blocked by strict mode'
+  # A contradicted Refs: line is answered by the line the script printed, which names the id and
+  # both remedies; the paste-ready hint below is for ids no trailer accounts for.
+  if [ -z "$uncovered" ] && printf '%s' "$out" | grep -q 'owns none of the staged files'; then
+    return 1
+  fi
   printf 'add these lines to the message body (after a blank line):\n\n'
   if [ -n "$uncovered" ]; then
     printf '%s\n' "$uncovered" | sed 's/^/  Refs: /'
@@ -191,10 +202,14 @@ message_lane() {
 msg_out=""
 if [ "$check_message" -eq 1 ]; then
   run "message-refs" \
-    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them" \
-    "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, then commit again; a subject naming a single id needs no trailer" \
+    "a subject naming two or more work-item ids accounts for each one with a trailer: Refs: <id> for an id that owns the commit's files, so the engagement floor can attribute them per id (a shared commit with no trailer is skipped, and an understated Affects then goes uncaught), or Mentions: <id> for an id that owns none of them; the hook writes both from the staged files' Affects, and refuses a commit no named id owns a staged file of, or a Refs: line naming a unit that owns none" \
+    "add the Refs: lines printed above to the message body, with Mentions: <id> in place of Refs: for an id the commit only mentions, or declare the file in that unit's Affects, then commit again; a subject naming a single id needs no trailer" \
     -- message_lane
   msg_out="$last_run_out"
+  # The trailers the script wrote are said once, here, and kept out of the attribution note below.
+  written="$(printf '%s\n' "$msg_out" | sed -n 's/^engagement floor (trailers): //p')"
+  msg_out="$(printf '%s\n' "$msg_out" | grep -v '^engagement floor (trailers): ' || true)"
+  [ -z "$written" ] || printf '  %strailers%s %s\n' "$G" "$N" "$written" >&2
 fi
 
 # The message lane refuses BEFORE the suites: a message defect costs seconds, not a full gate.

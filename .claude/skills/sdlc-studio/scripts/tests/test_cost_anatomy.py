@@ -16,6 +16,8 @@ import io
 import json
 import sys
 import unittest
+import unittest.mock
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -51,21 +53,28 @@ def _ctx(usage: dict) -> int:
     return p["input"] + p["cache_write_5m"] + p["cache_write_1h"] + p["cache_read"]
 
 
-def _assistant(msg_id: str | None, usage: dict, blocks: list[dict]) -> str:
+def _stamp(at: datetime | None) -> dict:
+    """A record's `timestamp`, as the harness writes it, or none."""
+    return {} if at is None else {"timestamp": at.isoformat(timespec="milliseconds").replace(
+        "+00:00", "Z")}
+
+
+def _assistant(msg_id: str | None, usage: dict, blocks: list[dict],
+               at: datetime | None = None) -> str:
     msg = {"model": meter.MODEL, "role": "assistant", "content": blocks, "usage": dict(usage)}
     if msg_id is not None:
         msg["id"] = msg_id
-    return json.dumps({"type": "assistant", "cwd": "/work/repo", "message": msg})
+    return json.dumps({"type": "assistant", "cwd": "/work/repo", "message": msg} | _stamp(at))
 
 
 def _tool_use(tid: str, name: str, **inp) -> dict:
     return {"type": "tool_use", "id": tid, "name": name, "input": inp}
 
 
-def _result(tid: str, size: int, as_list: bool = False) -> str:
+def _result(tid: str, size: int, as_list: bool = False, at: datetime | None = None) -> str:
     content = [{"type": "text", "text": "x" * size}] if as_list else "y" * size
     return json.dumps({"type": "user", "message": {"role": "user", "content": [
-        {"type": "tool_result", "tool_use_id": tid, "content": content}]}})
+        {"type": "tool_result", "tool_use_id": tid, "content": content}]}} | _stamp(at))
 
 
 def _prompt(text: str) -> str:
@@ -308,6 +317,166 @@ class CostAnatomyTests(meter._Case):
         self.assertIn("main thread start context: not available",
                       meter._live("lib.cost_anatomy").render(got))
 
+
+    def _two_runs(self):
+        """BG1254. A session that worked before the open run, every record timestamped as the
+        harness writes them. Before the run: the main thread's msg_pre_1 (MAIN_1, whose Bash
+        output of 500,000 characters three later calls re-read) and msg_pre_2 (MAIN_4), stamped
+        at the very second the run starts; agent-old (AGENT_A), wholly before; agent-x2's first
+        call (STRAY_Q0). Inside it: the main thread's msg_in_1 (MAIN_2, with a 3,000-character
+        Read output) and msg_in_2 (MAIN_3); b7, the run's builder (BUILD_X, BUILD_Y); agent-x2's
+        second call (OWN_X1). The run opens between the two, its start fixed so msg_pre_2 sits on
+        it, and its opening reading holds exactly the first part."""
+        ws = self._timed("two-runs")
+        sdlc_md = meter._live("lib.sdlc_md")
+        start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=30)
+        tx, before = ws.tx, start - timedelta(minutes=30)
+        tx._append(tx.main, [
+            _assistant("msg_pre_1", meter.MAIN_1,
+                       [_tool_use("t_pre", "Bash", command="cat old.log")], at=before),
+            _result("t_pre", 500_000, at=before + timedelta(seconds=1)),
+            _assistant("msg_pre_2", MAIN_4, [{"type": "text"}], at=start)])
+        tx._append(tx.subagents / "agent-old.jsonl",
+                   [_assistant("msg_old", meter.AGENT_A, [{"type": "text"}], at=before)])
+        tx._append(tx.subagents / "agent-x2.jsonl",
+                   [_assistant("msg_x2_pre", STRAY_Q0, [{"type": "text"}], at=before)])
+        with unittest.mock.patch.object(sdlc_md, "now_iso8601",
+                                        return_value=start.strftime("%Y-%m-%dT%H:%M:%SZ")):
+            ws.open()
+        self.assertEqual(start, sdlc_md.parse_iso8601(ws.state()["started_at"]))
+
+        def inside(n: int) -> datetime:
+            return start + timedelta(seconds=5 + n)
+        tx._append(tx.main, [
+            _assistant("msg_in_1", MAIN_2, [_tool_use("t_in", "Read", file_path="src/a.py")],
+                       at=inside(0)),
+            _result("t_in", 3_000, at=inside(1)),
+            _assistant("msg_in_2", MAIN_3, [{"type": "text"}], at=inside(2))])
+        tx._append(tx.subagents / "agent-b7.jsonl", [
+            _assistant("msg_b7_x", BUILD_X, [{"type": "text"}], at=inside(3)),
+            _assistant("msg_b7_y", BUILD_Y, [{"type": "text"}], at=inside(4))])
+        tx._append(tx.subagents / "agent-x2.jsonl",
+                   [_assistant("msg_x2_in", OWN_X1, [{"type": "text"}], at=inside(5))])
+        rc, out = ws.lane("return", "--units", "US0101", "--agent", "b7")
+        self.assertEqual(0, rc, out)
+        return ws
+
+    def _figures(self, doc: dict, expected: dict[str, tuple[int, tuple]]) -> None:
+        """Each role's agents, calls and priced, and the total, against `expected`: role ->
+        (agents, the usages of its calls)."""
+        got = {row["role"]: row for row in doc["roles"]}
+        for role, (agents, usages) in expected.items():
+            self.assertEqual((agents, len(usages)), (got[role]["agents"], got[role]["calls"]), role)
+            self.assertEqual(meter._priced(meter._sum(*usages)) if usages else 0,
+                             got[role]["priced"], role)
+        every = [u for _a, us in expected.values() for u in us]
+        self.assertEqual(meter._priced(meter._sum(*every)), doc["total"]["priced"])
+        self.assertEqual(sum(a for a, _us in expected.values()), doc["total"]["agents"])
+
+    def _header(self, ws, *argv: str) -> str:
+        rc, text = _cli(ws, *argv)
+        self.assertEqual(0, rc, text)
+        return text.split("\n\n", 1)[0]
+
+    def test_the_anatomy_is_windowed_to_the_open_run(self) -> None:
+        """BG1254 AC1. MUTANTS: `build` counting every record regardless of its timestamp; the
+        window applied to the main thread alone, not the subagents (agent-old, agent-x2's first
+        call); a subagent wholly before the run still counted as one of its agents; a tool output
+        from before the run still named (t_pre's 1,500,000 would head the list); the window
+        bounded at or before the start rather than after it; the header line dropped. The control:
+        the meter's own delta over the run, its closing reading less its opening one."""
+        ws = self._two_runs()
+        state = ws.state()
+        doc = self._json(ws)
+        self._figures(doc, {"orchestrator": (1, (MAIN_2, MAIN_3)),
+                            "builder": (1, (BUILD_X, BUILD_Y)), "reviewer": (0, ()),
+                            "repair": (0, ()), "other": (1, (OWN_X1,))})
+        other = next(row for row in doc["roles"] if row["role"] == "other")
+        self.assertEqual(["agent-x2"], other["agent_ids"])
+        self.assertEqual([("Read: src/a.py", 3_000, 1)],
+                         [(o["producer"], o["size"], o["later_calls"]) for o in doc["outputs"]])
+        self.assertEqual({"run_id": state["run_id"], "since": state["started_at"],
+                          "whole_session": False, "reason": None}, doc["window"])
+        # the start context stays the session's first call, which the window does not move
+        self.assertEqual(_ctx(meter.MAIN_1), doc["start_context"])
+        rs = meter._live("lib.run_state")
+        self.assertIsNotNone(rs.stamp_tokens(ws.root, "close"))
+        stamps = ws.state()[rs.TOKEN_STAMPS]
+        self.assertEqual(stamps[-1]["priced"] - stamps[0]["priced"], doc["total"]["priced"])
+        line = next((ln for ln in self._header(ws).splitlines() if "window:" in ln), "")
+        self.assertIn(f"the open run {state['run_id']}", line)
+        self.assertIn(f"after its start {state['started_at']}", line)
+
+    def test_the_session_flag_reads_the_whole_session(self) -> None:
+        """BG1254 AC2. MUTANTS: `--session` ignored, so the window still applies; `--session`
+        reading the run's window for the subagents; the header still naming the run. The control:
+        the meter's own reading of the whole session."""
+        ws = self._two_runs()
+        rc, out = _cli(ws, "--session", "--format", "json")
+        self.assertEqual(0, rc, out)
+        doc = json.loads(out)
+        self._figures(doc, {"orchestrator": (1, (meter.MAIN_1, MAIN_4, MAIN_2, MAIN_3)),
+                            "builder": (1, (BUILD_X, BUILD_Y)), "reviewer": (0, ()),
+                            "repair": (0, ()),
+                            "other": (2, (meter.AGENT_A, STRAY_Q0, OWN_X1))})
+        self.assertEqual(meter._live("lib.run_state").claude_tokens(ws.root)["priced"],
+                         doc["total"]["priced"])
+        self.assertEqual(("Bash: cat old.log", 500_000, 3),
+                         tuple(doc["outputs"][0][k] for k in ("producer", "size", "later_calls")))
+        self.assertEqual({"run_id": None, "since": None, "whole_session": True,
+                          "reason": "--session names the whole session"}, doc["window"])
+        line = next((ln for ln in self._header(ws, "--session").splitlines() if "window:" in ln),
+                    "")
+        self.assertIn("the whole session", line)
+        self.assertIn("--session", line)
+        self.assertNotIn(ws.state()["run_id"], line)
+
+    def test_with_no_open_run_the_session_is_named_not_zeroed(self) -> None:
+        """BG1254 AC3. MUTANTS: a window with no start defaulting to nothing, which prints a zero
+        anatomy; a closed run's start still taken as the window; a header that does not say no
+        run is open; a usage record with no timestamp dropped from a windowed read rather than
+        the whole session read and named; a harness reading given no window. The control: the
+        meter's own reading of the whole session, which is not zero."""
+        rs = meter._live("lib.run_state")
+
+        def closed():
+            ws = self._two_runs()
+            rs.close_run(ws.root, rs.GOAL_REACHED)
+            self.assertFalse(rs.is_open(ws.root), "premise: the run is closed")
+            return ws, {"orchestrator": (1, (meter.MAIN_1, MAIN_4, MAIN_2, MAIN_3)),
+                        "builder": (1, (BUILD_X, BUILD_Y)),
+                        "other": (2, (meter.AGENT_A, STRAY_Q0, OWN_X1))}
+
+        def never():
+            ws = self._timed("never-opened")   # points the meter at its own transcripts
+            ws.tx._append(ws.tx.main, [
+                _assistant("msg_n1", meter.MAIN_1, [{"type": "text"}],
+                           at=datetime.now(timezone.utc) - timedelta(hours=2))])
+            self.assertEqual({}, ws.state(), "premise: no run was ever opened")
+            return ws, {"orchestrator": (1, (meter.MAIN_1,))}
+
+        for make in (closed, never):
+            case, expected = make()
+            doc = self._json(case)
+            self.assertNotEqual(0, doc["total"]["priced"])
+            self.assertEqual(rs.claude_tokens(case.root)["priced"], doc["total"]["priced"])
+            self._figures(doc, {r: expected.get(r, (0, ())) for r in
+                                ("orchestrator", "builder", "reviewer", "repair", "other")})
+            self.assertEqual({"run_id": None, "since": None, "whole_session": True,
+                              "reason": "no run is open"}, doc["window"])
+            line = next((ln for ln in self._header(case).splitlines() if "window:" in ln), "")
+            self.assertIn("the whole session", line)
+            self.assertIn("no run is open", line)
+        # an open run over usage records that carry no timestamp reads the whole session, and
+        # says why, rather than dropping the records it cannot place
+        doc = self._json(self._session())
+        self.assertTrue(doc["window"]["whole_session"])
+        self.assertIn("no timestamp", doc["window"]["reason"])
+        self.assertNotEqual(0, doc["total"]["priced"])
+        anatomy = meter._live("lib.cost_anatomy")
+        got = anatomy.from_reading({"harness": "cursor", "components": meter._sum(meter.MAIN_1)})
+        self.assertTrue(got["window"]["whole_session"])
+        self.assertIn("window: the whole session", anatomy.render(got))
 
 if __name__ == "__main__":
     unittest.main()

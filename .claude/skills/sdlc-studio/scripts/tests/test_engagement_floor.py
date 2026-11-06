@@ -677,6 +677,66 @@ class CommitMsgCheckTests(unittest.TestCase):
         code, warning = self._check("# please enter the commit message\n\nUS0301 US0302: fix")
         self.assertIsNotNone(warning)
 
+    def test_write_trailers_appends_from_ownership(self):
+        # US1133 AC4. A consuming project with no hook of this repository's: the CLI writes the
+        # trailers the staged files' Affects attribute. Must fail on: the derivation living only
+        # in this repository's hook, trailers opening a second block beside an existing one, or
+        # landing after git's comment scaffolding.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], cwd=root)
+            _write_unit(root, "story", 301, status="In Progress", affects=["src/a.py"])
+            _write_unit(root, "story", 302, status="In Progress", affects=["src/b.py"])
+            (root / "src").mkdir()
+            for name in ("a.py", "b.py"):
+                (root / "src" / name).write_text("x = 1\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-q", "-m", "seed"], cwd=root)
+            (root / "src" / "a.py").write_text("x = 2\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            derived = "Refs: US0301\nMentions: US0302\n"
+            cases = {
+                "US0301 US0302: pair\n": "US0301 US0302: pair\n\n" + derived,
+                "US0301 US0302: pair\n\nSigned-off-by: t <t@t>\n":
+                    "US0301 US0302: pair\n\nSigned-off-by: t <t@t>\n" + derived,
+                "US0301 US0302: pair\n\nWhy it moved.\n# Please enter the message\n":
+                    "US0301 US0302: pair\n\nWhy it moved.\n\n" + derived
+                    + "# Please enter the message\n",
+                # already attributed as the Affects say: left exactly as written
+                "US0301 US0302: pair\n\n" + derived: "US0301 US0302: pair\n\n" + derived,
+            }
+            for before, want in cases.items():
+                with self.subTest(before=before):
+                    msg = root / "COMMIT_EDITMSG"
+                    msg.write_text(before, encoding="utf-8")
+                    r = subprocess.run(
+                        [sys.executable, str(SCRIPT), "check-commit-msg", "--strict",
+                         "--write-trailers", str(msg), "--root", str(root)],
+                        cwd=root, capture_output=True, text=True, env=gitutil.git_env(),
+                        timeout=60)
+                    self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                    self.assertEqual(msg.read_text(encoding="utf-8"), want)
+            # Negative control: no named id owns the staged file, so the map attributes the
+            # commit to nobody and the author still states it - refused, nothing written.
+            msg.write_text("US0302 US0303: neither\n", encoding="utf-8")
+            r = subprocess.run(
+                [sys.executable, str(SCRIPT), "check-commit-msg", "--strict",
+                 "--write-trailers", str(msg), "--root", str(root)],
+                cwd=root, capture_output=True, text=True, env=gitutil.git_env(), timeout=60)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertEqual(msg.read_text(encoding="utf-8"), "US0302 US0303: neither\n")
+        # ... and the two documents a developer reads say the hook writes them (this repository
+        # only: an installed copy carries neither file).
+        repo = SCRIPTS.parents[3]
+        agents, enable = repo / "AGENTS.md", repo / "tools" / "enable-hooks.sh"
+        if agents.is_file() and enable.is_file():
+            row = next(ln for ln in agents.read_text(encoding="utf-8").splitlines()
+                       if ln.startswith("| pre-commit + commit-msg hooks |"))
+            self.assertIn("writes the `Refs:` and `Mentions:` trailers", row)
+            said = next(ln for ln in enable.read_text(encoding="utf-8").splitlines()
+                        if ln.startswith('echo "A multi-id commit'))
+            self.assertIn("writes the 'Refs: <id>' and 'Mentions: <id>' trailers", said)
+
 
 class ForwardCutoffTests(unittest.TestCase):
     """F2 (critic reject): a forward cutoff (adopt_after above the highest existing id) is a

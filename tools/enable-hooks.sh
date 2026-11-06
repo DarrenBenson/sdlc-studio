@@ -6,11 +6,12 @@
 # Enables the tracked hooks, which together are one gate ordered cheapest first:
 #   - pre-commit  every cheap guard (style, links, budgets, drift), plus the decision on
 #                 whether this commit needs the unit suites.
-#   - commit-msg  REFUSES a commit whose subject names more than one work-item id
-#                 (US/BG/CR) without a `Refs: <id>` trailer per owning id, so the
-#                 engagement floor can attribute a shared commit per id, or a
-#                 `Mentions: <id>` trailer for an id it only mentions. It prints the
-#                 trailer lines to paste. A single-id subject, and a merge / revert /
+#   - commit-msg  WRITES the trailers a subject naming more than one work-item id
+#                 (US/BG/CR) owes, from the staged files' Affects: a `Refs: <id>` per
+#                 owning id, so the engagement floor can attribute a shared commit per id,
+#                 and a `Mentions: <id>` for an id that owns none. It refuses a commit no
+#                 named id owns a staged file of, and a `Refs:` line naming a unit that
+#                 owns none, printing the lines to paste. A single-id subject, and a merge / revert /
 #                 rebase replay, pass untouched. It then runs the unit suites, which sit
 #                 here rather than in pre-commit because git writes the commit message
 #                 after pre-commit has run: a message defect must not cost a full suite.
@@ -75,5 +76,5 @@ else
   echo "  (the pre-push gate runs for minutes; without a keepalive the connection is dropped"
   echo "   before the push starts and the gate is paid twice)"
 fi
-echo "A multi-id commit subject now needs a 'Refs: <id>' trailer per owning id, and a 'Mentions: <id>' trailer for an id it only mentions."
+echo "A multi-id commit subject needs a 'Refs: <id>' trailer per owning id and a 'Mentions: <id>' trailer for an id it only mentions; the commit-msg hook writes the 'Refs: <id>' and 'Mentions: <id>' trailers from the staged files' Affects, and refuses a commit they cannot attribute."
 echo "Bypass a single commit in an emergency with: git commit --no-verify; a single push with: git push --no-verify"

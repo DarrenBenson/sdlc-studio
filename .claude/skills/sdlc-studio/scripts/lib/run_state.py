@@ -2571,8 +2571,9 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     `reading` is the agent's own transcript reading (`agent_transcript_tokens`), or one lane run
     session's (`lanes.run_reading`): its priced cost, its components, its per-model split and its
     file land on the record beside the total, and `provenance` says whether the total was
-    supplied or read from that transcript. A lane session's reading carries no split, so its
-    components are booked under the one model it names, and under none when it names none
+    supplied or read from that transcript. A lane session's reading carries its split where
+    the CLI named its models; one with none, a lane record written before the split among
+    them, is booked under the one model it names, and under none when it names none
     (`unit_agent_totals` then prices it nowhere). A transcript is read whole, so a
     later reading of the same file for the same unit REPLACES the earlier record rather than
     adding to it, which would count the earlier messages twice.
@@ -2604,9 +2605,9 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     if minutes is not None:
         entry["minutes"] = float(minutes)
     if reading:
-        # A lane run session's reading (`lanes.run_reading`) carries no split but names its
-        # session's one model: its components are booked under that model, so the unit's
-        # dollars price the session at its own rate rather than under no model named.
+        # A lane run session's reading (`lanes.run_reading`) with no split names its session's
+        # one model: its components are booked under that model, so the unit's dollars price
+        # the session at its own rate rather than under no model named.
         model = reading.get("model")
         split = reading.get(BY_MODEL) or (
             {model: dict(reading["components"])}
