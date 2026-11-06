@@ -561,8 +561,11 @@ python3 <skill>/scripts/sprint.py lane run --harness codex --units US0123 --mode
 
 `lane run` briefs the one unit and runs the brief headless in `claude`, `cursor`, `codex`,
 `copilot` or `opencode`, in the lane's worktree (`--worktree`, else
-`sdlc-studio/.local/worktrees/lane-<unit>`, created from HEAD) under `--timeout` seconds (default
-3600), passing `--model` through. It writes one lane record per session to
+`sdlc-studio/.local/worktrees/lane-<unit>` with the id lowercased, `lane-us0101` for US0101, on
+the branch of that name, which a lane removed without `lane land` leaves to the next run, else
+created from HEAD) under `--timeout` seconds (default 3600), passing `--model` through. The CLI
+runs in a session of its own, and at its timeout its whole process group is killed before the
+staged files are read. It writes one lane record per session to
 `sdlc-studio/.local/lane-runs/<unit>/<session>.json`, keeping every earlier session's: the
 session id, model and usage normalised by `lib/harness_usage.py`, the files staged and, for
 Claude Code, the first call's context. A later `lane return` with no `--tokens` or `--agent`
@@ -572,7 +575,8 @@ counts each session once. A CLI that exits non-zero, times out or prints no usag
 leaves the lane unmetered with the reason, never zero, and its staged work in the worktree for
 `lane land`. A Claude Code lane runs with `--tools` naming its tool set beside
 `--strict-mcp-config` and `--disable-slash-commands`: a bare `--tools` allowlist loads every MCP
-tool in full. Exit 2 is a refusal before the CLI ran, 1 a CLI that exited non-zero or timed out.
+tool in full. Exit 2 is a refusal before the CLI ran, which marks no lane in flight; 1 a CLI that
+exited non-zero or timed out.
 
 `lane return` runs every executable criterion and reports each with the runner's own output and
 exit code, not a summary. It forces the outcome to `blocked` whenever a criterion did not pass,

@@ -2874,15 +2874,27 @@ def leaf_figures(report: dict):
                     yield sec["key"], f"{key}[{i}]", f
 
 
+def digest_entries(report: dict) -> list[tuple[str, str, object]]:
+    """Every `(section, key, value)` the fingerprint is over, in order: the figures
+    `in_the_digest`, then, on a page under `TABLE_RULE`, its price table as the one entry of
+    the `envelope`. One list, so what revalidation compares and what is signed are one set."""
+    out = [(section, key, f.get("value")) for section, key, f in leaf_figures(report)
+           if in_the_digest(section, key)]
+    if report.get(TABLE_RULE) == TABLE_REPLAYED:
+        out.append(("envelope", PRICE_TABLE, report.get(PRICE_TABLE)))
+    return out
+
+
 def fingerprint(report: dict) -> str:
     """A digest of the ordered FIGURE SET - not of the JSON file.
 
     The signature block and the generation timestamp are excluded deliberately. Fingerprinting
     the whole file would mean that signing a report changes the fingerprint the signature just
-    recorded, so every sealed run would read INVALIDATED from the moment it was signed.
+    recorded, so every sealed run would read INVALIDATED from the moment it was signed. A page
+    under `TABLE_RULE` adds the price table it replays (`digest_entries`); every other page
+    digests exactly the figures it always did.
     """
-    payload = [[section, key, f.get("value")] for section, key, f in leaf_figures(report)
-               if in_the_digest(section, key)]
+    payload = [[section, key, value] for section, key, value in digest_entries(report)]
     blob = json.dumps(payload, sort_keys=False, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
@@ -4377,11 +4389,18 @@ PRICED_PER_POINT = "unit-priced-and-per-point"
 #: dollars per point and its premium requests, whose unit rows carry their dollars, and whose
 #: cost carries the spend by role (`_usd_rows`, `_cost_roles_section`). The page carries the
 #: price table it was priced with (`PRICE_TABLE`), so a signed page's re-derivation prices with
-#: it (`_page_readings`); an unsigned page anchors nothing and prices with the table in force. A
-#: page filed before the rule re-derives as signed.
+#: it (`_page_readings`). A page filed before the rule re-derives as signed.
 USD_RULE = "usd_cost"
 USD_PER_MODEL = "per-model-dollars-and-roles"
 PRICE_TABLE = "price_table"
+
+#: The envelope mark of a page whose price table is in its digest (`digest_entries`) and is
+#: replayed on every re-derivation, unsigned as well as signed (`revalidate`), so a revision of
+#: the table between the close and the signature re-prices nothing and an edit to the table on
+#: disk is named. A page filed before it re-derives as signed: an unsigned one at the table in
+#: force.
+TABLE_RULE = "price_table_rule"
+TABLE_REPLAYED = "replayed-and-digested"
 
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
@@ -4409,7 +4428,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  delegated_rule: bool = True, agent_minutes_rule: bool = True,
                  cancelled_rule: bool = True, findings_end: str | None = None,
                  priced_rule: bool = True, priced_unit_rule: bool = True,
-                 usd_rule: bool = True) -> dict:
+                 usd_rule: bool = True, table_rule: bool = True,
+                 filed_prices: dict | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4507,7 +4527,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     readings = _page_readings(filed)
     usd = None
     if usd_rule:
-        table, error = run_state.price_table(root, readings["price_table"])
+        # A signed page's table is its anchor's; an unsigned page's is the one it was filed
+        # with (`filed_prices`, handed in by `revalidate` under `TABLE_RULE`); none, the live one.
+        table, error = run_state.price_table(
+            root, readings["price_table"] if filed is not None else filed_prices)
         usd = {"table": table, "error": error, "today": end.date() if end else None}
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
@@ -4560,7 +4583,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {}),
               **({USD_RULE: USD_PER_MODEL} if usd_rule else {}),
               **({PRICE_TABLE: run_state.table_record(usd["table"])}
-                 if usd and usd["table"] is not None else {})}
+                 if usd and usd["table"] is not None else {}),
+              **({TABLE_RULE: TABLE_REPLAYED}
+                 if table_rule and usd and usd["table"] is not None else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5604,6 +5629,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
     # that files it - entered the fresh figures and nothing else had to change for INVALIDATED
     # to appear. The run is the page's own, archived once the next run opens.
     bound = _legacy_window_end(root, basis, record)
+    replays = basis.get(TABLE_RULE) == TABLE_REPLAYED
     fresh = build_report(root, basis.get("retro_id"), as_of=basis.get("generated_at"),
                          window_end=bound, findings_end=basis.get(FINDINGS_END) or bound,
                          run_id=basis.get("run_id"), filed=anchor,
@@ -5618,11 +5644,13 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED,
                          priced_rule=basis.get(PRICED_RULE) == PRICED_HEADLINE,
                          priced_unit_rule=basis.get(PRICED_UNIT_RULE) == PRICED_PER_POINT,
-                         usd_rule=basis.get(USD_RULE) == USD_PER_MODEL)
-    was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
-           if in_the_digest(s, k)}
-    now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
-           if in_the_digest(s, k)}
+                         usd_rule=basis.get(USD_RULE) == USD_PER_MODEL,
+                         table_rule=replays,
+                         # Unsigned, the page's own table is the one its digest covers.
+                         filed_prices=stored.get(PRICE_TABLE)
+                         if replays and anchor is None else None)
+    was = {f"{s}.{k}": v for s, k, v in digest_entries(basis)}
+    now = {f"{s}.{k}": v for s, k, v in digest_entries(fresh)}
     changes = []
     for name in sorted(set(was) | set(now)):
         if was.get(name) != now.get(name):
@@ -5638,10 +5666,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
     edited = []
     if anchor is not None and (digest != fingerprint(anchor)
                                or stored.get("fingerprint") != signed):
-        held = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(anchor)
-                if in_the_digest(s, k)}
-        filed = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(stored)
-                 if in_the_digest(s, k)}
+        held = {f"{s}.{k}": v for s, k, v in digest_entries(anchor)}
+        filed = {f"{s}.{k}": v for s, k, v in digest_entries(stored)}
         edited = [{"page": "json", "figure": name,
                    "detail": f"filed {filed.get(name)!r}, the page signed in {signed_in[:10]} "
                              f"reads {held.get(name)!r}"}
@@ -5653,6 +5679,13 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
         edited = [{"page": "json", "figure": c["figure"],
                    "detail": f"filed {c['signed']!r}, the tree re-derives {c['current']!r}"}
                   for c in changes] or [
+            # Every figure re-derives as filed at the page's own table, so under the rule what
+            # moved is that table, or the fingerprint recorded beside it.
+            {"page": "json", "figure": f"envelope.{PRICE_TABLE}",
+             "detail": f"every figure re-derives as filed at the page's own price table, yet "
+                       f"they and the table digest to {digest}, not the {signed} recorded: the "
+                       f"table or the recorded fingerprint was edited after the page was filed"}
+            if replays else
             {"page": "json", "figure": "an unnamed figure",
              "detail": f"the filed figures digest to {digest}, not the {signed} recorded"}]
     edited += anchor_problems + _lifecycle_edits(root, stored, fresh, record)

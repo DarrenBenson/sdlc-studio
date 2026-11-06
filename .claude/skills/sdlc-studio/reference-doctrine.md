@@ -272,6 +272,41 @@ rules, the agents/services) live in that project's agent-instructions file
     reviewer may propose a ruling in a finding's text, but a proposal is not a ruling: only a
     row in that table rules.
 
+## Working habits {#working-habits}
+
+The habits the shipped `AGENTS.md` starter (`templates/agent-instructions.md`) points at
+rather than carries, since every call loads that file and pays for each line in it.
+
+1. **Re-orient from the snapshot.** `sdlc-studio/reviews/LATEST.md` is a state snapshot, not a
+   transcript, so it survives compaction and re-orients any agent in one read. `status` and
+   `hint` also print a one-line notice when a newer SDLC Studio release exists; take it with
+   `/sdlc-studio skill-update`, or opt out with `version_check.enabled: false` in `.config.yaml`.
+2. **Index & verification conventions.** Keep one canonical status summary per `_index.md`: the
+   `| Status | Count |` table with a `**Total**` row, which `reconcile` maintains. Per-section or
+   per-epic count tables carry no `Total` row, or reconcile reads them as the global summary.
+   Write a human-checked AC as `Verify: manual <what to check>` so it counts as manual and is
+   never shelled out, and never hand-stamp `Verified:` on an AC no machine checked. Never
+   hand-copy a file-owned cell (story points, titles) into an index: `reconcile fields` syncs it.
+3. **Bootstrap with `init`.** It creates the tree, every per-type `_index.md`, the config and
+   the agent-instructions files, so the first `new` of any type is indexed. The interactive
+   `/sdlc-studio bug create` delegates to the same allocation as `artifact.py`; a finding with
+   a repro and a fix travels better through `scripts/file_finding.py file`.
+4. **Fan out only over pre-wired scaffolds.** Delegated sub-agents fill content; the tool owns
+   structure (ids, slugs, filenames, links, the index).
+5. **Foundation first, then sprint.** Build the foundation epic by hand to a green gate, since
+   it sets the conventions every later story inherits, then hand later epics to
+   `sprint --epic EPxx --goal done`.
+6. **Consult rather than stop.** `consult team` on an epic or story design, `consult
+   stakeholders` when the change touches the running system; concerns are advisory unless one
+   is a hard technical blocker. Record load-bearing decisions in `decisions.md`.
+7. **No speculative code.** No abstraction for single-use code, no configurability nobody asked
+   for; match the existing style.
+8. **Temp files are per agent.** Never write a commit message, fields-file or worklist to a
+   shared, generically-named path while other agents may run: namespace it per agent or per
+   run, or keep it inside your own worktree. A worktree isolates the tree, not `/tmp`.
+9. **Generated specs are migration blueprints**, not documentation, and never auto-promote to
+   Done.
+
 ## Project constitution {#constitution}
 
 A project may declare its inviolable principles in an optional

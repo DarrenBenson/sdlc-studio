@@ -15,9 +15,11 @@ import io
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import unittest.mock
 from pathlib import Path
@@ -33,6 +35,8 @@ from lib import harness_usage, lanes  # noqa: E402
 sprint = loader.load_script("sprint")
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "harness_usage"
 TEMPLATE = SCRIPTS.parent / "reference-agent-prompt-template.md"
+HELP = SCRIPTS.parent / "help" / "sprint.md"
+REPO = SCRIPTS.parents[3]
 UNIT = "US0101"
 
 #: Each harness: its binary, the fixture it prints, the headless flags its command must carry and
@@ -51,6 +55,8 @@ CLAUDE = {"session": "4052faf6-ae92-4245-a560-c2c9534b3cec", "model": "claude-ha
 
 FAKE = r'''#!{python}
 import json, os, subprocess, sys
+LATE = ("import subprocess, sys, time; time.sleep(4); open(sys.argv[1], 'w').write('LATE = 1'); "
+        "subprocess.run(['git', 'add', '--', sys.argv[1]], check=True)")
 name = os.path.basename(sys.argv[0])
 with open(os.path.join(os.environ["FAKE_LOG"], name + ".json"), "w") as fh:
     json.dump({{"argv": sys.argv[1:], "cwd": os.getcwd()}}, fh)
@@ -59,6 +65,15 @@ if stage:
     with open(stage, "w") as fh:
         fh.write("LANE = 1\n")
     subprocess.run(["git", "add", "--", stage], check=True)
+late = os.environ.get("FAKE_LATE")
+if late:
+    # a child that writes and stages `late` 4 s after it starts, while this CLI waits on it
+    child = subprocess.Popen([sys.executable, "-c", LATE, late])
+    with open(os.path.join(os.environ["FAKE_LOG"], "late.pid"), "w") as fh:
+        fh.write(str(child.pid))
+    if os.environ.get("FAKE_SIGNAL"):
+        os.kill(os.getppid(), int(os.environ["FAKE_SIGNAL"]))
+    child.wait()
 out = os.environ.get("FAKE_OUT_" + name.replace("-", "_").upper())
 if out and os.environ.get("FAKE_MODE") != "silent":
     sys.stdout.write(open(out).read())
@@ -78,6 +93,33 @@ def _git(cwd: Path, *args: str) -> str:
 
 def _rs():
     return sys.modules["lib.run_state"]
+
+
+def _running(pid: int) -> bool:
+    """Whether `pid` is a live process, a zombie counting as dead."""
+    stat = Path(f"/proc/{pid}/stat")
+    if Path("/proc/self/stat").exists():
+        try:
+            return stat.read_text().rsplit(")", 1)[1].split()[0] != "Z"
+        except OSError:
+            return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def _outlives(pid: int, seconds: float = 1.0) -> bool:
+    """Whether `pid` is still running `seconds` from now, polled: a killed process is reaped by
+    whoever inherits it, a moment after the kill. Well inside the late child's 4 s, so a child
+    that was never killed is still running when the wait ends."""
+    deadline = time.monotonic() + seconds
+    while _running(pid):
+        if time.monotonic() > deadline:
+            return True
+        time.sleep(0.02)
+    return False
 
 
 class LaneRunTests(unittest.TestCase):
@@ -111,7 +153,7 @@ class LaneRunTests(unittest.TestCase):
         patch = unittest.mock.patch.dict(os.environ, env)
         patch.start()
         self.addCleanup(patch.stop)
-        for k in ("FAKE_MODE", "FAKE_EXIT", "FAKE_STAGE"):
+        for k in ("FAKE_MODE", "FAKE_EXIT", "FAKE_STAGE", "FAKE_LATE", "FAKE_SIGNAL"):
             os.environ.pop(k, None)
         _write(base / "transcripts", "orchestrator.jsonl", json.dumps(
             {"type": "assistant", "cwd": str(self.root), "message": {
@@ -157,7 +199,7 @@ class LaneRunTests(unittest.TestCase):
         carries it); `--model` dropped, or passed when none was given; a harness's headless
         flags missing (the CLI would start interactive); the timeout not handed to the run
         (the spy sees none); the worktree not created when none is named (no lane worktree)."""
-        spy = unittest.mock.patch.object(lanes.subprocess, "run", wraps=subprocess.run)
+        spy = unittest.mock.patch.object(lanes, "_run_in_group", wraps=lanes._run_in_group)
         for harness, (binary, _fixture, flags, model_flag) in HARNESSES.items():
             with self.subTest(harness=harness), spy as run:
                 rc, out = self._run(harness, "--model", f"m-{harness}", "--timeout", "77")
@@ -278,16 +320,16 @@ class LaneRunTests(unittest.TestCase):
                 wt = self._worktree(f"wt-{name}")
                 staged = wt / "src" / "lane.py"
                 env = dict(env, FAKE_STAGE=str(staged))
-                real = subprocess.run
+                real = lanes._run_in_group
 
                 def hang(cmd, *a, wt=wt, real=real, **kw):
                     if Path(cmd[0]).name == "codex":
                         _write(wt, "src/lane.py", "LANE = 1\n")
-                        real(["git", "add", "--", "src/lane.py"], cwd=wt, check=True)
+                        gitutil.git(["add", "--", "src/lane.py"], wt)
                         raise subprocess.TimeoutExpired(cmd, kw.get("timeout"))
                     return real(cmd, *a, **kw)
 
-                hook = (unittest.mock.patch.object(lanes.subprocess, "run", side_effect=hang)
+                hook = (unittest.mock.patch.object(lanes, "_run_in_group", side_effect=hang)
                         if name == "timeout" else contextlib.nullcontext())
                 with unittest.mock.patch.dict(os.environ, env), hook:
                     rc, out = self._run("codex", "--worktree", str(wt))
@@ -350,6 +392,131 @@ class LaneRunTests(unittest.TestCase):
             argv = lanes.headless_command(harness, "brief", None, self.root)
             if "--tools" in argv:
                 self.assertIn("--strict-mcp-config", argv, harness)
+
+    # -- BG1245 -----------------------------------------------------------------------------
+    def test_a_timed_out_lane_s_children_are_killed(self) -> None:
+        """BG1245 AC1. MUTANTS: the CLI started in no session of its own, or no `killpg` on
+        `TimeoutExpired` (the late child outlives the return and stages `src/late.py`); the
+        staged set read while the group still runs (it differs from the index); no reaper for a
+        signal while the lane runs (a SIGTERM to `sprint.py` leaves the late child running in
+        the session it no longer shares)."""
+        wt = self._worktree()
+        env = {"FAKE_STAGE": str(wt / "src" / "lane.py"), "FAKE_LATE": str(wt / "src" / "late.py")}
+        with unittest.mock.patch.dict(os.environ, env):
+            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "2")
+        self.assertEqual(1, rc, out)
+        pid = int((self.log / "late.pid").read_text(encoding="utf-8"))
+        self.assertFalse(_outlives(pid), "the CLI's child outlived the timeout")
+        self.assertFalse((wt / "src" / "late.py").exists(), "a write landed after the return")
+        rec = self._record()
+        self.assertEqual(lanes.TIMED_OUT, rec["unmetered"])
+        self.assertEqual(["src/lane.py"], rec["staged"])
+        self.assertEqual(rec["staged"], _git(wt, "diff", "--cached", "--name-only").split())
+        # a SIGTERM to `sprint.py` mid-lane kills the lane's group before it ends the command
+        (self.log / "late.pid").unlink()
+        wt = self._worktree("wt-signal")
+        env = gitutil.git_env(FAKE_LATE=str(wt / "src" / "late.py"),
+                              FAKE_SIGNAL=str(int(signal.SIGTERM)))
+        done = subprocess.run(
+            [sys.executable, str(SCRIPTS / "sprint.py"), "lane", "run", "--harness", "codex",
+             "--units", UNIT, "--worktree", str(wt), "--timeout", "60", "--root", str(self.root)],
+            env=env, capture_output=True, text=True, timeout=60, check=False)
+        self.assertEqual(-signal.SIGTERM, done.returncode, done.stdout + done.stderr)
+        pid = int((self.log / "late.pid").read_text(encoding="utf-8"))
+        self.assertFalse(_outlives(pid), "the lane's child outlived a SIGTERM to sprint.py")
+        self.assertFalse((wt / "src" / "late.py").exists())
+
+    def test_a_refused_or_repeated_lane_run_leaves_no_stale_state(self) -> None:
+        """BG1245 AC2. MUTANTS: the in-flight marker taken before `lanes.run`'s refusals pass
+        (the refused run leaves the unit in flight, or its span opened); the marker and span not
+        taken at all once they pass (the positive controls); `_lane_worktree` always passing
+        `-b` (the second run exits 2 on the branch that exists); the branch deleted and made
+        again from HEAD rather than reused (the lane's own commit is gone)."""
+        self._open_run()
+        in_flight = lambda: [r["unit"] for r in _rs().lanes_in_flight(self.root)]  # noqa: E731
+        spans = lambda: _rs().read(self.root).get(_rs().UNIT_ACTUALS) or {}  # noqa: E731
+        rc, out = self._run("codex", "--worktree", "/nonexistent")
+        self.assertEqual(2, rc, out)
+        self.assertNotIn(UNIT, in_flight())
+        self.assertNotIn(UNIT, spans())
+        rc, out = self._run("codex")
+        self.assertEqual(0, rc, out)
+        self.assertIn(UNIT, in_flight())
+        self.assertIn(UNIT, spans())
+        wt = Path(self._record()["worktree"])
+        self.assertEqual(f"lane-{UNIT.lower()}", _git(wt, "symbolic-ref", "--short", "HEAD"))
+        _write(wt, "src/b.py", "B = 1\n")
+        gitutil.git(["add", "--", "src/b.py"], wt)
+        gitutil.git(["commit", "-q", "-m", "chore: the lane's own work"], wt)
+        kept = _git(wt, "rev-parse", "HEAD")
+        gitutil.git(["worktree", "remove", str(wt)], self.root)
+        self.assertFalse(wt.exists())
+        rc, out = self._run("codex")
+        self.assertEqual(0, rc, out)
+        self.assertEqual(str(wt), self._record()["worktree"])
+        self.assertEqual(f"lane-{UNIT.lower()}", _git(wt, "symbolic-ref", "--short", "HEAD"))
+        self.assertEqual(kept, _git(wt, "rev-parse", "HEAD"))
+
+    def test_each_builder_can_write_and_a_zero_reading_is_not_priced(self) -> None:
+        """BG1245 AC3. MUTANTS: codex `--sandbox workspace-write` dropped, or its `--add-dir`
+        dropped or naming other than the repository's git directory (the builder cannot stage
+        from a worktree); copilot `--allow-all-tools` dropped; cursor `--force` dropped (each
+        CLI asks before it writes, and headless nobody answers); the `tokens <= 0` guard in
+        `run_reading` replaced by `if False:` (a zero reading priced)."""
+        wt = self._worktree()
+        common = Path(_git(self.root, "rev-parse", "--path-format=absolute",
+                           "--git-common-dir")).resolve()
+        writes = {"codex": {"--sandbox": "workspace-write", "--add-dir": str(common)},
+                  "copilot": {"--allow-all-tools": None}, "cursor": {"--force": None}}
+        for harness, flags in writes.items():
+            with self.subTest(harness=harness):
+                rc, out = self._run(harness, "--worktree", str(wt))
+                self.assertEqual(0, rc, out)
+                argv = self._called(HARNESSES[harness][0])["argv"]
+                for flag, value in flags.items():
+                    self.assertIn(flag, argv)
+                    if value is not None:
+                        got = argv[argv.index(flag) + 1]
+                        self.assertEqual(value, str(Path(got).resolve()) if flag == "--add-dir"
+                                         else got)
+        self._open_run()
+        rc, out = self._run("claude", "--worktree", str(wt))
+        self.assertEqual(0, rc, out)
+        path = self._records()[-1]
+        rec = json.loads(path.read_text(encoding="utf-8"))
+        reading, why = lanes.run_reading(path, UNIT, rec["run_id"])
+        self.assertEqual(2 + 35 + 17126, reading["tokens"], why)  # the positive control
+        rec["usage"].update(input=0, output=0, cache_write=0, cache_write_1h=0, cache_read=500)
+        path.write_text(json.dumps(rec), encoding="utf-8")
+        reading, why = lanes.run_reading(path, UNIT, rec["run_id"])
+        self.assertIsNone(reading)
+        self.assertIn("no input, output or cache write", why)
+        rc, out = self._lane("return", "--units", UNIT)
+        self.assertEqual(0, rc, out)
+        self.assertEqual([], self._delegated())
+        self.assertIn("no input, output or cache write", out)
+
+    def test_the_unmetered_warning_names_its_session_record(self) -> None:
+        """BG1245 AC4. MUTANTS: the unmetered warning naming only the unit (no session's record
+        in it); the warning naming the metered session's record; the help or US1126's fragment
+        naming the default worktree other than as it is created, lowercased."""
+        self._open_run()
+        self.assertEqual(0, self._run("claude")[0])
+        with unittest.mock.patch.dict(os.environ, {"FAKE_MODE": "silent"}):
+            self.assertEqual(0, self._run("claude")[0])
+        metered, silent = self._records()
+        rc, out = self._lane("return", "--units", UNIT)
+        self.assertEqual(0, rc, out)
+        [warning] = [ln for ln in out.splitlines() if ln.startswith("WARNING") and "unmetered" in ln]
+        self.assertIn(str(silent), warning)
+        self.assertNotIn(str(metered), warning)
+        self.assertEqual([str(metered)], [r["transcript"] for r in self._delegated()])
+        created = Path(self._record()["worktree"]).name
+        self.assertEqual(f"lane-{UNIT.lower()}", created)
+        # the fragment is collated into CHANGELOG.md, and deleted, at a release
+        fragment = REPO / "changelog.d" / "US1126.md"
+        for doc in (HELP, fragment if fragment.exists() else REPO / "CHANGELOG.md"):
+            self.assertIn(f"`{created}`", " ".join(doc.read_text(encoding="utf-8").split()), doc)
 
 
 if __name__ == "__main__":

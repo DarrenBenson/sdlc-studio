@@ -648,20 +648,20 @@ input + cache write + cache read.
 | reviewer | an agent a recorded verdict names as reviewer (`sprint lane accept --reviewer`), with or without its `agent-` prefix |
 | other | an agent no record names; its prompt text is never read for a role |
 
-It then names the ten tool outputs that cost most, each costed as its size in characters times
-the later calls of its own transcript, with the command or file that produced it. A context no
-per-call record gives, a harness reading with only a session total, usage records with no
-message id or a role with no calls, prints `not available`, never 0. With no Claude Code
-transcript the meter's own reading is shown as one total under other. `--transcripts DIR` names
-the transcript directory; `--format json` prints the same figures.
+It then names the ten costliest tool outputs, each its size in characters times the later calls
+of its own transcript, with what produced it. A context no per-call record gives (a session-total
+harness reading, usage records with no message id, a role with no calls) prints `not available`,
+never 0; with no Claude Code transcript the meter's reading is one total under other.
+`--transcripts DIR` names the transcript directory; `--format json` prints the same figures.
 
-The sprint report's cost appendix carries this table from the same `cost_anatomy.anatomy` call,
-so the page and the command cannot state two tables. The close records it on its own meter
-reading in the run record (`run_state.stamp_cost_roles`, a separate call so the reading stays
-incremental), and the page states it from there, never from the live transcript, which grows
-after the close: the page filed at the close re-derives to the same table at sign, and a signed
-page replays its own. It is NOT MEASURED when no reading in the window recorded one, or when the
-anatomy could not be had or read a session other than the meter's.
+The report's cost appendix takes this table from the same `cost_anatomy.anatomy` call, recorded on
+the close's meter reading (`run_state.stamp_cost_roles`), never the growing live transcript, so it
+re-derives at sign and a signed page replays its own. It is NOT MEASURED when no reading in the
+window recorded one, or the anatomy could not be had or read a session other than the meter's.
+
+The header names the main thread's start context, its first call's context. A project
+`.claude/settings.json` that disables the plugins and connectors a delivery session does not use
+is recommended, not enforced; a claude.ai connector may not be switchable per project.
 
 ### Dollar cost {#dollar-cost}
 

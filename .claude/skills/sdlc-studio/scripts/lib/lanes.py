@@ -40,12 +40,16 @@ the lane from, one reading per session, so a repair's session adds to the builde
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
+import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -497,17 +501,99 @@ def _first_call_context(harness: str, stdout: str) -> tuple[int | None, str | No
 
 
 def _lane_worktree(root_top: Path, unit: str) -> Path:
-    """The lane's worktree under `RUN_WORKTREES`, reused when present, else created on a new
-    branch `lane-<unit>` from the root's HEAD."""
+    """The lane's worktree under `RUN_WORKTREES`, `lane-<unit>` with the id lowercased: reused
+    when present, else checked out on the branch of that name where a lane whose worktree was
+    removed without landing left one, else created on a new branch from the root's HEAD."""
     name = f"lane-{unit.lower()}"
     path = root_top / RUN_WORKTREES / name
     if path.is_dir():
         return path.resolve()
-    made = _run_git(root_top, "worktree", "add", "-q", "-b", name, str(path), "HEAD")
+    if _run_git(root_top, "rev-parse", "--verify", "--quiet", f"refs/heads/{name}").returncode:
+        made = _run_git(root_top, "worktree", "add", "-q", "-b", name, str(path), "HEAD")
+    else:
+        made = _run_git(root_top, "worktree", "add", "-q", str(path), name)
     if made.returncode:
         raise LandError(f"the lane worktree {path} could not be created: "
                         f"{_tail(made.stderr)}", 2)
     return path.resolve()
+
+
+def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
+    """SIGKILL `proc`'s whole process group, reap `proc`, then wait up to `grace` seconds until
+    no member of the group is left, as `verify_ac.py` does for a verifier. The group is the
+    lane's own, led by `proc` (`start_new_session`); at a timeout `proc` is still unreaped, so
+    the group id is still the lane's when it is signalled. Where `os.killpg` does not exist,
+    only `proc` is killed."""
+    if not hasattr(os, "killpg"):
+        with contextlib.suppress(OSError):
+            proc.kill()
+        proc.wait()
+        return
+    with contextlib.suppress(OSError):
+        os.killpg(proc.pid, signal.SIGKILL)
+    proc.wait()
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(proc.pid, 0)
+        except OSError:
+            return
+        time.sleep(0.01)
+
+
+@contextlib.contextmanager
+def _reaping(proc: subprocess.Popen):
+    """While the lane's CLI runs, SIGTERM, SIGINT and SIGHUP first SIGKILL its group, which its
+    own session puts out of reach of a signal sent to this process's group (a hangup, a cancel
+    by process group), then do what they did before: the handler they replaced is called, or
+    under the default disposition this process dies by the signal. The group is killed only
+    while `proc` is unreaped, so it is the lane's. Only the main thread may set a handler; off
+    it, and for a signal that is ignored or whose handler was not set from Python, nothing
+    changes."""
+    prior: dict = {}
+
+    def reap(signum, frame):
+        if proc.returncode is None:
+            with contextlib.suppress(OSError):
+                os.killpg(proc.pid, signal.SIGKILL)
+        was = prior.get(signum, signal.SIG_DFL)
+        if callable(was):
+            return was(signum, frame)
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
+        return None
+
+    if hasattr(os, "killpg") and threading.current_thread() is threading.main_thread():
+        for name in ("SIGTERM", "SIGINT", "SIGHUP"):
+            sig = getattr(signal, name, None)
+            was = signal.getsignal(sig) if sig is not None else None
+            if was is None or was == signal.SIG_IGN:
+                continue
+            signal.signal(sig, reap)
+            prior[sig] = was
+    try:
+        yield
+    finally:
+        for sig, was in prior.items():
+            signal.signal(sig, was)
+
+
+def _run_in_group(cmd: list[str], timeout: int, cwd: Path,
+                  env: dict) -> subprocess.CompletedProcess:
+    """Run the lane's CLI in a session of its own and return what `subprocess.run(...,
+    capture_output=True, text=True)` would. On a timeout, or any exit that interrupts the wait,
+    its whole process group is killed and reaped before the exception propagates:
+    `subprocess.run` kills only the CLI, so a child it started ran on and staged work in the
+    worktree after the lane's record said what was staged."""
+    with subprocess.Popen(cmd, cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE, text=True, env=env,
+                          start_new_session=True) as proc, _reaping(proc):
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except BaseException:
+            _kill_group(proc)
+            raise
+    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 
 def _text(raw) -> str:
@@ -516,24 +602,28 @@ def _text(raw) -> str:
 
 def run(root: Path | str, unit: str, harness: str, brief: str, model: str | None = None,
         worktree: Path | str | None = None, timeout: int = RUN_TIMEOUT,
-        run_id: str | None = None) -> int:
+        run_id: str | None = None, on_start=None) -> int:
     """Run one lane's `brief` headless in `harness` in the lane's worktree; the exit status.
 
     Writes this session's lane record `RUN_RECORDS/<unit>/<session>.json` (the session id, model
     and usage normalised by `harness_usage.parse`, the first-call context, the files staged) and
     the CLI's stdout beside it, keeping every earlier session's record of the unit. A CLI that
     exits non-zero, runs past `timeout` or prints no usage is recorded unmetered with the reason,
-    its worktree and staged work left as they are. Exit 2 is a
-    refusal before the CLI ran, 1 a CLI that exited non-zero or timed out, 0 otherwise."""
+    its worktree and staged work left as they are. The CLI runs in a session of its own, and at
+    its timeout its whole process group is killed before the staged files are read, so nothing
+    it started stages work after the record. `on_start`, where given, is called once every
+    refusal has passed, just before the CLI starts. Exit 2 is a refusal before the CLI ran, 1 a
+    CLI that exited non-zero or timed out, 0 otherwise."""
     try:
-        return _run(Path(root), unit, harness, brief, model, worktree, timeout, run_id)
+        return _run(Path(root), unit, harness, brief, model, worktree, timeout, run_id,
+                    on_start)
     except LandError as exc:
         _say(f"sprint lane run: {exc}", err=True)
         return exc.code
 
 
 def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
-         worktree: Path | str | None, timeout: int, run_id: str | None) -> int:
+         worktree: Path | str | None, timeout: int, run_id: str | None, on_start) -> int:
     from lib import harness_usage  # noqa: PLC0415 - only a lane run reads usage
     if harness not in BINARIES:
         raise LandError(f"unknown harness {harness!r}; expected one of {', '.join(BINARIES)}", 2)
@@ -548,10 +638,11 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
     _resolve(root_top, wt)
     cmd = headless_command(harness, brief, model, wt)
     cmd[0] = binary
+    if on_start is not None:
+        on_start()
     started = sdlc_md.now_iso8601()
     try:
-        proc = subprocess.run(cmd, cwd=str(wt), capture_output=True, text=True, timeout=timeout,
-                              check=False, env=_child_env(), stdin=subprocess.DEVNULL)
+        proc = _run_in_group(cmd, timeout=timeout, cwd=wt, env=_child_env())
         stdout, stderr, code = proc.stdout, proc.stderr, proc.returncode
         usage = harness_usage.parse(harness, stdout, exit_code=code, model=model)
     except subprocess.TimeoutExpired as exc:
@@ -626,7 +717,8 @@ def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None,
             return None, (f"{unit}'s lane run record {path.name} was written under another run "
                           f"({rec.get('run_id') or 'none'}), so it is not priced into this one")
         if not rec.get("metered"):
-            return None, (f"{unit}'s lane run is unmetered ({rec.get('unmetered')}): "
+            return None, (f"{unit}'s lane run recorded at {path} is unmetered "
+                          f"({rec.get('unmetered')}): "
                           f"{rec.get('reason')}, so its return records no priced cost")
         u = rec["usage"]
         hour = u.get("cache_write_1h") or 0

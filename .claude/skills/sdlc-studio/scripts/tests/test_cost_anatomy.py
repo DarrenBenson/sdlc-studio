@@ -283,6 +283,31 @@ class CostAnatomyTests(meter._Case):
         orch_line = next(line for line in text.splitlines() if line.startswith("orchestrator"))
         self.assertTrue(orch_line.rstrip().endswith("not available  not available"), orch_line)
 
+    def test_the_main_thread_start_context_is_named(self) -> None:
+        """US1130 AC4. MUTANTS: the header line dropped; the start context read from the main
+        thread's largest call, its last, its average, or the role table's first context averaged
+        over every role's agents; the line printed below the table rather than in the header; a
+        main thread with no per-call record given 0 rather than `not available`. The fixture's
+        first main-thread call (MAIN_1) is neither its largest nor its last, so each moves it."""
+        ws = self._session()
+        main = (meter.MAIN_1, MAIN_2, MAIN_3, MAIN_4)
+        first = _ctx(meter.MAIN_1)
+        self.assertNotIn(first, (max(map(_ctx, main)), _ctx(main[-1]),
+                                 sum(map(_ctx, main)) / len(main)))
+        self.assertEqual(first, self._json(ws)["start_context"])
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+        header = text.split("\n\n", 1)[0]
+        line = next((ln for ln in header.splitlines() if "main thread start context" in ln), None)
+        self.assertIsNotNone(line, header)
+        self.assertIn(f"{first:,} tokens", line)
+        self.assertIn("input + cache", line)
+        got = meter._live("lib.cost_anatomy").from_reading(
+            {"harness": "cursor", "components": meter._sum(meter.MAIN_1)})
+        self.assertIsNone(got["start_context"])
+        self.assertIn("main thread start context: not available",
+                      meter._live("lib.cost_anatomy").render(got))
+
 
 if __name__ == "__main__":
     unittest.main()

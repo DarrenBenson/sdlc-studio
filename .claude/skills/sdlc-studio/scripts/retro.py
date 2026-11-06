@@ -1608,7 +1608,8 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "sprint_tokens_per_point": (_rate(sprint_tokens, delivered_points)
                                         if sprint_tokens and rung == "done" else None),
             # The run's priced cost and its components, per point by the same rule.
-            "priced": _priced_batch(priced, delivered_points, rung, root),
+            "priced": _priced_batch(priced, delivered_points, rung, root,
+                                    ended=_run_end(root, [u["id"] for u in units])),
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
             # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
             # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).
@@ -1631,7 +1632,17 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     }
 
 
-def _priced_batch(cap: dict | None, points: int, rung: str, root=None) -> dict | None:
+def _run_end(root, unit_ids):
+    """The day the run that delivered `unit_ids` ended (`_covering_run`'s `ended_at`, in UTC),
+    or None while it is open, when the window ends today. The page's rule, which judges
+    staleness on its window's end (`build_report`), read off the run record."""
+    rec = _covering_run(root, unit_ids) if root is not None else None
+    ended = sdlc_md.parse_iso8601(rec.get("ended_at")) if rec and rec.get("ended_at") else None
+    return ended.date() if ended else None
+
+
+def _priced_batch(cap: dict | None, points: int, rung: str, root=None,
+                  ended=None) -> dict | None:
     """The priced cost a harness capture `cap` states, per delivered point when the run was a
     build run with points, or None when no capture was made. `reason` says why a capture states
     no priced figure. `usd` is the same window in estimated US dollars (`_usd_batch`)."""
@@ -1640,7 +1651,7 @@ def _priced_batch(cap: dict | None, points: int, rung: str, root=None) -> dict |
     priced = cap.get("priced")
     priced = priced if isinstance(priced, int) and not isinstance(priced, bool) else None
     return {"priced": priced, "components": cap.get("components") if priced is not None else None,
-            "usd": _usd_batch(cap, points, rung, root) if priced is not None else None,
+            "usd": _usd_batch(cap, points, rung, root, ended) if priced is not None else None,
             "per_point": _rate(priced, points) if priced and rung == "done" else None,
             "points": points, "rung": rung, "reads_subagents": bool(cap.get("reads_subagents")),
             "supplied": int(cap.get("delegated_tokens") or 0),
@@ -1648,12 +1659,13 @@ def _priced_batch(cap: dict | None, points: int, rung: str, root=None) -> dict |
                                                        or cap.get("reason"))}
 
 
-def _usd_batch(cap: dict, points: int, rung: str, root) -> dict:
+def _usd_batch(cap: dict, points: int, rung: str, root, ended=None) -> dict:
     """The capture's estimated US dollars, each model's own components priced from the table
     (`run_state.usd`), per delivered point by the priced figure's own rule, with the table's
-    effective date and its stale mark (`prices.stale`)."""
+    effective date and its stale mark (`prices.stale`) judged on the day the run ended
+    (`_run_end`), today while it is open."""
     table, error = run_state.price_table(root)
-    got = run_state.usd(cap.get(run_state.BY_MODEL), table)
+    got = run_state.usd(cap.get(run_state.BY_MODEL), table, ended)
     return {"usd": got["usd"], "covered": got["covered"], "unpriced": got["unpriced"],
             "per_point": (got["usd"] / points
                           if got["usd"] is not None and points and rung == "done" else None),

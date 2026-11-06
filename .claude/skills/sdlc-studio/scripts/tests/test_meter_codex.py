@@ -33,6 +33,8 @@ import json
 import os
 import sqlite3
 import sys
+
+import pytest
 import tempfile
 import time
 import unittest
@@ -334,6 +336,8 @@ class CodexMeterTests(unittest.TestCase):
         self.assertEqual((got["tokens"], got["threads"]), (30000 - CACHED + 5, 1),
                          "the sibling's own thread is readable, so only the boundary kept it out")
 
+    @pytest.mark.serial_only
+    @pytest.mark.boundary_only
     def test_a_locked_store_is_abandoned_within_the_bound(self) -> None:
         """BG1246 AC3. Mutants: `timeout=TIMEOUT_SECONDS` dropped from the store's open, so a
         locked store is waited on for SQLite's default 5 s, or `timeout=0`, so a lock Codex holds

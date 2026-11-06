@@ -14,7 +14,8 @@ for a role: wording is not a record.
 A context figure (the first call's, and the average per call) is the prompt a call was billed
 for: input + cache write + cache read. It is None, printed `not available`, wherever no per-call
 record exists: a harness reading that gives only a session total, a transcript whose usage records
-carry no message id, or a role with no calls. It is never 0.
+carry no message id, or a role with no calls. It is never 0. The main thread's start context is its
+first call's context, which the header names: what the session paid before any tool output.
 
 A tool output is costed as its size in characters times the later calls of its own transcript,
 each of which re-reads it as context. The transcript records no token count per tool output, so
@@ -240,6 +241,7 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
     RAISES `AnatomyError` on a transcript the meter would refuse."""
     rows = {r: _row(r) for r in ROLES}
     seen: set = set()
+    start = None
     outputs: list[dict] = []
     sources = [(main, "main")] + [(f, "subagents") for f in subagents]
     readings = [_records_of(path, side) for path, side in sources]
@@ -249,6 +251,8 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
         role = ORCHESTRATOR if side == "main" else roles.get(key or "", OTHER)
         agent = path.stem if side == "subagents" else "session"
         comps, contexts = _usage_of(path, records, seen, largest)
+        if side == "main" and contexts:
+            start = contexts[0]  # the first call, in the order the calls first appear
         row = rows[role]
         row["agents"] += 1
         row["agent_ids"].append(agent)
@@ -267,8 +271,8 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
         for c in run_state.TOKEN_COMPONENTS:
             total[c] += row["components"][c]
     finished = _finish(rows)
-    return {"source": str(main), "subagent_files": len(subagents), "roles": finished,
-            "total": _total(finished, total), "outputs": outputs[:TOP_OUTPUTS],
+    return {"source": str(main), "subagent_files": len(subagents), "start_context": start,
+            "roles": finished, "total": _total(finished, total), "outputs": outputs[:TOP_OUTPUTS],
             "note": None}
 
 
@@ -297,7 +301,7 @@ def from_reading(reading: dict) -> dict:
             if isinstance(reading.get("priced"), int):
                 row["priced"] = reading["priced"]
     harness = reading.get("harness") or "harness"
-    return {"source": harness, "subagent_files": None, "roles": finished,
+    return {"source": harness, "subagent_files": None, "start_context": None, "roles": finished,
             "total": _total(finished, comps) | {"priced": finished[-1]["priced"]},
             "outputs": [],
             "note": f"the {harness} reading is one session total with no per-call records, so no "
@@ -343,7 +347,11 @@ def render(got: dict) -> str:
              "its largest usage record; split is each part's share of the role's priced cost; "
              "context is input + cache write + cache read per call",
              "  roles from the open run's lane returns and the recorded verdicts; an agent no "
-             "record names is other"]
+             "record names is other",
+             "  main thread start context: "
+             + (f"{got['start_context']:,} tokens (its first call's input + cache write + cache "
+                "read: what the session paid before any tool output)"
+                if got.get("start_context") is not None else NOT_AVAILABLE)]
     if got.get("note"):
         lines.append(f"  {got['note']}")
     lines += ["", f"{head[0]:<12}" + "".join(f"  {h:>{w}}" for h in head[1:])]

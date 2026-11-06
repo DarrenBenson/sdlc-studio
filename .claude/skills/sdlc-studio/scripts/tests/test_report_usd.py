@@ -75,10 +75,11 @@ class ReportUsdTests(meter._Case):
         patch.start()
         self.addCleanup(patch.stop)
 
-    def _run(self, *, unpriced: bool = False, delivered: bool = True):
+    def _run(self, *, unpriced: bool = False, delivered: bool = True, stamped: bool = True):
         """An open run: opus and haiku on the main thread after it opened (and a model no
         table prices, when asked), US0101 built by agent b7 in haiku and returned with
-        `--agent`, the stories Done, and a closing reading stamped."""
+        `--agent`, the stories Done, and a closing reading stamped (unless `stamped` is off,
+        for a test whose close takes its own)."""
         ws = self.workspace()
         ws.open()
         ws.tx._append(ws.tx.main, [_line("m_opus", MAIN_OPUS, OPUS),
@@ -92,8 +93,9 @@ class ReportUsdTests(meter._Case):
             for f in (ws.root / "sdlc-studio" / "stories").glob("US*.md"):
                 f.write_text(f.read_text(encoding="utf-8").replace("Ready", "Done"),
                              encoding="utf-8")
-        self.assertIsNotNone(self.rs.stamp_tokens(ws.root, "close"))
-        self.assertIsNotNone(self.rs.stamp_cost_roles(ws.root))   # as the close does
+        if stamped:
+            self.assertIsNotNone(self.rs.stamp_tokens(ws.root, "close"))
+            self.assertIsNotNone(self.rs.stamp_cost_roles(ws.root))   # as the close does
         return ws
 
     def _unit(self, page: dict, uid: str) -> dict:
@@ -342,6 +344,134 @@ class ReportUsdTests(meter._Case):
         self.assertEqual(_money(whole), signed)
         replayed = sr.build_report(ws.root, meter.RETRO, filed=sr.read_report(ws.root, rid))
         self.assertEqual(signed, ws.row(replayed, "Dollar cost")["est_actual"]["value"])
+
+    def _whole(self) -> float:
+        return (_dollars(OPUS, meter._parts(MAIN_OPUS))
+                + _dollars(HAIKU, meter._sum(MAIN_HAIKU, BUILD_1, BUILD_2)))
+
+    def _unsigned(self):
+        """The fixture run's page, filed by `file_report` as the close files it, and unsigned."""
+        ws = self._run()
+        page = self.sr.build_report(ws.root, meter.RETRO)
+        rid = self.sr.file_report(ws.root, page)
+        self.assertIsNone(self.sr.read_report(ws.root, rid).get("signature"), "premise: unsigned")
+        return ws, page, rid
+
+    def test_an_unsigned_page_keeps_the_prices_it_was_filed_with(self) -> None:
+        """BG1242 AC1, LC-017's round-trip for a page nobody has signed yet. MUTANTS: the
+        filed page's table not handed back (`revalidate` passing `filed_prices` None, or
+        `build_report` ignoring it), so a revision of the table between the close and the
+        signature re-prices the page and `sprint sign`'s check (`revalidate`) refuses it; the
+        mark left off the envelope. The control: a live derivation after the revision states
+        the revised dollars, so the table moved."""
+        sr = self.sr
+        ws, page, rid = self._unsigned()
+        self.assertEqual(sr.TABLE_REPLAYED, page[sr.TABLE_RULE])
+        whole, built = self._whole(), _dollars(HAIKU, meter._sum(BUILD_1, BUILD_2))
+        self.assertEqual(_money(whole), ws.row(page, "Dollar cost")["est_actual"]["value"])
+        self.assertEqual(_money(built), self._unit(page, "US0101")["eu_usd"]["value"])
+        self.table(dt.date.today(), scale=2.0)
+        live = ws.page()
+        self.assertEqual(_money(2 * whole), ws.row(live, "Dollar cost")["est_actual"]["value"],
+                         "control: the revision moves a live derivation")
+        self.assertEqual(_money(2 * built), self._unit(live, "US0101")["eu_usd"]["value"])
+        check = sr.revalidate(ws.root, rid)
+        self.assertTrue(check["valid"], check["changes"])
+        self.assertEqual([], check["changes"], "est_actual and eu_usd re-derive as filed")
+        self.assertEqual(page["fingerprint"], check["fingerprint"])
+
+    def test_an_edited_price_table_on_an_unsigned_page_is_named(self) -> None:
+        """BG1242 AC2. MUTANTS: the table replayed from the file but left out of the digest
+        (`digest_entries` without its envelope entry), so an edit that moves no figure reads
+        valid and one that re-prices the dollars reads INVALIDATED rather than edited; the
+        fallback naming an unnamed figure rather than the table. The control: the page as
+        filed reads valid."""
+        sr = self.sr
+        ws, page, rid = self._unsigned()
+        self.assertTrue(sr.revalidate(ws.root, rid)["valid"], "control: valid as filed")
+        path = sr.report_dir(ws.root) / f"{rid}.json"
+        filed = path.read_text(encoding="utf-8")
+
+        def edit(change) -> dict:
+            stored = json.loads(filed)
+            change(stored[sr.PRICE_TABLE]["models"])
+            path.write_text(json.dumps(stored, indent=2), encoding="utf-8")
+            return sr.revalidate(ws.root, rid)
+
+        quiet = edit(lambda models: models[OPUS].update(source="edited after the close"))
+        self.assertFalse(quiet["valid"], "an edit that moves no figure is still an edit")
+        self.assertIn(f"envelope.{sr.PRICE_TABLE}", [e["figure"] for e in quiet["edited"]])
+        self.assertEqual([], quiet["changes"], "premise: no figure moved")
+        loud = edit(lambda models: models[HAIKU].update(input=models[HAIKU]["input"] * 2))
+        self.assertFalse(loud["valid"])
+        self.assertTrue(any(repr(_money(self._whole())) in e["detail"]
+                            for e in loud["edited"]), loud["edited"])
+
+    def test_the_close_itself_files_the_role_table(self) -> None:
+        """BG1242 AC3: the close is driven through `sprint.py close`, never by calling
+        `stamp_cost_roles` here. MUTANT: `run_state.stamp_cost_roles(root)` in
+        `sprint._file_the_report` replaced by `pass`, so the filed page reads the role table NOT
+        MEASURED. The control: before the close the run holds no role reading, and a page
+        derived then reads the table NOT MEASURED."""
+        import test_lean_close as lean  # noqa: PLC0415 - its close driver, every step green
+        sr, ws = self.sr, self._run(stamped=False)
+
+        def roles(page: dict) -> dict:
+            return next(s for s in page["sections"] if s["key"] == "cost_roles")
+        self.assertIsNotNone(roles(ws.page()).get("not_measured"), "control: no reading yet")
+        self.rs.update(ws.root, sprint_goal_verdict={"verdict": "achieved", "note": "it did"})
+        mod = meter._live("sprint")
+        with lean._green_steps(mod), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            mod.main(["close", "--retro", meter.RETRO, "--root", str(ws.root)])
+        rid = ws.state().get("report")
+        self.assertTrue(rid, err.getvalue())
+        sec = roles(sr.read_report(ws.root, rid))
+        self.assertIsNone(sec.get("not_measured"), sec)
+        self.assertTrue(sec["rows"], sec)
+
+    def test_staleness_is_judged_on_the_run_s_end_date(self) -> None:
+        """BG1242 AC4. MUTANTS: `"today": None` in `build_report`, or `retro._usd_batch`
+        pricing with no `today`, so a page or a retro derived after the table turned stale
+        marks dollars STALE that were fresh on the day the run ended. The control: on the later
+        day the table itself reads stale."""
+        retro = meter._live("retro")
+        ws = self._run()
+        self.rs.update(ws.root, goal="done",
+                       ended_at=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+        table, _error = self.rs.price_table(ws.root)
+        later = dt.date.today() + dt.timedelta(days=table.stale_after_days + 30)
+        real = self.prices.stale
+        with unittest.mock.patch.object(self.prices, "stale",
+                                        lambda t, today=None: real(t, today or later)):
+            self.assertIsNotNone(self.prices.stale(table), "control: stale on the later day")
+            basis = ws.row(ws.page(), "Dollar cost")["est_basis"]["value"]
+            self.assertIn("price table effective", basis)
+            self.assertNotIn("STALE", basis)
+            cap = retro.run_attributed_tokens(ws.root, meter.RETRO)
+            res = retro.accuracy(ws.root, meter.RETRO, sprint_tokens=cap["tokens"], priced=cap)
+            line = next(p for p in retro._points_lines(res) if p.startswith("**Priced cost"))
+            self.assertIn("price table effective", line)
+            self.assertNotIn("STALE", line)
+
+    def test_the_table_mark_round_trips(self) -> None:
+        """LC-017, BG1242's mark. MUTANTS: the rule hard-wired on in `revalidate`, so a page
+        filed before the mark is re-derived under it and reads INVALIDATED; the mark built
+        without its rule check; the mark dropped from the envelope. The control: the page as
+        filed under the mark reads valid."""
+        sr = self.sr
+        ws = self._run()
+        page = sr.build_report(ws.root, meter.RETRO)
+        self.assertTrue(sr.revalidate(ws.root, sr.file_report(ws.root, page))["valid"])
+        before = sr.build_report(ws.root, meter.RETRO, table_rule=False)
+        self.assertNotIn(sr.TABLE_RULE, before)
+        self.assertIn(sr.PRICE_TABLE, before, "the table is carried as US1123 carried it")
+        self.assertNotEqual(page["fingerprint"], before["fingerprint"], "the table is digested")
+        check = sr.revalidate(ws.root, sr.file_report(ws.root, before))
+        self.assertTrue(check["valid"], check["changes"])
+        dropped = {k: v for k, v in page.items() if k != sr.TABLE_RULE}
+        check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
+        self.assertFalse(check["valid"], "the mark is under the fingerprint it changes")
 
     def test_premium_requests_are_their_own_unit(self) -> None:
         """AC5. MUTANTS: premium requests dropped from the page, added into the tokens or the

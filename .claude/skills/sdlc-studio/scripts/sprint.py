@@ -9139,7 +9139,7 @@ def cmd_lane(args: argparse.Namespace) -> int:
                   f"returned - the working tree MAY ALREADY CARRY its work. Check the diff "
                   f"before starting: a lane redoing a repair that is already present is how "
                   f"a partial edit reached a commit.", file=sys.stderr)
-        for b in dispatch["briefs"]:
+        def start_lane(b: dict) -> None:
             _lane_run_state(
                 "record_lane_start", lambda b=b: run_state.record_lane_start(root, b["id"]), None,
                 f"{b['id']}'s lane start could not be recorded (the run state is unreadable), "
@@ -9152,7 +9152,7 @@ def cmd_lane(args: argparse.Namespace) -> int:
             # terminal status: a whole-batch brief would reopen its measured span, and a lane
             # that never returns would leave it reading NOT MEASURED.
             if _at_terminal_status(root, b["id"]):
-                continue
+                return
             _lane_run_state(
                 "open_unit_span",
                 lambda b=b: run_state.record_unit_actual(root, b["id"],
@@ -9160,7 +9160,11 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 None,
                 f"{b['id']}'s span could not be opened (the run state is unreadable), so its "
                 f"time and tokens will read NOT MEASURED")
+
         if args.action == "run":
+            # A lane run takes its marker and opens its span only once `lanes.run`'s own
+            # refusals have passed (`on_start`), so a run refused before its CLI started (exit
+            # 2) leaves no unit in flight that no lane is working on.
             from lib import lanes  # noqa: PLC0415 - only a lane run needs it
             [brief] = dispatch["briefs"]
             run_id = _lane_run_state("lane_run_id", lambda: run_state.read(root).get("run_id"),
@@ -9168,7 +9172,10 @@ def cmd_lane(args: argparse.Namespace) -> int:
                                            "names no run and its return will not price it")
             return lanes.run(root, brief["id"], args.harness, lane_brief_text(brief),
                              model=args.model, worktree=getattr(args, "worktree", None),
-                             timeout=args.timeout or lanes.RUN_TIMEOUT, run_id=run_id)
+                             timeout=args.timeout or lanes.RUN_TIMEOUT, run_id=run_id,
+                             on_start=lambda: start_lane(brief))
+        for b in dispatch["briefs"]:
+            start_lane(b)
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
