@@ -50,7 +50,7 @@ import sys
 import types
 from pathlib import Path
 
-from . import sdlc_md, token_meters
+from . import prices, sdlc_md, token_meters
 from .token_meters import CACHE_READ, CLAUDE, HARNESS, harness_of
 
 REL = Path("sdlc-studio") / ".local" / "run-state.json"
@@ -178,6 +178,12 @@ COMPONENT_NAMES = {"input": "input", "output": "output", "cache_write_5m": "cach
                    "cache_write_1h": "cache write 1h", "cache_read": "cache read"}
 #: The label of the headline figure (D0390 (1)).
 PRICED_LABEL = "priced input-equivalent tokens"
+#: A reading's components split by the model each message names, `{model: components}`, which
+#: is what a dollar figure is priced from (`usd`); "" keys a message naming no model.
+BY_MODEL = "by_model"
+#: The premium requests a harness bills as their own unit (Copilot), carried beside the tokens
+#: and never converted into them.
+PREMIUM_REQUESTS = "premium_requests"
 #: The counting basis a reading was taken on, stamped under this key on every stamp and
 #: baseline this reader writes. A stamp naming no basis was taken by an earlier reader (counted
 #: per record before BG1111, once per message on the main thread alone after it), and a
@@ -1134,7 +1140,9 @@ def _aggregate(collected: dict, until=None) -> dict:
     than the message's last. A record with no id is counted by itself: nothing tells two of them
     apart. An id is booked to the side, main thread or subagents, it was first read on."""
     per_message: dict[str, tuple[str, dict]] = {}
+    msg_model: dict[str, str] = {}
     sides = {"main": _zero(), "subagents": _zero()}
+    by_model: dict[str, dict] = {}
     models: set[str] = set()
     seen = False
     for side, msg_id, at, parts, model in collected["records"]:
@@ -1151,15 +1159,20 @@ def _aggregate(collected: dict, until=None) -> dict:
         if model:
             models.add(model)
         if msg_id is None:
+            split = by_model.setdefault(model or "", _zero())
             for c in TOKEN_COMPONENTS:
                 sides[side][c] += parts[c]
+                split[c] += parts[c]
             continue
+        msg_model.setdefault(msg_id, model or "")
         held = per_message.get(msg_id)
         per_message[msg_id] = (side, parts) if held is None else (
             held[0], {c: max(held[1][c], parts[c]) for c in TOKEN_COMPONENTS})
-    for side, parts in per_message.values():
+    for msg_id, (side, parts) in per_message.items():
+        split = by_model.setdefault(msg_model[msg_id], _zero())
         for c in TOKEN_COMPONENTS:
             sides[side][c] += parts[c]
+            split[c] += parts[c]
     both = {c: sides["main"][c] + sides["subagents"][c] for c in TOKEN_COMPONENTS}
     if not seen or _counted(both) <= 0:
         raise _MeterError(
@@ -1170,7 +1183,7 @@ def _aggregate(collected: dict, until=None) -> dict:
     return {"tokens": _counted(both), "priced": price(both), "components": both,
             "main": sides["main"], "subagents": sides["subagents"] if with_agents else None,
             "includes_subagents": with_agents, "subagent_files": collected["files"],
-            "models": models}
+            "models": models, BY_MODEL: by_model}
 
 
 def session_tokens(repo_root: Path | str, transcripts_dir: Path | str | None = None) -> dict:
@@ -1272,7 +1285,8 @@ def agent_transcript_tokens(repo_root: Path | str, agent_id: str,
         return {"priced": None, "searched": str(folder),
                 "reason": f"agent {agent_id!r}'s transcript in {folder} gives no reading: {exc}"}
     return {"tokens": agg["tokens"], "priced": agg["priced"],
-            "components": dict(agg["components"]), "source": str(path)}
+            "components": dict(agg["components"]), BY_MODEL: agg[BY_MODEL],
+            "source": str(path)}
 
 
 def _reading(agg: dict, src: Path, note: str | None) -> dict:
@@ -1308,16 +1322,40 @@ def _priced_fields(cap: dict) -> dict:
     if not isinstance(comps, dict):
         return {}
     if harness_of(cap) != CLAUDE:
-        def count(v) -> bool:
-            return isinstance(v, int) and not isinstance(v, bool) and v >= 0
-        if not (count(cap.get("priced")) and all(count(comps.get(c)) for c in TOKEN_COMPONENTS)):
+        if not (_count(cap.get("priced"))
+                and all(_count(comps.get(c)) for c in TOKEN_COMPONENTS)):
             return {}
         return {"priced": cap["priced"], "components": dict(comps),
-                "subagents": bool(cap.get("includes_subagents"))}
+                "subagents": bool(cap.get("includes_subagents")), **_split_fields(cap)}
     if cap.get(METER) != METER_BASIS:
         return {}
     return {"priced": cap.get("priced"), "components": dict(comps),
-            "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS}
+            "subagents": bool(cap.get("includes_subagents")), METER: METER_BASIS,
+            **_split_fields(cap)}
+
+
+def _count(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool) and v >= 0
+
+
+def _split_fields(cap: dict) -> dict:
+    """What a stamp carries for the dollar figure: the reading's components per model
+    (`BY_MODEL`) and its `PREMIUM_REQUESTS`, each only when the reading states it. A reading
+    naming one model and no split is that model's whole; one naming `SESSION_MODEL_MIXED` with no
+    split carries none, so it is never priced at one model's rate."""
+    out: dict = {}
+    split = cap.get(BY_MODEL)
+    if isinstance(split, dict) and all(
+            isinstance(v, dict) and all(_count(v.get(c)) for c in TOKEN_COMPONENTS)
+            for v in split.values()):
+        out[BY_MODEL] = {str(m): {c: int(v[c]) for c in TOKEN_COMPONENTS}
+                         for m, v in split.items()}
+    elif cap.get("model") and cap.get("model") != SESSION_MODEL_MIXED:
+        out[BY_MODEL] = {str(cap["model"]): {c: int(cap["components"][c])
+                                             for c in TOKEN_COMPONENTS}}
+    if _count(cap.get(PREMIUM_REQUESTS)):
+        out[PREMIUM_REQUESTS] = cap[PREMIUM_REQUESTS]
+    return out
 
 
 def _reach_fields(cap: dict) -> dict:
@@ -1478,6 +1516,58 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     return stamp
 
 
+#: The session's spend by role, as `sprint cost --anatomy` reads it at the close, recorded on the
+#: close's own reading (`stamp_cost_roles`). The report states it from here and never from the
+#: live transcript, which grows after the close, so a page filed at the close re-derives to the
+#: same table at sign.
+COST_ROLES = "cost_roles"
+_ROLE_KEYS = ("role", "agents", "calls", "priced", "share", "split", "first_context",
+              "avg_context")
+
+
+def _cost_roles(repo_root: Path | str, transcripts_dir, source) -> dict:
+    """The current session's anatomy (`cost_anatomy.anatomy`), kept to the cells the report
+    states: `{"source", "subagent_files", "roles", "total"}`, or `{"reason"}` when it cannot be
+    had or reads a session other than `source`, the one the meter just read. Never raises: a
+    closing reading is not lost because the anatomy could not be taken."""
+    try:
+        from lib import cost_anatomy  # noqa: PLC0415 - it imports this module
+        got = cost_anatomy.anatomy(repo_root, transcripts_dir)
+    except Exception as exc:  # noqa: BLE001 - AnatomyError, or a reader that cannot load
+        return {"reason": f"the spend by role could not be read: {exc}"}
+    name = Path(str(got.get("source"))).name
+    if not source or name != Path(str(source)).name:
+        return {"reason": f"the session the anatomy read, {name}, is not the one this reading's "
+                          f"meter read, so its spend by role is not this run's"}
+    t = got.get("total") or {}
+    return {"source": Path(name).stem, "subagent_files": got.get("subagent_files"),
+            "roles": [{k: r.get(k) for k in _ROLE_KEYS} for r in got.get("roles") or []],
+            "total": {k: t.get(k) for k in ("agents", "calls", "priced")}}
+
+
+def stamp_cost_roles(repo_root: Path | str,
+                     transcripts_dir: Path | str | None = None) -> dict | None:
+    """Record the current session's spend by role (`_cost_roles`) on the open run's newest
+    reading, the one the close has just stamped, and return it; None when the run holds no
+    reading. A separate call from `stamp_tokens`, whose reading parses only what the last one
+    did not: the anatomy reads the whole session, so only the close pays for it, once."""
+    stamps = (read(repo_root) or {}).get(TOKEN_STAMPS) or []
+    if not stamps or not isinstance(stamps[-1], dict):
+        return None
+    at, source = stamps[-1].get("at"), stamps[-1].get("source")
+    got = _cost_roles(repo_root, transcripts_dir, source)
+
+    def apply(state: dict) -> dict:
+        for s in reversed((state or {}).get(TOKEN_STAMPS) or []):
+            if isinstance(s, dict) and s.get("at") == at and s.get("source") == source:
+                s[COST_ROLES] = got
+                break
+        return state
+
+    _mutate(repo_root, apply)
+    return got
+
+
 #: What a run token total is, said once so every caller inherits the sentence. A reading of the
 #: main thread alone, which every reading before subagent transcripts were read was, and a
 #: session that wrote to the run without a closing stamp contributes nothing, so that figure can
@@ -1528,20 +1618,121 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
     stamp written before the meter priced them. It is formed from the stamped components, never
     from `tokens` times a constant."""
     comps = _zero()
+    by_model: dict[str, dict] = {}
+    premium = None
     for rows in spans:
         if not all(isinstance(r.get("components"), dict) for r in rows):
             n = sum(1 for s in spans for r in s if not isinstance(r.get("components"), dict))
             return {"priced": None, "components": None, "includes_subagents": False,
+                    BY_MODEL: None, PREMIUM_REQUESTS: None,
                     "priced_reason": (f"{n} meter reading(s) were written before the meter "
                                       f"priced each component, so the run's priced cost cannot "
                                       f"be formed from them; its input + output + cache-write "
                                       f"total is unchanged")}
+        span = _zero()
         for c in TOKEN_COMPONENTS:
             vals = [int(r["components"].get(c) or 0) for r in rows]
-            comps[c] += max(0, max(vals) - min(vals))
+            span[c] = max(0, max(vals) - min(vals))
+            comps[c] += span[c]
+        _split_delta(rows, span, by_model)
+        # Over the readings that carry a count: one taken before the field existed, such as
+        # a legacy baseline folded beside the open stamp, carries none and is left out.
+        asked = [r[PREMIUM_REQUESTS] for r in rows if _count(r.get(PREMIUM_REQUESTS))]
+        if len(asked) >= 2:
+            premium = (premium or 0) + max(asked) - min(asked)
     return {"priced": price(comps), "components": comps, "priced_reason": None,
+            BY_MODEL: by_model, PREMIUM_REQUESTS: premium,
             "includes_subagents": bool(spans) and all(
                 bool(max(rows, key=lambda r: r["tokens"]).get("subagents")) for rows in spans)}
+
+
+def _split_delta(rows: list[dict], span: dict, by_model: dict) -> None:
+    """Add one session's per-model delta to `by_model`: each model's component, last reading
+    less first, from the readings' `BY_MODEL` splits. A session whose readings do not all carry
+    a split books its whole `span` under the one model its readings name, else under
+    `SESSION_MODEL_MIXED`, which no price covers."""
+    if all(isinstance(r.get(BY_MODEL), dict) for r in rows):
+        for m in sorted({m for r in rows for m in r[BY_MODEL]}):
+            got = by_model.setdefault(m, _zero())
+            for c in TOKEN_COMPONENTS:
+                vals = [int((r[BY_MODEL].get(m) or {}).get(c) or 0) for r in rows]
+                got[c] += max(0, max(vals) - min(vals))
+        return
+    named = {r.get("model") for r in rows if r.get("model")}
+    key = named.pop() if len(named) == 1 else SESSION_MODEL_MIXED
+    got = by_model.setdefault(key, _zero())
+    for c in TOKEN_COMPONENTS:
+        got[c] += span[c]
+
+
+def price_table(repo_root: Path | str | None, filed: dict | None = None):
+    """`(table, error)`: the price table a dollar figure is formed from. `filed` is a table a
+    page carried (`table_record`), read back so a re-derivation prices with the prices it was
+    filed with; else the shipped table with the project's `pricing` block over it. `error` is the
+    refusal's text when that table cannot be read, and the table is then None."""
+    try:
+        if isinstance(filed, dict) and isinstance(filed.get("models"), dict):
+            return prices.PriceTable(
+                models={m: prices._entry(dict(e), f"the page's price table, {m}", m)
+                        for m, e in filed["models"].items()},
+                stale_after_days=int(filed["stale_after_days"]),
+                origin="the price table the page was filed with"), None
+        return prices.load(repo_root), None
+    except (prices.PriceTableError, KeyError, TypeError, ValueError) as exc:
+        return None, str(exc)
+
+
+def table_record(table) -> dict:
+    """The price table as a page carries it, every entry whole, so `price_table` reads back
+    the prices the page was formed from."""
+    return {"stale_after_days": table.stale_after_days,
+            "models": {m: {**{c: getattr(p, c) for c in prices.COMPONENTS},
+                           "effective": p.effective.isoformat(), "source": p.source}
+                       for m, p in sorted(table.models.items())}}
+
+
+def usd(by_model: dict | None, table, today=None) -> dict:
+    """The estimated US dollar cost of a per-model split (`BY_MODEL`), each model priced from
+    its own components by `prices.cost`: `{usd, covered, models, unpriced, effective, stale,
+    reason}`. A model the table does not price, `SESSION_MODEL_MIXED` among them, is listed in
+    `unpriced` with its share of the priced tokens and is never summed in as $0; `covered` is the
+    share of the split's priced tokens the dollar figure prices. `usd` is None, with `reason`,
+    when nothing is priced. `stale` is `prices.stale` on `today` (default: today)."""
+    out = {"usd": None, "covered": None, "models": [], "unpriced": [], "reason": None,
+           "effective": None, "stale": None}
+    if table is not None:
+        newest = table.newest_effective
+        out.update(effective=newest.isoformat() if newest else None,
+                   stale=prices.stale(table, today))
+    if not by_model:
+        out["reason"] = "the reading carries no per-model split of its components"
+        return out
+    weighed = {m: price(c) for m, c in by_model.items()}
+    whole = sum(weighed.values())
+    total = 0.0
+    for m in sorted(by_model):
+        if not weighed[m]:
+            continue
+        got = (prices.Cost(None, m, "not priced: the reading spans more than one model and "
+                                    "carries no per-model split")
+               if m == SESSION_MODEL_MIXED or table is None else
+               prices.cost(m or None, by_model[m], table))
+        if got.usd is None:
+            out["unpriced"].append({"model": m or "no model named", "priced": weighed[m],
+                                    "share": weighed[m] / whole if whole else None,
+                                    "reason": got.unpriced})
+        else:
+            total += got.usd
+            out["models"].append({"model": m, "usd": got.usd, "priced": weighed[m]})
+    covered = sum(r["priced"] for r in out["models"])
+    out["covered"] = covered / whole if whole else None
+    if out["models"]:
+        out["usd"] = total
+    else:
+        out["reason"] = ("no model the reading names is in the price table: "
+                         + "; ".join(f"{u['model']} ({u['reason']})" for u in out["unpriced"])
+                         if out["unpriced"] else "the reading holds no priced tokens")
+    return out
 
 
 def rebased_note(total: dict) -> str:
@@ -2315,13 +2506,23 @@ def unit_agent_totals(state: dict) -> dict[str, dict]:
             continue
         t = out.setdefault(sdlc_md.norm_id(uid),
                            {"tokens": 0, "minutes": None, "agents": 0, "timed": 0,
-                            "priced": None, "priced_agents": 0})
+                            "priced": None, "priced_agents": 0, BY_MODEL: None})
         t["tokens"] += r["tokens"]
         t["agents"] += 1
         p = r.get("priced")
         if isinstance(p, int) and not isinstance(p, bool) and p >= 0:
             t["priced"] = (t["priced"] or 0) + p
             t["priced_agents"] += 1
+            # The record's own split, else its components under no model named, which no
+            # price covers: a record from before the split is never priced at a guessed rate.
+            split = r.get(BY_MODEL) if isinstance(r.get(BY_MODEL), dict) else (
+                {"": r["components"]} if isinstance(r.get("components"), dict) else {})
+            held = t[BY_MODEL] if t[BY_MODEL] is not None else {}
+            for m, comps in split.items():
+                got = held.setdefault(m, _zero())
+                for c in TOKEN_COMPONENTS:
+                    got[c] += int(comps.get(c) or 0)
+            t[BY_MODEL] = held
         m = r.get("minutes")
         if isinstance(m, (int, float)) and not isinstance(m, bool) and math.isfinite(m) and m > 0:
             t["minutes"] = (t["minutes"] or 0) + m
@@ -2401,7 +2602,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         entry["minutes"] = float(minutes)
     if reading:
         entry.update(priced=reading["priced"], components=dict(reading["components"]),
-                     transcript=reading["source"])
+                     transcript=reading["source"],
+                     **({BY_MODEL: reading[BY_MODEL]} if reading.get(BY_MODEL) else {}))
 
     def superseded(r: dict) -> bool:
         return (bool(reading) and r.get("transcript") == entry["transcript"]

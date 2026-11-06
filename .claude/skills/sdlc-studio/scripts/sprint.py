@@ -10024,7 +10024,8 @@ def _file_the_report(root, retro_id):
     first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
     try:
         if not first_end:
-            run_state.stamp_tokens(root, "report")
+            if run_state.stamp_tokens(root, "report"):
+                run_state.stamp_cost_roles(root)   # the page's spend by role, frozen here
     except sdlc_md.AllocationLockTimeout as exc:   # the close goes on; the missing stamp is said
         print(f"warning: the report-time token stamp was not recorded - {exc.reason}",
               file=sys.stderr)

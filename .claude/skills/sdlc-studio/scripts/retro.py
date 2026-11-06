@@ -1608,7 +1608,7 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "sprint_tokens_per_point": (_rate(sprint_tokens, delivered_points)
                                         if sprint_tokens and rung == "done" else None),
             # The run's priced cost and its components, per point by the same rule.
-            "priced": _priced_batch(priced, delivered_points, rung),
+            "priced": _priced_batch(priced, delivered_points, rung, root),
             # Velocity: PRIMARY = points/elapsed-hour (ceremony included, the planning
             # number); SECONDARY = points/worker-hour (runner time, tool-tuning). Both descriptive,
             # never a target, fed to no gate. None reads as UNMEASURED (interactive sprint).
@@ -1631,20 +1631,54 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
     }
 
 
-def _priced_batch(cap: dict | None, points: int, rung: str) -> dict | None:
+def _priced_batch(cap: dict | None, points: int, rung: str, root=None) -> dict | None:
     """The priced cost a harness capture `cap` states, per delivered point when the run was a
     build run with points, or None when no capture was made. `reason` says why a capture states
-    no priced figure."""
+    no priced figure. `usd` is the same window in estimated US dollars (`_usd_batch`)."""
     if not cap:
         return None
     priced = cap.get("priced")
     priced = priced if isinstance(priced, int) and not isinstance(priced, bool) else None
     return {"priced": priced, "components": cap.get("components") if priced is not None else None,
+            "usd": _usd_batch(cap, points, rung, root) if priced is not None else None,
             "per_point": _rate(priced, points) if priced and rung == "done" else None,
             "points": points, "rung": rung, "reads_subagents": bool(cap.get("reads_subagents")),
             "supplied": int(cap.get("delegated_tokens") or 0),
             "reason": None if priced is not None else (cap.get("priced_reason")
                                                        or cap.get("reason"))}
+
+
+def _usd_batch(cap: dict, points: int, rung: str, root) -> dict:
+    """The capture's estimated US dollars, each model's own components priced from the table
+    (`run_state.usd`), per delivered point by the priced figure's own rule, with the table's
+    effective date and its stale mark (`prices.stale`)."""
+    table, error = run_state.price_table(root)
+    got = run_state.usd(cap.get(run_state.BY_MODEL), table)
+    return {"usd": got["usd"], "covered": got["covered"], "unpriced": got["unpriced"],
+            "per_point": (got["usd"] / points
+                          if got["usd"] is not None and points and rung == "done" else None),
+            "effective": got["effective"], "stale": got["stale"],
+            "reason": f"the price table cannot be read: {error}" if error else got["reason"]}
+
+
+def _usd_sentence(d: dict | None) -> str:
+    """The retro's dollar clause: the run's estimated dollars and dollars per point, what they
+    leave unpriced, and the table's effective date, marked STALE when `prices.stale` says so."""
+    if not d:
+        return ""
+    def money(v: float) -> str:
+        return f"${v:,.2f}" if v >= 1 else f"${v:.4f}"
+    table = (f"price table effective {d['effective'] or 'never'}"
+             + (" (STALE: its newest price is older than pricing.stale_after_days)"
+                if d["stale"] else ""))
+    if d["usd"] is None:
+        return f" Estimated US dollars: not stated, {d['reason']}; {table}."
+    per = f", {money(d['per_point'])} per point" if d["per_point"] is not None else ""
+    left = ("".join(f"; {u['model']} is not priced ({100 * u['share']:.1f}% of the priced "
+                    f"tokens), and is not counted as $0" for u in d["unpriced"])
+            if d["unpriced"] else "")
+    return (f" Estimated US dollars: {money(d['usd'])}{per}, covering "
+            f"{100 * d['covered']:.1f}% of the priced tokens{left}; {table}.")
 
 
 def _priced_lines(p: dict | None) -> list[str]:
@@ -1668,8 +1702,11 @@ def _priced_lines(p: dict | None) -> list[str]:
     outside = (f" The {p['supplied']:,} tokens supplied by delegated agents are outside it."
                if p["supplied"] else "")
     comps = p["components"] or {}
-    return [f"**Priced cost: {p['priced']:,} {run_state.PRICED_LABEL}**{per} {reach} Each "
-            f"component is its count times its weight.{outside}",
+    # The dollars follow the reach sentence, so the line still opens with the priced tokens,
+    # their per-point figure and what the meter read, as it did before dollars were stated.
+    return [f"**Priced cost: {p['priced']:,} {run_state.PRICED_LABEL}**{per} {reach}"
+            f"{_usd_sentence(p.get('usd'))} Each component is its count times its weight."
+            f"{outside}",
             "\n".join(f"- {run_state.COMPONENT_NAMES[c]}: {int(comps.get(c) or 0):,} "
                       f"x{run_state.TOKEN_WEIGHTS[c]:g}" for c in run_state.TOKEN_COMPONENTS)]
 
@@ -2006,7 +2043,8 @@ def _priced_window(opening: dict, closing: dict) -> dict:
     from the `opening` reading to the `closing` one, priced by the run total's own rule, or
     `priced` None with `priced_reason` when a reading predates the priced meter."""
     got = run_state._priced_delta([[opening, closing]])  # noqa: SLF001 - one pricing rule
-    return {k: got[k] for k in ("priced", "components", "priced_reason")}
+    return {k: got.get(k) for k in ("priced", "components", "priced_reason", run_state.BY_MODEL,
+                                    run_state.PREMIUM_REQUESTS)}
 
 
 def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:

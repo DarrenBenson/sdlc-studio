@@ -120,10 +120,10 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="lede">Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The actual on the Minutes row above sums these minutes over the units that also carry a forecast; spans of units open at the same time overlap, so that sum can exceed the wall-clock span.</p>
 <!-- end -->
   <div class="scroll"><table>
-    <thead><tr><th scope="col">Unit</th><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens</th><!-- when: priced_unit_rule --><th scope="col" class="num">Priced</th><!-- end --></tr></thead>
+    <thead><tr><th scope="col">Unit</th><!-- when: usd_rule --><th scope="col" class="num">Dollars</th><!-- end --><th scope="col" class="num">Forecast minutes</th><th scope="col" class="num">Minutes</th><th scope="col" class="num">Forecast tokens</th><th scope="col" class="num">Tokens</th><!-- when: priced_unit_rule --><th scope="col" class="num">Priced</th><!-- end --></tr></thead>
     <tbody>
 <!-- repeat: estimates_units -->
-      <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><td class="num">{{eu_forecast_minutes}}</td><td class="num">{{eu_minutes}}</td>
+      <tr><th scope="row"><span class="uid">{{unit_id}}</span></th><!-- when: usd_rule --><td class="num">{{eu_usd}}</td><!-- end --><td class="num">{{eu_forecast_minutes}}</td><td class="num">{{eu_minutes}}</td>
         <td class="num">{{eu_forecast_tokens}}</td><td class="num">{{eu_tokens}}</td><!-- when: priced_unit_rule --><td class="num">{{eu_priced}}</td><!-- end --></tr>
 <!-- end -->
     </tbody>
@@ -201,6 +201,23 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <!-- unless: cost_measured -->
   <p class="unmeasured"><b>NOT MEASURED</b> - {{cost_reason}}</p>
   <p class="lede">Delegated: {{tokens_delegated}}.</p>
+<!-- end -->
+<!-- when: cost_roles_present -->
+<!-- when: cost_roles_measured -->
+  <p class="lede"><strong>Cost by role.</strong> The session's spend by role, each cell as <span class="mono">sprint cost --anatomy</span> prints it, from {{roles_session}}; total {{roles_total}}. Priced in input-equivalent tokens; split is each part's share of the role's priced cost; context is input + cache write + cache read per call.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Role</th><th scope="col" class="num">Agents</th><th scope="col" class="num">Calls</th><th scope="col" class="num">Priced tokens</th><th scope="col" class="num">Share</th><th scope="col" class="num">Cache read</th><th scope="col" class="num">Cache write</th><th scope="col" class="num">Output</th><th scope="col" class="num">First context</th><th scope="col" class="num">Avg context</th></tr></thead>
+    <tbody>
+<!-- repeat: cost_roles -->
+      <tr><th scope="row">{{role_name}}</th><td class="num">{{role_agents}}</td><td class="num">{{role_calls}}</td><td class="num">{{role_priced}}</td><td class="num">{{role_share}}</td>
+        <td class="num">{{role_cache_read}}</td><td class="num">{{role_cache_write}}</td><td class="num">{{role_output}}</td><td class="num">{{role_first_context}}</td><td class="num">{{role_avg_context}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- unless: cost_roles_measured -->
+  <p class="unmeasured"><b>Cost by role: NOT MEASURED</b> - {{cost_roles_reason}}</p>
+<!-- end -->
 <!-- end -->
 
   <h3>DORA</h3>

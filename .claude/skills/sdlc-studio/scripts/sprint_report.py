@@ -2829,7 +2829,8 @@ def _page_readings(page: dict | None) -> dict:
     page no commit holds signed) every map is None and every source is read.
     """
     if page is None:
-        return {"points": None, "findings": None, "waivers": None}
+        return {"points": None, "findings": None, "waivers": None, "roles": None,
+                "price_table": None}
     rows = {s.get("key"): s.get("rows") or [] for s in page.get("sections") or []}
 
     def val(row: dict, key: str):
@@ -2845,7 +2846,12 @@ def _page_readings(page: dict | None) -> dict:
     return {"points": {val(r, "unit_id"): val(r, "unit_points")
                        for r in rows.get("delivered", []) if "unit_points" in r},
             "findings": findings,
-            "waivers": {val(r, "waiver_id"): r for r in rows.get("waivers", [])}}
+            "waivers": {val(r, "waiver_id"): r for r in rows.get("waivers", [])},
+            # The spend by role reads a transcript that grows after the run, and the prices
+            # move when the table is revised: both are the page's, replayed.
+            "roles": next((s for s in page.get("sections") or []
+                           if s.get("key") == "cost_roles"), None),
+            "price_table": page.get(PRICE_TABLE)}
 
 
 def leaf_figures(report: dict):
@@ -3590,6 +3596,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
             "timed_minutes": agent.get("minutes"),
             "priced": agent.get("priced"), "priced_agents": agent.get("priced_agents", 0),
+            "by_model": agent.get(run_state.BY_MODEL),
             "in_plan": bool(plan), "measured": bool(act) or bool(agent),
             "rounds": (None if not ledger_found else
                        _frozen_rounds(frozen.get(uid) or [], present)
@@ -3749,10 +3756,91 @@ def _priced_point_row(run_tokens: dict, delivered: list[dict], state_rel: str) -
                          f"point", state_rel)}
 
 
+def _usd_text(v: float) -> str:
+    """Dollars as the page prints them: cents from a dollar up, four places below it, so a
+    figure of a cent or less still shows its size."""
+    return f"${v:,.2f}" if v >= 1 else f"${v:.4f}"
+
+
+def _pct(share) -> str:
+    return f"{100 * share:.1f}%" if isinstance(share, (int, float)) else "no share"
+
+
+def _usd_reach(got: dict) -> str:
+    """What a dollar figure covers and what it leaves out, as one clause."""
+    out = f"covers {_pct(got['covered'])} of the priced tokens"
+    if got["unpriced"]:
+        out += ("; not priced, and never counted as $0: " + "; ".join(
+            f"{u['model']} ({_pct(u['share'])} of the priced tokens)" for u in got["unpriced"]))
+    return out
+
+
+def _table_note(got: dict) -> str:
+    """The price table's date, marked stale when `prices.stale` says so on the run's end."""
+    return (f"price table effective {got['effective'] or 'never'}"
+            + (" (STALE: its newest price is older than pricing.stale_after_days)"
+               if got["stale"] else ""))
+
+
+def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict) -> list[dict]:
+    """`[Dollar cost, Dollars per point, Premium requests]` under `USD_RULE`: the Priced cost
+    row's tokens in estimated US dollars, each model's own components priced from the table
+    (`run_state.usd`), never the priced total at one rate; the same over the delivered points;
+    and the premium requests the readings carry, in their own unit, only when they carry any."""
+    table, error = usd["table"], usd["error"]
+    got = run_state.usd(run_tokens.get(run_state.BY_MODEL), table, usd["today"])
+    points = sum(u["points"] for u in delivered if _num(u["points"]))
+    why = (f"the price table cannot be read: {error}" if error else
+           got["reason"] if got["usd"] is None else None)
+    note = "" if error else f"; {_table_note(got)}"
+
+    def row(measure: str, actual: dict, basis: str) -> dict:
+        return {"est_measure": fig("est_measure", measure, state_rel),
+                "est_forecast": fig("est_forecast", "not forecast", state_rel),
+                "est_actual": actual, "est_ratio": fig("est_ratio", "no ratio", state_rel),
+                "est_basis": fig("est_basis", basis, state_rel)}
+    out = [row("Dollar cost",
+               fig("est_actual", _usd_text(got["usd"]), state_rel) if why is None else
+               unmeasured("est_actual", state_rel, why),
+               "estimated US dollars: each model's own components in the Priced cost row "
+               f"times that model's list prices{note}"
+               + (f"; {_usd_reach(got)}" if why is None else ""))]
+    if why is not None:
+        per = unmeasured("est_actual", state_rel, why)
+    elif not points:
+        per = unmeasured("est_actual", state_rel, "no delivered unit carries Points")
+    else:
+        per = fig("est_actual", _usd_text(got["usd"] / points), state_rel)
+    out.append(row("Dollars per point", per,
+                   f"the Dollar cost row over the {points:g} point(s) of the {len(delivered)} "
+                   f"delivered unit(s){note}"))
+    premium = run_tokens.get(run_state.PREMIUM_REQUESTS)
+    if _num(premium):
+        out.append(row("Premium requests", fig("est_actual", premium, state_rel),
+                       "premium requests the harness bills as their own unit, beside the "
+                       "priced tokens and the dollars above, never converted into either"))
+    return out
+
+
+def _unit_usd(u: dict, usd: dict) -> dict:
+    """A unit's estimated dollars: its priced agents' per-model split (`run_state.usd`), NOT
+    MEASURED with the reason when none is priced."""
+    if not u.get("by_model"):
+        return unmeasured("eu_usd", u["rel"],
+                          "no agent returned for it was priced from its own transcript")
+    if usd["error"]:
+        return unmeasured("eu_usd", u["rel"], f"the price table cannot be read: {usd['error']}")
+    got = run_state.usd(u["by_model"], usd["table"], usd["today"])
+    if got["usd"] is None:
+        return unmeasured("eu_usd", u["rel"], got["reason"])
+    return fig("eu_usd", _usd_text(got["usd"]), u["rel"],
+               label="estimated" + ("" if not got["unpriced"] else f", {_usd_reach(got)}"))
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
                        delegated_rule: bool = True, priced_rule: bool = True,
-                       priced_unit_rule: bool = True) -> dict:
+                       priced_unit_rule: bool = True, usd: dict | None = None) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -3765,7 +3853,11 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
 
     Under `priced_unit_rule` (`PRICED_UNIT_RULE`) the Tokens row is followed by the run's
     priced cost per delivered point (`_priced_point_row`), and a unit whose agents' transcripts
-    were priced carries their summed priced cost on its row, labelled priced."""
+    were priced carries their summed priced cost on its row, labelled priced.
+
+    `usd` (`USD_RULE`, `{"table", "error", "today"}`) adds the run's estimated US dollars beside
+    the Priced cost row, its dollars per point beside the Priced per point row, its premium
+    requests when a reading carries them, and each unit's dollars on its row (`_usd_rows`)."""
     delivered = [u for u in ledger if u["delivered"]]
     no_plan = "no plan snapshot is recorded"
     f, a, basis = _paired(delivered, "planned_points", "points")
@@ -3861,6 +3953,9 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     # Beneath the Tokens row, so the Priced cost row still leads the token rows.
     if head and priced_unit_rule:
         rows.append(_priced_point_row(run_tokens, delivered, state_rel))
+    # The dollars follow the token rows they price, so the Priced cost row still leads them.
+    if head and usd is not None:
+        rows += _usd_rows(run_tokens, delivered, state_rel, usd)
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -3901,7 +3996,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
                       "eu_priced", u["priced"],
                       f"no agent returned for it was priced from its own transcript - "
                       f"price one with `sprint.py lane return --units {u['id']} --agent A`",
-                      "priced")} if priced_unit_rule else {})}
+                      "priced")} if priced_unit_rule else {}),
+                  **({"eu_usd": _unit_usd(u, usd)} if usd is not None else {})}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
     if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",
                                                     "forecast_tokens", "tokens")):
@@ -4133,6 +4229,55 @@ def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
     return _section("cost", "Tokens by model", figures, rows)
 
 
+#: The anatomy's columns, in the order `sprint cost --anatomy` prints them, with the figure
+#: key each carries on the page and the cell kind its printer formats it as.
+ROLE_COLUMNS = (("role_agents", "agents", "int"), ("role_calls", "calls", "int"),
+                ("role_priced", "priced", "int"), ("role_share", "share", "pct"),
+                ("role_cache_read", "cache_read", "pct"),
+                ("role_cache_write", "cache_write", "pct"), ("role_output", "output", "pct"),
+                ("role_first_context", "first_context", "int"),
+                ("role_avg_context", "avg_context", "int"))
+
+
+def _cost_roles_section(state: dict, state_rel: str, replay: dict | None) -> dict:
+    """The session's spend by role, each cell the one `sprint cost --anatomy` prints for it
+    (its printer's own cell format), from the anatomy the run's closing reading recorded
+    (`run_state.COST_ROLES`, which the close records on its reading with `stamp_cost_roles`),
+    sourced to
+    the run record `state_rel` that holds it. Never from the live transcript: it grows after
+    the close, so a table read from it moved the page between the close and the sign. `state` is the window's record (`_metered`), so the newest
+    reading in the window that recorded one is the table; a signed page's is replayed
+    (`_page_readings`). NOT MEASURED when no reading in the window recorded one, or when the
+    anatomy could not be had or read a session other than the meter's."""
+    if replay is not None:
+        return replay
+    from lib import cost_anatomy  # noqa: PLC0415 - only this section needs it
+    got = next((s.get(run_state.COST_ROLES) for s in reversed(
+        state.get(run_state.TOKEN_STAMPS) or [])
+        if isinstance(s, dict) and isinstance(s.get(run_state.COST_ROLES), dict)), None)
+    if got is None or got.get("reason"):
+        return _section("cost_roles", "Cost by role", {}, not_measured=unmeasured(
+            "cost_roles", state_rel,
+            got["reason"] if got else "no closing reading in the run's window recorded the "
+                                      "spend by role"))
+    cell = cost_anatomy._cell  # noqa: SLF001 - the command's own cell format, not a copy
+    rows = []
+    for r in got.get("roles") or []:
+        split = r.get("split") or {}
+        vals = {**r, **{k: split.get(k) for k in ("cache_read", "cache_write", "output")}}
+        rows.append({"role_name": fig("role_name", r.get("role"), state_rel),
+                     **{key: fig(key, cell(vals.get(name), kind), state_rel)
+                        for key, name, kind in ROLE_COLUMNS}})
+    t = got.get("total") or {}
+    figures = {"roles_session": fig("roles_session", f"{got.get('source')}, "
+                                    f"{got.get('subagent_files')} subagent transcript(s)",
+                                    state_rel),
+               "roles_total": fig("roles_total", f"agents {cell(t.get('agents'))}, calls "
+                                  f"{cell(t.get('calls'))}, priced {cell(t.get('priced'))}",
+                                  state_rel)}
+    return _section("cost_roles", "Cost by role", figures, rows)
+
+
 def _calibration_section(state: dict, state_rel: str) -> dict:
     """The rates the plan was estimated from, and where each came from."""
     rates = (state.get("plan_snapshot") or {}).get("rates") or {}
@@ -4228,6 +4373,15 @@ PRICED_HEADLINE = "priced-input-equivalent"
 PRICED_UNIT_RULE = "priced_units"
 PRICED_PER_POINT = "unit-priced-and-per-point"
 
+#: The envelope mark of a page whose Estimates state the run's estimated US dollars, its
+#: dollars per point and its premium requests, whose unit rows carry their dollars, and whose
+#: cost carries the spend by role (`_usd_rows`, `_cost_roles_section`). The page carries the
+#: price table it was priced with (`PRICE_TABLE`), so a re-derivation prices with it. A page
+#: filed before the rule re-derives as signed.
+USD_RULE = "usd_cost"
+USD_PER_MODEL = "per-model-dollars-and-roles"
+PRICE_TABLE = "price_table"
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4253,7 +4407,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  findings_rule: bool = True, minutes_rule: bool = True,
                  delegated_rule: bool = True, agent_minutes_rule: bool = True,
                  cancelled_rule: bool = True, findings_end: str | None = None,
-                 priced_rule: bool = True, priced_unit_rule: bool = True) -> dict:
+                 priced_rule: bool = True, priced_unit_rule: bool = True,
+                 usd_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4278,8 +4433,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     `cancelled_rule` reads a cancelled or skipped CI run as no failed deployment
     (`CANCELLED_RULE`), and `priced_rule` leads the token rows with the priced cost
     (`PRICED_RULE`), and `priced_unit_rule` adds the priced cost per delivered point and each
-    unit's agents' priced cost (`PRICED_UNIT_RULE`); a re-derivation passes what the page
-    carries. `findings_end` bounds the
+    unit's agents' priced cost (`PRICED_UNIT_RULE`), and `usd_rule` states the dollars, the
+    premium requests and the spend by role (`USD_RULE`), priced from the table a signed page
+    carries (`PRICE_TABLE`) and stale-checked on the window's end; a re-derivation passes what
+    the page carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
@@ -4347,6 +4504,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     metered = _metered(state, end)
     tokens = run_state.run_token_total(metered, current, current_path)
     readings = _page_readings(filed)
+    usd = None
+    if usd_rule:
+        table, error = run_state.price_table(root, readings["price_table"])
+        usd = {"table": table, "error": error, "today": end.date() if end else None}
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
                           agent_minutes_rule)
@@ -4356,13 +4517,14 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                            round((end - start).total_seconds() / 60, 1) if start and end
                            else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
                            delegated_rule=delegated_rule, priced_rule=priced_rule,
-                           priced_unit_rule=priced_unit_rule),
+                           priced_unit_rule=priced_unit_rule, usd=usd),
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
         _cost_section(metered, state_rel, tokens),
+        _cost_roles_section(metered, state_rel, readings["roles"]) if usd_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
         _calibration_section(state, state_rel),
@@ -4394,7 +4556,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({AGENT_MINUTES_RULE: AGENT_MINUTES_ANY} if agent_minutes_rule else {}),
               **({CANCELLED_RULE: CANCELLED_NOT_FAILED} if cancelled_rule else {}),
               **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {}),
-              **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {})}
+              **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {}),
+              **({USD_RULE: USD_PER_MODEL} if usd_rule else {}),
+              **({PRICE_TABLE: run_state.table_record(usd["table"])}
+                 if usd and usd["table"] is not None else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -4979,6 +5144,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
     # The unit table's Priced column follows the page's own mark: a page filed before it keeps
     # the five columns it was signed with.
     flags["priced_unit_rule"] = report.get(PRICED_UNIT_RULE) == PRICED_PER_POINT
+    # The Dollars column follows the same rule: a page filed before it keeps its columns.
+    flags["usd_rule"] = report.get(USD_RULE) == USD_PER_MODEL
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):
@@ -5449,7 +5616,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          agent_minutes_rule=basis.get(AGENT_MINUTES_RULE) == AGENT_MINUTES_ANY,
                          cancelled_rule=basis.get(CANCELLED_RULE) == CANCELLED_NOT_FAILED,
                          priced_rule=basis.get(PRICED_RULE) == PRICED_HEADLINE,
-                         priced_unit_rule=basis.get(PRICED_UNIT_RULE) == PRICED_PER_POINT)
+                         priced_unit_rule=basis.get(PRICED_UNIT_RULE) == PRICED_PER_POINT,
+                         usd_rule=basis.get(USD_RULE) == USD_PER_MODEL)
     was = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(basis)
            if in_the_digest(s, k)}
     now = {f"{s}.{k}": f.get("value") for s, k, f in leaf_figures(fresh)
