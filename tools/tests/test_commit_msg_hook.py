@@ -567,7 +567,10 @@ class DerivedTrailerTests(unittest.TestCase):
     them. The BG1213 landing is the replay: a subject naming two units, each owning a staged file,
     refused once for a trailer the units' own declarations could have written."""
 
-    def _fixture(self, d: str, *, stage: tuple[str, ...]) -> Path:
+    def _fixture(self, d: str, *, stage: tuple[str, ...],
+                 units: tuple[tuple[str, str, str], ...] = (("stories", "US0001", "src/a.py"),
+                                                            ("bugs", "BG0002", "bin/gate")),
+                 files: tuple[str, ...] = ("src/a.py", "bin/gate")) -> Path:
         """US0001 owns src/a.py and BG0002 owns bin/gate, each by its Affects; the files in
         `stage` are modified and staged, and the hook is installed the way git runs it. The
         extension-less `bin/gate` is the shape of `.githooks/commit-msg`, which the footprint
@@ -577,13 +580,13 @@ class DerivedTrailerTests(unittest.TestCase):
         skill = repo / ".claude" / "skills" / "sdlc-studio"
         skill.mkdir(parents=True)
         (skill / "scripts").symlink_to(REPO / ".claude" / "skills" / "sdlc-studio" / "scripts")
-        for rel, rid, owned in (("stories", "US0001", "src/a.py"), ("bugs", "BG0002", "bin/gate")):
+        for rel, rid, owned in units:
             folder = repo / "sdlc-studio" / rel
-            folder.mkdir(parents=True)
+            folder.mkdir(parents=True, exist_ok=True)
             (folder / f"{rid}-sample.md").write_text(
                 f"# {rid}: sample\n\n> **Status:** In Progress\n> **Affects:** {owned}\n",
                 encoding="utf-8")
-        for rel in ("src/a.py", "bin/gate"):
+        for rel in files:
             (repo / rel).parent.mkdir(exist_ok=True)
             (repo / rel).write_text("x = 1\n", encoding="utf-8")
         gitutil.git(["add", "-A"], cwd=repo)
@@ -646,6 +649,46 @@ class DerivedTrailerTests(unittest.TestCase):
             r, after = self._hook(repo, f"{subject}\n\nRefs: US0001\n")
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n")
+
+    def test_a_directory_or_glob_declaration_owns_the_files_under_it(self):
+        # Round-1 REJECT of US1133. `Affects` declares a DIRECTORY (`src/`) or a GLOB
+        # (`lib/*.py`) as often as a file; the base hook accepted the owner's `Refs:` line, and
+        # the close's own guard (`sprint.batch_repair_in_tree`) already reads such a token as
+        # covering what sits under it. Must fail on: ownership judged by the exact path only, so
+        # the owner is refused its correct `Refs:` and is written `Mentions:`; or a glob under a
+        # dot-directory (`.ci/*.sh`) mangled to `ci/*.sh` by a leading-character strip.
+        units = (("stories", "US0001", "src/"), ("stories", "US0003", "lib/*.py"),
+                 ("bugs", "BG0004", ".ci/*.sh"), ("bugs", "BG0002", "bin/gate"),
+                 ("stories", "US0005", "docs/x.md"))
+        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "docs/x.md")
+        owners = ("US0001", "US0003", "BG0004", "BG0002")
+        subject = "fix(US0001, US0003, BG0004, BG0002, US0005): under a declaration"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=files[:4], units=units, files=files)
+            # Derivation: one `Refs:` per owner, `Mentions:` for the control, never the reverse.
+            r, after = self._hook(repo, f"{subject}\n")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            for rid in owners:
+                with self.subTest(owner=rid):
+                    self.assertEqual(after.count(f"Refs: {rid}\n"), 1, after)
+                    self.assertNotIn(f"Mentions: {rid}", after)
+            self.assertEqual(after.count("Mentions: US0005\n"), 1, after)
+            self.assertNotIn("Refs: US0005", after)
+            # The owners' correct `Refs:` lines pass unchanged, as the base hook passed them ...
+            right = (f"{subject}\n\n" + "".join(f"Refs: {i}\n" for i in owners)
+                     + "Mentions: US0005\n")
+            r, after = self._hook(repo, right)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, right)
+            # ... and the non-owning control's `Refs:` is still refused, naming only it.
+            wrong = f"{subject}\n\n" + "".join(f"Refs: {i}\n" for i in (*owners, "US0005"))
+            r, after = self._hook(repo, wrong)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(r.returncode, 0, out)
+            self.assertRegex(out, r"Refs: US0005[^\n]*owns none of the staged files", out)
+            for rid in owners:
+                self.assertNotRegex(out, rf"Refs: {rid}[^\n]*owns none", out)
+            self.assertEqual(after, wrong)
 
 
 class HookInvocationHermeticityTests(unittest.TestCase):

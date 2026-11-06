@@ -737,6 +737,45 @@ class CommitMsgCheckTests(unittest.TestCase):
                         if ln.startswith('echo "A multi-id commit'))
             self.assertIn("writes the 'Refs: <id>' and 'Mentions: <id>' trailers", said)
 
+    def test_trailer_ownership_agrees_with_the_close_guard_on_every_declaration_shape(self):
+        # Round-1 REJECT of US1133 (LL0016). `sprint.batch_repair_in_tree` already rules that a
+        # DIRECTORY or GLOB `Affects` token covers what sits under it; the trailer derivation
+        # must read the same declarations the same way, or the hook refuses an owner's correct
+        # `Refs:` that the close credits it with. Driven together over one tree: a directory, a
+        # glob, a glob under a dot-directory (`.ci/*.sh`, the leading-character strip's shape)
+        # and an exact path each own a changed file, and a non-owning control owns none. Must
+        # fail on: ownership judged by the exact path only, or either rule changed alone.
+        spec = importlib.util.spec_from_file_location("sprint", SCRIPTS / "sprint.py")
+        assert spec and spec.loader
+        sprint = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sprint)
+        ef = _load()
+        declared = {311: "src/", 312: "lib/*.py", 313: ".ci/*.sh", 314: "bin/gate",
+                    315: "docs/x.md"}
+        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "docs/x.md")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], cwd=root)
+            for num, tok in declared.items():
+                _write_unit(root, "story", num, status="In Progress", affects=[tok])
+            for rel in files:
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text("x = 1\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-q", "-m", "seed"], cwd=root)
+            for rel in files[:4]:
+                (root / rel).write_text("x = 2\n", encoding="utf-8")
+            gitutil.git(["add", "-A"], cwd=root)
+            ids = [f"US{n:04d}" for n in declared]
+            close = {uid for uid, _ in sprint.batch_repair_in_tree(root, {"batch": ids})}
+            derived = ef.derive_trailers(root, " ".join(ids) + ": all five\n",
+                                         staged=list(files[:4]))
+        owners = {"US0311", "US0312", "US0313", "US0314"}
+        self.assertEqual(close, owners, "the close guard's own reading of the declarations")
+        self.assertEqual(set(derived["refs"]), close)
+        self.assertEqual(derived["mentions"], ["US0315"])
+        self.assertEqual(derived["contradicted"], [])
+
 
 class ForwardCutoffTests(unittest.TestCase):
     """F2 (critic reject): a forward cutoff (adopt_after above the highest existing id) is a

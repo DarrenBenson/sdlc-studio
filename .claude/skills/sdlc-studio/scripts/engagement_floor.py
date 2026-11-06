@@ -63,6 +63,7 @@ Read-only; pure stdlib core (git is a soft dependency: absent, the floor rests o
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import re
 import subprocess
@@ -718,7 +719,11 @@ def _repo_relative(root: Path, p: str) -> str:
             return str(Path(r).relative_to(root))
         except ValueError:
             return str(r)
-    return p.strip().lstrip("./")
+    # A literal `./` prefix only: `lstrip("./")` strips every leading `.` or `/` CHARACTER, so a
+    # path that resolves to nothing (a glob, a deleted file) under `.ci/` or `.claude/` lost its
+    # dot and matched nothing git reports.
+    p = p.strip()
+    return p[2:] if p.startswith("./") else p
 
 
 def affects_owners(repo_root: Path | str,
@@ -883,13 +888,23 @@ _TRAILER_LINE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*:[ \t]")
 _SCISSORS_RE = re.compile(r"^# -+ >8 -+$")
 
 
+def declaration_covers(path: str, declared: str) -> bool:
+    """True when one `Affects` token covers a repo-relative path: the path itself, a DIRECTORY
+    the path sits under (`src/` or `src`), or a GLOB it matches (`src/*.py`). The rule the close
+    already applies to the same declarations (`sprint.batch_repair_in_tree`), which a test drives
+    beside this one so the two cannot drift: an owner the close credits is an owner here."""
+    return (path == declared or path.startswith(declared.rstrip("/") + "/")
+            or fnmatch.fnmatch(path, declared))
+
+
 def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | None = None,
                     footprints: dict[str, set[str]] | None = None) -> dict:
     """The `Refs:` and `Mentions:` lines the staged files' ownership already states, for a
     subject naming two or more judged ids.
 
-    An id OWNS a staged file when its `Affects` declares the file or the file carries its id in
-    its own name (its artefact, its changelog fragment). Each named id no trailer accounts for gets
+    An id OWNS a staged file when its `Affects` covers the file (`declaration_covers`: the path,
+    a directory it sits under or a glob it matches) or the file carries its id in its own name
+    (its artefact, its changelog fragment). Each named id no trailer accounts for gets
     `Refs:` when it owns one and `Mentions:` when it owns none. Nothing is derived when no id the
     message names owns a staged file, nothing is staged, or git cannot be asked: the map then
     attributes the commit to nobody, and the author states it as before.
@@ -910,7 +925,8 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
     keys = {f: _repo_relative(root, f) for f in paths}
 
     def owns(rid: str) -> bool:
-        return any(k in fp.get(rid, ()) or _path_owner(f) == rid for f, k in keys.items())
+        return any(_path_owner(f) == rid or any(declaration_covers(k, d) for d in fp.get(rid, ()))
+                   for f, k in keys.items())
 
     refs, mentions = _refs_ids(body), _mentions_ids(body)
     for m in _REFS_LINE_RE.finditer(body):
