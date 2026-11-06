@@ -329,7 +329,7 @@ The appetite is resolved **once**, at plan time, most specific first: `sprint pl
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `cost.baseline_per_point` | 2500000 | Priced input-equivalent tokens per point the close compares a run against until three priced runs exist (VELOCITY.md rows with a Priced/pt figure, plus `retro.py cost-baseline add` rows); `off` records no cost issue until then |
-| `cost.agent_start_budget` | 30000 | Context tokens (input + cache write + cache read) a subagent's first call may carry before `sprint cost --anatomy` flags it with its start and this budget; the first call is judged, not the largest, and the main thread is not judged; `off` flags none |
+| `cost.agent_start_budget` | 30000 | Context tokens (input + cache write + cache read) a subagent's first call may carry before `sprint cost --anatomy` flags it with its start and this budget; the first call is judged, not the largest, and is its transcript's first whatever the run window, which decides only which subagents are judged; a subagent whose records give no per-call start reads not available; the main thread is not judged; `off` flags none |
 
 The default is this repository's own measure: two of its runs, priced from their transcripts, cost about 2.0M and 3.0M per point, and 2.5M sits between them. It describes SDLC Studio's work, not yours, so set your project's own figure. Once three priced runs exist the close uses their median and the key is not read. See `reference-sprint.md#cost-regression`.
 

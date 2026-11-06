@@ -46,6 +46,9 @@ OWN_X1 = _usage(4, 40, 700, 0, 8_000)
 #: an agent whose first call is small and whose later call is its largest (US1132 AC4)
 H5_START = _usage(5, 50, 20_000, 0, 0)
 H5_LATER = _usage(5, 50, 1_000, 0, 140_000)
+#: a start of 10,005 and one of 125,005, either side of a 100,000 budget (US1132 round 1)
+LEAN_START = _usage(5, 50, 0, 0, 10_000)
+HEAVY_START = _usage(5, 50, 0, 0, 125_000)
 
 #: q0's prompt reads as a reviewer's, and no record names q0.
 REVIEWER_WORDED_PROMPT = ("You are the independent reviewer of US0101. Review the builder's "
@@ -364,6 +367,79 @@ class CostAnatomyTests(meter._Case):
         self.assertIn("agent-b7", flagged[0])
         self.assertIn(f"{_ctx(BUILD_X):,} tokens", flagged[0])
         self.assertIn(f"{budget:,}", flagged[0])
+
+    def test_a_subagent_start_is_its_first_call_whatever_the_window(self) -> None:
+        """US1132 AC4 under BG1254's window (round-1 REJECT). MUTANTS: a subagent's start read
+        from its first call inside the open run's window rather than its transcript's first call
+        (agent-lean, which started at 10,005 before the run and grew past the budget inside it,
+        flagged; agent-heavy, which started at 125,005 before the run, missed); the window no
+        longer deciding which subagents count (agent-gone, wholly before the run, flagged)."""
+        ws = self._two_runs()
+        start = meter._live("lib.sdlc_md").parse_iso8601(ws.state()["started_at"])
+        before, inside = start - timedelta(minutes=10), start + timedelta(seconds=30)
+        for name, calls in (("lean", ((LEAN_START, before), (HEAVY_START, inside))),
+                            ("heavy", ((HEAVY_START, before), (LEAN_START, inside))),
+                            ("gone", ((HEAVY_START, before),))):
+            ws.tx._append(ws.tx.subagents / f"agent-{name}.jsonl", [
+                _assistant(f"msg_{name}_{n}", usage, [{"type": "text"}], at=at)
+                for n, (usage, at) in enumerate(calls)])
+        budget = 100_000
+        self.assertEqual((10_005, 125_005), (_ctx(LEAN_START), _ctx(HEAVY_START)))
+        (ws.root / "sdlc-studio" / ".config.yaml").write_text(
+            f"cost:\n  agent_start_budget: {budget}\n", encoding="utf-8")
+        doc = self._json(ws)
+        self.assertFalse(doc["window"]["whole_session"], doc["window"])
+        self.assertEqual([("agent-b7", _ctx(BUILD_X)), ("agent-heavy", 125_005)],
+                         sorted((o["agent"], o["start"]) for o in doc["over_start_budget"]))
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+        flagged = [ln for ln in text.splitlines() if "over the start budget" in ln]
+        self.assertEqual(2, len(flagged), text)
+        self.assertTrue(any("agent-heavy" in ln and "125,005 tokens" in ln for ln in flagged))
+        # the path beside: the whole session judges agent-gone too, at the same first calls
+        rc, out = _cli(ws, "--session", "--format", "json")
+        self.assertEqual(0, rc, out)
+        self.assertEqual([("agent-b7", _ctx(BUILD_X)), ("agent-gone", 125_005),
+                          ("agent-heavy", 125_005)],
+                         sorted((o["agent"], o["start"])
+                                for o in json.loads(out)["over_start_budget"]))
+
+    def test_a_subagent_with_no_per_call_record_reads_not_available(self) -> None:
+        """US1132 AC4 (round-1 REJECT). MUTANTS: a subagent whose records carry no message id
+        skipped silently, with no not-available line for it; the whole check reading "none
+        started over the start budget" when no subagent can be judged; an id-less subagent
+        counted as cleared or flagged."""
+        ws = self._session()
+        noid = ws.tx.subagents / "agent-n1.jsonl"
+        ws.tx._append(noid, [_assistant(None, HEAVY_START, [{"type": "text"}])])
+        (ws.root / "sdlc-studio" / ".config.yaml").write_text(
+            "cost:\n  agent_start_budget: 100000\n", encoding="utf-8")
+        doc = self._json(ws)
+        self.assertEqual(["agent-b7"], [o["agent"] for o in doc["over_start_budget"]])
+        self.assertEqual(["agent-n1"], [o["agent"] for o in doc["start_not_available"]])
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+
+        def section(rendered: str) -> str:
+            return rendered.split("Subagent starts", 1)[1].split("\n\n", 1)[0]
+        named = [ln for ln in section(text).splitlines() if "agent-n1" in ln]
+        self.assertEqual(1, len(named), text)
+        self.assertIn("not available", named[0])
+        self.assertNotIn("over the start budget", named[0])
+        # no subagent can be judged: the whole check is not available, not "none started over"
+        lib = meter._live("lib.cost_anatomy")
+        got = lib.build(ws.tx.main, [noid], {}, budget=100_000)
+        self.assertIsNone(got["over_start_budget"])
+        self.assertEqual(["agent-n1"], [o["agent"] for o in got["start_not_available"]])
+        whole = section(lib.render(got))
+        self.assertIn("not available", whole)
+        self.assertNotIn("none started", whole)
+        self.assertNotIn("no budget is configured", whole)
+        # the path beside: a harness total has no per-call record, whatever the budget
+        total = section(lib.render(lib.from_reading(
+            {"harness": "cursor", "components": meter._sum(meter.MAIN_1)})))
+        self.assertIn("not available: no per-call record exists", total)
+        self.assertNotIn("no budget is configured", total)
 
 
     def _two_runs(self):
