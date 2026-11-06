@@ -12,6 +12,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -63,10 +64,42 @@ FIX = ("def paginate(items, page, page_size):\n"
        "    start = (page - 1) * page_size\n"
        "    return items[start:start + page_size]\n")
 
+# Copilot CLI `-p --output-format json` and OpenCode `run --format json`, one model, one step.
+COPILOT_OUT = json.dumps({"type": "session.shutdown", "data": {"accountingSnapshot": {
+    "modelMetrics": {"m1": {"usage": {"inputTokens": 100, "outputTokens": 10,
+                                      "cacheReadTokens": 40, "cacheWriteTokens": 0}}}}}})
+OPENCODE_OUT = json.dumps({"type": "step_finish", "sessionID": "s-oc", "part": {"tokens": {
+    "input": 10, "output": 5, "reasoning": 0, "cache": {"read": 0, "write": 0}, "total": 15}}})
+
+# The fake reports the HOME and configuration variables it was given, and which personal copies
+# of the skill it could reach by its CLI's own documented lookup (each CLI's help and bundled
+# docs, 2026-11-06), read from that environment: never from the runner's table.
 _FAKE = """#!{python}
 import json, os, pathlib, sys
-with open(os.environ["FAKE_CLI_LOG"], "a", encoding="utf-8") as fh:
-    fh.write(json.dumps({{"argv": sys.argv, "cwd": os.getcwd()}}) + "\\n")
+env = os.environ
+home = pathlib.Path(env["HOME"])
+def on(var):
+    return env.get(var, "").lower() in ("1", "true")
+def under(var, default):
+    return pathlib.Path(env[var]) if env.get(var) else home / default
+agents, claude_home = home / ".agents" / "skills", home / ".claude" / "skills"
+opencode = [under("XDG_CONFIG_HOME", ".config") / "opencode" / d for d in ("skills", "skill")]
+if not (on("OPENCODE_DISABLE_EXTERNAL_SKILLS") or on("OPENCODE_DISABLE_CLAUDE_CODE_SKILLS")):
+    opencode.append(claude_home)
+if not on("OPENCODE_DISABLE_EXTERNAL_SKILLS"):
+    opencode.append(agents)
+roots = {{"claude": [under("CLAUDE_CONFIG_DIR", ".claude") / "skills"],
+         "codex": [under("CODEX_HOME", ".codex") / "skills", agents],
+         "copilot": [under("COPILOT_HOME", ".copilot") / "skills", agents],
+         "opencode": opencode}}.get(pathlib.Path(sys.argv[0]).name, [])
+config = {{v: env.get(v) for v in ("CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME")}}
+with open(env["FAKE_CLI_LOG"], "a", encoding="utf-8") as fh:
+    fh.write(json.dumps({{"argv": sys.argv, "cwd": os.getcwd(), "home": str(home),
+                         "config": config,
+                         "config_is_dir": {{k: bool(v) and os.path.isdir(v)
+                                           for k, v in config.items()}},
+                         "personal": [str(r / "sdlc-studio") for r in roots
+                                      if (r / "sdlc-studio" / "SKILL.md").is_file()]}}) + "\\n")
 fix = {fix!r}
 if fix:
     pathlib.Path("paginate.py").write_text(fix, encoding="utf-8")
@@ -114,10 +147,14 @@ class BenchHeadlessTests(unittest.TestCase):
         patches = (mock.patch.object(runner, "REPO_ROOT", self.repo),
                    mock.patch.dict(os.environ, {
                        "PATH": f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}",
-                       "FAKE_CLI_LOG": str(self.log)}))
+                       "FAKE_CLI_LOG": str(self.log),
+                       # An empty HOME, so the operator's own skill copies cannot refuse a run.
+                       "HOME": str(self.tmp / "home")}))
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
+        for var in ("CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME", "XDG_CONFIG_HOME"):
+            os.environ.pop(var, None)  # restored with the rest of os.environ by the patch
 
     def _fake(self, name: str, out: str, code: int = 0, fix: str = "") -> None:
         path = self.bin / name
@@ -248,6 +285,89 @@ class BenchHeadlessTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("not empty", err)
         self.assertEqual(len(self.log.read_text().splitlines()), calls)
+
+    def _calls(self) -> list[dict]:
+        if not self.log.exists():
+            return []
+        return [json.loads(line) for line in self.log.read_text().splitlines()]
+
+    # AC2: the row's skill_ref is the skill the session ran, so no personal copy may reach it.
+    def test_no_personal_copy_of_the_skill_reaches_the_session(self) -> None:
+        home, operator = self.tmp / "home", self.tmp / "operator"
+        copies = {name: root / "sdlc-studio" for name, root in (
+            ("claude", home / ".claude" / "skills"), ("codex", home / ".codex" / "skills"),
+            ("copilot", home / ".copilot" / "skills"), ("agents", home / ".agents" / "skills"),
+            ("opencode", home / ".config" / "opencode" / "skills"),
+            ("claude-set", operator / "claude" / "skills"),
+            ("codex-set", operator / "codex" / "skills"),
+            ("copilot-set", operator / "copilot" / "skills"))}
+        for copy in copies.values():
+            copy.mkdir(parents=True)
+            (copy / "SKILL.md").write_text("personal skill\n", encoding="utf-8")
+        patch = mock.patch.dict(os.environ, {
+            "HOME": str(home), "CLAUDE_CONFIG_DIR": str(operator / "claude"),
+            "CODEX_HOME": str(operator / "codex"), "COPILOT_HOME": str(operator / "copilot")})
+        patch.start()
+        self.addCleanup(patch.stop)
+        os.environ.pop("XDG_CONFIG_HOME", None)
+        harnesses = {"claude": CLAUDE_OUT, "codex": CODEX_OUT, "copilot": COPILOT_OUT,
+                     "opencode": OPENCODE_OUT}
+        for harness, out in harnesses.items():
+            self._fake(harness, out, fix=FIX)
+            # Positive control: the operator's own environment reaches a personal copy.
+            subprocess.run([str(self.bin / harness)], cwd=self.tmp, check=True,
+                           capture_output=True)
+            self.assertTrue(self._calls()[-1]["personal"], harness)
+
+        def measured(harness: str, run_id: str, arm: str = "A") -> dict:
+            calls = len(self._calls())
+            code, _, err = self._main(
+                "run", "--fixture", "brownfield-pagination", "--arm", arm, "--harness", harness,
+                "--skill-ref", self.pinned, "--run-id", run_id, "--dest",
+                str(self.tmp / f"ws-{harness}-{run_id}"), "--results", str(self.results))
+            self.assertEqual(code, 0, err)
+            (call,) = self._calls()[calls:]
+            self.assertEqual(call["home"], str(home), harness)
+            self.assertEqual(call["personal"], [], harness)
+            var = runner.CONFIG_DIR_VAR.get(harness)
+            if var:
+                private = Path(call["config"][var])
+                self.assertTrue(call["config_is_dir"][var], harness)
+                self.assertNotEqual(private, operator / harness, harness)
+                self.assertNotIn(home, private.parents, harness)
+                self.assertFalse(private.exists(), f"{harness}: {private} outlived the run")
+            row = self._rows()[-1]
+            self.assertEqual((row["harness"], row["arm"], row["skill_ref"],
+                              row["metrics_source"]), (harness, arm, self.pinned, "measured"))
+            return call
+
+        def refused(harness: str, run_id: str, copy: Path) -> None:
+            calls, rows = len(self._calls()), len(self._rows())
+            dest = self.tmp / f"ws-{harness}-{run_id}"
+            code, _, err = self._run(harness, run_id)
+            self.assertEqual(code, 1, harness)
+            self.assertIn(str(copy), err, harness)
+            self.assertEqual((len(self._calls()), len(self._rows())), (calls, rows), harness)
+            self.assertFalse(dest.exists(), harness)
+
+        # Claude Code's personal directory moves with CLAUDE_CONFIG_DIR, for arm A and arm B.
+        measured("claude", "a1")
+        measured("claude", "b1", arm="B")
+        # A copy where no variable of the harness reaches refuses the run, naming the copy.
+        refused("codex", "r1", copies["agents"])
+        refused("copilot", "r1", copies["agents"])
+        refused("opencode", "r1", copies["opencode"])
+        # OpenCode's scans of ~/.claude and ~/.agents are switched off; its own global is gone.
+        shutil.rmtree(copies["opencode"])
+        measured("opencode", "r2")
+        # With ~/.agents/skills clear, Codex and Copilot run with their own directory moved.
+        shutil.rmtree(copies["agents"])
+        measured("codex", "r2")
+        measured("copilot", "r2")
+        # OpenCode's global directory follows XDG_CONFIG_HOME where the operator sets it.
+        self.assertEqual(runner.fixed_skill_dirs("opencode", {"HOME": "/h",
+                                                              "XDG_CONFIG_HOME": "/x"})[0],
+                         Path("/x/opencode/skills"))
 
     # AC3
     def test_summary_by_fixture_arm_and_harness_with_dollars(self) -> None:

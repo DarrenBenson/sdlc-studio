@@ -245,6 +245,52 @@ HEADLESS = {
     "opencode": lambda prompt, model: ["opencode", "run", "--format", "json", "--auto",
                                        *_flag("-m", model), prompt],
 }
+#: Each harness's variable for its own configuration directory, which holds the personal skill
+#: directory it scans (`<dir>/skills`), as Copilot CLI's help, Codex CLI's bundled docs and
+#: tools/eval_run.py's worker setup name it. A run points
+#: it at a private empty directory, so a personal copy of the skill there, or wherever the
+#: operator's own value points, never reaches the session. OpenCode is absent: its
+#: OPENCODE_CONFIG_DIR adds a directory to the ones it reads rather than replacing its global one.
+CONFIG_DIR_VAR = {"claude": "CLAUDE_CONFIG_DIR", "codex": "CODEX_HOME",
+                  "copilot": "COPILOT_HOME"}
+#: Switches a CLI documents for turning its scans of other tools' personal skill directories off.
+SKILL_SCAN_OFF = {"opencode": {"OPENCODE_DISABLE_EXTERNAL_SKILLS": "1",
+                               "OPENCODE_DISABLE_CLAUDE_CODE_SKILLS": "1"}}
+SKILL_NAME = "sdlc-studio"
+
+
+def fixed_skill_dirs(harness: str, env: dict) -> list[Path]:
+    """The personal skill directories `harness` scans that no variable of its own relocates:
+    `~/.agents/skills` for Codex CLI and Copilot CLI, and OpenCode's global
+    `${XDG_CONFIG_HOME:-~/.config}/opencode/skill(s)`."""
+    home = Path(env.get("HOME") or os.path.expanduser("~"))
+    if harness in ("codex", "copilot"):
+        return [home / ".agents" / "skills"]
+    if harness == "opencode":
+        xdg = Path(env["XDG_CONFIG_HOME"]) if env.get("XDG_CONFIG_HOME") else home / ".config"
+        return [xdg / "opencode" / "skills", xdg / "opencode" / "skill"]
+    return []
+
+
+def isolate_skills(harness: str, env: dict, private: Path | None) -> dict:
+    """The CLI's environment with the operator's personal skill copies out of the session's
+    reach, so it loads only the skill `prepare` installed, and none for arm B. A harness whose
+    personal copy sits where no variable reaches is refused, naming the copy, because a row
+    from that session could not say which skill ran. `private` is the empty directory the
+    harness's configuration variable is pointed at; None checks the refusal alone."""
+    for root in fixed_skill_dirs(harness, env):
+        copy = root / SKILL_NAME
+        if copy.exists():
+            raise Refused(f"harness {harness!r}: a personal copy of the skill at {copy} would "
+                          f"load into the session beside the pinned one, and {harness} offers "
+                          f"no variable to move it; remove it to run {harness}")
+    env = dict(env)
+    if private is not None and harness in CONFIG_DIR_VAR:
+        env[CONFIG_DIR_VAR[harness]] = str(private)
+    env.update(SKILL_SCAN_OFF.get(harness, {}))
+    return env
+
+
 #: The normalised counts a row records, from `harness_usage.Usage`.
 USAGE_COUNTS = ("input", "cache_read", "cache_write", "cache_write_1h", "output", "reasoning")
 
@@ -307,7 +353,11 @@ def run_headless(fixture: str, arm: str, harness: str, skill_ref: str, run_id: s
     record a row. The row's tokens are the usage the CLI printed, normalised by
     `harness_usage.parse`; `wall_time_s` is the CLI session's own duration, scoring excluded;
     `metrics_source` is `measured`. A CLI that exits non-zero, times out or prints no usage
-    writes no row: the run is refused with the normaliser's reason."""
+    writes no row: the run is refused with the normaliser's reason. The session gets the
+    operator's HOME but, where its harness has a variable for one, a private, empty
+    configuration directory, removed when it ends, so it loads no personal copy of the skill
+    (`isolate_skills`); that directory holds no credential, so the CLI authenticates from what
+    the operator's environment exports."""
     dest = Path(dest)
     targets = skill_targets()
     skill_dir_for(harness, targets)
@@ -321,15 +371,19 @@ def run_headless(fixture: str, arm: str, harness: str, skill_ref: str, run_id: s
     exe = shutil.which(cmd[0], path=env.get("PATH"))
     if not exe:
         raise Refused(f"harness {harness!r}: {cmd[0]} is not on PATH")
+    isolate_skills(harness, env, None)  # refuse before the workspace is written
     sha = prepare_harness_workspace(fixture, arm, dest, harness, skill_ref, fixtures_dir,
                                     targets=targets)
-    start = time.monotonic()
-    try:
-        proc = subprocess.run([exe, *cmd[1:]], cwd=dest, capture_output=True, text=True,
-                              timeout=timeout, env=env, stdin=subprocess.DEVNULL, check=False)
-    except subprocess.TimeoutExpired:
-        raise Refused(f"no row written: {cmd[0]} ran past --timeout {timeout}s") from None
-    wall = round(time.monotonic() - start, 2)
+    with tempfile.TemporaryDirectory(prefix=f"bench-{harness}-config-") as private:
+        session_env = isolate_skills(harness, env, Path(private))
+        start = time.monotonic()
+        try:
+            proc = subprocess.run([exe, *cmd[1:]], cwd=dest, capture_output=True, text=True,
+                                  timeout=timeout, env=session_env, stdin=subprocess.DEVNULL,
+                                  check=False)
+        except subprocess.TimeoutExpired:
+            raise Refused(f"no row written: {cmd[0]} ran past --timeout {timeout}s") from None
+        wall = round(time.monotonic() - start, 2)
     usage = harness_usage.parse(harness, proc.stdout, exit_code=proc.returncode, model=model)
     if not usage.metered:
         raise Refused(f"no row written: {harness} {usage.reason}")
