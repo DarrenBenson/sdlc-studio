@@ -746,8 +746,8 @@ class CommitMsgCheckTests(unittest.TestCase):
         # and an exact path each own a changed file, and a non-owning control owns none. Must
         # fail on: ownership judged by the exact path only, or either rule changed alone.
         # Round-2 REJECT (BG1274): two shapes this tree's own units carry, where a second reader
-        # had disagreed with the close - a bracketed note holding a comma (CR0155's
-        # `scripts/audit.py (`_bug_underspecified`, lines ~72-83)`), which a split on every
+        # had disagreed with the close - a bracketed note holding a comma (CR0155's shape, a
+        # script path then a note naming a function and a line range), which a split on every
         # comma cut in two, and a path with a `..` segment (US0483's `scripts/../x.md`), which
         # was never resolved. A staged DELETION under a declared directory (`tmpl/`) is judged by
         # the path the index reports, as the close judges it, not re-resolved to the skill's
@@ -759,10 +759,10 @@ class CommitMsgCheckTests(unittest.TestCase):
         spec.loader.exec_module(sprint)
         ef = _load()
         declared = {311: "src/", 312: "lib/*.py", 313: ".ci/*.sh", 314: "bin/gate",
-                    316: "tool/audit.py (`_bug`, lines ~72-83)", 317: "docs/guide/../y.md",
+                    316: "tool/scan.py (`_bug`, lines ~72-83)", 317: "docs/guide/../y.md",
                     318: "tmpl/", 315: "docs/x.md"}
         skill_twin = ".claude/skills/sdlc-studio/tmpl/x.md"
-        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "tool/audit.py",
+        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "tool/scan.py",
                  "docs/y.md", "tmpl/x.md", "docs/x.md", "docs/guide/g.md", "tmpl/keep.md",
                  skill_twin)
         changed = files[:7]
