@@ -37,7 +37,11 @@ It runs one stage at a time and draws each in turn, so you review a draft and co
 moves on. The stages, in order:
 
 1. **agents** - seed the project agent-instructions (`AGENTS.md` + `CLAUDE.md`) so every tool reads
-   the same discipline.
+   the same discipline, and the lean subagent definitions `.claude/agents/sdlc-builder.md` and
+   `.claude/agents/sdlc-reviewer.md` (a `tools` line of Bash, Read, Edit, Write and Monitor, so a
+   lane or review agent starts without the skill and tool catalogues it never uses). Each file is
+   drafted only if absent: a project that already has its own `AGENTS.md` still gets the missing
+   definitions, and a definition you have edited is left untouched and reported skipped.
 2. **prd** - the Product Requirements: created from a conversation on a greenfield repo, or generated
    from the existing code on a brownfield one.
 3. **trd** - the Technical Requirements, generated from the PRD.
@@ -104,6 +108,8 @@ Initialises SDLC Studio for a project by:
    - Seed the agent-instructions file if absent (see Onboarding step 2): copy
      `templates/agent-instructions.md` → `AGENTS.md` and
      `templates/agent-instructions.CLAUDE.md` → `CLAUDE.md`, then fill placeholders.
+   - Seed the subagent definitions if absent: `templates/agents/sdlc-builder.md` and
+     `templates/agents/sdlc-reviewer.md` → `.claude/agents/`, verbatim.
    - Write the default `definition-of-ready.md` / `definition-of-done.md` (the
      project's editable ready/done bars - see `reference-decisions.md#dor-dod`)
 

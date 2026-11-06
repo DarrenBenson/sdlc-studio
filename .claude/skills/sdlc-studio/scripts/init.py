@@ -66,8 +66,15 @@ def tree_dirs() -> list[str]:
 DIRS = tree_dirs()
 INDEX_TYPES = index_types()
 SINGLETONS = ["prd", "trd", "tsd", "personas"]
-AGENT_FILES = [("agent-instructions.md", "AGENTS.md"),
-               ("agent-instructions.CLAUDE.md", "CLAUDE.md")]
+# The instruction files every tool reads; the agents stage is done when these are authored.
+INSTRUCTION_FILES = [("agent-instructions.md", "AGENTS.md"),
+                     ("agent-instructions.CLAUDE.md", "CLAUDE.md")]
+# The lean subagent definitions a builder or reviewer is spawned as: a restricted tool line, so a
+# lane starts without the skill listing and deferred-tool catalogue it never uses. Drafted beside
+# the instructions; a project's edited copy is never overwritten without `force`.
+AGENT_DEFINITIONS = [("agents/sdlc-builder.md", ".claude/agents/sdlc-builder.md"),
+                     ("agents/sdlc-reviewer.md", ".claude/agents/sdlc-reviewer.md")]
+AGENT_FILES = INSTRUCTION_FILES + AGENT_DEFINITIONS
 # The placeholders init can derive without judgement. Everything else is left visibly
 # unfilled - see `_fill_known`, which owns the substitution and its postcondition.
 KNOWN_FIELDS = ("project_name", "language", "date", "last_updated")
@@ -423,9 +430,10 @@ def stage_output_exists(root: Path | str, stage: str) -> bool:
         # ordinary brownfield repo that has one and no CLAUDE.md, so the stage was skipped and
         # CLAUDE.md never drafted - the fail-OPEN direction this fix opened and has to close.
         # And an AGENTS.md of framework boilerplate is not this stage's output: without the
-        # doctrine the project's agents never learn the process.
+        # doctrine the project's agents never learn the process. The subagent definitions are
+        # drafted by the stage but do not hold it open: they carry no placeholders to fill.
         return (all(_authored(root, root / dst, SKILL / "templates" / src)
-                    for src, dst in AGENT_FILES)
+                    for src, dst in INSTRUCTION_FILES)
                 and carries_doctrine(root))
     if stage in _SINGLETON_STAGES:
         tmpl, rel = _singleton(stage)
@@ -494,9 +502,11 @@ def reset_onboarding(root: Path | str) -> dict:
 
 def stage_agents(root: Path | str, force: bool = False) -> dict:
     """The agents stage: draft the tool-neutral agent instructions (`AGENTS.md` + the `CLAUDE.md`
-    import) from the shipped starters, so every agent that touches the repo inherits the discipline.
-    Idempotent - an existing file is left for the operator to edit, never overwritten unless
-    `force`. Returns what was drafted vs left in place."""
+    import) and the `sdlc-builder` / `sdlc-reviewer` subagent definitions (`.claude/agents/`) from
+    the shipped starters, so every agent that touches the repo inherits the discipline.
+    Idempotent per file - an existing file is left for the operator to edit, never overwritten
+    unless `force`, and a missing one is drafted beside it. Returns what was drafted vs left in
+    place."""
     root = Path(root)
     starters = [(SKILL / "templates" / src, dst) for src, dst in AGENT_FILES]
     # A starter missing from the installed skill was skipped with a bare `continue`: the file
@@ -507,7 +517,7 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
     missing = [src for (st, _), (src, _) in zip(starters, AGENT_FILES) if not st.exists()]
     if missing:
         raise RuntimeError(
-            "init: the agent-instructions starter(s) " + ", ".join(missing)
+            "init: the agent starter(s) " + ", ".join(missing)
             + " are missing from the installed skill (templates/) - the agents stage cannot "
               "draft what it promises. Reinstall the skill rather than onboarding a repo whose "
               "agents would inherit no instructions.")
@@ -518,12 +528,14 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
         if p.exists() and not force:
             skipped.append(dst)
             continue
+        p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(seed_text(st, fields), encoding="utf-8")
         created.append(dst)
     # A pre-existing AGENTS.md is the project's own and is never rewritten, so the stage OFFERS
     # the doctrine it lacks rather than ticking a file the project's agents learn nothing from.
     todo = []
-    unreadable = {dst: why for _src, dst in AGENT_FILES if (why := _unreadable(root / dst))}
+    unreadable = {dst: why for _src, dst in INSTRUCTION_FILES
+                  if (why := _unreadable(root / dst))}
     for dst, why in unreadable.items():
         fix = "re-save it as UTF-8" if why == "not valid UTF-8" else "make it a readable file"
         todo.append(f"{dst} cannot be read ({why}) - {fix} so the doctrine check can read it")
@@ -753,7 +765,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
     #. Self-contained in sdlc-studio/ - never touches the project's own root .gitignore.
     _write(f"{SDLC}/.gitignore", RUNTIME_STATE_GITIGNORE)
 
-    # 4. agent-instructions (tool-neutral starters; copied verbatim if absent)
+    # 4. agent-instructions and the subagent definitions (shipped starters; seeded if absent)
     for src, dst in AGENT_FILES:
         st = SKILL / "templates" / src
         if st.exists():

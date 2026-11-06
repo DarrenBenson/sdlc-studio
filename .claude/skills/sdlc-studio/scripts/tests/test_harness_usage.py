@@ -22,6 +22,11 @@ Pinned here:
   are checked against the normalised figure, a gap above 5% is named, and a check that cannot
   be made is named as unchecked rather than passed (AC4).
 
+BG1244 adds: a usage container that is not a JSON object is unmetered with a reason naming it,
+never an `AttributeError` (AC1); an absent reasoning count is None and unreported, never 0
+(AC2); a session that used two models is named for the one that carried the most tokens (AC3);
+and the Codex reading of `input_tokens` cites the evidence that decides it (AC4).
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py -q
 """
@@ -243,6 +248,133 @@ class HarnessUsageTests(unittest.TestCase):
             self.assertEqual(parse("opencode", edge).checks[0].status, status, uncached)
         self.assertEqual(parse("codex", _text("codex.jsonl")).checks, ())
 
+
+    def test_a_non_object_usage_container_is_unmetered_not_raised(self):
+        """Each shape is a real capture with one container replaced by a JSON value that is not
+        an object: the eight BG1244 found raising `AttributeError`, then the four containers
+        beside them read the same way."""
+        def claude(change):
+            doc = json.loads(_text("claude.json"))
+            change(doc)
+            return json.dumps(doc)
+
+        def flat(change):
+            def edit(doc):
+                del doc["modelUsage"]
+                change(doc["usage"])
+            return edit
+
+        def stream(name, kind, change):
+            events = _lines(name)
+            change([e for e in events if e["type"] == kind][-1])
+            return _jsonl(events)
+
+        def snapshot(change):
+            return stream("copilot.jsonl", "session.usage_checkpoint",
+                          lambda e: change(e["data"]["accountingSnapshot"]))
+
+        sonnet = "claude-sonnet-5.5"
+        shapes = [
+            ("claude", claude(lambda d: d.update(modelUsage={"m": 5})), "modelUsage.m"),
+            ("claude", claude(lambda d: d.update(modelUsage=[1])), "modelUsage"),
+            ("claude", claude(lambda d: (d.pop("modelUsage"), d.update(usage="x"))), "usage"),
+            ("copilot", snapshot(lambda s: s["modelMetrics"].update({sonnet: "x"})),
+             f"modelMetrics.{sonnet}"),
+            ("copilot", stream("copilot.jsonl", "session.usage_checkpoint",
+                               lambda e: e.update(data=[1])), "session.usage_checkpoint.data"),
+            ("copilot", snapshot(lambda s: s["tokenDetails"].update(input=4)),
+             "accountingSnapshot.tokenDetails.input"),
+            ("opencode", stream("opencode.jsonl", "step_finish", lambda e: e.update(part="x")),
+             "step_finish.part"),
+            ("opencode", stream("opencode.jsonl", "step_finish",
+                                lambda e: e["part"]["tokens"].update(cache=[1])), "tokens.cache"),
+            # The four containers beside the eight, which raised the same way, then two that
+            # were read as absent: a `modelUsage` array, and `tokenDetails` itself.
+            ("claude", claude(flat(lambda u: u.update(cache_creation="x"))),
+             "usage.cache_creation"),
+            ("claude", claude(flat(lambda u: u.update(output_tokens_details=[1]))),
+             "usage.output_tokens_details"),
+            ("copilot", stream("copilot.jsonl", "session.usage_checkpoint",
+                               lambda e: e["data"].update(accountingSnapshot=[1])),
+             "data.accountingSnapshot"),
+            ("copilot", snapshot(lambda s: s["modelMetrics"][sonnet].update(usage="x")),
+             f"modelMetrics.{sonnet}.usage"),
+            ("claude", claude(lambda d: d.update(modelUsage=[])), "modelUsage"),
+            ("copilot", snapshot(lambda s: s.update(tokenDetails=[1])),
+             "accountingSnapshot.tokenDetails"),
+        ]
+        for harness, text, container in shapes:
+            with self.subTest(harness=harness, container=container):
+                got = parse(harness, text)
+                self.assertFalse(got.metered)
+                self.assertEqual(got.unmetered, NO_USAGE)
+                self.assertTrue(got.reason.endswith(f": {container} is not a JSON object"),
+                                got.reason)
+                self.assertEqual([getattr(got, c) for c in COUNTS], [None] * len(COUNTS))
+        # The positive control: each builder with no edit still meters.
+        self.assertTrue(parse("claude", claude(lambda d: None)).metered)
+        self.assertTrue(parse("copilot", snapshot(lambda s: None)).metered)
+        self.assertTrue(parse("opencode", stream("opencode.jsonl", "step_finish",
+                                                 lambda e: None)).metered)
+
+    def test_an_absent_reasoning_count_is_unreported_not_zero(self):
+        """Each capture with its reasoning field removed: the reasoning is None and named in
+        `unreported`, while the output it would sit inside is read as captured."""
+        claude = json.loads(_text("claude.json"))
+        del claude["modelUsage"]["claude-haiku-5-5"]["thinkingTokens"]
+        flat = json.loads(_text("claude.json"))
+        del flat["modelUsage"]
+        del flat["usage"]["output_tokens_details"]["thinking_tokens"]
+        # An absent container reads as empty, so with no details at all it is still unreported.
+        bare = json.loads(json.dumps(flat))
+        del bare["usage"]["output_tokens_details"]
+        codex = _lines("codex.jsonl")
+        del next(e for e in codex if e["type"] == "turn.completed")["usage"][
+            "reasoning_output_tokens"]
+        copilot = _lines("copilot.jsonl")
+        del next(e for e in copilot if e["type"] == "session.usage_checkpoint")["data"][
+            "accountingSnapshot"]["modelMetrics"]["claude-sonnet-5.5"]["usage"]["reasoningTokens"]
+        cases = [("claude", json.dumps(claude), 35), ("claude", json.dumps(flat), 35),
+                 ("claude", json.dumps(bare), 35),
+                 ("codex", _jsonl(codex), 5), ("copilot", _jsonl(copilot), 4)]
+        for harness, text, output in cases:
+            with self.subTest(harness=harness):
+                got = parse(harness, text, model="m")
+                self.assertTrue(got.metered, got.reason)
+                self.assertIsNone(got.reasoning)
+                self.assertEqual(got.unreported, ("reasoning",))
+                self.assertEqual(got.output, output)
+
+    def test_the_session_model_is_the_one_with_most_tokens(self):
+        """Two models in one Claude Code session: the second carries more tokens in all, but
+        fewer input and output tokens, so a model chosen by order, by input or by output is
+        the wrong one. Either order names the same model, and the counts are the two summed."""
+        haiku = json.loads(_text("claude.json"))["modelUsage"]["claude-haiku-5-5"]
+        opus = dict(haiku, inputTokens=1, outputTokens=1, thinkingTokens=0,
+                    cacheReadInputTokens=40000, cacheCreationInputTokens=0,
+                    cacheCreationEphemeral1hInputTokens=0)
+        for order in (("claude-haiku-5-5", "claude-opus-5-5"),
+                      ("claude-opus-5-5", "claude-haiku-5-5")):
+            doc = json.loads(_text("claude.json"))
+            doc["modelUsage"] = {name: {"claude-haiku-5-5": haiku, "claude-opus-5-5": opus}[name]
+                                 for name in order}
+            with self.subTest(order=order):
+                got = parse("claude", json.dumps(doc))
+                self._expect(got, model="claude-opus-5-5", model_source="output",
+                             input=3, cache_read=51382, cache_write=17126, output=36,
+                             reasoning=31)
+
+    def test_the_codex_docstring_names_the_total_tokens_evidence(self):
+        """14524 input beside 12288 cached fits either reading; the rollout's `total_tokens`,
+        input plus output, decides it, and the docstring must cite that."""
+        doc = harness_usage.__doc__
+        codex = doc[doc.index("* Codex CLI:"):doc.index("* Copilot CLI:")]
+        self.assertIn("total_tokens", codex)
+        self.assertIn("14529", codex)
+        raw = next(e for e in _lines("codex.jsonl") if e["type"] == "turn.completed")["usage"]
+        self.assertEqual(raw["input_tokens"] + raw["output_tokens"], 14529)
+        self.assertIn(str(raw["input_tokens"] + raw["cached_input_tokens"]
+                          + raw["output_tokens"]), codex)
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,14 @@ Pinned here:
 * no store, an empty store or a malformed token value is tokens None with a reason (AC4);
 * `sprint.py plan --write` stamps a baseline naming opencode and the database (AC5).
 
+BG1240 adds:
+
+* a database present at the default path that SQLite cannot read (not a database, or mode 000)
+  is a candidate at the store step, never left out so Claude is chosen by default (AC1);
+* a readable database holding only other directories' sessions is still not a candidate (AC2);
+* `read_db` on a cleanly closed WAL database leaves its bytes unchanged, through a read-only
+  open, and the module docstring says so without claiming the write-ahead log is untouched (AC3).
+
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py
 """
@@ -285,6 +293,84 @@ class OpenCodeReaderTests(_Fixture):
         self.assertEqual(len(opened), 2, "each store() call opens the database once")
         self.assertEqual(self.db.read_bytes(), before)
         self.assertFalse(self.mark.exists())
+
+    def unsignalled(self, claude: bool) -> dict:
+        """The selection's environment with no harness named or signalled, and a Claude
+        transcript for this repo when `claude` is set."""
+        transcripts = self.home / ("claude" if claude else "none")
+        if claude:
+            transcripts.mkdir(exist_ok=True)
+            (transcripts / "session.jsonl").write_text("{}\n", "utf-8")
+        return {token_meters.HARNESS_ENV: None, run_state.TRANSCRIPTS_ENV: str(transcripts)}
+
+    def test_an_unreadable_store_is_a_candidate(self) -> None:
+        """BG1240 AC1. Mutant: `store()` keeping `except sqlite3.Error: return None` for a file
+        that exists, so the selection falls to Claude by default with no warning."""
+        def junk() -> None:
+            self.db.parent.mkdir(parents=True, exist_ok=True)
+            self.db.write_bytes(b"not a database at all" * 100)
+
+        def sealed() -> None:
+            make_db(self.db, str(self.root), str(self.other))
+            self.db.chmod(0)
+            self.addCleanup(self.db.chmod, stat.S_IRUSR | stat.S_IWUSR)
+        cases = {"bytes that are not a database": junk, "mode 000": sealed}
+        for label, unreadable in cases.items():
+            with self.subTest(store=label):
+                if label == "mode 000" and os.geteuid() == 0:
+                    self.skipTest("root reads a mode 000 file, so it is not unreadable")
+                for leftover in self.data.glob("opencode.db*"):
+                    leftover.chmod(stat.S_IRUSR | stat.S_IWUSR)
+                    leftover.unlink()
+                unreadable()
+                with self.env(**self.unsignalled(claude=False)):
+                    alone = run_state.session_tokens(self.root)
+                self.assertEqual(alone[token_meters.HARNESS], "opencode", alone)
+                self.assertIn("could not be", alone["selected_by"])
+                self.assertIsNone(alone["tokens"])
+                self.assertIn(str(self.db), alone["reason"])
+                self.assertIn("could not be read", alone["reason"])
+                with self.env(**self.unsignalled(claude=True)):
+                    both = run_state.session_tokens(self.root)
+                self.assertIsNone(both["tokens"])
+                self.assertIsNone(both[token_meters.HARNESS], both)
+                self.assertEqual(both["candidates"], ["claude", "opencode"])
+                self.assertIn("opencode (its store could not be", both["reason"])
+        self.assertFalse(self.mark.exists())
+
+    def test_a_readable_store_of_other_directories_is_not_a_candidate(self) -> None:
+        """BG1240 AC2. Mutant: a fix that raises, or reports a candidate, for every database that
+        exists, readable or not."""
+        make_db(self.db, str(self.other), str(self.other))
+        with self.env(**self.unsignalled(claude=False)):
+            self.assertIsNone(meter_opencode.store(self.root, os.environ))
+            alone = run_state.session_tokens(self.root)
+        self.assertEqual(alone[token_meters.HARNESS], "claude", alone)
+        self.assertIn("the default", alone["selected_by"])
+        with self.env(**self.unsignalled(claude=True)):
+            both = run_state.session_tokens(self.root)
+        self.assertEqual(both[token_meters.HARNESS], "claude", both)
+        self.assertNotIn("candidates", both)
+        self.assertIn(str(self.home / "claude"), both["selected_by"])
+        self.assertNotIn(str(self.db), both["selected_by"])
+
+    def test_a_read_leaves_the_database_bytes_unchanged(self) -> None:
+        """BG1240 AC3. Mutants: the docstring keeping that the write-ahead log is not written, or
+        `connect` dropping `mode=ro` or `PRAGMA query_only`. A read-write open that only reads
+        leaves a closed WAL database's bytes as they were too, so the open itself is pinned: the
+        spy writes on every open that permits it, so the bytes then change as well."""
+        make_db(self.db, str(self.root), str(self.other))
+        self.assertFalse(Path(f"{self.db}-wal").exists(), "the fixture is closed cleanly")
+        before = self.db.read_bytes()
+        with self.opens() as opened:
+            got = meter_opencode.read_db(self.db, self.root)
+        self.assertEqual(got["tokens"], TOKENS, got.get("reason"))
+        self.assert_read_only(opened, "read_db")
+        self.assertEqual(self.db.read_bytes(), before, "the database's own bytes are unchanged")
+        doc = " ".join(meter_opencode.__doc__.split())
+        self.assertNotIn("nor its write-ahead log", doc)
+        for said in ("never writes the database", "`-wal`", "`-shm`"):
+            self.assertIn(said, doc)
 
     def test_legacy_json_store_reads_the_same_basis(self) -> None:
         """AC3. Mutant: returning not attributable whenever the database is absent, or reading

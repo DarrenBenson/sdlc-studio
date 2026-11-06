@@ -622,9 +622,9 @@ layout and its rule for each count and each malformed record; this page keeps wh
   the `session.usage_checkpoint` running totals. The cache is taken out of `inputTokens`,
   reasoning is not added to output, every cache write prices at five minutes and two models read
   as `mixed`. Set `SDLC_STUDIO_HARNESS=copilot` when another harness keeps a store for this repo.
-- **Codex CLI 0.160** (`lib/meter_codex.py`): `~/.codex/state_5.sqlite`, summing every thread
+- **Codex CLI 0.160** (`lib/meter_codex.py`): `state_5.sqlite` in `CODEX_HOME`, else `~/.codex`, summing every thread
   whose working directory is the workspace or under it, worktrees and spawned agents included,
-  from the last `token_count` in each rollout; the cached input moves out of input to `cache_read`.
+  from the last `token_count` in each rollout; the cached input moves out of input to `cache_read`. The store is never written, though a read may leave SQLite's `-wal` and `-shm` files beside it.
 - **OpenCode** (`lib/meter_opencode.py`): `OPENCODE_DB`, else
   `$XDG_DATA_HOME/opencode/opencode.db`, else `~/.local/share/opencode/opencode.db`, else the
   legacy JSON tree under `storage/`, starting no `opencode` process. It folds each message's

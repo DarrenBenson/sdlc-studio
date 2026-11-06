@@ -803,5 +803,84 @@ class AgentInstructionsSkillPathTests(unittest.TestCase):
         self.assertNotIn("foreign-skill-path", rules)
 
 
+class AgentDefinitionStageTests(unittest.TestCase):
+    """US1131 AC2: the agents stage drafts the lean `sdlc-builder` and `sdlc-reviewer` subagent
+    definitions into a consuming project's `.claude/agents/`, from the INSTALLED templates.
+
+    MUTANTS this must fail on: `AGENT_FILES` not listing the definitions; the stage writing
+    without creating `.claude/agents/`; an edited copy overwritten on a re-run without `force`;
+    the definitions skipped because the project already has its own `AGENTS.md`; the stage
+    reading the templates from anywhere but the installed skill; `help/init.md` silent."""
+
+    DEFINITIONS = (".claude/agents/sdlc-builder.md", ".claude/agents/sdlc-reviewer.md")
+
+    def _installed_skill(self, into: Path) -> Path:
+        """A copy of the shipped starters standing in for an installed skill, each definition
+        marked so a draft read from this repository's templates instead is told apart."""
+        tmpl = into / "templates"
+        (tmpl / "agents").mkdir(parents=True)
+        for name in ("agent-instructions.md", "agent-instructions.CLAUDE.md"):
+            (tmpl / name).write_bytes((init.SKILL / "templates" / name).read_bytes())
+        for rel in self.DEFINITIONS:
+            name = Path(rel).name
+            body = (init.SKILL / "templates" / "agents" / name).read_text(encoding="utf-8")
+            (tmpl / "agents" / name).write_text(body + f"\nInstalled copy of {name}.\n",
+                                                encoding="utf-8")
+        return into
+
+    def test_the_agents_stage_drafts_the_definitions_into_a_project(self) -> None:
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as fake:
+            skill = self._installed_skill(Path(fake))
+            with mock.patch.object(init, "SKILL", skill):
+                # a consuming project outside this repository, with no .claude/ at all
+                root = Path(d) / "consumer"
+                root.mkdir()
+                r = init.stage_agents(root)
+                for rel in self.DEFINITIONS:
+                    self.assertIn(rel, r["created"])
+                    want = (skill / "templates" / "agents" / Path(rel).name).read_text(
+                        encoding="utf-8")
+                    self.assertEqual(want, (root / rel).read_text(encoding="utf-8"),
+                                     f"{rel} is not the installed template")
+
+                # a re-run leaves the definition the project edited untouched and names it skipped
+                edited = root / self.DEFINITIONS[0]
+                edited.write_text("---\nname: sdlc-builder\n---\nours\n", encoding="utf-8")
+                r2 = init.stage_agents(root)
+                self.assertEqual([], r2["created"])
+                for rel in self.DEFINITIONS:
+                    self.assertIn(rel, r2["skipped"])
+                self.assertEqual("---\nname: sdlc-builder\n---\nours\n",
+                                 edited.read_text(encoding="utf-8"))
+                # positive control: force is the one route that rewrites it
+                self.assertIn(self.DEFINITIONS[0], init.stage_agents(root, force=True)["created"])
+                self.assertIn("Installed copy of sdlc-builder.md", edited.read_text(encoding="utf-8"))
+
+                # a project that already has its own AGENTS.md still gets the missing definitions
+                own = Path(d) / "has-agents-md"
+                own.mkdir()
+                (own / "AGENTS.md").write_text("# Ours\n", encoding="utf-8")
+                r3 = init.stage_agents(own)
+                self.assertIn("AGENTS.md", r3["skipped"])
+                self.assertEqual("# Ours\n", (own / "AGENTS.md").read_text(encoding="utf-8"))
+                for rel in self.DEFINITIONS:
+                    self.assertIn(rel, r3["created"])
+                    self.assertTrue((own / rel).is_file(), rel)
+
+                # plain `init` seeds them too, through the same table
+                fresh = Path(d) / "fresh"
+                fresh.mkdir()
+                init.init(fresh)
+                for rel in self.DEFINITIONS:
+                    self.assertTrue((fresh / rel).is_file(), f"init did not seed {rel}")
+
+        # help/init.md says so, in the agents stage it describes
+        text = (init.SKILL / "help" / "init.md").read_text(encoding="utf-8")
+        stage = text[text.index("1. **agents**"):text.index("2. **prd**")]
+        for rel in self.DEFINITIONS:
+            self.assertIn(rel, " ".join(stage.split()), "help/init.md's agents stage omits " + rel)
+        self.assertIn("already has", stage)
+
+
 if __name__ == "__main__":
     unittest.main()

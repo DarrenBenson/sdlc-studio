@@ -22,12 +22,14 @@ output, adds it no second time, and one whose `total` fits neither is refused, s
 would then overlap. Cache reads are `cache_read`, apart. OpenCode does not split a cache write
 by duration, so each is booked at five minutes, and reasoning is priced as output.
 
-The database is opened with a `mode=ro` URI and `PRAGMA query_only` (`connect`), so neither it
-nor its write-ahead log is written; only SQLite's shared-memory index (`-shm`) is touched, as by
-any reader of a WAL database. No `opencode` process is started: `opencode stats` is never run.
-No store, a store holding no session for this repo or no count above zero, a store that cannot
-be read, or a message whose `tokens` is malformed gives tokens None with the reason, never zero
-and never a figure with that message left out.
+The database is opened with a `mode=ro` URI and `PRAGMA query_only` (`connect`), so a read
+never writes the database's own bytes. As for any reader of a WAL database, the read-only open
+may create the write-ahead log (`-wal`) and shared-memory index (`-shm`) files beside it. No
+`opencode` process is started: `opencode stats` is never run. No store, a store holding no
+session for this repo or no count above zero, a store that cannot be read, or a message whose
+`tokens` is malformed gives tokens None with the reason, never zero and never a figure with that
+message left out. The store probe, `store`, raises on a database present that SQLite cannot
+read, so `token_meters` reports OpenCode as a candidate rather than leaving it out.
 """
 from __future__ import annotations
 
@@ -223,19 +225,18 @@ def read_legacy(storage: Path, repo_root: Path) -> dict:
 def store(repo_root: Path, env: Mapping) -> str | None:
     """This repo's OpenCode store, or None: the database, else the legacy tree, when it holds a
     session in this repo's directory. A store of other directories' sessions is not this
-    repo's, so it does not make OpenCode a candidate."""
+    repo's, so it does not make OpenCode a candidate. RAISES the `sqlite3.Error` that opening
+    or querying a database file present raises: a store present but unreadable may be this
+    run's, so `token_meters` reports it as a candidate."""
     db = db_path(env)
     if db is not None and db.is_file():
         dirs = _dirs(repo_root)
+        con = connect(db)
         try:
-            con = connect(db)
-            try:
-                hit = con.execute(f"SELECT 1 FROM session WHERE directory IN "
-                                  f"({', '.join('?' * len(dirs))}) LIMIT 1", dirs).fetchone()
-            finally:
-                con.close()
-        except sqlite3.Error:
-            return None
+            hit = con.execute(f"SELECT 1 FROM session WHERE directory IN "
+                              f"({', '.join('?' * len(dirs))}) LIMIT 1", dirs).fetchone()
+        finally:
+            con.close()
         return str(db) if hit else None
     storage = data_dir(env) / STORAGE
     if not (storage / "message").is_dir():

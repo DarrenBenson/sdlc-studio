@@ -72,6 +72,12 @@ accountable for satisfying.
 "being collaborative" - while the quiet user goal loses. The tell: a sprint of features no persona
 asked for, each defended by someone in the room.
 
+## Hand-back *(review render)*
+
+- Run every command in the foreground, or wait for it to finish before you hand back.
+- Hand back in at most three lines: the unit, the outcome (the verdict), the hand-in path.
+- Send no progress message unless you are blocked.
+
 ## Tensions
 
 - vs **Engineering**: Lena's "users need it this sprint" against Dani's "this needs a refactor first."

@@ -28,7 +28,9 @@ How each CLI forms "input", from the sessions captured on 2026-11-06 (the fixtur
   as inside, the second would be 6k short. `cacheWriteTokens` is taken as apart too: assumed,
   since every capture wrote none. No reasoning count and no model are printed.
 * Codex CLI: `turn.completed.usage`, summed over turns (assumed per turn: one was captured).
-  `input_tokens` holds `cached_input_tokens`: observed, 14524 input with 12288 cached.
+  `input_tokens` holds `cached_input_tokens`: observed, since the session's rollout records
+  `total_tokens` 14529, which is the 14524 input plus 5 output; read apart, with the 12288
+  cached added, it would be 26817.
   `cache_write_input_tokens` is taken as inside `input_tokens` and `reasoning_output_tokens` as
   inside `output_tokens`: assumed, both were 0. The stream names no model.
 * Copilot CLI: the last `session.usage_checkpoint` or `session.shutdown`, whose
@@ -45,9 +47,10 @@ The `model` keyword fills the model where the output names none, and `model_sour
 supplied it.
 
 A non-zero exit (the caller's `exit_code`, or Copilot's own `exitCode`), output carrying no
-usage, and a line that does not parse as a JSON object, or a count that is not one, are each
-unmetered: `metered` False, `unmetered` naming which (`NONZERO_EXIT`, `NO_USAGE`,
-`UNPARSEABLE`), `reason` saying why, and every count None, never zero.
+usage (a usage or accounting container that is not a JSON object included), and a line that
+does not parse as a JSON object, or a count that is not one, are each unmetered: `metered`
+False, `unmetered` naming which (`NONZERO_EXIT`, `NO_USAGE`, `UNPARSEABLE`), `reason` saying
+why, and every count None, never zero.
 
 Where the output carries the harness's own total, the normalised figure is checked against it
 (`checks`): Claude Code's `total_cost_usd` against the normalised counts priced from `prices`,
@@ -156,6 +159,15 @@ def _events(text: str) -> list[dict]:
     return events
 
 
+def _container(value, where: str) -> dict:
+    """`value` as a JSON object, an absent one (None) as empty; any other value is no usage."""
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise _no_usage(f"{where} is not a JSON object")
+    return value
+
+
 def _last(events: list[dict], *types: str) -> dict | None:
     return next((e for e in reversed(events) if e.get("type") in types), None)
 
@@ -177,9 +189,11 @@ def _claude(events, prices):
     if not result or not (result.get("modelUsage") or result.get("usage")):
         raise _no_usage("no result carrying usage or modelUsage")
     per_model = {}
-    if result.get("modelUsage"):
-        for name, mu in result["modelUsage"].items():
+    models = _container(result.get("modelUsage"), "modelUsage")
+    if models:
+        for name, mu in models.items():
             where = f"modelUsage.{name}"
+            mu = _container(mu, where)
             per_model[name] = {
                 "input": _need(mu, "inputTokens", where),
                 "cache_read": _need(mu, "cacheReadInputTokens", where),
@@ -188,16 +202,17 @@ def _claude(events, prices):
                 "output": _need(mu, "outputTokens", where),
                 "reasoning": _opt(mu, "thinkingTokens", where)}
     else:
-        u = result["usage"]
-        split = u.get("cache_creation") or {}
+        u = _container(result["usage"], "usage")
+        split = _container(u.get("cache_creation"), "usage.cache_creation")
         per_model[None] = {
             "input": _need(u, "input_tokens", "usage"),
             "cache_read": _need(u, "cache_read_input_tokens", "usage"),
             "cache_write": _need(u, "cache_creation_input_tokens", "usage"),
             "cache_write_1h": _opt(split, "ephemeral_1h_input_tokens", "usage.cache_creation"),
             "output": _need(u, "output_tokens", "usage"),
-            "reasoning": _opt(u.get("output_tokens_details") or {}, "thinking_tokens",
-                              "usage.output_tokens_details")}
+            "reasoning": _opt(_container(u.get("output_tokens_details"),
+                                         "usage.output_tokens_details"),
+                              "thinking_tokens", "usage.output_tokens_details")}
     counts = _sum(per_model.values())
     model = _largest(per_model)
     checks = ()
@@ -271,14 +286,16 @@ def _copilot(events, _prices):
     code = (result or {}).get("exitCode")
     if code not in (None, 0):
         raise _Refused(NONZERO_EXIT, f"the session reports exit status {code!r}")
-    record = _last(events, "session.usage_checkpoint", "session.shutdown")
-    snapshot = ((record or {}).get("data") or {}).get("accountingSnapshot") or {}
+    record = _last(events, "session.usage_checkpoint", "session.shutdown") or {}
+    data = _container(record.get("data"), f"{record.get('type')}.data")
+    snapshot = _container(data.get("accountingSnapshot"), "data.accountingSnapshot")
     metrics = snapshot.get("modelMetrics")
     if not isinstance(metrics, dict) or not metrics:
         raise _no_usage("no session.usage_checkpoint or session.shutdown carrying modelMetrics")
     per_model = {}
     for name, m in metrics.items():
-        u, where = (m or {}).get("usage") or {}, f"modelMetrics.{name}.usage"
+        where = f"modelMetrics.{name}.usage"
+        u = _container(_container(m, f"modelMetrics.{name}").get("usage"), where)
         read, write = _need(u, "cacheReadTokens", where), _need(u, "cacheWriteTokens", where)
         per_model[name] = {"input": _uncached(_need(u, "inputTokens", where), read, write,
                                               "inputTokens"),
@@ -287,9 +304,10 @@ def _copilot(events, _prices):
                            "reasoning": _opt(u, "reasoningTokens", where)}
     counts = _sum(per_model.values())
     checks = ()
-    details = snapshot.get("tokenDetails")
-    if isinstance(details, dict) and details:
-        booked = [(d or {}).get("tokenCount") for d in details.values()]
+    details = _container(snapshot.get("tokenDetails"), "accountingSnapshot.tokenDetails")
+    if details:
+        booked = [_container(d, f"accountingSnapshot.tokenDetails.{kind}").get("tokenCount")
+                  for kind, d in details.items()]
         if all(_count(b) for b in booked):
             checks = (_check("session accounting", sum(booked), _token_total(counts)),)
         else:
@@ -301,12 +319,12 @@ def _copilot(events, _prices):
 
 def _opencode(events, _prices):
     steps = [e for e in events if e.get("type") == "step_finish"]
-    tokens = [((e.get("part") or {}).get("tokens")) for e in steps]
+    tokens = [_container(e.get("part"), "step_finish.part").get("tokens") for e in steps]
     if not steps or not all(isinstance(t, dict) for t in tokens):
         raise _no_usage("no step_finish event carrying tokens")
     per_step, totals = [], []
     for t in tokens:
-        cache = t.get("cache") or {}
+        cache = _container(t.get("cache"), "tokens.cache")
         reasoning = _need(t, "reasoning", "tokens")
         per_step.append({"input": _need(t, "input", "tokens"),
                          "cache_read": _need(cache, "read", "tokens.cache"),

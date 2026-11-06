@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Codex CLI's token reader, the module `token_meters` loads for the Codex harness.
 
-Codex CLI 0.160.0 keeps its state under `HOME_REL` in the user's home. Its state store,
+Codex CLI 0.160.0 keeps its state in `HOME_ENV` when it is set and not empty, else under
+`HOME_REL` in the user's home. Its state store,
 `STATE_DB` (SQLite, in WAL mode), holds a `threads` row per session: the session's working
 directory `cwd`, the `rollout_path` of the JSONL rollout the session appends its events to, its
 `model`, and `tokens_used`, the session's input + output with the cached input inside it. Spawned
@@ -23,9 +24,9 @@ under it included, and a spawned thread there is counted with the rest. A missin
 unreadable store, a store with no thread for the workspace, or a thread that has spent tokens
 whose rollout holds no usable count, is tokens None with the reason, never zero; a thread whose
 `tokens_used` is 0 and whose rollout holds no usable count has spent nothing, and adds nothing.
-The store is never opened for writing: every
-open is a `mode=ro` URI, and a store another process has locked is waited on for
-`TIMEOUT_SECONDS` at most. Reasons name an error by its type, never by its message.
+The store is never written: every open is a `mode=ro` URI, though SQLite may create the store's
+`-wal` and `-shm` files beside it, as any reader of a WAL database may, and leave them. A store
+another process has locked is waited on for `TIMEOUT_SECONDS` at most. Reasons name an error by its type, never by its message.
 """
 from __future__ import annotations
 
@@ -37,7 +38,9 @@ from pathlib import Path
 
 from .token_meters import CACHE_READ
 
-#: Codex's home, under the user's HOME.
+#: The variable that names Codex's home, as codex-cli reads it.
+HOME_ENV = "CODEX_HOME"
+#: Codex's home under the user's HOME, when `HOME_ENV` is unset or empty.
 HOME_REL = ".codex"
 #: The state store codex-cli 0.160.0 writes in its home.
 STATE_DB = "state_5.sqlite"
@@ -49,7 +52,11 @@ TIMEOUT_SECONDS = 1.0
 
 
 def codex_home(env: Mapping) -> Path:
-    """Where Codex keeps its state for the user whose HOME `env` names."""
+    """Where Codex keeps its state: `HOME_ENV` when `env` sets it and it is not empty, else
+    `HOME_REL` under the HOME `env` names."""
+    named = env.get(HOME_ENV)
+    if named:
+        return Path(named)
     return Path(env.get("HOME") or str(Path.home())) / HOME_REL
 
 
