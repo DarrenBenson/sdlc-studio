@@ -3,7 +3,7 @@
   "report_id": "RPT0027",
   "run_id": "RUN-01M6RZQZ",
   "retro_id": "RETRO0141",
-  "generated_at": "2026-11-06T22:32:18Z",
+  "generated_at": "2026-11-06T23:33:51Z",
   "window_end": "2026-11-06T22:32:18Z",
   "signature": null,
   "sections": [
@@ -48,7 +48,7 @@
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "88689566c44693dc5f47335765dd9a3d8e4536ed",
+          "value": "06eac03d7abcf2fea129fa925bae2e78746aa0eb",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -68,12 +68,12 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 40,
+            "value": 41,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 40,
+            "value": 41,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -83,7 +83,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "16 of 16 delivered unit(s)",
+            "value": "17 of 17 delivered unit(s)",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -110,7 +110,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 11 of 16 unit(s) planned or added and not dropped that carry both",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 11 of 17 unit(s) planned or added and not dropped that carry both",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -176,7 +176,7 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 7450080,
+            "value": 7636332,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
@@ -186,12 +186,12 @@
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.83x",
+            "value": "0.81x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 15 delegated total(s) supplied are not added",
+            "value": "the whole run: forecast over 17 of 17 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 15 delegated total(s) supplied are not added",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -208,7 +208,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 1113757,
+            "value": 1086592,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -218,7 +218,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the Priced cost row over the 40 point(s) of the 16 delivered unit(s), in priced input-equivalent tokens per point",
+            "value": "the Priced cost row over the 41 point(s) of the 17 delivered unit(s), in priced input-equivalent tokens per point",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -262,7 +262,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": "$2.96",
+            "value": "$2.89",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -272,7 +272,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the Dollar cost row over the 40 point(s) of the 16 delivered unit(s); price table effective 2026-11-06",
+            "value": "the Dollar cost row over the 41 point(s) of the 17 delivered unit(s); price table effective 2026-11-06",
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -923,6 +923,47 @@
             "source": "sdlc-studio/bugs/BG1274-us1133-did-not-converge-in-review-round-2.md",
             "label": "estimated"
           }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1278",
+            "source": "sdlc-studio/bugs/BG1278-bg1274-s-parity-test-fixture-names-the-retired.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1278 --delegated-minutes M`"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1278 --delegated-minutes M`"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1278 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1278-bg1274-s-parity-test-fixture-names-the-retired.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
         }
       ]
     },
@@ -952,12 +993,12 @@
         },
         "added_delivered_units": {
           "key": "added_delivered_units",
-          "value": 5,
+          "value": 6,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "added_points": {
           "key": "added_points",
-          "value": 9,
+          "value": 10,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "dropped_units": {
@@ -982,13 +1023,13 @@
         },
         "added_units": {
           "key": "added_units",
-          "value": 5,
+          "value": 6,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "points_delivered": {
           "key": "points_delivered",
-          "value": 40,
-          "source": "sdlc-studio/bugs/BG1240-us0988-s-opencode-meter-treats-a-present-but.md, sdlc-studio/bugs/BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md, sdlc-studio/bugs/BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md, sdlc-studio/bugs/BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md, sdlc-studio/bugs/BG1242-us1123-s-dollar-report-re-prices-an-unsigned.md, sdlc-studio/stories/US1129-cut-agents-md-to-7-000-chars-and.md, sdlc-studio/stories/US1131-ship-sdlc-builder-and-sdlc-reviewer-agent-definitions.md, sdlc-studio/bugs/BG1252-a-lane-run-session-that-used-two-models.md, sdlc-studio/bugs/BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md, sdlc-studio/stories/US1132-spawn-lanes-and-reviews-with-the-lean-definitions.md, sdlc-studio/stories/US1135-price-the-non-claude-models-the-meters-read.md, sdlc-studio/bugs/BG1257-bg1246-s-locked-store-test-bounds-a-duration.md, sdlc-studio/bugs/BG1258-us1130-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1259-the-forge-s-lint-job-has-been-red.md, sdlc-studio/bugs/BG1273-us1133-made-engagement-floor-py-a-writer-without.md, sdlc-studio/bugs/BG1274-us1133-did-not-converge-in-review-round-2.md"
+          "value": 41,
+          "source": "sdlc-studio/bugs/BG1240-us0988-s-opencode-meter-treats-a-present-but.md, sdlc-studio/bugs/BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md, sdlc-studio/bugs/BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md, sdlc-studio/bugs/BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md, sdlc-studio/bugs/BG1242-us1123-s-dollar-report-re-prices-an-unsigned.md, sdlc-studio/stories/US1129-cut-agents-md-to-7-000-chars-and.md, sdlc-studio/stories/US1131-ship-sdlc-builder-and-sdlc-reviewer-agent-definitions.md, sdlc-studio/bugs/BG1252-a-lane-run-session-that-used-two-models.md, sdlc-studio/bugs/BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md, sdlc-studio/stories/US1132-spawn-lanes-and-reviews-with-the-lean-definitions.md, sdlc-studio/stories/US1135-price-the-non-claude-models-the-meters-read.md, sdlc-studio/bugs/BG1257-bg1246-s-locked-store-test-bounds-a-duration.md, sdlc-studio/bugs/BG1258-us1130-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1259-the-forge-s-lint-job-has-been-red.md, sdlc-studio/bugs/BG1273-us1133-made-engagement-floor-py-a-writer-without.md, sdlc-studio/bugs/BG1274-us1133-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1278-bg1274-s-parity-test-fixture-names-the-retired.md"
         }
       },
       "rows": [
@@ -1502,6 +1543,33 @@
           "unit_rounds": {
             "key": "unit_rounds",
             "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1278",
+            "source": "sdlc-studio/bugs/BG1278-bg1274-s-parity-test-fixture-names-the-retired.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1278-bg1274-s-parity-test-fixture-names-the-retired.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - D0426: the push gate's rename guard refused BG1274's fixture; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
             "source": "sdlc-studio/reviews/critic-verdicts.md"
           }
         }
@@ -2184,7 +2252,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": 16,
+            "value": 19,
             "source": "git log"
           },
           "dora_mapping": {
@@ -2199,7 +2267,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - 16 commit(s) on main inside the run window",
+            "value": "git history - 19 commit(s) on main inside the run window",
             "source": "git log"
           }
         },
@@ -2211,7 +2279,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "4h 13m",
+            "value": "5h 15m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2226,7 +2294,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 16 commit(s)",
+            "value": "git history - first to last of 19 commit(s)",
             "source": "git log"
           }
         },
@@ -2653,6 +2721,7 @@
       "not_measured": null
     }
   ],
+  "findings_window_end": "2026-11-06T23:33:51Z",
   "record_paths": "portable",
   "token_ratio": "every-delivered-unit-delegated",
   "restore_pairing": "next-success-after-failure",
@@ -2848,5 +2917,5 @@
   },
   "price_table_rule": "replayed-and-digested",
   "premium_usd": "per-request-dollars",
-  "fingerprint": "c7e8849ff8c4a8f5"
+  "fingerprint": "17a047f494e68304"
 }

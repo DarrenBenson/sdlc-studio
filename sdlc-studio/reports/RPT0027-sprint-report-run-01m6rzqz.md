@@ -7,7 +7,7 @@ Run seven's cost features hold in every harness, and every consuming agent start
 **Verdict: Judged partial** - Run seven's cost features now hold: all seven hardening bugs are Fixed and the non-Claude models are priced (US1135), and every agent starts leaner (AGENTS.md at 6,580 chars, the lean builder and reviewer definitions at about 16k start context against 34k). Commits got only partly leaner: the self-written trailers landed after a carry (US1133, fixed in-run as BG1274), the quiet commit path (US1134) went to 6.4 under D0419, and Copilot's token billing (CR0685) and the pricing gaps (BG1266) are carried.
 
 > **Run:** 2026-11-06T17:42:55Z to 2026-11-06T22:32:18Z (4.8h)
-> **Verified on:** 88689566c44693dc5f47335765dd9a3d8e4536ed   **Fingerprint:** c7e8849ff8c4a8f5
+> **Verified on:** 06eac03d7abcf2fea129fa925bae2e78746aa0eb   **Fingerprint:** 17a047f494e68304
 
 ## Estimates
 
@@ -18,14 +18,14 @@ line with no ratio. Ratio is actual over forecast.
 
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
-| Points | 40 | 40 | 1.0x | 16 of 16 delivered unit(s) |
-| Minutes | 181.0 | 819.4 | 4.53x | measured active minutes (spans or agent minutes) against their forecast, over the 11 of 16 unit(s) planned or added and not dropped that carry both |
+| Points | 41 | 41 | 1.0x | 17 of 17 delivered unit(s) |
+| Minutes | 181.0 | 819.4 | 4.53x | measured active minutes (spans or agent minutes) against their forecast, over the 11 of 17 unit(s) planned or added and not dropped that carry both |
 | Wall-clock span | not forecast | 289.4 | no ratio | the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared |
 | Priced cost | not forecast | 44,550,286 | no ratio | priced input-equivalent tokens, the run's headline cost, each component times its weight: input + output + cache write 6,209,549 (input 3,590 x1, output 1,754,886 x5, cache write 5m 4,055,443 x1.25, cache write 1h 395,630 x2, cache read 299,117,027 x0.1); the sum is the Tokens row; read from the main thread and every subagent transcript, once per message |
-| Tokens | 7,450,080 | 6,209,549 | 0.83x | the whole run: forecast over 16 of 16 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 15 delegated total(s) supplied are not added |
-| Priced per point | not forecast | 1,113,757 | no ratio | the Priced cost row over the 40 point(s) of the 16 delivered unit(s), in priced input-equivalent tokens per point |
+| Tokens | 7,636,332 | 6,209,549 | 0.81x | the whole run: forecast over 17 of 17 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 15 delegated total(s) supplied are not added |
+| Priced per point | not forecast | 1,086,592 | no ratio | the Priced cost row over the 41 point(s) of the 17 delivered unit(s), in priced input-equivalent tokens per point |
 | Dollar cost | not forecast | $118.38 | no ratio | estimated US dollars: each model's own components in the Priced cost row times that model's list prices; price table effective 2026-11-06; covers 100.0% of the priced tokens |
-| Dollars per point | not forecast | $2.96 | no ratio | the Dollar cost row over the 40 point(s) of the 16 delivered unit(s); price table effective 2026-11-06 |
+| Dollars per point | not forecast | $2.89 | no ratio | the Dollar cost row over the 41 point(s) of the 17 delivered unit(s); price table effective 2026-11-06 |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The
@@ -50,6 +50,7 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | BG1259 | $0.4584 estimated | 5.8 | NOT MEASURED - 0 of its 1 tagged agent(s) reported minutes, so its minutes are unknown - an agent's minutes are recorded with its `--delegated-tokens` as `--delegated-minutes M` when it reports, and cannot be added afterwards | 186,252 | 43,940 agent tokens | 133,295 priced |
 | BG1273 | NOT MEASURED - no agent returned for it was priced from its own transcript | 5.8 | NOT MEASURED - no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1273 --delegated-minutes M` | 186,252 | NOT MEASURED - no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1273 --delegated-minutes M` | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1273 --agent A` |
 | BG1274 | $1.84 estimated | 17.5 | NOT MEASURED - 0 of its 1 tagged agent(s) reported minutes, so its minutes are unknown - an agent's minutes are recorded with its `--delegated-tokens` as `--delegated-minutes M` when it reports, and cannot be added afterwards | 558,756 | 133,991 agent tokens | 585,300 priced |
+| BG1278 | NOT MEASURED - no agent returned for it was priced from its own transcript | 5.8 | NOT MEASURED - no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1278 --delegated-minutes M` | 186,252 | NOT MEASURED - no In Progress span and no agent total tagged to it - record one with `retro.py accuracy --delegated-tokens N --delegated-unit BG1278 --delegated-minutes M` | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1278 --agent A` |
 
 ## Delivered to plan
 
@@ -57,14 +58,14 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | --- | --- | --- |
 | Planned | 14 | 40 |
 | Delivered of the plan | 11 | 31 |
-| Added mid-run and delivered | 5 of 5 added | 9 |
+| Added mid-run and delivered | 6 of 6 added | 10 |
 | Dropped | 3 | 9 |
 | Carried undelivered | 0 | 0 |
 
 Points here are the sizes the plan recorded: a unit resized since keeps its planned size and
 shows its current size below, and an added unit is sized when it is added. Added units are work
 outside the plan and are never counted as delivering it. Points delivered at their current
-size, plan and added together: 40.
+size, plan and added together: 41.
 
 | Unit | Planned points | Points | Outcome | Review rounds |
 | --- | --- | --- | --- | --- |
@@ -87,6 +88,7 @@ size, plan and added together: 40.
 | BG1259 | 1 | 1 | added - D0420: the forge Lint job is red on a bandit false positive; delivered | 2 |
 | BG1273 | 1 | 1 | added - D0421: the push gate's confinement sweep refused engagement_floor.py; delivered | 1 |
 | BG1274 | 3 | 3 | added - D0422: carries US1133; the live hook still refuses correct Refs on two declaration shapes; delivered | 2 |
+| BG1278 | 1 | 1 | added - D0426: the push gate's rename guard refused BG1274's fixture; delivered | 1 |
 
 ## Known issues handed over
 
@@ -148,8 +150,8 @@ part's share of the role's priced cost; context is input + cache write + cache r
 
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
-| Deployment frequency | 16 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 16 commit(s) on main inside the run window |
-| Lead time for changes | 4h 13m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 16 commit(s) |
+| Deployment frequency | 19 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window | on demand | git history - 19 commit(s) on main inside the run window |
+| Lead time for changes | 5h 15m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 19 commit(s) |
 | Change failure rate | NOT MEASURED - no forge run data | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | no push-triggered CI run is readable for this run window |
 | Time to restore | NOT MEASURED - no forge run data | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | no push-triggered CI run is readable for this run window |
 

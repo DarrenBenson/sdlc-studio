@@ -21,7 +21,8 @@
     "BG1258",
     "BG1259",
     "BG1273",
-    "BG1274"
+    "BG1274",
+    "BG1278"
   ],
   "plan": "sdlc-studio/.local/sprint-plan.json",
   "handoff": null,
@@ -1670,7 +1671,16 @@
       }
     }
   ],
-  "reopened": [],
+  "reopened": [
+    {
+      "at": "2026-11-06T22:48:32Z",
+      "run_id": "RUN-01M6RZQZ",
+      "from_outcome": "running",
+      "was_ended_at": null,
+      "report": "RPT0027",
+      "reason": "The push gate's full suite refused the close commit bca8b1e6: BG1274's parity-test fixture names the retired module audit.py, which test_readiness.py's rename guard forbids in shipped files. The repair changes the tree RPT0027 describes, so it is made inside the run and the run re-closed."
+    }
+  ],
   "batch_changes": [
     {
       "action": "add",
@@ -1719,6 +1729,19 @@
       "id": "BG1274",
       "at": "2026-11-06T20:47:08Z",
       "reason": "D0422: carries US1133; the live hook still refuses correct Refs on two declaration shapes"
+    },
+    {
+      "action": "add",
+      "id": "BG1278",
+      "at": "2026-11-06T22:48:38Z",
+      "reason": "D0426: the push gate's rename guard refused BG1274's fixture"
+    },
+    {
+      "action": "add",
+      "id": "BG1278",
+      "at": "2026-11-06T22:48:45Z",
+      "reason": "D0426: the push gate's rename guard refused BG1274's fixture",
+      "note": "already in batch"
     }
   ],
   "rulings": [
@@ -1884,6 +1907,12 @@
         "planned_points": 3,
         "forecast_tokens": 558756,
         "forecast_minutes": 17.5,
+        "added": true
+      },
+      "BG1278": {
+        "planned_points": 1,
+        "forecast_tokens": 186252,
+        "forecast_minutes": 5.8,
         "added": true
       }
     },
@@ -2059,7 +2088,8 @@
     "BG1258": 0,
     "BG1259": 0,
     "BG1273": 0,
-    "BG1274": 0
+    "BG1274": 0,
+    "BG1278": 0
   },
   "sprint_goal_verdict": {
     "verdict": "partial",
@@ -2070,11 +2100,18 @@
       "at": "2026-11-06T22:17:35Z",
       "outstanding": 0,
       "stages": []
+    },
+    {
+      "at": "2026-11-06T23:19:35Z",
+      "outstanding": 1,
+      "stages": [
+        "installed-copy"
+      ]
     }
   ],
   "close_known_issues": [],
   "close_not_measured": [],
-  "close_tree": "56441f657488507c8b8603e195c9cb7202313ec3",
+  "close_tree": "4b34cf7af8f4307cdf980a3e12d5ead6ce9d8641",
   "report_gate_clear": [
     "BG1240",
     "BG1242",
@@ -2088,12 +2125,13 @@
     "BG1259",
     "BG1273",
     "BG1274",
+    "BG1278",
     "US1129",
     "US1131",
     "US1132",
     "US1135"
   ],
-  "verified_sha": "88689566c44693dc5f47335765dd9a3d8e4536ed",
+  "verified_sha": "06eac03d7abcf2fea129fa925bae2e78746aa0eb",
   "ci_runs": {
     "source": "gh run list",
     "runs": []
@@ -2159,10 +2197,13 @@
     "BG1274": [
       "f3e6fee2e3424fb5",
       "d3a366a4d441dd77"
+    ],
+    "BG1278": [
+      "ac554395dbc4f4f3"
     ]
   },
   "report_discharged": [],
   "report": "RPT0027",
-  "report_fingerprint": "c7e8849ff8c4a8f5",
+  "report_fingerprint": "17a047f494e68304",
   "report_window_end": "2026-11-06T22:32:18Z"
 }

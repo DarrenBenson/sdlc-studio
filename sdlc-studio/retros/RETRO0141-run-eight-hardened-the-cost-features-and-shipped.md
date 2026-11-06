@@ -68,19 +68,16 @@
 | BG1257 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG1258 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | BG1259 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| BG1273 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| BG1274 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
+| BG1278 | - | - | - | **UNFORECAST** (no plan-time forecast recorded; no telemetry token record) | - | - | - | - |
 | **Batch (rated units only)** | **0** | **0** | **0** | - | **-** | | **-** | - |
 
-**0 of 16 unit(s) measured; 13 of 16 forecast at plan time.**
+**0 of 19 unit(s) measured; 13 of 19 forecast at plan time.**
 
-**Priced cost: 44,550,286 priced input-equivalent tokens**, 1,237,508 per point over 36 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $118.38, $3.29 per point, covering 100.0% of the priced tokens; price table effective 2026-11-06. Each component is its count times its weight.
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
-- input: 3,590 x1
-- output: 1,754,886 x5
-- cache write 5m: 4,055,443 x1.25
-- cache write 1h: 395,630 x2
-- cache read: 299,117,027 x0.1
-
-**Sprint tokens/point: 172,487** (6,209,549 tokens over 36 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+**Sprint tokens/point: 151,452** (6,209,549 tokens over 41 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
 **Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
@@ -88,9 +85,9 @@
 
 Review passes - read from the verdict ledger:
 
-  code review: 21 pass(es) over 16 unit(s), 7 rejected
+  code review: 25 pass(es) over 19 unit(s), 8 rejected
 Unmeasured: BG1240, BG1244, BG1245, BG1246, BG1242, US1129, US1130, US1131, BG1252, BG1254, US1132, US1133, US1135. They are excluded from the batch ratio - an unmeasured unit is not evidence that the estimate was right.
-Unforecast: BG1257, BG1258, BG1259. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
+Unforecast: BG1257, BG1258, BG1259, BG1273, BG1274, BG1278. No plan-time forecast was recorded for them, so they are excluded too. The estimate is NOT re-derived from today's constants: a number computed at judgement time, by the model being judged, is not a prediction.
 No unit in this batch is rated, so this sprint says nothing about the estimator's accuracy.
 
 Forecast by `TOKENS_PER_POINT=186252`, recorded at plan time. OUT-OF-SAMPLE: forecast by the constants in force, on a sprint they were not fitted to. This is the only kind of row that tells you anything.
