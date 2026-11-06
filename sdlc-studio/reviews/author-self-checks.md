@@ -150,3 +150,5 @@
 | US1126 | builder-US1126-repair | 2026-11-06 | TRUE 50, FALSE 0, UNVERIFIABLE 5 | killed 31, survived 0 | 3cb9edcec5b6e3c9 at 4950f9681d01 |
 | US1123 | builder-US1123-repair2 | 2026-11-06 | TRUE 50, FALSE 0, UNVERIFIABLE 4 | killed 25, survived 2 | 112f80bc0b75d85c at a9b13121e943 |
 | BG1238 | builder-BG1238 | 2026-11-06 | TRUE 16, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 1 | c89295e3c6d96019 at a5df01de5a3f |
+| BG1238 | orchestrator-BG1238-repair | 2026-11-06 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 1 | f68770a7b1c4700e at 822afd5b1f47 |
+| BG1255 | orchestrator-BG1255 | 2026-11-06 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 8a9272e4ada47100 at 4abb10c02f97 |

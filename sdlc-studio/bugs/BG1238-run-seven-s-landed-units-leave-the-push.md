@@ -1,6 +1,6 @@
 # BG1238: Run seven's landed units leave the push gate red: reference-sprint.md is over its ceiling and two environment-scrub sites are unregistered
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, tools/tests/test_skill_tests_env.py, tools/check_budgets.py, tools/tests/test_check_budgets.py, changelog.d/BG1238.md
@@ -26,8 +26,10 @@ Bring `reference-sprint.md` to its ceiling by tightening or moving prose (the pe
 
 - [ ] **AC1** `reference-sprint.md` fits its recorded ceiling without the tolerance, and the ceiling is not what was raised to fit it.
   - **Verify:** pytest tools/tests/test_check_budgets.py::ReferenceSprintCeilingTests
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC2** Every site that scrubs the git environment, `lib/lanes.py` and `tools/bench/runner.py` included, is registered with what pins it, and the registry has no rotted entry.
   - **Verify:** pytest tools/tests/test_skill_tests_env.py::ScrubSiteSweepTests
+  - **Verified:** yes (2026-11-06)
 
 ## Revision History
 

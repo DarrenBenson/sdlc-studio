@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 228 |
+| Open | 229 |
 | In Progress | 0 |
-| Fixed | 851 |
+| Fixed | 853 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1253** |
+| **Total** | **1256** |
 
 ## All Bugs
 
@@ -313,7 +313,7 @@
 | [BG1235](BG1235-run-six-s-round-2-and-lane-accept.md) | Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1236](BG1236-run-six-s-landings-left-five-repo-wide.md) | Run six's landings left five repo-wide census tests red, which the push gate's full suite refused | Fixed | High | 2026-11-05 | 2026-11-05 |
 | [BG1237](BG1237-orchestration-frictions-batch-add-takes-an-id-with.md) | Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item | Open | Low | 2026-11-05 | 2026-11-05 |
-| [BG1238](BG1238-run-seven-s-landed-units-leave-the-push.md) | Run seven's landed units leave the push gate red: reference-sprint.md is over its ceiling and two environment-scrub sites are unregistered | Open | High | 2026-11-06 | 2026-11-06 |
+| [BG1238](BG1238-run-seven-s-landed-units-leave-the-push.md) | Run seven's landed units leave the push gate red: reference-sprint.md is over its ceiling and two environment-scrub sites are unregistered | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1239](BG1239-us0987-s-copilot-meter-leaves-its-git-root.md) | US0987's Copilot meter leaves its git-root-over-cwd preference unpinned and counts `includes_subagents: False` on trust | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1240](BG1240-us0988-s-opencode-meter-treats-a-present-but.md) | US0988's OpenCode meter treats a present but unreadable store as absent, against the token-meter contract, and its docstring says a read leaves the write-ahead log alone | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1241](BG1241-us1122-s-price-table-leaves-ten-defensive-branches.md) | US1122's price table leaves ten defensive branches unpinned, promises a date format its parser does not hold to, and prices a bare `cost()` call without the project's overrides | Open | Low | 2026-11-06 | 2026-11-06 |
@@ -329,6 +329,9 @@
 | [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1252](BG1252-a-lane-run-session-that-used-two-models.md) | A lane run session that used two models is priced entirely at the rate of the model with the most tokens | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1253](BG1253-lib-lanes-py-clears-only-7-of-the.md) | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1254](BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md) | sprint cost --anatomy reads the whole session, not the open run's window, so it cannot price one run inside a long-lived session | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1255](BG1255-us1123-s-signed-page-test-runs-git-without.md) | US1123's signed-page test runs git without the confined environment, so the push gate's unconfined-git sweep is red | Fixed | High | 2026-11-06 | 2026-11-06 |
+| [BG1256](BG1256-test-lane-run-py-runs-git-unconfined-through.md) | test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it | Open | Medium | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 
