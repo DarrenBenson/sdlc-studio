@@ -1,13 +1,19 @@
-"""Unit tests for tools/check_budgets.py - recording ceilings, reporting drift (US0657, US0658).
+"""Unit tests for tools/check_budgets.py - recording ceilings, reporting drift (US0657, US0658),
+and the size budgets on the always-loaded files (US1129).
 
 Run from the repo root:
     python3 -m unittest discover -s tools/tests
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import math
+import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -265,6 +271,85 @@ class DriftTests(unittest.TestCase):
         self.assertEqual(500, self.cb.SKILL_MD_BUDGET,
                          "SKILL.md's ceiling moved - the router's size is the reason it is a "
                          "router, and a section added past the ceiling trades that away")
+
+
+class AlwaysLoadedBudgetTests(unittest.TestCase):
+    """US1129 AC3-AC4: AGENTS.md by chars, SKILL.md by estimated tokens and description length."""
+
+    def setUp(self) -> None:
+        self.cb = _load(ROOT / "tools/check_budgets.py")
+
+    def _run(self, d: Path) -> tuple[int, str]:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+            rc = self.cb.main(["--root", str(d)])
+        return rc, err.getvalue()
+
+    def _tree(self, d: Path, *, agents: str | None = None, skill_md: str = "# S\n") -> None:
+        skill = d / ".claude/skills/sdlc-studio"
+        skill.mkdir(parents=True, exist_ok=True)
+        (skill / "SKILL.md").write_text(skill_md, encoding="utf-8")
+        if agents is not None:
+            (d / "AGENTS.md").write_text(agents, encoding="utf-8")
+
+    def test_agents_md_over_budget_is_refused_naming_its_size(self) -> None:
+        """AC3. MUTANTS: never read AGENTS.md; read it in lines (one line of 7,001 chars passes
+        a line count); refuse AT the budget; refuse a tree with no AGENTS.md, such as a hook-test
+        fixture (BG1226's regression); a budget constant above 7,000; the lane's rule naming no
+        always-loaded file."""
+        budget = self.cb.AGENTS_MD_BUDGET
+        self.assertLessEqual(budget, 7000)
+        cases = {"one line, one over": ("x" * (budget + 1), 1),
+                 "many lines, one over": (("y" * 9 + "\n") * (budget // 10) + "zz", 1),
+                 "at the budget": ("x" * budget, 0),
+                 "many lines, at the budget": (("y" * 9 + "\n") * (budget // 10), 0),
+                 "no AGENTS.md": (None, 0)}
+        for name, (agents, want) in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as t:
+                self._tree(Path(t), agents=agents)
+                rc, err = self._run(Path(t))
+                self.assertEqual(want, rc, err)
+                if want:
+                    self.assertIn(f"AGENTS.md: {len(agents)} chars > {budget}", err)
+        # the lane's rule as the hook states it, through `--list`, which runs no lane
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        listing = subprocess.run([str(ROOT / ".githooks/pre-commit"), "--list"], cwd=ROOT,
+                                 capture_output=True, text=True, env=env, timeout=60,
+                                 check=False).stdout
+        rule = next((ln.split("\t", 1)[1] for ln in listing.splitlines()
+                     if ln.split("\t", 1)[0] == "budgets" and "\t" in ln), "")
+        self.assertTrue(rule, f"the pre-commit hook lists no budgets lane rule:\n{listing}")
+        for name in ("AGENTS.md", "SKILL.md"):
+            self.assertIn(name, rule, f"the budgets lane's rule does not name {name}")
+        self.assertEqual([], self.cb.always_loaded_faults(ROOT), "the shipped tree is over budget")
+
+    def test_skill_md_token_and_description_budgets_refuse(self) -> None:
+        """AC4. MUTANTS: count SKILL.md in lines only (one long line passes); a description cap
+        above 600; refuse AT either budget; refuse a SKILL.md with no frontmatter; the shipped
+        description over 600 chars or without its `NOT for:` clause or `audit --profile repo`."""
+        self.assertLessEqual(self.cb.SKILL_DESCRIPTION_BUDGET, 600)
+        tokens, ratio = self.cb.SKILL_MD_TOKEN_BUDGET, self.cb.CHARS_PER_TOKEN
+        at = int(tokens * ratio)                       # the most chars that estimate at the budget
+        self.assertEqual(tokens, math.ceil(at / ratio))
+        cases = {"one line over the token estimate": ("x" * (at + 1), 1, f"~{tokens + 1} tokens"),
+                 "at the token estimate": ("x" * at, 0, ""),
+                 "a description of 601 chars": ('---\nname: s\ndescription: "' + "d" * 601
+                                                + '"\n---\n# S\n', 1, "601 chars > 600"),
+                 "a description of 600 chars": ('---\nname: s\ndescription: "' + "d" * 600
+                                                + '"\n---\n# S\n', 0, ""),
+                 "an unquoted description over": ("---\nname: s\ndescription: " + "d" * 650
+                                                  + "\n---\n", 1, "650 chars > 600"),
+                 "no frontmatter": ("# S\n", 0, "")}
+        for name, (skill_md, want, says) in cases.items():
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as t:
+                self._tree(Path(t), skill_md=skill_md)
+                rc, err = self._run(Path(t))
+                self.assertEqual(want, rc, err)
+                self.assertIn(says, err)
+        desc = self.cb.skill_description((SKILL / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertLessEqual(len(desc), 600, desc)
+        for clause in ("NOT for:", "audit --profile repo"):
+            self.assertIn(clause, desc, f"the shipped description lost {clause!r}")
 
 
 class ReferenceSprintCeilingTests(unittest.TestCase):

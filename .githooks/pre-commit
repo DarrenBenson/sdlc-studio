@@ -266,8 +266,8 @@ budgets_lane() {
   return "$rc"
 }
 run "budgets" \
-  "each reference-*.md stays under its declared line ceiling (keeps load cost bounded), and the generated docs match the tree: docgen surface --check when a skill script is staged, docgen references --check and reading-guides --check when a reference-*.md or help/ file is staged" \
-  "for a ceiling, shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment); for docgen drift, regenerate, then stage what it rewrote: python3 $skill/docgen.py surface && python3 $skill/docgen.py references && python3 $skill/docgen.py reading-guides" \
+  "the always-loaded files stay inside their size budgets (AGENTS.md in chars; SKILL.md in lines, estimated tokens and description chars), each reference-*.md stays under its declared line ceiling (keeps load cost bounded), and the generated docs match the tree: docgen surface --check when a skill script is staged, docgen references --check and reading-guides --check when a reference-*.md or help/ file is staged" \
+  "for an always-loaded file, move detail out to the page it points at (AGENTS.md to CONTRIBUTING.md, SKILL.md to a reference-*.md); for a ceiling, shrink the file, or raise its ceiling in tools/check_budgets.py deliberately (with a rationale comment); for docgen drift, regenerate, then stage what it rewrote: python3 $skill/docgen.py surface && python3 $skill/docgen.py references && python3 $skill/docgen.py reading-guides" \
   -- budgets_lane -- python3 tools/check_budgets.py
 { [ -n "${docgen_verbs// /}" ] && [ -z "${docgen_partial:-}" ]; } \
   || lane budgets printf '  %snote%s budgets - docgen checks skipped: %s\n' "$Y" "$N" "$docgen_skip"

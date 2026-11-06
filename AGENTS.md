@@ -1,247 +1,109 @@
 # AGENTS.md
 
-Guidance for coding agents working on this repository. Claude Code reads this via the
-`@AGENTS.md` import in [CLAUDE.md](CLAUDE.md); Codex, Copilot, Cursor, Gemini and others
-read it directly.
-
-**This file is always loaded. Keep it short enough to be read, and put nothing here that a
-command already prints.** The pre-commit hook names every guard it runs, the rule it
-enforces, the offending line and the fix, so this file does not restate them.
+Guidance for coding agents here; Claude Code reads it via `@AGENTS.md` in [CLAUDE.md](CLAUDE.md).
+It is loaded on every call, so it holds nothing a command prints and is held to 7,000 chars;
+the detail is in [CONTRIBUTING.md](CONTRIBUTING.md#agent-detail-moved-from-agentsmd).
 
 ## Start here, every session
 
-Do these four before acting, including after a context reset or compaction. They take
-under a minute and each one has cost a real sprint when skipped.
+Do these four before acting, including after a context reset or compaction.
 
-1. `sdlc-studio/reviews/LATEST.md` - what the last run landed and what it left owed.
+1. `sdlc-studio/reviews/LATEST.md` - what the last run landed and left owed.
 2. `/sdlc-studio status` - pipeline state and the next step.
-3. `.claude/skills/sdlc-studio/lessons/_index.md` - the cross-project lessons. Read them
-   before any design decision, not after.
-4. `git fetch` - a stale clone mints ids the remote already used and plans over artefacts
-   somebody else changed.
+3. `.claude/skills/sdlc-studio/lessons/_index.md` - read the lessons before any design decision.
+4. `git fetch` - a stale clone mints ids the remote already used.
 
-## The failure mode this repo actually has
-
-Not ignorance. **Rules that were read and then not followed.** One session produced five
-instances: the lessons index went unread while the plan printed its digest; review prompts
-were hand-written though the shipped seat briefs exist; findings were not sorted into
-regression versus pre-existing; a backlog census was hand-scripted rather than taken from
-the tooling; and the full-suite-before-commit rule was broken one commit after being
-shipped, leaving `main` red for six commits.
-
-So: **when a rule matters, gate it in the command people actually run** - LL0027 in the
-[lessons registry](.claude/skills/sdlc-studio/lessons/_index.md). Adding a line here is the
-weakest available fix, and a rule stated here with no gate behind it should be read as a
-known-weak one.
+The [failure mode](CONTRIBUTING.md#the-failure-mode) here is rules read and not followed, so a
+rule that matters is gated in the command people run (LL0027); one stated here alone is weak.
 
 ## What will refuse you
 
-These block. Everything else in this file is guidance.
-
 | Gate | Refuses |
 | --- | --- |
-| pre-commit + commit-msg hooks | any lane `.githooks/pre-commit --list` or `.githooks/commit-msg --list` prints; the message rule (a multi-id subject with no `Refs:` trailer) and the collapsed-suite check are lanes there too |
-| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag): a push runs the full suite once plus the core gate lanes, and a tag adds the slow release lanes; `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints the current figure |
+| pre-commit + commit-msg hooks | any lane `.githooks/pre-commit --list` or `.githooks/commit-msg --list` prints |
+| pre-push hook | a red boundary gate (`gate.py --boundary push`, or `release` for a tag); `python3 tools/gate_timing.py estimate --suite boundary-push --warn-seconds 0` prints its cost |
 | `sprint plan` | a batch whose units lack `Affects:` or `Points:`, or exceed the split threshold |
 | `transition -> Done` | a story whose executable ACs have not passed |
-| `transition -> Fixed` | a bug nothing speaks for (no ticked criterion, no `Verify:` line), or whose recorded `verify_ac` run is red |
-| `sprint close` | an uncommitted change to a file a batch unit declares (uncovered units, unanswered items and failing lanes are recorded as known issues on the report, not refused) |
-| `critic.py brief` | a unit whose author has recorded no self-check of its current diff with `critic.py self-check record` (`review.author_self_check: block`) |
-| `sprint sign` | a report that is not the run's, a page that no longer re-derives to what was filed, a tree changed since the close, or a principal who is a unit's author or a reviewer recorded on it |
+| `transition -> Fixed` | a bug nothing speaks for, or whose recorded `verify_ac` run is red |
+| `sprint close` | an uncommitted change to a file a batch unit declares |
+| `critic.py brief` | a unit whose author recorded no self-check of its current diff |
+| `sprint sign` | a report not the run's, a changed page or tree, or a principal who authored or reviewed a unit |
 
-**Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the three tracked hooks
-(pre-commit, commit-msg, pre-push), names each, and sets this clone's `core.sshCommand` to an ssh
-carrying a keepalive - the pre-push gate runs for minutes before git writes a byte, and a connection
-idle that long is dropped before the push starts, so the gate passes, the push fails and the retry
-pays the gate again. It also names each gate prerequisite this machine lacks, what breaks without it and an
-install route for this interpreter (`python3 tools/gate_prereqs.py check` alone re-checks). A `core.sshCommand` already in force at ANY scope - local, global or system - is left as you set
-it, and the script names the scope it found it in; if yours carries no keepalive, add one, because
-the script will not write over it. Without them you are running with the gates off.
-Emergency bypass is `git commit --no-verify` for a commit and `git push --no-verify` for a push, and
-nothing else.
-
-**Pushes go straight to main and a red main is read before the next push (D0181).** The pre-push
-hook asks the forge for the latest push-triggered Lint run on main before it runs the gate; on any
-conclusion but success it refuses until that run's id is acknowledged once per clone with
-`SDLC_PUSH_ACK_RED=<run id> git push`. A red answer is read once more before it refuses, and the
-second answer is judged: the forge's ordering is eventually consistent, and a stale first row once
-named a two-month-old red (BG0709). An unreadable or empty answer is named and never read as
-green, and it does not block an offline push. The required status check a direct push can never
-satisfy was removed from branch protection under the same ruling on 2026-09-06, and the
-protection read-back shows none.
-
-**Each hook lists its own lanes; this file does not.** `.githooks/pre-commit --list` and
-`.githooks/commit-msg --list` print one lane per line, its key and the rule it enforces, read from
-the hook's own `run` calls, and run nothing; every refusal either hook makes is such a lane.
-`.githooks/pre-push` has no `--list`: a push runs `gate.py --boundary push`, the full suite once,
-which catches what per-commit selection cannot reach, plus the core gate lanes, and a tag runs
-`--boundary release`, which adds the slow release lanes. The gate prints each lane it runs and its
-cost.
+**Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the
+three tracked hooks and an ssh keepalive, and names any missing prerequisite
+([hooks and the push](CONTRIBUTING.md#hooks-and-the-push)). Without them the gates are off. The only bypass is `git commit --no-verify` or
+`git push --no-verify`. Pushes go straight to main; a red main is read before the next push
+(D0181). Each hook lists its lanes (`--list` above); `.githooks/pre-push` runs the full suite once.
 
 ## Non-negotiable rules
 
-**No ad-hoc coding.** Work becomes a story or a bug with acceptance criteria before it
-becomes a diff. A CR or RFC is not work until `refine` decomposes it into sized units.
-This repo is held to it like any consuming project.
+**No ad-hoc coding.** Work becomes a story or bug with acceptance criteria before it becomes a
+diff; a CR or RFC is not work until `refine` decomposes it into sized units.
 
-**Review is independent of the author.** Each unit gets one independent reviewer, a fresh
-context that did not write the code, briefed with `critic.py brief` and recording its verdict
-with `critic.py record`. The operator signs the run once, after the close, with `sprint sign`.
-A reviewer the author controls does not satisfy this.
+**Review is independent of the author.** Each unit gets one reviewer, a fresh context that did
+not write the code, briefed with `critic.py brief`, recording with `critic.py record`. The
+operator signs the run once, after the close, with `sprint sign`.
 
-**Brief a reviewer with the shipped tool, never by hand.** `critic.py brief --unit <id>
---seat engineering|product|qa` carries the seat charter, the bounded diff scope (the unit's
-declared `Affects`), the canonical acceptance criteria as law, and the claim-inventory pass.
-A hand-written prompt carries none of them and silently substitutes an unbounded surface for
-a unit review.
+**Brief a reviewer with the shipped tool, never by hand.** `critic.py brief --unit <id> --seat
+engineering|product|qa` carries the seat charter, the unit's `Affects` as scope, the criteria as
+law and the claim-inventory pass; a hand-written prompt carries none of them.
 
-**A review judges the unit's own diff.** Scope is that unit's `Affects` against the run's
-base ref. Only a regression or a newly introduced defect blocks; anything already true of
-the tree, or already recorded in an open Bug or CR, is reported with its id and does not
-hold the gate. Decide which by execution (`git log -S`), not by impression.
+**A review judges the unit's own diff.** Only a regression or a new defect blocks; what is
+already true of the tree, or in an open Bug or CR, is reported with its id. Decide by execution
+(`git log -S`), not impression.
 
-**Always look for a tool before doing anything by hand.** The
-[toolchain runbook](.claude/skills/sdlc-studio/reference-sprint-toolchain.md) is ordered by
-SPRINT STEP - plan, groom, batch, deliver, review, in-flight, close - and each row names the one
-command that performs the step beside the hand-rolled shape it replaces. Read the row for the
-step you are on BEFORE you start it, not after. If a step there has no command, that is a
-finding to file, not permission to hand-roll it.
+**Always look for a tool before doing anything by hand.** Read your step's row in the
+[toolchain runbook](.claude/skills/sdlc-studio/reference-sprint-toolchain.md) before starting
+it; a step with no command is a finding to file ([tools before hand-rolling](CONTRIBUTING.md#tools-before-hand-rolling)).
 
-RUN-01KYZKY5 paid for this line: the close was hand-authored first, and running the shipped
-commands afterwards caught four defects the hand version had missed - example scaffold rows left
-in a retro, a Batch field that parsed to zero units, a header claiming a delivered count the
-batch contradicted, and a lessons digest that no longer matched its log. The runbook already
-named the command that would have caught them.
+**Use the deterministic tooling; never hand-roll what it wires.** `artifact.py new`/`batch`,
+`next_id.py`, `file_finding.py`, `transition.py`; `_index.md` is derived and `reconcile` syncs
+it. Read `reference-scripts.md`, the catalogue, before hand-doing anything mechanical.
 
-**Use the deterministic tooling; never hand-roll what it wires.** Create artefacts with
-`artifact.py new` / `batch`, allocate ids with `next_id.py`, file findings with
-`file_finding.py`, change status with `transition.py`. Never hand-author `_index.md` - it is
-derived, and `reconcile` syncs it. **Read `reference-scripts.md` before hand-doing anything
-mechanical**; it is the catalogue, and the answer is usually already there.
-
-**Exercise every claim through the shipped entry point before asking for review.** A review
-should CONFIRM your work, not discover that it does not run. Take each factual claim in the
-changelog fragment and the criteria and put it through the CLI in a throwaway fixture -
-refusals included, with the positive control beside each one. A library test cannot see a
-missing lane, because the wiring is the part it does not exercise: `brief_fingerprint(brief(
-...))` passed in-process for a whole sprint while `critic.py brief` printed nothing and the
-paperwork said it did. Needing a second review round to learn that is not thoroughness, it is
-verification handed to somebody else. `critic.py brief` holds it: this repository sets
-`review.author_self_check: block`, so the brief is refused until the author records that pass,
-claims and mutants, against the unit's current diff with `critic.py self-check record`.
+**Exercise every claim through the shipped entry point before asking for review.** Put each
+claim in the fragment and criteria through the CLI in a throwaway fixture, refusals with a
+positive control beside each ([exercising claims](CONTRIBUTING.md#exercising-claims)). This repo
+sets `review.author_self_check: block`: record the pass with `critic.py self-check record`.
 
 **Ship the paperwork in the same commit as the code.** Every behaviour or doc change carries
 its `changelog.d/<UNIT-ID>.md` fragment (`lessons/LL0004`).
 
 **The push gate is the full-suite check.** A commit runs only the test modules its change
-selects; the pre-push hook runs the whole suite on the commit each pushed ref points at, on
-the gate host when `sdlc.gateHost` is set (D0382). It reads one commit per ref, so a commit
-the push carries beneath a ref's tip is not judged by the full suite. `tools/run-suite.sh all`
-runs it on demand against the working tree, on that host too, and `run-suite.sh --check` reads
-its verdict.
-
-## Project overview
-
-SDLC Studio is an agent skill (the [Agent Skills](https://agentskills.io) open format) for
-managing the full software development lifecycle - PRD, epics, stories, planning, tests.
-It enables **Goal-Driven Development**: set a goal and acceptance criteria, and the agent
-drives the proven lifecycle to it (TDD, BDD, Eval-Driven, Goal-Driven). `sprint` runs it and
-closes every run with a reconcile and review.
-
-**The skill source lives at `.claude/skills/sdlc-studio/`** and installs to each tool's
-skill directory (`install.sh --list-targets`). This repo dogfoods the skill against its own
-source. Durable guidance lives here; volatile state lives in `sdlc-studio/reviews/LATEST.md`,
-so the two do not drift.
+selects; the pre-push hook runs the whole suite on the commit each pushed ref points at, on the
+gate host when `sdlc.gateHost` is set (D0382), so a commit beneath a ref's tip is not judged by
+it. `tools/run-suite.sh all` runs it on demand, there too; `run-suite.sh --check` reads it.
 
 ## Where things live
 
 | Path | Purpose |
 | --- | --- |
-| `.claude/skills/sdlc-studio/SKILL.md` | Always-loaded router (~300 lines, CI-budgeted under 500) |
-| `.claude/skills/sdlc-studio/reference-philosophy.md` | Create vs Generate modes - read first |
-| `.claude/skills/sdlc-studio/reference-doctrine.md` | Project-agnostic operating doctrine |
-| `.claude/skills/sdlc-studio/reference-scripts.md` | **The script catalogue. Read before hand-doing a mechanical task** |
-| `.claude/skills/sdlc-studio/reference-*.md` | Domain workflows (50+ files); `help/references.md` indexes them |
-| `.claude/skills/sdlc-studio/help/` | Type-specific help (~45 files) |
-| `.claude/skills/sdlc-studio/lessons/` | Cross-project lessons registry |
-| `.claude/skills/sdlc-studio/templates/personas/amigos/` | The three shipped amigo seats, in work and review renders; this repo's own cards in `sdlc-studio/personas/seats/` override them (`persona_resolve.py resolve --seat <s> --path-only` names the one in force) |
-| `.claude/skills/sdlc-studio/scripts/` | 40+ helpers sharing `lib/sdlc_md.py` |
-| `.claude/skills/sdlc-studio/templates/` | Documents and code, incl. `agent-instructions.md` (the starter this file's shape follows) |
-| `.claude/skills/sdlc-studio/best-practices/` | Quality guidelines (19 files) |
+| `.claude/skills/sdlc-studio/` | The skill source; this repo dogfoods it ([project overview](CONTRIBUTING.md#project-overview-and-layout)) |
+| `.claude/skills/sdlc-studio/reference-scripts.md` | The script catalogue |
+| `.claude/skills/sdlc-studio/templates/personas/amigos/` | The shipped amigo seats; this repo's cards in `sdlc-studio/personas/seats/` override them |
 | `tools/` | Repo-only CI guards, not shipped |
 
-## Forward-porting to the installed copy
+## Forward-porting
 
-Never run `install.sh` from the dev repo - its sweep clobbers the git-tracked tree. Mirror
-with the guarded wrapper instead:
-
-```bash
-bash tools/forward-port.sh          # itemised diff, dry-run
-bash tools/forward-port.sh --yes    # apply (.local and __pycache__ untouched)
-bash tools/forward-port.sh --check  # drift gate; non-zero when the copy has drifted
-```
-
-The installed copy is what every other project on this machine loads, so the window between
-a fix landing here and the mirror running is a window in which a fix believed shipped is in
-force nowhere. Two states are reported rather than failed: no installed copy, and a copy
-holding a `.local/forward-port.pin` marker.
+Never run `install.sh` here; mirror with `bash tools/forward-port.sh` (dry-run, `--yes` to
+apply) and gate drift with `bash tools/forward-port.sh --check`; a copy holding a
+`.local/forward-port.pin` marker is reported, not failed ([forward-porting](CONTRIBUTING.md#forward-porting)).
 
 ## Testing
 
-`npm run lint` (markdown plus all guards) and `npm test` (the script suite). **Without npm,
-every check except markdownlint is a plain Python or bash command** - do not skip the gate
-because npm is missing.
-
-**Budget the time.** A commit runs only the test modules its staged change reaches, in parallel,
-and reports its time against a 90-second budget; a docs or artefact commit runs only the modules
-whose `test-census-subject` names a file it stages. A change to a hub script still selects large
-modules, so give a commit a 10-minute timeout. The full suite runs at push.
-
-**The gate spans two hooks, cheapest first.** `pre-commit` runs the cheap guards and decides
-whether the suites are needed; `commit-msg` checks the message rules and only then runs them.
-Git creates the commit message after `pre-commit`, so this is the only order in which a
-message defect is refused before the suites run rather than after them.
-
-One lane is deliberately outside the gate: `npm run lint:corpus` lints every tracked markdown
-file under the strict root rules, attributing findings against the latest tag. It runs from a
-scheduled job and by hand before a release, because a guard whose cost is paid on every commit
-gets switched off.
-
-Manual verification: `./install.sh --local`, then `/sdlc-studio help`, `status`,
-`repo map build`, and `reconcile --verify --dry-run` against a fixture story.
+`npm run lint` and `npm test`; without npm every check but markdownlint is a plain command.
+Give a commit a 10-minute timeout ([test budgets](CONTRIBUTING.md#test-budgets)).
 
 ## Soft dependencies
 
 | Feature | Requires |
 | --- | --- |
 | `cr sync`, `story sync`, `project sync` | `gh` CLI, authenticated |
-| `reconcile --verify` | whichever of `pytest`, `jest`, `vitest`, `go`, `curl`, `jq`, `rg` your Verify lines invoke |
-| `repo map build` | Python 3.10+ (pure stdlib) |
-| `verify_ac run --coverage` and the `review.line_coverage` gate | `coverage` 7.10 or later on the interpreter that runs the selectors (`SDLC_COVERAGE_PYTHON`, else the current one); absent, the run refuses under `block` and reports under `report` |
+| `reconcile --verify` | the tools your Verify lines invoke |
+| `repo map build` | Python 3.10+ |
+| `verify_ac run --coverage`, `review.line_coverage` | `coverage` 7.10 or later ([soft dependencies](CONTRIBUTING.md#soft-dependencies-in-full)) |
 
 ## Style
 
-Enforced by `tools/lint-style.sh`, with no code-span or "only quoting the rule" exception:
-British English; no em dashes (use a spaced hyphen, or restructure); no corporate jargon
-(allowlist in `tools/style-allowlist.txt`); no internal provenance tags in consuming-facing
-`reference-*.md`, `help/` or `scripts/`; dense, economical writing; `{{placeholder}}` syntax
-in templates.
-
-## Before you write
-
-| Creating | Read |
-| --- | --- |
-| Python script | `best-practices/python.md`, then `script.md` |
-| Bash script | `best-practices/script.md` |
-| Documentation | `best-practices/documentation.md` |
-| Agent skill | `best-practices/claude-skill.md` |
-| A test | `best-practices/testing.md#name-the-mutant-first` - state the production change the test must fail on, before writing it |
-
-When modifying the skill: keep SKILL.md a router (philosophy gates, the loading guide,
-pointers); add a `help/` file for a new command; update the matching `reference-*.md` for a
-workflow change.
-
-## Related
-
-- [README.md](README.md) - installation and quick start
-- [CONTRIBUTING.md](CONTRIBUTING.md) - contribution guidelines
+`tools/lint-style.sh` enforces British English, no em dashes, no corporate jargon, no provenance
+tags in consuming-facing pages, and `{{placeholder}}` in templates. Before writing code, docs or
+a test, read [before you write](CONTRIBUTING.md#before-you-write).

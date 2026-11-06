@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Enforce line budgets on the skill's always-loaded and reference files.
+"""Enforce size budgets on the always-loaded files and line budgets on the reference files.
 
 A skill-development CI tool (lives in tools/). The Agent Skills guidance
 caps SKILL.md at 500 lines; reference files are progressively loaded but
 past ~600 lines partial reads start missing content, so growth beyond
-that needs deliberate sign-off here rather than accretion.
+that needs deliberate sign-off here rather than accretion. AGENTS.md and
+SKILL.md are loaded on every call, so they are also held by size, which is
+what a call pays for, not lines (US1129).
 
 Rules:
 - SKILL.md must stay under 500 lines (hard).
+- AGENTS.md at the root, when there is one, is at most 7,000 chars (hard).
+- SKILL.md is at most 8,000 tokens, estimated at 2.73 chars a token, and its
+  frontmatter description at most 600 chars (hard).
 - Any reference-*.md over 600 lines must appear in ALLOWLIST (hard),
   recorded with its ceiling; an allowlisted file may not exceed its
   ceiling by more than 5% (hard) - shrink it or consciously raise the
@@ -21,12 +26,25 @@ Exits non-zero on any violation.
 from __future__ import annotations
 
 import argparse
+import math
 import re
 import sys
 from pathlib import Path
 
 SKILL_DIR = ".claude/skills/sdlc-studio"
 SKILL_MD_BUDGET = 500
+#: AGENTS.md, in chars. It sits in the instructions of every agent here, main thread and
+#: subagent alike, on every call; it was 15,786 chars when this budget was set (CR0677).
+AGENTS_MD_BUDGET = 7000
+#: SKILL.md's ceiling in ESTIMATED tokens: chars / CHARS_PER_TOKEN, rounded up. A line count
+#: cannot see a page that grows by lengthening its lines.
+SKILL_MD_TOKEN_BUDGET = 8000
+#: The chars a token measured on AGENTS.md against a floor session (CR0677); an estimate, not a
+#: tokenizer, so the ceiling above carries headroom over the file it was set against.
+CHARS_PER_TOKEN = 2.73
+#: The frontmatter `description`, in chars: it is listed in every session whether or not the
+#: skill is invoked.
+SKILL_DESCRIPTION_BUDGET = 600
 REFERENCE_BUDGET = 600
 
 
@@ -230,6 +248,61 @@ def guide_justification_faults(root) -> list[str]:
     return sorted(set(faults))
 
 
+def skill_description(text: str) -> str:
+    """SKILL.md's frontmatter `description`, unquoted; "" when the page has no frontmatter.
+
+    Reads the one-line form the shipped page uses, quoted or bare, and a folded or literal
+    block (`>` or `|`) whose indented lines are joined with a space.
+    """
+    m = re.match(r"---\n(.*?)\n---\n", text, re.S)
+    if not m:
+        return ""
+    lines = m.group(1).splitlines()
+    for i, line in enumerate(lines):
+        d = re.match(r"description:\s*(.*)$", line)
+        if not d:
+            continue
+        value = d.group(1).strip()
+        if value in (">", "|", ">-", "|-"):
+            body = []
+            for nxt in lines[i + 1:]:
+                if nxt and not nxt[0].isspace():
+                    break
+                body.append(nxt.strip())
+            return " ".join(b for b in body if b)
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        return value
+    return ""
+
+
+def always_loaded_faults(root) -> list[str]:
+    """The size budgets on the files every call loads: AGENTS.md in chars, SKILL.md in estimated
+    tokens and its description in chars. A tree with no AGENTS.md, such as a hook-test fixture,
+    has nothing to hold to the first."""
+    root = Path(root)
+    faults = []
+    agents = root / "AGENTS.md"
+    if agents.is_file():
+        n = len(agents.read_text(encoding="utf-8"))
+        if n > AGENTS_MD_BUDGET:
+            faults.append(f"AGENTS.md: {n} chars > {AGENTS_MD_BUDGET} budget - it is loaded on "
+                          f"every call; move detail to CONTRIBUTING.md and link it")
+    skill_md = root / SKILL_DIR / "SKILL.md"
+    if skill_md.is_file():
+        text = skill_md.read_text(encoding="utf-8")
+        est = math.ceil(len(text) / CHARS_PER_TOKEN)
+        if est > SKILL_MD_TOKEN_BUDGET:
+            faults.append(f"SKILL.md: ~{est} tokens ({len(text)} chars at {CHARS_PER_TOKEN} a "
+                          f"token) > {SKILL_MD_TOKEN_BUDGET} token budget - move detail to a "
+                          f"reference page")
+        desc = skill_description(text)
+        if len(desc) > SKILL_DESCRIPTION_BUDGET:
+            faults.append(f"SKILL.md: description {len(desc)} chars > "
+                          f"{SKILL_DESCRIPTION_BUDGET} - it is listed in every session")
+    return faults
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".", help="repo root")
@@ -278,6 +351,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"{path.name}: {n} lines > allowlisted ceiling {ceiling} +5% "
                 f"({int(ceiling * CEILING_TOLERANCE)}) - shrink it or raise the ceiling deliberately")
 
+    errors += always_loaded_faults(args.root)
+
     for name in guide_justification_faults(args.root):
         errors.append(f"{name}: its ceiling justification names a Reading Guide and the file "
                       f"has none - generate it with `docgen.py reading-guides`, or the "
@@ -286,7 +361,7 @@ def main(argv: list[str] | None = None) -> int:
     for err in errors:
         print(f"BUDGET: {err}", file=sys.stderr)
     if not errors:
-        print("All files within line budgets.")
+        print("All files within their budgets.")
     return 1 if errors else 0
 
 
