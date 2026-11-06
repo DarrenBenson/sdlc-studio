@@ -294,6 +294,40 @@ class OpenCodeReaderTests(_Fixture):
         self.assertEqual(self.db.read_bytes(), before)
         self.assertFalse(self.mark.exists())
 
+    def test_the_store_probe_binds_its_directories(self) -> None:
+        """BG1259 AC2. Mutant: the `store()` probe writing each directory into its SQL as a
+        quoted literal instead of binding it as a parameter, which its `# nosec B608` keeps
+        bandit from refusing. Every statement is seen at the connection's `execute`, as `opens`
+        sees each open at `sqlite3.connect`; the repo is reached through a symlink, so both of
+        its spellings are probed."""
+        make_db(self.db, str(self.root), str(self.other))
+        link = self.home / "repo-link"
+        link.symlink_to(self.root, target_is_directory=True)
+        dirs = [str(self.root), str(link)]
+        real, ran = sqlite3.connect, []
+
+        class Recorder(sqlite3.Connection):
+            def execute(self, sql, *args):
+                ran.append((sql, tuple(args[0]) if args else ()))
+                return super().execute(sql, *args)
+
+        def spy(database, *args, **kwargs):
+            return real(database, *args, factory=Recorder, **kwargs)
+        faked = {meter_opencode.XDG_ENV: str(self.home / ".local" / "share"),
+                 meter_opencode.DB_ENV: str(self.db)}
+        with self.env(**faked), mock.patch.object(sqlite3, "connect", spy):
+            found = meter_opencode.store(link, os.environ)
+        self.assertEqual(found, str(self.db), "the workspace directory's session is found")
+        probes = [(sql, params) for sql, params in ran if "FROM session" in sql]
+        self.assertEqual(len(probes), 1, ran)
+        sql, params = probes[0]
+        for d in dirs:
+            self.assertNotIn(d, sql, "a directory is written into the probe's SQL")
+        self.assertNotIn("'", sql, "the probe's SQL carries a quoted literal")
+        listed = sql.partition(" IN (")[2].partition(")")[0]
+        self.assertEqual([p.strip() for p in listed.split(",")], ["?"] * len(dirs), sql)
+        self.assertEqual(params, tuple(dirs), "each directory arrives as a bound parameter")
+
     def unsignalled(self, claude: bool) -> dict:
         """The selection's environment with no harness named or signalled, and a Claude
         transcript for this repo when `claude` is set."""
