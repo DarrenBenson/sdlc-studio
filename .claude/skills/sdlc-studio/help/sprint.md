@@ -600,6 +600,15 @@ carrying bug's id at the review cap. A red criterion leaves the unit where it wa
 verifier's output. Exit 2 is a refusal before anything was recorded, 1 a unit not moved or a
 non-zero return, 0 a unit moved and returned.
 
+See where a session's tokens went, by role, and the tool outputs that cost most:
+
+```bash
+python3 <skill>/scripts/sprint.py cost --anatomy
+```
+
+`cost --anatomy` reads the transcripts the meter reads and prints, per role, the agents, calls, priced
+tokens and share, and the context per call; `reference-sprint.md#cost-anatomy` has the detail.
+
 The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress
 keeps the span it has) and a passing `lane return` closes it, so the sprint report states the
 unit's minutes and tokens over that span. A blocked return leaves the span open. A lane briefed

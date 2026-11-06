@@ -1,0 +1,22 @@
+{
+ "captured": "2026-11-06",
+ "prompt": "Reply with the single word OK.",
+ "captures": [
+  {
+   "workspace": "empty git repository in the run's capture scratchpad",
+   "stdout": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"duration_ms\":5507,\"duration_api_ms\":5507,\"result\":\"OK\",\"session_id\":\"372d681a-bac0-4786-b53b-60fe4399f7a4\",\"request_id\":\"af8b9ec7-f309-42de-acf5-312605e0bf80\",\"usage\":{\"inputTokens\":9046,\"outputTokens\":31,\"cacheReadTokens\":6016,\"cacheWriteTokens\":0}}"
+  },
+  {
+   "workspace": "plain directory under this repository's sdlc-studio/.local/, cold",
+   "stdout": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"duration_ms\":5398,\"duration_api_ms\":5398,\"result\":\"OK\",\"session_id\":\"db983057-4a9e-455f-8b27-327ae5025048\",\"request_id\":\"fa91b4e9-f60d-47da-b7e5-2520ec1bca22\",\"usage\":{\"inputTokens\":23289,\"outputTokens\":30,\"cacheReadTokens\":0,\"cacheWriteTokens\":0}}"
+  },
+  {
+   "workspace": "the same directory again a minute later, cold",
+   "stdout": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"duration_ms\":3537,\"duration_api_ms\":3537,\"result\":\"OK\",\"session_id\":\"6a1df450-2b44-496c-97d4-701e5e01d528\",\"request_id\":\"02bec6ed-b611-45c0-9a33-9cfb0e3fc71e\",\"usage\":{\"inputTokens\":23289,\"outputTokens\":31,\"cacheReadTokens\":0,\"cacheWriteTokens\":0}}"
+  },
+  {
+   "workspace": "empty git repository under this repository's sdlc-studio/.local/, its prefix cached",
+   "stdout": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"duration_ms\":5871,\"duration_api_ms\":5871,\"result\":\"OK\",\"session_id\":\"11af98e1-3ca4-4d5a-ae38-9e6bd28d080e\",\"request_id\":\"b938ddb8-c655-4d1c-916b-402c6d5eabfb\",\"usage\":{\"inputTokens\":17312,\"outputTokens\":31,\"cacheReadTokens\":6016,\"cacheWriteTokens\":0}}"
+  }
+ ]
+}

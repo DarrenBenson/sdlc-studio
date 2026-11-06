@@ -8975,6 +8975,34 @@ def _at_terminal_status(root: Path, uid: str) -> bool:
     return sdlc_md.is_terminal_status(hit[1], status)
 
 
+def cmd_cost(args: argparse.Namespace) -> int:
+    """`sprint cost --anatomy`: the current session's spend by role and its heaviest tool outputs
+    (`lib/cost_anatomy.py`). Exit 2 with no `--anatomy`, the one view this command prints; 1 when
+    no reading can be had, with the reason.
+
+    With no Claude Code session transcript and no `--transcripts`, the harness meter's own
+    reading (`run_state.session_tokens`) is printed as one total under `other`, its counts and
+    contexts not available."""
+    if not args.anatomy:
+        print("sprint cost: name --anatomy, the one view this command prints", file=sys.stderr)
+        return 2
+    from lib import cost_anatomy  # noqa: PLC0415 - only this command needs it
+    root = Path(args.root)
+    try:
+        got = cost_anatomy.anatomy(root, args.transcripts)
+    except cost_anatomy.AnatomyError as exc:
+        reading = (run_state.session_tokens(root)
+                   if not exc.store and not args.transcripts else {"tokens": None})
+        if reading.get("tokens") is None or reading.get("harness") in (None, "claude"):
+            print(f"sprint cost --anatomy: no reading: {exc}"
+                  + (f"; the meter: {reading['reason']}" if reading.get("reason") else ""),
+                  file=sys.stderr)
+            return 1
+        got = cost_anatomy.from_reading(reading)
+    print(json.dumps(got, indent=2) if args.format == "json" else cost_anatomy.render(got))
+    return 0
+
+
 def cmd_lane(args: argparse.Namespace) -> int:
     """`sprint lane brief|return|land`: the two ends of a delegated unit, and its landing.
 
@@ -12581,6 +12609,22 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--format", choices=("text", "json"), default="text")
     ln.add_argument("--root", default=".", help="Repo root (default: .)")
     ln.set_defaults(func=cmd_lane)
+
+    co = sub.add_parser(
+        "cost",
+        help="`--anatomy`: break the current session's spend down by role (orchestrator, "
+             "builder, reviewer, repair, other) and name the ten tool outputs that cost most. "
+             "Reads the transcripts the token meter reads, each message once at its largest "
+             "usage; a subagent's role comes from the open run's lane returns and the recorded "
+             "verdicts, never its prompt, and one no record names is other. A context no "
+             "per-call record gives prints as not available, never 0.")
+    co.add_argument("--anatomy", action="store_true",
+                    help="print the per-role table and the heaviest tool outputs")
+    co.add_argument("--transcripts", default=None, metavar="DIR",
+                    help="the harness transcript directory (default: the one the meter reads)")
+    co.add_argument("--format", choices=("text", "json"), default="text")
+    co.add_argument("--root", default=".", help="Repo root (default: .)")
+    co.set_defaults(func=cmd_cost)
 
     sdlc_md.add_global_root(parser)
     return parser

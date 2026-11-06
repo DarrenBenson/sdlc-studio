@@ -889,8 +889,9 @@ NON_CEREMONY_VERBS = {
     # `sign` is the close's own last act: the operator's one signature over the report this
     # checklist feeds, recorded on the report page and the run. A checklist row for it could
     # only ever read pending when the page is composed.
+    # `cost` is a read-only report of where a session's tokens went; it certifies nothing.
     "sprint": ("appetite", "close", "boundary", "report", "sign",
-               "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call"),
+               "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call", "cost"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
