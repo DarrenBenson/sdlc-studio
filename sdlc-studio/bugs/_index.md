@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-05
+**Last Updated:** 2026-11-06
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 212 |
+| Open | 228 |
 | In Progress | 0 |
 | Fixed | 851 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1237** |
+| **Total** | **1253** |
 
 ## All Bugs
 
@@ -313,6 +313,22 @@
 | [BG1235](BG1235-run-six-s-round-2-and-lane-accept.md) | Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1236](BG1236-run-six-s-landings-left-five-repo-wide.md) | Run six's landings left five repo-wide census tests red, which the push gate's full suite refused | Fixed | High | 2026-11-05 | 2026-11-05 |
 | [BG1237](BG1237-orchestration-frictions-batch-add-takes-an-id-with.md) | Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item | Open | Low | 2026-11-05 | 2026-11-05 |
+| [BG1238](BG1238-run-seven-s-landed-units-leave-the-push.md) | Run seven's landed units leave the push gate red: reference-sprint.md is over its ceiling and two environment-scrub sites are unregistered | Open | High | 2026-11-06 | 2026-11-06 |
+| [BG1239](BG1239-us0987-s-copilot-meter-leaves-its-git-root.md) | US0987's Copilot meter leaves its git-root-over-cwd preference unpinned and counts `includes_subagents: False` on trust | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1240](BG1240-us0988-s-opencode-meter-treats-a-present-but.md) | US0988's OpenCode meter treats a present but unreadable store as absent, against the token-meter contract, and its docstring says a read leaves the write-ahead log alone | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1241](BG1241-us1122-s-price-table-leaves-ten-defensive-branches.md) | US1122's price table leaves ten defensive branches unpinned, promises a date format its parser does not hold to, and prices a bare `cost()` call without the project's overrides | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1242](BG1242-us1123-s-dollar-report-re-prices-an-unsigned.md) | US1123's dollar report re-prices an unsigned page from the live price table, so `sprint sign` refuses it after a price revision, and its close wiring and end-date rule are unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1243](BG1243-us1124-s-cost-anatomy-leaves-four-rules-unpinned.md) | US1124's cost anatomy leaves four rules unpinned: the per-component maximum, the CLI harness fallback and two role assignments | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1244](BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md) | US1125's harness usage parser raises `AttributeError` on a usage container that is not an object, and three of its rules are unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1245](BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md) | US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1246](BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md) | US1127's Codex meter ignores `CODEX_HOME`, leaves its workspace boundary unpinned, and its AC3 test names a timeout mutant it cannot kill | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1247](BG1247-us1128-s-benchmark-runner-kills-only-the-cli.md) | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Open | High | 2026-11-06 | 2026-11-06 |
+| [BG1249](BG1249-the-suite-s-root-conftest-py-isolates-neither.md) | The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores | Open | High | 2026-11-06 | 2026-11-06 |
+| [BG1250](BG1250-fourteen-tools-tests-modules-strip-every-git-variable.md) | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1252](BG1252-a-lane-run-session-that-used-two-models.md) | A lane run session that used two models is priced entirely at the rate of the model with the most tokens | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1253](BG1253-lib-lanes-py-clears-only-7-of-the.md) | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane | Open | Low | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 

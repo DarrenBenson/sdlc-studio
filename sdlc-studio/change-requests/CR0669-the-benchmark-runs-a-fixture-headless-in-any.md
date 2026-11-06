@@ -1,6 +1,6 @@
 # CR-0669: The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0299
 > **Parent:** RFC0062
 > **Priority:** High

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 79 |
-| Ready | 3 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 863 |
+| Done | 865 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -160,10 +160,10 @@
 | [US1120](US1120-the-lane-brief-leaves-the-commit-to-lane.md) | The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context | Done | EP0298 | 2026-11-05 | 2026-11-05 |
 | [US1121](US1121-a-cursor-cli-run-is-metered-from-an.md) | A Cursor CLI run is metered from an afterAgentResponse hook ledger, and the meter reads it as measured | Done | EP0274 | 2026-11-05 | 2026-11-05 |
 | [US1122](US1122-a-dated-per-model-price-table-gives-every.md) | A dated per-model price table gives every token reading an estimated cost in US dollars | Done | EP0299 | 2026-11-06 | 2026-11-06 |
-| [US1123](US1123-the-sprint-report-states-each-run-s-and.md) | The sprint report states each run's and unit's estimated dollar cost and the run's per-role cost breakdown | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1123](US1123-the-sprint-report-states-each-run-s-and.md) | The sprint report states each run's and unit's estimated dollar cost and the run's per-role cost breakdown | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1124](US1124-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names the tool outputs that drove it | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1125](US1125-each-cli-s-headless-usage-output-is-normalised.md) | Each CLI's headless usage output is normalised to one basis, pinned by real captured sessions | Done | EP0299 | 2026-11-06 | 2026-11-06 |
-| [US1126](US1126-sprint-lane-run-runs-a-lane-s-brief.md) | sprint lane run runs a lane's brief headless in any supported CLI and prices the lane from the usage it prints | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1126](US1126-sprint-lane-run-runs-a-lane-s-brief.md) | sprint lane run runs a lane's brief headless in any supported CLI and prices the lane from the usage it prints | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1127](US1127-the-meter-recognises-a-codex-cli-run-and.md) | The meter recognises a Codex CLI run and reads its token actual from the Codex store | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1128](US1128-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage it prints | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 

@@ -1,6 +1,6 @@
 # CR-0666: sprint cost --anatomy breaks a run's spend down by role and names what drove it
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0299
 > **Parent:** RFC0062
 > **Priority:** High

@@ -1,6 +1,6 @@
 # CR-0667: A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0299
 > **Parent:** RFC0062
 > **Priority:** High

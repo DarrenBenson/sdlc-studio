@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 29 |
 | Approved | 0 |
-| In Progress | 30 |
-| Complete | 533 |
+| In Progress | 25 |
+| Complete | 538 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -76,11 +76,11 @@
 | [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | In Progress | High | Feature | 2026-11-04 | EP0274 |
 | [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Proposed | High | Feature | 2026-11-05 | -- |
 | [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Proposed | Medium | Improvement | 2026-11-05 | -- |
-| [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | In Progress | High | Feature | 2026-11-06 | EP0299 |
-| [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | In Progress | High | Feature | 2026-11-06 | EP0299 |
-| [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | In Progress | High | Feature | 2026-11-06 | EP0299 |
-| [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | In Progress | Medium | Feature | 2026-11-06 | EP0299 |
-| [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | In Progress | High | Improvement | 2026-11-06 | EP0299 |
+| [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | Complete | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | Complete | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | Complete | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | Complete | Medium | Feature | 2026-11-06 | EP0299 |
+| [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | Complete | High | Improvement | 2026-11-06 | EP0299 |
 | [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | Proposed | High | Feature | 2026-11-06 | -- |
 | [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | Proposed | High | Improvement | 2026-11-06 | -- |
 | [CR-0672](CR0672-add-a-deterministic-sprint-py-drive-loop-that.md) | Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end. | Proposed | High | Feature | 2026-11-06 | -- |

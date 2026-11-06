@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 14 |
+| Draft | 13 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 252 |
+| Done | 253 |
 | Superseded | 33 |
 | **Total** | **299** |
 
@@ -49,7 +49,7 @@
 | [EP0296](EP0296-the-release-gate-s-verify-lane-costs-about.md) | The release gate's verify lane costs about one parallel suite run and can run on the gate host | Done | 3 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0297](EP0297-a-commit-subject-can-mention-a-work-item.md) | A commit subject can mention a work-item id without attributing the commit's files to it | Done | 2 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0298](EP0298-a-sprint-costs-about-a-million-priced-tokens.md) | A sprint costs about a million priced tokens per point | Done | 4 | -- | 2026-11-05 | 2026-11-05 |
-| [EP0299](EP0299-every-run-is-measured-the-same-way-in.md) | Every run is measured the same way in every supported harness, in tokens and in dollars | Draft | 7 | -- | 2026-11-06 | 2026-11-06 |
+| [EP0299](EP0299-every-run-is-measured-the-same-way-in.md) | Every run is measured the same way in every supported harness, in tokens and in dollars | Done | 7 | -- | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 
