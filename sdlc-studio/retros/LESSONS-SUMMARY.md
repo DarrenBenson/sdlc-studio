@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0462: Fixing BG1248 and BG1249 before Phase 2 runs the benchmark: a real run cannot log in with an emptied config directory, and suite tests can…**
+- **L-0461: A fresh orchestrator session per wave and for the close (CR0670): the orchestrator was again the largest single cost**
+- **L-0460: A commit-time sweep lane for the repo-wide census, ceiling and scrub tests (CR0671), so a red push gate is caught at the commit that causes…**
 - **L-0459: Start each run in a fresh orchestrator session: the main thread was a third of this run's cost at an average context near 400k**
 - **L-0458: Run each batch's repo-wide census sweeps (test_test_census, test_root_census, test_gitutil's sweep, test_skill_tests_env…**
 - **L-0457: Run the commit-time suites on the gate host (CR0663): the hooks, not the agents, were this run's wall-clock**

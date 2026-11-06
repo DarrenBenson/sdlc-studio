@@ -217,3 +217,4 @@ it. Compare a fan-out sprint's rate with a single-thread sprint's only with that
 | RETRO0137 | 2026-11-01 | 24 | 0 | 24 | 69 | - | 12,851,388 | 22,817,311 | - | 330,686 | - | 0 | - | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | supplied |
 | RETRO0138 | 2026-11-04 | 23 | 0 | 15 | 57 | - | 6,705,072 | 44,019,404 | - | 772,270 | 2,540,889 | 0 | - | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | harness (main thread and subagents, once per message) |
 | RETRO0139 | 2026-11-05 | 13 | 0 | 10 | 29 | - | 4,470,048 | 5,883,977 | - | 202,896 | 1,269,689 | 0 | 16,740 | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | harness (main thread and subagents, once per message) |
+| RETRO0140 | 2026-11-06 | 10 | 0 | 9 | 39 | - | 6,891,324 | 7,735,113 | - | 198,336 | 1,210,884 | 0 | 48,062 | - | - | TOKENS_PER_POINT=186252 | out-of-sample | mixed | - | harness (main thread and subagents, once per message) |

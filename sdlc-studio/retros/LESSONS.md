@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-05
+**Last Updated:** 2026-11-06
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0462: Fixing BG1248 and BG1249 before Phase 2 runs the benchmark: a real run cannot log in with an emptied config directory, and suite tests can…
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+Fixing BG1248 and BG1249 before Phase 2 runs the benchmark: a real run cannot log in with an emptied config directory, and suite tests can reach the operator's harness stores.
+
+Recorded from retro RETRO0140.
+
+## L-0461: A fresh orchestrator session per wave and for the close (CR0670): the orchestrator was again the largest single cost
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+A fresh orchestrator session per wave and for the close (CR0670): the orchestrator was again the largest single cost.
+
+Recorded from retro RETRO0140.
+
+## L-0460: A commit-time sweep lane for the repo-wide census, ceiling and scrub tests (CR0671), so a red push gate is caught at the commit that causes…
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+A commit-time sweep lane for the repo-wide census, ceiling and scrub tests (CR0671), so a red push gate is caught at the commit that causes it.
+
+Recorded from retro RETRO0140.
 
 ## L-0459: Start each run in a fresh orchestrator session: the main thread was a third of this run's cost at an average context near 400k
 
