@@ -15,6 +15,7 @@ import contextlib
 import datetime as dt
 import io
 import json
+import subprocess
 import sys
 import unittest
 import unittest.mock
@@ -61,11 +62,13 @@ class ReportUsdTests(meter._Case):
         self.prices = meter._live("lib.prices")
         self.table(dt.date.today())
 
-    def table(self, effective: dt.date) -> None:
-        """Lay the typed table in place of the shipped one, every entry dated `effective`."""
-        path = self.tmp / f"prices-{effective.isoformat()}.json"
+    def table(self, effective: dt.date, scale: float = 1.0) -> None:
+        """Lay the typed table in place of the shipped one, every entry dated `effective` and
+        every price times `scale` (a revision of the table)."""
+        path = self.tmp / f"prices-{effective.isoformat()}-{scale:g}.json"
         path.write_text(json.dumps({"models": [
-            {"model": m, **p, "effective": effective.isoformat(), "source": "typed in the test"}
+            {"model": m, **{c: v * scale for c, v in p.items()},
+             "effective": effective.isoformat(), "source": "typed in the test"}
             for m, p in PRICES.items()]}), encoding="utf-8")
         patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", path)
         patch.start()
@@ -124,6 +127,15 @@ class ReportUsdTests(meter._Case):
         html = self.sr.render_html(page)
         self.assertIn(self.sr._cell(unit), html)
         self.assertIn(_money(whole), html)
+        # The committed twin states the same figures, the unit's dollars beside its id where
+        # the HTML's Dollars column stands: the twin is the page of record (LC-018).
+        md = self.sr.render_markdown(page)
+        self.assertIn("| Unit | Dollars | Forecast minutes |", md)
+        self.assertNotIn("| Unit | Forecast minutes |", md, "one unit table, not two")
+        self.assertIn(f"| US0101 | {self.sr._cell(unit)} |", md)
+        self.assertIn(f"| US0102 | {self.sr._cell(self._unit(page, 'US0102')['eu_usd'])} |", md)
+        self.assertIn(f"| Dollar cost | {self.sr._cell(row['est_forecast'])} | {_money(whole)} |",
+                      md)
 
     def test_an_unpriced_model_is_named_with_the_covered_share(self) -> None:
         """AC2. MUTANTS: the unpriced model summed in at $0 with a share of 100%; the model
@@ -215,6 +227,21 @@ class ReportUsdTests(meter._Case):
         html = self.sr.render_html(page)
         for r in sec["rows"]:
             self.assertIn(f'<th scope="row">{r["role_name"]["value"]}</th>', html)
+        # The committed twin carries the same table, cell for cell in the command's column
+        # order: AC4 holds on the page of record, not only on the HTML (LC-018).
+        md = self.sr.render_markdown(page)
+        self.assertIn("**Cost by role.**", md)
+        for r in sec["rows"]:
+            self.assertIn("| " + " | ".join(str(self.sr._cell(r[k]))
+                                            for k in ("role_name", *keys)) + " |", md)
+        # The path beside it: a role section NOT MEASURED says so, with its reason, in both.
+        gone = json.loads(json.dumps(page))
+        roles = next(s for s in gone["sections"] if s["key"] == "cost_roles")
+        roles.update(rows=[], not_measured={"reason": "no closing reading recorded one",
+                                            "source": "run.json"})
+        for render in (self.sr.render_markdown, self.sr.render_html):
+            self.assertRegex(render(gone), r"Cost by role: NOT MEASURED\S* - no closing "
+                                           r"reading recorded one")
 
     def test_the_role_table_is_the_close_s_not_the_live_transcript(self) -> None:
         """AC4, at sign. MUTANTS: the table re-derived from the live transcripts through
@@ -236,6 +263,84 @@ class ReportUsdTests(meter._Case):
         moved = next(s for s in sr.build_report(ws.root, meter.RETRO)["sections"]
                      if s["key"] == "cost_roles")
         self.assertNotEqual(sec["rows"], moved["rows"], "the growth moves a closing reading")
+
+    def _lane_session(self, ws, session: str, usage: dict, model: str | None) -> None:
+        """A metered `sprint lane run` session record of US0102, in the shape `lanes._run`
+        writes it: the CLI's summed usage and the one model it names (`usage_model`)."""
+        parts = meter._parts(usage)
+        path = ws.root / meter._live("lib.lanes").RUN_RECORDS / "US0102" / f"{session}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "unit": "US0102", "run_id": ws.state()["run_id"], "harness": "claude",
+            "metered": True, "usage_model": model,
+            "usage": {"input": parts["input"], "output": parts["output"],
+                      "cache_write": parts["cache_write_5m"] + parts["cache_write_1h"],
+                      "cache_write_1h": parts["cache_write_1h"],
+                      "cache_read": parts["cache_read"]}}), encoding="utf-8")
+
+    def test_a_lane_run_unit_is_priced_at_each_session_s_model(self) -> None:
+        """AC1, on the headless delivery path (`sprint lane run`, one record per session).
+        MUTANTS: the lane reading's model dropped from its delegated record (round 1: the row
+        read NOT MEASURED, "the reading names no model", beside a lane run cost the return had
+        just printed); every session priced at one session's rate; a repair's session
+        replacing its builder's. The controls: sessions naming no model, or a model the table
+        does not price, still read NOT MEASURED with their reasons, never $0."""
+        ws = self._run()
+        self._lane_session(ws, "s1-builder", BUILD_1, HAIKU)
+        self._lane_session(ws, "s2-repair", BUILD_2, OPUS)
+        rc, out = ws.lane("return", "--units", "US0102")
+        self.assertEqual(0, rc, out)
+        each = _dollars(HAIKU, meter._parts(BUILD_1)) + _dollars(OPUS, meter._parts(BUILD_2))
+        both = meter._sum(BUILD_1, BUILD_2)
+        self.assertNotIn(_money(each), [_money(_dollars(m, both)) for m in (HAIKU, OPUS)]
+                         + [_money(_dollars(OPUS, meter._parts(BUILD_2)))],
+                         "premise: one rate, or the repair alone, cannot equal the sum")
+        got = self._unit(ws.page(), "US0102")["eu_usd"]
+        self.assertEqual(_money(each), got["value"], got)
+        self.assertEqual("estimated", got.get("label"))
+        for model, why in ((None, "no model named"), (UNPRICED, UNPRICED)):
+            with self.subTest(model=model):
+                self._lane_session(ws, "s1-builder", BUILD_1, model)
+                self._lane_session(ws, "s2-repair", BUILD_2, model)
+                rc, out = ws.lane("return", "--units", "US0102")
+                self.assertEqual(0, rc, out)
+                got = self._unit(ws.page(), "US0102")["eu_usd"]
+                self.assertEqual(self.sr.NOT_MEASURED, got["value"], got)
+                self.assertIn(why, got["reason"])
+
+    def test_a_signed_page_keeps_the_prices_it_was_filed_with(self) -> None:
+        """LC-017, the price table's round-trip. MUTANTS: the signed page's table not read
+        back (`_page_readings` handing `price_table` None), so the next revision of the table
+        re-prices every signed dollar page and `sprint sign`'s check reads it INVALIDATED; the
+        table left off the envelope. The control: a live derivation after the revision does
+        state the revised dollars, so the table moved."""
+        sr, ws = self.sr, self._run()
+
+        def git(*argv: str) -> None:
+            subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com",
+                            "-c", "commit.gpgsign=false", *argv], cwd=ws.root, check=True,
+                           capture_output=True)
+        git("init", "-q", ".")
+        git("add", "-A")
+        git("commit", "-qm", "the delivered batch")
+        page = sr.build_report(ws.root, meter.RETRO)
+        rid = sr.file_report(ws.root, page)
+        with contextlib.redirect_stdout(io.StringIO()):
+            meter._live("sprint")._write_the_signature(ws.root, rid, "Maya Okafor")
+        git("add", "-A")
+        git("commit", "-qm", "sign the report")
+        self.assertTrue(sr.revalidate(ws.root, rid)["valid"], "premise: valid before")
+        signed = ws.row(page, "Dollar cost")["est_actual"]["value"]
+        self.table(dt.date.today(), scale=2.0)
+        whole = (_dollars(OPUS, meter._parts(MAIN_OPUS))
+                 + _dollars(HAIKU, meter._sum(MAIN_HAIKU, BUILD_1, BUILD_2)))
+        self.assertEqual(_money(2 * whole), ws.row(ws.page(), "Dollar cost")["est_actual"]
+                         ["value"], "control: the revision moves a live derivation")
+        check = sr.revalidate(ws.root, rid)
+        self.assertTrue(check["valid"], check["changes"])
+        self.assertEqual(_money(whole), signed)
+        replayed = sr.build_report(ws.root, meter.RETRO, filed=sr.read_report(ws.root, rid))
+        self.assertEqual(signed, ws.row(replayed, "Dollar cost")["est_actual"]["value"])
 
     def test_premium_requests_are_their_own_unit(self) -> None:
         """AC5. MUTANTS: premium requests dropped from the page, added into the tokens or the
@@ -287,7 +392,9 @@ class ReportUsdTests(meter._Case):
             self.assertNotIn("Dollar cost", text)
             self.assertNotIn("Cost by role", text)
             self.assertNotIn('class="num">Dollars</th>', text)
+            self.assertNotIn("| Dollars |", text)
         self.assertIn('class="num">Dollars</th>', sr.render_html(page))
+        self.assertIn("| Unit | Dollars |", sr.render_markdown(page))
         dropped = {k: v for k, v in page.items() if k not in (sr.USD_RULE, "fingerprint")}
         check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
         self.assertFalse(check["valid"], "the rule moves no figure on this fixture")

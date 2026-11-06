@@ -49,6 +49,7 @@ actual on the Minutes row above sums these minutes over the units that also carr
 spans of units open at the same time overlap, so that sum can exceed the wall-clock span.
 <!-- end -->
 
+<!-- unless: usd_rule -->
 <!-- unless: priced_unit_rule -->
 | Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |
 | --- | --- | --- | --- | --- |
@@ -61,6 +62,23 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | --- | --- | --- | --- | --- | --- |
 <!-- repeat: estimates_units -->
 | {{unit_id}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} | {{eu_priced}} |
+<!-- end -->
+<!-- end -->
+<!-- end -->
+<!-- when: usd_rule -->
+<!-- unless: priced_unit_rule -->
+| Unit | Dollars | Forecast minutes | Minutes | Forecast tokens | Tokens |
+| --- | --- | --- | --- | --- | --- |
+<!-- repeat: estimates_units -->
+| {{unit_id}} | {{eu_usd}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} |
+<!-- end -->
+<!-- end -->
+<!-- when: priced_unit_rule -->
+| Unit | Dollars | Forecast minutes | Minutes | Forecast tokens | Tokens | Priced |
+| --- | --- | --- | --- | --- | --- | --- |
+<!-- repeat: estimates_units -->
+| {{unit_id}} | {{eu_usd}} | {{eu_forecast_minutes}} | {{eu_minutes}} | {{eu_forecast_tokens}} | {{eu_tokens}} | {{eu_priced}} |
+<!-- end -->
 <!-- end -->
 <!-- end -->
 <!-- end -->
@@ -127,6 +145,24 @@ Total {{tokens_total}}, of which delegated {{tokens_delegated}}. Coverage: {{tok
 NOT MEASURED - {{cost_reason}}
 
 Delegated: {{tokens_delegated}}.
+<!-- end -->
+<!-- when: cost_roles_present -->
+<!-- when: cost_roles_measured -->
+
+**Cost by role.** The session's spend by role, each cell as `sprint cost --anatomy` prints it,
+from {{roles_session}}; total {{roles_total}}. Priced in input-equivalent tokens; split is each
+part's share of the role's priced cost; context is input + cache write + cache read per call.
+
+| Role | Agents | Calls | Priced tokens | Share | Cache read | Cache write | Output | First context | Avg context |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+<!-- repeat: cost_roles -->
+| {{role_name}} | {{role_agents}} | {{role_calls}} | {{role_priced}} | {{role_share}} | {{role_cache_read}} | {{role_cache_write}} | {{role_output}} | {{role_first_context}} | {{role_avg_context}} |
+<!-- end -->
+<!-- end -->
+<!-- unless: cost_roles_measured -->
+
+**Cost by role: NOT MEASURED** - {{cost_roles_reason}}
+<!-- end -->
 <!-- end -->
 
 ### DORA

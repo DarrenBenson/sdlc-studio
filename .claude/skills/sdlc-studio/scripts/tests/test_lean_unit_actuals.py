@@ -239,7 +239,9 @@ class UnitActualsTests(unittest.TestCase):
         self.assertIn("| 15.5 agent minutes |", md)
         self.assertIn("| 42,500 agent tokens |", md)
         # The headers name no single source: each cell's label does, in both renders.
-        self.assertIn("| Unit | Forecast minutes | Minutes | Forecast tokens | Tokens |", md)
+        # US1123 puts a Dollars column after Unit on a page priced in dollars; the claim is about
+        # these four headers, so the assertion does not pin what sits beside them.
+        self.assertIn("| Forecast minutes | Minutes | Forecast tokens | Tokens |", md)
         html = importlib.import_module("sprint_report").render_html(rep)
         for label, page in (("markdown", md), ("html", html)):
             text = " ".join(page.split())

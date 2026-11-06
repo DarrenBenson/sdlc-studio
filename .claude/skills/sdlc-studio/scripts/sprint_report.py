@@ -4376,8 +4376,9 @@ PRICED_PER_POINT = "unit-priced-and-per-point"
 #: The envelope mark of a page whose Estimates state the run's estimated US dollars, its
 #: dollars per point and its premium requests, whose unit rows carry their dollars, and whose
 #: cost carries the spend by role (`_usd_rows`, `_cost_roles_section`). The page carries the
-#: price table it was priced with (`PRICE_TABLE`), so a re-derivation prices with it. A page
-#: filed before the rule re-derives as signed.
+#: price table it was priced with (`PRICE_TABLE`), so a signed page's re-derivation prices with
+#: it (`_page_readings`); an unsigned page anchors nothing and prices with the table in force. A
+#: page filed before the rule re-derives as signed.
 USD_RULE = "usd_cost"
 USD_PER_MODEL = "per-model-dollars-and-roles"
 PRICE_TABLE = "price_table"

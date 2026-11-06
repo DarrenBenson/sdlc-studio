@@ -2568,9 +2568,12 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     record to the unit the agent worked on and `minutes` is the agent's own reported duration,
     a positive number when given; `unit_agent_totals` reads them as that unit's actuals.
 
-    `reading` is the agent's own transcript reading (`agent_transcript_tokens`): its priced cost,
-    its components and its file land on the record beside the total, and `provenance` says
-    whether the total was supplied or read from that transcript. A transcript is read whole, so a
+    `reading` is the agent's own transcript reading (`agent_transcript_tokens`), or one lane run
+    session's (`lanes.run_reading`): its priced cost, its components, its per-model split and its
+    file land on the record beside the total, and `provenance` says whether the total was
+    supplied or read from that transcript. A lane session's reading carries no split, so its
+    components are booked under the one model it names, and under none when it names none
+    (`unit_agent_totals` then prices it nowhere). A transcript is read whole, so a
     later reading of the same file for the same unit REPLACES the earlier record rather than
     adding to it, which would count the earlier messages twice.
     """
@@ -2601,9 +2604,15 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     if minutes is not None:
         entry["minutes"] = float(minutes)
     if reading:
+        # A lane run session's reading (`lanes.run_reading`) carries no split but names its
+        # session's one model: its components are booked under that model, so the unit's
+        # dollars price the session at its own rate rather than under no model named.
+        model = reading.get("model")
+        split = reading.get(BY_MODEL) or (
+            {model: dict(reading["components"])}
+            if isinstance(model, str) and model.strip() else None)
         entry.update(priced=reading["priced"], components=dict(reading["components"]),
-                     transcript=reading["source"],
-                     **({BY_MODEL: reading[BY_MODEL]} if reading.get(BY_MODEL) else {}))
+                     transcript=reading["source"], **({BY_MODEL: split} if split else {}))
 
     def superseded(r: dict) -> bool:
         return (bool(reading) and r.get("transcript") == entry["transcript"]

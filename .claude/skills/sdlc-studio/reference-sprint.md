@@ -691,19 +691,19 @@ anatomy could not be had or read a session other than the meter's.
 
 ### Dollar cost {#dollar-cost}
 
-The report states the run's estimated US dollars beside its priced tokens: a Dollar cost row and
-a Dollars per point row follow the token rows, and each unit row carries its agents' dollars.
-Every figure is priced per model (`run_state.usd`, over `lib/prices.py`): the meter keeps each
-reading's components by the model each message names, and each model's own components are
-priced from its own entry in the table. A collapsed `mixed` reading is never priced at one
-model's rate. A model the table does not list is named on the row with its share of the priced
-tokens, and the figure states the share it covers; it is never summed in as $0, and a run with
-nothing priced reads NOT MEASURED. The row states the table's effective date, marked STALE when
-`prices.stale` says so on the run's end date, and the page carries the table it was priced with,
-so a re-derivation prices with the same prices. Premium requests a reading carries are their own
-row, beside the tokens and dollars, never converted into either. The retro's priced line states
-the dollars and dollars per point beside the priced tokens per point, with the table's date and
-the same stale mark.
+The report states estimated US dollars beside the priced tokens: Dollar cost and Dollars per point
+rows, and each unit row's own dollars, in the HTML page and its Markdown twin. Every figure is
+priced per model (`run_state.usd` over `lib/prices.py`) from the components the meter keeps by
+model, so a collapsed `mixed` reading is never priced at one model's rate. A `sprint lane run`
+unit is priced session by session at the model its lane record names (the one with the most
+tokens where the CLI reported several); a session naming none reads NOT MEASURED. A model the
+table does not list is named with its share of the priced tokens and never summed in as $0. The
+row states the table's effective date, marked STALE when `prices.stale` says so on the run's end
+date. The page carries the table it was priced with: a signed page re-derives at that table, so a
+price revision cannot invalidate it, and an unsigned page re-derives at the table in force.
+Premium requests are their own row, never converted into tokens or dollars. The retro's priced
+line states dollars and dollars per point beside priced tokens per point, with the same date
+and stale mark.
 
 ## Cost regression at the close {#cost-regression}
 
