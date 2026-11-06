@@ -229,34 +229,61 @@ class OpenCodeReaderTests(_Fixture):
         self.assertEqual(got["tokens"], TOKENS + 150, got.get("reason"))
         self.assertEqual(got["components"]["output"], COMPONENTS["output"] + 50)
 
-    def test_read_only_this_repo_and_no_binary(self) -> None:
-        """AC2. Mutants: a plain read-write open, the `mode=ro` URI or `PRAGMA query_only`
-        dropped, the other directory's session counted, or `opencode stats` run."""
-        make_db(self.db, str(self.root), str(self.other))
-        opened = []
-        real = meter_opencode.connect
+    @contextlib.contextmanager
+    def opens(self):
+        """Every database opened while the block runs, seen at `sqlite3.connect` itself, so an
+        open that bypasses the module's read-only helper is seen too. Each is (database, the
+        `uri` flag, whether a write on the bare open was refused, `PRAGMA query_only` at each
+        statement other than a PRAGMA run on it)."""
+        real, opens = sqlite3.connect, []
 
-        def spy(db):
-            con = real(db)
-            opened.append(db)
-            self.assertEqual(con.execute("PRAGMA query_only").fetchone()[0], 1,
-                             "PRAGMA query_only is set")
-            con.execute("PRAGMA query_only = OFF")
-            with self.assertRaises(sqlite3.OperationalError, msg="the open itself is mode=ro"):
-                con.execute("CREATE TABLE written (k)")
-            con.execute("PRAGMA query_only = ON")
+        class Probe(sqlite3.Connection):
+            def execute(self, sql, *args):
+                if not sql.lstrip().upper().startswith("PRAGMA"):
+                    self.ran.append(super().execute("PRAGMA query_only").fetchone()[0])
+                return super().execute(sql, *args)
+
+        def spy(database, *args, **kwargs):
+            con = real(database, *args, factory=Probe, **kwargs)
+            con.ran = []
+            try:
+                sqlite3.Connection.execute(con, "CREATE TABLE written_by_the_reader (x)")
+                refused = False
+            except sqlite3.OperationalError:
+                refused = True
+            opens.append((str(database), kwargs.get("uri", False), refused, con.ran))
             return con
+        with mock.patch.object(sqlite3, "connect", spy):
+            yield opens
+
+    def assert_read_only(self, opens: list, what: str) -> None:
+        self.assertTrue(opens, f"{what} answered without opening the database")
+        for database, uri, refused, ran in opens:
+            self.assertIn("mode=ro", database, f"{what} opened {database} without mode=ro")
+            self.assertTrue(uri, f"{what} opened {database} without uri=True")
+            self.assertTrue(refused, f"{what} opened {database} for writing")
+            self.assertTrue(ran, f"{what} ran no statement on {database}")
+            self.assertEqual(set(ran), {1}, f"{what} queried {database} without query_only")
+
+    def test_read_only_this_repo_and_no_binary(self) -> None:
+        """AC2. Mutants: a plain read-write open in `read_db` or in the `store()` probe, the
+        `mode=ro` URI or `PRAGMA query_only` dropped, the other directory's session counted, or
+        `opencode stats` run."""
+        make_db(self.db, str(self.root), str(self.other))
         before = self.db.read_bytes()
-        with mock.patch.object(meter_opencode, "connect", spy):
+        with self.opens() as opened:
             got = self.reading()
-        self.assertEqual(opened, [self.db], "the reading is taken through the read-only open")
+        self.assert_read_only(opened, "the reading")
         self.assertEqual(got["tokens"], TOKENS, "the other directory's 11,691 is left out")
         self.assertEqual(self.db.read_bytes(), before)
         self.assertFalse(self.mark.exists(), "no opencode process is started")
-        with self.env():
+        with self.env(), self.opens() as opened:
             self.assertIn(str(self.db), meter_opencode.store(self.root, os.environ))
             self.assertIsNone(meter_opencode.store(self.home, os.environ),
                               "a store holding no session for that directory is not its store")
+        self.assert_read_only(opened, "the store() probe")
+        self.assertEqual(len(opened), 2, "each store() call opens the database once")
+        self.assertEqual(self.db.read_bytes(), before)
         self.assertFalse(self.mark.exists())
 
     def test_legacy_json_store_reads_the_same_basis(self) -> None:
