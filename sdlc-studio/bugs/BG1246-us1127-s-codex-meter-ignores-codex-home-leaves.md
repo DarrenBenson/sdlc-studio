@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py, changelog.d/BG1246.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1127 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,18 @@ Resolve the store from `CODEX_HOME` when set, else `~/.codex`, and pin both. Add
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1127 round 1 (APPROVE, non-blocking).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Resolve the store from `CODEX_HOME` when set, else `~/.codex`, and pin both.
+- [ ] **AC1** Given `CODEX_HOME` naming a populated store and no `~/.codex` under HOME, when the Codex meter reads, then it reads that store's tokens; with `CODEX_HOME` unset it reads `~/.codex`. Fails on: `codex_home` reading only HOME (`meter_codex.py:51-53`).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_codex_home_names_the_store
+- [ ] **AC2** Given a store holding a thread whose cwd is `/x/repo-old` beside one in `/x/repo`, when the meter reads for `/x/repo`, then only the `/x/repo` thread is booked. Fails on: `startswith(workspace.rstrip(os.sep) + os.sep)` replaced by `startswith(workspace)`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_sibling_prefix_workspace_is_not_this_repo_s
+- [ ] **AC3** Given a store held under a write lock by another connection, when the meter reads, then it returns a named None within `TIMEOUT_SECONDS` plus a margin, measured by wall clock rather than by asserting the constant. Fails on: `timeout=TIMEOUT_SECONDS` dropped from the store's open (`meter_codex.py:118`), which waits SQLite's default 5 s.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_locked_store_is_abandoned_within_the_bound
+- [ ] **AC4** Given a cleanly closed WAL store, when the meter reads it, then the store's bytes are unchanged, and the module docstring and `reference-sprint.md` say the store is never written though SQLite may create `-wal` and `-shm` beside it. Fails on: the open losing `mode=ro`, or either text keeping 'never opened for writing' with nothing said of the files a read creates.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_read_leaves_the_store_s_bytes_unchanged
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-06 | Claude Opus 5.5 | Groomed for run eight (D0416): criteria with Verify checks, Points and Affects |

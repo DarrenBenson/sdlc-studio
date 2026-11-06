@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_opencode.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_opencode.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py, changelog.d/BG1240.md
 > **Evidence:** run seven (RUN-01M6RAP7) US0988 review rounds 1 and 2
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,16 @@ Have `store()` raise (or return a candidate marked unreadable) on `sqlite3.Error
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US0988 rounds 1 and 2 (round 2 APPROVE; both findings re-executed in round 2 and still open).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have `store()` raise (or return a candidate marked unreadable) on `sqlite3.Error` for a file that exists, as the Codex and Copilot probes do, and pin it with a...
+- [ ] **AC1** Given an OpenCode database present at the default path that SQLite cannot read (bytes that are not a database, and mode 000 where the test is not root) and no harness signal variable set, when the token-meter selection runs, then OpenCode is reported as a candidate whose store cannot be read, and the run is not metered as Claude by default without a warning. Fails on: `store()` in `lib/meter_opencode.py` keeping `except sqlite3.Error: return None` for a file that exists.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_an_unreadable_store_is_a_candidate
+- [ ] **AC2** Given a readable OpenCode database that holds sessions only for other directories, when `store()` probes it, then it returns None and OpenCode is not a candidate. Fails on: a fix that raises or reports a candidate for every database that exists, readable or not.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_a_readable_store_of_other_directories_is_not_a_candidate
+- [ ] **AC3** Given a cleanly closed WAL database, when `read_db` reads it, then the database file's bytes are unchanged, and the module docstring says a read-only open may create the `-wal` and `-shm` files beside it but never writes the database. Fails on: the docstring keeping 'nor its write-ahead log' is written, or `connect` dropping `mode=ro` or `PRAGMA query_only` (the bytes then change).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_a_read_leaves_the_database_bytes_unchanged
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-06 | Claude Opus 5.5 | Groomed for run eight (D0416): criteria with Verify checks, Points and Affects |

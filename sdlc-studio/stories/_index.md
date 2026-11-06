@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 79 |
-| Ready | 1 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1128** |
+| **Total** | **1135** |
 
 ## All Stories
 
@@ -166,6 +166,13 @@
 | [US1126](US1126-sprint-lane-run-runs-a-lane-s-brief.md) | sprint lane run runs a lane's brief headless in any supported CLI and prices the lane from the usage it prints | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1127](US1127-the-meter-recognises-a-codex-cli-run-and.md) | The meter recognises a Codex CLI run and reads its token actual from the Codex store | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1128](US1128-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage it prints | Done | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1129](US1129-cut-agents-md-to-7-000-chars-and.md) | Cut AGENTS.md to 7,000 chars and gate the always-loaded files by size | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1130](US1130-trim-the-shipped-agent-instructions-template-to-5.md) | Trim the shipped agent-instructions template to 5,000 chars and name the start context a delivery session pays | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1131](US1131-ship-sdlc-builder-and-sdlc-reviewer-agent-definitions.md) | Ship sdlc-builder and sdlc-reviewer agent definitions and draft them into each project's .claude/agents | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1132](US1132-spawn-lanes-and-reviews-with-the-lean-definitions.md) | Spawn lanes and reviews with the lean definitions and carry the builder traps in the lane brief | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1133](US1133-write-the-refs-and-mentions-trailers-the-commit.md) | Write the Refs and Mentions trailers the commit-msg hook now refuses for | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1134](US1134-print-one-line-on-success-from-the-hooks.md) | Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1135](US1135-price-the-non-claude-models-the-meters-read.md) | Price the non-Claude models the meters read, each from a dated provider source | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 

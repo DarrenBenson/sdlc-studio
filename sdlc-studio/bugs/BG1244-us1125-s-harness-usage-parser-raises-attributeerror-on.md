@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/harness_usage.py, .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/harness_usage.py, .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py, changelog.d/BG1244.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1125 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,18 @@ Check each container's type before reading it and return unmetered with a reason
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1125 round 1 (APPROVE, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Call `harness_usage.parse` on a Claude line whose `modelUsage` is `[1]`: it raises `AttributeError`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Check each container's type before reading it and return unmetered with a reason, as the Cursor and Codex readers do, with the eight shapes as subtests.
+- [ ] **AC1** Given each of the eight JSON-valid lines whose usage container is not an object (Claude `modelUsage` `{"m": 5}` and `[1]`, Claude `usage` `"x"`, a Copilot `modelMetrics` entry `"x"`, Copilot `data` `[1]`, a `tokenDetails` entry `4`, OpenCode `part` `"x"`, OpenCode `cache` `[1]`), when `harness_usage.parse` reads it, then it returns unmetered with a reason naming the container, as the Cursor and Codex readers do, and never raises. Fails on: any one of the eight type checks removed (the `AttributeError` at `harness_usage.py:181`).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_a_non_object_usage_container_is_unmetered_not_raised
+- [ ] **AC2** Given a captured session with its reasoning field removed, when it is parsed, then `reasoning` is None and named in `unreported`, never 0. Fails on: `_opt` returning 0 for a missing key.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_an_absent_reasoning_count_is_unreported_not_zero
+- [ ] **AC3** Given a two-model Claude capture whose second model carries more tokens, when it is parsed, then the session's model is the second. Fails on: `_largest` returning the first model.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_the_session_model_is_the_one_with_most_tokens
+- [ ] **AC4** Given the module docstring's Codex paragraph, then it names the deciding evidence that `input_tokens` holds `cached_input_tokens`: the rollout's `total_tokens` 14529 equals input plus output. Fails on: the docstring citing only '14524 input with 12288 cached', which fits either reading.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_the_codex_docstring_names_the_total_tokens_evidence
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-06 | Claude Opus 5.5 | Groomed for run eight (D0416): criteria with Verify checks, Points and Affects |

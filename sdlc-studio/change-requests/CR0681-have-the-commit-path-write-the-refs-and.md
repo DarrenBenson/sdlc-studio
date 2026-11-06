@@ -1,6 +1,7 @@
 # CR-0681: Have the commit path write the Refs and Mentions trailers it now refuses for, make every tool that writes markdown emit lint-clean output, and print one line on success from the hooks and the commands agents filter by hand
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0300
 > **Parent:** RFC0062
 > **Priority:** Low
 > **Type:** Improvement

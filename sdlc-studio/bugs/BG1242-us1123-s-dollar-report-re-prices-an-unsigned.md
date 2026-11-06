@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, changelog.d/BG1242.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1123 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,18 @@ Replay the filed page's own price table for an unsigned page as well as a signed
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1123 round 1 (REJECT; its three blocking findings are repaired in the run and not repeated here).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Replay the filed page's own price table for an unsigned page as well as a signed one, so a re-derivation prices with the table the close used, and pin it with...
+- [ ] **AC1** Given a closed run whose page is filed but unsigned, when one model's price in `templates/model-prices.json` changes and the page is then revalidated or put to `sprint sign`, then it reads valid and re-derives the close's `est_actual` and `eu_usd` unchanged. Fails on: `_page_readings` returning `price_table: None` for an unsigned page, so the live table is read (the executed $0.6608 to $1.32 shift).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_an_unsigned_page_keeps_the_prices_it_was_filed_with
+- [ ] **AC2** Given the same unsigned page with its recorded price table edited on disk after the close and its fingerprint left as filed, when it is revalidated, then it reads invalid and names the change. Fails on: replaying the table from the file with the table left out of the digest.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_an_edited_price_table_on_an_unsigned_page_is_named
+- [ ] **AC3** Given a fixture run closed through the `sprint.py close` entry point, never by calling `stamp_cost_roles` directly, then the filed page carries the per-role table. Fails on: replacing `run_state.stamp_cost_roles(root)` in `_file_the_report` (`sprint.py`) with `pass`, which survives every current test.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_the_close_itself_files_the_role_table
+- [ ] **AC4** Given a run that ended on a day after which the table turns stale, when the report and the retro are derived later, then both judge staleness on the run's end date and neither marks the dollars stale. Fails on: `"today": None` in `build_report`, or `retro.py` calling `run_state.usd` with no `today`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_staleness_is_judged_on_the_run_s_end_date
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-06 | Claude Opus 5.5 | Groomed for run eight (D0416): criteria with Verify checks, Points and Affects |
