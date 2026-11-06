@@ -553,7 +553,24 @@ of the message in the project's own shape. A unit with no Affects is told to dec
 no staging command is printed. So a fresh agent builds each unit from its brief, while the
 orchestrator holds the run state and the verdicts, waits on each builder's completion
 notification rather than polling, and accepts the work back with `lane return`. A harness
-without subagents starts a fresh session per unit from the same brief.
+without subagents starts a fresh session per unit from the same brief, with one command:
+
+```bash
+python3 <skill>/scripts/sprint.py lane run --harness codex --units US0123 --model <model>
+```
+
+`lane run` briefs the one unit and runs the brief headless in `claude`, `cursor`, `codex`,
+`copilot` or `opencode`, in the lane's worktree (`--worktree`, else
+`sdlc-studio/.local/worktrees/lane-<unit>`, created from HEAD) under `--timeout` seconds (default
+3600), passing `--model` through. It writes the lane record to
+`sdlc-studio/.local/lane-runs/<unit>.json`: the session id, model and usage normalised by
+`lib/harness_usage.py`, the files staged and, for Claude Code, the first call's context. A later
+`lane return` with no `--tokens` or `--agent` prices the unit from that record, in priced
+input-equivalent tokens and US dollars. A CLI that exits non-zero, times out or prints no usage
+leaves the lane unmetered with the reason, never zero, and its staged work in the worktree for
+`lane land`. A Claude Code lane runs with `--tools` naming its tool set beside
+`--strict-mcp-config` and `--disable-slash-commands`: a bare `--tools` allowlist loads every MCP
+tool in full. Exit 2 is a refusal before the CLI ran, 1 a CLI that exited non-zero or timed out.
 
 `lane return` runs every executable criterion and reports each with the runner's own output and
 exit code, not a summary. It forces the outcome to `blocked` whenever a criterion did not pass,

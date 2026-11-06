@@ -35,6 +35,11 @@ REVIEW_Q3 = _usage(6, 60, 4_000, 0, 40_000)
 REVIEW_Q4 = _usage(7, 70, 4_100, 0, 41_000)
 REPAIR_Z = _usage(25, 250, 2_500, 0, 60_000)
 STRAY_Q0 = _usage(3, 30, 900, 0, 9_000)
+#: messages read on two transcripts: msg_shared partial on the main thread and whole on agent-x1,
+#: msg_shared_2 whole on the main thread and partial on agent-x1
+SHARED = _usage(9, 900, 0, 1_500, 20_000)
+SHARED_PARTIAL_OUTPUT = 10
+OWN_X1 = _usage(4, 40, 700, 0, 8_000)
 
 #: q0's prompt reads as a reviewer's, and no record names q0.
 REVIEWER_WORDED_PROMPT = ("You are the independent reviewer of US0101. Review the builder's "
@@ -136,7 +141,11 @@ class CostAnatomyTests(meter._Case):
         twelve); the repair booked as a builder (agents of a unit not split by its first
         verdict's author); a role's first context taken from its last call, or from its first
         agent alone rather than each agent's first call (reviewer, other); the average taken over
-        the role's agents rather than its calls; a share formed over one role alone. Each moves a
+        the role's agents rather than its calls; a share formed over one role alone; a message
+        read on two transcripts counted at its first transcript's partial usage (msg_shared at
+        output 10 on the main thread, 900 on agent-x1), or at its later copy rather than its
+        largest (msg_shared_2, whole first), or counted on both, or booked to the last
+        transcript reading it rather than the side the meter books it to. Each moves a
         figure asserted."""
         ws = self._session()
         by_agent = {  # each role's agents, each agent's calls in order
@@ -178,6 +187,28 @@ class CostAnatomyTests(meter._Case):
         self.assertIn(f"{priced['builder']:,}", builder)
         self.assertIn(f"{100 * priced['builder'] / sum(priced.values()):.1f}%", builder)
         self.assertIn(f"{_ctx(BUILD_X):,}", builder)
+        # a message read on two transcripts counts once at its largest usage across both, booked
+        # to the side that read it first, as the meter reads it
+        ws = self.workspace(agents=False)
+        partial = dict(SHARED, output_tokens=SHARED_PARTIAL_OUTPUT)
+        ws.tx._append(ws.tx.main, [_assistant("msg_shared", partial, [{"type": "text"}]),
+                                   _assistant("msg_shared_2", SHARED, [{"type": "text"}])])
+        ws.tx._append(ws.tx.subagents / "agent-x1.jsonl", [
+            _assistant("msg_shared", SHARED, [{"type": "text"}]),
+            _assistant("msg_shared_2", partial, [{"type": "text"}]),
+            _assistant("msg_x1", OWN_X1, [{"type": "text"}])])
+        doc = self._json(ws)
+        got = {row["role"]: row for row in doc["roles"]}
+        run_state = meter._live("lib.run_state")
+        reading = run_state.claude_tokens(ws.root)
+        self.assertEqual(meter._priced(meter._sum(meter.MAIN_1, SHARED, SHARED, OWN_X1)),
+                         doc["total"]["priced"])
+        self.assertEqual(reading["priced"], doc["total"]["priced"])
+        self.assertEqual(meter._priced(meter._sum(meter.MAIN_1, SHARED, SHARED)),
+                         got["orchestrator"]["priced"])
+        self.assertEqual(run_state.price(reading["main"]), got["orchestrator"]["priced"])
+        self.assertEqual(meter._priced(meter._sum(OWN_X1)), got["other"]["priced"])
+        self.assertEqual((3, 1), (got["orchestrator"]["calls"], got["other"]["calls"]))
 
     def test_the_heaviest_tool_outputs_are_named(self) -> None:
         """AC2. MUTANTS: outputs ranked by size alone (r9's 200,000-character dump, which no later

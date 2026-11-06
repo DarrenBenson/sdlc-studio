@@ -346,6 +346,16 @@ no builder waits on a commit hook. The brief states a tool-call budget, a fixed 
 per-point constant times the unit's points; at the budget the builder writes `HANDOFF.md` there
 (what is done, the criteria left, the next step) and returns.
 
+A harness without subagents runs each lane with
+`sprint lane run --harness <h> --units <id> [--model <m>]`, one fresh session per lane: it briefs
+the unit, runs that brief headless in the named CLI (`claude`, `cursor`, `codex`, `copilot` or
+`opencode`) in the lane's own worktree under a timeout, and records the session id, model and
+usage the CLI printed, which `sprint lane return` prices the lane from. A CLI that exits non-zero,
+times out or prints no usage leaves the lane unmetered, with the reason, and its staged work
+stays in the worktree for `sprint lane land`. A Claude Code lane starts with `--tools` naming its
+tool set beside `--strict-mcp-config` and `--disable-slash-commands`, because a bare `--tools`
+allowlist loads every MCP tool in full.
+
 A repair or second build resumes its builder only while that builder's context is below 100k
 tokens; otherwise it starts a fresh builder from the hand-off note. Every call re-reads the whole
 context, so a resumed builder at 462k tokens pays about fifteen times per call what a fresh one

@@ -92,18 +92,41 @@ def _context(parts: dict) -> int:
     return parts["input"] + parts["cache_write_5m"] + parts["cache_write_1h"] + parts["cache_read"]
 
 
-def _usage_of(path: Path, side: str, seen: set) -> tuple[dict, list[int] | None]:
-    """`(components, contexts)` of one transcript: its components once per message at the
-    message's largest usage (`run_state`'s reader and `_aggregate`), and each call's context in
-    the order the calls first appear, None when a usage record carries no message id. A message
-    id already read on an earlier transcript stays booked there. RAISES `AnatomyError` on a
-    malformed or unreadable transcript, as the meter refuses one."""
+def _records_of(path: Path, side: str) -> list:
+    """One transcript's usage records through the meter's reader (`run_state._file_records`),
+    collapsed per message at its largest. RAISES `AnatomyError` on a malformed or unreadable
+    transcript, as the meter refuses one."""
     out: list = []
     try:
         run_state._file_records(path, side, out, memo={})  # collapsed per message, at its largest
     except run_state._MeterError as exc:
         raise AnatomyError(str(exc)) from exc
-    kept = [rec for rec in out if rec[1] is None or rec[1] not in seen]
+    return out
+
+
+def _largest(readings: list[list]) -> dict:
+    """`{message id: components}`, each component at its largest over every transcript's records,
+    as `run_state._aggregate` reads a message read on more than one transcript."""
+    largest: dict = {}
+    for records in readings:
+        for _side, msg_id, _at, parts, _model in records:
+            if msg_id is not None:
+                held = largest.get(msg_id)
+                largest[msg_id] = parts if held is None else {
+                    c: max(held[c], parts[c]) for c in run_state.TOKEN_COMPONENTS}
+    return largest
+
+
+def _usage_of(path: Path, records: list, seen: set,
+              largest: dict) -> tuple[dict, list[int] | None]:
+    """`(components, contexts)` of one transcript's `records`: its components once per message
+    at the message's largest usage over every transcript (`largest`, then `_aggregate`), and each
+    call's context in the order the calls first appear, None when a usage record carries no
+    message id. A message id already read on an earlier transcript stays booked there, at that
+    largest usage, as the meter books it to the side it was first read on."""
+    kept = [(side, msg_id, at, parts if msg_id is None else largest[msg_id], model)
+            for side, msg_id, at, parts, model in records
+            if msg_id is None or msg_id not in seen]
     seen.update(rec[1] for rec in kept if rec[1] is not None)
     calls: dict = {}
     for _side, msg_id, _at, parts, model in kept:
@@ -218,11 +241,14 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str]) -> dict:
     rows = {r: _row(r) for r in ROLES}
     seen: set = set()
     outputs: list[dict] = []
-    for path, side in [(main, "main")] + [(f, "subagents") for f in subagents]:
+    sources = [(main, "main")] + [(f, "subagents") for f in subagents]
+    readings = [_records_of(path, side) for path, side in sources]
+    largest = _largest(readings)
+    for (path, side), records in zip(sources, readings):
         key = agent_key(path.stem) if side == "subagents" else None
         role = ORCHESTRATOR if side == "main" else roles.get(key or "", OTHER)
         agent = path.stem if side == "subagents" else "session"
-        comps, contexts = _usage_of(path, side, seen)
+        comps, contexts = _usage_of(path, records, seen, largest)
         row = rows[role]
         row["agents"] += 1
         row["agent_ids"].append(agent)

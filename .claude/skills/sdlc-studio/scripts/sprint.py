@@ -8612,6 +8612,67 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
               file=sys.stderr)
 
 
+#: `lane return` and `lane accept`'s per-verifier timeout in seconds when `--timeout` is not given.
+LANE_VERIFY_TIMEOUT = 300
+
+
+def _lane_run_refusal(args: argparse.Namespace, units: list[str]) -> str | None:
+    """Why `lane run` cannot start, before anything is recorded, or None: no `--harness`, other
+    than one unit (one fresh session per lane, priced on its own), or the CLI not on PATH."""
+    import shutil  # noqa: PLC0415 - only a lane run looks a CLI up
+    from lib import lanes  # noqa: PLC0415 - only a lane run needs it
+    if not getattr(args, "harness", None):
+        return f"name the CLI with --harness ({', '.join(lanes.BINARIES)})"
+    if len(units) != 1:
+        return (f"a lane run takes one unit, one fresh session per lane priced on its own; got "
+                f"{len(units)} ({', '.join(units)})")
+    binary = lanes.BINARIES[args.harness]
+    if shutil.which(binary) is None:
+        return f"{binary} is not on PATH, so no {args.harness} lane can run"
+    return None
+
+
+def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) -> None:
+    """Price each returned unit from its `lane run` record (`lanes.run_reading`): the usage its
+    own CLI printed, weighed by `run_state.price` and costed in US dollars by `lib/prices.py`,
+    recorded as the unit's delegated record. A return that names its builder's own total
+    (`--tokens` or `--agent`) is priced from that instead. An unmetered lane, or a record another
+    run wrote, is warned about and records nothing, never a zero."""
+    if getattr(args, "tokens", None) is not None or getattr(args, "agent", None) is not None:
+        return
+    from lib import lanes, prices  # noqa: PLC0415 - only a lane run's return needs them
+    run_id = _lane_run_state(
+        "lane_run_totals", lambda: run_state.read(root).get("run_id"), None,
+        "the run state could not be read, so no lane run record is priced")
+    unreadable = object()
+    for res in results:
+        reading, why = lanes.run_reading(root, res["unit"], run_id)
+        if why:
+            print(f"WARNING {why}", file=sys.stderr)
+        if reading is None:
+            continue
+        reading["priced"] = run_state.price(reading["components"])
+        try:
+            cost = prices.cost(reading["model"], reading["components"], prices.load(root))
+            usd, note = cost.usd, cost.unpriced
+        except (prices.PriceTableError, ValueError) as exc:
+            usd, note = None, f"not priced: {exc}"
+        got = _lane_run_state(
+            "record_lane_run_total",
+            lambda res=res, reading=reading: run_state.record_delegated_tokens(
+                root, reading["tokens"], agent=f"lane-run-{reading['harness']}",
+                note=f"sprint lane run return ({res['outcome']})", unit=res["unit"],
+                reading=reading, provenance=lanes.HARNESS_OUTPUT),
+            unreadable,
+            f"{res['unit']}'s lane run usage could not be recorded (the run state is "
+            f"unreadable), so its cost will not reach the page")
+        res["agent_total"] = None if got is unreadable else got
+        res["lane_run_cost"] = {"usd": usd, "unpriced": note, "model": reading["model"]}
+        if got is None:
+            print(f"WARNING {res['unit']}'s lane run usage was not recorded: no run is open, so "
+                  f"there is no run to count it against", file=sys.stderr)
+
+
 def _page_units(state: dict) -> list[str]:
     """The units the page lists a per-unit row for: planned, added or dropped."""
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
@@ -9029,7 +9090,8 @@ def cmd_lane(args: argparse.Namespace) -> int:
         return lanes.accept(args.root, getattr(args, "unit", None),
                             getattr(args, "verdict", None), getattr(args, "reviewer", None),
                             _SIGNOFF_TERMINAL, author=getattr(args, "author", None),
-                            timeout=args.timeout, passthrough=passthrough)
+                            timeout=args.timeout or LANE_VERIFY_TIMEOUT,
+                            passthrough=passthrough)
     root = Path(args.root)
     units = _lane_unit_ids(args)
     if not units:
@@ -9037,12 +9099,19 @@ def cmd_lane(args: argparse.Namespace) -> int:
               "some. An empty lane is reported, never treated as a lane with nothing to do.",
               file=sys.stderr)
         return 2
-    if args.action == "brief":
+    if args.action == "run" and (refusal := _lane_run_refusal(args, units)):
+        print(f"sprint lane run: {refusal}", file=sys.stderr)
+        return 2
+    if args.action in ("brief", "run"):
         for flag in ("tokens", "minutes"):
             if getattr(args, flag, None) is not None:
                 print(f"WARNING --{flag} was not recorded: a brief records no agent total - "
                       f"pass the builder's total to `sprint lane return`", file=sys.stderr)
         dispatch = lane_dispatch(root, units)
+        if args.action == "run" and dispatch["refused"]:
+            for ref in dispatch["refused"]:
+                print(f"REFUSED {ref['refusal']}", file=sys.stderr)
+            return 2
         # An IN-FLIGHT marker per briefed unit, taken at dispatch and cleared at return. A lane
         # that dies mid-flight leaves real code in the working tree behind a unit still marked
         # Ready, and a restart cannot tell a delivered unit from an untouched one - the revision
@@ -9087,6 +9156,15 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 None,
                 f"{b['id']}'s span could not be opened (the run state is unreadable), so its "
                 f"time and tokens will read NOT MEASURED")
+        if args.action == "run":
+            from lib import lanes  # noqa: PLC0415 - only a lane run needs it
+            [brief] = dispatch["briefs"]
+            run_id = _lane_run_state("lane_run_id", lambda: run_state.read(root).get("run_id"),
+                                     None, "the run state could not be read, so the lane record "
+                                           "names no run and its return will not price it")
+            return lanes.run(root, brief["id"], args.harness, lane_brief_text(brief),
+                             model=args.model, worktree=getattr(args, "worktree", None),
+                             timeout=args.timeout or lanes.RUN_TIMEOUT, run_id=run_id)
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
@@ -9103,7 +9181,7 @@ def cmd_lane(args: argparse.Namespace) -> int:
         print(f"sprint lane return: {exc}", file=sys.stderr)
         return 2
     results = [lane_return(root, uid, claimed=args.claimed, proof=proof, proof_gaps=gaps,
-                           timeout=args.timeout) for uid in units]
+                           timeout=args.timeout or LANE_VERIFY_TIMEOUT) for uid in units]
     # Cleared on RETURN, whatever the outcome: a blocked return is still a lane that came back,
     # and leaving the marker set would warn about a unit nobody is mid-way through.
     for res in results:
@@ -9133,6 +9211,7 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 f"its time and tokens may read NOT MEASURED. Its acceptance criteria HAVE been "
                 f"run and their result is reported below")
     _lane_agent_totals(root, args, results)
+    _lane_run_totals(root, args, results)
     if getattr(args, "format", "text") == "json":
         print(json.dumps(results, indent=2))
     else:
@@ -9147,6 +9226,9 @@ def cmd_lane(args: argparse.Namespace) -> int:
                 if got.get("priced") is not None:
                     print(f"  agent priced cost recorded (read from {read_from}): "
                           f"{got['priced']:,} {run_state.PRICED_LABEL}")
+            if cost := res.get("lane_run_cost"):
+                print(f"  lane run cost: US${cost['usd']:.4f} ({cost['model']})"
+                      if cost["usd"] is not None else f"  lane run cost: {cost['unpriced']}")
             for crit in res["verification"]["criteria"]:
                 print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
                       f"<- {crit['verifier']}")
@@ -12570,8 +12652,16 @@ def build_parser() -> argparse.ArgumentParser:
              "branch, fast-forwards that branch, removes the worktree, then records each unit's "
              "self-check and writes its QA brief. `accept` records the reviewer's verdict "
              "against that brief and, on an APPROVE, runs the criteria, moves the unit to Done "
-             "or Fixed and returns its lane.")
-    ln.add_argument("action", choices=("brief", "return", "land", "accept"))
+             "or Fixed and returns its lane. `run` briefs one unit and runs that brief headless "
+             "in a supported CLI (--harness) in the lane's worktree under a timeout, recording "
+             "the session id, model and usage the CLI printed, which `return` prices the lane "
+             "from; a CLI that fails or prints no usage leaves the lane unmetered, never zero.")
+    ln.add_argument("action", choices=("brief", "return", "land", "accept", "run"))
+    ln.add_argument("--harness", default=None, choices=("claude", "cursor", "codex", "copilot",
+                                                        "opencode"),
+                    help="(run) the CLI the lane's brief runs in, one fresh headless session")
+    ln.add_argument("--model", default=None,
+                    help="(run) the model the session runs on, passed through to the CLI")
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
     ln.add_argument("--claimed", default="fixed",
@@ -12590,11 +12680,14 @@ def build_parser() -> argparse.ArgumentParser:
                     help="(return, accept) the builder agent's id: its transcript agent-ID.jsonl in this "
                          "session's subagents directory is read once per message and its priced "
                          "cost recorded on the unit's delegated record; optional")
-    ln.add_argument("--timeout", type=int, default=300,
-                    help="(return, accept) per-verifier timeout in seconds (default: 300)")
+    ln.add_argument("--timeout", type=_lane_positive_int, default=None,
+                    help="(return, accept) per-verifier timeout in seconds (default: 300); "
+                         "(run) the CLI session's timeout in seconds (default: 3600)")
     ln.add_argument("--worktree", default=None,
                     help="(land) the builder's worktree, holding its staged change and the "
-                         "hand-in files under sdlc-studio/.local/lane/")
+                         "hand-in files under sdlc-studio/.local/lane/; (run) the worktree the "
+                         "session runs in (default: sdlc-studio/.local/worktrees/lane-<unit>, "
+                         "created from HEAD when absent)")
     ln.add_argument("--author", default=None,
                     help="(land) the author each self-check is recorded under (default: the "
                          "worktree's directory name); (accept) the author the verdict names (default: "

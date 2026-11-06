@@ -31,10 +31,16 @@ runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its
 `sprint.py lane return`, each through its own entry point. Exit 2 is a refusal before anything
 was recorded, 1 a verdict recorded and the unit not moved (a REJECT, a red criterion or a
 refused transition) or a return that exited non-zero, 0 a unit moved and its lane returned.
+
+`sprint lane run` runs one lane's brief headless in a supported CLI (`headless_command`), in the
+lane's worktree and under a timeout, and keeps the lane record `RUN_RECORDS/<unit>.json`: the
+session id, model and usage `harness_usage.parse` normalised from what the CLI printed, or the
+reason the lane is unmetered. `run_reading` is what `lane return` prices the lane from.
 """
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -396,3 +402,222 @@ def accept(root: Path | str, unit: str | None, verdict: Path | str | None,
     except LandError as exc:
         _say(f"sprint lane accept: {exc}", err=True)
         return exc.code
+
+
+# -- sprint lane run ------------------------------------------------------------------------
+
+#: Where `lane run` keeps each lane's record (`<unit>.json`) and the CLI's own stdout
+#: (`<unit>.out`): under the root, because the worktree goes when the lane lands.
+RUN_RECORDS = Path("sdlc-studio") / ".local" / "lane-runs"
+#: Where `lane run` creates a lane's worktree when none is named.
+RUN_WORKTREES = Path("sdlc-studio") / ".local" / "worktrees"
+#: A lane run's timeout in seconds when none is given.
+RUN_TIMEOUT = 3600
+#: The unmetered kind of a CLI stopped at its timeout; `harness_usage` names the other three.
+TIMED_OUT = "timeout"
+#: The provenance of a delegated record priced from the usage a lane's own CLI printed.
+HARNESS_OUTPUT = "harness-output"
+#: The tools a Claude Code lane starts with. Named with `--tools` only beside
+#: `--strict-mcp-config` and `--disable-slash-commands`: a bare `--tools` allowlist loads every
+#: configured MCP tool in full, and a first call measured at 113k tokens that way started at
+#: 7.0k with all three (2026-11-06; 28.2k with none of them).
+CLAUDE_LANE_TOOLS = ("Bash", "Read", "Edit", "Write", "Glob", "Grep")
+#: Each harness's binary.
+BINARIES = {"claude": "claude", "cursor": "cursor-agent", "codex": "codex",
+            "copilot": "copilot", "opencode": "opencode"}
+#: The longest brief passed as one argument: Linux refuses a single argument over 128 KiB.
+BRIEF_MAX_BYTES = 120_000
+#: The normalised counts a lane record holds, each None where the run reported none.
+USAGE_COUNTS = ("input", "cache_read", "cache_write", "cache_write_1h", "output", "reasoning")
+#: Git's per-checkout variables, scrubbed from the lane's CLI and from the git `lane run` uses to
+#: create the worktree and read what it staged, so a run made from inside a hook cannot point the
+#: lane's git at the hook's checkout.
+_GIT_ENV = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+            "GIT_COMMON_DIR", "GIT_PREFIX", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+
+
+def _child_env() -> dict:
+    """This process's environment less git's per-checkout variables and `CLAUDECODE`, which
+    marks a session nested inside Claude Code."""
+    drop = set(_GIT_ENV) | {"CLAUDECODE"}
+    return {k: v for k, v in os.environ.items() if k not in drop}
+
+
+def _run_git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, text=True,
+                          timeout=GIT_TIMEOUT, check=False, env=_child_env())
+
+
+def headless_command(harness: str, brief: str, model: str | None, worktree: Path) -> list[str]:
+    """The argv that runs `brief` headless in `harness` with its usage printed as JSON, in each
+    CLI's own form (its `--help`, 2026-11-06). Codex's sandbox is widened to the repository's
+    git directory, which a worktree keeps outside itself, so its builder can stage."""
+    tools = ",".join(CLAUDE_LANE_TOOLS)
+    if harness == "claude":
+        cmd = ["claude", "-p", brief, "--output-format", "json", "--tools", tools,
+               "--allowedTools", tools, "--strict-mcp-config", "--disable-slash-commands"]
+    elif harness == "cursor":
+        cmd = ["cursor-agent", "-p", "--output-format", "json", "--trust", "--force"]
+    elif harness == "codex":
+        cmd = ["codex", "exec", "--json", "--skip-git-repo-check", "--sandbox", "workspace-write"]
+        common = _run_git(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir")
+        if common.returncode == 0 and common.stdout.strip():
+            cmd += ["--add-dir", common.stdout.strip()]
+    elif harness == "copilot":
+        cmd = ["copilot", "-p", brief, "--output-format", "json", "-s", "--allow-all-tools"]
+    elif harness == "opencode":
+        cmd = ["opencode", "run", "--format", "json"]
+    else:
+        raise ValueError(f"unknown harness {harness!r}; expected one of {', '.join(BINARIES)}")
+    if model:
+        cmd += ["-m" if harness in ("codex", "opencode") else "--model", model]
+    if harness in ("cursor", "codex", "opencode"):
+        cmd.append(brief)
+    return cmd
+
+
+def _first_call_context(harness: str, stdout: str) -> tuple[int | None, str | None]:
+    """The prompt of the session's first model call, and why it is None where it is: Claude
+    Code's `usage.iterations[0]` (input, cache creation and cache read). That the first entry is
+    the session's first call is observed on a one-call capture and assumed for longer ones. No
+    other CLI's headless output is read for it."""
+    if harness != "claude":
+        return None, f"{harness}'s headless output is not read for a first-call context"
+    try:
+        first = (json.loads(stdout).get("usage") or {}).get("iterations")[0]
+        return sum(int(first.get(k) or 0) for k in (
+            "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")), None
+    except (ValueError, TypeError, AttributeError, IndexError):
+        return None, "the output carries no usage.iterations entry"
+
+
+def _lane_worktree(root_top: Path, unit: str) -> Path:
+    """The lane's worktree under `RUN_WORKTREES`, reused when present, else created on a new
+    branch `lane-<unit>` from the root's HEAD."""
+    name = f"lane-{unit.lower()}"
+    path = root_top / RUN_WORKTREES / name
+    if path.is_dir():
+        return path.resolve()
+    made = _run_git(root_top, "worktree", "add", "-q", "-b", name, str(path), "HEAD")
+    if made.returncode:
+        raise LandError(f"the lane worktree {path} could not be created: "
+                        f"{_tail(made.stderr)}", 2)
+    return path.resolve()
+
+
+def _text(raw) -> str:
+    return raw.decode("utf-8", "replace") if isinstance(raw, bytes) else (raw or "")
+
+
+def run(root: Path | str, unit: str, harness: str, brief: str, model: str | None = None,
+        worktree: Path | str | None = None, timeout: int = RUN_TIMEOUT,
+        run_id: str | None = None) -> int:
+    """Run one lane's `brief` headless in `harness` in the lane's worktree; the exit status.
+
+    Writes the lane record `RUN_RECORDS/<unit>.json` (the session id, model and usage normalised
+    by `harness_usage.parse`, the first-call context, the files staged) and the CLI's stdout
+    beside it. A CLI that exits non-zero, runs past `timeout` or prints no usage is recorded
+    unmetered with the reason, its worktree and staged work left as they are. Exit 2 is a
+    refusal before the CLI ran, 1 a CLI that exited non-zero or timed out, 0 otherwise."""
+    try:
+        return _run(Path(root), unit, harness, brief, model, worktree, timeout, run_id)
+    except LandError as exc:
+        _say(f"sprint lane run: {exc}", err=True)
+        return exc.code
+
+
+def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
+         worktree: Path | str | None, timeout: int, run_id: str | None) -> int:
+    from lib import harness_usage  # noqa: PLC0415 - only a lane run reads usage
+    if harness not in BINARIES:
+        raise LandError(f"unknown harness {harness!r}; expected one of {', '.join(BINARIES)}", 2)
+    binary = shutil.which(BINARIES[harness])
+    if binary is None:
+        raise LandError(f"{BINARIES[harness]} is not on PATH, so no {harness} lane can run", 2)
+    if len(brief.encode("utf-8")) > BRIEF_MAX_BYTES:
+        raise LandError(f"{unit}'s brief is over {BRIEF_MAX_BYTES:,} bytes, too long to pass "
+                        f"as one argument", 2)
+    root_top = _top(root, "the root")
+    wt = Path(worktree).resolve() if worktree else _lane_worktree(root_top, unit)
+    _resolve(root_top, wt)
+    cmd = headless_command(harness, brief, model, wt)
+    cmd[0] = binary
+    started = sdlc_md.now_iso8601()
+    try:
+        proc = subprocess.run(cmd, cwd=str(wt), capture_output=True, text=True, timeout=timeout,
+                              check=False, env=_child_env(), stdin=subprocess.DEVNULL)
+        stdout, stderr, code = proc.stdout, proc.stderr, proc.returncode
+        usage = harness_usage.parse(harness, stdout, exit_code=code, model=model)
+    except subprocess.TimeoutExpired as exc:
+        stdout, stderr, code = _text(exc.stdout), _text(exc.stderr), None
+        usage = harness_usage.Usage(harness, False, unmetered=TIMED_OUT,
+                                    reason=f"the CLI ran past its {timeout}s timeout and was "
+                                           f"stopped")
+    first, first_why = _first_call_context(harness, stdout) if usage.metered else (None, None)
+    staged = _run_git(wt, "diff", "--cached", "--name-only").stdout.split()
+    out_path = root_top / RUN_RECORDS / f"{unit}.out"
+    sdlc_md.atomic_write(out_path, stdout)
+    record = {
+        "unit": unit, "run_id": run_id, "harness": harness, "model": model,
+        "command": ["<brief>" if a == brief else a for a in cmd], "worktree": str(wt),
+        "started_at": started, "ended_at": sdlc_md.now_iso8601(), "timeout": timeout,
+        "exit_code": code, "metered": usage.metered, "unmetered": usage.unmetered,
+        "reason": usage.reason, "session_id": usage.session_id, "usage_model": usage.model,
+        "model_source": usage.model_source,
+        "usage": {k: getattr(usage, k) for k in USAGE_COUNTS},
+        "unreported": list(usage.unreported), "disagreements": list(usage.disagreements),
+        "first_call_context": first, "first_call_reason": first_why, "staged": staged,
+        "output": str(out_path)}
+    rec_path = root_top / RUN_RECORDS / f"{unit}.json"
+    sdlc_md.atomic_write(rec_path, json.dumps(record, indent=2) + "\n")
+    _say(f"{unit}: {harness} lane ran in {wt} (exit {'none' if code is None else code})")
+    if usage.metered:
+        u = record["usage"]
+        _say(f"  session {usage.session_id or 'not reported'}, model "
+             f"{usage.model or 'not reported'}: {u['input']:,} input, {u['cache_read']:,} cache "
+             f"read, {u['cache_write']:,} cache write, {u['output']:,} output")
+        _say(f"  first-call context: {first:,} tokens" if first is not None
+             else f"  first-call context: not available ({first_why})")
+        for gap in usage.disagreements:
+            _say(f"  WARNING the usage disagrees with the CLI's own total - {gap}", err=True)
+    else:
+        _say(f"WARNING {unit}'s lane is unmetered ({usage.unmetered}): {usage.reason}; its "
+             f"return records no priced cost", err=True)
+        if stderr.strip():
+            _say(_tail(stderr), err=True)
+    _say(f"  staged: {', '.join(staged) if staged else 'nothing'}")
+    _say(f"  record: {rec_path}")
+    _say(f"  next: sprint.py lane land --worktree {wt} --units {unit}")
+    return 1 if code != 0 else 0
+
+
+def run_reading(root: Path | str, unit: str,
+                run_id: str | None) -> tuple[dict | None, str | None]:
+    """The reading `lane return` prices `unit` from: its lane record's usage, as
+    {"tokens", "components", "source", "harness", "model"}, or (None, why) where the record is
+    unreadable, another run's or unmetered. (None, None) where the unit has no lane record."""
+    path = Path(root) / RUN_RECORDS / f"{unit}.json"
+    if not path.is_file():
+        return None, None
+    try:
+        rec = json.loads(path.read_text(encoding="utf-8"))
+        if rec.get("run_id") != run_id:
+            return None, (f"{unit}'s lane run record {path.name} was written under another run "
+                          f"({rec.get('run_id') or 'none'}), so it is not priced into this one")
+        if not rec.get("metered"):
+            return None, (f"{unit}'s lane run is unmetered ({rec.get('unmetered')}): "
+                          f"{rec.get('reason')}, so its return records no priced cost")
+        u = rec["usage"]
+        hour = u.get("cache_write_1h") or 0
+        parts = {"input": int(u["input"]), "output": int(u["output"]),
+                 "cache_write_5m": int(u["cache_write"]) - hour, "cache_write_1h": hour,
+                 "cache_read": int(u["cache_read"])}
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+        return None, (f"{unit}'s lane run record {path} cannot be read ({exc}), so its return "
+                      f"records no priced cost")
+    tokens = parts["input"] + parts["output"] + parts["cache_write_5m"] + parts["cache_write_1h"]
+    if tokens <= 0:
+        return None, (f"{unit}'s lane run reports no input, output or cache write, so its "
+                      f"return records no priced cost")
+    return {"tokens": tokens, "components": parts, "source": str(path),
+            "harness": rec.get("harness"), "model": rec.get("usage_model")}, None
