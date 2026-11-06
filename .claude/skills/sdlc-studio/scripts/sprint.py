@@ -9542,6 +9542,7 @@ def batch_repair_in_tree(root, state: dict) -> list:
     Degrades to "nothing found" when git cannot be read: this is a discipline gate, and a close
     that cannot run because git is unavailable is a worse failure than one that proceeds.
     """
+    import engagement_floor  # noqa: PLC0415 - read only here; sibling script on sys.path
     changed = _changed_paths(root)
     if not changed:
         return []
@@ -9550,26 +9551,14 @@ def batch_repair_in_tree(root, state: dict) -> list:
         found = sdlc_md.find_by_id(root, uid)
         if not found:
             continue
-        declared = set()
-        for raw in sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]) or ""):
-            # NORMALISED, not compared raw. `Affects` is hand-written and this repo alone
-            # carries 95 declarations that do not resolve from the root and 14 containing
-            # `..`, none of which can ever equal git's spelling - so a raw comparison is dark
-            # to them. `resolve_affects` is the shared normaliser and already existed.
-            resolved = sdlc_md.resolve_affects(root, raw)
-            rel = _repo_rel(root, resolved) if resolved else raw.strip()
-            if rel:
-                # NOT `lstrip("./")` - that strips any leading `.` or `/` CHARACTER, so
-                # `.claude/...` became `claude/...` and the guard matched nothing at all on
-                # this repository. Only a literal `./` prefix is meant.
-                norm = rel.replace("\\", "/")
-                declared.add(norm[2:] if norm.startswith("./") else norm)
+        # ONE reading of a declaration, shared with the commit-msg hook's ownership check
+        # (LL0016): `engagement_floor.declared_keys` normalises each token - a note holding a
+        # comma, a `..` segment, a skill-relative spelling, a `.claude/` dot prefix - and
+        # `declaration_covers` lets a DIRECTORY or glob cover what sits under it. A second copy
+        # of either here is how the hook came to refuse owners this guard credits.
+        declared = engagement_floor.declared_keys(root, sdlc_md.read_text_safe(found[0]) or "")
         for path in sorted(changed):
-            # A DIRECTORY or glob declaration covers what sits under it. Comparing only whole
-            # paths meant a unit declaring `src/` - or `sdlc-studio/stories`, which several do -
-            # matched nothing at all.
-            if any(path == d or path.startswith(d.rstrip("/") + "/") or fnmatch.fnmatch(path, d)
-                   for d in declared):
+            if any(engagement_floor.declaration_covers(path, d) for d in declared):
                 hits.append((uid, path))
     return hits
 

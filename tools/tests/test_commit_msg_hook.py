@@ -587,7 +587,7 @@ class DerivedTrailerTests(unittest.TestCase):
                 f"# {rid}: sample\n\n> **Status:** In Progress\n> **Affects:** {owned}\n",
                 encoding="utf-8")
         for rel in files:
-            (repo / rel).parent.mkdir(exist_ok=True)
+            (repo / rel).parent.mkdir(parents=True, exist_ok=True)
             (repo / rel).write_text("x = 1\n", encoding="utf-8")
         gitutil.git(["add", "-A"], cwd=repo)
         gitutil.git(["commit", "-q", "-m", "seed"], cwd=repo)
@@ -690,6 +690,34 @@ class DerivedTrailerTests(unittest.TestCase):
                 self.assertNotRegex(out, rf"Refs: {rid}[^\n]*owns none", out)
             self.assertEqual(after, wrong)
 
+
+    def test_a_bracketed_note_or_a_dotdot_path_owns_its_file_as_the_close_reads_it(self):
+        # Round-2 REJECT of US1133 (BG1274). Two declaration shapes this tree's own units carry,
+        # which the close guard credits and the base hook passed: CR0155's bracketed note
+        # holding a comma (`scripts/audit.py (`_bug_underspecified`, lines ~72-83)`) and
+        # US0483's path through a `..` segment (`.claude/skills/sdlc-studio/scripts/../x.md`).
+        # A commit naming both with their own `Refs:` lines must land. Must fail on: the hook
+        # splitting the note on its comma, or keying the `..` path unresolved, so a true owner's
+        # `Refs:` is refused as owning none of the staged files.
+        skill = ".claude/skills/sdlc-studio"
+        units = (("change-requests", "CR0155", "tool/audit.py (`_bug_underspecified`, "
+                  "lines ~72-83)"),
+                 ("stories", "US0483", f"{skill}/templates/../reference-config.md"))
+        files = ("tool/audit.py", f"{skill}/reference-config.md", f"{skill}/templates/t.md")
+        subject = "fix(US0483, CR0155): the note and the dot-dot path"
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=files[:2], units=units, files=files)
+            right = f"{subject}\n\nRefs: US0483\nRefs: CR0155\n"
+            r, after = self._hook(repo, right)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, right)
+            # Derived, each owner gets `Refs:` and neither is written `Mentions:`.
+            r, after = self._hook(repo, f"{subject}\n")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            for rid in ("US0483", "CR0155"):
+                with self.subTest(owner=rid):
+                    self.assertEqual(after.count(f"Refs: {rid}\n"), 1, after)
+                    self.assertNotIn(f"Mentions: {rid}", after)
 
 class HookInvocationHermeticityTests(unittest.TestCase):
     """BG0595 AC4/AC5. No test may invoke the hook against the repository under development."""

@@ -746,11 +746,44 @@ def affects_owners(repo_root: Path | str,
     return owners
 
 
+def declared_keys(repo_root: Path | str, text: str) -> set[str]:
+    """The repo-relative keys a unit's `Affects` declares, read the ONE way two readers share:
+    the close guard (`sprint.batch_repair_in_tree`) calls this and `declaration_covers`, and so
+    does the commit-msg hook's ownership check, so the two cannot read a declaration apart
+    (LL0016). A second reader once split a bracketed note on its own comma and keyed a `..`
+    path unresolved, and refused owners' `Refs:` lines the close credited.
+
+    Tokens come from `sdlc_md.affects_files` (split on the commas outside a note, the note and
+    backticks stripped). Each is resolved through the shared resolver and made repo-relative
+    with `..` and symlinks resolved; one that resolves to nothing (a glob, a directory not yet
+    made, a deleted file) is kept as written less a literal `./` prefix, and one that resolves
+    outside the root is dropped, since no repo-relative path could equal it."""
+    root = Path(repo_root)
+    keys: set[str] = set()
+    for raw in sdlc_md.affects_files(text):
+        resolved = sdlc_md.resolve_affects(root, raw)
+        if resolved is None:
+            rel = raw.strip()
+        else:
+            try:
+                rel = Path(resolved).resolve().relative_to(root.resolve()).as_posix()
+            except (ValueError, OSError) as exc:  # outside the root: no repo path equals it
+                sdlc_md.debug("engagement_floor.declared_keys", exc)
+                rel = ""
+        # NOT `lstrip("./")`: that strips every leading `.` or `/` CHARACTER, so `.claude/...`
+        # became `claude/...` and matched nothing. Only a literal `./` prefix is meant.
+        norm = rel.replace("\\", "/")
+        if norm:
+            keys.add(norm[2:] if norm.startswith("./") else norm)
+    return keys
+
+
 def unit_footprints(repo_root: Path | str) -> dict[str, set[str]]:
-    """{normalised judged-type unit id -> the repo-relative paths its `Affects` declares}, one
-    entry for every unit artefact found, a unit declaring nothing included with an empty set, and
-    every declared token kept (`_declared_tokens`). `affects_owners` is this map inverted and
-    narrowed to file tokens; the trailer derivation reads it the right way round, whole."""
+    """{normalised judged-type unit id -> the repo-relative keys its `Affects` declares}, one
+    entry for every unit artefact found, a unit declaring nothing included with an empty set,
+    each read by `declared_keys`, the close guard's own reading. `affects_owners` is this map
+    inverted and narrowed to file tokens; the trailer derivation reads it the right way round,
+    whole."""
     footprints: dict[str, set[str]] = {}
     root = Path(repo_root)
     for type_ in SHIPPED_STATUS:
@@ -758,9 +791,8 @@ def unit_footprints(repo_root: Path | str) -> dict[str, set[str]]:
             rid = sdlc_md.extract_record_id(p.stem)
             if not rid:
                 continue
-            paths = footprints.setdefault(sdlc_md.norm_id(rid), set())
-            for f in _declared_tokens(sdlc_md.read_text_safe(p)):
-                paths.add(_repo_relative(root, f))
+            footprints.setdefault(sdlc_md.norm_id(rid), set()).update(
+                declared_keys(root, sdlc_md.read_text_safe(p) or ""))
     return footprints
 
 
@@ -889,10 +921,11 @@ _SCISSORS_RE = re.compile(r"^# -+ >8 -+$")
 
 
 def declaration_covers(path: str, declared: str) -> bool:
-    """True when one `Affects` token covers a repo-relative path: the path itself, a DIRECTORY
-    the path sits under (`src/` or `src`), or a GLOB it matches (`src/*.py`). The rule the close
-    already applies to the same declarations (`sprint.batch_repair_in_tree`), which a test drives
-    beside this one so the two cannot drift: an owner the close credits is an owner here."""
+    """True when one declared key (`declared_keys`) covers a repo-relative path: the path
+    itself, a DIRECTORY the path sits under (`src/` or `src`), or a GLOB it matches
+    (`src/*.py`). The close guard (`sprint.batch_repair_in_tree`) calls this same function over
+    the same keys, so a unit the close credits with a path is credited with it here; a test
+    drives both readers over one tree."""
     return (path == declared or path.startswith(declared.rstrip("/") + "/")
             or fnmatch.fnmatch(path, declared))
 
@@ -922,11 +955,11 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
     if len(written) <= 1 or not paths:
         return result
     fp = unit_footprints(root) if footprints is None else footprints
-    keys = {f: _repo_relative(root, f) for f in paths}
 
+    # Each staged path as the index reports it, repo-relative: the form the close guard compares.
     def owns(rid: str) -> bool:
-        return any(_path_owner(f) == rid or any(declaration_covers(k, d) for d in fp.get(rid, ()))
-                   for f, k in keys.items())
+        return any(_path_owner(f) == rid or any(declaration_covers(f, d) for d in fp.get(rid, ()))
+                   for f in paths)
 
     refs, mentions = _refs_ids(body), _mentions_ids(body)
     for m in _REFS_LINE_RE.finditer(body):

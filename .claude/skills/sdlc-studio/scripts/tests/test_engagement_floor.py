@@ -745,14 +745,27 @@ class CommitMsgCheckTests(unittest.TestCase):
         # glob, a glob under a dot-directory (`.ci/*.sh`, the leading-character strip's shape)
         # and an exact path each own a changed file, and a non-owning control owns none. Must
         # fail on: ownership judged by the exact path only, or either rule changed alone.
+        # Round-2 REJECT (BG1274): two shapes this tree's own units carry, where a second reader
+        # had disagreed with the close - a bracketed note holding a comma (CR0155's
+        # `scripts/audit.py (`_bug_underspecified`, lines ~72-83)`), which a split on every
+        # comma cut in two, and a path with a `..` segment (US0483's `scripts/../x.md`), which
+        # was never resolved. A staged DELETION under a declared directory (`tmpl/`) is judged by
+        # the path the index reports, as the close judges it, not re-resolved to the skill's
+        # same-named file. Must fail on: the hook reading declarations, or the staged paths,
+        # through any parser or resolver other than the close guard's own.
         spec = importlib.util.spec_from_file_location("sprint", SCRIPTS / "sprint.py")
         assert spec and spec.loader
         sprint = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(sprint)
         ef = _load()
         declared = {311: "src/", 312: "lib/*.py", 313: ".ci/*.sh", 314: "bin/gate",
-                    315: "docs/x.md"}
-        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "docs/x.md")
+                    316: "tool/audit.py (`_bug`, lines ~72-83)", 317: "docs/guide/../y.md",
+                    318: "tmpl/", 315: "docs/x.md"}
+        skill_twin = ".claude/skills/sdlc-studio/tmpl/x.md"
+        files = ("src/a.py", "lib/b.py", ".ci/run.sh", "bin/gate", "tool/audit.py",
+                 "docs/y.md", "tmpl/x.md", "docs/x.md", "docs/guide/g.md", "tmpl/keep.md",
+                 skill_twin)
+        changed = files[:7]
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             gitutil.git(["init", "-q"], cwd=root)
@@ -763,18 +776,24 @@ class CommitMsgCheckTests(unittest.TestCase):
                 (root / rel).write_text("x = 1\n", encoding="utf-8")
             gitutil.git(["add", "-A"], cwd=root)
             gitutil.git(["commit", "-q", "-m", "seed"], cwd=root)
-            for rel in files[:4]:
+            for rel in changed[:6]:
                 (root / rel).write_text("x = 2\n", encoding="utf-8")
+            (root / "tmpl" / "x.md").unlink()
             gitutil.git(["add", "-A"], cwd=root)
             ids = [f"US{n:04d}" for n in declared]
             close = {uid for uid, _ in sprint.batch_repair_in_tree(root, {"batch": ids})}
-            derived = ef.derive_trailers(root, " ".join(ids) + ": all five\n",
-                                         staged=list(files[:4]))
-        owners = {"US0311", "US0312", "US0313", "US0314"}
+            derived = ef.derive_trailers(root, " ".join(ids) + ": all eight\n",
+                                         staged=list(changed))
+            refs = ef.derive_trailers(root, " ".join(ids) + ": all eight\n\n"
+                                      + "".join(f"Refs: US{n:04d}\n" for n in (316, 317, 318)),
+                                      staged=list(changed))
+        owners = {"US0311", "US0312", "US0313", "US0314", "US0316", "US0317", "US0318"}
         self.assertEqual(close, owners, "the close guard's own reading of the declarations")
         self.assertEqual(set(derived["refs"]), close)
         self.assertEqual(derived["mentions"], ["US0315"])
         self.assertEqual(derived["contradicted"], [])
+        # The note and `..` owners' own `Refs:` lines stand, as the base hook let them.
+        self.assertEqual(refs["contradicted"], [])
 
 
 class ForwardCutoffTests(unittest.TestCase):
