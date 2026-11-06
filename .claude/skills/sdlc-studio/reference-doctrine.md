@@ -274,8 +274,8 @@ rules, the agents/services) live in that project's agent-instructions file
 
 ## Working habits {#working-habits}
 
-The habits the shipped `AGENTS.md` starter (`templates/agent-instructions.md`) points at
-rather than carries, since every call loads that file and pays for each line in it.
+The habits the shipped `AGENTS.md` starter (`templates/agent-instructions.md`) points at,
+since every call loads that file and pays for each line in it; it keeps item 8 as one line.
 
 1. **Re-orient from the snapshot.** `sdlc-studio/reviews/LATEST.md` is a state snapshot, not a
    transcript, so it survives compaction and re-orients any agent in one read. `status` and

@@ -70,6 +70,8 @@ class AgentInstructionsBudgetTests(unittest.TestCase):
         # reads as an unresolvable link to the links lane, and a consuming project has no relative path.
         flat = re.sub(r"\s+", " ", text)
         self.assertIn("Working habits section of `<skill>/reference-doctrine.md`", flat)
+        # BG0280 put the shared-temp-path rule in the template; BG1258 pins that it stays there.
+        self.assertIn("Share a temp path: name it per agent or run, or keep it in your worktree.", flat)
         habits = re.sub(r"\s+", " ", _section(DOCTRINE.read_text(encoding="utf-8"),
                                               "## Working habits {#working-habits}"))
         for moved in MOVED:
