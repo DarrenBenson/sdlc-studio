@@ -233,7 +233,8 @@ def store(repo_root: Path, env: Mapping) -> str | None:
         dirs = _dirs(repo_root)
         con = connect(db)
         try:
-            hit = con.execute(f"SELECT 1 FROM session WHERE directory IN "
+            # Only `?` placeholders are interpolated; every directory is a bound parameter.
+            hit = con.execute(f"SELECT 1 FROM session WHERE directory IN "  # nosec B608
                               f"({', '.join('?' * len(dirs))}) LIMIT 1", dirs).fetchone()
         finally:
             con.close()
