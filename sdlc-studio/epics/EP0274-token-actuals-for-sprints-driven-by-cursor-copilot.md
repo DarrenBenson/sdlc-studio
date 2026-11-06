@@ -16,8 +16,8 @@ Decomposed from CR0611. Delivers the work CR0611 requested.
 ## Story Breakdown
 
 - [ ] [US0986: The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two](../stories/US0986-the-token-meter-reads-the-running-harness-s.md)
-- [ ] [US0987: A Copilot CLI run records its token actual from the session events](../stories/US0987-a-copilot-cli-run-records-its-token-actual.md)
-- [ ] [US0988: An OpenCode run records its token actual from the read-only OpenCode database, child sessions included](../stories/US0988-an-opencode-run-records-its-token-actual-from.md)
+- [x] [US0987: A Copilot CLI run records its token actual from the session events](../stories/US0987-a-copilot-cli-run-records-its-token-actual.md)
+- [x] [US0988: An OpenCode run records its token actual from the read-only OpenCode database, child sessions included](../stories/US0988-an-opencode-run-records-its-token-actual-from.md)
 - [x] [US0989: A Cursor cloud run records its token actual from the usage API when a key is present](../stories/US0989-a-cursor-cloud-run-records-its-token-actual.md)
 - [x] [US0990: A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot](../stories/US0990-a-cursor-cli-run-records-its-token-actual.md)
 - [x] [US0991: The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend](../stories/US0991-the-close-and-the-report-state-each-reading.md)

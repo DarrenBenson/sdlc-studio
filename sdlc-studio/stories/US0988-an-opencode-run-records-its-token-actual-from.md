@@ -1,6 +1,6 @@
 # US0988: An OpenCode run records its token actual from the read-only OpenCode database, child sessions included
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -21,14 +21,19 @@
 
 - **AC1:** Given a fixture SQLite database at `$OPENCODE_DB` (else `$XDG_DATA_HOME/opencode/opencode.db`, else `~/.local/share/opencode/opencode.db`) holding messages for a session whose directory is this repo and for a child session (`parent_id` set), when the OpenCode reader runs, then `tokens` is folded from each message's JSON as input + output + cache write, with reasoning added once where the store reports it apart from output, cache reads reported apart, child sessions included, and a basis saying subagent spend is included. Fails on: reading the session aggregate columns, which migrated rows leave at zero, or dropping the child session
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_messages_fold_one_basis_with_child_sessions
+  - **Verified:** yes (2026-11-06)
 - **AC2:** Given the fixture database, then it is opened read-only (a `mode=ro` URI and `PRAGMA query_only`), a session in another directory is excluded, and no `opencode` process is started. Fails on: opening the database read-write, or shelling out to `opencode stats`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_read_only_this_repo_and_no_binary
+  - **Verified:** yes (2026-11-06)
 - **AC3:** Given no database and a legacy JSON tree under `storage/message`, then the same messages are read from it on the same basis. Fails on: returning not attributable whenever the database is absent
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_legacy_json_store_reads_the_same_basis
+  - **Verified:** yes (2026-11-06)
 - **AC4:** Given neither store, an empty store or a malformed token value, then the reading is tokens None with a named reason, never zero, whether or not an `opencode` binary is on PATH. Fails on: a missing binary or an empty store becoming zero
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_missing_or_malformed_store_is_not_attributable
+  - **Verified:** yes (2026-11-06)
 - **AC5:** Given a fixture repository and database with `SDLC_STUDIO_HARNESS=opencode`, when `sprint.py plan --write` opens a run, then the baseline it stamps names opencode and the database. Fails on: the reader passing its unit tests while the plan path never reaches it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeLaneTests::test_plan_write_stamps_an_opencode_baseline
+  - **Verified:** yes (2026-11-06)
 
 ## Notes
 

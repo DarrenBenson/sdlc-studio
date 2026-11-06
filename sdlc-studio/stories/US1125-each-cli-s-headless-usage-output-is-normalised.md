@@ -1,6 +1,6 @@
 # US1125: Each CLI's headless usage output is normalised to one basis, pinned by real captured sessions
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0667
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given the headless output of Claude Code, Cursor CLI, Codex CLI, Copilot CLI and OpenCode captured from real sessions on 2026-11-06 and scrubbed of account identifiers, then `harness_usage.parse(harness, text)` returns input without cache, cache read, cache write, output, reasoning, model and session id for each. Fails on: a fixture written from documentation rather than captured
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_each_captured_session_normalises
+  - **Verified:** yes (2026-11-06)
 - **AC2:** Given Codex's and Copilot's input, which includes cached tokens, then the cached part is split out, so input, cache read and cache write together equal the CLI's own prompt total exactly once. Fails on: cached tokens counted inside input and again as cache
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_cached_input_is_split_and_never_counted_twice
+  - **Verified:** yes (2026-11-06)
 - **AC3:** Given a non-zero exit, output with no usage, or a line that does not parse, then the result is unmetered with a reason naming which. Fails on: any of them read as zero tokens
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_unmetered_with_a_reason
+  - **Verified:** yes (2026-11-06)
 - **AC4:** Given output that carries the harness's own total (Claude Code's `total_cost_usd`, Copilot's session accounting), then the normalised figure is checked against it and a disagreement above 5% is named. Fails on: a disagreement passed silently
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_a_disagreement_with_the_harness_total_is_named
+  - **Verified:** yes (2026-11-06)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # US0987: A Copilot CLI run records its token actual from the session events
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -21,14 +21,19 @@
 
 - **AC1:** Given a fixture `events.jsonl` under `$COPILOT_HOME/session-state/<id>/` for a session recording this repo's directory, ending in a `session.shutdown` event whose `data.modelMetrics.<model>.usage` carries `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheWriteTokens` and `reasoningTokens`, where `inputTokens` already includes the cached tokens (a real session on 2026-11-06 recorded `inputTokens` 27582 with `cacheWriteTokens` 27578 and an uncached input of 4), when the Copilot reader runs, then `tokens` is the uncached input + output + cache write, cache reads are reported apart, reasoning is not added on top of output, and the model is that model's name; a session recording another repo is never read. Fails on: adding `reasoningTokens` to output, counting cache reads in `tokens`, or counting the cache write twice by taking `inputTokens` as uncached input
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_shutdown_aggregate_counts_one_basis
+  - **Verified:** yes (2026-11-06)
 - **AC2:** Given a live session with no `session.shutdown` yet, then the reading is the sum of its per-call `session.usage_record` events (each `data.usage`, on the same split basis), and per-call events already folded into a shutdown aggregate are never counted again, so a resumed session is not double-counted. Fails on: summing the per-call events and the aggregate for the same span
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_live_and_ended_sessions_are_never_double_counted
+  - **Verified:** yes (2026-11-06)
 - **AC3:** Given `session.usage_checkpoint` events, which carry running session totals, and a `modelMetrics` map naming two models, then the checkpoints are never added to the per-call records and the model reads as the mixed marker. Fails on: adding a running total to the records it totals, or picking the first model
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_occupancy_is_not_spend_and_two_models_read_mixed
+  - **Verified:** yes (2026-11-06)
 - **AC4:** Given no `COPILOT_HOME`, the reader looks under `~/.copilot`; a missing directory, an empty session or a malformed usage value returns tokens None with a named reason, never zero. Fails on: a malformed record skipped so the total is quietly short
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_missing_or_malformed_store_is_not_attributable
+  - **Verified:** yes (2026-11-06)
 - **AC5:** Given a fixture repository and Copilot store with `SDLC_STUDIO_HARNESS=copilot`, when `sprint.py plan --write` opens a run, then the baseline it stamps names copilot and the session's events file. Fails on: the reader passing its unit tests while the plan path never reaches it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotLaneTests::test_plan_write_stamps_a_copilot_baseline
+  - **Verified:** yes (2026-11-06)
 
 ## Notes
 

@@ -5,7 +5,7 @@
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/reviews/command-audit.md, changelog.d/US1126.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/reviews/command-audit.md, changelog.d/US1126.md, .claude/skills/sdlc-studio/help/sprint.md
 > **Epic:** EP0299
 > **Points:** 5
 > **Depends on:** US1125
@@ -27,6 +27,8 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_failed_or_silent_cli_leaves_the_lane_unmetered
 - **AC4:** Given `reference-agent-prompt-template.md`, then it says how a harness without subagents runs each lane with `lane run`, one fresh session per lane. Fails on: the template naming only the subagent route
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_the_template_names_lane_run_for_a_harness_without_subagents
+- **AC5:** Given `--harness claude`, then the command line carries `--tools` naming the lane's tool set together with `--strict-mcp-config` and `--disable-slash-commands`, never a `--tools` allowlist without `--strict-mcp-config`, and the lane record holds the session's first-call context. Fails on: a bare `--tools` allowlist, which loads every MCP tool in full (a 113k first context measured on 2026-11-06, against 7.0k with all three flags)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_claude_lane_starts_lean
 
 ## Revision History
 
@@ -34,3 +36,5 @@
 | --- | --- | --- |
 | 2026-11-06 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-06 | Claude Opus 5.5 | Groomed: criteria and Verify checks authored for run seven (RFC0062 Phase 1) |
+| 2026-11-06 | Claude Opus 5.5 | AC5 added before build from RFC0062's agent-context lens: a headless Claude lane is pinned to a lean start |
+| 2026-11-06 | Claude Opus 5.5 | Affects widened before build: a new `lane run` verb must appear in `help/sprint.md` in invocation form |

@@ -135,3 +135,15 @@
 | US1119 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 7284fd9456cf374b at 329fad161849 |
 | BG1236 | Claude Opus 5.5 (builder) | 2026-11-05 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | 24c9f630a0b765a0 at 17ee4997094e |
 | BG1236 | Claude Opus 5.5 (orchestrator repair) | 2026-11-05 | TRUE 3, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 0 | 6a8ab6ad0fd6d476 at 67f3cfa4edb6 |
+| US1122 | builder-US1122 | 2026-11-06 | TRUE 26, FALSE 0, UNVERIFIABLE 0 | killed 22, survived 2 | e392ab2665da0b88 at 3b5fcba949cc |
+| US1124 | builder-w1b | 2026-11-06 | TRUE 16, FALSE 0, UNVERIFIABLE 1 | killed 13, survived 3 | 5d82f3de8fb24f3d at 9356d1fc4b4f |
+| US1125 | builder-w1b | 2026-11-06 | TRUE 27, FALSE 0, UNVERIFIABLE 3 | killed 21, survived 3 | 236f266bca6c5a07 at 9356d1fc4b4f |
+| US0987 | builder-w1b | 2026-11-06 | TRUE 27, FALSE 0, UNVERIFIABLE 1 | killed 19, survived 3 | 01b0d5cdbc8e2b0d at 9356d1fc4b4f |
+| US1127 | builder-w2a | 2026-11-06 | TRUE 31, FALSE 0, UNVERIFIABLE 3 | killed 16, survived 1 | aab7ea91b15c3546 at 2871659b7d71 |
+| US0988 | builder-w2a | 2026-11-06 | TRUE 25, FALSE 0, UNVERIFIABLE 2 | killed 23, survived 4 | 3d801d220653458e at 2871659b7d71 |
+| US1128 | builder-US1128 | 2026-11-06 | TRUE 33, FALSE 0, UNVERIFIABLE 2 | killed 17, survived 1 | ed0320b1fbc4a26c at 992b6e5de003 |
+| US1126 | builder-w2b | 2026-11-06 | TRUE 33, FALSE 0, UNVERIFIABLE 4 | killed 23, survived 0 | 762e94599d26e4ec at 2c8d0c40dc25 |
+| US1124 | builder-w2b | 2026-11-06 | TRUE 26, FALSE 0, UNVERIFIABLE 1 | killed 17, survived 5 | bab824cd245ea822 at 2c8d0c40dc25 |
+| US0988 | builder-US0988-repair | 2026-11-06 | TRUE 35, FALSE 0, UNVERIFIABLE 3 | killed 30, survived 5 | 55e614b9cbba741f at 7272875aae8f |
+| US1128 | builder-US1128-repair | 2026-11-06 | TRUE 53, FALSE 0, UNVERIFIABLE 7 | killed 33, survived 2 | 33fbb69817626393 at b75acbcb980e |
+| US1123 | builder-US1123 | 2026-11-06 | TRUE 42, FALSE 0, UNVERIFIABLE 3 | killed 14, survived 2 | 8ef20f2d429a3b16 at 61e9afe3491d |

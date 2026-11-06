@@ -1,7 +1,7 @@
 # RFC-0062: Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness
 
 > **Status:** Draft
-> **Decomposed-into:** CR0665, CR0666, CR0667, CR0668, CR0669
+> **Decomposed-into:** CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683
 > **Size:** XL
 > **Evidence:** Run six (RUN-01M6NH7W) transcripts, recounted 2026-11-06 at 37.5M priced against RPT0025's 36.8M; a capture of one headless session in each of Claude Code, Cursor CLI, Codex CLI, Copilot CLI and OpenCode on 2026-11-06.
 > **Date:** 2026-11-06
@@ -43,9 +43,38 @@ Option B. The bar, ruled by the operator on 2026-11-06 (D0411): this repository'
 4. **Deliver.** Findings refined into units ranked by saving per point. Each unit carries a before-and-after measurement criterion and, where it can, a budget gate.
 5. **Re-measure.** The same benchmark and one sprint of this repository, judged against the bar; publish cost per point by harness.
 
+## Phase 3 Result (2026-11-06)
+
+Six independent reviewers (orchestration, agent starting context and briefs, review cost, first-time-right,
+tool output, ceremony) worked from run six's transcripts; one consolidating agent merged their 45 findings
+into 14 CRs and counted each saving once. Savings are priced tokens per run of run six's shape (37.5M, 29 points).
+
+| CR | Change | Saving |
+| --- | --- | --- |
+| CR0670 | Each wave and the close in a fresh orchestrator session from an on-disk resume brief | 8.54M |
+| CR0671 | A commit-time sweep lane and a static census-marker check | 1.95M |
+| CR0672 | A deterministic `sprint.py drive` loop and a multi-worktree `lane land` | 1.73M |
+| CR0673 | One shipped mutation runner for author and reviewer, recorded by the self-check | 1.72M |
+| CR0674 | Restricted-tool agent definitions and a three-line hand-back | 1.63M |
+| CR0675 | A hostile-runtime fixture kit for the verifier core | 0.94M |
+| CR0676 | Changelog fragments generated from the unit | 0.89M |
+| CR0677 | Size budgets for AGENTS.md, the consuming template and SKILL.md | 0.85M |
+| CR0678 | `repo_map.py outline` and symbol ranges in both briefs | 0.77M |
+| CR0679 | The critic brief as a complete review packet, with a repair-scoped rejoinder | 0.61M |
+| CR0680 | Small same-wave units batched into one reviewer; a fresh round-2 reviewer recorded as such | 0.38M |
+| CR0681 | Self-writing trailers and one-line success output on the commit path | 0.25M |
+| CR0682 | Executed per-criterion claims, docs naming what changed, captures, defect-class tags | about 0 tokens; the second-round bar |
+| CR0683 | Three run-seven steps that leave state the next step refuses | not grounded |
+
+De-duplicated total: about 20.0M per run (53%), projecting 0.60M priced per point against run six's 1.29M; the
+conservative case is 0.72M. Orchestration alone (CR0670, CR0672) gives 0.94M, so the bar needs the rest too.
+CR0671, CR0673, CR0675 and CR0682 together take run six's second-round count from 8 of 13 units to about none.
+Not covered: models and effort, which waits for the Phase 2 benchmark's routed arm and for dollar pricing.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
 | 2026-11-06 | Claude Opus 5.5 | Open decisions resolved by the operator's rulings (D0411); phased plan added |
+| 2026-11-06 | Claude Opus 5.5 | Phase 3 result recorded: CR0670-CR0683 filed from six lens reviews, about 20.0M per run de-duplicated |

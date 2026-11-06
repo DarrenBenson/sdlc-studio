@@ -23,7 +23,7 @@
 | [RFC-0059](RFC0059-a-run-ends-with-one-signed-report-the.md) | A run ends with one signed report: the sign-off becomes a transaction over frozen, derived facts | High | Accepted | sdlc-studio | 2026-09-16 | EP0255 |
 | [RFC-0060](RFC0060-the-dark-factory-a-sprint-that-decides-for.md) | the dark factory: a sprint that decides for itself, and a goal that decides whether it worked | Medium | Accepted | sdlc-studio | 2026-09-21 | CR0593, CR0604, EP0258, EP0259 |
 | [RFC-0061](RFC0061-personas-become-accountable-team-members-each-keeps-its.md) | Personas become accountable team members: each keeps its own memory, learns from its own verdicts at the retro, and passes a persona review before it is trusted | High | Accepted | Claude Opus 5.5 | 2026-10-09 | CR0631, CR0632, CR0633, CR0634 |
-| [RFC-0062](RFC0062-token-efficient-delivery-a-sprint-costs-at-most.md) | Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness | High | Draft | Claude Opus 5.5 | 2026-11-06 | CR0665, CR0666, CR0667, CR0668, CR0669 |
+| [RFC-0062](RFC0062-token-efficient-delivery-a-sprint-costs-at-most.md) | Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness | High | Draft | Claude Opus 5.5 | 2026-11-06 | CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683 |
 
 ## Archived Releases
 

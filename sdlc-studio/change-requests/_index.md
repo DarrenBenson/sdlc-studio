@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 15 |
+| Proposed | 29 |
 | Approved | 0 |
 | In Progress | 30 |
 | Complete | 533 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **669** |
+| **Total** | **683** |
 
 ## All Changes
 
@@ -81,6 +81,20 @@
 | [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | In Progress | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | In Progress | Medium | Feature | 2026-11-06 | EP0299 |
 | [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | In Progress | High | Improvement | 2026-11-06 | EP0299 |
+| [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | Proposed | High | Feature | 2026-11-06 | -- |
+| [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | Proposed | High | Improvement | 2026-11-06 | -- |
+| [CR-0672](CR0672-add-a-deterministic-sprint-py-drive-loop-that.md) | Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end. | Proposed | High | Feature | 2026-11-06 | -- |
+| [CR-0673](CR0673-replace-the-author-s-and-the-reviewer-s.md) | Replace the author's and the reviewer's hand-rolled mutation passes with one shipped runner (`mutation.py` with drop-conjunct and prose-polarity operators, plus arbitrary file, old and new edits), and have `critic.py self-check record` take its report and refuse unanswered survivors. | Proposed | High | Improvement | 2026-11-06 | -- |
+| [CR-0674](CR0674-ship-restricted-tool-agent-definitions-for-builders-reviewers.md) | Ship restricted-tool agent definitions for builders, reviewers and repairs and spawn every lane and review with them, carrying a hand-back contract (commands in the foreground, at most three lines, detail on disk) and the run's builder notes folded into the shipped lane brief. | Proposed | High | Improvement | 2026-11-06 | -- |
+| [CR-0675](CR0675-ship-a-hostile-runtime-fixture-kit-that-every.md) | Ship a hostile-runtime fixture kit that every change to the verifier core runs: a group SIGTERM and SIGINT to the caller, nested `run_verifier` callers, a consumer pytest.ini with addopts -m and filterwarnings = error beside a pytest11 plugin, a shallow clone, a non-Claude harness environment and an over-long Verify token. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0676](CR0676-generate-each-changelog-d-fragment-from-the-unit.md) | Generate each changelog.d fragment from the unit's title and acceptance criteria with one command instead of hand-writing it, so builders stop learning the format and the fragment stops over-claiming. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0677](CR0677-budget-every-always-loaded-instruction-file-by-size.md) | Budget every always-loaded instruction file by size: cut AGENTS.md to at most 7,000 chars and the consuming-project template to at most 5,000 chars, gate both and SKILL.md's token size, and recommend a project settings file that disables unused plugins for delivery sessions. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0678](CR0678-add-repo-map-py-outline-and-where-from.md) | Add `repo_map.py outline` and `where` from the existing symbol index, and have the lane and critic briefs name each target symbol with its line range, so agents stop spending a fifth of their calls locating code. | Proposed | Medium | Feature | 2026-11-06 | -- |
+| [CR-0679](CR0679-make-the-critic-brief-a-complete-review-packet.md) | Make the critic brief a complete review packet: claim surfaces first in the capped diff with the full diff written beside it, a one-line `--out` delivery read in one call, verifier and selected-test results computed at brief time against a current verify stamp, and a round-2 rejoinder scoped to the repair. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0680](CR0680-batch-same-wave-units-of-at-most-3.md) | Batch same-wave units of at most 3 points into one reviewer, up to three units with one brief and one verdict file each, and let `critic.py record` accept a round-2 verdict from a fresh reviewer under its own name. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0681](CR0681-have-the-commit-path-write-the-refs-and.md) | Have the commit path write the Refs and Mentions trailers it now refuses for, make every tool that writes markdown emit lint-clean output, and print one line on success from the hooks and the commands agents filter by hand. | Proposed | Low | Improvement | 2026-11-06 | -- |
+| [CR-0682](CR0682-make-the-author-self-check-prove-each-acceptance.md) | Make the author self-check prove each acceptance criterion at the observable it names through the shipped entry point, list the docs outside Affects that name what the diff changed, require a captured producer sample for a unit that parses another tool's output, and tag each blocking finding with its defect class. | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0683](CR0683-fix-three-run-seven-frictions-in-which-a.md) | Fix three run-seven frictions in which a shipped step leaves state the next step refuses: `lane land` checks the self-check hand-in only after it commits, `verify_ac run` in a builder worktree stamps the story file outside the unit's Affects, and `file_finding --parent` leaves the parent RFC's spawned-work cell unsynced. | Proposed | Medium | Bug | 2026-11-06 | -- |
 
 ## Archived Releases
 

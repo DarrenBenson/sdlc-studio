@@ -5,7 +5,7 @@
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, changelog.d/US1123.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, changelog.d/US1123.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py, .claude/skills/sdlc-studio/scripts/tests/test_velocity_priced_basis.py
 > **Epic:** EP0299
 > **Points:** 5
 > **Depends on:** US1122, US1124
@@ -36,3 +36,5 @@
 | --- | --- | --- |
 | 2026-11-06 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-06 | Claude Opus 5.5 | Groomed: criteria and Verify checks authored for run seven (RFC0062 Phase 1) |
+| 2026-11-06 | Claude Opus 5.5 | Affects widened at landing: the close must stamp the role table on its own meter reading (two lines in `sprint.py`), so a signed page replays it rather than re-reading live transcripts |
+| 2026-11-06 | Claude Opus 5.5 | Affects declare .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py, .claude/skills/sdlc-studio/scripts/tests/test_velocity_priced_basis.py: unchanged, but the repair's mutants are killed there |
