@@ -1,6 +1,6 @@
 # US0988: An OpenCode run records its token actual from the read-only OpenCode database, child sessions included
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new

@@ -1,6 +1,7 @@
 # CR-0668: The token meter recognises a Codex CLI run and reads its token actual from the Codex store
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0299
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Feature

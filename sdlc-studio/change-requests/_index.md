@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 20 |
+| Proposed | 15 |
 | Approved | 0 |
-| In Progress | 25 |
+| In Progress | 30 |
 | Complete | 533 |
 | Rejected | 30 |
 | Deferred | 0 |
@@ -76,11 +76,11 @@
 | [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | In Progress | High | Feature | 2026-11-04 | EP0274 |
 | [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Proposed | High | Feature | 2026-11-05 | -- |
 | [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Proposed | Medium | Improvement | 2026-11-05 | -- |
-| [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | Proposed | High | Feature | 2026-11-06 | -- |
-| [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | Proposed | High | Feature | 2026-11-06 | -- |
-| [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | Proposed | High | Feature | 2026-11-06 | -- |
-| [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | Proposed | Medium | Feature | 2026-11-06 | -- |
-| [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | Proposed | High | Improvement | 2026-11-06 | -- |
+| [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | In Progress | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | In Progress | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | In Progress | High | Feature | 2026-11-06 | EP0299 |
+| [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | In Progress | Medium | Feature | 2026-11-06 | EP0299 |
+| [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | In Progress | High | Improvement | 2026-11-06 | EP0299 |
 
 ## Archived Releases
 

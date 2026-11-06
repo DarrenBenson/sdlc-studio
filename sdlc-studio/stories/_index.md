@@ -1,14 +1,14 @@
 # Story Index
 
-**Last Updated:** 2026-11-05
+**Last Updated:** 2026-11-06
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 81 |
-| Ready | 1 |
+| Draft | 79 |
+| Ready | 10 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,15 +17,15 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1121** |
+| **Total** | **1128** |
 
 ## All Stories
 
 | ID | Title | Status | Epic | Created | Updated |
 | --- | --- | --- | --- | --- | --- |
 | [US0986](US0986-the-token-meter-reads-the-running-harness-s.md) | The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0987](US0987-a-copilot-cli-run-records-its-token-actual.md) | A Copilot CLI run records its token actual from the session events | Draft | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0988](US0988-an-opencode-run-records-its-token-actual-from.md) | An OpenCode run records its token actual from the read-only OpenCode database, child sessions included | Draft | EP0274 | 2026-10-06 | 2026-10-06 |
+| [US0987](US0987-a-copilot-cli-run-records-its-token-actual.md) | A Copilot CLI run records its token actual from the session events | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
+| [US0988](US0988-an-opencode-run-records-its-token-actual-from.md) | An OpenCode run records its token actual from the read-only OpenCode database, child sessions included | Ready | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0989](US0989-a-cursor-cloud-run-records-its-token-actual.md) | A Cursor cloud run records its token actual from the usage API when a key is present | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0990](US0990-a-cursor-cli-run-records-its-token-actual.md) | A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Done | EP0274 | 2026-10-06 | 2026-10-06 |
@@ -159,6 +159,13 @@
 | [US1119](US1119-sprint-lane-accept-records-a-reviewer-s-verdict.md) | sprint lane accept records a reviewer's verdict and, on APPROVE, runs the criteria, moves the unit to its terminal status and returns its lane | Done | EP0298 | 2026-11-05 | 2026-11-05 |
 | [US1120](US1120-the-lane-brief-leaves-the-commit-to-lane.md) | The lane brief leaves the commit to lane land and holds the builder to a call budget with a hand-off note in place of a growing context | Done | EP0298 | 2026-11-05 | 2026-11-05 |
 | [US1121](US1121-a-cursor-cli-run-is-metered-from-an.md) | A Cursor CLI run is metered from an afterAgentResponse hook ledger, and the meter reads it as measured | Done | EP0274 | 2026-11-05 | 2026-11-05 |
+| [US1122](US1122-a-dated-per-model-price-table-gives-every.md) | A dated per-model price table gives every token reading an estimated cost in US dollars | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1123](US1123-the-sprint-report-states-each-run-s-and.md) | The sprint report states each run's and unit's estimated dollar cost and the run's per-role cost breakdown | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1124](US1124-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names the tool outputs that drove it | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1125](US1125-each-cli-s-headless-usage-output-is-normalised.md) | Each CLI's headless usage output is normalised to one basis, pinned by real captured sessions | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1126](US1126-sprint-lane-run-runs-a-lane-s-brief.md) | sprint lane run runs a lane's brief headless in any supported CLI and prices the lane from the usage it prints | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1127](US1127-the-meter-recognises-a-codex-cli-run-and.md) | The meter recognises a Codex CLI run and reads its token actual from the Codex store | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
+| [US1128](US1128-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage it prints | Ready | EP0299 | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 

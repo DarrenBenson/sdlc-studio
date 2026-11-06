@@ -1,6 +1,7 @@
 # CR-0665: Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0299
 > **Parent:** RFC0062
 > **Priority:** High
 > **Type:** Feature
