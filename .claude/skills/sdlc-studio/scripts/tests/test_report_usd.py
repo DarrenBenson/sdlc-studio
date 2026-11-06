@@ -23,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_meter_reads_true as meter  # noqa: E402 - US1091's harness store and workspace
+import gitutil  # noqa: E402 - confines the signed-page test's git calls (BG1255)
 
 OPUS, HAIKU, UNPRICED = meter.MODEL, "claude-haiku-5-5", "model-nobody-prices"
 #: US dollars per million tokens, typed here: opus and haiku differ in every component, so a
@@ -319,7 +320,7 @@ class ReportUsdTests(meter._Case):
         def git(*argv: str) -> None:
             subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com",
                             "-c", "commit.gpgsign=false", *argv], cwd=ws.root, check=True,
-                           capture_output=True)
+                           capture_output=True, env=gitutil.git_env())
         git("init", "-q", ".")
         git("add", "-A")
         git("commit", "-qm", "the delivered batch")
