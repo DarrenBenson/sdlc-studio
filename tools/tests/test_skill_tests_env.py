@@ -189,6 +189,16 @@ SCRUB_SITES: dict[str, str] = {
         "`dirty_targets` (US0504). It asks whether a mutation target carries uncommitted work; "
         "an escape misreports - the run refuses a clean file, or proceeds over a dirty one - "
         "rather than writing anywhere. Widen it to REPO_LOCATING when touched.",
+    "tools/bench/runner.py":
+        "pinned by test_the_bench_runner_scrubs_the_same_variables. It drops the list from the "
+        "git, installer and harness CLI calls a bench run makes (US1128), so a run started "
+        "from a hook cannot point them at the hook's repository.",
+    ".claude/skills/sdlc-studio/scripts/lib/lanes.py":
+        "PARTIAL, pinned by test_the_lane_runner_scrub_keeps_its_names_and_only_repo_locating_"
+        "ones: `_GIT_ENV` clears 7 of the 11, without GIT_INDEX_VERSION, GIT_NAMESPACE, "
+        "GIT_CEILING_DIRECTORIES or GIT_DISCOVERY_ACROSS_FILESYSTEM, from the git `sprint "
+        "lane run` creates its worktree with and the headless CLI it starts (US1126). Every "
+        "call names its checkout with `git -C`. Widen it to REPO_LOCATING when touched.",
 }
 
 
@@ -307,6 +317,30 @@ class ScrubListsAgreeTests(unittest.TestCase):
         self.assertEqual(
             sorted(self._named_tuple_in(self.VERIFY_AC, "_REPO_LOCATING_GIT_VARS")),
             sorted(REPO_LOCATING))
+
+    BENCH_RUNNER = REPO / "tools" / "bench" / "runner.py"
+    LANES = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "lib" / "lanes.py"
+    #: What `lib/lanes.py` clears today. A floor, not the target: dropping a name fails, and
+    #: widening the list to REPO_LOCATING passes and should then move it to the equality test.
+    LANES_FLOOR = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY",
+                   "GIT_COMMON_DIR", "GIT_PREFIX", "GIT_ALTERNATE_OBJECT_DIRECTORIES")
+
+    def test_the_bench_runner_scrubs_the_same_variables(self) -> None:
+        """A bench run installs a pinned skill and drives a harness CLI that runs git in its
+        workspace (US1128), so it carries the whole list, and this holds it equal."""
+        self.assertEqual(
+            sorted(self._named_tuple_in(self.BENCH_RUNNER, "_GIT_ENV_VARS")),
+            sorted(REPO_LOCATING))
+
+    def test_the_lane_runner_scrub_keeps_its_names_and_only_repo_locating_ones(self) -> None:
+        """`sprint lane run` creates a worktree with git and starts a headless CLI in it
+        (US1126). Its list is partial, so it is held to a floor (no name dropped) and a ceiling
+        (no name outside REPO_LOCATING, such as the identity and config variables MUST_SURVIVE
+        names)."""
+        names = set(self._named_tuple_in(self.LANES, "_GIT_ENV"))
+        self.assertLessEqual(set(self.LANES_FLOOR), names, "a name dropped from lib/lanes.py")
+        self.assertLessEqual(names, set(REPO_LOCATING),
+                             "lib/lanes.py scrubs a variable that does not locate a repo")
 
     def test_the_script_itself_still_scrubs_them(self) -> None:
         """Closes the loop: without this, every copy could drift together away from the list
