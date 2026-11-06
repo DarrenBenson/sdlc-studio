@@ -350,8 +350,9 @@ A harness without subagents runs each lane with
 `sprint lane run --harness <h> --units <id> [--model <m>]`, one fresh session per lane: it briefs
 the unit, runs that brief headless in the named CLI (`claude`, `cursor`, `codex`, `copilot` or
 `opencode`) in the lane's own worktree under a timeout, and records the session id, model and
-usage the CLI printed, which `sprint lane return` prices the lane from. A CLI that exits non-zero,
-times out or prints no usage leaves the lane unmetered, with the reason, and its staged work
+usage the CLI printed, one record per session, which `sprint lane return` prices the lane from: a
+repair run as a second `lane run` adds its session's cost to its builder's. A CLI that exits
+non-zero, times out or prints no usage leaves the lane unmetered, with the reason, and its staged work
 stays in the worktree for `sprint lane land`. A Claude Code lane starts with `--tools` naming its
 tool set beside `--strict-mcp-config` and `--disable-slash-commands`, because a bare `--tools`
 allowlist loads every MCP tool in full.

@@ -562,11 +562,13 @@ python3 <skill>/scripts/sprint.py lane run --harness codex --units US0123 --mode
 `lane run` briefs the one unit and runs the brief headless in `claude`, `cursor`, `codex`,
 `copilot` or `opencode`, in the lane's worktree (`--worktree`, else
 `sdlc-studio/.local/worktrees/lane-<unit>`, created from HEAD) under `--timeout` seconds (default
-3600), passing `--model` through. It writes the lane record to
-`sdlc-studio/.local/lane-runs/<unit>.json`: the session id, model and usage normalised by
-`lib/harness_usage.py`, the files staged and, for Claude Code, the first call's context. A later
-`lane return` with no `--tokens` or `--agent` prices the unit from that record, in priced
-input-equivalent tokens and US dollars. A CLI that exits non-zero, times out or prints no usage
+3600), passing `--model` through. It writes one lane record per session to
+`sdlc-studio/.local/lane-runs/<unit>/<session>.json`, keeping every earlier session's: the
+session id, model and usage normalised by `lib/harness_usage.py`, the files staged and, for
+Claude Code, the first call's context. A later `lane return` with no `--tokens` or `--agent`
+prices the unit from each session's record, in priced input-equivalent tokens and US dollars, so
+a repair run with a second `lane run` adds its cost to its builder's and returning the unit again
+counts each session once. A CLI that exits non-zero, times out or prints no usage
 leaves the lane unmetered with the reason, never zero, and its staged work in the worktree for
 `lane land`. A Claude Code lane runs with `--tools` naming its tool set beside
 `--strict-mcp-config` and `--disable-slash-commands`: a bare `--tools` allowlist loads every MCP

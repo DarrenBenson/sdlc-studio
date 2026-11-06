@@ -33,9 +33,10 @@ was recorded, 1 a verdict recorded and the unit not moved (a REJECT, a red crite
 refused transition) or a return that exited non-zero, 0 a unit moved and its lane returned.
 
 `sprint lane run` runs one lane's brief headless in a supported CLI (`headless_command`), in the
-lane's worktree and under a timeout, and keeps the lane record `RUN_RECORDS/<unit>.json`: the
-session id, model and usage `harness_usage.parse` normalised from what the CLI printed, or the
-reason the lane is unmetered. `run_reading` is what `lane return` prices the lane from.
+lane's worktree and under a timeout, and keeps one lane record per session under
+`RUN_RECORDS/<unit>/`: the session id, model and usage `harness_usage.parse` normalised from what
+the CLI printed, or the reason the lane is unmetered. `run_readings` is what `lane return` prices
+the lane from, one reading per session, so a repair's session adds to the builder's.
 """
 from __future__ import annotations
 
@@ -45,6 +46,8 @@ import re
 import shutil
 import subprocess
 import sys
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from lib import sdlc_md
@@ -406,8 +409,10 @@ def accept(root: Path | str, unit: str | None, verdict: Path | str | None,
 
 # -- sprint lane run ------------------------------------------------------------------------
 
-#: Where `lane run` keeps each lane's record (`<unit>.json`) and the CLI's own stdout
-#: (`<unit>.out`): under the root, because the worktree goes when the lane lands.
+#: Where `lane run` keeps a lane's records: one `<unit>/<session>.json` and the CLI's own stdout
+#: `<unit>/<session>.out` per run, under the root because the worktree goes when the lane lands.
+#: Never one file per unit: a repair run in a fresh session would overwrite its builder's record,
+#: and the builder's priced cost with it.
 RUN_RECORDS = Path("sdlc-studio") / ".local" / "lane-runs"
 #: Where `lane run` creates a lane's worktree when none is named.
 RUN_WORKTREES = Path("sdlc-studio") / ".local" / "worktrees"
@@ -514,10 +519,11 @@ def run(root: Path | str, unit: str, harness: str, brief: str, model: str | None
         run_id: str | None = None) -> int:
     """Run one lane's `brief` headless in `harness` in the lane's worktree; the exit status.
 
-    Writes the lane record `RUN_RECORDS/<unit>.json` (the session id, model and usage normalised
-    by `harness_usage.parse`, the first-call context, the files staged) and the CLI's stdout
-    beside it. A CLI that exits non-zero, runs past `timeout` or prints no usage is recorded
-    unmetered with the reason, its worktree and staged work left as they are. Exit 2 is a
+    Writes this session's lane record `RUN_RECORDS/<unit>/<session>.json` (the session id, model
+    and usage normalised by `harness_usage.parse`, the first-call context, the files staged) and
+    the CLI's stdout beside it, keeping every earlier session's record of the unit. A CLI that
+    exits non-zero, runs past `timeout` or prints no usage is recorded unmetered with the reason,
+    its worktree and staged work left as they are. Exit 2 is a
     refusal before the CLI ran, 1 a CLI that exited non-zero or timed out, 0 otherwise."""
     try:
         return _run(Path(root), unit, harness, brief, model, worktree, timeout, run_id)
@@ -555,7 +561,8 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
                                            f"stopped")
     first, first_why = _first_call_context(harness, stdout) if usage.metered else (None, None)
     staged = _run_git(wt, "diff", "--cached", "--name-only").stdout.split()
-    out_path = root_top / RUN_RECORDS / f"{unit}.out"
+    session = _session_key()
+    out_path = root_top / RUN_RECORDS / unit / f"{session}.out"
     sdlc_md.atomic_write(out_path, stdout)
     record = {
         "unit": unit, "run_id": run_id, "harness": harness, "model": model,
@@ -568,7 +575,7 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
         "unreported": list(usage.unreported), "disagreements": list(usage.disagreements),
         "first_call_context": first, "first_call_reason": first_why, "staged": staged,
         "output": str(out_path)}
-    rec_path = root_top / RUN_RECORDS / f"{unit}.json"
+    rec_path = root_top / RUN_RECORDS / unit / f"{session}.json"
     sdlc_md.atomic_write(rec_path, json.dumps(record, indent=2) + "\n")
     _say(f"{unit}: {harness} lane ran in {wt} (exit {'none' if code is None else code})")
     if usage.metered:
@@ -591,14 +598,28 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
     return 1 if code != 0 else 0
 
 
-def run_reading(root: Path | str, unit: str,
-                run_id: str | None) -> tuple[dict | None, str | None]:
-    """The reading `lane return` prices `unit` from: its lane record's usage, as
+def _session_key() -> str:
+    """The name of one session's lane record: its start in UTC to the microsecond, so a unit's
+    records sort in the order they ran, and a random suffix, so no two runs share one."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    return f"{stamp}-{uuid.uuid4().hex[:8]}"
+
+
+def run_readings(root: Path | str, unit: str,
+                 run_id: str | None) -> list[tuple[dict | None, str | None]]:
+    """The readings `lane return` prices `unit` from: one `(reading, why)` per session a lane of
+    the unit ran (`run_reading`), in the order they ran, and [] where it has no lane record. Each
+    reading's `source` is its own session's record, so returning the unit again replaces each
+    session's delegated record rather than adding it twice, and a second session adds to the
+    first rather than replacing it."""
+    return [run_reading(path, unit, run_id)
+            for path in sorted((Path(root) / RUN_RECORDS / unit).glob("*.json"))]
+
+
+def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None, str | None]:
+    """One session's reading from its lane record at `path`: its usage, as
     {"tokens", "components", "source", "harness", "model"}, or (None, why) where the record is
-    unreadable, another run's or unmetered. (None, None) where the unit has no lane record."""
-    path = Path(root) / RUN_RECORDS / f"{unit}.json"
-    if not path.is_file():
-        return None, None
+    unreadable, another run's or unmetered."""
     try:
         rec = json.loads(path.read_text(encoding="utf-8"))
         if rec.get("run_id") != run_id:

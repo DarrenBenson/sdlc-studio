@@ -8633,11 +8633,13 @@ def _lane_run_refusal(args: argparse.Namespace, units: list[str]) -> str | None:
 
 
 def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) -> None:
-    """Price each returned unit from its `lane run` record (`lanes.run_reading`): the usage its
-    own CLI printed, weighed by `run_state.price` and costed in US dollars by `lib/prices.py`,
-    recorded as the unit's delegated record. A return that names its builder's own total
-    (`--tokens` or `--agent`) is priced from that instead. An unmetered lane, or a record another
-    run wrote, is warned about and records nothing, never a zero."""
+    """Price each returned unit from its `lane run` records (`lanes.run_readings`): each
+    session's usage as its own CLI printed it, weighed by `run_state.price` and costed in US
+    dollars by `lib/prices.py`, recorded as one delegated record per session, so a repair's
+    session adds to its builder's and a second return of the same session counts it once. A
+    return that names its builder's own total (`--tokens` or `--agent`) is priced from that
+    instead. An unmetered session, or a record another run wrote, is warned about and records
+    nothing, never a zero."""
     if getattr(args, "tokens", None) is not None or getattr(args, "agent", None) is not None:
         return
     from lib import lanes, prices  # noqa: PLC0415 - only a lane run's return needs them
@@ -8645,8 +8647,9 @@ def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) 
         "lane_run_totals", lambda: run_state.read(root).get("run_id"), None,
         "the run state could not be read, so no lane run record is priced")
     unreadable = object()
-    for res in results:
-        reading, why = lanes.run_reading(root, res["unit"], run_id)
+    sessions = [(res, got) for res in results
+                for got in lanes.run_readings(root, res["unit"], run_id)]
+    for res, (reading, why) in sessions:
         if why:
             print(f"WARNING {why}", file=sys.stderr)
         if reading is None:
@@ -8666,8 +8669,9 @@ def _lane_run_totals(root: Path, args: argparse.Namespace, results: list[dict]) 
             unreadable,
             f"{res['unit']}'s lane run usage could not be recorded (the run state is "
             f"unreadable), so its cost will not reach the page")
-        res["agent_total"] = None if got is unreadable else got
-        res["lane_run_cost"] = {"usd": usd, "unpriced": note, "model": reading["model"]}
+        res.setdefault("lane_runs", []).append(
+            {"agent_total": None if got is unreadable else got,
+             "lane_run_cost": {"usd": usd, "unpriced": note, "model": reading["model"]}})
         if got is None:
             print(f"WARNING {res['unit']}'s lane run usage was not recorded: no run is open, so "
                   f"there is no run to count it against", file=sys.stderr)
@@ -9217,18 +9221,22 @@ def cmd_lane(args: argparse.Namespace) -> int:
     else:
         for res in results:
             print(f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})")
-            if got := res.get("agent_total"):
-                timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
-                read_from = Path(got.get("transcript") or "").name
-                how = ("supplied, not measured" if got.get("provenance") == run_state.SUPPLIED
-                       else f"read from {read_from}")
-                print(f"  agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
-                if got.get("priced") is not None:
-                    print(f"  agent priced cost recorded (read from {read_from}): "
-                          f"{got['priced']:,} {run_state.PRICED_LABEL}")
-            if cost := res.get("lane_run_cost"):
-                print(f"  lane run cost: US${cost['usd']:.4f} ({cost['model']})"
-                      if cost["usd"] is not None else f"  lane run cost: {cost['unpriced']}")
+            # one entry per lane run session priced, else the builder's own total
+            for priced in res.get("lane_runs") or [res]:
+                if got := priced.get("agent_total"):
+                    timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
+                    read_from = Path(got.get("transcript") or "").name
+                    how = ("supplied, not measured"
+                           if got.get("provenance") == run_state.SUPPLIED
+                           else f"read from {read_from}")
+                    print(f"  agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
+                    if got.get("priced") is not None:
+                        print(f"  agent priced cost recorded (read from {read_from}): "
+                              f"{got['priced']:,} {run_state.PRICED_LABEL}")
+                if cost := priced.get("lane_run_cost"):
+                    print(f"  lane run cost: US${cost['usd']:.4f} ({cost['model']})"
+                          if cost["usd"] is not None
+                          else f"  lane run cost: {cost['unpriced']}")
             for crit in res["verification"]["criteria"]:
                 print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
                       f"<- {crit['verifier']}")

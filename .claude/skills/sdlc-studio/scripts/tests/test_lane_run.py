@@ -99,6 +99,8 @@ class LaneRunTests(unittest.TestCase):
         gitutil.git(["commit", "-q", "-m", "chore: the fixture"], self.root)
         env = {"PATH": f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}",
                "FAKE_LOG": str(self.log),
+               # no real harness state is ever read or written
+               "HOME": str(base / "home"), "XDG_DATA_HOME": str(base / "xdg"),
                # an orchestrator transcript the lane must never be priced from
                _rs().TRANSCRIPTS_ENV: str(base / "transcripts")}
         for binary, fixture, _flags, _model in HARNESSES.values():
@@ -129,8 +131,12 @@ class LaneRunTests(unittest.TestCase):
     def _called(self, binary: str) -> dict:
         return json.loads((self.log / f"{binary}.json").read_text(encoding="utf-8"))
 
+    def _records(self) -> list[Path]:
+        return sorted((self.root / lanes.RUN_RECORDS / UNIT).glob("*.json"))
+
     def _record(self) -> dict:
-        return json.loads((self.root / lanes.RUN_RECORDS / f"{UNIT}.json").read_text("utf-8"))
+        """The latest session's lane record."""
+        return json.loads(self._records()[-1].read_text("utf-8"))
 
     def _worktree(self, name: str = "wt-lane") -> Path:
         wt = self.root.parent / name
@@ -206,18 +212,56 @@ class LaneRunTests(unittest.TestCase):
         # D0390's weights, typed here: 2 + 5 x 35 + 2.0 x 17126 + 0.1 x 11382
         self.assertEqual(round(2 + 175 + 34252 + 1138.2), got["priced"])
         self.assertEqual(2 + 35 + 17126, got["tokens"])
-        self.assertEqual(f"{UNIT}.json", Path(got["transcript"]).name)
-        self.assertIn(f"read from {UNIT}.json", out)
+        [path] = self._records()
+        self.assertEqual(str(path), got["transcript"])
+        self.assertIn(f"read from {path.name}", out)
         # the capture's own costUSD, 0.00355672, from the shipped price table
         self.assertIn("lane run cost: US$0.0036 (claude-haiku-5-5)", out)
         # a record another run wrote is not this run's lane
         rec["run_id"] = "RUN-OTHER"
-        (self.root / lanes.RUN_RECORDS / f"{UNIT}.json").write_text(json.dumps(rec), "utf-8")
+        path.write_text(json.dumps(rec), "utf-8")
         _rs().update(self.root, **{_rs().DELEGATED: []})
         rc, out = self._lane("return", "--units", UNIT)
         self.assertEqual(0, rc, out)
         self.assertEqual([], self._delegated())
         self.assertIn("another run", out)
+
+    def test_every_session_of_a_lane_is_priced_once(self) -> None:
+        """AC2, a repair's session. MUTANTS: one lane record per unit, overwritten by each run (the
+        builder's 17,163 tokens read [19163]); the record's source keyed per unit rather than per
+        session (the second return supersedes the first); `lane return` pricing only the latest
+        session; a session's record or output deleted by the next run (one file left); a second
+        return of the same sessions adding them again (four records)."""
+        self._open_run()
+        self.assertEqual((0, 0), (self._run("claude")[0],
+                                  self._lane("return", "--units", UNIT)[0]))
+        second = json.loads((FIXTURES / "claude.json").read_text("utf-8"))
+        second["session_id"] = "second-session"
+        for usage in (second["usage"], second["usage"]["iterations"][0]):
+            usage["input_tokens"] += 2000
+        second["modelUsage"]["claude-haiku-5-5"]["inputTokens"] += 2000
+        _write(self.log, "second.json", json.dumps(second))
+        with unittest.mock.patch.dict(os.environ,
+                                      {"FAKE_OUT_CLAUDE": str(self.log / "second.json")}):
+            rc, out = self._run("claude")
+        self.assertEqual(0, rc, out)
+        self.assertEqual("second-session", self._record()["session_id"])
+        records = self._records()
+        self.assertEqual(2, len(records), records)
+        self.assertEqual(2, len(list(records[0].parent.glob("*.out"))))
+        self.assertEqual(CLAUDE["session"],
+                         json.loads(records[0].read_text("utf-8"))["session_id"])
+        # the repair returned after its builder was, then both returned at once, twice over
+        for fresh in (False, True, False):
+            if fresh:
+                _rs().update(self.root, **{_rs().DELEGATED: []})
+            rc, out = self._lane("return", "--units", UNIT)
+            self.assertEqual(0, rc, out)
+            got = self._delegated()
+            self.assertEqual([17_163, 19_163], sorted(r["tokens"] for r in got))
+            self.assertEqual(sorted(map(str, records)), sorted(r["transcript"] for r in got))
+        self.assertIn("19,163 tokens", out)
+        self.assertIn("17,163 tokens", out)
 
     # -- AC3 --------------------------------------------------------------------------------
     def test_a_failed_or_silent_cli_leaves_the_lane_unmetered(self) -> None:
