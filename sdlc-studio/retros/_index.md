@@ -150,3 +150,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0138](RETRO0138-run-five-delivered-the-release-path-and-the.md) | Run five delivered the release path and the Cursor meters, at a cost the operator ruled too high | 2026-11-04 | -- | -- |
 | [RETRO-0139](RETRO0139-run-six-cut-the-cost-per-point-and.md) | Run six cut the cost per point and landed the efficiency tooling | 2026-11-05 | -- | -- |
 | [RETRO-0140](RETRO0140-run-seven-measured-every-harness-the-same-way.md) | Run seven measured every harness the same way and found where the tokens go | 2026-11-06 | -- | -- |
+| [RETRO-0141](RETRO0141-run-eight-hardened-the-cost-features-and-shipped.md) | Run eight hardened the cost features and shipped the first consumer savings | 2026-11-06 | -- | -- |

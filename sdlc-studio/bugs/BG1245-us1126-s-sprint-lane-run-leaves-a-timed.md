@@ -1,6 +1,6 @@
 # BG1245: US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1126.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1245.md
@@ -26,12 +26,16 @@ Start the CLI with `start_new_session=True` and kill its process group on timeou
 
 - [ ] **AC1** Given a fake `codex` on PATH whose child process writes and stages a file 4 s after start, when `sprint.py lane run` runs it with `--timeout 2`, then the CLI's whole process group is killed, no file lands in the worktree after the command returns, and the record's `staged` is read after the kill and matches the worktree's index. Fails on: `subprocess.run` in `lib/lanes.py` started without `start_new_session=True` and no `killpg` on `TimeoutExpired`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_timed_out_lane_s_children_are_killed
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC2** Given `sprint.py lane run --worktree /nonexistent` for a unit, then it exits 2 and the run state's `lanes_in_flight` does not name the unit; and given a lane worktree removed with `git worktree remove` without `lane land`, a second `lane run` of the unit reuses its existing `lane-<unit>` branch and exits 0. Fails on: the in-flight marker taken in `sprint.py` before `lanes.run`'s refusals pass, or `_lane_worktree` always passing `-b`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_refused_or_repeated_lane_run_leaves_no_stale_state
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC3** Given each builder harness's headless command, then it carries the flag that lets it write (codex `--sandbox workspace-write` and `--add-dir`, copilot `--allow-all-tools`, cursor `--force`), and a lane record reporting zero input, output and cache write gives `run_reading` no priced reading. Fails on: any one of the four flags dropped from `headless_command`, or the `tokens <= 0` guard in `run_reading` replaced by `if False:`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_each_builder_can_write_and_a_zero_reading_is_not_priced
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC4** Given a multi-session return in which one session is unmetered, then the warning names that session's record path; and `help/sprint.md` and `changelog.d/US1126.md` name the default worktree as it is created, lowercased (`lane-us0101`). Fails on: the warning at `lib/lanes.py:629` naming only the unit, or the help keeping `lane-<unit>` in upper case.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_the_unmetered_warning_names_its_session_record
+  - **Verified:** yes (2026-11-06)
 
 ## Revision History
 

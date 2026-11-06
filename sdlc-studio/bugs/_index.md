@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 229 |
+| Open | 237 |
 | In Progress | 0 |
-| Fixed | 853 |
+| Fixed | 865 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1256** |
+| **Total** | **1276** |
 
 ## All Bugs
 
@@ -315,23 +315,43 @@
 | [BG1237](BG1237-orchestration-frictions-batch-add-takes-an-id-with.md) | Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1238](BG1238-run-seven-s-landed-units-leave-the-push.md) | Run seven's landed units leave the push gate red: reference-sprint.md is over its ceiling and two environment-scrub sites are unregistered | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1239](BG1239-us0987-s-copilot-meter-leaves-its-git-root.md) | US0987's Copilot meter leaves its git-root-over-cwd preference unpinned and counts `includes_subagents: False` on trust | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1240](BG1240-us0988-s-opencode-meter-treats-a-present-but.md) | US0988's OpenCode meter treats a present but unreadable store as absent, against the token-meter contract, and its docstring says a read leaves the write-ahead log alone | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1240](BG1240-us0988-s-opencode-meter-treats-a-present-but.md) | US0988's OpenCode meter treats a present but unreadable store as absent, against the token-meter contract, and its docstring says a read leaves the write-ahead log alone | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1241](BG1241-us1122-s-price-table-leaves-ten-defensive-branches.md) | US1122's price table leaves ten defensive branches unpinned, promises a date format its parser does not hold to, and prices a bare `cost()` call without the project's overrides | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1242](BG1242-us1123-s-dollar-report-re-prices-an-unsigned.md) | US1123's dollar report re-prices an unsigned page from the live price table, so `sprint sign` refuses it after a price revision, and its close wiring and end-date rule are unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1242](BG1242-us1123-s-dollar-report-re-prices-an-unsigned.md) | US1123's dollar report re-prices an unsigned page from the live price table, so `sprint sign` refuses it after a price revision, and its close wiring and end-date rule are unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1243](BG1243-us1124-s-cost-anatomy-leaves-four-rules-unpinned.md) | US1124's cost anatomy leaves four rules unpinned: the per-component maximum, the CLI harness fallback and two role assignments | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1244](BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md) | US1125's harness usage parser raises `AttributeError` on a usage container that is not an object, and three of its rules are unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1245](BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md) | US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run | Open | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1246](BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md) | US1127's Codex meter ignores `CODEX_HOME`, leaves its workspace boundary unpinned, and its AC3 test names a timeout mutant it cannot kill | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1244](BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md) | US1125's harness usage parser raises `AttributeError` on a usage container that is not an object, and three of its rules are unpinned | Fixed | Low | 2026-11-06 | 2026-11-06 |
+| [BG1245](BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md) | US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run | Fixed | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1246](BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md) | US1127's Codex meter ignores `CODEX_HOME`, leaves its workspace boundary unpinned, and its AC3 test names a timeout mutant it cannot kill | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1247](BG1247-us1128-s-benchmark-runner-kills-only-the-cli.md) | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Open | High | 2026-11-06 | 2026-11-06 |
 | [BG1249](BG1249-the-suite-s-root-conftest-py-isolates-neither.md) | The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores | Open | High | 2026-11-06 | 2026-11-06 |
 | [BG1250](BG1250-fourteen-tools-tests-modules-strip-every-git-variable.md) | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1252](BG1252-a-lane-run-session-that-used-two-models.md) | A lane run session that used two models is priced entirely at the rate of the model with the most tokens | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1252](BG1252-a-lane-run-session-that-used-two-models.md) | A lane run session that used two models is priced entirely at the rate of the model with the most tokens | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1253](BG1253-lib-lanes-py-clears-only-7-of-the.md) | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1254](BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md) | sprint cost --anatomy reads the whole session, not the open run's window, so it cannot price one run inside a long-lived session | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1254](BG1254-sprint-cost-anatomy-reads-the-whole-session-not.md) | sprint cost --anatomy reads the whole session, not the open run's window, so it cannot price one run inside a long-lived session | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1255](BG1255-us1123-s-signed-page-test-runs-git-without.md) | US1123's signed-page test runs git without the confined environment, so the push gate's unconfined-git sweep is red | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1256](BG1256-test-lane-run-py-runs-git-unconfined-through.md) | test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1257](BG1257-bg1246-s-locked-store-test-bounds-a-duration.md) | BG1246's locked-store test bounds a duration its own process measured without the wall-clock census marks | Fixed | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1258](BG1258-us1130-did-not-converge-in-review-round-2.md) | US1130 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1259](BG1259-the-forge-s-lint-job-has-been-red.md) | The forge's Lint job has been red on main since 8a00d2cc because bandit reads the OpenCode meter's placeholder join as SQL injection | Fixed | High | 2026-11-06 | 2026-11-06 |
+| [BG1260](BG1260-init-run-and-init-guided-exit-1-and.md) | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1267](BG1267-sprint-py-lane-return-prints-a-two-model.md) | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1268](BG1268-no-shipped-command-writes-a-row-to-sdlc.md) | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1269](BG1269-sprint-plan-puts-every-unit-in-one-shared.md) | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing keeps those units sequential | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1270](BG1270-the-always-loaded-instruction-cuts-leave-their-restored.md) | The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char cap | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1271](BG1271-sprint-cost-anatomy-counts-a-call-from-the.md) | `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start budget as none, and leaves three boundaries and an AC2 pin loose | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1272](BG1272-the-pre-push-check-reads-only-the-latest.md) | The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1273](BG1273-us1133-made-engagement-floor-py-a-writer-without.md) | US1133 made engagement_floor.py a writer without a confinement case or allowlist entry, so the push gate's roster sweep is red | Fixed | High | 2026-11-06 | 2026-11-06 |
+| [BG1274](BG1274-us1133-did-not-converge-in-review-round-2.md) | US1133 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1275](BG1275-two-statements-from-run-eight-s-last-repairs.md) | Two statements from run eight's last repairs claim more than the code or its tests show | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1276](BG1276-the-footprint-counter-splits-affects-on-every-comma.md) | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count | Open | Low | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 

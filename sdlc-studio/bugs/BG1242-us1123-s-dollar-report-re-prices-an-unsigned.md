@@ -1,6 +1,6 @@
 # BG1242: US1123's dollar report re-prices an unsigned page from the live price table, so `sprint sign` refuses it after a price revision, and its close wiring and end-date rule are unpinned
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, changelog.d/BG1242.md
@@ -26,12 +26,16 @@ Replay the filed page's own price table for an unsigned page as well as a signed
 
 - [ ] **AC1** Given a closed run whose page is filed but unsigned, when one model's price in `templates/model-prices.json` changes and the page is then revalidated or put to `sprint sign`, then it reads valid and re-derives the close's `est_actual` and `eu_usd` unchanged. Fails on: `_page_readings` returning `price_table: None` for an unsigned page, so the live table is read (the executed $0.6608 to $1.32 shift).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_an_unsigned_page_keeps_the_prices_it_was_filed_with
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC2** Given the same unsigned page with its recorded price table edited on disk after the close and its fingerprint left as filed, when it is revalidated, then it reads invalid and names the change. Fails on: replaying the table from the file with the table left out of the digest.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_an_edited_price_table_on_an_unsigned_page_is_named
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC3** Given a fixture run closed through the `sprint.py close` entry point, never by calling `stamp_cost_roles` directly, then the filed page carries the per-role table. Fails on: replacing `run_state.stamp_cost_roles(root)` in `_file_the_report` (`sprint.py`) with `pass`, which survives every current test.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_the_close_itself_files_the_role_table
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC4** Given a run that ended on a day after which the table turns stale, when the report and the retro are derived later, then both judge staleness on the run's end date and neither marks the dollars stale. Fails on: `"today": None` in `build_report`, or `retro.py` calling `run_state.usd` with no `today`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_staleness_is_judged_on_the_run_s_end_date
+  - **Verified:** yes (2026-11-06)
 
 ## Revision History
 

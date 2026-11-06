@@ -1,6 +1,6 @@
 # BG1252: A lane run session that used two models is priced entirely at the rate of the model with the most tokens
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/harness_usage.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1252.md
@@ -26,10 +26,13 @@ Carry the per-model split from `lib/harness_usage.py` through the lane session r
 
 - [ ] **AC1** Given a CLI output whose usage names two models, when `harness_usage.parse` reads it, then the `Usage` carries a per-model split whose components sum to the session's counts. Fails on: the split dropped so only `_largest`'s model survives.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_harness_usage.py::HarnessUsageTests::test_a_two_model_session_carries_its_split
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC2** Given `sprint.py lane run` with a fake CLI whose usage names two models, then `sprint.py lane return`, then the unit's dollars equal each model's components priced at its own rate (the $0.4358 shape, not $0.5425), and `reference-sprint.md#dollar-cost` no longer says a session is priced at its largest model. Fails on: the lane record or `run_reading` carrying no `by_model`, so `record_delegated_tokens` books the whole session under one model.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_two_model_session_is_priced_per_model
+  - **Verified:** yes (2026-11-06)
 - [ ] **AC3** Given a single-model session, or a lane record written before the fix with no split, when it is returned, then it prices exactly as before under its one named model. Fails on: a record without a split read as unpriced or as zero.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_record_without_a_split_prices_at_its_one_model
+  - **Verified:** yes (2026-11-06)
 
 ## Revision History
 

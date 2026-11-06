@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 27 |
+| Proposed | 29 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 538 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **684** |
+| **Total** | **686** |
 
 ## All Changes
 
@@ -96,6 +96,8 @@
 | [CR-0682](CR0682-make-the-author-self-check-prove-each-acceptance.md) | Make the author self-check prove each acceptance criterion at the observable it names through the shipped entry point, list the docs outside Affects that name what the diff changed, require a captured producer sample for a unit that parses another tool's output, and tag each blocking finding with its defect class. | Proposed | Medium | Improvement | 2026-11-06 | -- |
 | [CR-0683](CR0683-fix-three-run-seven-frictions-in-which-a.md) | Fix three run-seven frictions in which a shipped step leaves state the next step refuses: `lane land` checks the self-check hand-in only after it commits, `verify_ac run` in a builder worktree stamps the story file outside the unit's Affects, and `file_finding --parent` leaves the parent RFC's spawned-work cell unsynced. | Proposed | Medium | Bug | 2026-11-06 | -- |
 | [CR-0684](CR0684-prevent-or-retire-lesson-lc-015-a-retirement.md) | Prevent or retire lesson LC-015 (a retirement outruns the deletion) | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0685](CR0685-price-a-github-copilot-run-per-token-in.md) | Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0686](CR0686-carry-the-hand-back-contract-in-a-project.md) | Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats | Proposed | Low | Improvement | 2026-11-06 | -- |
 
 ## Archived Releases
 
