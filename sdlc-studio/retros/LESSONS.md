@@ -6,6 +6,33 @@
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
 
+## L-0465: Wait for the forge's CI on the parent before pushing again, or have the pre-push check name an in-progress run (BG1272)
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+Wait for the forge's CI on the parent before pushing again, or have the pre-push check name an in-progress run (BG1272).
+
+Recorded from retro RETRO0141.
+
+## L-0464: Serialise units that edit the same function into one lane or strict sequence at planning, not only the same file (BG1269)
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+Serialise units that edit the same function into one lane or strict sequence at planning, not only the same file (BG1269).
+
+Recorded from retro RETRO0141.
+
+## L-0463: A pre-review sweep that runs, for every unit, the tests and Verify lines that read each file the unit changed, so a cut prose rule or a…
+
+- **Added:** 2026-11-06
+- **Review-by:** 2027-02-04
+
+A pre-review sweep that runs, for every unit, the tests and Verify lines that read each file the unit changed, so a cut prose rule or a stale fragment sentence is found before review (US1129, US1130, BG1238).
+
+Recorded from retro RETRO0141.
+
 ## L-0462: Fixing BG1248 and BG1249 before Phase 2 runs the benchmark: a real run cannot log in with an emptied config directory, and suite tests can…
 
 - **Added:** 2026-11-06

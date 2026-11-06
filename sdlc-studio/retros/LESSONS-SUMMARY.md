@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0465: Wait for the forge's CI on the parent before pushing again, or have the pre-push check name an in-progress run (BG1272)**
+- **L-0464: Serialise units that edit the same function into one lane or strict sequence at planning, not only the same file (BG1269)**
+- **L-0463: A pre-review sweep that runs, for every unit, the tests and Verify lines that read each file the unit changed, so a cut prose rule or a…**
 - **L-0462: Fixing BG1248 and BG1249 before Phase 2 runs the benchmark: a real run cannot log in with an emptied config directory, and suite tests can…**
 - **L-0461: A fresh orchestrator session per wave and for the close (CR0670): the orchestrator was again the largest single cost**
 - **L-0460: A commit-time sweep lane for the repo-wide census, ceiling and scrub tests (CR0671), so a red push gate is caught at the commit that causes…**
