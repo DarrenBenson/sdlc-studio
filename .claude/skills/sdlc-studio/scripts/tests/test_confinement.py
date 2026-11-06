@@ -393,6 +393,8 @@ def _writers_on_disk() -> dict[str, set[str]]:
 #: This is the only way past the sweep, and it is a debt list: an entry here says
 #: the writer is unproven, not that it is safe.
 CONFINEMENT_ALLOWLIST: dict[str, str] = {
+    "engagement_floor.py": ("with --write-trailers, writes only the commit-message file git hands "
+                            "the commit-msg hook, never a workspace artefact; the hook tests pin it"),
     "init.py": "seeds a whole project tree, so every path it writes is its target",
     "project_upgrade.py": "rewrites the tree it migrates; covered by the upgrade suite",
     "migrate_v3.py": "renames artefacts wholesale as its purpose",
