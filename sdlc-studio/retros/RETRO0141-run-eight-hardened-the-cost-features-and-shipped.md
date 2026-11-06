@@ -44,3 +44,4 @@
 | CR0686 | not-stop-ship | Claude Opus 5.5 (orchestrator, D0423) | 2026-11-06 |
 | BG1275 | not-stop-ship | Claude Opus 5.5 (orchestrator, D0424) | 2026-11-06 |
 | BG1276 | not-stop-ship | Claude Opus 5.5 (orchestrator, D0424) | 2026-11-06 |
+| BG1277 | not-stop-ship | Claude Opus 5.5 (orchestrator, D0425) | 2026-11-06 |

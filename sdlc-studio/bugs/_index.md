@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 237 |
+| Open | 238 |
 | In Progress | 0 |
 | Fixed | 865 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1276** |
+| **Total** | **1277** |
 
 ## All Bugs
 
@@ -352,6 +352,7 @@
 | [BG1274](BG1274-us1133-did-not-converge-in-review-round-2.md) | US1133 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1275](BG1275-two-statements-from-run-eight-s-last-repairs.md) | Two statements from run eight's last repairs claim more than the code or its tests show | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1276](BG1276-the-footprint-counter-splits-affects-on-every-comma.md) | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1277](BG1277-the-close-s-closing-review-row-does-not.md) | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run | Open | Low | 2026-11-06 | 2026-11-06 |
 
 ## Archived Releases
 
