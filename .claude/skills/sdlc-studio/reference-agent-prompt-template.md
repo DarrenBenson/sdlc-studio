@@ -346,6 +346,15 @@ no builder waits on a commit hook. The brief states a tool-call budget, a fixed 
 per-point constant times the unit's points; at the budget the builder writes `HANDOFF.md` there
 (what is done, the criteria left, the next step) and returns.
 
+**Spawning a lane.** Spawn a builder as `subagent_type="sdlc-builder"` and a reviewer as
+`subagent_type="sdlc-reviewer"`: the definitions `init` installs from `templates/agents/` into
+`.claude/agents/` grant only the tools a lane calls and carry the hand-back contract, so a lane
+pays at its start for no tool it never calls. `general-purpose` is the fallback for a harness
+with no agent config (Codex CLI); Copilot CLI and OpenCode keep their own. A parallel wave
+launches its first agent alone and the rest after it has started, so they start on the warm
+shared prefix it wrote rather than each writing its own; `sprint cost --anatomy` flags a
+subagent whose first call exceeds `cost.agent_start_budget`.
+
 A harness without subagents runs each lane with
 `sprint lane run --harness <h> --units <id> [--model <m>]`, one fresh session per lane: it briefs
 the unit, runs that brief headless in the named CLI (`claude`, `cursor`, `codex`, `copilot` or

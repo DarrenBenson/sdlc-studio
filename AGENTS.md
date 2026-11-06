@@ -33,7 +33,8 @@ rule that matters is gated in the command people run (LL0027); one stated here a
 three tracked hooks and an ssh keepalive, and names any missing prerequisite
 ([hooks and the push](CONTRIBUTING.md#hooks-and-the-push)). Without them the gates are off. The only bypass is `git commit --no-verify` or
 `git push --no-verify`. Pushes go straight to main; a red main is read before the next push
-(D0181). Each hook lists its lanes (`--list` above); `.githooks/pre-push` runs the full suite once.
+(D0181). pre-commit and commit-msg list their lanes (`--list` above); `.githooks/pre-push` runs the full suite
+once.
 
 ## Non-negotiable rules
 
@@ -42,7 +43,8 @@ diff; a CR or RFC is not work until `refine` decomposes it into sized units.
 
 **Review is independent of the author.** Each unit gets one reviewer, a fresh context that did
 not write the code, briefed with `critic.py brief`, recording with `critic.py record`. The
-operator signs the run once, after the close, with `sprint sign`.
+operator signs the run once, after the close, with `sprint sign`. A reviewer the author
+controls does not satisfy this.
 
 **Brief a reviewer with the shipped tool, never by hand.** `critic.py brief --unit <id> --seat
 engineering|product|qa` carries the seat charter, the unit's `Affects` as scope, the criteria as

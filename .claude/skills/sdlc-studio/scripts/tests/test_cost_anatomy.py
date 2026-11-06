@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import sys
 import unittest
 import unittest.mock
@@ -42,6 +43,9 @@ STRAY_Q0 = _usage(3, 30, 900, 0, 9_000)
 SHARED = _usage(9, 900, 0, 1_500, 20_000)
 SHARED_PARTIAL_OUTPUT = 10
 OWN_X1 = _usage(4, 40, 700, 0, 8_000)
+#: an agent whose first call is small and whose later call is its largest (US1132 AC4)
+H5_START = _usage(5, 50, 20_000, 0, 0)
+H5_LATER = _usage(5, 50, 1_000, 0, 140_000)
 
 #: q0's prompt reads as a reviewer's, and no record names q0.
 REVIEWER_WORDED_PROMPT = ("You are the independent reviewer of US0101. Review the builder's "
@@ -316,6 +320,50 @@ class CostAnatomyTests(meter._Case):
         self.assertIsNone(got["start_context"])
         self.assertIn("main thread start context: not available",
                       meter._live("lib.cost_anatomy").render(got))
+
+    def test_a_subagent_over_its_start_budget_is_flagged(self) -> None:
+        """US1132 AC4. MUTANTS: the flag comparing an agent's largest call (h5's), its last or its
+        average (b7's) rather than its first; the budget a constant rather than
+        `cost.agent_start_budget` read from the config (the override and the shipped default
+        differ); the main thread flagged as a subagent; the flag line dropped from the text, or
+        its start or budget left out; the key missing from config-defaults.yaml or undocumented."""
+        ws = self._session()
+        # h5 starts lean and grows past the budget; b7 starts over it and then shrinks
+        ws.tx._append(ws.tx.subagents / "agent-h5.jsonl", [
+            _assistant("msg_h5_1", H5_START, [_tool_use("t_h5", "Read", file_path="a.py")]),
+            _result("t_h5", 10),
+            _assistant("msg_h5_2", H5_LATER, [{"type": "text"}])])
+        budget = 100_000
+        self.assertGreater(_ctx(BUILD_X), budget)
+        self.assertLess(max(_ctx(BUILD_Y), (_ctx(BUILD_X) + _ctx(BUILD_Y)) / 2), budget)
+        self.assertLess(_ctx(H5_START), budget)
+        self.assertGreater(_ctx(H5_LATER), budget)
+        defaults = (meter.SCRIPTS.parent / "templates" / "config-defaults.yaml").read_text(encoding="utf-8")
+        m = re.search(r"^cost:\n(?:  .*\n)*?  agent_start_budget: (\d+)", defaults, re.M)
+        self.assertIsNotNone(m, "config-defaults.yaml ships no cost.agent_start_budget")
+        shipped = int(m.group(1))
+        self.assertNotEqual(budget, shipped)
+        self.assertGreater(_ctx(meter.MAIN_1), shipped)  # the main thread starts over it
+        got = self._json(ws)
+        self.assertEqual(shipped, got["start_budget"])
+        over = [o["agent"] for o in got["over_start_budget"]]
+        self.assertIn("agent-b7", over)
+        self.assertEqual([], [a for a in over if a in ("session", "agent-h5")], over)
+        doc = (meter.SCRIPTS.parent / "reference-config.md").read_text(encoding="utf-8")
+        self.assertIn("| `cost.agent_start_budget` |", doc)
+        (ws.root / "sdlc-studio" / ".config.yaml").write_text(
+            f"cost:\n  agent_start_budget: {budget}\n", encoding="utf-8")
+        got = self._json(ws)
+        self.assertEqual(budget, got["start_budget"])
+        self.assertEqual([{"agent": "agent-b7", "role": "builder", "start": _ctx(BUILD_X)}],
+                         got["over_start_budget"])
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+        flagged = [ln for ln in text.splitlines() if "over the start budget" in ln]
+        self.assertEqual(1, len(flagged), text)
+        self.assertIn("agent-b7", flagged[0])
+        self.assertIn(f"{_ctx(BUILD_X):,} tokens", flagged[0])
+        self.assertIn(f"{budget:,}", flagged[0])
 
 
     def _two_runs(self):

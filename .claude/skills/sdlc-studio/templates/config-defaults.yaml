@@ -367,6 +367,10 @@ gate_budget:
 # issue until three priced runs exist.
 cost:
   baseline_per_point: 2500000  # priced input-equivalent tokens per point
+  # `sprint cost --anatomy` flags each subagent whose FIRST call carried more context than this
+  # (input + cache write + cache read), with its start and the budget: a lean builder or reviewer
+  # starts well under it, an agent granted every tool does not. `off` flags none.
+  agent_start_budget: 30000
 
 # Flow-metrics ageing flags (US-level, advisory). Unset = the status ageing advisory is OFF
 # (a flag appearing uninvited on a live workflow is a break, not a feature - opt in). When

@@ -16,6 +16,9 @@ for: input + cache write + cache read. It is None, printed `not available`, wher
 record exists: a harness reading that gives only a session total, a transcript whose usage records
 carry no message id, or a role with no calls. It is never 0. The main thread's start context is its
 first call's context, which the header names: what the session paid before any tool output.
+A subagent whose first call's context exceeds `cost.agent_start_budget` is flagged with its start
+and the budget: the first call, not the largest, because the start is what its definition and
+brief cost before it did any work. The main thread is not judged against it.
 
 A tool output is costed as its size in characters times the later calls of its own transcript,
 each of which re-reads it as context. The transcript records no token count per tool output, so
@@ -49,6 +52,7 @@ PRODUCER_FIELDS = ("command", "file_path", "notebook_path", "path", "pattern", "
 PRODUCER_WIDTH = 100
 _PLAIN = re.compile(r"[A-Za-z0-9_-]+")
 _WRITES = ("cache_write_5m", "cache_write_1h")
+START_BUDGET_KEY = "cost.agent_start_budget"
 
 
 class AnatomyError(Exception):
@@ -282,14 +286,25 @@ def _finish(rows: dict) -> list[dict]:
     return out
 
 
+def start_budget(repo_root) -> int | None:
+    """`cost.agent_start_budget` as a whole number of tokens, or None when it is off, unset or
+    not one, which flags no agent."""
+    import config  # noqa: PLC0415 - sibling script; only the start budget reads the config
+    raw = config.get(repo_root, START_BUDGET_KEY)
+    return raw if isinstance(raw, int) and not isinstance(raw, bool) and raw > 0 else None
+
+
 def build(main: Path, subagents: list[Path], roles: dict[str, str],
-          window: dict | None = None) -> dict:
+          window: dict | None = None, budget: int | None = None) -> dict:
     """The anatomy of the session whose transcript is `main`, its subagents' transcripts
     `subagents`, each subagent's role read from `roles` (`agent_roles`) and `other` when absent,
-    over `window` (`run_window`; the whole session when None). RAISES `AnatomyError` on a
-    transcript the meter would refuse."""
+    over `window` (`run_window`; the whole session when None), and each subagent whose first
+    call's context in that window exceeds `budget` (`start_budget`) named in
+    `over_start_budget`, which is None with no budget. RAISES `AnatomyError` on a transcript the
+    meter would refuse."""
     rows = {r: _row(r) for r in ROLES}
     seen: set = set()
+    over: list[dict] | None = [] if budget is not None else None
     outputs: list[dict] = []
     sources = [(main, "main")] + [(f, "subagents") for f in subagents]
     whole = [_records_of(path, side) for path, side in sources]
@@ -315,6 +330,8 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
         role = ORCHESTRATOR if side == "main" else roles.get(key or "", OTHER)
         agent = path.stem if side == "subagents" else "session"
         comps, contexts = _usage_of(path, records, seen, largest)
+        if side == "subagents" and over is not None and contexts and contexts[0] > budget:
+            over.append({"agent": agent, "role": role, "start": contexts[0]})
         row = rows[role]
         row["agents"] += 1
         row["agent_ids"].append(agent)
@@ -334,7 +351,8 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
             total[c] += row["components"][c]
     finished = _finish(rows)
     return {"source": str(main), "subagent_files": len(subagents), "start_context": start,
-            "window": window, "roles": finished, "total": _total(finished, total),
+            "start_budget": budget, "over_start_budget": over, "window": window,
+            "roles": finished, "total": _total(finished, total),
             "outputs": outputs[:TOP_OUTPUTS], "note": None}
 
 
@@ -364,6 +382,7 @@ def from_reading(reading: dict) -> dict:
                 row["priced"] = reading["priced"]
     harness = reading.get("harness") or "harness"
     return {"source": harness, "subagent_files": None, "start_context": None,
+            "start_budget": None, "over_start_budget": None,
             "window": _whole(f"the {harness} reading is one session total, which no window "
                              f"divides"), "roles": finished,
             "total": _total(finished, comps) | {"priced": finished[-1]["priced"]},
@@ -390,7 +409,8 @@ def anatomy(repo_root: Path | str, transcripts_dir: Path | str | None = None,
     files = sorted(folder.glob(run_state.SUBAGENT_GLOB)) if folder.is_dir() else []
     state = run_state.read(repo_root)
     roles = agent_roles(state, critic.read_verdicts(repo_root))
-    return build(main, files, roles, run_window(state, session))
+    return build(main, files, roles, window=run_window(state, session),
+                 budget=start_budget(repo_root))
 
 
 def _cell(value, kind: str = "int") -> str:
@@ -439,6 +459,16 @@ def render(got: dict) -> str:
     t = got["total"]
     lines.append(f"{'total':<12}" + "".join(f"  {c:>{w}}" for c in (
         _cell(t["agents"]), _cell(t["calls"]), _cell(t["priced"]))))
+    lines += ["", f"Subagent starts (each one's first call's context) against "
+                  f"`{START_BUDGET_KEY}`:"]
+    budget, over = got.get("start_budget"), got.get("over_start_budget")
+    if budget is None or over is None:
+        lines.append("  not available: no budget is configured, or no per-call record exists")
+    elif not over:
+        lines.append(f"  none started over the start budget of {budget:,} tokens")
+    for o in over or ():
+        lines.append(f"  {o['agent']} ({o['role']}) started at {o['start']:,} tokens, over the "
+                     f"start budget of {budget:,} tokens")
     lines += ["", "Heaviest tool outputs (size in characters x the later calls of its own "
                   "transcript that re-read it):"]
     if not got["outputs"]:
