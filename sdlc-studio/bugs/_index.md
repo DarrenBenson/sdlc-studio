@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-06
+**Last Updated:** 2026-11-07
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 238 |
+| Open | 239 |
 | In Progress | 0 |
 | Fixed | 866 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1278** |
+| **Total** | **1279** |
 
 ## All Bugs
 
@@ -354,6 +354,7 @@
 | [BG1276](BG1276-the-footprint-counter-splits-affects-on-every-comma.md) | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1277](BG1277-the-close-s-closing-review-row-does-not.md) | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1278](BG1278-bg1274-s-parity-test-fixture-names-the-retired.md) | BG1274's parity-test fixture names the retired module audit.py, so the push gate's rename guard is red | Fixed | High | 2026-11-06 | 2026-11-06 |
+| [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Open | Medium | 2026-11-07 | 2026-11-07 |
 
 ## Archived Releases
 
