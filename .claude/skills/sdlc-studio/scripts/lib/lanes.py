@@ -6,7 +6,8 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
 
 1. copy the hand-in files out of the worktree, to `sdlc-studio/.local/lane/landed/<worktree>/`
    under the root, since removing the worktree removes them, emptying that directory first so
-   nothing an earlier landing of the same worktree name left there survives;
+   nothing an earlier landing of the same worktree name left there survives, and removing each
+   unit's QA brief, so a brief found after the landing is one this landing wrote;
 2. commit the staged change in the worktree through the repository's hooks, never a bypass;
 3. rebase the worktree's branch onto the root's branch, aborting and naming the files on a
    conflict;
@@ -14,7 +15,9 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
 5. remove the worktree and delete its branch;
 6. record each unit's self-check on the root with `critic.py self-check record`;
 7. write each unit's QA brief with `critic.py brief --seat qa` to
-   `sdlc-studio/.local/briefs/<unit>-qa.txt`, printing its review tier and fingerprint.
+   `sdlc-studio/.local/briefs/<unit>-qa.txt`, printing its review tier and fingerprint. A unit
+   left with no brief has `<unit>-qa.none` beside it instead, naming this landing and why it
+   wrote none.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -61,6 +64,8 @@ from lib import sdlc_md
 HAND_IN = Path("sdlc-studio") / ".local" / "lane"
 LANDED = HAND_IN / "landed"
 BRIEFS = Path("sdlc-studio") / ".local" / "briefs"
+#: beside a unit whose latest landing wrote no brief: that landing, and why it wrote none
+NO_BRIEF = "{unit}-qa.none"
 COMMIT_MSG = "commit-msg.txt"
 SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
@@ -204,11 +209,19 @@ def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tup
     rel = BRIEFS / f"{unit}-qa.txt"
     (root_top / rel).parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(root_top / rel, brief.stdout)
+    (root_top / BRIEFS / NO_BRIEF.format(unit=unit)).unlink(missing_ok=True)
     tier = re.search(r"^review tier: (\S+)", brief.stderr, re.M)
     fp = re.search(r"^brief fingerprint: (\S+)", brief.stderr, re.M)
     return True, (f"{unit}: self-check recorded; QA brief {rel}, review tier: "
                   f"{tier.group(1) if tier else 'UNKNOWN'}, fingerprint: "
                   f"{fp.group(1) if fp else 'UNKNOWN'}")
+
+
+def _unbrief(root_top: Path, unit: str, why: str) -> None:
+    """Leave `unit` with no QA brief, and the note of the landing that wrote none."""
+    (root_top / BRIEFS / f"{unit}-qa.txt").unlink(missing_ok=True)
+    (root_top / BRIEFS).mkdir(parents=True, exist_ok=True)
+    sdlc_md.atomic_write(root_top / BRIEFS / NO_BRIEF.format(unit=unit), why + "\n")
 
 
 def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> int:
@@ -233,6 +246,12 @@ def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> i
         if path.is_file():
             shutil.copy2(path, keep / path.name)
     _say(f"hand-in copied to {keep.relative_to(root_top)}")
+    # an earlier round's brief is not this landing's: lane accept would record a verdict on it
+    landing = (f"the landing of {wt_top.name} begun "
+               f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}")
+    for unit in units:
+        _unbrief(root_top, unit, f"{landing} wrote no brief: it stopped before it briefed "
+                                 f"{unit}")
     if staged:
         _say(f"committed {_commit(wt_top, keep, target)} in {wt_top} through the hooks")
     _rebase(wt_top, branch, target)
@@ -253,6 +272,8 @@ def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> i
         _say(f"removed the worktree {wt_top} and the branch {branch}")
     for unit in units:
         ok, line = _record_and_brief(root_top, keep, unit, author or wt_top.name)
+        if not ok:
+            _unbrief(root_top, unit, f"{landing} wrote no brief: {line}")
         failed += 0 if ok else 1
         _say(line, err=not ok)
     return 1 if failed else 0
@@ -296,6 +317,15 @@ def _brief_of(root: Path, unit: str) -> tuple[str, str]:
     try:
         fp = critic.brief_fingerprint((root / rel).read_text(encoding="utf-8"))
     except OSError:
+        try:
+            why = (root / BRIEFS / NO_BRIEF.format(unit=unit)).read_text(encoding="utf-8")
+        except OSError:
+            why = ""
+        if why.strip():
+            raise LandError(f"no QA brief at {rel}: {why.strip()}. A verdict is recorded only "
+                            f"against the brief of the unit's latest landing, so nothing was "
+                            f"recorded: land {unit} again with its self-check handed in, and "
+                            f"that landing writes the brief", 2) from None
         raise LandError(f"no QA brief at {rel}: `sprint lane land` writes it when it lands the "
                         f"unit, and the verdict is recorded against that brief", 2) from None
     uid, tier = sdlc_md.norm_id(unit), None

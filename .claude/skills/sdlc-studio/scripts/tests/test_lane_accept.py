@@ -9,6 +9,10 @@ decoy note for the same unit carries another fingerprint and tier, so a verdict 
 `transition.py set` and `sprint.py lane return` run for real through their entry points; a spy
 on `lanes._script` names the calls made. One case stubs the record, for a REJECT at the review
 cap: carrying a unit needs an open run whose batch holds it.
+
+BG1290's cases land rounds of the green story for real, through `sprint.py lane land` from a
+`lane-us0101` worktree checked out afresh for each round, so the brief `lane accept` reads is
+the one a landing wrote, or none.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/lanes.py
 from __future__ import annotations
@@ -16,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -41,6 +46,14 @@ REJECT = ("VERDICT: REJECT\n"
           "ISSUES: [new] the gate lets a red unit through; [new] a docstring overstates the "
           "refusal; [pre-existing] BG0900 the lane is slow\n"
           "BLOCKING: [new] the gate lets a red unit through\n")
+CLAIMS = [{"surface": "commit message", "claim": "a", "ruling": "TRUE"},
+          {"surface": f"changelog.d/{GREEN}.md", "claim": "a", "ruling": "TRUE"}]
+MUTANTS = [{"mutant": "a stays one", "test": "tests/test_a.py::test_a", "result": "killed"}]
+#: the worktree every round of the green story lands from, as `sprint lane run` names it
+LANE_WT = f"lane-{GREEN.lower()}"
+HAND_IN = "sdlc-studio/.local/lane"
+#: claims `critic.py self-check record` refuses: none is from the unit's changelog fragment
+REFUSED = [{"surface": "commit message", "claim": "a", "ruling": "TRUE"}]
 
 
 def _write(root: Path, rel: str, body: str) -> Path:
@@ -90,12 +103,8 @@ class LaneAcceptTests(unittest.TestCase):
             notes.append({"fp": "0123456789ab", "unit": uid, "seat": "qa", "tier": "light"})
         _write(root, "sdlc-studio/.local/briefs.jsonl", "".join(json.dumps(n) + "\n"
                                                               for n in notes))
-        claims = [{"surface": "commit message", "claim": "a", "ruling": "TRUE"},
-                  {"surface": f"changelog.d/{GREEN}.md", "claim": "a", "ruling": "TRUE"}]
-        mutants = [{"mutant": "a stays one", "test": "tests/test_a.py::test_a",
-                    "result": "killed"}]
         files = [_write(root, f"sc/{n}.json", json.dumps(v))
-                 for n, v in (("claims", claims), ("mutants", mutants))]
+                 for n, v in (("claims", CLAIMS), ("mutants", MUTANTS))]
         done = subprocess.run(
             [sys.executable, str(SCRIPTS / "critic.py"), "self-check", "record", "--unit", GREEN,
              "--claims", str(files[0]), "--mutants", str(files[1]), "--author", AUTHOR,
@@ -227,6 +236,122 @@ class LaneAcceptTests(unittest.TestCase):
                 self.assertIn(said, err)
         self.assertEqual(self.calls, [])
         self.assertFalse(critic.verdicts_path(self.root).exists())
+
+    # -- BG1290: the brief a landing leaves -----------------------------------------------
+
+    def _land_round(self, body: str, message: str, *, claims: list | None = None,
+                    self_check: bool = True,
+                    main_moves: bool = False) -> subprocess.CompletedProcess:
+        """Land one round of the green story from a fresh `lane-us0101` worktree: `src/a.py`
+        set to `body` and staged, handed in with `message` and, when `self_check`, a self-check
+        whose claims are `claims` if given. `main_moves` commits to main's `src/a.py` after the
+        worktree branched, so the landing stops at its rebase."""
+        if not hasattr(self, "lanes"):
+            tmp = tempfile.TemporaryDirectory()
+            self.addCleanup(tmp.cleanup)
+            self.lanes = Path(tmp.name).resolve()
+        wt = self.lanes / LANE_WT
+        gitutil.git(["worktree", "add", "-q", "-b", LANE_WT, str(wt), "main"], self.root)
+        if main_moves:
+            _write(self.root, "src/a.py", "A = 'main'\n")
+            gitutil.git(["commit", "-q", "-m", "chore: main moves src/a.py", "--", "src/a.py"],
+                        self.root)
+        _write(wt, "src/a.py", body)
+        gitutil.git(["add", "--", "src/a.py"], wt)
+        _write(wt, f"{HAND_IN}/commit-msg.txt", message + "\n")
+        if self_check:
+            _write(wt, f"{HAND_IN}/{GREEN}-claims.json", json.dumps(claims or CLAIMS))
+            _write(wt, f"{HAND_IN}/{GREEN}-mutants.json", json.dumps(MUTANTS))
+        return subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "sprint.py"), "lane", "land", "--worktree",
+             str(wt), "--units", GREEN, "--root", str(self.root)], capture_output=True,
+            text=True, timeout=600, cwd=str(self.root), env=gitutil.git_env(), check=False)
+
+    def _brief(self, uid: str = GREEN) -> Path:
+        return self.root / f"sdlc-studio/.local/briefs/{uid}-qa.txt"
+
+    def _landed_fp(self, landed: subprocess.CompletedProcess) -> str:
+        """The fingerprint the landing printed for the brief it wrote; asserted to be the
+        fingerprint of the brief now on disk."""
+        printed = re.search(rf"^{GREEN}: self-check recorded; QA brief .* fingerprint: (\S+)$",
+                            landed.stdout, re.M)
+        self.assertIsNotNone(printed, landed.stdout + landed.stderr)
+        fp = critic.brief_fingerprint(self._brief().read_text(encoding="utf-8"))
+        self.assertEqual(printed.group(1), fp, "the brief on disk is not the one it wrote")
+        return fp
+
+    def test_accept_refuses_when_the_latest_landing_wrote_no_brief(self) -> None:
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        first = self._landed_fp(landed)
+        rc, out, err = self._accept(GREEN, REJECT)
+        self.assertEqual(rc, 1, out + err)
+        rows = self._rows(GREEN)
+        self.assertEqual([rows[-1][1], rows[-1][5]], ["REJECT", first])
+        repairs = {"not recorded": ({"self_check": False}, "self-check NOT RECORDED"),
+                   "refused": ({"claims": REFUSED}, "self-check REFUSED")}
+        for n, (name, (how, why)) in enumerate(repairs.items(), start=3):
+            with self.subTest(name):
+                landed = self._land_round(f"A = {n}\n", f"fix({GREEN}): a is {n}", **how)
+                self.assertEqual(landed.returncode, 1, landed.stdout + landed.stderr)
+                self.assertIn(f"{GREEN}: {why} and no brief written", landed.stderr)
+                self.calls.clear()
+                rc, out, err = self._accept(GREEN, APPROVE)
+                self.assertEqual(rc, 2, out + err)
+                self.assertNotIn("APPROVE recorded", out)
+                self.assertEqual(self.calls, [], "lane accept ran a script against no brief")
+                self.assertEqual(self._rows(GREEN), rows, "a verdict was recorded")
+                self.assertEqual(_status(self.root, GREEN), "Review")
+                # the refusal names the landing that wrote no brief, and why it wrote none
+                self.assertIn(f"no QA brief at sdlc-studio/.local/briefs/{GREEN}-qa.txt", err)
+                self.assertIn(f"the landing of {LANE_WT} ", err)
+                self.assertIn(f"wrote no brief: {GREEN}: {why}", err)
+
+    def test_a_landing_leaves_only_its_own_brief(self) -> None:
+        earlier = self._brief().read_text(encoding="utf-8")
+        # a landing that briefs the unit leaves its own brief, not the earlier round's
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        self.assertNotEqual(self._landed_fp(landed), self.fp[GREEN])
+        none = self.root / f"sdlc-studio/.local/briefs/{GREEN}-qa.none"
+        self.assertFalse(none.exists(), "a landing that wrote the brief left a no-brief note")
+        landings = {"no self-check handed in": {"self_check": False},
+                    "self-check refused": {"claims": REFUSED},
+                    # stopped part way, at the rebase: the worktree is left, so this goes last
+                    "stopped at the rebase": {"main_moves": True}}
+        for n, (name, how) in enumerate(landings.items(), start=3):
+            with self.subTest(name):
+                _write(self.root, f"sdlc-studio/.local/briefs/{GREEN}-qa.txt", earlier)
+                landed = self._land_round(f"A = {n}\n", f"fix({GREEN}): a is {n}", **how)
+                self.assertEqual(landed.returncode, 1, landed.stdout + landed.stderr)
+                self.assertFalse(self._brief().exists(),
+                                 f"a landing that wrote no brief left one ({name})")
+                self.assertIn(f"the landing of {LANE_WT} ", none.read_text(encoding="utf-8"))
+                # the other units' briefs are not this landing's to clear
+                self.assertTrue(self._brief(RED).is_file())
+        self.assertIn("rebasing", landed.stderr)
+
+    def test_a_repair_with_its_own_brief_is_accepted(self) -> None:
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        self._landed_fp(landed)
+        rc, out, err = self._accept(GREEN, REJECT)
+        self.assertEqual(rc, 1, out + err)
+        # the brief text repeats from round to round, so round one's file is marked: the
+        # fingerprint on disk matches the one the repair printed only if the repair rewrote it
+        stale = self._brief().read_text(encoding="utf-8") + "round one's brief\n"
+        _write(self.root, f"sdlc-studio/.local/briefs/{GREEN}-qa.txt", stale)
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        fresh = self._landed_fp(landed)
+        self.assertNotEqual(fresh, critic.brief_fingerprint(stale))
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, APPROVE)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 2, against brief {fresh}", out)
+        row = self._rows(GREEN)[-1]
+        self.assertEqual([row[1], row[5]], ["APPROVE", fresh])
+        self.assertEqual(_status(self.root, GREEN), "Done")
 
 
 if __name__ == "__main__":
