@@ -76,6 +76,8 @@ _MOVE_METHODS = ("replace", "rename")
 _MOVE_CALLS = {"os": ("replace", "rename"), "shutil": ("move", "copy", "copy2", "copyfile")}
 #: An `open` mode that writes.
 _WRITE_MODE_RE = re.compile(r"[wax+]")
+#: US1138: an `os.open` flag that writes, as `cursor_usage_hook.py` appends its ledger.
+_OS_WRITE_FLAGS = frozenset({"O_WRONLY", "O_RDWR", "O_APPEND", "O_CREAT", "O_TRUNC"})
 #: A helper whose name joins one of these to another word (`atomic_write`, `append_history`,
 #: `write_report`) writes each path it is passed; a bare `append` or `write` is a list or a handle.
 _WRITE_WORDS = frozenset({"write", "append", "save"})
@@ -228,6 +230,9 @@ class _Writes:
                     or self._path(m, e.value, names))
         if isinstance(e, ast.BinOp) and isinstance(e.op, ast.Div):
             return self._path(m, e.left, names) or self._path(m, e.right, names)
+        if isinstance(e, ast.IfExp):
+            # US1138: `run_state._memo_path` returns the memo's path or None.
+            return self._path(m, e.body, names) or self._path(m, e.orelse, names)
         if not isinstance(e, ast.Call):
             return False
         f = e.func
@@ -275,6 +280,10 @@ class _Writes:
                 return path(f.value)
             if f.attr == "open" and path(f.value):
                 return writes_mode(0)
+            if f.attr == "open" and isinstance(f.value, ast.Name) and f.value.id == "os":
+                return (len(c.args) > 1 and path(c.args[0]) and any(
+                    (n.attr if isinstance(n, ast.Attribute) else getattr(n, "id", None))
+                    in _OS_WRITE_FLAGS for n in ast.walk(c.args[1])))
             if isinstance(f.value, ast.Name) and f.attr in _MOVE_CALLS.get(f.value.id, ()):
                 return len(c.args) == 2 and path(c.args[1])
             if f.attr in _MOVE_METHODS:
@@ -633,6 +642,17 @@ _PROBES = (
                                 f"        fh.write('x')\n"}, "w.py", True),
     ("os.replace onto it", {"w.py": f"def f(root, tmp):\n    os.replace(tmp, root / '{PROBE}')\n"},
      "w.py", True),
+    ("os.open to append", {"w.py": f"def f(root):\n    fd = os.open(root / '{PROBE}', "
+                                   f"os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)\n"}, "w.py", True),
+    ("os.open to read", {"w.py": f"def f(root):\n    fd = os.open(root / '{PROBE}', os.O_RDONLY)\n"},
+     "w.py", False),
+    ("a conditional path saved", {"w.py": f"REL = Path('{PROBE}')\n"
+                                          f"def path(root, on):\n    return root / REL if on else None\n"
+                                          f"def go(root, s):\n    _save_memo(path(root, True), s)\n"},
+     "w.py", True),
+    ("a conditional of another file", {"w.py": f"# {PROBE}\ndef f(root, on):\n"
+                                               f"    p = root / 'other.json' if on else None\n"
+                                               f"    p.write_text('x')\n"}, "w.py", False),
     ("an argparse default", {"w.py": f"def main(argv):\n    ap = argparse.ArgumentParser()\n"
                                      f"    ap.add_argument('--out', default='.local/{PROBE}')\n"
                                      f"    args = ap.parse_args(argv)\n"

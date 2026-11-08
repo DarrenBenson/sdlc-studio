@@ -52,7 +52,7 @@ each project's TRD).
 - Files are the source of truth; indexes and statuses are derived and reconciled
   from a disk census. (ADR-003)
 - GitHub integration through the `gh` CLI, the release check's GET the one exception -
-  no PyGitHub or token handling. (ADR-004)
+  no PyGitHub and no GitHub token handling. (ADR-004)
 - `AGENTS.md` is the tool-neutral instruction standard; tool-specific files point
   at it rather than duplicate it. (ADR-005)
 - A gate's fire/skip decision is computed from artefact fields and config, never
@@ -250,6 +250,7 @@ Python and Node the gate runs, which `~/sdlc-gate/gate-env.sh` on the host may p
 | --- | --- | --- |
 | GitHub Issues and Actions | GitHub | Two-way sync of CR/Story/Epic artifacts, and the CI runs a tag check and a run report read, via the `gh` CLI. |
 | GitHub Releases | GitHub | The release check's read of the latest release, a direct HTTPS GET (§5 Network paths). |
+| Cursor usage API | Cursor | The Cursor token meter's read of a cloud agent's usage, a direct HTTPS GET (§5 Network paths), made only when that meter is selected and its key and agent id are set. |
 
 No databases, no servers, no container runtime at the skill level. The consuming
 project supplies whatever Verify-line tools its acceptance criteria reference.
@@ -303,9 +304,9 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    rewrite, so a torn write costs only its own last row (which `critic.read_verdicts`
    reports rather than silently drops), never the file. The scripts are NOT read-only
    over the workspace; the guarantee is that every write is tested and bounded.
-6. Network access is limited to the outbound paths [Network paths](#network-paths) lists.
-   No other shipped script calls `gh`, opens a connection through `urllib` or runs
-   `git fetch`.
+6. Network access is limited to the outbound paths [Network paths](#network-paths) lists,
+   the Cursor usage request from `meter_cursor.py` among them. No other shipped script
+   calls `gh`, opens a connection through `urllib` or runs `git fetch`.
 7. Plain text to stdout by default; `--format json` where machine-parseable output
    matters.
 8. Unit tests under `scripts/tests/test_<script>.py`.
@@ -319,8 +320,10 @@ between installed copies.
 ### Network paths
 
 Every GitHub call but the release check goes through the `gh` CLI, which owns auth; the
-release check's GET is the exception ADR-004 records. `tools/tests/test_lean_trd_refresh.py`
-finds the `gh` callers by scanning the shipped scripts and holds this table to them.
+release check's GET is the exception ADR-004 records. The Cursor usage GET is not a GitHub
+call. `tools/tests/test_lean_trd_refresh.py` finds the `gh` callers by scanning the shipped
+scripts and holds this table to them, and `tools/tests/test_lean_specs_v63.py` holds it to
+every shipped script that imports `urllib.request`.
 
 | Path | Script | Function | Command or endpoint | Under ADR-004 | When it gets no answer |
 | --- | --- | --- | --- | --- | --- |
@@ -329,6 +332,7 @@ finds the `gh` callers by scanning the shipped scripts and holds this table to t
 | A run report's CI runs | `sprint_report.py` | `fetch_ci_runs` | `gh run list` | via `gh` | Returns no runs, with a source naming why |
 | The release check | `version_check.py` | `latest_release` | HTTPS GET to `api.github.com`, 5 s timeout | exception | Reads as offline and says nothing; `version_check.enabled: false` turns it off |
 | Origin drift | `sprint.py` | `origin_drift` | `git fetch origin` | not GitHub | Marks the comparison unverified, naming why |
+| Cursor usage | `lib/meter_cursor.py` | `call` | Sent by `call`, nested in `_get`: HTTPS GET `/v1/agents/{id}/usage` on `https://api.cursor.com` (`SDLC_STUDIO_CURSOR_API` overrides it: https, or http on a loopback IP address only), 5 s timeout, redirect refused, `CURSOR_API_KEY` in its `Authorization` header | not GitHub | Reads tokens None with the reason; made only when the Cursor meter is selected and both `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID` are set |
 
 The consuming project's own Verify-line tools reach the network too, bounded to the hosts
 `SDLC_VERIFY_HTTP_HOSTS` names.
@@ -593,6 +597,12 @@ closing a record still running `blocked`; `sprint.py boundary --strict` adds ori
 | `mutation-report.json` | `mutation.py` | The LATEST run: per-mutant killed / survived / error / unviable, with the git rev and a content hash per target. Last-write-wins, so it carries one run's survivors rather than accumulated evidence; no gate lane reads it. [HIGH] |
 | `mutation-series.jsonl` | `mutation.py` | One row appended per run: what it cost and what it found, read back by `mutation.py yield --run <id>`. No per-target ledger is kept. [HIGH] |
 | `repo-map.json` | `repo_map.py` | Per-file symbols, imports, in-degree score; queried for `READ THESE FILES FIRST` lists. [HIGH] |
+| `meter-reads.json` | `lib/run_state.py` | The meter's memo: what each transcript of the last reading held, so the next reading parses only the bytes appended since. Deleting it costs one whole re-read. [HIGH] |
+| `cursor-usage.jsonl` | `cursor_usage_hook.py` | The Cursor CLI hook's ledger: one line per response with its four token counts, which the Cursor meter reads a CLI run's tokens from. [HIGH] |
+| `lane-runs/<unit>/<session>.json` | `lib/lanes.py`, called by `sprint.py lane run` | One record per headless lane session: the session id, model, normalised usage, first-call context and the files staged, with the CLI's output beside it; `lane return` prices the lane from them. [HIGH] |
+| `lane/` | the builder, in its worktree, as the brief `sprint.py` prints for `lane brief` directs | The lane hand-in: the commit message and the self-check's claims and mutants files that `sprint.py lane land` commits and records from. [HIGH] |
+| `lane/landed/<worktree>/` | `lib/lanes.py`, called by `sprint.py lane land` | The hand-in files copied out of a worktree before it is removed. [HIGH] |
+| `briefs/<unit>-qa.txt` | `lib/lanes.py`, called by `sprint.py lane land` | Each landed unit's QA brief, which `sprint.py lane accept` records the verdict against. [HIGH] |
 
 Each writer a row names writes its file under `.local/`, which `test_lean_v61_review_residue.py`
 checks by reading each script's code, where a write counts only at module level or in a function
@@ -635,9 +645,10 @@ migration. [HIGH]
 
 | Service | Purpose | Protocol | Auth |
 | --- | --- | --- | --- |
-| GitHub Issues | Two-way sync of CR/Story/Epic artifacts | `gh` CLI subprocess | Inherited from `gh auth`; the skill handles no tokens |
+| GitHub Issues | Two-way sync of CR/Story/Epic artifacts | `gh` CLI subprocess | Inherited from `gh auth`; the skill sends no GitHub token |
 | GitHub Actions | Whether CI passed on the commit a tag names; the CI runs a run report freezes | `gh run list` subprocess | Inherited from `gh auth` |
 | GitHub Releases | The release check | Stdlib HTTPS GET | None: a public endpoint, and no token is sent |
+| Cursor usage API | The Cursor token meter's reading of a cloud agent's usage | Stdlib HTTPS GET | `CURSOR_API_KEY` from the environment, sent only in this request's `Authorization` header and never recorded |
 
 `github_sync.py` subcommands: `pull` (fetch `sdlc:*`-labelled issues into local
 files), `push` (create/update issues from local files), `cascade` (walk merged PRs
@@ -736,7 +747,8 @@ cross-machine clash is caught at merge (ADR-008).
 | Threat | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
 | Script mutating files outside its remit | L | M | Contract rule 5: read-only helpers never mutate the workspace, and every writer is confined to the tested boundary §5 rule 5 names for it. The write surface is a bounded, enumerated SET, not a single exception. Unit-tested, with a write-confinement snapshot suite. |
-| Token leakage via GitHub integration | L | M | No token handling: every GitHub call but the release check goes through `gh`, which owns auth, and the release check sends none (ADR-004). |
+| Token leakage via GitHub integration | L | M | No GitHub token handling: every GitHub call but the release check goes through `gh`, which owns auth, and the release check sends none (ADR-004). |
+| Credential leakage via the Cursor meter | L | M | The skill stores no secret. `CURSOR_API_KEY` is read from the environment and sent only in the Cursor usage request's `Authorization` header, over https or http to a loopback IP address, with a redirect refused so the key never follows one; no reading carries it (US0989). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
 | Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |
 | Network exfiltration | L | H | Only the outbound paths §5 Network paths lists, each with what it does when it gets no answer, plus the consuming project's own Verify-line tools (host-bounded by `SDLC_VERIFY_HTTP_HOSTS`). See §5 rule 6. |
@@ -745,11 +757,11 @@ cross-machine clash is caught at merge (ADR-008).
 
 | Control | Implementation |
 | --- | --- |
-| Authentication | None at skill level; GitHub sync inherits `gh auth`. |
+| Authentication | None at skill level; GitHub sync inherits `gh auth`, and the Cursor meter sends `CURSOR_API_KEY` from the environment. |
 | Authorisation | Filesystem permissions of the host; script writes are bounded and tested (see §5 rule 5), not read-only. |
 | Encryption at rest | Not applicable (plain files in the consuming repo). |
-| Encryption in transit | HTTPS for `gh` and the `api.github.com` release check; `git fetch origin` uses the remote's own transport. |
-| Secret handling | The skill handles no secrets; secret management is the consuming project's concern, documented in its `AGENTS.md`. |
+| Encryption in transit | HTTPS for `gh`, the `api.github.com` release check and the Cursor usage request (or http to a loopback IP address only); `git fetch origin` uses the remote's own transport. |
+| Secret handling | The skill stores no secret. The one credential it sends, `CURSOR_API_KEY`, is read from the environment and sent only in the Cursor usage request's `Authorization` header, never recorded; other secret management is the consuming project's concern, documented in its `AGENTS.md`. |
 
 ---
 
@@ -778,9 +790,12 @@ plan time** to `retros/evidence/forecasts-*.jsonl` (`telemetry.forecasts`), stam
 with the points and the estimator rate constants that produced it, so `retro
 accuracy` judges that recorded number and never re-derives one - the loop can falsify
 itself. It is quoted with a band (about +/-50%) and is **never** a gate: a script
-measures the session total from the transcript but only as a LOWER BOUND - delegated and
-sidechain spend is supplied, not observed - so tokens warn while minutes and units stop a
-run. See §12.
+the meter reads the store of the harness running the session (`lib/token_meters.py`: Claude
+Code, Codex CLI, Copilot CLI, OpenCode or Cursor, named by `SDLC_STUDIO_HARNESS`, else the
+one harness the environment signals, else the one store on disk), and each reading says
+with `includes_subagents` whether delegated agents' spend is in it. A reading that holds it
+is the whole figure and one that leaves it out is a lower bound, so tokens warn while
+minutes and units stop a run. See §12.
 
 ---
 
@@ -872,7 +887,7 @@ tokens.
 
 **Decision:** Route every GitHub call through the `gh` CLI as a subprocess
 (`github_sync.py`, `release_cut.py` and `sprint_report.py`, §5 Network paths). No
-third-party client, no token handling - `gh` owns auth.
+third-party client, no GitHub token handling - `gh` owns auth.
 
 **Exception:** the release check. `version_check.py` reads the latest release with a stdlib
 HTTPS GET to `api.github.com` rather than through `gh`. It sends no token, reads a public
@@ -881,7 +896,8 @@ turns it off.
 
 **Consequences:**
 
-- Positive: keeps the script layer pure stdlib; no secret management in the skill.
+- Positive: keeps the script layer pure stdlib; the skill stores no secret, and the one it
+  sends, the Cursor meter's `CURSOR_API_KEY`, goes to Cursor, not GitHub.
 - Sync FAILS LOUD, by design: with `gh` absent `github_sync.py` aborts non-zero (127)
   and names the missing CLI. It does NOT degrade gracefully - a silent no-op would let a
   caller mistake an unsynced workspace for a synced one. Callers handle the non-zero
@@ -1281,8 +1297,8 @@ A constraint that governs one component sits in that component's Constraints cel
 touches the component. The constraints below span components.
 
 - `gate.py --release` passes before a release is tagged.
-- GitHub access via `gh`, the release check's GET the one exception (ADR-004); no token
-  handling, no third-party client.
+- GitHub access via `gh`, the release check's GET the one exception (ADR-004); no GitHub
+  token handling, no third-party client.
 - `AGENTS.md` canonical; tool-specific files point at it.
 - Every new gate obeys ADR-006: the fire/skip decision is computable from artefact
   fields, config and deterministic signals. A judgement-gated trigger in a design is a
@@ -1298,9 +1314,9 @@ touches the component. The constraints below span components.
 - Executable conformance tests for the markdown command flows (the eval scenarios are a
   partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
-- A token budget that gates. The session total IS transcript-measured, but it is a LOWER
-  BOUND because delegated and sidechain spend is supplied rather than observed, so a
-  number could never be a breaker; tokens warn, minutes and units stop the run.
+- A token budget that gates. The session total is read from the running harness's store,
+  and a reading that leaves delegated agents' spend out is a lower bound, so a number
+  could never be a breaker; tokens warn, minutes and units stop the run.
 - Auto-refitting of the estimator's fitted constants from the velocity history. Curve-
   fitting a handful of sprints fits noise and dresses it as evidence; a human reads the
   trend and decides. (This is distinct from what the shipped loop DOES do: once a project
@@ -1332,6 +1348,7 @@ touches the component. The constraints below span components.
 | 2026-11-01 | 6.1.0 | US1101: §6's type registry gains `charter` and its vocabulary, the epic's `Superseded` and a `META_TYPES` table; §5 gives the network paths as a table holding all three `gh` callers, the version check's GET and `git fetch`, and ADR-004 records the GET as its exception; ADR-003 adds `reconcile.py settle` at commit; ADR-009 says `persona_gen.py` writes no card and the default seats ship; ADR-012 says it is not yet built; §10's gate row cites `GATE_BUDGET_MEASURED`; the coverage line reads v6.1.0 plus 6.2 on `main` |
 | 2026-11-02 | 6.2.0 | US1111: the release cut. The Coverage line reads v6.2.0 as cut, plus the 6.3 work on `main` |
 | 2026-11-04 | 6.2.0 | BG1163: §6's run lifecycle names `sprint.py stop` and `sprint.py close --file-and-close` and what each files; the Run state's tracked row says `--file-and-close` files none; the boundary note says it runs a close; the claim-drift writer cell names US0577 alone, from git; the `.local` paragraph says how the pin reads a writer |
+| 2026-11-08 | 6.2.0 | The 6.3 work on `main` (US1138): §5's Network paths and rule 6 name the Cursor usage GET, held to every shipped script that imports `urllib.request`; §4, §7 and §9 name it, and the skill stores no secret and sends one, `CURSOR_API_KEY`, only in that request's header. §10's cost model reads the running harness's store, a reading holding delegated agents' spend being the whole figure. The `.local/` table adds `meter-reads.json`, `cursor-usage.jsonl`, `lane-runs/`, the `lane/` hand-in, its `landed/` copies and `briefs/` |
 
 ---
 

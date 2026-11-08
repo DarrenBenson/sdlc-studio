@@ -669,7 +669,10 @@ def _owners(source: str, hit) -> set[str]:
                      else owner)
             visit(child, inner)
 
-    visit(ast.parse(source), "<module>")
+    tree = ast.parse(source)
+    if hit is _connects:
+        hit = functools.partial(_connects, openers=_openers(tree))
+    visit(tree, "<module>")
     return out
 
 
@@ -698,19 +701,40 @@ def _runs_git_fetch(node: ast.AST) -> bool:
     return False
 
 
-def _connects(node: ast.AST) -> bool:
-    """A call of a `_CONNECTS` name, as an attribute (`urllib.request.urlopen`) or bare."""
+def _callee(node: ast.AST) -> str | None:
+    """The name a call calls, as an attribute (`urllib.request.urlopen`) or bare."""
+    f = node.func if isinstance(node, ast.Call) else None
+    return f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
+
+
+def _openers(tree: ast.AST) -> frozenset[str]:
+    """US1138: each name an assignment binds to a `build_opener(...)` call, the opener
+    `lib/meter_cursor.py` refuses redirects through."""
+    return frozenset(t.id for n in ast.walk(tree) if isinstance(n, (ast.Assign, ast.AnnAssign))
+                     and _callee(n.value) == "build_opener"
+                     for t in (n.targets if isinstance(n, ast.Assign) else [n.target])
+                     if isinstance(t, ast.Name))
+
+
+def _connects(node: ast.AST, openers: frozenset[str] = frozenset()) -> bool:
+    """A call of a `_CONNECTS` name, as an attribute (`urllib.request.urlopen`) or bare, or an
+    opener's `.open(...)`: on a name in `openers`, or on a `build_opener(...)` call itself."""
     if not isinstance(node, ast.Call):
         return False
+    if _callee(node) in _CONNECTS:
+        return True
     f = node.func
-    return (f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)) in _CONNECTS
+    return (isinstance(f, ast.Attribute) and f.attr == "open"
+            and (isinstance(f.value, ast.Name) and f.value.id in openers
+                 or _callee(f.value) == "build_opener"))
 
 
 #: A source text no `hit` can match in, read before parsing it: each hit's strings and names
 #: stand in the text as written, quoted for a string. A string spelt with escapes is not read.
 _PREFILTER = {_runs_gh: re.compile(r"[\"']gh[\s\"']"),
               _runs_git_fetch: re.compile(r"[\"']fetch[\"']"),
-              _connects: re.compile(r"\b(?:" + "|".join(sorted(_CONNECTS)) + r")\b")}
+              _connects: re.compile(r"\b(?:" + "|".join(sorted(_CONNECTS | {"build_opener"}))
+                                    + r")\b")}
 
 
 def _scan(hit) -> set[tuple[str, str]]:
@@ -757,8 +781,9 @@ class TrdRegistryNetworkTests(unittest.TestCase):
         fetches from origin and has no row, or a row for a function that no longer does; a
         `gh` row whose command names something else; the version check's row given as anything
         but the ADR-004 exception, or ADR-004's Exception paragraph not naming its script; a
-        row naming a function its script does not define. The scanners are checked first on a
-        sample: an argv display, a `shell=True` string, and the near misses they must pass."""
+        row naming a function its script does not define; a connection not to `api.github.com`
+        given as the exception. The scanners are checked first on a sample: an argv display, a
+        `shell=True` string, an opener's `.open`, and the near misses they must pass."""
         sample = ("import shutil, subprocess\n"
                   "def a(): subprocess.run(['gh', 'run', 'list'])\n"
                   "def b(): cmd = ('gh',)\n"
@@ -768,21 +793,32 @@ class TrdRegistryNetworkTests(unittest.TestCase):
                   "def f():\n    def g(): subprocess.run(['git', 'fetch'])\n"
                   "def h(): run(root, 'fetch', 'origin')\n"
                   "def i(): steps = ('close-down', 'fetch')\n"
-                  "def j(): urllib.request.urlopen(r)\n")
+                  "def j(): urllib.request.urlopen(r)\n"
+                  "O = urllib.request.build_opener(h)\n"
+                  "def k(): O.open(r)\n"
+                  "def m(): path.open('w')\n"
+                  "def n(): open(r)\n"
+                  "def o(): urllib.request.build_opener(h).open(r)\n")
         self.assertEqual({"a", "b", "c"}, _owners(sample, _runs_gh))
         self.assertEqual({"g", "h"}, _owners(sample, _runs_git_fetch))
-        self.assertEqual({"j"}, _owners(sample, _connects))
+        self.assertEqual({"j", "k", "o"}, _owners(sample, _connects))
         gh, fetch, get = _scan(_runs_gh), _scan(_runs_git_fetch), _scan(_connects)
         self.assertIn(("github_sync.py", "gh"), gh)
         self.assertIn(("sprint.py", "origin_drift"), fetch)
         self.assertIn(("version_check.py", "latest_release"), get)
+        self.assertIn(("lib/meter_cursor.py", "call"), get)
 
         table = _one_table(_section(_trd_body(), "Network paths"), "Path")
         script, fn, cmd, adr = (table[0].index(c) for c in
                                 ("Script", "Function", "Command or endpoint", "Under ADR-004"))
         rows = {(r[script].strip("`"), r[fn].strip("`")): r for r in table[1:]}
         self.assertEqual(len(table) - 1, len(rows), "a script and function listed twice")
-        for verdict, found in ((VIA_GH, gh), (EXCEPTION, get), (NOT_GITHUB, fetch)):
+        # US1138: a connection is the ADR-004 exception when its script reaches `api.github.com`,
+        # and not GitHub otherwise, as the Cursor usage GET is.
+        github = {k for k in get if "api.github.com" in _read(SCRIPTS / k[0])}
+        self.assertIn(("version_check.py", "latest_release"), github)
+        for verdict, found in ((VIA_GH, gh), (EXCEPTION, github),
+                               (NOT_GITHUB, fetch | (get - github))):
             with self.subTest(verdict=verdict):
                 self.assertEqual(found, {k for k, r in rows.items() if r[adr] == verdict})
         self.assertEqual(set(rows), gh | get | fetch)
@@ -796,7 +832,7 @@ class TrdRegistryNetworkTests(unittest.TestCase):
                     self.assertTrue(all(s.split()[0] == "gh" for s in _spans(row[cmd])), row)
         exception = _adr(_trd_body(), "004").split("**Exception:**", 1)
         self.assertEqual(2, len(exception), "ADR-004 has no Exception paragraph")
-        self.assertLessEqual({p for p, _ in get}, _spans(exception[1].split("\n\n", 1)[0]))
+        self.assertLessEqual({p for p, _ in github}, _spans(exception[1].split("\n\n", 1)[0]))
 
     def test_the_adrs_and_header_match_6_2(self) -> None:
         """AC3. Mutants: ADR-012 with no Revision History row dated on or after its acceptance;

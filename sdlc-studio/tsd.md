@@ -383,8 +383,9 @@ A static security scanner IS wired as a **blocking** CI step. The CI job runs
 the shipped script tier, reporting medium-and-high severity findings only (`-ll`),
 excluding the test modules (`-x '*/tests/*'`), quietly (`-q`). A finding fails the
 build. Beyond the scanner, the security posture (TRD section 9) is also enforced
-structurally: the script contract forbids network calls except the `gh` wrapper and
-forbids token handling, the suite mocks `gh`, and the pure-stdlib constraint removes
+structurally: the script contract forbids network calls except the paths the TRD's
+Network paths table lists, among them the Cursor usage GET, the skill stores no secret
+and sends one, `CURSOR_API_KEY`, only in that request's header, the suite mocks `gh`, and the pure-stdlib constraint removes
 third-party supply-chain surface. bandit covers the shipped script tier only; the
 `tools/` CI checkers and the markdown corpus are out of its scope. See the
 quality-gate tables for the NFR mapping and the remaining gaps.
@@ -414,7 +415,7 @@ adjoins either end of it.
 | **Security** - "`git fetch origin` from `sprint.py`" | `test_sprint_rolling.py::BoundaryOriginFetchTests`: the boundary fetches each cycle, and `--no-fetch` suppresses the fetch and still compares. `test_sprint_rolling.py::UnreachableOriginIsNotCleanTests`: a failed fetch is reported unverified, which `--strict` turns into a refusal at the plan and a stop at the boundary. | Yes (the suite) | [HIGH] |
 | **Security** - "the tools a project's Verify lines invoke" | `test_verify_ac.py::RestrictedHttpTests`: with `SDLC_VERIFY_HTTP_HOSTS` set, the `http` verb refuses a host off the list and allows one on it. The list bounds the `http` verb only; `verify_ac.py run --no-shell` blocks the shell-backed verbs outright. | Partial (the `http` verb) | [MEDIUM] |
 | **Security** - "Id allocation reads `origin/main` with `git ls-tree` and never fetches" | `test_lean_prd_refresh.py::PrdRulesTests` refuses this sentence when `next_id.py`'s source makes a network call. | Yes (the suite) | [HIGH] |
-| **Security** - "No secrets handled by the skill"; "secret handling is the consuming project's concern" | Not gated: no secret scanner runs. Enforced by design (no token handling; `gh` owns auth) and by code review. | No (design control) | [MEDIUM] |
+| **Security** - "The skill stores no secret"; "sent only in the Cursor usage request's header"; "secret handling is the consuming project's concern" | `test_meter_cursor.py::CursorCloudTests`: the key goes out only in the request's header and no reading carries it. No secret scanner runs; the rest is by design (no GitHub token handling; `gh` owns auth) and by code review. | Partial (the Cursor key) | [MEDIUM] |
 | **Scalability** - "Progressive disclosure keeps always-loaded context minimal" | `check_budgets.py`: `SKILL.md` must be under 500 lines, and a long `reference-*.md` within the ceiling `check_budgets.py` records for it. Hard gate via `lint:budgets`; new commands add a `help/` file and a guide row, not router bulk. | Yes | [HIGH] |
 | **Scalability** - "Agentic waves bound concurrency" | Not gated. `sprint.py` computes the waves as dependency levels (`_topo_waves`, held by `test_sprint.py::WaveTests`), and `_topo_waves` caps no wave's size: the bound on concurrency is the instruction in `reference-agentic-lessons.md`. | No | [MEDIUM] |
 | **Scalability** - "the appetite breaker bounds an unattended run" | `test_loop_guard.py::BudgetVerdictTests` trips the breaker when the appetite's minutes or units are spent, `test_loop_guard.py::BudgetExitCodeTests` gives it an exit code distinct from quarantine's, and `test_loop_guard.py::BudgetCliTests` drives `loop_guard.py budget` from a recorded run state. | Yes (the suite) | [HIGH] |
@@ -543,7 +544,8 @@ order. No shared mutable fixture database exists.
 
 ### Sensitive Data
 
-None. The skill handles no secrets and the tests touch no real credentials.
+The skill stores no secret, and the tests touch no real credentials: the Cursor tests send a
+fake `CURSOR_API_KEY` to a loopback stub.
 `github_sync.py` tests mock the `gh` subprocess, so no live GitHub token is needed
 and none is present in the suite.
 
@@ -819,6 +821,7 @@ is set; see Pipeline Stages), whose `full-suite` lane runs both suites once.
 | 2026-10-22 | BG1095 | The push stage gives where the gate runs as a table, for each `sdlc.gateHost` and `SDLC_GATE_LOCAL` setting and a failed connection to the host, in place of the sentences |
 | 2026-11-01 | US1102 | Coverage is stated by the CI step that gates it, with the measured figure left to that step's output, and the ~90% aspiration is gone; per-unit added-line coverage (`verify_ac.py run --coverage`, `review.line_coverage`) is described with this repository's setting. Test Organisation names the per-script and per-unit lean conventions, the shared helpers, the pytest markers and the hooks. The NFR table quotes each PRD section 5 clause it maps, adding rows for the network paths, the appetite breaker and ULID identity, and states the `status` wall-clock bounds. The gate budget is described as BG1065 left it. The header names the 6.2 baseline and a defined status, and this history runs in date order |
 | 2026-11-02 | US1111 | The release cut: the header's Coverage baseline moves to v6.2.0, and the work on `main` beside it to 6.3 |
+| 2026-11-08 | US1138 | The security posture, the Security NFR row and Sensitive Data say the skill stores no secret and sends one, `CURSOR_API_KEY`, only in the Cursor usage request's header, the row now gated by `test_meter_cursor.py::CursorCloudTests` |
 
 ---
 

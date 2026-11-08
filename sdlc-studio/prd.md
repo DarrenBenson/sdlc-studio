@@ -310,6 +310,11 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Line coverage gate | `review.line_coverage` sets what a story's Done or a bug's Fixed does with an added line the unit's own verifiers never executed, measured by `verify_ac.py run --coverage` at the transition: `block` refuses, naming the file and the line; `report` prints the count and proceeds; `off`, the shipped default, collects nothing. `verify_ac.py coverage rule` rules one uncovered line equivalent, inside the artefact. Needs `coverage` 7.10 or later, an optional dependency | Complete | Medium | help/verify.md, scripts/verify_ac.py, scripts/transition.py | EP0247 |
 | Changelog fragments and release cut | Release notes are composed from per-unit fragments under `changelog.d/`, and `changelog.py check` lists any not yet composed. `release_cut.py changelog-cut --version X.Y.Z` composes them into `[Unreleased]` and moves that body under a new versioned heading; `record-green` stamps the commit the pre-tag gate passed on, and `tag-check` refuses a tag unless that stamp names the tagged commit and CI passed on it, asked of the forge with `gh run list`. Only a clone with no remote, or one whose forge `gh` cannot address (a non-GitHub forge), is let through without that answer; an absent or unauthenticated `gh` refuses the tag | Complete | Medium | reference-scripts-domain.md, scripts/changelog.py, scripts/release_cut.py | EP0058, EP0117 |
 | Sprint report and sign | `sprint.py close --retro RETROxxxx` runs the close as one chain (goal verdict, retro, lessons, gate, reconcile) and files the run's one-page report, `RPTxxxx` under `sdlc-studio/reports/`, derived from the run's own artefacts. `sprint.py sign` then seals the run under one principal, moving the batch to its terminal statuses. It refuses a report that is not the run's, a tree changed since the close, a page that no longer re-derives to what was filed, and a principal who is a unit's author or a reviewer recorded on it | Complete | High | reference-sprint.md, scripts/sprint.py, scripts/sprint_report.py | EP0048, EP0192, EP0255 |
+| Multi-harness token meter | The cost axis reads the store of the harness running the session (`lib/token_meters.py`): Claude Code's transcripts, Codex CLI's state store, Copilot CLI's session events, OpenCode's database, or Cursor's cloud usage API, CLI chat store or hook ledger. `SDLC_STUDIO_HARNESS` names the harness, else the one harness the environment signals, else the one whose store is on disk; two candidates read as not measured, never a sum | Complete | High | reference-sprint.md#token-meters, scripts/lib/token_meters.py, scripts/lib/meter_cursor.py | EP0274, EP0299 (US0986, US0987, US0988, US0989, US0990, US1127) |
+| Price table and dollar cost | A dated per-model price table, `templates/model-prices.json` (`pricing.models` adds or replaces a model), prices each reading per model through `scripts/lib/prices.py`. The run report states a Dollar cost row, Dollars per point and each unit's dollars, marks the table STALE past `pricing.stale_after_days`, and names a model the table does not list rather than counting it as $0 | Complete | High | reference-sprint.md#dollar-cost, reference-config.md#pricing, scripts/lib/prices.py | EP0299, EP0300 (US1122, US1123, US1135) |
+| Cost anatomy | `sprint.py cost --anatomy` says where the open run's tokens went: per role, its agents, calls, priced tokens and shares, then the ten costliest tool outputs. A subagent whose first call's context exceeds `cost.agent_start_budget` is flagged | Complete | Medium | reference-sprint.md#cost-anatomy, scripts/lib/cost_anatomy.py | EP0299 (US1124) |
+| Headless lanes and one-command landing | `sprint.py lane run --harness <h>` (claude, cursor, codex, copilot or opencode) runs one lane's brief headless in the lane's worktree and keeps a record per session. `sprint.py lane land` commits the staged lane through the hooks, fast-forwards the root's branch, records the self-check and writes the QA brief; `sprint.py lane accept` records the verdict, runs the criteria, transitions the unit and returns its lane | Complete | High | help/sprint.md, scripts/sprint.py, scripts/lib/lanes.py | EP0298, EP0299 (US1118, US1119, US1120, US1126) |
+| Lean subagent definitions | `init` seeds `.claude/agents/sdlc-builder.md` and `sdlc-reviewer.md` from `templates/agents/` when absent, each limited to Bash, Read, Edit, Write and Monitor, and lanes and reviews spawn them | Complete | Medium | help/init.md, templates/agents/ | EP0300 (US1131, US1132) |
 
 ### Feature Details (representative)
 
@@ -497,14 +502,16 @@ The skill's scripts reach the network on these outbound, optional paths only:
 - an HTTPS GET to the Cursor cloud usage API (`https://api.cursor.com`, overridable
   with `SDLC_STUDIO_CURSOR_API`) from `meter_cursor.py`, made only when the Cursor
   token meter is selected and both `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID`
-  are set, with the key only in its request header, a redirect refused rather
+  are set (a base neither https nor http on a loopback IP address is refused before
+  any request), with the key only in its request header, a redirect refused rather
   than followed, and a 5s timeout or any failure read as not measured;
 - the tools a project's Verify lines invoke, whose reachable hosts a project bounds
   with `SDLC_VERIFY_HTTP_HOSTS`.
 
-Id allocation reads `origin/main` with `git ls-tree` and never fetches. No secrets
-handled by the skill; secret handling is the consuming project's concern
-(documented in its AGENTS.md).
+Id allocation reads `origin/main` with `git ls-tree` and never fetches. The skill stores no
+secret. The one it sends, `CURSOR_API_KEY`, is read from the environment and sent
+only in the Cursor usage request's header, never recorded; other secret handling is
+the consuming project's concern (documented in its AGENTS.md).
 
 ### Scalability
 
@@ -592,11 +599,15 @@ Plain files in the repo (`sdlc-studio/`), user-local runtime state in
   opt-out, 5s timeout, silent on any failure).
 - **The git remote** (`git fetch origin`) in `sprint plan`'s origin-drift preflight
   and remote-aware id allocation (best-effort; failure ignored, skipped with no remote).
+- **The Cursor usage API** (`api.cursor.com`) via a direct stdlib HTTPS GET from
+  `meter_cursor.py`, made only when the Cursor token meter is selected and its key and
+  agent id are set (5s timeout, a redirect refused).
 
 ### Authentication Methods
 
 Inherited from `gh auth` for sync and from the ambient git credentials for `fetch`.
-The release check is an unauthenticated public GET. None otherwise.
+The release check is an unauthenticated public GET. The Cursor usage request sends
+`CURSOR_API_KEY`, read from the environment, as a bearer token. None otherwise.
 
 ### Third-Party Dependencies
 
@@ -642,6 +653,7 @@ skill keeps its old flow until it opts in - the release must not break it.
 | `quality.done_requires_verified` | `true` | The hard Done gate: a story cannot transition to Done while its executable ACs are red or never-run. Set false to downgrade it to an advisory warn |
 | `quality.require_full_sections` | off | Hold every story to the full template's sections, not just the stamped ones |
 | `schema_version` | 3 | 1 = legacy, 2 = modular, 3 = distributed identity + triage |
+| `release_strategy` | `trunk` | Commit each unit to `main` when its gate passes, then push, with no branch or pull request. `pr-required` opts back into a branch and pull request per change; `solo-dev`, the earlier name, reads as `trunk` |
 
 Plus story-quality thresholds, review interval, commit strategy and coverage
 targets. See `reference-config.md` for the full reference.
