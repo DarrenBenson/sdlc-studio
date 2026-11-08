@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 80 |
+| Draft | 79 |
 | Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 872 |
+| Done | 873 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -176,7 +176,7 @@
 | [US1136](US1136-the-v6-3-release-notes-lead-with-what.md) | The v6.3 release notes lead with what changed for the person using it | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 | [US1137](US1137-the-help-reference-and-public-pages-describe-what.md) | The help, reference and public pages describe what 6.3 ships | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 | [US1138](US1138-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.3 ships | Done | EP0301 | 2026-11-08 | 2026-11-08 |
-| [US1139](US1139-v6-3-0-is-cut-version-changelog-known.md) | v6.3.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Draft | EP0301 | 2026-11-08 | 2026-11-08 |
+| [US1139](US1139-v6-3-0-is-cut-version-changelog-known.md) | v6.3.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 
 ## Archived Releases
 
