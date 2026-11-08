@@ -37,6 +37,7 @@ sprint = loader.load_script("sprint")
 
 A, B = "US0101", "US0102"
 BRANCH = "lane-us0101"
+LANE = "sdlc-studio/.local/lane"
 REFUSAL = "stub pre-commit: REFUSED src/refuse.py"
 HOOK = """#!/bin/sh
 git rev-parse --show-toplevel >> "{log}"
@@ -70,7 +71,8 @@ class LaneLandTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         base = Path(self._tmp.name).resolve()
-        self.root, self.wt, self.log = base / "repo", base / "wt-lane", base / "hook.log"
+        # the worktree is named `lane-<unit>`, as `sprint lane run` names it for every round
+        self.root, self.wt, self.log = base / "repo", base / BRANCH, base / "hook.log"
         _write(self.root, "src/a.py", "A = 1\n")
         _write(self.root, "src/b.py", "B = 1\n")
         _write(self.root, "tests/test_a.py", "def test_a():\n    assert True\n")
@@ -131,6 +133,23 @@ class LaneLandTests(unittest.TestCase):
 
     def _branches(self) -> list[str]:
         return _git(self.root, "branch", "--format=%(refname:short)").splitlines()
+
+    def _land_round_one(self) -> str:
+        """Round one of a lane: landed from `lane-<unit>` with its claims, its mutants and a
+        HANDOFF.md handed in, then the same worktree name checked out again for a repair, as
+        `sprint lane run` does. Main's head after round one."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        _write(self.wt, f"{LANE}/HANDOFF.md", "ROUND ONE handoff\n")
+        self._land_and_reopen()
+        return _git(self.root, "rev-parse", "HEAD")
+
+    def _land_and_reopen(self) -> None:
+        """Land a round that must land cleanly, then check the same worktree name out again."""
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertFalse(self.wt.exists(), "the landed round's worktree was not removed")
+        gitutil.git(["worktree", "add", "-q", "-b", BRANCH, str(self.wt), "main"], self.root)
 
     # -- the criteria ---------------------------------------------------------------------
 
@@ -308,6 +327,56 @@ class LaneLandTests(unittest.TestCase):
                       err.getvalue())
         self.assertEqual([A], [row["unit"] for row in critic.read_self_checks(self.root)])
         self.assertFalse((self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").exists())
+
+    def test_a_repair_round_without_a_hand_in_records_no_stale_self_check(self) -> None:
+        first = self._land_round_one()
+        rows = critic.read_self_checks(self.root)
+        self.assertEqual([A], [row["unit"] for row in rows])
+        self.assertTrue(first.startswith(rows[0]["commit"]) and rows[0]["commit"],
+                        "round one's self-check was not recorded at its own landing")
+        # the repair hands in its commit message alone: no claims and no mutants
+        self._stage("src/a.py", "A = 3\n")
+        self._hand_in(message=f"fix({A}): a is three", self_check=False)
+        r = self._land(A)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("A = 3\n", (self.root / "src/a.py").read_text(encoding="utf-8"),
+                         "the repair did not land")
+        self.assertIn(f"{A}: self-check NOT RECORDED and no brief written - the hand-in "
+                      f"carries no {A}-claims.json or {A}-mutants.json", r.stderr)
+        self.assertEqual(rows, critic.read_self_checks(self.root),
+                         "round one's claims and mutants were recorded for the repair")
+
+    def _handed(self) -> dict[str, bytes]:
+        return {p.name: p.read_bytes() for p in (self.wt / LANE).iterdir() if p.is_file()}
+
+    def test_each_landing_starts_from_its_own_hand_in(self) -> None:
+        self._land_round_one()
+        keep = self.root / LANE / "landed" / self.wt.name
+        own = [{"surface": "commit message", "claim": "a is three", "ruling": "TRUE"},
+               {"surface": f"changelog.d/{A}.md", "claim": "a is three", "ruling": "TRUE"}]
+        # round two stages its change, so the landing commits it and writes commit.log
+        self._stage("src/a.py", "A = 3\n")
+        self._hand_in(message=f"fix({A}): a is three")
+        _write(self.wt, f"{LANE}/{A}-claims.json", json.dumps(own))
+        handed = self._handed()
+        self.assertNotIn("HANDOFF.md", handed)
+        self._land_and_reopen()
+        landed = {p.name: p.read_bytes() for p in keep.iterdir() if p.name != "commit.log"}
+        self.assertEqual(handed, landed, "a file from round one's hand-in survived round two")
+        log = (keep / "commit.log").read_text(encoding="utf-8")
+        self.assertIn(f"fix({A}): a is three", log)
+        self.assertNotIn(f"feat({A}): a is two", log)
+        # round three lands a branch already committed: no commit message, no commit.log
+        self._stage("src/a.py", "A = 4\n")
+        gitutil.git(["commit", "-q", "-m", f"fix({A}): a is four"], self.wt)
+        for name in (f"{A}-claims.json", f"{A}-mutants.json"):
+            _write(self.wt, f"{LANE}/{name}", handed[name].decode("utf-8"))
+        handed = self._handed()
+        self.assertEqual({f"{A}-claims.json", f"{A}-mutants.json"}, set(handed))
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual(handed, {p.name: p.read_bytes() for p in keep.iterdir()},
+                         "a file from round two's landing survived round three")
 
     def test_a_worktree_holding_an_uncommitted_change_is_left_in_place(self) -> None:
         self._stage("src/a.py", "A = 2\n")

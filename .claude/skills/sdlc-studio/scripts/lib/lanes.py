@@ -5,7 +5,8 @@ message and its self-check files at the hand-in path `sdlc-studio/.local/lane/`.
 lane is then one command, so the minutes the commit hook takes are paid in no agent's context:
 
 1. copy the hand-in files out of the worktree, to `sdlc-studio/.local/lane/landed/<worktree>/`
-   under the root, since removing the worktree removes them;
+   under the root, since removing the worktree removes them, emptying that directory first so
+   nothing an earlier landing of the same worktree name left there survives;
 2. commit the staged change in the worktree through the repository's hooks, never a bypass;
 3. rebase the worktree's branch onto the root's branch, aborting and naming the files on a
    conflict;
@@ -223,6 +224,10 @@ def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> i
         raise LandError(f"{wt_top} has nothing staged and no commit ahead of {target}: there "
                         f"is nothing to land", 2)
     keep = root_top / LANDED / wt_top.name
+    # a repair round reuses the worktree's name, so what an earlier landing left here is
+    # cleared first: the self-check recorded below is read only from this landing's hand-in
+    if keep.is_dir():
+        shutil.rmtree(keep)
     keep.mkdir(parents=True, exist_ok=True)
     for path in sorted(hand_in.glob("*")) if hand_in.is_dir() else []:
         if path.is_file():
