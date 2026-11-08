@@ -1,6 +1,6 @@
 # BG1290: `sprint lane accept` records a verdict against the previous round's QA brief when a repair's landing wrote none, so an unchecked repair moves to Done
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1290.md
@@ -26,13 +26,17 @@ Have `lane land` remove `briefs/<unit>-qa.txt` before it lands, so only a brief 
 
 - **AC1:** Given a unit whose round-1 landing wrote `briefs/<unit>-qa.txt` and whose repair landing's self-check was refused or not recorded, when `sprint lane accept` is run with an APPROVE verdict, then it exits non-zero, records nothing and leaves the unit's status unchanged, naming the landing that wrote no brief. Fails on: `_brief_of` fingerprinting round one's file (the reproduced 'APPROVE recorded, round 2 ... moved to Done').
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_refuses_when_the_latest_landing_wrote_no_brief
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given any `sprint lane land` of a unit, then a QA brief for that unit exists afterwards only if this landing wrote it: a landing that writes none leaves no `briefs/<unit>-qa.txt` behind. Fails on: a landing that leaves the earlier round's brief in place.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_landing_leaves_only_its_own_brief
+  - **Verified:** yes (2026-11-08)
 - **AC3:** Given a repair whose self-check is recorded and whose landing writes a fresh brief, then `lane accept` records the verdict against that fresh brief, as before. Fails on: a fix that refuses every round-2 accept.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_repair_with_its_own_brief_is_accepted
+  - **Verified:** yes (2026-11-08)
 
 - **AC4:** Given a unit whose brief was written by a landing, and whose declared Affects changed after that landing's self-check (a repair or follow-up commit reaching main with no `lane land` of the unit), when `sprint lane accept` is run, then it exits non-zero and records nothing, naming the self-check that no longer matches the unit's current Affects. This is the check `critic.py brief` applies under `review.author_self_check: block`. Fails on: `_brief_of` accepting any brief on disk (the reviewer's P1 and P1b reach Done at 147d249d).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_refuses_when_the_affects_changed_since_the_self_check
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 
