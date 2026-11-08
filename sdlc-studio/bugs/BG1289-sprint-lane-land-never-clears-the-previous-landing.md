@@ -1,6 +1,6 @@
 # BG1289: `sprint lane land` never clears the previous landing's hand-in, so a repair round that hands in no self-check files records round one's as its own and the `author_self_check: block` gate passes an unchecked diff
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1289.md
@@ -26,8 +26,10 @@ In `_land`, before copying, remove `keep` (or the `<unit>-claims.json`, `<unit>-
 
 - **AC1:** Given a unit landed once from worktree `lane-<unit>` with claims and mutants handed in, and a repair round landed from the same worktree name that hands in only `commit-msg.txt`, when the repair lands, then no self-check is recorded for it and the landing says the hand-in carries no claims or mutants file. Fails on: round one's `<unit>-claims.json` read from `landed/<worktree>/` (the observed 'ROUND ONE claims').
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_repair_round_without_a_hand_in_records_no_stale_self_check
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given any landing, then the files it records come from that landing's own hand-in: nothing under `landed/<worktree>/` survives from an earlier landing. Fails on: `_land` copying into `keep` without clearing it first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_each_landing_starts_from_its_own_hand_in
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 
