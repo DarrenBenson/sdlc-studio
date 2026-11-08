@@ -27,10 +27,22 @@ OpenCode chose that harness for tests whose fixture is a Claude transcript, and 
 `token_meters.selection_variables()` names, read afresh, so a harness or a reader's signal added
 later is cleared without an edit here, and puts back what it cleared after the test. A test that
 sets one in `setUp` or its body keeps it; one set in `setUpClass` or `setUpModule` is cleared.
+
+The session also gets a private home (BG1249). A meter's step-3 probe looks for a harness's store
+under `HOME` and the XDG directories, so a session that kept the operator's opened the live
+`~/.codex`, `~/.copilot` and `~/.local/share/opencode` stores, and a reviewer's mutant that wrote
+would have written to them. The owning session points `HOME` and each of `XDG_DATA_HOME`,
+`XDG_CONFIG_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` at `PRIVATE_HOME`'s directories under the
+private directory, unsets each of `HARNESS_HOMES`, and seeds the home's `.gitconfig` with a test
+identity, since a fixture commit that sets none reads it from `HOME`. A child Python derives its
+user site from `HOME`, and a base interpreter may find pytest only there (BG0978), so
+`PYTHONUSERBASE` is pinned to the user base read before `HOME` moves. Workers and nested runs
+inherit all of it, and `pytest_unconfigure` puts each variable back.
 """
 import importlib
 import os
 import shutil
+import site
 import sys
 import tempfile
 from pathlib import Path
@@ -44,6 +56,17 @@ OWNER_VAR = "SDLC_TEST_TMPDIR"
 
 _owned = None   # (private dir, TMPDIR before, marker before, tempfile.tempdir before)
 _git_config_before = None   # the GIT_CONFIG_* variables this session set, as they were
+_home_before = None   # each variable `_move_home` set or unset, as it was
+
+#: Each variable the owning session points under the private directory, and where.
+PRIVATE_HOME = {"HOME": "home", "XDG_DATA_HOME": "home/.local/share",
+                "XDG_CONFIG_HOME": "home/.config", "XDG_STATE_HOME": "home/.local/state",
+                "XDG_CACHE_HOME": "home/.cache"}
+#: The harness homes that name a store outright, wherever `HOME` is; the session unsets them.
+HARNESS_HOMES = ("CODEX_HOME", "COPILOT_HOME", "CLAUDE_CONFIG_DIR", "OPENCODE_DB")
+USER_BASE_VAR = "PYTHONUSERBASE"
+#: The private home's `.gitconfig`: an identity for a fixture commit that sets none.
+TEST_IDENTITY = "[user]\n\tname = sdlc-studio tests\n\temail = tests@sdlc-studio.invalid\n"
 
 MAINTENANCE_OFF = ("maintenance.auto", "false")
 
@@ -102,6 +125,23 @@ def _restore(saved):
             os.environ[name] = value
 
 
+def _move_home(private):
+    """Point `PRIVATE_HOME`'s variables under `private`, unset `HARNESS_HOMES`, pin the user base
+    and seed the home's `.gitconfig`. Only the session that owns `private` calls it."""
+    global _home_before
+    user_base = site.getuserbase()      # read before HOME moves, since it derives from HOME
+    _home_before = {name: os.environ.get(name)
+                    for name in (USER_BASE_VAR, *PRIVATE_HOME, *HARNESS_HOMES)}
+    os.environ[USER_BASE_VAR] = user_base
+    for name, relative in PRIVATE_HOME.items():
+        path = Path(private, relative)
+        path.mkdir(parents=True, exist_ok=True)
+        os.environ[name] = str(path)
+    for name in HARNESS_HOMES:
+        os.environ.pop(name, None)
+    Path(os.environ["HOME"], ".gitconfig").write_text(TEST_IDENTITY, encoding="utf-8")
+
+
 def pytest_configure(config):
     global _owned
     _turn_git_maintenance_off()
@@ -113,12 +153,15 @@ def pytest_configure(config):
     _owned = (private, current, os.environ.get(OWNER_VAR), tempfile.tempdir)
     os.environ["TMPDIR"] = os.environ[OWNER_VAR] = private
     tempfile.tempdir = private
+    _move_home(private)
 
 
 def pytest_unconfigure(config):
-    global _owned, _git_config_before
+    global _owned, _git_config_before, _home_before
     _restore(_git_config_before or {})
     _git_config_before = None
+    _restore(_home_before or {})
+    _home_before = None
     if _owned is None:
         return
     private, env, owner, cached = _owned
