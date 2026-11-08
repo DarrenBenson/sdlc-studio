@@ -1,8 +1,8 @@
 # Test Strategy Document
 
 > **Project:** SDLC Studio
-> **Version:** 6.2.0
-> **Last Updated:** 2026-11-02
+> **Version:** 6.3.0
+> **Last Updated:** 2026-11-08
 > **Status:** In Progress
 >
 > Generated in **Generate mode** by reverse-engineering the skill's own test
@@ -14,7 +14,7 @@
 > Consistent with PRD section 5 (Non-Functional Requirements) and section 10
 > (Quality Assessment), and with the TRD component and script inventory.
 >
-> **Coverage:** v6.2.0 as cut, plus the 6.3 work on `main` since. The
+> **Coverage:** v6.3.0 as cut, plus the 6.4 work on `main` since. The
 > document version tracks the product version; it is not itself a release artefact.
 
 ---
@@ -822,6 +822,7 @@ is set; see Pipeline Stages), whose `full-suite` lane runs both suites once.
 | 2026-11-01 | US1102 | Coverage is stated by the CI step that gates it, with the measured figure left to that step's output, and the ~90% aspiration is gone; per-unit added-line coverage (`verify_ac.py run --coverage`, `review.line_coverage`) is described with this repository's setting. Test Organisation names the per-script and per-unit lean conventions, the shared helpers, the pytest markers and the hooks. The NFR table quotes each PRD section 5 clause it maps, adding rows for the network paths, the appetite breaker and ULID identity, and states the `status` wall-clock bounds. The gate budget is described as BG1065 left it. The header names the 6.2 baseline and a defined status, and this history runs in date order |
 | 2026-11-02 | US1111 | The release cut: the header's Coverage baseline moves to v6.2.0, and the work on `main` beside it to 6.3 |
 | 2026-11-08 | US1138 | The security posture, the Security NFR row and Sensitive Data say the skill stores no secret and sends one, `CURSOR_API_KEY`, only in the Cursor usage request's header, the row now gated by `test_meter_cursor.py::CursorCloudTests` |
+| 2026-11-08 | US1139 | The release cut: the header's Coverage baseline moves to v6.3.0, and the work on `main` beside it to 6.4 |
 
 ---
 

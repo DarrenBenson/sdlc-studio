@@ -4,7 +4,7 @@ description: "The antidote to vibe coding: a full software engineering team. Cre
 license: MIT
 compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Agentic wave execution (--agentic) is Claude-Code-only."
 metadata:
-  version: "6.2.0"
+  version: "6.3.0"
   openclaw: { "emoji": "📋", "requires": { "bins": ["python3"] } }
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Agent
 ---

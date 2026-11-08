@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.2.0
+**Version:** 6.3.0
 **Status:** Draft
-**Last Updated:** 2026-11-04
+**Last Updated:** 2026-11-08
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -34,7 +34,7 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v6.2.0 as cut, plus the 6.3 work on `main` since. The document version
+Coverage: v6.3.0 as cut, plus the 6.4 work on `main` since. The document version
 tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
@@ -1354,6 +1354,7 @@ touches the component. The constraints below span components.
 | 2026-11-02 | 6.2.0 | US1111: the release cut. The Coverage line reads v6.2.0 as cut, plus the 6.3 work on `main` |
 | 2026-11-04 | 6.2.0 | BG1163: §6's run lifecycle names `sprint.py stop` and `sprint.py close --file-and-close` and what each files; the Run state's tracked row says `--file-and-close` files none; the boundary note says it runs a close; the claim-drift writer cell names US0577 alone, from git; the `.local` paragraph says how the pin reads a writer |
 | 2026-11-08 | 6.2.0 | The 6.3 work on `main` (US1138): §5's Network paths and rule 6 name the Cursor usage GET, held to every shipped script that imports `urllib.request`; §4, §7 and §9 name it, and the skill stores no secret and sends one, `CURSOR_API_KEY`, only in that request's header. §10's cost model reads the running harness's store, a reading holding delegated agents' spend being the whole figure. The `.local/` table adds `meter-reads.json`, `cursor-usage.jsonl`, `lane-runs/`, the `lane/` hand-in, its `landed/` copies and `briefs/` |
+| 2026-11-08 | 6.3.0 | US1139: the release cut. The Coverage line reads v6.3.0 as cut, plus the 6.4 work on `main` |
 
 ---
 

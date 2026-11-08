@@ -3,7 +3,7 @@
 **SDLC Studio 6.3.0 is the current release: a run's cost is now measured on whichever harness ran
 it and stated in US dollars, and a lane can run headless in any of five harnesses' CLIs.**
 
-Every entry is in [the CHANGELOG's 6.3 section](../CHANGELOG.md#unreleased). From 6.2, the
+Every entry is in [the CHANGELOG's 6.3 section](../CHANGELOG.md#630---2026-11-08). From 6.2, the
 "Upgrading from 6.2" section below is the whole path, and
 [the existing-users page](existing-users.md#from-62-to-63) walks it too; from an earlier
 release, start with [that page](existing-users.md).
@@ -80,9 +80,10 @@ new refusal or a changed default, each with what to do instead:
   reviews spawn them by name.
   Instead: in an existing project, run `init.py run` again to add them. It leaves a definition
   you have edited alone; to take the shipped one back, delete it and run `init.py run` again,
-  which changes no other file. Do not pass `--force` for this: it rewrites every file `init`
-  writes, `.config.yaml`, `AGENTS.md`, `CLAUDE.md` and `decisions.md` among them. A harness with
-  no agent config falls back to `general-purpose`.
+  which changes no other file. Do not pass `--force` for this: it rewrites the files `init`
+  seeds, `.config.yaml`, `AGENTS.md`, `CLAUDE.md` and `decisions.md` among them, though it
+  leaves `sdlc-studio/.version` alone and skips an `_index.md` that exists. A harness with no
+  agent config falls back to `general-purpose`.
 - **`gate.py --run-tests` refuses a stale selector.** A path that does not exist, or a node id
   whose test does not exist, is refused by name and exits 2 before any test runs, where under
   pytest-xdist it could let a failing module beside it read green.
@@ -116,10 +117,12 @@ new refusal or a changed default, each with what to do instead:
   listed under Known issues: a signal sent to the caller's process group no longer reaches a
   running verifier.
   Instead: do not rely on a verifier's background children outliving it.
-- **A light APPROVE stops counting once the unit's own Affects grow.** Conformance owes the
-  full-tier review when the unit's Affects gained a file since its light APPROVE, or when the
-  tier was forced with `--tier light`, and `critic.py record` warns on stderr when a unit's latest
-  APPROVE is shallower than the tier its risk band now derives.
+- **A light APPROVE stops counting once the unit's risk band tiers it full.** It stops counting
+  only once `critic.tier_for` derives `full` for the unit's risk band, and then when the tier was
+  forced with `--tier light` or the unit's own Affects gained a file since the APPROVE, or when
+  git cannot name the commit that recorded it, as in a shallow clone; conformance then owes the
+  full-tier review. `critic.py record` warns on stderr when a unit's latest APPROVE is shallower
+  than the tier its risk band now derives.
   Instead: re-brief and review the unit at the full tier the warning names.
 - **The sprint report has new cost rows.** It gains a Priced column, Dollar cost, Dollars per
   point and Premium requests rows, and the anatomy table in its cost appendix; a page filed
@@ -170,7 +173,7 @@ BG1190 stays open: a verifier that times out now has its children killed with it
 review found that a signal sent to the caller's process group no longer reaches a running
 verifier.
 
-**v6.3.0 discloses 245 open defects: 61 Medium, 184 Low.**
+**v6.3.0 discloses 251 open defects: 60 Medium, 191 Low.**
 
 ## For contributors to this repository
 

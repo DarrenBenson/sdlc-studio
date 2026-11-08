@@ -4,14 +4,14 @@ The defects SDLC Studio knows about and has chosen to ship. This page is the dis
 half of the release bar: a project that hides its open findings is asking to be trusted
 rather than read.
 
-## The bar v6.2 is held to
+## The bar v6.3 is held to
 
 **Zero open Critical or High finding at the tag, and every open Medium ruled by one triage
 decision.** A finding either reaches a terminal status with its own verifiers passing, or it
 stays open under the triage target below, which one recorded decision rules for the whole list
 rather than a waiver per finding.
 
-**Medium and Low findings ship open, listed here by id, triaged to v6.3.** Each is a real
+**Medium and Low findings ship open, listed here by id, triaged to v6.4.** Each is a real
 defect with a reproduction and, in most cases, a proposed fix. None of them stops the
 lifecycle running. They are listed rather than closed, because closing a bug to make a
 release look clean is the practice this tool exists to prevent.
@@ -33,7 +33,7 @@ severity; it moved on 2026-08-11, because holding a release for findings that ar
 but not release-blocking had cost a month and was buying nothing a disclosure could not
 buy honestly.
 
-## Triaged to v6.3
+## Triaged to v6.4
 
 | Id | Severity | Finding |
 | --- | --- | --- |
@@ -157,13 +157,83 @@ buy honestly.
 | `BG1173` | Low | A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the ru... |
 | `BG1174` | Low | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause |
 | `BG1175` | Low | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short |
+| `BG1177` | Low | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing se... |
+| `BG1178` | Low | known_issues.py check compares the page with the corpus but never reads the release notes' count sentence, so a hand edit of that line goes uncheck... |
+| `BG1179` | Low | The TRD refresh test pins vocabulary rather than US1101's corrected claims: the ADR-012 row, the ADR sentences and an aliased urlopen all slip past it |
+| `BG1180` | Low | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches |
+| `BG1181` | Low | gate_prereqs.py check reports every prerequisite present on a machine with no Python 3.10, which the release gate's US0908 lane needs |
+| `BG1182` | Low | `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops... |
+| `BG1184` | Low | BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment |
+| `BG1185` | Low | BG1167's rule reads a light APPROVE's scope from git history, so three narrow orderings still count a unit whose own Affects widened as covered |
+| `BG1186` | Low | The release verify lane's declared budget is 600 s against a measured 3,340 s, so every release run prints OVER and the pin keeps it there |
+| `BG1188` | Low | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane |
+| `BG1189` | Low | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses |
+| `BG1191` | Low | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker |
+| `BG1192` | Low | US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other |
+| `BG1193` | Low | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile |
+| `BG1194` | Low | remote-gate.sh's release route does not send SDLC_GATE_BOUNDARY, so a value set in the shell changes the local release gate but not the host's |
+| `BG1195` | Low | Four test modules of tools/remote-gate.sh name no test-census-subject, so a commit to the script runs only one of the five |
+| `BG1196` | Low | No test pins the host's SDLC_STUDIO_BOUNDARY_SUITE=1 export for remote-gate.sh's push and suite jobs |
+| `BG1198` | Low | reference-config.md says the commit-msg hook refuses a commit without a Refs: trailer per owning id, and does not name the Mentions: trailer US1115... |
+| `BG1199` | Low | US1115's reference and fragment say a commit whose every id is a mention is attributed no files, but a one-id subject whose only id is a Mentions:... |
+| `BG1200` | Low | mutation.changed_lines reports no lines when git's color.ui or color.diff is always, because the +++ b/ header arrives wrapped in ANSI codes |
+| `BG1201` | Low | US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run |
+| `BG1202` | Low | US0989's Cursor reader leaves two guards unpinned and names an empty usage for a malformed answer |
+| `BG1203` | Low | US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins |
+| `BG1204` | Low | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend |
+| `BG1206` | Low | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions |
+| `BG1207` | Low | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the... |
+| `BG1208` | Low | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth |
+| `BG1209` | Low | The pre-commit hook's payload markdown lane quotes its markdownlint path untested, because the BG1147 fixture tracks no markdown under .claude/ |
+| `BG1211` | Low | The shell-hazard check flags unittest's own assertion separator (the spaced colon after an assertion's operands) when a reviewer's finding quoting... |
+| `BG1214` | Low | BG1212's AC2 docstring says only a clock can see the no-timeout join mutant, but the clock-free AC2 test also fails on it |
+| `BG1215` | Low | verify_ac's fallback for a queued collection that raised is untested, so dropping it would read a live stamp as stale |
+| `BG1218` | Low | A critic brief spends most of its 5 to 13 s in the per-unit affect-key parse, and a refused brief still renders before the self-check gate |
+| `BG1219` | Low | migrate's dry run leaves its private bytecode directory behind when verify_ac's ceiling kills it, and BG1183 AC1 cannot pass verify_ac at its 120 s... |
+| `BG1222` | Low | The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included |
+| `BG1225` | Low | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it |
+| `BG1230` | Low | lane return --agent: one agent priced onto two units, stale --tokens wording, and undocumented help |
+| `BG1231` | Low | lane land: exit 1 documented too narrowly, two test gaps, a false --units help line, and an unscrubbed git environment |
+| `BG1232` | Low | The lane brief's budget and hand-in: no-Points untested, one shared hand-in for a multi-unit lane, and US1093's stale story text |
+| `BG1233` | Low | The Cursor hook ledger: mid-run creation or deletion misreads the run, deep nesting is fatal, and the text cut is untested |
+| `BG1234` | Low | Small follow-ups from run six's approved bug fixes: BG1217, BG1220, BG1223, BG1224 and BG1227 |
+| `BG1235` | Low | Run six's round-2 and lane accept follow-ups: an unfailing help pin, unpinned counts, and accept's late refusals |
+| `BG1237` | Low | Orchestration frictions: batch add takes an id with no file, and a re-review's prior-finding notes parse as a blocking item |
+| `BG1239` | Low | US0987's Copilot meter leaves its git-root-over-cwd preference unpinned and counts `includes_subagents: False` on trust |
+| `BG1241` | Low | US1122's price table leaves ten defensive branches unpinned, promises a date format its parser does not hold to, and prices a bare `cost()` call wi... |
+| `BG1243` | Low | US1124's cost anatomy leaves four rules unpinned: the per-component maximum, the CLI harness fallback and two role assignments |
+| `BG1247` | Low | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and... |
+| `BG1250` | Low | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopenin... |
+| `BG1251` | Low | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, a... |
+| `BG1253` | Low | lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane |
+| `BG1263` | Low | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted t... |
+| `BG1266` | Low | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and wo... |
+| `BG1267` | Low | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser d... |
+| `BG1269` | Low | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing kee... |
+| `BG1270` | Low | The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char... |
+| `BG1271` | Low | `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start... |
+| `BG1275` | Low | Two statements from run eight's last repairs claim more than the code or its tests show |
+| `BG1276` | Low | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count |
+| `BG1277` | Low | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run |
+| `BG1282` | Low | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token re... |
+| `BG1283` | Low | One old Codex thread whose rollout file is gone makes every later Codex reading in that workspace unmetered, permanently |
+| `BG1284` | Low | Dollars per point omits the coverage its dollar figure has, and the Priced cost row's reach sentence uses Claude-transcript wording for every harness |
+| `BG1285` | Low | A non-UTF-8 legacy OpenCode message file is refused as 'raised UnicodeDecodeError', and a Cursor cloud reading's stamps are given the wrong unprice... |
+| `BG1286` | Low | `sprint lane land` leaves a timed-out commit's hook running while saying it was stopped, and reports a dirty worktree's rebase refusal as a conflict |
+| `BG1287` | Low | Every lane brief's standing obligation hard-codes `main` and tells the builder to fast-forward, contradicting the same brief's 'do not commit' |
+| `BG1291` | Low | The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever g... |
+| `BG1292` | Low | `sprint lane brief` run in a builder worktree that is behind the root's branch prints the worktree's stale copy of the unit without a warning |
+| `BG1293` | Low | A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its... |
+| `BG1294` | Low | `sprint lane accept`'s stale-self-check refusal tells the operator to land the unit again, which `lane land` refuses after an out-of-band repair, a... |
+| `BG1295` | Low | No test pins `lane accept`'s `off` and unrecognised `review.author_self_check` branches, so asking for the self-check gap under `off`, or reading a... |
+| `BG1296` | Low | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.tx... |
+| `BG1297` | Low | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong fla... |
 | `BG0947` | Medium | reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS |
 | `BG0948` | Medium | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined |
 | `BG0949` | Medium | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon |
 | `BG0954` | Medium | A Draft story transitions straight to Done - the Definition of Ready is never required |
 | `BG0956` | Medium | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them |
 | `BG0957` | Medium | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red |
-| `BG0958` | Medium | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate |
 | `BG0959` | Medium | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one |
 | `BG0961` | Medium | A Verify line cannot name the skill: <skill> is a shell redirect, not a path |
 | `BG0965` | Medium | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read |
@@ -193,28 +263,33 @@ buy honestly.
 | `BG1027` | Medium | The commit-time links lane resolves a link against the working tree, so a staged index row linking to an untracked file passes the commit and turns... |
 | `BG1050` | Medium | A reviewer id carrying a carriage return or line separator tears its own verdict row |
 | `BG1051` | Medium | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why |
-| `BG1052` | Medium | A unit whose risk band rises after its review is found under-reviewed only at the close |
 | `BG1058` | Medium | The close's dry run names a unit the run cannot end over that the real tree answers |
 | `BG1059` | Medium | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement a... |
 | `BG1060` | Medium | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds |
 | `BG1063` | Medium | `require_ac_verification` is documented as a gate that aborts the completion cascade on a failed verification, but no code reads it |
-| `BG1090` | Medium | test_output_prints_in_declared_order_whatever_finishes_first failed one subtest under heavy load, and passes alone; not yet diagnosed |
 | `BG1101` | Medium | test_repo_hygiene writes probe fixtures into the real scripts/tests directory, so a parallel test copying that tree can fail |
 | `BG1107` | Medium | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence |
 | `BG1108` | Medium | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block |
 | `BG1112` | Medium | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) runnin... |
-| `BG1114` | Medium | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane bri... |
-| `BG1116` | Medium | Shipped guidance tells a consuming project's agent to run the full suite before every commit, which the shipped gate's per-commit selection and pus... |
 | `BG1120` | Medium | A self-check record reads an author's own edit made in a merge commit as another unit's, so the brief gate admits a changed diff in a project that... |
-| `BG1122` | Medium | Each meter reading now re-reads every subagent transcript from the start, so a lane, transition or report command takes about 36 s on a long sessio... |
 | `BG1124` | Medium | critic.py brief's practice and claim-inventory refusals read the whole brief, so the unit diff US1094 embeds can satisfy them, and a unit whose own... |
 | `BG1125` | Medium | The review brief's unit diff is the whole run's diff over the unit's files, not the unit's own change, so on a shared file the 400-line cap is spen... |
-| `BG1147` | Medium | The pre-commit markdown lane skips in a linked worktree, because it looks for markdownlint only in that worktree's node_modules |
-| `BG1160` | Medium | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails |
-| `BG1163` | Medium | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an... |
-| `BG1167` | Medium | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right wh... |
+| `BG1190` | Medium | A verifier that times out is killed alone, so its children run on and load every verifier after it |
+| `BG1205` | Medium | US0986 did not converge in review: round 2 REJECT findings |
+| `BG1228` | Medium | BG1190 did not converge in review: round 2 REJECT findings |
+| `BG1229` | Medium | critic.py's self-check and verdict records refuse shapes authors and reviewers write naturally, and record has no dry run |
+| `BG1256` | Medium | test_lane_run.py runs git unconfined through a local name and inside its fake CLI script, where the unconfined-git sweep cannot see it |
+| `BG1260` | Medium | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly |
+| `BG1261` | Medium | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it |
+| `BG1262` | Medium | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpi... |
+| `BG1264` | Medium | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves... |
+| `BG1265` | Medium | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests... |
+| `BG1268` | Medium | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next b... |
+| `BG1272` | Medium | The pre-push check reads only the latest Lint run, so a push made while the previous run is still in progress never sees it fail |
+| `BG1279` | Medium | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost |
+| `BG1281` | Medium | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for |
 
-176 findings: 56 Medium, 120 Low.
+251 findings: 60 Medium, 191 Low.
 
 ## Not carried
 

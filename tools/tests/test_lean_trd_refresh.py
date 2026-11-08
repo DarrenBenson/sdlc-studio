@@ -846,7 +846,9 @@ class TrdRegistryNetworkTests(unittest.TestCase):
         self.assertIn(f"## [{BASELINE}]", _read(REPO / "CHANGELOG.md"))
         claims = list(doc_freshness._BASELINE_CLAIM.finditer(body))
         self.assertEqual([BASELINE], [m.group("version") for m in claims])
-        coverage = next(u for u in _units(_section(body, "Scope")) if u.startswith("Coverage:"))
+        coverage = next((u for u in _units(_section(body, "Scope"))
+                         if u.startswith("Coverage:")), None)
+        self.assertIsNotNone(coverage, "the Scope states no Coverage line")
         self.assertRegex(coverage, rf"\bv{re.escape(BASELINE)}\b.*?\bplus\b.*?"
                                    rf"\b{re.escape(ON_MAIN)}\b.*?\bmain\b")
         header = text.split("\n---\n", 1)[0]

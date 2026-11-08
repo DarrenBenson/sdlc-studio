@@ -618,7 +618,8 @@ class TsdRefreshTests(unittest.TestCase):
                                        "`test_sprint.py::WaveTests::test_nope`"))
 
     def test_the_header_and_history(self):
-        """AC4. Mutants: the baseline back at v6.0.0 or the work on main at 6.1; the status
+        """AC4. Mutants: the baseline back at v6.0.0 or the work on main at 6.1; the stale
+        v6.2.0 plus 6.3 put back, or the Coverage line removed (US1139); the status
         restored to the generated wording or set to a value the foot does not define; two
         revision-history rows swapped."""
         self.assertEqual([], header_problems(self.tsd))
@@ -632,6 +633,11 @@ class TsdRefreshTests(unittest.TestCase):
                          header_problems(old))
         self.assertTrue(header_problems(mutate(self.tsd, f"plus the {ON_MAIN} work",
                                                "plus the 6.1 work")))
+        stale = mutate(self.tsd, coverage.group(0), "**Coverage:** v6.2.0 as cut, plus the 6.3 work")
+        self.assertIn(f"the TSD names v6.2.0; SKILL.md is {coverage.group(1)}",
+                      header_problems(stale))
+        self.assertTrue(header_problems(mutate(self.tsd, coverage.group(0), "")),
+                        "the header passes with its Coverage line removed")
         status = _STATUS_RE.search(header).group(0)
         for wrong in ("Generated (brownfield - awaiting validation)", "Approved"):
             with self.subTest(status=wrong):

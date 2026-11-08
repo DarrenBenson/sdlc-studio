@@ -516,7 +516,8 @@ class PrdBaselineTests(unittest.TestCase):
         """AC1. Mutants: one [Unreleased] marker left on a shipped row's Status, or on a
         Feature Details heading; the header's baseline back at v6.0.0, or the inventory's at
         v4.1.0; the header naming no `ON_MAIN` work on main; the header's baseline put back at the
-        stale v6.1.0 plus 6.2 (US1111). Near misses that must pass: the marker
+        stale v6.1.0 plus 6.2 (US1111) or v6.2.0 plus 6.3 (US1139); the header's Coverage
+        line removed (US1139). Near misses that must pass: the marker
         inside a code span, and on a row whose Status is not shipped."""
         self.assertEqual([], baseline_problems(self.prd))
         self.assertEqual([], unreleased_marks(self.prd))
@@ -547,6 +548,9 @@ class PrdBaselineTests(unittest.TestCase):
                 (coverage.group(0), f"**Coverage:** v{BASELINE} as cut", unnamed),
                 (coverage.group(0), "**Coverage:** v6.1.0 as cut, plus the 6.2 work",
                  [f"the header names 6.1.0, not only {BASELINE}"] + unnamed),
+                (coverage.group(0), "**Coverage:** v6.2.0 as cut, plus the 6.3 work",
+                 [f"the header names 6.2.0, not only {BASELINE}"] + unnamed),
+                (coverage.group(0), "", unnamed),
                 (preamble, preamble.replace(f"v{BASELINE}", "v4.1.0"),
                  [f"the inventory preamble names 4.1.0, not only {BASELINE}"] + unnamed)):
             where = "inventory preamble" if old == preamble else "header"

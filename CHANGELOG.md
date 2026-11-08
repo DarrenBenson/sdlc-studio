@@ -7,6 +7,1021 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.3.0] - 2026-11-08
+
+### Added
+
+- The 6.3.0 release notes, `docs/release-notes-v6.3.0.md`, lead with what changed for someone on
+  6.2 (US1136). Four themes name the units behind them: cost measured on whichever harness ran
+  the run, the run's cost in US dollars, headless lanes that land in one command, and faster,
+  truer gates. Each changed default or new refusal a 6.2 habit meets sits beside what to do
+  instead, the Cursor meter's https-only base is called out as a security fix, and the page says
+  no 6.3 fragment is filed under Breaking or Removed. The upgrade path is reinstall, `migrate`,
+  `migrate --apply`, then `init.py run` for the two agent definitions. Known issues says BG1190
+  stays open while the bug corpus records it Open.
+  `tools/tests/test_lean_release_notes_v63.py` reads each figure from its source (RPT0027's
+  Estimates, the lane budget in `sprint.py`, the shipped `release_strategy`) and runs the upgrade
+  steps on a project v6.2.0's `init.py` made. It also runs the release-strategy, lane-brief,
+  stale-selector, Cursor-base, commit-msg-hook and agent-definition claims through the 6.3.0
+  skill itself: the hook `help/gate.md` gives passes every message 6.2.0's check passes, and
+  deleting an edited definition and rerunning `init.py run` changes no other file, while
+  `--force` rewrites each file the notes name.
+The shipped price table prices the non-Claude models the meters read, each from its own
+provider's page with the day it was read: OpenAI's Standard short-context rates for gpt-6-astra,
+gpt-6.1-sol, gpt-6.1-terra, gpt-6-luna and gpt-5.3-codex (whose cache writes carry its input
+rate, since the page lists no write price), and OpenCode's free
+`opencode/deepseek-v4.1-flash-free` at $0, so its share counts as covered while an unlisted model
+still reads not priced. The table also carries GitHub's legacy price of one Copilot premium request
+($0.04, overridable as `pricing.premium_request`), and the sprint report's Premium requests row
+states their dollars at it, never summed into the Dollar cost row, reading not priced where the
+table has none. A page filed under the new `premium_usd` mark carries that price in its table and
+replays it; a page filed before it re-derives with the count alone (US1135).
+- **Lean `sdlc-builder` and `sdlc-reviewer` subagent definitions, drafted into every project.**
+  The skill now ships `templates/agents/sdlc-builder.md` and `templates/agents/sdlc-reviewer.md`,
+  each restricted to a `tools` line of Bash, Read, Edit, Write and Monitor, so a lane or review
+  agent spawned as one starts without the skill listing and deferred-tool catalogue it never uses.
+  `init` and the guided onboarding's agents stage draft them into `.claude/agents/` beside
+  `AGENTS.md` and `CLAUDE.md`: each file only if absent, so a project with its own `AGENTS.md`
+  still gets the missing definitions and an edited definition is left untouched and reported
+  skipped (`force` alone rewrites it). Both definitions and each amigo seat's review render carry
+  the same hand-back contract: run every command in the foreground or wait for it, hand back in at
+  most three lines (unit, outcome, hand-in path), and send no progress message unless blocked.
+  This repository's own `.claude/agents/` copies are pinned byte-identical to the templates.
+- The benchmark runner, `tools/bench/runner.py`, runs a fixture headless in Claude Code, Codex
+  CLI, Copilot CLI or OpenCode against a pinned skill commit, and records the usage that CLI
+  printed (US1128). `prepare --harness <h> --skill-ref <commit>` installs the skill as that
+  commit holds it, read from git rather than the working tree, into the harness's local skill
+  directory as `install.sh --list-targets` names it. A harness the installer names no
+  directory for, such as Cursor CLI, is refused by name before anything is written. `run`
+  prepares an empty workspace, runs the arm's prompt in the harness's CLI, scores the
+  held-back suite and records a row with `metrics_source` measured. Its tokens are normalised
+  by `lib/harness_usage.py`, and the wall time is the CLI session's own. A CLI that exits
+  non-zero, times out or prints no usage writes no row. The session never loads the
+  operator's personal copy of the skill: Claude Code, Codex CLI and Copilot CLI get a private
+  `CLAUDE_CONFIG_DIR`, `CODEX_HOME` or `COPILOT_HOME`, removed when the session ends, and
+  OpenCode's scans of `~/.claude` and `~/.agents` are switched off. A `--dest` inside a git
+  work tree is refused before anything is written, so a repository's skills stay out of the
+  session's reach. A personal copy where no such variable reaches, in
+  `~/.agents/skills` for Codex CLI and Copilot CLI or in OpenCode's global skill directory,
+  refuses the run by path before anything is written. The private directory holds at most a
+  symlink to the operator's login file, `.credentials.json` for Claude Code or `auth.json`
+  for Codex CLI; without one the CLI authenticates from what the environment exports, and a
+  Claude Code or Codex CLI run with neither is refused, naming the exports. `summary` groups
+  rows by fixture, arm and harness, so two harnesses' runs are never pooled. It adds the mean
+  estimated US dollar cost from `lib/prices.py`, pricing each model of a mixed Claude Code or
+  Copilot session at its own rate, counts the rows it priced and names each model it could
+  not price. Legacy rows that name no harness keep their `fixture::arm` key.
+- The token meter recognises a Codex CLI run (US1127). `codex` joins the harnesses
+  `SDLC_STUDIO_HARNESS` can name, and `CODEX_THREAD_ID`, which a real Codex CLI 0.160 session
+  sets in the shell its commands run in, signals it. `scripts/lib/meter_codex.py` reads Codex's
+  state store, `~/.codex/state_5.sqlite`, through a read-only `mode=ro` open, and sums every
+  thread whose working directory is the workspace or under it, each from the last `token_count`
+  total in the rollout its row names. Codex's `input_tokens` includes its cached input, so the
+  cached input is taken out of input and carried as the cache read, and `tokens` is input +
+  output + cache write. A missing, locked or unreadable store, a store with no thread for the
+  workspace, or a thread that has spent tokens whose rollout holds no count, reads tokens None
+  with the reason, never zero.
+- `sprint lane run --harness <h> --units <id>` runs a lane's brief headless in Claude Code,
+  Cursor CLI, Codex CLI, Copilot CLI or OpenCode, one fresh session per lane (US1126). It briefs
+  the one unit, runs the CLI in the lane's worktree (`--worktree`, else
+  `sdlc-studio/.local/worktrees/lane-<unit>` with the id lowercased, as in `lane-us0101`,
+  created from HEAD) under `--timeout` seconds
+  (default 3600), and passes `--model` through. Each session's lane record,
+  `sdlc-studio/.local/lane-runs/<unit>/<session>.json`, holds the session id, model and usage
+  normalised by `lib/harness_usage.py`, the files staged and, for Claude Code, the first call's
+  context, and no later run overwrites it. A later `lane return` with no `--tokens` or `--agent`
+  prices the unit from each session's record, in priced input-equivalent tokens and US dollars,
+  and never from the orchestrator's own transcript: a repair run as a second `lane run` adds its
+  session's cost to its builder's, returning the unit again counts each session once, and a
+  record another run wrote is not priced. A CLI that exits non-zero, times out or prints no usage
+  leaves the lane unmetered with the reason, never zero tokens, and its staged work stays in the
+  worktree. A Claude Code lane starts with `--tools` naming its tool set beside
+  `--strict-mcp-config` and `--disable-slash-commands`: a bare `--tools` allowlist loads every
+  MCP tool in full, measured at a 113k first context against 7.0k with all three flags.
+  `reference-agent-prompt-template.md` names the route for a harness without subagents.
+- `lib/harness_usage.py` reads the headless usage output of Claude Code, Cursor CLI, Codex CLI,
+  Copilot CLI and OpenCode onto one basis (US1125). `parse(harness, text)` returns input
+  without cache, cache read, cache write, output (reasoning included), reasoning, the model and
+  the session id. Codex's and Copilot's input holds their cached tokens, so the cached part is
+  taken off and the prompt is counted once. Cursor's `inputTokens` leaves its cache reads out,
+  settled by three more captured sessions. A non-zero exit, output with no usage, or a line
+  that does not parse is unmetered with a reason naming which, never read as zero tokens.
+  Claude Code's `total_cost_usd`, Copilot's session accounting and OpenCode's own total are
+  checked against the normalised figure, and a gap above 5% is named. A check that cannot be
+  made, for a model with no price, is recorded as unchecked. The fixtures are real sessions
+  captured on 2026-11-06, with account identifiers scrubbed. Readings no capture could settle
+  are named in the module as assumptions: Cursor's cache writes, and where Codex, Copilot and
+  OpenCode count reasoning.
+- `sprint.py cost --anatomy` breaks the current session's spend down by role and names the tool
+  outputs that drove it (US1124). Per role (orchestrator, builder, reviewer, repair, other) it
+  prints the agents, the calls, the priced tokens and their share, the cache-read, cache-write
+  and output shares of that priced cost, each agent's first-call context averaged over the
+  role's agents, and the average context per call. It reads the transcripts the token meter
+  reads, through the meter's own reader, so each message counts once at its largest usage record
+  and the whole equals the meter's priced reading. A subagent's role comes from the run's own
+  records: an agent `sprint lane return --agent` recorded is its unit's builder, or its repair
+  when the unit's first verdict names another agent as the author; an agent a recorded verdict
+  names as reviewer is a reviewer. An agent no record names is counted under other, and no
+  prompt text is read for a role. The ten tool outputs that cost most are each costed as their
+  size in characters times the later calls of their own transcript, with the command or file
+  that produced them. A context no per-call record gives (a harness reading with only a session
+  total, usage records with no message id, a role with no calls) prints as `not available`,
+  never 0. `--format json` prints the same figures.
+- The sprint report states the run's estimated US dollar cost (US1123). A Dollar cost row and a
+  Dollars per point row follow the token rows, and each unit row carries its agents' dollars, in
+  the committed Markdown twin as in the HTML. Every figure is priced per model: the meter now
+  keeps each reading's components by the model each message names, and each model's components
+  are priced from its own entry in the price table, never the priced total at one rate and never
+  a collapsed `mixed` reading. A unit a `sprint lane run` delivered is priced session by session,
+  each session's usage at the one model its lane record names (the model that carried the most
+  tokens, where the CLI reported several), so a repair in another model adds at its own rate; a
+  session naming no model reads NOT MEASURED, never $0. A model the
+  table does not list is named with its share of the priced tokens, and the row states the share
+  it covers; it is never counted as $0, and a run with nothing priced reads NOT MEASURED. The row
+  states the table's effective date, marked STALE when `prices.stale` says so on the run's end
+  date, and the page carries the table it was priced with: a signed page re-derives at that
+  table, so a later revision of the prices cannot invalidate it, while an unsigned page re-derives
+  at the table in force. Premium requests a reading carries get their own row, beside the tokens and the
+  dollars and never converted into either; no shipped reader yet records them.
+- The retro's priced cost line states the estimated dollars and dollars per point beside the
+  priced tokens per point, with the price table's effective date and the same STALE mark.
+- The sprint report's cost appendix carries the per-role table `sprint cost --anatomy` prints,
+  each cell in the command's own format from the same call, in the Markdown twin as in the HTML.
+  The close records the table on its
+  own meter reading in the run record, and the page states it from there rather than from the live
+  transcript, so the page filed at the close re-derives unchanged at `sprint sign` however far
+  the session runs on. It is NOT MEASURED when no reading in the run's window recorded one, or
+  when the anatomy read a session other than the meter's. A page filed before this change
+  carries no `usd_cost` mark and re-derives as it was signed.
+- A dated per-model price table, `templates/model-prices.json`, and `scripts/lib/prices.py`,
+  which turns a token reading into an estimated cost in US dollars from its own model and
+  components (US1122). Each entry gives a model's input, output, cache-read, 5-minute and 1-hour
+  cache-write prices per million tokens, the date they were confirmed in force and their source;
+  the shipped entries are Anthropic's first-party list prices for thirteen Claude models, read
+  from the published pricing page on 2026-11-06. `prices.load()` refuses an entry missing any
+  field, naming the entry and the field, so a missing price is never read as zero.
+  `prices.cost()` sums each component times its price, and a model the table does not list
+  returns no figure, naming the model, never 0. A project adds a model or replaces a shipped one
+  under `pricing.models`, and `pricing.stale_after_days` (90 days unless set) makes
+  `prices.stale()` name the table as stale once its newest effective date is older than that.
+  Models from other providers are not listed until their prices are sourced.
+- A Cursor CLI run's tokens are measured from a ledger its `afterAgentResponse` hook writes
+  (US1121). The CLI's chat store records no usage, so the reading was not attributable.
+  - `scripts/cursor_usage_hook.py`, registered as the `afterAgentResponse` entry of the
+    project's `.cursor/hooks.json`, appends one line per response to
+    `sdlc-studio/.local/cursor-usage.jsonl` under its working directory, or under `--root`.
+    Each line keeps the time, the ids, the model and the four counts the payload carries:
+    `input_tokens`, `output_tokens`, `cache_read_tokens` and `cache_write_tokens`. The
+    response's text is not written.
+  - The hook appends nothing for a payload that is not a JSON object, or in a root with no
+    `sdlc-studio/` directory, says why on stderr, and exits 0.
+  - The Cursor CLI reading sums the ledger's lines and prices them, cache writes at the
+    five-minute weight since the payload does not split them by duration. The payload's
+    `input_tokens` holds the cache reads and writes, so each line's uncached input is it less
+    both, never below zero, as the CLI's own usage line forms it. Its source and basis name the
+    ledger.
+  - A stamp of a priced reading from any harness now keeps its priced cost and components, as
+    a Claude stamp did alone, so a Cursor CLI run's total carries the run window's priced cost
+    and each component's delta from the open stamp to the close.
+  - A line that is not a JSON object carrying the four as counts is skipped and counted in the
+    reading's `skipped`, and the basis then calls the figure a lower bound. A ledger of such
+    lines alone reads tokens None with the reason. With no ledger, the reading and its reason
+    are as before.
+  - `reference-sprint.md` names the hook entry and the ledger path, and states that
+    `SDLC_STUDIO_CURSOR_API` must be https or http on a loopback IP address.
+- `sprint.py lane accept --unit <id> --verdict <file> --reviewer <name>` finishes a reviewed unit
+  in one command (US1119). It records the reviewer's returned block with `critic.py record`
+  against the fingerprint of the QA brief `lane land` saved at
+  `sdlc-studio/.local/briefs/<unit>-qa.txt` and the review tier `critic.py brief` noted for that
+  fingerprint. The author defaults to the one on the unit's latest recorded self-check.
+- On an APPROVE it runs `verify_ac.py run --id <id>`, moves a story to Done or a bug to Fixed with
+  `transition.py set`, and returns the lane with `sprint.py lane return`, passing `--agent`,
+  `--tokens`, `--minutes`, `--proof` and `--gap` through as given.
+- A REJECT is recorded and nothing moves: it prints the round and only the findings the verdict's
+  BLOCKING section names, and at the review cap the id of the bug that carries the unit.
+- An APPROVE whose criteria are not green leaves the unit where it was, prints the verifier's
+  output naming the red criterion, and exits 1. Exit 2 is a refusal before anything was recorded:
+  no QA brief, no noted tier for its fingerprint, no author, or no such story or bug.
+- `sprint.py lane land --worktree <path> --units <id>...` lands a builder's staged lane in one
+  command (US1118), so the minutes the commit hook takes are paid in no agent's context. It
+  copies the hand-in files out of the worktree to `sdlc-studio/.local/lane/landed/<worktree>/`,
+  commits the staged change with the message at `sdlc-studio/.local/lane/commit-msg.txt`
+  through the repository's hooks with no bypass, rebases the worktree's branch onto the branch
+  the root has checked out, fast-forwards that branch, and removes the worktree and its branch.
+  It then records each unit's self-check on the root from its `<unit>-claims.json` and
+  `<unit>-mutants.json`, writes its QA brief to `sdlc-studio/.local/briefs/<unit>-qa.txt`, and
+  prints one line per unit with its review tier and brief fingerprint.
+- A step that fails stops the landing and names the worktree to resume in:
+  - a hook refusal prints the hook's own output and leaves the staged change, the worktree and
+    the root's branch as they were;
+  - a rebase conflict is aborted and the conflicting files are named, with the root's branch
+    unchanged;
+  - a worktree still holding a change no commit carries is left in place, never forced.
+- A staged change with no commit message, or a worktree with nothing staged and no commit
+  ahead, is refused with exit 2 before anything is committed. A branch already committed is
+  landed without a second commit, so re-running after a repair resumes.
+- `sprint lane return --agent <id>` prices a lane from its builder's own transcript (US1117).
+  It reads `agent-<id>.jsonl` in the current session's subagents directory with the meter's
+  reader, each message counted once and each component weighted by `TOKEN_WEIGHTS`. The
+  priced cost, its components and the transcript's path land on the unit's delegated record.
+  - With no `--tokens` beside it, the record's token total is the transcript's input, output
+    and cache-write sum, and its provenance reads `transcript` rather than `supplied`.
+  - An `--agent` naming no transcript in the session warns, naming the id and the directory
+    searched. The return still completes and records no priced cost.
+  - A second return naming the same agent for the same unit replaces that agent's earlier
+    reading, so the messages it held are not counted twice.
+  - The sprint report's unit row carries the summed priced cost of the unit's agents, labelled
+    priced, in the report's `eu_priced` cell. The Markdown and HTML pages show that cell in a
+    Priced column of the unit table. A unit no agent was priced for reads NOT MEASURED there,
+    with a reason giving the `sprint.py lane return --units ... --agent` command that prices it.
+    A Priced per point row beneath the Tokens
+    row states the run's priced cost over its delivered points. All three sit under a new
+    envelope mark, `priced_units`. A page filed before the mark carries and renders none of
+    them, and re-derives as signed.
+- `engagement_floor.py check-commit-msg` accepts a `Mentions: <id>` trailer as accounting for
+  an id a multi-id commit subject only mentions (US1115). `Refs: <id>` still says the id owns
+  the commit's files; `Mentions: <id>` says it owns none of them.
+  - The trailer takes the `Refs:` grammar: ids separated by commas and/or spaces, repeatable
+    lines, case-insensitive, the dashed spelling too.
+  - The engagement floor's git leg reads `Refs:` alone, in both `_git_touched_by_id` and
+    `_git_touched_source_files`, so in a commit whose subject names several ids an id only
+    `Mentions:` names is attributed none of the files, and an id in both trailers keeps them.
+    No commit already in the history changes meaning. A commit whose subject names one id still
+    gives its files to every id its message names, a mentioned one included, as before.
+  - A refusal names each id no trailer accounts for and offers, for the first, `Refs: <id>` if
+    it owns the commit's files or `Mentions: <id>` if it owns none of them.
+  - A commit whose every id is a mention passes the rule and is attributed to no id, as a bare
+    multi-id commit was before the `Refs:` rule. That is disclosed, not refused.
+- `tools/remote-gate.sh push --commit <sha> --release` runs that commit's own `gate.py --release`
+  on the gate host `sdlc.gateHost` names, so the pre-tag gate no longer occupies the workstation
+  (US1114). The host checks out exactly <sha>. The exit is 0 when the host's gate passed and 1
+  when it refused, whatever its own non-zero exit, so a gate's 4 never reads as a host setup
+  fault nor its 255 as a dropped connection. 3 still means the connection failed, and 4 that the
+  host did not reach the gate.
+  - Only on 0 is the full <sha> recorded green, through `release_cut.py record-green`, so
+    `tag-check` reads the commit the host judged even when <sha> was typed abbreviated. A
+    refusal, a failed connection or a host setup fault leaves
+    `sdlc-studio/.local/release-gate-green.json` byte for byte as it was. Exit 2 also means the
+    host passed but the green could not be recorded.
+  - `SDLC_VERIFY_TIMEOUT`, `SDLC_VERIFY_BATCH_TIMEOUT` and `SDLC_VERIFY_WORKERS` go with it when
+    set here, so the host's gate reads the same ceilings and worker count. Each must be a
+    positive integer, a leading zero allowed. Any other value, the empty string included, is
+    refused by name before anything connects, so a value such as `600;rm` never reaches the
+    host's command line.
+  - `SDLC_STUDIO_BOUNDARY_SUITE` goes with it as set here, so a `boundary_only` verifier gets
+    the verdict a local `gate.py --release` gives it. The host's push and suite jobs still
+    export `SDLC_STUDIO_BOUNDARY_SUITE=1`; its release job does not. A value holding anything
+    but letters, digits, `.`, `-` and `_` is refused by name before anything connects.
+  - A setting of the four left unset here is unset on the host, even when the host's
+    `gate-env.sh` sets it.
+  - `--release` is refused beside `--suite` or `--boundary`. A failed connection names the
+    local fallback, `gate.py --release` on this machine.
+  - The host's lock (US1076) serialises the release gate with every other run there, so a push
+    sent to that host waits until it finishes.
+- A Cursor CLI run on a workspace is read from the chat store the CLI keeps for it, and says
+  why its tokens cannot be read (US0990). With `CURSOR_API_KEY` or
+  `SDLC_STUDIO_CURSOR_AGENT_ID` unset, `lib/meter_cursor.py` reads the CLI's surface in place
+  of the cloud usage API. Its reason still names the variable unset.
+  - The store is looked for where the CLI's 2026.10.22 build writes it:
+    `chats/<md5 of the workspace's absolute path>/` under `CURSOR_CONFIG_DIR`, else
+    `$XDG_CONFIG_HOME/cursor`, else `~/.cursor`. The two directory names that build wrote on
+    the development machine are pinned in the tests.
+  - That build records no usage in the store: each chat is a `meta.json`, a `store.db` holding
+    only the tables `blobs` and `meta`, or both. The reading is tokens None, never zero, and its
+    reason says the CLI kept no usage record and names the store. A `store.db` holding other
+    tables, or not readable as SQLite, reads tokens None saying its shape is not the one
+    pinned. The usage a print run reports on its stdout, and the CLI's terminal and transcript
+    files, are not read.
+  - The store is never written. The CLI keeps it in WAL mode, so a chat it has just opened has
+    its tables in its `-wal` alone until the first checkpoint. A `store.db` with no `-wal`, or
+    an empty one, is read in place with SQLite's immutable read-only open; one with a `-wal` is
+    read through a copy of the two in a temporary directory, since even a read-only open of a
+    live store writes its `-shm`. A chat held open so reads as one that kept no usage.
+  - With both variables set, the cloud reading alone is taken and the CLI store is not opened,
+    even when the call fails; the two surfaces are never added together.
+- A Cursor cloud run records its token actual from Cursor's cloud usage API (US0989). The
+  Cursor reader, `lib/meter_cursor.py`, calls `GET /v1/agents/{id}/usage` only when
+  `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID` are both set; with either missing, no
+  request is made and the reading names the missing variable. `SDLC_STUDIO_CURSOR_API`
+  overrides the base URL.
+  - `tokens` is the agent's `totalUsage` input + output + cache write, with `cacheReadTokens`
+    carried apart as `cache_read`; `totalTokens`, which holds the cache reads, is never the
+    figure, and an answer whose `totalTokens` is not the sum of the four counts is refused. The
+    source names the agent id.
+  - `SDLC_STUDIO_CURSOR_AGENT_ID` signals Cursor to the selector; the key does not.
+  - The call waits at most 5 seconds, connect and answer together, and a redirect is refused,
+    not followed. An HTTP error, a timeout, an unreachable API, a malformed or oversized answer,
+    or an agent with no usage recorded yet reads tokens None with a reason, never zero.
+  - The key goes in the request's `Authorization` header alone: no reason quotes an error's
+    message, body or headers, so it reaches no reading, stamp or run state, which are what the
+    report renders from.
+  - `sprint.py plan --write` under `SDLC_STUDIO_HARNESS=cursor` stamps a baseline naming
+    cursor and the agent.
+- An OpenCode token reader, `scripts/lib/meter_opencode.py`, so a sprint run from OpenCode
+  records its token actual (US0988). It reads OpenCode's SQLite database (`OPENCODE_DB`, else
+  `$XDG_DATA_HOME/opencode/opencode.db`, else `~/.local/share/opencode/opencode.db`) through a
+  `mode=ro` URI and `PRAGMA query_only`, and never starts an `opencode` process. It folds each
+  assistant message's `tokens` across the sessions whose directory is the repo and every child
+  session descending from them, so subagent spend is included, and never reads the session
+  totals, which rows migrated from the legacy JSON store hold as zero. `tokens` is input + output +
+  reasoning + cache write, since OpenCode reports reasoning beside output and its input
+  excludes the cache; cache reads are carried apart, and every component is priced. With no
+  database file the legacy JSON tree under `storage/` is read on the same basis. No store, a
+  store with no session for the repo, or a malformed token count reads tokens None with the
+  reason, never zero. `sprint.py plan --write` under `SDLC_STUDIO_HARNESS=opencode` stamps a
+  baseline naming opencode and the database.
+- A Copilot CLI run records its token actual from the session events the CLI keeps (US0987).
+  `lib/meter_copilot.py` is the reader `token_meters` loads for `copilot`: it reads
+  `session-state/<id>/events.jsonl` under `COPILOT_HOME`, else `~/.copilot`, for the latest
+  changed session whose `session.start` records this repo's directory, and never a session
+  recording another.
+  - An ended session is read from its last `session.shutdown` aggregate (`modelMetrics`). A
+    resumed Copilot CLI 1.0.106 session on 2026-11-06 showed that aggregate covering the calls
+    before the resume as well as after it, so earlier shutdowns are never added to it. A live
+    session adds the per-call `session.usage_record` events written after the last shutdown, or
+    is those records alone before the first. `session.usage_checkpoint` running totals are never
+    added.
+  - Copilot's `inputTokens` already holds the cache reads and writes, so the uncached input is
+    `inputTokens` less both, and one short of them is refused. A real session on 2026-11-06
+    read 27,586 tokens: 4 uncached input, 4 output and 27,578 cache write. `reasoningTokens` is
+    not added to `outputTokens`, as the CLI's own priced `tokenDetails` carry no reasoning line.
+    Cache reads are carried apart as `cache_read`, every cache write is priced at the five-minute
+    weight, and two models read as `mixed`.
+  - A missing store, a session with no usage, a line that is not JSON or a counted value that is
+    not a count reads tokens None with the reason, never zero and never a total short of a
+    skipped record. `sprint.py plan --write` under `SDLC_STUDIO_HARNESS=copilot` stamps a
+    baseline naming copilot and the session's events file.
+- The token meter reads the store of the harness that is running, and that one alone (US0986).
+  `SDLC_STUDIO_HARNESS` set to `claude`, `cursor`, `copilot` or `opencode` chooses it, matched
+  without regard to case or surrounding whitespace; any other non-blank value reads nothing.
+  Unset, exactly one harness signalled by the environment (`CLAUDECODE`; `CURSOR_AGENT`;
+  `COPILOT_HOME`; `OPENCODE` or `OPENCODE_DB`) is chosen over any store on disk, else exactly
+  one harness whose store is present, else Claude. Two signals, or two stores and no signal,
+  give tokens None with a reason naming every candidate, and no reading is taken.
+  - `run_state.session_tokens` is now the selector, so `open_run`, `stamp_tokens`,
+    `retro.harness_tokens` and the report's legacy reading all take its choice. Claude's
+    reading, `run_state.claude_tokens`, is the transcript reading it was, its reasons word for
+    word.
+  - Every other harness's reader is its own module, `lib/meter_<harness>.py`, loaded by name:
+    a `read(repo_root, env)`, and optionally a `store` probe and further `SIGNALS`. A chosen
+    harness whose module is absent reads tokens None naming it, never zero and never the Claude
+    transcript.
+  - `token_meters.selection_variables()` lists every variable that names or signals a harness,
+    the signals an installed reader module adds included. The run-state and token-meter tests
+    clear them, so the harness running those suites no longer chooses their reader.
+  - A reading that breaks the contract (a count for `tokens`, `cache_read` a count or None, a
+    `source`, a `basis` and an `includes_subagents` flag) is refused. A reader that raises or
+    fails to load is reported by its exception's type, never its message.
+  - Every reading names its `harness` and carries cache reads as `cache_read`, outside
+    `tokens`, and so do the baseline and the stamps `open_run` and `stamp_tokens` take from a
+    reading; a row re-derived from a Claude transcript names neither. A stamp
+    naming no harness, as every earlier one, reads as Claude's. The run total pairs only
+    readings of one harness's one store, and re-derives and rebases Claude readings alone.
+
+### Changed
+
+- v6.3.0 is cut (US1139). `package.json`, `package-lock.json`, `templates/version.yaml`, the
+  `SKILL.md` frontmatter, README and the PRD, TRD and TSD Version fields carry 6.3.0, and
+  `check_versions.py --strict` agrees. `release_cut.py changelog-cut` folded every pending
+  fragment into this section, `known_issues.py write --release 6.3.0` rewrote
+  `docs/known-issues.md` and filled the release notes' count line, and README and
+  `docs/INSTALL.md` pin `--version v6.3.0`. The three specs' Coverage lines read v6.3.0 as cut,
+  plus the 6.4 work on `main`. Three sentences of the release text now claim no more than the
+  code does: the notes' light-APPROVE bullet names the `critic.tier_for` precondition, their
+  `--force` sentence names the two files it leaves, and BG1290's entry names the commits
+  `critic.self_check_gap` sets aside.
+- The PRD, TRD and TSD describe what 6.3 ships (US1138). The TRD's Network paths table and
+  rule 6 name the Cursor usage GET from `lib/meter_cursor.py`, and
+  `tools/tests/test_lean_specs_v63.py` holds the table to every shipped script that imports
+  `urllib.request`. The three specs no longer say the skill handles no secrets: it stores none,
+  and sends one, `CURSOR_API_KEY`, only in that request's header. The TRD's cost model reads the
+  store of the harness running the session, a reading that holds delegated agents' spend being
+  the whole figure, and its `.local/` table names `meter-reads.json`, `cursor-usage.jsonl`,
+  `lane-runs/`, the `lane/` hand-in with its `landed/` copies, and `briefs/`. The PRD's
+  inventory gains rows for the multi-harness token meter, the price table and dollar cost, the
+  cost anatomy, headless lanes with `lane land`, and the lean subagent definitions, and its
+  flags table lists `release_strategy` with its default, `trunk`. The TRD refresh test's
+  connection scan now reads an opener's `.open(...)` call, and holds a connection that does
+  not reach `api.github.com` to a not-GitHub row; the `.local/` writer pin reads a conditional
+  path and an `os.open` given a write flag, so the two new state files are pinned to their
+  writers.
+- The help, the reference and the public pages describe what 6.3 ships (US1137). The lane
+  paragraph of `help/sprint.md` no longer tells a builder to record its self-check and commit:
+  the brief ends with the author self-check, the command that runs the unit's criteria, the
+  hand-in files under `sdlc-studio/.local/lane/` and the line that stages exactly its Affects,
+  and `sprint lane land` commits the lane and records its self-check. The page states the call
+  budget of 25 plus 13 per point, and names the `sdlc-builder` and `sdlc-reviewer` definitions,
+  with `general-purpose` as the fallback. Its meter paragraph names the harness the meter reads
+  (`claude`, `codex`, `copilot`, `opencode` or `cursor`, chosen by `SDLC_STUDIO_HARNESS` or
+  the environment) and the report's dollar rows. Its `cost --anatomy` paragraph names the open
+  run's window, `--session` and the `cost.agent_start_budget` flag. `reference-sprint.md#cost-anatomy`
+  documents the Subagent starts section and its JSON keys, and `#dollar-cost` names
+  `templates/model-prices.json` and its `pricing` overrides, within the page's 859-line ceiling.
+  README states what 6.3 adds, `llms.txt` names Cursor among the install targets and the five
+  harnesses it meters, and the economics section of `docs/why-sdlc-studio.md` gains a fourth
+  fact: every run's report gives its priced cost per point. `docs/existing-users.md` gains
+  "From 6.2 to 6.3" and "From 6.1 to 6.2" sections, the second closing the gap BG1175 records.
+- **The commit-msg hook writes the `Refs:` and `Mentions:` trailers a multi-id subject owes,
+  rather than refusing for them (US1133).** `engagement_floor.py check-commit-msg
+  --write-trailers <file>` reads the staged files' ownership - a unit's `Affects` declaring the
+  file, a directory it sits under (`src/`) or a glob it matches (`src/*.py`), or the file
+  carrying the unit's id in its own name - and appends `Refs: <id>` for each
+  named id that owns a staged file and `Mentions: <id>` for each that owns none, joined to the
+  message's closing trailer block when it has one and placed above git's comment lines. A
+  trailer already written is left as it is and never written twice. It still refuses a commit
+  no named id owns a staged file of, and now refuses, on a subject naming two or more ids, a `Refs:` line naming a unit that owns none
+  of the staged files. This repository's hook passes the flag, so a commit whose ownership the
+  declarations already state lands at its first attempt; a consuming project's hook gets the
+  same rule by passing it too. The declarations are read by one function, which the close's
+  batch-repair guard now calls as well (`engagement_floor.declared_keys` with
+  `declaration_covers`), so a unit's `Affects` covers the same files for the hook as for
+  `sprint close`, a bracketed note holding a comma and a path through `..` included (BG1274).
+- **Lanes and reviews spawn the lean definitions (US1132).** `reference-sprint.md`'s Build and
+  Review steps, `reference-epic.md`'s wave example and `reference-agent-prompt-template.md` spawn a
+  builder as `sdlc-builder` and a reviewer as `sdlc-reviewer`, with `general-purpose` the fallback
+  for a harness with no agent config. A parallel wave launches its first agent alone and the rest
+  after it has started, so they start on the prefix it wrote. `sprint cost --anatomy` flags each
+  subagent whose first call's context exceeds the new `cost.agent_start_budget` (default 30000
+  tokens, `off` flags none), with its start and the budget, under a new "Subagent starts" section
+  and in the JSON as `start_budget` and `over_start_budget`. The start is the subagent's
+  first call whatever the open run's window, which decides only which subagents are judged;
+  one whose records give no per-call start is named not available in the section and in
+  `start_not_available`, and the whole check reads not available when none can be judged.
+  The durable builder traps from run six's brief and run seven's notes are filed as three
+  build-phase classes, LC-019 to LC-021, in `sdlc-studio/lessons.jsonl`, so a builder's lane
+  brief carries each one within the five-class build cap.
+- **The shipped `AGENTS.md` starter is under 5,000 characters, from 10,892 (US1130).**
+  `templates/agent-instructions.md` is loaded on every call of every consuming-project
+  session, so it now keeps its operating-doctrine pointer, its non-negotiable gates, the
+  tooling rules `validate` reads and its project-specifics form; the working habits it shed (index conventions, fan-out,
+  foundation-first, the release-notice opt-out) are in
+  `reference-doctrine.md#working-habits`, which it points at; it keeps the shared-temp-path
+  rule as one line (BG0280). `sprint.py cost --anatomy` now
+  names the main thread's start context in its header, the first call's input plus cache, and
+  `--format json` carries it as `start_context`. `reference-sprint.md#cost-anatomy`
+  recommends a project `.claude/settings.json` that disables the plugins and connectors a
+  delivery session does not use, and says a claude.ai connector may not be switchable per
+  project.
+- `AGENTS.md`, which every agent in this repository loads on every call, is cut from 15,786 to
+  6,324 chars. It keeps the four start-here steps, the refusals table and one paragraph per
+  non-negotiable rule; the detail moves to a new "Agent detail moved from AGENTS.md" section of
+  `CONTRIBUTING.md`, each block linked from the line that names it. The shipped `SKILL.md`
+  description is cut from 982 to 589 chars, keeping its `NOT for:` clause. `tools/check_budgets.py`,
+  the pre-commit budgets lane, now refuses an `AGENTS.md` over 7,000 chars, a `SKILL.md` over an
+  estimated 8,000 tokens (chars at 2.73 a token) and a `description` over 600 chars, naming the
+  file, its size and the budget; a tree with no `AGENTS.md` is not held to it (US1129).
+- `sprint.py lane brief` leaves the commit to `sprint lane land` (US1120). Its closing commands
+  tell the builder to stage exactly its Affects, write its claims and mutants files and the
+  commit message to `sdlc-studio/.local/lane/`, and stop; the brief no longer prints a commit
+  step or a `critic.py self-check record` command, and the self-check section's record line
+  names the two hand-in files instead. A sized unit's brief states a tool-call budget of 25 plus
+  13 per point (38 for a 1-point unit, 90 for 5), read from `LANE_CALLS_PER_POINT`, and the rule
+  at the budget: write `HANDOFF.md` there with what is done, the criteria left and the next step,
+  stage what you have, and return; an unsized unit's brief says no budget is derived.
+  `reference-agent-prompt-template.md` says a repair or second build
+  resumes its builder only while its context is below 100k tokens, and otherwise starts a fresh
+  builder from the hand-off note.
+- The commit-msg hook's paste-ready trailers never ask for `Refs: <id>` on an id a
+  `Mentions: <id>` line already accounts for (US1116). On a refusal the hook prints a
+  `Refs:` line for each id the subject names and no `Refs:` or `Mentions:` line accounts
+  for, then offers `Mentions: <id>` in place of `Refs:` for an id the commit only mentions,
+  which owns none of its files.
+  - `.githooks/commit-msg --list` gives the `message-refs` rule as accounting for each id with
+    `Refs: <id>` when it owns the commit's files or `Mentions: <id>` when it owns none of them.
+  - `tools/enable-hooks.sh` names both trailers in the line it prints about the rule.
+- The release verify lane runs the criteria its pytest batch leaves on a bounded pool of workers
+  (US1113). Once the batch had run, every story ran one after another, so each Verify line the
+  batch cannot answer paid its subprocess in series: every line but a bare `pytest <node>` (631
+  on 2026-11-03), and each bare one naming a file the batch did not collect.
+  - At most `SDLC_VERIFY_WORKERS` stories run at once, by default the machine's cores up to 8.
+    A value that is not a positive integer reads as the default. `SDLC_VERIFY_WORKERS=1` runs
+    one story at a time and reports in path order, but not in the old run order: a story naming
+    a `serial_only` test module still runs after the rest. The cost clause names the count, as
+    in `stories on 8 worker(s) (SDLC_VERIFY_WORKERS, default 8)`, and `gate.py --help` names the
+    variable.
+  - A story whose Verify line names a test module (`test_*.py` or `*_test.py`) carrying
+    `serial_only` runs after the pool has drained, one at a time, and the cost clause counts
+    those stories. The text test is the one `gate.py --run-tests` uses. A module counts when it
+    is named as a path or as a unittest dotted name, read against the workspace root or a
+    directory the line names (`cd <dir> && python3 -m unittest ...`, `discover -s <dir> -p
+    <file>`). A word of the line that cannot be statted, such as a 300-character grep pattern,
+    is read as no directory.
+  - A criterion that outlives the per-verifier ceiling on the pool reads red, is named in
+    `[ids: ...]`, and is not run again.
+  - Every clause lists its criteria in path order, the order one story at a time gives, and the
+    lane still writes no story file.
+  - The batch's `batch resolved N of M` count holds on the pool: each story resolves against its
+    own view of the batch, and the main thread adds up the views' counts.
+  - An interrupt cancels the stories still queued. Without that, the interpreter ran every one
+    of them before it exited.
+  - Measured on this workspace (8 cores, load average 1.7 to 5.7, 2026-11-03), with the batch's
+    answers stood in for so that only what it leaves ran: the stories took 741 s on 8 workers
+    (542 s on the pool, then 199 s for the 75 `serial_only` stories) and 1,524 s on one. The
+    batch itself (1,788 s in US1112's measurement) is unchanged and runs first.
+  - On that run the pool read three criteria red that one worker read green. US0926::AC1 and
+    US0944::AC3 (266 s and 298 s alone) outran the 300 s per-verifier ceiling beside other work,
+    and US0164::AC1, whose `serial_only` tests bound a wall-clock duration, failed after the
+    pool where it passes alone. `SDLC_VERIFY_WORKERS=1` runs one story at a time, as the
+    one-worker run did.
+- The release verify lane's pytest batch runs on every core and under its own ceiling, and its
+  cost clause says how many criteria it resolved (US1112). Before the change (measured
+  2026-11-02) the batch ran the 262 verifier test files present as one serial `pytest` under the
+  300 s per-verifier ceiling. It timed out at 300 s and returned nothing, so each of the 2,112
+  bare `pytest <node>` verifiers paid its own cold start while the lane printed `(batched)`.
+  - When the `pytest` on PATH, the one each criterion's own run uses, takes pytest-xdist's `-n`
+    under the workspace's own configuration, the batch runs `-n auto` (plus `--maxschedchunk=1`
+    where that `pytest` takes it) over every test not marked `serial_only`. It then runs the
+    files holding `serial_only` tests in a process with no worker. Otherwise it is one serial
+    run. That `pytest` is asked with a collect-only run of one verifier file, never the
+    interpreter running the gate, so a wrapper passing `-p no:xdist` gets a serial run rather
+    than a refused `-n`. Each phase writes its own JUnit report and the two are merged.
+  - The phases split by each test's own `serial_only` mark, through a plugin the batch writes
+    and loads with `-p`, and never by a `-m`. A `-m` on the command line replaces the one a
+    project's addopts give: a test the project deselects ran in the batch, so a criterion red on
+    its own run read green. A mark a conftest hook or a project plugin applies counts too, and
+    the serial phase runs the files the parallel phase held such tests back from. Read from the
+    files' text instead, a passing criterion so marked read as a test that does not exist, and a
+    class whose red case was so marked read green.
+  - The batch has its own ceiling, `SDLC_VERIFY_BATCH_TIMEOUT` (default 3600 s), named in
+    `gate.py --help` and in the lane's detail. At the ceiling its whole process group is killed.
+  - Each criterion is still held to the per-verifier ceiling, `SDLC_VERIFY_TIMEOUT`. A criterion
+    the batch timed at longer than that reads red as a timeout (exit 124), as its own spawn
+    would. JUnit time leaves out a spawn's start-up and collection.
+  - The cost clause reads `batch resolved N of M pytest verifier(s)` and never the bare
+    `(batched)`. When the batch times out, cannot start, exits with no usable report, names no
+    file that exists or reports none of the named tests, it reads `batch resolved 0 of M` with
+    the reason, and every criterion runs on its own and keeps its verdict. A failed phase's
+    reason quotes its last output line holding `error`, else its last line, since pytest ends a
+    refused command line with its `rootdir:`. A batch that ran and answered none of its
+    verifiers says its reported tests answered none of them.
+  - A phase that fails empties the whole batch. A node reported by the other phase would make
+    its file read as collected, and a node missing from a collected file reads as a test that
+    does not exist.
+  - A class, module or parametrised target resolves from the cases under it. It reads green
+    only when every one passed, and red as a timeout when their durations together pass the
+    ceiling. Otherwise it runs on its own. Before, a batch that resolved read each of the 106
+    such verifiers as a test that does not exist.
+  - Measured on this workspace on 2026-11-03 (8 cores), in three separate runs of the batch
+    while its phases still split with `-m`. In one, at load 2 to 14, the batch took 1,788 s for
+    7,023 nodes and the lane 3,340 s, `batch resolved 1772 of 2112 pytest verifier(s)`, against
+    the 4,447 to 6,582 s of the 6.2.0 lane. Each of the 340 left names a test file that no
+    longer exists, on a story claiming no completion. The other two, at load 2 to 26, took
+    2,261 s and 2,966 s. The 3600 s default sits above all three.
+- `verify_ac.py run --batch` gets the same phases. Its batch ceiling stays its `--timeout`, and
+  its `batch: cached N pytest node(s)` line now names the reason when the batch resolved
+  nothing.
+- A run metered by a harness other than Claude is stated on its own reader's basis, and a
+  supplied delegated total is added only when that reader says delegated agents' spend is not
+  in its reading (US0991).
+  - Each stamp and baseline such a reader writes carries its `includes_subagents` answer as
+    `subagents`, and its `basis` sentence. `run_token_total` reads the flag from them, so a run
+    whose readings already hold that spend no longer adds the supplied totals on top. Its
+    `basis` names each harness with its reader's sentence, and calls the total a LOWER BOUND
+    only when a reading leaves that spend out.
+  - `retro.run_attributed_tokens` names the harness and quotes its reader's basis. Over a run
+    whose stamps say the reading holds delegated spend, it says the supplied totals are not
+    added, since adding them would count that spend twice. Over one whose reading leaves it
+    out, it adds them and calls the figure a lower bound, as it does for Claude.
+  - On the sprint report, the cost section's `token_shape` names the harness and its reader's
+    basis, and so do the Estimates Tokens row and the close checklist's cost row. None of them
+    says "main thread" of that harness's reading unless its reader's basis does.
+  - A Claude-metered run's stamps, total basis and page figures read word for word as before,
+    so a page filed before this change re-derives to its filed fingerprint. Two fixture pages
+    pin it, one from legacy stamps and one from stamps that read every subagent transcript.
+- `release_strategy` now ships as `trunk`, and the ship guidance under it no longer tells an
+  agent to open a PR (BG1224). The default was `pr-required`, so `code implement` taught
+  `gh pr create`, and a harness that followed the shipped guidance opened a PR per change.
+  Under `trunk` an agent commits each unit to `main` when its gate passes and pushes `main`,
+  with no branch and no PR. `reference-config.md` reads `solo-dev`, the earlier name, as
+  `trunk`, and `pr-required` stays as an opt-in a project sets in its own config. `SKILL.md` and the `AGENTS.md` starter
+  (`templates/agent-instructions.md`) each state the rule in one line, and the lane brief
+  from `sprint.py lane brief` lists it among the lane's obligations: land the unit on `main`,
+  fast-forwarding a local worktree onto `main` within the lane. `reference-config.md`,
+  `reference-code.md` and `reference-decisions.md` describe `trunk` as the default.
+
+### Fixed
+
+- `sprint lane accept` refuses, and records nothing, when the unit's latest landing wrote no QA
+  brief, and under `review.author_self_check: block` when no recorded self-check covers the
+  unit's Affects as they now stand (BG1290). A landing that wrote no brief, because its
+  self-check was refused or not handed in, left the earlier round's
+  `sdlc-studio/.local/briefs/<unit>-qa.txt` in place, and `lane accept` recorded an APPROVE
+  against it and moved the unchecked repair to Done. `sprint lane land` now removes each unit's
+  brief before it commits, so a brief found afterwards is one that landing wrote. A unit left
+  with no brief gets `<unit>-qa.none` beside it, naming the landing and why it wrote none, and
+  `lane accept` quotes that note. Both files are named by the unit id as the command line spells
+  it. A brief also outlived its diff when a repair or follow-up reached main with no `lane land`
+  of the unit: the brief's text repeats from round to round, so its fingerprint could not show
+  it. `lane accept` now applies the check `critic.py brief` applies, `critic.self_check_gap`:
+  under `block` it refuses and names the stale self-check, under `report` it records the verdict
+  with that finding as a warning, and under `off` it does not ask. `critic.self_check_gap` sets
+  aside a commit whose subject names only another unit, so a change to the unit's Affects
+  committed under another unit's id is not read as stale, unless a later commit that is not
+  another unit's, or an uncommitted edit, touches the same file.
+- `sprint lane land` no longer records an earlier landing's self-check for a repair round
+  (BG1289). Each landing copied its hand-in into `sdlc-studio/.local/lane/landed/<worktree>/`
+  without clearing it, and `sprint lane run` names every round of a unit's worktree
+  `lane-<unit>`. So a repair round that handed in only `commit-msg.txt` had round one's claims
+  and mutants recorded against its own diff, and the `critic.py brief` gate passed a change its
+  author never self-checked. The landing now empties that directory before it copies the hand-in.
+  A repair round with no claims or mutants is reported as `self-check NOT RECORDED`, and nothing
+  under the directory survives from an earlier landing.
+- A run metered by Codex CLI no longer counts a `sprint lane run --harness codex` lane's spend
+  twice in its Tokens actual (BG1288). The Codex reading summed the lane's own `codex exec`
+  thread, whose working directory is the lane's worktree, and the report then added the lane's
+  delegated total on top. The reading now leaves out every thread whose working directory is
+  under the lane worktrees (`sdlc-studio/.local/worktrees/`), so a lane is counted once, through
+  its delegated record. A session started in any other subdirectory of the workspace is still
+  counted, and only a spawned thread says the reading already holds delegated spend, so an
+  earlier run's lane thread in the store no longer drops a later run's delegated totals.
+- A run that brings in a Codex model new to the workspace no longer books the workspace's
+  pre-run history as dollars (BG1280). The Codex reading named a reading over two models
+  `A, B` and carried no per-model split, so the stamp's split was synthesised under that joined
+  name; when the set of models changed within the run, the opening reading's whole history was
+  booked as spend under the model that left. The reading now sums each thread's components under
+  its own model and names a reading over more than one model `mixed`, so each model is priced at
+  its own rate. A session's per-model delta is now booked per model only when it sums to the
+  session's delta in every component; otherwise the session is booked whole, under the one model
+  its readings name or as `mixed`, which no price covers.
+- **`sprint.py cost --anatomy` reads the open run, not every run the session held (BG1254).**
+  It counted every record of the session's transcripts, so in a session spanning runs five to
+  seven it reported 840.7M priced over 325 agents. It now counts only the records timestamped
+  after the open run's `started_at`, per role, in the total and in the heaviest tool outputs,
+  drops a subagent with no call in that window, and its header names the window. `--session`
+  reads the whole session, as does a run that is not open and a usage record with no
+  timestamp, and the header says which and why rather than printing a zero table. `--format
+  json` carries the window as `window`; the main thread's start context stays the session's
+  first call. The report's role table, stamped at the close while the run is open, is the
+  run's in the same way.
+- A `sprint lane run` unit's dollars now price a session that used two models per model, each
+  at its own rate, rather than wholly at the rate of the model that carried the most tokens
+  (BG1252).
+  `harness_usage.parse` carries each named model's own counts in `Usage.by_model` (Claude
+  Code's `modelUsage`, Copilot's `modelMetrics`), the lane record keeps that split as
+  `by_model`, and `lanes.run_reading` hands it to `record_delegated_tokens` as the reading's
+  per-model components, so the unit's dollars price each model's share at its own list price.
+  A split that does not sum to the session's own usage is refused with the record. A single-model
+  session, and a lane record written before the split, price exactly as before under the one
+  model the record names. `reference-sprint.md#dollar-cost` says so.
+- A pytest session from this repository no longer opens the operator's harness stores (BG1249).
+  The root `conftest.py` kept the operator's `HOME` and XDG directories, so a token-meter test
+  that reached the selection's store probe opened the live `~/.codex`, `~/.copilot` and
+  `~/.local/share/opencode` stores, and a reviewer's mutant that wrote would have written to
+  them. The owning session now points `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`,
+  `XDG_STATE_HOME` and `XDG_CACHE_HOME` under its private directory, unsets `CODEX_HOME`,
+  `COPILOT_HOME`, `CLAUDE_CONFIG_DIR` and `OPENCODE_DB`, seeds the private home's `.gitconfig`
+  with a test identity, and pins `PYTHONUSERBASE` to the operator's user base so a child
+  Python still finds pytest there. xdist workers inherit the same home, and the session puts
+  every variable back when it ends.
+- A benchmark run in Claude Code or Codex CLI can now authenticate from the operator's file
+  login (BG1248). `tools/bench/runner.py run` used to leave the session's private configuration
+  directory empty, so the CLI found no login unless one was exported. It now puts a symlink to
+  the operator's `.credentials.json` (Claude Code) or `auth.json` (Codex CLI) there, read from
+  `CLAUDE_CONFIG_DIR` or `CODEX_HOME` or their defaults under HOME. It links nothing else from
+  the operator's directory and gives Copilot CLI no copy of its `config.json`. A run with no
+  login file and none of the exports that CLI authenticates from is refused before anything
+  is written, naming those exports. A `--dest` inside a git work tree is now refused before
+  anything is written, naming the work tree's top level, because the session would reach that
+  repository and its skills. The session's `GIT_CEILING_DIRECTORIES` is set to the workspace's
+  parent.
+- The Codex meter now reads the store in `CODEX_HOME` when that variable is set and not empty,
+  and `~/.codex` otherwise (BG1246). Before, it read only `~/.codex`. A session that moved its
+  home was never metered, and one that also had an old `~/.codex` read that store's stale total.
+  New tests also pin two things that were right but untested: a thread in a sibling directory
+  whose name starts with the workspace's (`repo-old` beside `repo`) is not booked to the
+  workspace, and a locked store is given up within `TIMEOUT_SECONDS`, timed by the clock rather
+  than read off the constant. The module docstring and `reference-sprint.md` now say the store is
+  never written, though SQLite may create `-wal` and `-shm` files beside it, and a test holds
+  both texts to that and checks that a read leaves the store's bytes unchanged.
+- `sprint lane run` no longer leaves a timed-out lane's children working in its worktree
+  (BG1245): the CLI runs in a session of its own, its whole process group is killed at the
+  timeout before the staged files are read, and a SIGTERM, SIGINT or SIGHUP to `sprint.py`
+  while the lane runs kills that group before the signal does what it did before. A run refused
+  before its CLI starts (exit 2) no longer leaves the unit marked in flight or its span opened,
+  and a lane whose worktree was removed without `lane land` runs again on its existing
+  `lane-<unit>` branch rather than refusing. The unmetered warning on a return names the
+  session's record, and the help names the default worktree as it is created, lowercased.
+- `harness_usage.parse` no longer raises `AttributeError` when a CLI's usage or accounting
+  container is a JSON value that is not an object (BG1244). Claude Code's `modelUsage`, a
+  `modelUsage` entry, `usage`, `usage.cache_creation` and `usage.output_tokens_details`;
+  Copilot's checkpoint `data`, `accountingSnapshot`, a `modelMetrics` entry, its `usage`,
+  `tokenDetails` and a `tokenDetails` entry; and OpenCode's `step_finish` part and
+  `tokens.cache` each now return the session unmetered as no usage, with a reason naming the
+  container, as the Cursor and Codex readers already did. A `modelUsage` array and a
+  `tokenDetails` that is not an object, formerly read as absent, are refused the same way. An
+  absent container still reads as empty, and an empty `modelUsage` object still falls back to
+  `usage`. Three rules that were
+  true but unpinned now have tests: an absent reasoning count is None and unreported, never 0;
+  a session that used two models is named for the one that carried the most tokens; and the
+  module docstring cites the evidence that Codex's `input_tokens` holds its cached input, the
+  rollout's `total_tokens` 14529 being input plus output.
+- A sprint report that is filed but not yet signed now keeps the prices it was filed with
+  (BG1242). Re-deriving an unsigned page read the live price table, so revising one model's
+  price between the close and the signature re-priced the page and `sprint sign` refused it. A
+  page now carries a new envelope mark, `price_table_rule`, under which `revalidate` replays
+  the page's own price table whether or not it is signed, and that table is in the page's
+  digest, so an edit to it on disk reads invalid and is named. A page filed before the mark
+  re-derives as it did. The retro now judges the price table's stale mark on the day the run
+  ended, as the report does, rather than on the day it is read. A new test drives `sprint.py
+  close`, its chain steps stubbed green, and asserts the filed page carries the per-role table;
+  another pins the end-date rule on both the report and the retro.
+- The OpenCode token meter no longer treats a database it cannot read as absent (BG1240). Its
+  store probe returned None on any SQLite error, so an `opencode.db` present at the default path
+  but unreadable (bytes that are not a database, or mode 000) was never a candidate, and with no
+  harness signalled the run was metered as Claude by default with no warning. The probe now
+  raises for a database file present that SQLite cannot open or query, as the Codex probe does,
+  so the token-meter selection reports OpenCode as a candidate whose store could not be probed. A readable database holding only other directories' sessions is still not a
+  candidate. The module docstring no longer claims a read leaves the write-ahead log untouched: a
+  read-only open of a WAL database may create its `-wal` and `-shm` files, and never writes the
+  database's own bytes.
+- `reference-sprint.md` is back under its 859-line ceiling (858 lines) without raising it: the four
+  per-harness Token meters paragraphs are one list pointing to each reader's docstring, and the
+  scrub-site registry now names `lib/lanes.py` and `tools/bench/runner.py` (BG1238).
+- `cursor_usage_hook.py` now anchors its root through `sdlc_md.resolve_root` (BG1236), so a
+  hook fired from a subdirectory of the workspace appends to the ledger at the workspace root,
+  where the Cursor meter reads it, rather than reading the subdirectory as the root and keeping
+  no ledger. A named `--root` is still honoured verbatim, and a working directory with no
+  workspace at or above it still keeps no ledger and says so on stderr. The root census
+  classifies the hook as anchored, which brings its counts back to the measured 65 anchored of
+  70. Three tests stop tripping the repo-wide sweeps: the bare-URL filing test finds the main
+  checkout through `gitutil.git`, the pre-commit docgen test scrubs through the shared
+  `gitutil.git_env` and runs `--list` with a `cwd`, and the Cursor hook test passes the
+  fixture's own environment.
+- The finding filer no longer writes a bare URL that markdownlint's MD034 refuses (BG1227). A
+  bare `http://` or `https://` URL in a finding's summary, steps, fix, criteria or `Evidence`
+  line is now wrapped in backticks, its trailing full stop or unbalanced closing bracket left
+  outside the span, and an underscore inside it is no longer code-spanned on its own. A URL
+  already in backticks, in `<...>` or a link destination is written as given. A bug filed
+  through `file_finding.py file` with a URL in each of those fields passes markdownlint under
+  the skill's config. A URL in a `Verify:` selector is still written verbatim, because the
+  selector is executed.
+- The pre-commit hook refuses generated-doc drift in its cheap lanes, before the unit suites are
+  selected (BG1226). The `budgets` lane now also runs `docgen.py surface --check` when the commit
+  stages a skill script, and `references --check` and `reading-guides --check` when it stages a
+  `reference-*.md` or `help/` file. It refuses on any drift count but 0 and names the regenerate
+  command; a commit staging none of those files, or made in a tree with no `docgen.py` such as a
+  hook-test fixture, notes the checks as skipped. The `test_lean_*`
+  suites already refused the same drift, so this moves the refusal earlier rather than adding
+  one. Measured once on this repository, `surface --check` took 7.3 s and the other two under
+  1 s each, where the bug records the selected suites taking 1,016 s and over 1,500 s.
+- The side-by-side collection tests no longer race `close` against a worker thread's start
+  (BG1223). The `_side_by_side` helper closed the collection straight after its last `submit`,
+  and `close` drops a collection no worker has begun, so the no-server test judged how soon a
+  worker started: with every worker delayed 0.5 s before it takes a collection, it read `[]`
+  against `['a.py', 'b.py']`. The helper now waits for every future in `_COLLECT_PENDING`
+  before it closes. A new test runs the no-server test under that delay, beside a control
+  showing `close` drops both queued files under it, and another pins `close`'s own wait for
+  every collection begun. `_SideBySideCollection.close` is unchanged.
+- The push gate's hand-copied-list census passes again (BG1221). BG1187's side-by-side stamps
+  test passed its fixture files as three quoted `.py` names in a row, which the census reads as
+  a hand-copied list of shipped scripts. The list is now built from its stems, and the test
+  judges the same three files.
+- `remote-gate.sh push --commit <sha> --release` now refuses on the gate host before the
+  release gate starts, exit 4, when that host lacks Python 3.10 or pdftotext, naming each
+  one missing with what reads red without it and an install route (BG1220). The release
+  gate's criteria run both, so a host without them read passing criteria red. The check is
+  `python3 tools/gate_prereqs.py check --release`: Python 3.10 counts when `python3.10` on
+  PATH, or the one `uv python find --no-project 3.10` names, answers 3.10 when asked its
+  version. The push boundary gate's preflight on the host checks only what it did before.
+- `gate.py --run-tests` refuses a node id whose file exists but whose test does not, by name
+  and with exit 2, before any test runs (BG1217). Under pytest-xdist such a node id beside a
+  failing module made pytest exit 5 having run nothing, which the lane reads as a pass, so the
+  red module read green; BG1160's refusal covers only a path that does not exist. A selector
+  carrying `::` is read by one `pytest --collect-only` under `--root`; only when pytest refuses
+  that collect (exit 4) does each node id get its own, so the refusal names the ones at fault,
+  and any other exit (5 for a node id that collects nothing, say) is left to the run. A
+  selection with no `::`, the commit hook's whole modules, spawns no collect at all.
+- The TSD maps the PRD's Cursor usage call to the test that pins it (BG1216). BG1210 added
+  that clause to the PRD's Security NFR without a TSD row, and the TSD refresh test, which
+  requires every PRD NFR clause to map to one, failed; the bullet's internal semicolon also
+  split it into two clauses. The bullet is now one clause, and a TSD Security row names
+  `test_meter_cursor.py::CursorCloudTests`.
+- A `SDLC_STUDIO_CURSOR_API` base that is not https is now refused before any request
+  (BG1213), unless it is http on a loopback address, as a test's local stub is, so a mistyped
+  `http://` override no longer sends `CURSOR_API_KEY` in cleartext to the host it names. The
+  Cursor reading is then tokens None with a reason naming `SDLC_STUDIO_CURSOR_API`, never its
+  value, so a password in the base is not echoed. A host name, `localhost` among them, is
+  refused rather than resolved, and so are a base with no scheme, a non-http scheme on a
+  loopback address and a base `urlsplit` cannot parse.
+- The push gate's wall-clock census no longer names a test in `test_meter_cursor.py`
+  (BG1212). US0989's AC2 test bounded the time its own reading took, so a parallel commit run
+  could fail it on a busy machine. AC2's test, which `verify_ac` runs, now holds no clock
+  assertion. Its clock half moved to `test_a_held_or_dribbling_answer_is_cut_off_at_the_deadline`,
+  marked `serial_only` and `boundary_only`, which still fails when the worker is joined with
+  no timeout.
+- The PRD's Security NFR names the Cursor cloud usage call `meter_cursor.py` makes (BG1210).
+  US0989 added that call, and the PRD refresh test, which requires the NFR to name every
+  script whose source reaches the network, failed on it. The entry says the call is made only
+  when the Cursor meter is selected and both `CURSOR_API_KEY` and
+  `SDLC_STUDIO_CURSOR_AGENT_ID` are set, that the key travels only in its request header, that
+  a redirect is refused, and that a 5s timeout or any failure reads the run as not measured.
+- A pytest run of the tests that read a Claude transcript through the token meter no longer
+  turns to another harness's reader when Cursor, Copilot CLI or OpenCode runs the suite
+  (BG1197). The meter chooses its reader from `SDLC_STUDIO_HARNESS` and each harness's signal
+  variables, and those tests left them as the running harness set them. With `CURSOR_AGENT=1` and `CLAUDECODE` unset, the 14
+  meter-reaching modules BG1205 names give 308 passed, against 88 failed with the root conftest
+  left out (`--noconftest`).
+  - The repository-root `conftest.py` now clears, before each test, every variable
+    `token_meters.selection_variables()` names, read afresh each time, so a harness or a
+    reader's signal added later is cleared with no edit there. What it cleared is put back after
+    the test. A test that sets a signal in `setUp` or its body keeps it; one set in `setUpClass`
+    or `setUpModule` is cleared.
+  - The scrub covers pytest runs from the repository, which load that conftest. A run under
+    `python3 -m unittest` loads no conftest and is not covered.
+  - `scripts/tests/test_token_env_isolation.py` runs `test_lean_transcript_dir.py` in a child
+    pytest under `SDLC_STUDIO_HARNESS=cursor`, under `COPILOT_HOME` beside `CLAUDECODE=1`, and
+    under `OPENCODE_DB`, each passing, with a `--noconftest` control that must fail with the
+    meter's reason for that environment in its output. A fixture whose Cursor reader declares a signal no list names
+    pins that the scrub is read from the meter, not from a fixed list.
+- A verifier that outruns its timeout is now killed with its whole process group, so the
+  children it spawned no longer keep running to load the verifiers after it (BG1190). It still
+  reads red as a timeout, exit 124.
+  - `verify_ac.run_verifier` ran a criterion's command with `subprocess.run(..., timeout=...)`,
+    which kills only the shell: `shell sleep 7.31 && echo x` under `verify_ac.py run --timeout 1`
+    left `sleep 7.31` running afterwards. `run_verifier` now starts the command, the `eval`
+    verb's included, as the leader of its own session; on a timeout its whole process group is
+    sent SIGKILL, the shell is reaped, and the verdict waits up to 2 s until no member of the
+    group is left.
+  - A verifier leading its own session is outside its caller's process group, so a signal
+    sent to that group, a Ctrl-C at the terminal or a cancel's `kill -TERM -- -<pgid>`, no
+    longer reaches it. Importing `verify_ac` on the main thread therefore puts a handler in
+    front of SIGTERM, SIGINT and SIGHUP that sends SIGKILL to every running verifier's group,
+    those on worker threads included, then hands the signal to the handler it replaced, or
+    dies by it under the default disposition. A signal the caller ignores stays ignored.
+    Measured through `verify_ac.py run` on a verifier that backgrounds a sleep: a SIGTERM to
+    the caller's group left the shell, its subshell and the sleep running before this fix and
+    none after, and the caller still exits by SIGTERM. A Ctrl-C during a thread pool of
+    verifiers, the shape of `gate.py`'s verify pool, now returns in well under a second where
+    it waited for each verifier to finish.
+  - A KeyboardInterrupt raised in the thread that waits on the verifier still kills its group
+    before it propagates.
+  - Where `os.killpg` does not exist, the verifier alone is killed, as before.
+- `verify_ac.py stamps --bugs`, the verifier of US0944 AC3, took 117 s on this repository at
+  load 13 to 16, where it took 323 s at load 1 and read red as a timeout under the release
+  gate's 300 s default ceiling (BG1187).
+  - The check collected each test file a stamped `pytest` selector names, one fresh
+    `pytest --collect-only` after another: 445 files here. It now queues each file as it reads
+    the stamps (the file a selector names, and the files beside an `or`-joined `-k`) and collects
+    up to eight at a time while it judges. Each worker asks its own `CollectionServer` (BG1183),
+    or runs a fresh `pytest` of its own where no server can start. A stamp whose file is still
+    being collected waits for that answer rather than collecting the file again.
+  - Every refusal is kept: a stamp whose selector selects nothing still exits 1 and is named
+    with its verifier, a dead `-k` term still exits 1, an unknown `--story` id still exits 2, and
+    `--staged` is unchanged. A run whose stamps name one file between them collects it as
+    before, with no server.
+  - Eight at a time, not the four migrate uses, because the check answers to a wall-clock
+    ceiling: over the 445 files, eight took 85 s at load 7 to 14 on 648 s of worker time, and
+    four took 109 s at load 10 to 17 on 432 s (4 cores, 8 threads, 2026-11-04). With four, the
+    whole check ran past 120 s at load 8 to 17.
+- A `migrate.py` dry run, and the test US0940 AC1 runs, take a fraction of the time they did
+  (BG1183). On a machine other work does not saturate they finish inside the ceilings their
+  criteria hold them to: `verify_ac run`'s default 120 s for US0926 AC1's dry run, and the
+  release gate's default 300 s for US0940 AC1.
+  - migrate's conformance step collected each test file a stamped `pytest` selector on a Done
+    story names, one fresh `pytest --collect-only` after another: 268 files on this repository,
+    and most of the run. The collections now run four at a time before the step, and the step
+    runs beside them, waiting only for a file still being collected. A dry run starts them
+    before its first step; `--apply` starts them once its steps that write have run.
+  - Each collection is answered by a `verify_ac.CollectionServer`: a process that imports pytest,
+    its own plugin modules and `pdb`, then forks a child per file that runs the `pytest` script
+    as a fresh `pytest --collect-only -q` would. An installed `pytest11` plugin is left for each
+    child to import, because importing it first draws PytestAssertRewriteWarning, which a
+    project's `filterwarnings = error` or `-W error` turns into a failed collection. Over 61 of this
+    repository's test files its answers matched fresh runs file for file, on less than half the
+    CPU. Where no server can run (no `os.fork`, or a `pytest` that is not a Python script) each
+    file gets a fresh `pytest` of its own, as before, and so does a file a server stops answering.
+  - The collections write bytecode under a private temporary directory, seeded with the bytecode
+    already beside the test files, and migrate removes it afterwards. pytest's cache stays off,
+    and the project's own files are left byte for byte as they were. The CLI turns SIGTERM into an
+    exit, so a run that `timeout` stops still removes the directory.
+  - Four collections at a time, not eight, because on this 4-core, 8-thread workstation eight
+    made the dry run no faster and cost about a quarter more CPU.
+  - A dry run reads the artefact corpus through `sdlc_md.corpus_cache`, which took the sizing
+    step from 21.7 s to 0.9 s (load 3 to 8). migrate makes its root absolute first, because the
+    cache hands every caller the paths its first walk built, and a step that makes the root
+    absolute itself cannot place relative ones. `--apply` reads the disk, as before.
+  - The conformance census reads the frozen sprint-review ledger once, where it read and parsed
+    it again for each Done unit (845 times on this repository). It answers
+    `critic.sprint_review_for` from an index built as that function reads the ledger, so its
+    output is unchanged; the gate's conformance lane reads it once too.
+  - Measured on this workspace (4 cores, 8 threads, 2026-11-04) while other agents' test runs
+    shared it: the dry run printed the same report as before and took 57 s and 72 s at load 4
+    to 7, and 102 s at load 5 to 8, against 415 s before at load 2 to 7. Of the seven runs that
+    began or ended at a load above 11, six ran past 120 s and one took 113 s.
+  - `tools/tests/test_lean_release_verify.py` no longer re-runs the five measured criteria whose
+    Verify is a bare `pytest <node>`: US0021 AC1, US0042 AC2, US0047 AC1, US0284 AC4 and US0941
+    AC5. Each names a test of this suite, which the push's full suite runs beside this one and
+    the release lane's pytest batch answers in its own right. The test now checks that each
+    still selects a test, the red no suite run reports. US0284 AC4 alone took 64 s (load 6 to
+    11). US0940 AC1's text is re-pointed to say so, not retired, and its stamp is renewed on a
+    green run of its Verify line.
+  - The other 14 it re-runs as the release lane runs the stories its batch leaves,
+    `gate._verify_workers()` at a time, holding back to run alone after the pool any whose
+    criteria name a `serial_only` test module. Each still fails the test when red. The module
+    took 130 s to 205 s at load 4 to 14, against the 535 s BG1183 measured, and ran past
+    300 s at load 12 to 21.
+- Conformance no longer fails a light APPROVE because another unit later changed a file the
+  approved unit declares (BG1167, absorbing BG1052). When a unit's risk band now derives the
+  full tier and its APPROVE was taken at a derived light tier, `conformance.tier_covers` finds
+  the commit that recorded the verdict row (`git log -S` on its brief fingerprint in
+  `sdlc-studio/reviews/critic-verdicts.md`) and reads the unit's Affects at that commit's
+  parent, so a widening committed with the row counts as one.
+  - If every file the unit declares today was declared then, the light APPROVE still counts.
+  - If the unit's own Affects gained a file in that commit or since, it owes the deeper review.
+  - It owes it too when the tier was chosen with `--tier light`, and when git cannot name the
+    commit or the unit file at its parent: a row with no brief fingerprint, a row not yet
+    committed, a recording commit with no parent, or a shallow clone, whose cut history can
+    name the wrong commit.
+  - Of two rows carrying one brief fingerprint, the older row's commit decides.
+- The census now names 'a review at the depth this unit's risk band demands', not
+  'independent APPROVE verdict', for an independent APPROVE that fails only on depth, as
+  `critiqued_unmet` already did.
+- `critic.py record` prints a warning on stderr after it writes any verdict on a unit whose
+  latest APPROVE no longer meets its band. The warning names that APPROVE's reviewer, date,
+  brief and tier, and the full tier the band now demands.
+- The TRD's run lifecycle names each `sprint.py` route that reaches `run_state.close_run`
+  (BG1163). It showed only the route that ends in a signature: it now has rows for
+  `sprint.py stop` and `sprint.py close --file-and-close`, each saying it files no run report
+  and creates no tracked record, and its boundary note says `sprint.py boundary` runs a close
+  and that a stop predicate ends the run there, closing `blocked` only a record still running.
+  Origin drift under `--strict` is such a stop, checked after the cycle's close has closed the
+  record, so the run keeps the outcome that close gave it. The Run state table says
+  `--file-and-close` files no tracked record, and the claim-drift study's writer cell names
+  US0577 alone, the unit whose commit last changed both files.
+- `tools/tests/test_lean_trd_refresh.py` reads which routes reach `run_state.close_run` and
+  `run_state.file_tracked` from `sprint.py`'s handlers, a flag branch that returns being a route
+  of its own, and fails on a close route the lifecycle does not name. It reads the Run state rows
+  by label as well as by path, so swapping the Live and Tracked labels fails.
+- The `.local` writer pin in `test_lean_v61_review_residue.py` counts a script's write only at
+  module level or in a function shipped code refers to, so a writer nothing calls fails it; it
+  matches the file under `.local/`, so a file moved out of it fails; and a page line saying it
+  does not write the file ('does not write', 'never records') is not read as writing it. This
+  corrects US1100's 6.2.0 entry, which said the pin fails when a writer the TRD names no longer
+  writes its file: a writer whose writing function nothing called still passed.
+- `gate.py --run-tests` refuses a path that does not exist, by name and with exit 2, before
+  any test runs (BG1160). Under pytest-xdist a missing path beside a real one made pytest
+  exit 5 having run nothing ('no tests ran'), and the lane reads 5 as a pass, so a failing
+  module beside a stale path read green; a serial run exits 4 on the same argv. A selector is
+  read against `--root`, and only the part before any `::` must exist, so a directory and a
+  node id still run. The commit hook's selection names only test modules on disk, so a
+  commit that deletes one is not refused.
+- A commit made in a linked worktree (`git worktree add`) now runs the pre-commit markdown lanes,
+  where it printed SKIP and landed unlinted markdown (BG1147). With no
+  `node_modules/.bin/markdownlint` of its own, the hook now runs the main worktree's, found as
+  the parent of `git rev-parse --git-common-dir`, and prints a note naming that path. A
+  worktree that has its own still runs its own. With markdownlint in neither tree and not on
+  PATH, the lane still skips, and its note now names each path it looked in.
+- A reading of the Claude transcript meter parses only the bytes appended since the last
+  reading in that workspace, so a lane, transition or report command no longer re-reads every
+  subagent transcript of a long session from its first byte (BG1122).
+  - Each reading that gives a figure leaves a memo at `sdlc-studio/.local/meter-reads.json`. For
+    each transcript it read, the memo holds the file's device and inode, how many bytes were
+    read, and, for the bytes through the last newline parsed, a digest of their first and last
+    4 KiB and the usage they held: one row per message id and model, at its largest reading, and
+    one per model for records with no id, at their sum. The next reading parses only what
+    follows that newline, and equals a reading that parses every file whole.
+  - A transcript is parsed whole when its device or inode differ, when it is shorter than the
+    bytes last read, or when either digested span differs. A last line with no newline is read
+    as a whole read reads it, and parsed again by the next reading, so a line the harness is
+    still writing is neither lost nor counted twice.
+  - The memo holds the files of the last reading and no other. It is rewritten only when a
+    reading changes it: a file read whole, bytes appended to one, or a file added to or gone from
+    the reading. A memo another version of `run_state.py` wrote, or one that is not JSON, is
+    discarded, and a malformed entry reads its file whole. A root with no `sdlc-studio/`
+    directory keeps no memo and gets no directory, and a memo that cannot be written leaves the
+    reading standing.
+  - `run_state.rederive` and `retro.window_priced` still read each transcript whole.
+- The shipped lesson "Review BEFORE the commit, not after" no longer tells a consuming
+  project's agent to run the full suite before every commit (BG1116). Its habit now runs the
+  full suite at the push boundary: let a commit run the tests its change reaches, and run the
+  project's own full test command before each push, from a pre-push hook or by hand. It names
+  no `gate.py` route: `gate.py --boundary push` runs only the suites its `TEST_SUITE_DIRS`
+  lists, this repository's own, so on a consuming project it passes with no test run. The
+  lead-in now counts the three habits it lists, where it said two.
+- AGENTS.md's push-gate paragraph now says the pre-push hook runs the whole suite on the
+  commit each pushed ref points at, not on each pushed commit: the hook reads one commit per
+  ref, so a commit the push carries beneath a ref's tip is not judged by the full suite.
+- `critic.brief` assembles the brief inside `sdlc_md.corpus_cache()`, as `sprint.py lane
+  brief` already does around the same file-history call (BG1114), so the unit's lookup and
+  the file history's corpus walk share one read of each artefact type. The cache closes as
+  the brief returns or raises, and one the caller holds stays open. It does not make a single
+  brief measurably faster on this workspace: `reconcile.unit_corpus` has opened the cache for
+  its own walk since US0930, and that walk, paid once per brief either way, is where the time
+  goes.
+- The pre-commit declared-order test no longer rests its Given on sleeps 0.25 s apart, which
+  lanes started late reorder (BG1090). Each stubbed lane now finishes only once the lane
+  declared after it has, so the lanes finish in the reverse of their declared order by
+  construction. A new test starts each lane 0.3 s later than the one declared before it, so
+  sleeps alone would have finished them in declared order, and the verdicts still print in
+  declared order.
+- The mutation probe scoped to a unit's changed lines no longer finds nothing to mutate when
+  git config renames the diff prefixes (BG0958). `mutation.changed_lines` keyed each file on
+  `+++ b/<path>`, but `diff.mnemonicPrefix` writes `+++ w/<path>` and `diff.noprefix` writes
+  `+++ <path>`, so the map came back empty and `mutants_over_changed_lines` returned no
+  mutants. `changed_lines` now passes `--src-prefix=a/ --dst-prefix=b/` to `git diff`, which
+  override both settings, set in a repository's config or in a global one. The changed-line
+  tests no longer fail on a machine whose global config sets `diff.mnemonicPrefix`.
+
 ## [6.2.0] - 2026-11-02
 
 ### Added

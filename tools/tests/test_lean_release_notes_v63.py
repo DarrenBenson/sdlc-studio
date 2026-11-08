@@ -101,8 +101,10 @@ CHANGES = {
                               r"working habits there"),
     "the push-boundary lesson": (r"shipped lesson runs the full suite", (), r"before each push"),
 }
-#: What a bullet naming `--force` must say beside it: the flag rewrites more than one file.
-FORCE_SAYS = re.compile(r"rewrites every file `init` writes, (.+?) among them")
+#: What a bullet naming `--force` must say beside it: the flag rewrites more than one file, and
+#: the two it leaves (US1139 AC5): `sdlc-studio/.version` and an `_index.md` that exists.
+FORCE_SAYS = re.compile(r"rewrites the files `init` seeds, (.+?) among them, though it leaves "
+                        r"`sdlc-studio/\.version` alone and skips an `_index\.md` that exists")
 #: Each pinned figure -> what reads it from the notes, whitespace folded: the first section's,
 #: then the changed-behaviour section's.
 LEAD_FIGURES = {
@@ -322,8 +324,8 @@ def changed_problems(text: str, entries: list[tuple[str, str]],
         elif len(re.findall(r"\w[\w-]*", b.partition("Instead:")[2])) < 3:
             problems.append(f"a change whose `Instead:` says nothing: {b[:90]!r}")
         if "`--force`" in b and not FORCE_SAYS.search(b):
-            problems.append(f"a bullet names `--force` and not that it rewrites every file "
-                            f"`init` writes: {b[:90]!r}")
+            problems.append(f"a bullet names `--force` and not what it rewrites and what it "
+                            f"leaves: {b[:90]!r}")
         named = [label for label, (names, _s, _i) in CHANGES.items() if re.search(names, b)]
         if not named:
             problems.append(f"a bullet no listed change names: {b[:90]!r}")
@@ -660,7 +662,18 @@ class ReleaseNotesTests(unittest.TestCase):
                          "never names the Refs refusal")
         agents = ("  Instead: in an existing project, run `init.py run`", "- **`gate.py --run-tests`")
         self.assertFlags(changed_problems(self.swap(*agents, ROUND1_AGENTS), entries, figs),
-                         "names `--force` and not that it rewrites every file")
+                         "names `--force` and not what it rewrites and what it leaves")
+        said = re.search(r"rewrites the files `init`\s+seeds, .+? that exists\.", self.text, re.S)
+        self.assertIsNotNone(said, "premise: the bullet says what --force rewrites and leaves")
+        round2 = ("rewrites every file `init` writes, `.config.yaml`, `AGENTS.md`, `CLAUDE.md` "
+                  "and `decisions.md` among them.")
+        self.assertFlags(changed_problems(self.mutant(said.group(0), round2), entries, figs),
+                         "names `--force` and not what it rewrites and what it leaves")
+        leaves = re.search(r", though it\s+leaves `sdlc-studio/\.version` alone and skips an "
+                           r"`_index\.md` that exists", self.text)
+        self.assertIsNotNone(leaves, "premise: the bullet names the two files --force leaves")
+        self.assertFlags(changed_problems(self.mutant(leaves.group(0), ""), entries, figs),
+                         "names `--force` and not what it rewrites and what it leaves")
         self.assertFlags(changed_problems(self.swap(*agents, ROUND1_AGENTS), entries, figs),
                          "the agent definitions is named with no replacement")
         verifier = ("- **A verifier that outruns", "- **A light APPROVE")

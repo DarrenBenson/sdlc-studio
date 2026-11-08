@@ -1,8 +1,8 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.2.0
-**Last Updated:** 2026-11-02
+**Version:** 6.3.0
+**Last Updated:** 2026-11-08
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -11,7 +11,7 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v6.2.0 as cut, plus the 6.3 work on `main` since. The v6 line
+> **Coverage:** v6.3.0 as cut, plus the 6.4 work on `main` since. The v6 line
 > covers the refusal gates (the breakdown gate, the executable-criteria gate on
 > Done, the vacuous-verifier refusal), one independent review per unit and one
 > signature per run (`sprint sign`), the cost work that made the gate cheap enough
@@ -205,7 +205,7 @@ importing it.
 
 ## 3. Feature Inventory
 
-Baseline: v6.2.0 as cut, plus the 6.3 work on `main` (the skill is in production
+Baseline: v6.3.0 as cut, plus the 6.4 work on `main` (the skill is in production
 use); each row's Status column gives its feature's state. Confidence **[HIGH]**
 unless noted – extracted directly from source. The Epic column maps each feature to
 its owning epic (see `sdlc-studio/epics/`); a few rows delivered before the
@@ -761,6 +761,7 @@ none.
 | 2026-11-01 | 6.1.0 | Baseline refresh (US1103): the baseline reads v6.1.0 plus the 6.2 work on `main`, and the release markers are gone, RV0028 PRD-5 having found every marked row shipped by v6.0.0. The inventory gains rows for the capabilities RV0028 PRD-10 names: the charter queue, rolling runs, the boundary gates, risk-banded review, the line coverage gate, changelog fragments and the release cut, the project constitution, and the sprint report and sign. The refine row names `refine.py add`, a subcommand, where it said `--add` |
 | 2026-11-01 | 6.1.0 | Rules, NFRs and cost model (US1104): stories and bugs execute their Verify lines, per `sdlc_md.EXECUTES_VERIFIERS`; the groomed definition names the criteria check and the split ceiling; the network paths add the close's and the tag check's `gh run list` and drop the fetch that id allocation never made; `critic`, `gate` and `repo_map` leave the read-only set; a plan prices from the measured tokens-per-point rate, the 25,000 seed standing only where none is measured. Derived counts are bands. The engagement floor and Verify AC read Partial while BG0959, BG1023 and BG1063 are open, and the detail criteria that hold are ticked, Reconcile's `--scope` corrected to one scope. Per-ship history leaves §10 for this table: BG0133 and BG0136 fixed the accuracy judge and the finder's `Affects:`, and the 2026-07-04 enforcement-gap retrospective closed |
 | 2026-11-02 | 6.2.0 | Release cut (US1111): the Coverage note and the Feature Inventory baseline read v6.2.0 as cut, plus the 6.3 work on `main` |
+| 2026-11-08 | 6.3.0 | Release cut (US1139): the Coverage note and the Feature Inventory baseline read v6.3.0 as cut, plus the 6.4 work on `main` |
 
 ---
 
