@@ -49,6 +49,50 @@ pre-release as equal to its final release, so it never offers you the final. Lat
 a pre-release below its final, so this happens once. Then run `migrate --apply` again: it restamps
 `sdlc-studio/.version` with the version you now run.
 
+### From 6.2 to 6.3
+
+A project already on 6.2 reinstalls and runs `migrate`. The rest of this list is what 6.3 changes
+in how you work.
+
+1. **Reinstall.** A plain `install.sh` or `install.ps1` fetches the latest published release; pass
+   `main` as the version for the moving branch.
+2. **`migrate`** is the dry run, and `migrate --apply` writes what it lists. A 6.2 project owes it
+   only the version stamp in `sdlc-studio/.version`: 6.3 retires no config key or command, so
+   `--apply` removes nothing.
+3. **Keep a branch and PR per change, if you want one.** `release_strategy` now ships as `trunk`:
+   an agent commits each unit to `main` when its gate passes and pushes `main`, with no branch and
+   no PR. To keep 6.2's behaviour, set `release_strategy: pr-required` in
+   `sdlc-studio/.config.yaml`.
+4. **`sprint lane land` now commits a lane.** A builder stages exactly its Affects, leaves its
+   hand-in files under `sdlc-studio/.local/lane/` and stops. Then
+   `sprint.py lane land --worktree <path> --units <id>` commits it through your hooks and records
+   its self-check, and `sprint.py lane accept` finishes the unit once its reviewer answers.
+5. **Draft the lean agent definitions.** Run `init.py run` again (`--dry-run` previews it). It
+   drafts `.claude/agents/sdlc-builder.md` and `.claude/agents/sdlc-reviewer.md`, and any other
+   file it seeds that is missing, and leaves every existing file as it is.
+6. **Outside Claude Code, name the harness.** The meter reads one harness's store. Set
+   `SDLC_STUDIO_HARNESS` when more than one harness is signalled or keeps a store for the repo,
+   or the run's cost gets no reading.
+7. **Fix a stale `gate.py --run-tests` selector.** One naming a missing file, or a test its file
+   does not hold, is now refused by name with exit 2 before any test runs.
+
+### From 6.1 to 6.2
+
+A project already on 6.1 takes two steps. The
+[6.2.0 release notes](release-notes-v6.2.0.md#upgrading-from-61) give the whole path.
+
+1. **Reinstall**, as above.
+2. **`migrate`**, then **`migrate --apply`**. For a 6.1 project the dry run lists one
+   deterministic upgrade, the version stamp, and `--apply` writes it to `sdlc-studio/.version`
+   and changes nothing else: 6.2 retires no config key or command. The new keys,
+   `review.author_self_check`, `review.brief_diff_lines` and `cost.baseline_per_point`, read their
+   shipped defaults until you set them.
+
+Two records then need committing. The first `lessons` command, or `retro.py extract`, moves a
+legacy `sdlc-studio/.local/lessons.md` to `sdlc-studio/retros/LESSONS.md` and says to commit it.
+From the first 6.2 close, each run's record is filed under `sdlc-studio/reports/runs/` beside its
+report: commit both.
+
 ### From 6.0 to 6.1
 
 A project already on 6.0 takes three steps: 6.1 retires the handoff writers and one config key.

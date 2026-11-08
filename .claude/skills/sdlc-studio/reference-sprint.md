@@ -26,9 +26,9 @@
 | Guardrails | 501-520 |
 | Autonomous mode (`--autonomous`) | 521-541 |
 | The Two Instruments: Schedule and Cost {#schedule-and-cost} | 542-587 |
-| &nbsp;&nbsp;Token meters {#token-meters} | 588-634 |
-| &nbsp;&nbsp;Cost anatomy {#cost-anatomy} | 635-666 |
-| &nbsp;&nbsp;Dollar cost {#dollar-cost} | 667-680 |
+| &nbsp;&nbsp;Token meters {#token-meters} | 588-633 |
+| &nbsp;&nbsp;Cost anatomy {#cost-anatomy} | 634-665 |
+| &nbsp;&nbsp;Dollar cost {#dollar-cost} | 666-680 |
 | Cost regression at the close {#cost-regression} | 681-693 |
 | Appetite (the run-level circuit breaker) {#appetite} | 694-738 |
 | Rolling multi-sprint policy {#rolling} | 739-764 |
@@ -597,16 +597,15 @@ The cost axis reads the store of ONE harness, the one running the session (`lib/
 3. Otherwise exactly one harness whose store for this repo is on disk.
 4. Otherwise Claude, which names the directory it found no transcript in.
 
-Two signalled harnesses, or two stores and no signal, give no reading: the reason names every
-candidate, and no two readings are ever added. A chosen harness whose reader is not installed
-(`lib/meter_<harness>.py`) reads tokens None naming it, never zero and never another harness's
-store. Every reading, and each stamp taken from one, names its `harness`; `tokens` is input +
-output + cache write on every harness, with cache reads carried apart as `cache_read`. A run
-total pairs only readings of one harness's one store.
+Two signalled harnesses, or two stores and no signal, give no reading: the reason names every candidate, and no two readings
+are ever added. A chosen harness whose reader is not installed (`lib/meter_<harness>.py`) reads tokens None naming it, never
+zero and never another harness's store. Every reading, and each stamp taken from one, names its `harness`; `tokens` is input +
+output + cache write on every harness, with cache reads carried apart as `cache_read`. A run total pairs only readings of one
+harness's one store.
 
-Each reader opens its store read-only; a missing store, or one with no session for this repo,
-reads tokens None with the reason, never zero. The reader's module docstring holds the store's
-layout and its rule for each count and each malformed record; this page keeps what you set:
+Each reader opens its store read-only; a missing store, or one with no session for this repo, reads tokens None with the
+reason, never zero. The reader's module docstring holds the store's layout and its rule for each count and each malformed
+record; this page keeps what you set:
 
 - **Cursor** (`lib/meter_cursor.py`): a cloud agent's `totalUsage` from Cursor's usage API when
   `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID` (which also signals Cursor) are both set;
@@ -634,12 +633,11 @@ layout and its rule for each count and each malformed record; this page keeps wh
 
 ### Cost anatomy {#cost-anatomy}
 
-`sprint.py cost --anatomy` says where the open run's tokens went: the records after its `started_at`
-in the transcripts the meter reads, so each message counts once at its largest usage record and the
-whole equals the meter's delta over the run. `--session`, no open run, or a usage record with no
-timestamp reads the whole session, and the header says which. Per role: agents, calls, priced tokens
-and share, the cache-read, cache-write and output shares, the first call's context (over the role's
-agents) and the average per call; context is input + cache write + cache read.
+`sprint.py cost --anatomy` says where the open run's tokens went: the records after its `started_at` in the transcripts the
+meter reads, so each message counts once at its largest usage record and the whole equals the meter's delta over the run.
+`--session`, no open run, or a usage record with no timestamp reads the whole session, and the header says which. Per role:
+agents, calls, priced tokens and share, the cache-read, cache-write and output shares, the first call's context (over the
+role's agents) and the average per call; context is input + cache write + cache read.
 
 | Role | From |
 | --- | --- |
@@ -649,34 +647,36 @@ agents) and the average per call; context is input + cache write + cache read.
 | reviewer | an agent a recorded verdict names as reviewer (`sprint lane accept --reviewer`), with or without its `agent-` prefix |
 | other | an agent no record names; its prompt text is never read for a role |
 
-It then names the ten costliest tool outputs, each its size in characters times the later calls
-of its own transcript, with what produced it. A context no per-call record gives (a session-total
-harness reading, usage records with no message id, a role with no calls) prints `not available`,
-never 0; with no Claude Code transcript the meter's reading is one total under other.
-`--transcripts DIR` names the transcript directory; `--format json` prints the same figures.
+It then names the ten costliest tool outputs, each its size in characters times the later calls of its own transcript, with
+what produced it. A context no per-call record gives (a session-total harness reading, usage records with no message id, a
+role with no calls) prints `not available`, never 0; with no Claude Code transcript the meter's reading is one total under
+other. `--transcripts DIR` names the transcript directory; `--format json` prints the same figures.
 
-The report's cost appendix takes this table from the same `cost_anatomy.anatomy` call, recorded on
-the close's meter reading (`run_state.stamp_cost_roles`), never the growing live transcript, so it
-re-derives at sign and a signed page replays its own. It is NOT MEASURED when no reading in the
-window recorded one, or the anatomy could not be had or read a session other than the meter's.
+The report's cost appendix takes this table from the same `cost_anatomy.anatomy` call, recorded on the close's meter reading
+(`run_state.stamp_cost_roles`), never the growing live transcript, so it re-derives at sign and a signed page replays its
+own. It is NOT MEASURED when no reading in the window recorded one, or the anatomy could not be had or read a session other
+than the meter's.
 
-The header names the main thread's start context, the session's first call's, whatever the window. A
-project `.claude/settings.json` that disables the plugins and connectors a delivery session does not
-use is recommended, not enforced; a claude.ai connector may not be switchable per project.
+The header names the main thread's start context, the session's first call's, whatever the window. A Subagent starts section
+flags each subagent whose first call's context, whatever the window, exceeds `cost.agent_start_budget` (30000 by default;
+`off` flags none), with its start; one with no per-call start is named not available. The JSON carries `start_budget`,
+`over_start_budget` and `start_not_available`. A project `.claude/settings.json` that disables the plugins and connectors a
+delivery session does not use is recommended, not enforced; a claude.ai connector may not be switchable per project.
 
 ### Dollar cost {#dollar-cost}
 
-The report states estimated US dollars beside the priced tokens - Dollar cost and Dollars per point
-rows, and each unit row's dollars, in the HTML page and its Markdown twin - priced per model
-(`run_state.usd` over `lib/prices.py`) from the components the meter keeps by model, so a `mixed`
-reading is never priced at one model's rate. A `sprint lane run` unit is priced per session, each
-model at its own rate from the split its lane record keeps where the CLI names several; a session
-naming none reads NOT MEASURED. A model the table does not list is named with its share of the
-priced tokens, never summed in as $0. The row states the table's effective date, marked STALE when
-`prices.stale` says so on the run's end date. A signed page re-derives at the table it carries, so a
-price revision cannot invalidate it; an unsigned page re-derives at the table in force. Premium
-requests are their own row, priced per request, never in Dollar cost. The retro's priced line states
-dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
+The report states estimated US dollars beside the priced tokens - Dollar cost and Dollars per point rows, and each unit
+row's dollars, in the HTML page and its Markdown twin - priced per model (`run_state.usd` over `lib/prices.py`) from the
+components the meter keeps by model, so a `mixed` reading is never priced at one model's rate. The table is
+`templates/model-prices.json`: Anthropic's Claude list prices, OpenAI's standard rates for the models behind Codex CLI and
+OpenCode's free model at $0, each dated and sourced. A project adds or replaces a model under `pricing.models`, and
+`pricing.premium_request` and `pricing.stale_after_days` override the rest ([config](reference-config.md#pricing)). A
+`sprint lane run` unit is priced per session, each model at its own rate from the split its lane record keeps where the CLI
+names several; a session naming none reads NOT MEASURED. A model the table does not list is named with its share of the
+priced tokens, never summed in as $0. The row states the table's effective date, marked STALE when `prices.stale` says so on
+the run's end date. A signed page re-derives at the table it carries, so a price revision cannot invalidate it; an unsigned
+page re-derives at the table in force. Premium requests are their own row, priced per request, never in Dollar cost. The
+retro's priced line states dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
 
 ## Cost regression at the close {#cost-regression}
 

@@ -3,8 +3,9 @@
 > An open Agent Skill (agentskills.io format) that runs the full software development
 > lifecycle - PRD, epics, stories with executable acceptance criteria, implementation,
 > testing, verification, reconciliation - with deterministic gates that hold the agent to
-> what the files actually say. Installs into Claude Code, Codex, Gemini CLI, opencode and
-> GitHub Copilot; invoked as /sdlc-studio [type] [action] or model-invoked from plain
+> what the files actually say. Installs into Claude Code, Cursor, Codex, Gemini CLI, opencode
+> and GitHub Copilot, and meters a run's token cost on Claude Code, Codex, Copilot CLI,
+> opencode and Cursor; invoked as /sdlc-studio [type] [action] or model-invoked from plain
 > language.
 
 ## Docs

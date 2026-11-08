@@ -214,7 +214,7 @@ run ([N=5 report](benchmarks/2026-07-08-n5-run.md); spikes:
 
 ## The economics
 
-Tokens are the wrong denominator; engineer time and defect cost are the right ones. Three
+Tokens are the wrong denominator; engineer time and defect cost are the right ones. Four
 facts to price honestly:
 
 1. **Per single ticket, the full pipeline costs more tokens** - about 3.1 times the
@@ -232,6 +232,11 @@ facts to price honestly:
    never a smaller model than the author. At N=5 the router sent four of five deliveries on
    the easy fixture to the smallest tier (a 0.40 mean cost index against an all-mid-tier
    mix) with zero defect escapes, and correctly refused to down-tier the harder fixture.
+4. **Every run states what it cost.** Since 6.3 the signed sprint report gives each run's
+   priced cost per point: priced tokens and estimated US dollars per point, priced per model,
+   read from the harness that ran it (Claude Code, Codex CLI, Copilot CLI, OpenCode or Cursor).
+   The close compares it with the project's own baseline, and a run over 1.5 times that
+   baseline is a known issue on its report.
 
 Against those costs, the comparison that matters: a defect that reaches production - or an
 audit you cannot pass - is priced in engineer-days and trust, not tokens. The benchmark's
@@ -277,7 +282,8 @@ capped at two rounds, and one signature per run. A check now has to earn its pla
   measured.
 - Whether the value is *having* good acceptance criteria or *mechanically enforcing* them -
   a planned arm with ticket-grade ACs but no gates.
-- Fan-out economics as a measurement rather than a field report.
+- Fan-out economics across projects. Each run now measures its own cost per point; what
+  remains is a comparison across projects, beside plain AI coding.
 
 ## Try it in ten minutes
 

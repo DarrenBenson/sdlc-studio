@@ -33,6 +33,11 @@ the author - and drops the ceremony around each unit that caught nothing.
   `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
 - **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
   carried into the next plan, build and review.
+- **New in 6.3: a cost you can read.** The signed report states the run's priced tokens and
+  estimated US dollars per point, priced per model, read from the store of whichever harness ran
+  it: Claude Code, Codex CLI, Copilot CLI, OpenCode or Cursor. `sprint cost --anatomy` names where
+  the tokens went, and `sprint lane run --harness <h>` runs one unit headless in any of their
+  CLIs.
 
 How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
 What changed and why: [the release notes](docs/release-notes-v6.2.0.md). Upgrading a v5

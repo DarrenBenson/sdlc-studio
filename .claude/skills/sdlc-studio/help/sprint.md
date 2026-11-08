@@ -66,15 +66,23 @@ with no baseline reports not-attributable rather than a number, and it states pl
 cannot attribute, so `--tokens N` is the manual override and `--elapsed-hours H` supplies the
 elapsed the run-state cannot know. Read-only.
 
-**The meter reads the main thread and every subagent, and the headline is the priced cost.**
-Each reading counts every assistant message once, from the session's transcript and from each
-subagent transcript beside it (`<session-id>/subagents/agent-*.jsonl`, depth-2 agents included).
+**The meter reads the harness running the session, and the headline is the priced cost.**
+It reads one harness's store. `SDLC_STUDIO_HARNESS` (`claude`, `codex`, `copilot`, `opencode`
+or `cursor`) chooses it, else the one harness the environment signals, else the one whose store
+holds this repo, else Claude. Two candidates give no reading, never a sum
+([token meters](../reference-sprint.md#token-meters)). Under Claude Code each reading counts every
+assistant message once, from the session's transcript and from each subagent transcript beside
+it (`<session-id>/subagents/agent-*.jsonl`, depth-2 agents included).
 It carries input, output, cache write at 5 minutes and at 1 hour, and cache read, and prices
 them in input-equivalent tokens from one weight table: input 1, output 5, cache write 1.25 (5
 minutes) and 2.0 (1 hour), cache read 0.1 (D0390). The report's Estimates place a `Priced
 cost` row directly before the `Tokens` row, and the close report's COST section opens on the
 same figure, each with the input + output + cache-write sum beside it as a component. A
-delegated total that the `Tokens` row adds is outside the priced figure, and both say so. A
+delegated total that the `Tokens` row adds is outside the priced figure, and both say so.
+Beside them the report states estimated US dollars (the Dollar cost and Dollars per point rows,
+and each unit's dollars), priced per model from the dated table in `templates/model-prices.json`
+([dollar cost](../reference-sprint.md#dollar-cost)). A model the table does not list is named,
+never counted as $0, and premium requests have a row of their own. A
 session whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread
 alone and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
 earlier meter took for it, in any session, is re-derived from its transcript up to the moment
@@ -546,13 +554,21 @@ artefact corpus in bulk. The corpus behind it is walked once per dispatch.
 A brief is also a builder's whole brief for its unit. It lists the unit's Affects, one path per
 line, and names the engineering seat card `persona_resolve` resolves (the project's own seat
 before the shipped default) as the work render to adopt. It ends with the author self-check
-`critic.py brief` prints on stderr, verbatim, then the commands that run the unit's criteria
-(`verify_ac.py run --id <id>`), record the self-check (`critic.py self-check record --unit <id>`)
-and commit it: `git add -- <its Affects>`, with the unit id in the commit subject and the rest
-of the message in the project's own shape. A unit with no Affects is told to declare them, and
-no staging command is printed. So a fresh agent builds each unit from its brief, while the
+`critic.py brief` prints on stderr, verbatim, then the closing commands. They run the unit's
+criteria (`verify_ac.py run --id <id>`) and write the hand-in files to `sdlc-studio/.local/lane/`:
+`<unit>-claims.json` and `<unit>-mutants.json`, the two self-check passes, then
+`commit-msg.txt`, with the unit id in its subject and the rest in the project's own shape. Last,
+they stage exactly its Affects (`git add -- <its Affects>`) and stop. The builder neither commits
+nor records: `sprint lane land` commits the lane and records its self-check. A unit with no
+Affects is told to declare them, and no staging command is printed. A sized unit's brief states a
+tool-call budget of 25 plus 13 per point (38 for 1 point, 90 for 5); at it the builder writes
+`HANDOFF.md` there with what is done, the criteria left, the next step and the files touched,
+stages what it has and returns. So a fresh agent builds each unit from its brief, while the
 orchestrator holds the run state and the verdicts, waits on each builder's completion
-notification rather than polling, and accepts the work back with `lane return`. A harness
+notification rather than polling, and accepts the work back with `lane return`. Spawn the
+builder as `sdlc-builder` and the reviewer as `sdlc-reviewer`, the definitions `init` drafts into
+`.claude/agents/`; `general-purpose` is the fallback on a harness with no agent config. In a
+parallel wave, launch the first agent alone and the rest once it has started. A harness
 without subagents starts a fresh session per unit from the same brief, with one command:
 
 ```bash
@@ -630,7 +646,11 @@ python3 <skill>/scripts/sprint.py cost --anatomy
 ```
 
 `cost --anatomy` reads the transcripts the meter reads and prints, per role, the agents, calls, priced
-tokens and share, and the context per call; `reference-sprint.md#cost-anatomy` has the detail.
+tokens and share, and the context per call. It reads the open run's window, the records after its
+`started_at`; `--session` reads the whole session, as it does with no run open. The header names
+the main thread's start context. A Subagent starts section flags each subagent whose first call
+carries more context than `cost.agent_start_budget` (30000 tokens by default; `off` flags none).
+`reference-sprint.md#cost-anatomy` has the detail.
 
 The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress
 keeps the span it has) and a passing `lane return` closes it, so the sprint report states the
