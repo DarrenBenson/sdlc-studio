@@ -1,6 +1,6 @@
 # US1136: The v6.3 release notes lead with what changed for the person using it
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -19,12 +19,16 @@
 
 - **AC1:** Given docs/release-notes-v6.3.0.md, then it opens with a one-sentence headline naming 6.3.0 as the current release. Its first section leads with what changed for the person using it, under four themes, each naming the units that delivered it: a run's cost is measured on whichever harness ran it (US0986, US0987, US0988, US0989, US1127); the report states the run's cost in US dollars and shows where it went (US1122, US1123, US1124, US1135); a lane runs headless in any harness's CLI, lands in one command and spawns lean agents (US1126, US1120, US1132); and the gates and commit checks are faster and truer (US1112, US1113, US1133). It links the CHANGELOG section that lists every change. Fails on: the 6.2.0 notes with the version changed, or a theme with no unit named.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given the notes' section on changed behaviour, then it names each change a 6.2 user meets as a new refusal or a changed default, each beside what to do instead. Among them: the shipped `release_strategy` default is now `trunk` (BG1224; `pr-required` keeps a branch and PR per change); `sprint lane land`, not the builder, now commits a lane and records its self-check (US1120); and `init` drafts the `sdlc-builder` and `sdlc-reviewer` agent definitions (US1132). It also calls out the security fix BG1213, and states that no 6.3 fragment is filed under Breaking or Removed. Fails on: a changed default named with no replacement, or a breaking change claimed that no fragment records.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do
+  - **Verified:** yes (2026-11-08)
 - **AC3:** Given the notes' 'Upgrading from 6.2' section, then it says to reinstall, gives `migrate` before `migrate --apply` as commands, and states what each reports for a 6.2 project, each statement checked by running it on a 6.2-shaped fixture. Fails on: a step naming a command the shipped CLI refuses, or `--apply` given before the dry run.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_the_62_upgrade_path_is_given
+  - **Verified:** yes (2026-11-08)
 - **AC4:** Given the notes, then `tools/check_links.py` and `tools/lint-style.sh` pass and the notes carry exactly one `**v6.3.0 discloses N open defects: N Medium, N Low.**` line for `known_issues.py write --release 6.3.0` to fill. Fails on: a broken CHANGELOG anchor, an em dash, or a missing count line.
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && test "$(grep -cE '^\*\*v6\.3\.0 discloses [0-9]+ open defects: [0-9]+ Medium, [0-9]+ Low\.\*\*$' docs/release-notes-v6.3.0.md)" = 1
+  - **Verified:** yes (2026-11-08)
 
 ## Notes
 
