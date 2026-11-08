@@ -1,6 +1,6 @@
 # BG1288: A Codex reading counts a lane worktree's own `codex exec` thread but says it holds no subagent spend, so the report adds the lane's delegated total a second time
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py, changelog.d/BG1288.md
@@ -26,8 +26,10 @@ In `meter_codex`, set `includes_subagents` True whenever any counted thread's cw
 
 - **AC1:** Given a Codex store holding a workspace-root thread that grows 11,000 tokens and a thread whose cwd is a lane worktree under `sdlc-studio/.local/worktrees/` that spends 44,000, and one delegated lane record of that 44,000, when the run's Tokens actual is derived through `sprint_report`, then it reads 55,000, the lane counted once. Fails on: `includes_subagents` left False for a reading that holds a worktree thread (the observed 99,000).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_lane_worktree_thread_is_counted_once
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given a Codex store whose only counted threads have the workspace itself as their cwd and no spawned child, then the reading's `includes_subagents` is False, as before. Fails on: a fix that sets the flag for every reading.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_root_only_reading_holds_no_subagent_spend
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 

@@ -184,3 +184,5 @@
 | BG1280 | builder-BG1288 | 2026-11-08 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 2 | ec7a94c3409e2749 at 4c236fe4d597 |
 | US1137 | builder-US1137 | 2026-11-08 | TRUE 25, FALSE 0, UNVERIFIABLE 0 | killed 20, survived 0 | 6b62630f433dae3f at 5f757e0f3564 |
 | US1136 | builder-US1136 | 2026-11-08 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | 59cff9809128e967 at a459fd6dc652 |
+| BG1288 | builder-BG1288-r2 | 2026-11-08 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 1 | b170b281b2e5f1ad at e51dad926285 |
+| BG1290 | builder-BG1290 | 2026-11-08 | TRUE 18, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | 1fedf79f0c896871 at b00deeaa8a4e |

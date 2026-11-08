@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 248 |
 | In Progress | 0 |
-| Fixed | 870 |
+| Fixed | 871 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1292** |
+| **Total** | **1293** |
 
 ## All Bugs
 
@@ -363,11 +363,12 @@
 | [BG1285](BG1285-a-non-utf-8-legacy-opencode-message-file.md) | A non-UTF-8 legacy OpenCode message file is refused as 'raised UnicodeDecodeError', and a Cursor cloud reading's stamps are given the wrong unpriced reason | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1286](BG1286-sprint-lane-land-leaves-a-timed-out-commit.md) | `sprint lane land` leaves a timed-out commit's hook running while saying it was stopped, and reports a dirty worktree's rebase refusal as a conflict | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1287](BG1287-every-lane-brief-s-standing-obligation-hard-codes.md) | Every lane brief's standing obligation hard-codes `main` and tells the builder to fast-forward, contradicting the same brief's 'do not commit' | Open | Low | 2026-11-08 | 2026-11-08 |
-| [BG1288](BG1288-a-codex-reading-counts-a-lane-worktree-s.md) | A Codex reading counts a lane worktree's own `codex exec` thread but says it holds no subagent spend, so the report adds the lane's delegated total a second time | Open | High | 2026-11-08 | 2026-11-08 |
+| [BG1288](BG1288-a-codex-reading-counts-a-lane-worktree-s.md) | A Codex reading counts a lane worktree's own `codex exec` thread but says it holds no subagent spend, so the report adds the lane's delegated total a second time | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1289](BG1289-sprint-lane-land-never-clears-the-previous-landing.md) | `sprint lane land` never clears the previous landing's hand-in, so a repair round that hands in no self-check files records round one's as its own and the `author_self_check: block` gate passes an unchecked diff | Fixed | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1290](BG1290-sprint-lane-accept-records-a-verdict-against-the.md) | `sprint lane accept` records a verdict against the previous round's QA brief when a repair's landing wrote none, so an unchecked repair moves to Done | Open | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1291](BG1291-the-benchmark-runner-refuses-a-claude-code-run.md) | The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever git errors | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1292](BG1292-sprint-lane-brief-run-in-a-builder-worktree.md) | `sprint lane brief` run in a builder worktree that is behind the root's branch prints the worktree's stale copy of the unit without a warning | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1293](BG1293-a-codex-lane-that-times-out-or-prints.md) | A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its spend reaches a Codex-metered run zero times | Open | Low | 2026-11-08 | 2026-11-08 |
 
 ## Archived Releases
 
