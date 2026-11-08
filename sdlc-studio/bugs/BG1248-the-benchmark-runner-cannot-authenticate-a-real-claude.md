@@ -1,6 +1,6 @@
 # BG1248: The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** tools/bench/runner.py, tools/tests/test_bench_headless.py, changelog.d/BG1248.md, changelog.d/US1128.md
@@ -26,10 +26,13 @@ Before the session, symlink only the operator's credential file into the private
 
 - **AC1:** Given an operator credential at `$CLAUDE_CONFIG_DIR/.credentials.json` (`~/.claude/.credentials.json` when unset) for Claude Code, or `$CODEX_HOME/auth.json` (`~/.codex/auth.json` when unset) for Codex, then `tools/bench/runner.py run` gives the session's private config directory a symlink to that one file and no other entry of the operator's directory, and gives Copilot no copy of its `config.json`. Fails on: a copy rather than a link, or the operator's whole directory linked.
   - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_only_the_operators_login_file_is_linked_into_the_private_directory
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given no credential file and none of the exports the harness authenticates from, then `runner.py run` refuses before any session starts, naming the export the harness needs, and writes no row. Fails on: a session started that cannot authenticate.
   - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_a_run_with_no_login_names_the_exports_it_needs
+  - **Verified:** yes (2026-11-08)
 - **AC3:** Given a `--dest` inside any git work tree (the repository's own, or a directory nested in it), then `runner.py run` refuses before any session starts, naming the enclosing top level; a `--dest` outside every work tree is accepted. Fails on: `--dest <repo>/tools/bench/ws-nested` accepted.
   - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_a_dest_inside_a_git_work_tree_is_refused
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 

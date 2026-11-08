@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 249 |
+| Open | 248 |
 | In Progress | 0 |
-| Fixed | 866 |
+| Fixed | 867 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -323,7 +323,7 @@
 | [BG1245](BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md) | US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1246](BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md) | US1127's Codex meter ignores `CODEX_HOME`, leaves its workspace boundary unpinned, and its AC3 test names a timeout mutant it cannot kill | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1247](BG1247-us1128-s-benchmark-runner-kills-only-the-cli.md) | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Open | High | 2026-11-06 | 2026-11-06 |
+| [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1249](BG1249-the-suite-s-root-conftest-py-isolates-neither.md) | The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores | Open | High | 2026-11-06 | 2026-11-06 |
 | [BG1250](BG1250-fourteen-tools-tests-modules-strip-every-git-variable.md) | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1251](BG1251-three-lane-frictions-each-cost-a-hand-fix.md) | Three lane frictions each cost a hand-fix: an in-flight warning per sibling lane on every brief, a hand-in fragment not linted before the commit, and a hand-in line that names its fields but not the values the record accepts | Open | Low | 2026-11-06 | 2026-11-06 |

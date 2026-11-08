@@ -20,16 +20,17 @@ In a temp-HOME fixture: the parse regex accepts 'faad4b9'. `release_cut.py --roo
 
 ## Proposed Fix
 
-In `cmd_push`, resolve the sha before connecting: commit=$(git rev-parse --verify "$commit^{commit}") || die. Send and record the full sha. Also consider having record-green itself store `git rev-parse` of its argument.
+In `cmd_push`, resolve the sha before connecting: resolve it with `git rev-parse --verify <sha>^{commit}` and refuse when that fails. Send and record the full sha. Also consider having record-green itself store `git rev-parse` of its argument.
 
 ## Acceptance Criteria
 
 - [ ] **AC1** The behaviour described is corrected: `remote-gate.sh push --commit <sha> --release` accepts an abbreviated sha (the regex allows 7 to 64 hex digits).
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a temp-HOME fixture: the parse regex accepts 'faad4b9'.
-- [ ] **AC3** The proposed fix lands, pinned by a test: In `cmd_push`, resolve the sha before connecting: commit=$(git rev-parse --verify "$commit^{commit}") || die.
+- [ ] **AC3** The proposed fix lands, pinned by a test: In `cmd_push`, resolve the sha before connecting: resolve it with `git rev-parse --verify <sha>^{commit}` and refuse when that fails.
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-08 | Claude Opus 5.5 | The proposed fix reworded without a command substitution, which the shell-hazard guard refuses in an artefact field |
