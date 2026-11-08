@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 247 |
+| Open | 251 |
 | In Progress | 0 |
 | Fixed | 872 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1293** |
+| **Total** | **1297** |
 
 ## All Bugs
 
@@ -369,6 +369,10 @@
 | [BG1291](BG1291-the-benchmark-runner-refuses-a-claude-code-run.md) | The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever git errors | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1292](BG1292-sprint-lane-brief-run-in-a-builder-worktree.md) | `sprint lane brief` run in a builder worktree that is behind the root's branch prints the worktree's stale copy of the unit without a warning | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1293](BG1293-a-codex-lane-that-times-out-or-prints.md) | A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its spend reaches a Codex-metered run zero times | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1294](BG1294-sprint-lane-accept-s-stale-self-check-refusal.md) | `sprint lane accept`'s stale-self-check refusal tells the operator to land the unit again, which `lane land` refuses after an out-of-band repair, and its refusal prints a doubled full stop | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1295](BG1295-no-test-pins-lane-accept-s-off-and.md) | No test pins `lane accept`'s `off` and unrecognised `review.author_self_check` branches, so asking for the self-check gap under `off`, or reading a mistyped mode as off, survives every lane accept test | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1296](BG1296-sprint-lane-land-names-a-unit-s-brief.md) | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.txt` and leaves the canonical brief in place | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1297](BG1297-the-6-3-0-release-notes-test-checks.md) | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes | Open | Low | 2026-11-08 | 2026-11-08 |
 
 ## Archived Releases
 

@@ -4,9 +4,9 @@
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
-> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, README.md, docs/INSTALL.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, docs/known-issues.md, docs/release-notes-v6.3.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v63.py
+> **Affects:** package.json, package-lock.json, .claude/skills/sdlc-studio/templates/version.yaml, .claude/skills/sdlc-studio/SKILL.md, README.md, docs/INSTALL.md, sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, CHANGELOG.md, changelog.d/, docs/known-issues.md, docs/release-notes-v6.3.0.md, tools/tests/test_lean_prd_refresh.py, tools/tests/test_lean_trd_refresh.py, tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_release_cut_v63.py, tools/tests/test_lean_release_notes_v63.py
 > **Epic:** EP0301
-> **Points:** 3
+> **Points:** 5
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -25,6 +25,8 @@
   - **Verify:** shell grep -qE '[]][(]docs/release-notes-v6[.]3[.]0[.]md[)]' README.md && python3 -m pytest -q tools/tests/test_lean_public_docs_retired.py tools/tests/test_lean_release_cut_v63.py
 - **AC4:** Given the PRD, TRD and TSD after the cut, then each names v6.3.0 as the release it covers (no Coverage line reads `v6.2.0 as cut`), and the refresh tests read that baseline from the release the documents name and package.json, so they pass at 6.3.0. Fails on: a refresh test that passes with the Coverage line removed.
   - **Verify:** shell python3 -m pytest -q tools/tests/test_lean_prd_refresh.py tools/tests/test_lean_trd_refresh.py tools/tests/test_lean_tsd_refresh.py
+- **AC5:** Given the 6.3.0 release text after the cut, then three sentences the reviews found claiming more than the code does are corrected (D0432). (a) The notes' light-APPROVE bullet says a light APPROVE stops counting only once `critic.tier_for` derives `full` for the unit's risk band, and then when the tier was forced with `--tier light` or the Affects grew (conformance.py, the light-APPROVE check). (b) The notes' `--force` sentence no longer says it rewrites every file `init` writes: it leaves `sdlc-studio/.version` alone and skips an `_index.md` that exists (init.py). (c) BG1290's CHANGELOG entry says that `critic.self_check_gap` sets aside a commit whose subject names only another unit, so a change to the unit's Affects committed under another unit's id is not read as stale. Fails on: any of the three sentences as worded before the cut.
+  - **Verify:** pytest tools/tests/test_lean_release_cut_v63.py::ReleaseCutTests::test_the_release_text_claims_no_more_than_the_code
 
 ## Notes
 
@@ -41,3 +43,4 @@
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Created via `new` (deterministic) |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for EP0301 under D0427: user story, criteria with Verify lines and notes, modelled on EP0295 |
+| 2026-11-08 | Claude Opus 5.5 (grooming) | AC5 added under D0432: three over-claiming release-text sentences from the US1136 and BG1290 reviews; Points 3 to 5; `test_lean_release_notes_v63.py` joins Affects |
