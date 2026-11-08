@@ -13,7 +13,7 @@ The 6.3.0 release paperwork under D0427: the release notes and the document upda
 
 - [x] [US1136: The v6.3 release notes lead with what changed for the person using it](../stories/US1136-the-v6-3-release-notes-lead-with-what.md)
 - [x] [US1137: The help, reference and public pages describe what 6.3 ships](../stories/US1137-the-help-reference-and-public-pages-describe-what.md)
-- [ ] [US1138: The PRD, TRD and TSD describe what 6.3 ships](../stories/US1138-the-prd-trd-and-tsd-describe-what-6.md)
+- [x] [US1138: The PRD, TRD and TSD describe what 6.3 ships](../stories/US1138-the-prd-trd-and-tsd-describe-what-6.md)
 - [ ] [US1139: v6.3.0 is cut: version, changelog, known issues, install pins and the specs' baseline](../stories/US1139-v6-3-0-is-cut-version-changelog-known.md)
 
 ## Revision History
