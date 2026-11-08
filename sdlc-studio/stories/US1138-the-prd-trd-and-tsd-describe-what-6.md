@@ -4,9 +4,9 @@
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
-> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_specs_v63.py, changelog.d/US1138.md
+> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, sdlc-studio/tsd.md, tools/tests/test_lean_specs_v63.py, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/US1138.md
 > **Epic:** EP0301
-> **Points:** 3
+> **Points:** 5
 > **Persona:** Rowan Achterberg
 
 ## User Story
@@ -30,6 +30,7 @@
 
 - Serves: Rowan Achterberg, the skill maintainer.
 - The gaps are the document leg's findings 1 to 8, in scratchpad rel63/legs/docs.json. Finding 8 overlaps BG1165 (open): fix what this story's criteria name, and leave the rest of BG1165 to its own unit. Finding 9 (the Version and Coverage lines) belongs to the cut.
+- Affects amended 2026-11-08, in flight (D0427): `test_lean_trd_refresh.py`'s network-path scan does not see `meter_cursor`'s `_OPENER.open(...)`, and `test_lean_v61_review_residue.py`'s writer scan does not see `run_state._save_memo`'s parameter path or `cursor_usage_hook`'s `os.open(..., O_APPEND)`; both refuse the rows AC1 and AC2 require, so each scanner learns the shape it misses, keeping its original mutants. Points 3 to 5 for the two scanners.
 - AC1's table check is the regression guard: build it from the shipped scripts' imports, so a future meter that opens a connection fails it until the TRD names it.
 
 ## Revision History
@@ -38,3 +39,4 @@
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Created via `new` (deterministic) |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for EP0301 under D0427: user story, criteria with Verify lines and notes, modelled on EP0295 |
+| 2026-11-08 | Claude Opus 5.5 (grooming) | Affects amended in flight: the two scanners that refuse the new TRD rows; Points 3 to 5 (see Notes) |

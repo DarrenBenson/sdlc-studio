@@ -1,6 +1,6 @@
 # BG1249: The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** conftest.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py, changelog.d/BG1249.md
@@ -26,10 +26,13 @@ In `pytest_configure`, point `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_ST
 
 - **AC1:** Given a pytest session under the root `conftest.py`, then `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` each name a directory under the session's private `TMPDIR`, and `CODEX_HOME`, `COPILOT_HOME`, `CLAUDE_CONFIG_DIR` and `OPENCODE_DB` are unset, in the main process and in an xdist worker. Fails on: a session that leaves `HOME` as the operator's.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_the_session_home_is_private
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given the store paths the token-meter selection's step 3 probes for Codex, Copilot and OpenCode, then each resolves inside the session's private directory and none under the operator's home, read from the passwd entry (`pwd.getpwuid(os.getuid()).pw_dir`) rather than `$HOME`. Fails on: a probe that resolves the operator's `~/.codex`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_a_step_three_probe_stays_private
+  - **Verified:** yes (2026-11-08)
 - **AC3:** Given a fixture repository that commits with no identity of its own, then the commit succeeds under the private home's test identity, and `pytest_unconfigure` restores `HOME` and every variable the session changed or unset to the value it had before. Fails on: a commit refused for want of an identity, or `HOME` left pointing at the private directory after the session.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_a_fixture_commit_has_an_identity .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_unconfigure_restores_what_it_changed
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 
