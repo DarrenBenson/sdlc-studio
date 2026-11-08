@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-11-06
+**Last Updated:** 2026-11-08
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 79 |
+| Draft | 83 |
 | Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1135** |
+| **Total** | **1139** |
 
 ## All Stories
 
@@ -173,6 +173,10 @@
 | [US1133](US1133-write-the-refs-and-mentions-trailers-the-commit.md) | Write the Refs and Mentions trailers the commit-msg hook now refuses for | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1134](US1134-print-one-line-on-success-from-the-hooks.md) | Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1135](US1135-price-the-non-claude-models-the-meters-read.md) | Price the non-Claude models the meters read, each from a dated provider source | Done | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1136](US1136-the-v6-3-release-notes-lead-with-what.md) | The v6.3 release notes lead with what changed for the person using it | Draft | EP0301 | 2026-11-08 | 2026-11-08 |
+| [US1137](US1137-the-help-reference-and-public-pages-describe-what.md) | The help, reference and public pages describe what 6.3 ships | Draft | EP0301 | 2026-11-08 | 2026-11-08 |
+| [US1138](US1138-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.3 ships | Draft | EP0301 | 2026-11-08 | 2026-11-08 |
+| [US1139](US1139-v6-3-0-is-cut-version-changelog-known.md) | v6.3.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Draft | EP0301 | 2026-11-08 | 2026-11-08 |
 
 ## Archived Releases
 

@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-06
+**Last Updated:** 2026-11-08
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 14 |
+| Draft | 15 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 253 |
 | Superseded | 33 |
-| **Total** | **300** |
+| **Total** | **301** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -51,6 +51,7 @@
 | [EP0298](EP0298-a-sprint-costs-about-a-million-priced-tokens.md) | A sprint costs about a million priced tokens per point | Done | 4 | -- | 2026-11-05 | 2026-11-05 |
 | [EP0299](EP0299-every-run-is-measured-the-same-way-in.md) | Every run is measured the same way in every supported harness, in tokens and in dollars | Done | 7 | -- | 2026-11-06 | 2026-11-06 |
 | [EP0300](EP0300-every-consuming-agent-starts-leaner-and-every-commit.md) | Every consuming agent starts leaner and every commit says less, and each harness's dollars are priced | Draft | 7 | -- | 2026-11-06 | 2026-11-06 |
+| [EP0301](EP0301-v6-3-0-ships-with-paperwork-that-matches.md) | v6.3.0 ships with paperwork that matches the code | Draft | 4 | -- | 2026-11-08 | 2026-11-08 |
 
 ## Archived Releases
 
