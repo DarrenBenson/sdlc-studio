@@ -32,9 +32,12 @@ whose self-check or brief was not written, 0 a landed lane with every unit brief
 `sprint lane accept` finishes the unit once its reviewer has answered that brief: it records the
 verdict file with `critic.py record` against the brief's fingerprint and tier, and on an APPROVE
 runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its lane with
-`sprint.py lane return`, each through its own entry point. Exit 2 is a refusal before anything
-was recorded, 1 a verdict recorded and the unit not moved (a REJECT, a red criterion or a
-refused transition) or a return that exited non-zero, 0 a unit moved and its lane returned.
+`sprint.py lane return`, each through its own entry point. Under `review.author_self_check:
+block` it refuses a unit with no current self-check (`critic.self_check_gap`, the check
+`critic.py brief` applies), as after a commit to its Affects that no `lane land` checked. Exit 2
+is a refusal before anything was recorded, 1 a verdict recorded and the unit not moved (a REJECT,
+a red criterion or a refused transition) or a return that exited non-zero, 0 a unit moved and its
+lane returned.
 
 `sprint lane run` runs one lane's brief headless in a supported CLI (`headless_command`), in the
 lane's worktree and under a timeout, and keeps one lane record per session under
@@ -311,7 +314,9 @@ def _script(root: Path, script: str, *args: str,
 def _brief_of(root: Path, unit: str) -> tuple[str, str]:
     """The fingerprint and tier of the QA brief `lane land` wrote for `unit`. The fingerprint is
     hashed from the saved text as `critic.py record --brief-file` hashes a first-round brief; the
-    tier is the one `critic.py brief` noted beside that fingerprint when it printed the brief."""
+    tier is the one `critic.py brief` noted beside that fingerprint when it printed the brief.
+    Under `review.author_self_check: block` a unit with no current self-check
+    (`critic.self_check_gap`) is refused; under `report` that is a warning; `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
@@ -328,6 +333,22 @@ def _brief_of(root: Path, unit: str) -> tuple[str, str]:
                             f"that landing writes the brief", 2) from None
         raise LandError(f"no QA brief at {rel}: `sprint lane land` writes it when it lands the "
                         f"unit, and the verdict is recorded against that brief", 2) from None
+    # a commit that reaches main with no `lane land` of the unit leaves the brief in place and
+    # its text unchanged, so the unit is asked whether a recorded self-check still covers its
+    # Affects: the check `critic.py brief` applies, refusing only under `block`
+    try:
+        mode = critic.author_self_check_mode(root)
+    except ValueError as exc:
+        raise LandError(str(exc), 2) from None
+    gap = critic.self_check_gap(root, unit) if mode != "off" else None
+    if gap and mode == "block":
+        raise LandError(f"{gap}, so no self-check covers the diff {rel} would be the brief of, "
+                        f"and nothing was recorded: land {unit} again with its self-check "
+                        f"handed in, and that landing writes the brief "
+                        f"(review.author_self_check: block)", 2)
+    if gap:
+        _say(f"WARNING {unit}: {gap}, so no self-check covers the diff {rel} is the brief of "
+             f"(review.author_self_check: {mode}; `block` refuses the verdict)", err=True)
     uid, tier = sdlc_md.norm_id(unit), None
     try:
         notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")

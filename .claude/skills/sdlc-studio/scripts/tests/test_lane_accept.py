@@ -353,6 +353,54 @@ class LaneAcceptTests(unittest.TestCase):
         self.assertEqual([row[1], row[5]], ["APPROVE", fresh])
         self.assertEqual(_status(self.root, GREEN), "Done")
 
+    def test_accept_refuses_when_the_affects_changed_since_the_self_check(self) -> None:
+        """BG1290's round-1 review, P1 and P1b: a commit reaches main with no `lane land` of the
+        unit, so its Affects change after the self-check the brief was written against, and the
+        brief's text, which repeats from round to round, cannot show it. Under `block` accept
+        refuses as `critic.py brief` would; under `report` it records with the same finding."""
+        config = _write(self.root, "sdlc-studio/.config.yaml",
+                        "review:\n  author_self_check: block\n")
+        gitutil.git(["add", "--", str(config)], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: the self-check gate blocks"], self.root)
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        first = self._landed_fp(landed)
+        # positive control: the landing's own self-check is current, so the verdict is recorded
+        rc, out, err = self._accept(GREEN, REJECT)
+        self.assertEqual(rc, 1, out + err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["REJECT", first])
+        out_of_band = {"P1: a repair committed on main after the REJECT": False,
+                       "P1b: a follow-up after a self-checked repair landing": True}
+        for n, (name, relanded) in enumerate(out_of_band.items(), start=3):
+            with self.subTest(name):
+                if relanded:
+                    landed = self._land_round(f"A = {n}\n", f"fix({GREEN}): a is {n}")
+                    self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+                    self._landed_fp(landed)
+                _write(self.root, "src/a.py", f"A = {n}0\n")
+                gitutil.git(["commit", "-q", "-m", f"fix({GREEN}): a is {n}0", "--", "src/a.py"],
+                            self.root)
+                rows, stale = self._rows(GREEN), critic.read_self_checks(self.root)[-1]
+                self.calls.clear()
+                rc, out, err = self._accept(GREEN, APPROVE)
+                self.assertEqual(rc, 2, out + err)
+                self.assertNotIn("APPROVE recorded", out)
+                self.assertEqual(self.calls, [], "lane accept ran a script on a stale self-check")
+                self.assertEqual(self._rows(GREEN), rows, "a verdict was recorded")
+                self.assertEqual(_status(self.root, GREEN), "Review")
+                # the refusal names the self-check that no longer matches the unit's Affects
+                self.assertIn(f"the self-check recorded for {GREEN} on {stale['date']} is "
+                              f"stale: its digest {stale['digest']} is of an earlier diff", err)
+                self.assertIn("review.author_self_check: block", err)
+        # under `report` the same unit is recorded and moved, the stale self-check named
+        _write(self.root, "sdlc-studio/.config.yaml", "review:\n  author_self_check: report\n")
+        rc, out, err = self._accept(GREEN, APPROVE)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(f"WARNING {GREEN}: the self-check recorded for {GREEN} on "
+                      f"{stale['date']} is stale", err)
+        self.assertEqual(self._rows(GREEN)[-1][1], "APPROVE")
+        self.assertEqual(_status(self.root, GREEN), "Done")
+
 
 if __name__ == "__main__":
     unittest.main()
