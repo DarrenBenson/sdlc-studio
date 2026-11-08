@@ -31,9 +31,13 @@ Have `lane land` remove `briefs/<unit>-qa.txt` before it lands, so only a brief 
 - **AC3:** Given a repair whose self-check is recorded and whose landing writes a fresh brief, then `lane accept` records the verdict against that fresh brief, as before. Fails on: a fix that refuses every round-2 accept.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_repair_with_its_own_brief_is_accepted
 
+- **AC4:** Given a unit whose brief was written by a landing, and whose declared Affects changed after that landing's self-check (a repair or follow-up commit reaching main with no `lane land` of the unit), when `sprint lane accept` is run, then it exits non-zero and records nothing, naming the self-check that no longer matches the unit's current Affects. This is the check `critic.py brief` applies under `review.author_self_check: block`. Fails on: `_brief_of` accepting any brief on disk (the reviewer's P1 and P1b reach Done at 147d249d).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_refuses_when_the_affects_changed_since_the_self_check
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Criteria with Verify lines; joins the 6.3.0 release-blocking set (D0429) |
+| 2026-11-08 | Claude Opus 5.5 (grooming) | AC4 added in flight after the round-1 REJECT: the Proposed Fix's second half, the self-check currency check, closes the bypass the headline claimed closed (D0430) |
