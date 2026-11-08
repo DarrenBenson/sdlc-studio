@@ -247,12 +247,24 @@ HEADLESS = {
 }
 #: Each harness's variable for its own configuration directory, which holds the personal skill
 #: directory it scans (`<dir>/skills`), as Copilot CLI's help, Codex CLI's bundled docs and
-#: tools/eval_run.py's worker setup name it. A run points
-#: it at a private empty directory, so a personal copy of the skill there, or wherever the
-#: operator's own value points, never reaches the session. OpenCode is absent: its
-#: OPENCODE_CONFIG_DIR adds a directory to the ones it reads rather than replacing its global one.
+#: tools/eval_run.py's worker setup name it. A run points it at a private directory that holds
+#: at most a link to the operator's login file (`LOGIN_FILE`), so a personal copy of the skill
+#: there, or wherever the operator's own value points, never reaches the session. OpenCode is
+#: absent: its OPENCODE_CONFIG_DIR adds a directory to the ones it reads rather than replacing
+#: its global one.
 CONFIG_DIR_VAR = {"claude": "CLAUDE_CONFIG_DIR", "codex": "CODEX_HOME",
                   "copilot": "COPILOT_HOME"}
+#: Where each configuration variable points when the operator leaves it unset, under HOME.
+CONFIG_DIR_DEFAULT = {"claude": ".claude", "codex": ".codex", "copilot": ".copilot"}
+#: The file in its configuration directory a CLI keeps its login in: Claude Code's
+#: `.credentials.json` and Codex CLI's `auth.json`. Only this file is linked into the private
+#: directory, never the directory itself, so the operator's skills stay out. Copilot CLI is
+#: absent: it authenticates through `gh` or a token, and its `config.json` names skill
+#: directories.
+LOGIN_FILE = {"claude": ".credentials.json", "codex": "auth.json"}
+#: The variables each of those CLIs authenticates from when it has no login file.
+LOGIN_EXPORTS = {"claude": ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY"),
+                 "codex": ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN")}
 #: Switches a CLI documents for turning its scans of other tools' personal skill directories off.
 SKILL_SCAN_OFF = {"opencode": {"OPENCODE_DISABLE_EXTERNAL_SKILLS": "1",
                                "OPENCODE_DISABLE_CLAUDE_CODE_SKILLS": "1"}}
@@ -274,10 +286,12 @@ def fixed_skill_dirs(harness: str, env: dict) -> list[Path]:
 
 def isolate_skills(harness: str, env: dict, private: Path | None) -> dict:
     """The CLI's environment with the operator's personal skill copies out of the session's
-    reach, so it loads only the skill `prepare` installed, and none for arm B. A harness whose
-    personal copy sits where no variable reaches is refused, naming the copy, because a row
-    from that session could not say which skill ran. `private` is the empty directory the
-    harness's configuration variable is pointed at; None checks the refusal alone."""
+    reach. A harness whose personal copy sits where no variable reaches is refused, naming the
+    copy, because a row from that session could not say which skill ran. A skill in a
+    directory above the workspace is a route this does not close; `run_headless` refuses a
+    dest inside a git work tree, which keeps a repository's skills out. `private` is the
+    private directory the harness's configuration variable is pointed at; None checks the
+    refusal alone."""
     for root in fixed_skill_dirs(harness, env):
         copy = root / SKILL_NAME
         if copy.exists():
@@ -289,6 +303,42 @@ def isolate_skills(harness: str, env: dict, private: Path | None) -> dict:
         env[CONFIG_DIR_VAR[harness]] = str(private)
     env.update(SKILL_SCAN_OFF.get(harness, {}))
     return env
+
+
+def operator_login(harness: str, env: dict) -> Path | None:
+    """The operator's login file for `harness`, read from their configuration variable or its
+    default under HOME, which `run_headless` links into the private directory. None when the
+    harness keeps no login file there, or when it has none but one of `LOGIN_EXPORTS` is
+    exported. A harness with neither is refused, naming the file and the exports, because the
+    session would fail to authenticate and write no row."""
+    name = LOGIN_FILE.get(harness)
+    if name is None:
+        return None
+    var = CONFIG_DIR_VAR[harness]
+    home = Path(env.get("HOME") or os.path.expanduser("~"))
+    root = Path(env[var]) if env.get(var) else home / CONFIG_DIR_DEFAULT[harness]
+    login = Path(os.path.abspath(root / name))
+    if login.is_file():
+        return login
+    exports = LOGIN_EXPORTS[harness]
+    if any(env.get(v) for v in exports):
+        return None
+    raise Refused(f"harness {harness!r}: no login at {login} and none of "
+                  f"{', '.join(exports)} is exported; log {harness} in, or export one of them, "
+                  f"to run it")
+
+
+def enclosing_work_tree(dest: Path) -> Path | None:
+    """The top of the git work tree `dest` sits in, or None: `git rev-parse --show-toplevel`
+    from `dest`, or from its nearest existing ancestor when `dest` is not made yet. The caller's
+    git variables are dropped first (`_clean_env`), so a GIT_CEILING_DIRECTORIES of theirs
+    cannot hide an enclosing tree from the check."""
+    probe = Path(os.path.abspath(dest))
+    while not probe.is_dir():
+        probe = probe.parent
+    proc = _git(probe, "rev-parse", "--show-toplevel")
+    top = proc.stdout.decode(errors="replace").strip()
+    return Path(top) if proc.returncode == 0 and top else None
 
 
 #: The normalised counts a row records, from `harness_usage.Usage`.
@@ -353,11 +403,15 @@ def run_headless(fixture: str, arm: str, harness: str, skill_ref: str, run_id: s
     record a row. The row's tokens are the usage the CLI printed, normalised by
     `harness_usage.parse`; `wall_time_s` is the CLI session's own duration, scoring excluded;
     `metrics_source` is `measured`. A CLI that exits non-zero, times out or prints no usage
-    writes no row: the run is refused with the normaliser's reason. The session gets the
-    operator's HOME but, where its harness has a variable for one, a private, empty
-    configuration directory, removed when it ends, so it loads no personal copy of the skill
-    (`isolate_skills`); that directory holds no credential, so the CLI authenticates from what
-    the operator's environment exports."""
+    writes no row: the run is refused with the normaliser's reason. A dest inside a git work
+    tree is refused before anything is written, because the session would reach that
+    repository and the skills on its ancestor chain. The session gets the operator's HOME but,
+    where its harness has a variable for one, a private configuration directory, removed when
+    it ends, so it loads no personal copy of the skill (`isolate_skills`). That directory holds
+    at most a symlink to the operator's login file (`operator_login`), a link rather than a copy
+    so a CLI that rewrites the file in place writes to the operator's own; without one the CLI
+    authenticates from what the operator's environment exports. GIT_CEILING_DIRECTORIES is set
+    to the workspace's parent, so the session's git finds no repository above it."""
     dest = Path(dest)
     targets = skill_targets()
     skill_dir_for(harness, targets)
@@ -366,16 +420,25 @@ def run_headless(fixture: str, arm: str, harness: str, skill_ref: str, run_id: s
                       f"(it runs {', '.join(sorted(HEADLESS))})")
     if dest.exists() and any(dest.iterdir()):
         raise Refused(f"--dest {dest} is not empty: a run starts from a fresh workspace")
+    top = enclosing_work_tree(dest)
+    if top is not None:
+        raise Refused(f"--dest {dest} is inside the git work tree at {top}: the session would "
+                      f"reach that repository and its skills; choose a dest outside any "
+                      f"repository")
     cmd = HEADLESS[harness](prompt, model)
     env = _clean_env("CLAUDECODE")  # a nested Claude Code session refuses to start under it
     exe = shutil.which(cmd[0], path=env.get("PATH"))
     if not exe:
         raise Refused(f"harness {harness!r}: {cmd[0]} is not on PATH")
     isolate_skills(harness, env, None)  # refuse before the workspace is written
+    login = operator_login(harness, env)
     sha = prepare_harness_workspace(fixture, arm, dest, harness, skill_ref, fixtures_dir,
                                     targets=targets)
     with tempfile.TemporaryDirectory(prefix=f"bench-{harness}-config-") as private:
         session_env = isolate_skills(harness, env, Path(private))
+        if login is not None:
+            (Path(private) / login.name).symlink_to(login)
+        session_env["GIT_CEILING_DIRECTORIES"] = str(Path(os.path.realpath(dest)).parent)
         start = time.monotonic()
         try:
             proc = subprocess.run([exe, *cmd[1:]], cwd=dest, capture_output=True, text=True,

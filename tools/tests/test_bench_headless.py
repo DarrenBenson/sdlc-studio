@@ -59,6 +59,11 @@ CODEX_OUT = "\n".join(json.dumps(e) for e in (
                                           "reasoning_output_tokens": 0}}))
 NO_USAGE_OUT = json.dumps({"type": "result", "result": "OK", "session_id": "s-none"})
 
+# The variables each CLI authenticates from instead of its login file (BG1248), written out
+# here rather than read from the runner's table, so a dropped name fails a test.
+EXPORTS = {"claude": ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY"),
+           "codex": ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN")}
+
 # The brownfield-pagination fix the held-back suite accepts.
 FIX = ("def paginate(items, page, page_size):\n"
        "    start = (page - 1) * page_size\n"
@@ -88,16 +93,29 @@ if not (on("OPENCODE_DISABLE_EXTERNAL_SKILLS") or on("OPENCODE_DISABLE_CLAUDE_CO
     opencode.append(claude_home)
 if not on("OPENCODE_DISABLE_EXTERNAL_SKILLS"):
     opencode.append(agents)
+name = pathlib.Path(sys.argv[0]).name
 roots = {{"claude": [under("CLAUDE_CONFIG_DIR", ".claude") / "skills"],
          "codex": [under("CODEX_HOME", ".codex") / "skills", agents],
          "copilot": [under("COPILOT_HOME", ".copilot") / "skills", agents],
-         "opencode": opencode}}.get(pathlib.Path(sys.argv[0]).name, [])
+         "opencode": opencode}}.get(name, [])
+# The login file each CLI reads from its configuration directory. Copilot's config.json names
+# skill directories, so it must stay out of reach as well.
+login = {{"claude": under("CLAUDE_CONFIG_DIR", ".claude") / ".credentials.json",
+         "codex": under("CODEX_HOME", ".codex") / "auth.json",
+         "copilot": under("COPILOT_HOME", ".copilot") / "config.json"}}.get(name)
 config = {{v: env.get(v) for v in ("CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME")}}
 with open(env["FAKE_CLI_LOG"], "a", encoding="utf-8") as fh:
     fh.write(json.dumps({{"argv": sys.argv, "cwd": os.getcwd(), "home": str(home),
                          "config": config,
                          "config_is_dir": {{k: bool(v) and os.path.isdir(v)
                                            for k, v in config.items()}},
+                         "config_files": {{k: sorted(os.listdir(v)) for k, v in config.items()
+                                          if v and os.path.isdir(v)}},
+                         "login": {{"text": login.read_text() if login and login.is_file()
+                                   else None,
+                                   "link": os.readlink(login) if login and login.is_symlink()
+                                   else None}},
+                         "ceiling": env.get("GIT_CEILING_DIRECTORIES"),
                          "personal": [str(r / "sdlc-studio") for r in roots
                                       if (r / "sdlc-studio" / "SKILL.md").is_file()]}}) + "\\n")
 fix = {fix!r}
@@ -148,13 +166,21 @@ class BenchHeadlessTests(unittest.TestCase):
                    mock.patch.dict(os.environ, {
                        "PATH": f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}",
                        "FAKE_CLI_LOG": str(self.log),
-                       # An empty HOME, so the operator's own skill copies cannot refuse a run.
+                       # A HOME of the test's own, so the operator's skill copies cannot refuse
+                       # a run and the operator's real login is never read.
                        "HOME": str(self.tmp / "home")}))
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
-        for var in ("CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME", "XDG_CONFIG_HOME"):
+        for var in ("CLAUDE_CONFIG_DIR", "CODEX_HOME", "COPILOT_HOME", "XDG_CONFIG_HOME",
+                    "GIT_CEILING_DIRECTORIES", *EXPORTS["claude"], *EXPORTS["codex"]):
             os.environ.pop(var, None)  # restored with the rest of os.environ by the patch
+        # Fake logins where each CLI looks by default, so a run has a file to authenticate from.
+        self.logins = {"claude": self.tmp / "home" / ".claude" / ".credentials.json",
+                       "codex": self.tmp / "home" / ".codex" / "auth.json"}
+        for harness, path in self.logins.items():
+            path.parent.mkdir(parents=True)
+            path.write_text(f'{{"fake": "{harness} default login"}}', encoding="utf-8")
 
     def _fake(self, name: str, out: str, code: int = 0, fix: str = "") -> None:
         path = self.bin / name
@@ -304,6 +330,8 @@ class BenchHeadlessTests(unittest.TestCase):
         for copy in copies.values():
             copy.mkdir(parents=True)
             (copy / "SKILL.md").write_text("personal skill\n", encoding="utf-8")
+        for harness, login in (("claude", ".credentials.json"), ("codex", "auth.json")):
+            (operator / harness / login).write_text("{}", encoding="utf-8")
         patch = mock.patch.dict(os.environ, {
             "HOME": str(home), "CLAUDE_CONFIG_DIR": str(operator / "claude"),
             "CODEX_HOME": str(operator / "codex"), "COPILOT_HOME": str(operator / "copilot")})
@@ -368,6 +396,105 @@ class BenchHeadlessTests(unittest.TestCase):
         self.assertEqual(runner.fixed_skill_dirs("opencode", {"HOME": "/h",
                                                               "XDG_CONFIG_HOME": "/x"})[0],
                          Path("/x/opencode/skills"))
+
+    # BG1248 AC2: the session authenticates from a link to the operator's login file, alone.
+    def test_only_the_operators_login_file_is_linked_into_the_private_directory(self) -> None:
+        operator = self.tmp / "operator"
+        logins = {"claude": operator / "claude" / ".credentials.json",
+                  "codex": operator / "codex" / "auth.json",
+                  "copilot": operator / "copilot" / "config.json"}
+        for harness, login in logins.items():
+            skill = login.parent / "skills" / "sdlc-studio"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("personal skill\n", encoding="utf-8")
+            (login.parent / "settings.json").write_text("{}", encoding="utf-8")
+            login.write_text(f'{{"fake": "{harness} operator login"}}', encoding="utf-8")
+        patch = mock.patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(operator / "claude"),
+                                             "CODEX_HOME": str(operator / "codex"),
+                                             "COPILOT_HOME": str(operator / "copilot")})
+        patch.start()
+        self.addCleanup(patch.stop)
+        outs = {"claude": CLAUDE_OUT, "codex": CODEX_OUT, "copilot": COPILOT_OUT}
+
+        def session(harness: str, run_id: str) -> dict:
+            self._fake(harness, outs[harness], fix=FIX)
+            calls = len(self._calls())
+            code, _, err = self._run(harness, run_id)
+            self.assertEqual(code, 0, f"{harness}: {err}")
+            (call,) = self._calls()[calls:]
+            self.assertEqual(call["personal"], [], harness)
+            return call
+
+        for harness in ("claude", "codex"):
+            login, var = logins[harness], runner.CONFIG_DIR_VAR[harness]
+            call = session(harness, "op")
+            # A link to the operator's own file, not a copy, and the only entry in the directory.
+            self.assertEqual(call["login"], {"text": f'{{"fake": "{harness} operator login"}}',
+                                             "link": str(login)}, harness)
+            self.assertEqual(call["config_files"][var], [login.name], harness)
+            # The run removed its link and left the operator's file as it was.
+            self.assertEqual(login.read_text(encoding="utf-8"),
+                             f'{{"fake": "{harness} operator login"}}', harness)
+        # Copilot's config.json names skill directories, so it is never carried in.
+        call = session("copilot", "op")
+        self.assertEqual(call["login"], {"text": None, "link": None})
+        self.assertEqual(call["config_files"]["COPILOT_HOME"], [])
+        # With the variable unset, the login is read from its default directory under HOME.
+        for var in ("CLAUDE_CONFIG_DIR", "CODEX_HOME"):
+            os.environ.pop(var)
+        for harness in ("claude", "codex"):
+            call = session(harness, "home")
+            self.assertEqual(call["login"]["link"], str(self.logins[harness]), harness)
+
+    # BG1248 AC2: with no login file and nothing exported, the refusal names what a run needs.
+    def test_a_run_with_no_login_names_the_exports_it_needs(self) -> None:
+        for harness, out in (("claude", CLAUDE_OUT), ("codex", CODEX_OUT)):
+            self._fake(harness, out, fix=FIX)
+            self.logins[harness].unlink()
+            calls = len(self._calls())
+            code, _, err = self._run(harness, "nologin")
+            self.assertEqual(code, 1, harness)
+            self.assertIn(str(self.logins[harness]), err, harness)
+            for var in EXPORTS[harness]:
+                self.assertIn(var, err, harness)
+            self.assertEqual(len(self._calls()), calls, harness)
+            self.assertFalse((self.tmp / f"ws-{harness}-nologin").exists(), harness)
+            # Positive control: any one export is enough, and no dangling link is made for it.
+            for var in EXPORTS[harness]:
+                with mock.patch.dict(os.environ, {var: "fake-token"}):
+                    code, _, err = self._run(harness, f"env-{var}")
+                self.assertEqual(code, 0, f"{harness} {var}: {err}")
+                self.assertEqual(
+                    self._calls()[-1]["config_files"][runner.CONFIG_DIR_VAR[harness]], [], var)
+        # Copilot and OpenCode carry no login file in, so neither is refused for one.
+        for harness, out in (("copilot", COPILOT_OUT), ("opencode", OPENCODE_OUT)):
+            self._fake(harness, out, fix=FIX)
+            code, _, err = self._run(harness, "nologin")
+            self.assertEqual(code, 0, f"{harness}: {err}")
+
+    # BG1248 AC1: a dest inside a git work tree is refused before anything is written.
+    def test_a_dest_inside_a_git_work_tree_is_refused(self) -> None:
+        self._fake("claude", CLAUDE_OUT, fix=FIX)
+        (self.repo / "empty").mkdir()
+        # A caller's ceiling that would hide the repository from git's discovery hides nothing.
+        os.environ["GIT_CEILING_DIRECTORIES"] = str(self.repo)
+        for dest in (self.repo / "tools" / "bench" / "ws-nested", self.repo / "empty"):
+            code, _, err = self._main("run", "--fixture", "brownfield-pagination", "--arm", "B",
+                                      "--harness", "claude", "--skill-ref", self.pinned,
+                                      "--run-id", "nested", "--dest", str(dest),
+                                      "--results", str(self.results))
+            self.assertEqual(code, 1, dest)
+            self.assertIn("git work tree", err, dest)
+            self.assertIn(os.path.realpath(self.repo), err, dest)
+        self.assertFalse((self.repo / "tools").exists())
+        self.assertEqual(list((self.repo / "empty").iterdir()), [])
+        self.assertEqual((self._calls(), self._rows()), ([], []))
+        # Positive control: a dest beside the repository runs, with git's discovery stopped at
+        # the workspace's parent in place of the caller's ceiling.
+        code, _, err = self._run("claude", "beside")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self._calls()[-1]["ceiling"],
+                         str((self.tmp / "ws-claude-beside").resolve().parent))
 
     # AC3
     def test_summary_by_fixture_arm_and_harness_with_dollars(self) -> None:
