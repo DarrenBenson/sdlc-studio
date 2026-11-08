@@ -19,6 +19,7 @@ Each is driven through what the user meets: `sprint.py goal-review record`, the 
 from __future__ import annotations
 
 import ast
+import fnmatch
 import functools
 import json
 import os
@@ -53,10 +54,49 @@ def _local_rows(text: str) -> list[tuple[str, str]]:
             continue
         for row in parts[i + 1].splitlines():
             cells = row.split("|")
-            first = re.fullmatch(r"\s*`([\w.-]+\.\w+)`\s*", cells[1]) if len(cells) > 3 else None
+            first = _BARE_CELL_RE.fullmatch(cells[1]) if len(cells) > 3 else None
             if first:
                 rows.append((first.group(1), cells[2]))
     return rows
+
+
+#: A `.local` row's first cell naming one bare file, which `_local_rows` reads.
+_BARE_CELL_RE = re.compile(r"\s*`([\w.-]+\.\w+)`\s*")
+#: US1138: a backticked path in a row's first cell, `lane/` or `briefs/<unit>-qa.txt`.
+_PATH_SPAN_RE = re.compile(r"`([^`\s]*/[^`\s]*)`")
+#: A table's separator line.
+_SEPARATOR_RE = re.compile(r"\|(?:\s*:?-+:?\s*\|)+\s*")
+
+
+def _local_cells(text: str) -> list[list[str]]:
+    """The cells of each body row of each table under a heading naming `.local`: every table line
+    but a header, the line above a separator, and the separator."""
+    parts = re.split(r"(?m)^(#+ .*)$", text)
+    out = []
+    for i in range(1, len(parts), 2):
+        if ".local" not in parts[i]:
+            continue
+        lines = parts[i + 1].splitlines()
+        for j, line in enumerate(lines):
+            if (line.startswith("|") and not _SEPARATOR_RE.fullmatch(line)
+                    and not (j + 1 < len(lines) and _SEPARATOR_RE.fullmatch(lines[j + 1]))
+                    and len(cells := line.split("|")) > 3):
+                out.append(cells)
+    return out
+
+
+def _local_path_rows(text: str) -> list[tuple[str, str]]:
+    """US1138: (path, writer cell) for each backticked path in the first cell of a `.local` row
+    `_local_rows` does not read: `lane/`, `briefs/<unit>-qa.txt`."""
+    return [(span, cells[2]) for cells in _local_cells(text)
+            if not _BARE_CELL_RE.fullmatch(cells[1]) for span in _PATH_SPAN_RE.findall(cells[1])]
+
+
+def _unread_rows(text: str) -> list[str]:
+    """The first cell of each `.local` row that neither `_local_rows` nor `_local_path_rows`
+    reads, so a row the pins skip fails rather than passing unread."""
+    return [cells[1].strip() for cells in _local_cells(text)
+            if not _BARE_CELL_RE.fullmatch(cells[1]) and not _PATH_SPAN_RE.search(cells[1])]
 
 
 # US1100: the pin reads whether a writer WRITES the file, not whether its source spells the name.
@@ -470,6 +510,188 @@ def _pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[
     return out
 
 
+# US1138: a `.local` row whose first cell is a path, `lane-runs/<unit>/<session>.json`,
+# `lane/landed/<worktree>/`, rather than one bare file name. The span is read segment by segment
+# under `LOCAL_DIR`, a `<placeholder>` standing for any text, and a span ending in `/` as a
+# directory written inside. A cited script writes the path when one of its writing calls
+# (`_written`) is given an expression whose segments (`_segments`) match the span and no deeper
+# span of the table (`_claims`), at module level or in a def shipped code refers to; it is read
+# in its own code, a caller beside it not followed. A cell saying the script `directs` the agent
+# that writes the path holds the script to a string it builds that tells the reader to.
+#: A writer cell saying the script it cites only directs the agent that writes the path.
+_DIRECTS_RE = re.compile(r"\bdirects?\b")
+#: A path segment the code does not spell.
+_WILD = "*"
+_PATH_CTORS = ("Path", "PurePath", "PurePosixPath")
+
+
+def _segments(e: ast.AST, env: dict[str, list[str]]) -> list[str] | None:
+    """The path segments `e` spells, each a glob: a literal as itself, `*` for each value an
+    f-string or a `.format` call fills in, `*` for a name `env` does not bind and for an attribute
+    (`wt.name`); None for an expression that is no string or path."""
+    if isinstance(e, ast.Constant):
+        return [s for s in e.value.split("/") if s] if isinstance(e.value, str) else None
+    if isinstance(e, ast.JoinedStr):
+        return [s for s in _rendered(e, env).split("/") if s]
+    if isinstance(e, ast.Name):
+        return env.get(e.id, [_WILD])
+    if isinstance(e, ast.Attribute):
+        return [_WILD]
+    if isinstance(e, ast.BinOp) and isinstance(e.op, ast.Div):
+        left, right = _segments(e.left, env), _segments(e.right, env)
+        return None if left is None or right is None else left + right
+    if isinstance(e, ast.Call) and isinstance(e.func, ast.Name) and e.func.id in _PATH_CTORS:
+        args = [_segments(a, env) for a in e.args]
+        return None if any(a is None for a in args) else [s for a in args for s in a]
+    if isinstance(e, ast.Call) and isinstance(e.func, ast.Attribute) and e.func.attr == "format":
+        base = _segments(e.func.value, env)
+        return None if base is None else [re.sub(r"\{[^{}]*\}", _WILD, s) for s in base]
+    return None
+
+
+def _rendered(e: ast.JoinedStr, env: dict[str, list[str]]) -> str:
+    """An f-string's text, each value it formats filled in as the literal path `env` binds it to,
+    or `*`."""
+    out = []
+    for v in e.values:
+        if isinstance(v, ast.Constant):
+            out.append(v.value)
+            continue
+        segs = _segments(v.value, env)
+        out.append("/".join(segs) if segs and _WILD not in "".join(segs) else _WILD)
+    return "".join(out)
+
+
+def _env(nodes: list[ast.AST], env: dict[str, list[str]],
+         before: tuple[int, int] | None = None) -> dict[str, list[str]]:
+    """`env` with each name an assignment among `nodes` ending before `before` binds, in source
+    order: to the segments its value spells, or unbound when it spells none."""
+    env = dict(env)
+    for n in sorted((n for n in nodes if isinstance(n, (ast.Assign, ast.AnnAssign))
+                     and n.value is not None), key=lambda n: (n.end_lineno, n.end_col_offset)):
+        if before is not None and (n.end_lineno, n.end_col_offset) > before:
+            break
+        pairs = [(t, n.value) for t in (n.targets if isinstance(n, ast.Assign) else [n.target])]
+        pairs += [p for t, v in pairs if isinstance(t, ast.Tuple) and isinstance(v, ast.Tuple)
+                  and len(t.elts) == len(v.elts) for p in zip(t.elts, v.elts)]
+        for t, v in pairs:
+            if isinstance(t, ast.Name):
+                segs = _segments(v, env)
+                if segs is None:
+                    env.pop(t.id, None)
+                else:
+                    env[t.id] = segs
+    return env
+
+
+def _opens_to_write(c: ast.Call, i: int) -> bool:
+    """Whether an `open` call's mode, its `mode=` or its argument `i`, writes."""
+    mode = next((k.value for k in c.keywords if k.arg == "mode"),
+                c.args[i] if len(c.args) > i else None)
+    return (isinstance(mode, ast.Constant) and isinstance(mode.value, str)
+            and bool(_WRITE_MODE_RE.search(mode.value)))
+
+
+def _written(c: ast.Call) -> list[ast.AST]:
+    """The expressions call `c` writes, the shapes `_Writes._is_write` reads: the receiver of a
+    `_PATH_WRITE_METHODS` call, a writing `open`'s file, a move or copy's target, or each argument
+    of a `_WRITE_WORDS` helper."""
+    f = c.func
+    if isinstance(f, ast.Name):
+        if f.id == "open":
+            return c.args[:1] if _opens_to_write(c, 1) else []
+        callee = f.id
+    elif isinstance(f, ast.Attribute):
+        os_call = isinstance(f.value, ast.Name) and f.value.id == "os"
+        if f.attr in _PATH_WRITE_METHODS or (f.attr == "open" and not os_call):
+            return [f.value] if f.attr != "open" or _opens_to_write(c, 0) else []
+        if f.attr == "open":
+            return c.args[:1] if len(c.args) > 1 and any(
+                (n.attr if isinstance(n, ast.Attribute) else getattr(n, "id", None))
+                in _OS_WRITE_FLAGS for n in ast.walk(c.args[1])) else []
+        if isinstance(f.value, ast.Name) and f.attr in _MOVE_CALLS.get(f.value.id, ()):
+            return c.args[1:2] if len(c.args) == 2 else []
+        if f.attr in _MOVE_METHODS:
+            return c.args[:1] if len(c.args) == 1 and not c.keywords else []
+        callee = f.attr
+    else:
+        return []
+    return [*c.args, *(k.value for k in c.keywords)] if _compound_write(callee) else []
+
+
+def _matches(span: str, segs: list[str]) -> bool:
+    """Whether `segs` hold `LOCAL_DIR` and then the span's segments: a literal the same, a lone
+    `<placeholder>` any segment, a mixed one (`<unit>-qa.txt`) the same glob or a literal it
+    fits; one more segment or deeper for a span ending in `/`, none for any other."""
+    want = [re.sub(r"<[^<>]*>", _WILD, s) for s in span.split("/") if s]
+    for i in (i for i, s in enumerate(segs) if s == LOCAL_DIR):
+        rest = segs[i + 1:]
+        if ((len(rest) > len(want)) if span.endswith("/") else (len(rest) == len(want))) and all(
+                w in (_WILD, r) or (_WILD not in r and fnmatch.fnmatchcase(r, w))
+                for w, r in zip(want, rest)):
+            return True
+    return False
+
+
+def _claims(span: str, segs: list[str], spans: list[str]) -> bool:
+    """Whether `segs` is `span`'s: it matches, and no span of `spans` with more segments does,
+    so a write into `lane/landed/<worktree>/` is not read as one into `lane/`."""
+    depth = len([s for s in span.split("/") if s])
+    return _matches(span, segs) and not any(
+        len([s for s in t.split("/") if s]) > depth and _matches(t, segs) for t in spans)
+
+
+def _path_writes(sources: dict[str, str], module: str, span: str,
+                 spans: list[str]) -> list[ast.Call]:
+    """The calls in `module` that write a path `_claims` gives `span`, each read with the names
+    assigned before it, at module level or in a def shipped code refers to."""
+    if span.split("/", 1)[0].split("<", 1)[0] not in sources[module]:
+        return []
+    scopes = _index(sources[module])[0]
+    menv, refs, out = _env(scopes[0][1], {}), _Writes(sources, span), []
+    for node, nodes, _used, _strings in scopes:
+        base = {} if isinstance(node, ast.Module) else menv
+        calls = [c for c in nodes if isinstance(c, ast.Call) and any(
+            (segs := _segments(p, _env(nodes, base, (c.lineno, c.col_offset)))) is not None
+            and _claims(span, segs, spans) for p in _written(c))]
+        if calls and (isinstance(node, ast.Module) or refs._referred_to(module, node)):
+            out += calls
+    return out
+
+
+def _printed_writes(source: str, prefix: str) -> bool:
+    """Whether a string the script builds, its f-string values filled in from the module's
+    names, is a line `_page_writes` reads as telling the reader to write `prefix`."""
+    scopes = _index(source)[0]
+    env = _env(scopes[0][1], {})
+    return any(_page_writes(_rendered(n, env) if isinstance(n, ast.JoinedStr) else n.value, prefix)
+               for n in ast.walk(scopes[0][0]) if isinstance(n, ast.JoinedStr)
+               or (isinstance(n, ast.Constant) and isinstance(n.value, str)))
+
+
+def _path_pin_failures(rows: list[tuple[str, str]], sources: dict[str, str]) -> list[str]:
+    """One line per path row whose writer cell names no shipped script or page, names one
+    `sources` lacks, or names one that does not write the path: a page with no line telling the
+    agent to write under it, a script the cell says `directs` the agent with no string telling
+    the reader to, any other script with no `_path_writes` call."""
+    spans, out = [s for s, _ in rows], []
+    for span, writer in rows:
+        cited, prefix = _cited(writer), f"{LOCAL_DIR}/{span.split('<', 1)[0]}"
+        if not cited:
+            out.append(f"{span}: the writer cell {writer.strip()!r} names no script or page")
+        for c in cited:
+            if c not in sources:
+                out.append(f"{span}: `{c}` is no shipped script or workflow page")
+            elif c.endswith(".md") and not _page_writes(sources[c], prefix):
+                out.append(f"{span}: `{c}` has no line telling the agent to write it")
+            elif c.endswith(".py") and _DIRECTS_RE.search(writer):
+                if not _printed_writes(sources[c], prefix):
+                    out.append(f"{span}: `{c}` prints nothing telling the agent to write it")
+            elif c.endswith(".py") and not _path_writes(sources, c, span, spans):
+                out.append(f"{span}: `{c}` does not write it where it runs")
+    return out
+
+
 def _blank(text: str, calls: list[ast.Call]) -> str:
     """`text` with the source of each outermost of `calls` replaced by `None`."""
     starts = [0]
@@ -606,9 +828,15 @@ class V61ReviewResidueTests(unittest.TestCase):
         cells (`project orchestration`, `review workflow`) name nothing that writes them; a
         writer cell naming a script or workflow page that does not write the file. US1100 made
         the check `_pin_failures`: each backticked writer must write the file, not merely name it."""
-        rows = _local_rows(TRD.read_text(encoding="utf-8"))
+        text = TRD.read_text(encoding="utf-8")
+        rows = _local_rows(text)
         self.assertGreaterEqual(len(rows), 10, "premise: the TRD's .local table moved")
         self.assertEqual([], _pin_failures(rows, _shipped_sources()))
+        # US1138: a row whose first cell is a path is read by `_path_pin_failures`, and no row
+        # is read by neither
+        self.assertGreaterEqual(len(_local_path_rows(text)), 4, "premise: the path rows moved")
+        self.assertEqual([], _path_pin_failures(_local_path_rows(text), _shipped_sources()))
+        self.assertEqual([], _unread_rows(text))
 
 
 #: The file the fixtures below write, read or only mention.
@@ -784,6 +1012,121 @@ class LocalWriterPinTests(unittest.TestCase):
                                       f"It never records `{PROBE}` either.\n"}
         self.assertEqual([f"{PROBE}: `reference-probe.md` has no line telling the agent to "
                           f"write it"], _pin_failures([(PROBE, "`reference-probe.md`")], page))
+
+
+#: US1138: a path row's fixture writer, `w.py`, as `lib/lanes.py` writes its records.
+_RUNS = ("from pathlib import Path\nRUNS = Path('sdlc-studio') / '.local' / 'probe-runs'\n"
+         "NOTE = '{unit}-qa.none'\n")
+
+
+class LocalPathRowPinTests(unittest.TestCase):
+    """US1138: a `.local` row naming a path, not one bare file, is held to its writer too."""
+
+    def test_each_path_row_is_held_to_the_code_that_writes_it(self) -> None:
+        """qa-seat-US1138-r1: `_local_rows` read a row only when its first cell was one bare file
+        name, so the four path rows US1138 added were never read, and their writer cells set to
+        `critic.py` stayed green. MUTANTS: `_unread_rows` reading nothing; `_path_pin_failures`
+        not run; `_matches` taking a `<placeholder>` for a literal, a literal for a placeholder,
+        or ignoring a span's suffix or trailing `/`; `_claims` not deferring to a deeper row;
+        `_path_writes` counting an uncalled def; `_DIRECTS_RE` dropped. The control: every path
+        row of the TRD passes. Then each is set to `critic.py`, and each code writer has the
+        writes the pin found blanked, alone, and the pin names it."""
+        text, sources = TRD.read_text(encoding="utf-8"), _shipped_sources()
+        rows = _local_path_rows(text)
+        spans = dict(rows)
+        for span in ("lane-runs/<unit>/<session>.json", "lane/", "lane/landed/<worktree>/",
+                     "briefs/<unit>-qa.txt", "briefs/<unit>-qa.none"):
+            self.assertIn(span, spans, "premise: the TRD documents the lane state")
+        self.assertEqual([], _path_pin_failures(rows, sources))
+        self.assertTrue(_unread_rows("## `.local` files\n\n| File | Writer | Purpose |\n"
+                                     "| --- | --- | --- |\n| lane runs | `lanes.py` | x |\n"),
+                        "a row naming no file in backticks is read by neither reader")
+        for span, writer in rows:
+            mutant = writer.replace("`sprint.py`", "`critic.py`").replace("`lib/lanes.py`",
+                                                                          "`critic.py`")
+            with self.subTest(span=span, writer="critic.py"):
+                self.assertNotEqual(writer, mutant, "premise: the row cites another script")
+                failures = _path_pin_failures([(span, mutant)], sources)
+                self.assertTrue(any("`critic.py`" in f for f in failures), failures)
+            if _DIRECTS_RE.search(writer):
+                continue
+            for cited in dict.fromkeys(_cited(writer)):
+                with self.subTest(span=span, stopped=cited):
+                    calls = _path_writes(sources, cited, span, list(spans))
+                    stopped = {**sources, cited: _blank(sources[cited], calls)}
+                    self.assertNotEqual(sources[cited], stopped[cited])
+                    failures = _path_pin_failures([(span, f"`{cited}`")], stopped)
+                    self.assertTrue(any(f"`{cited}`" in f for f in failures), failures)
+        # the hand-in the builder writes is not written by `sprint.py`'s code: a cell that does
+        # not say the script directs the agent holds it to a write
+        self.assertTrue(_path_pin_failures([("lane/", "`sprint.py`")], sources))
+
+    def test_a_path_matches_only_what_its_span_names(self) -> None:
+        """The fixture writer `w.py` writes, or does not write, under `.local/probe-runs/`; each
+        near miss names the directory and writes elsewhere, or writes there and does not run."""
+        live = "w.save(None, 'u', 's')\n"
+        for case, body, span, writes in (
+                ("the record", "def save(root, unit, s):\n"
+                 "    (root / RUNS / unit / f'{s}.json').write_text('x')\n",
+                 "probe-runs/<unit>/<session>.json", True),
+                ("another suffix", "def save(root, unit, s):\n"
+                 "    (root / RUNS / unit / f'{s}.out').write_text('x')\n",
+                 "probe-runs/<unit>/<session>.json", False),
+                ("one level short", "def save(root, unit, s):\n"
+                 "    (root / RUNS / f'{s}.json').write_text('x')\n",
+                 "probe-runs/<unit>/<session>.json", False),
+                ("an unknown where a literal stands", "def save(root, d, s):\n"
+                 "    (root / '.local' / d / f'{s}.json').write_text('x')\n",
+                 "probe-runs/<session>.json", False),
+                ("a literal fitting a placeholder", "def save(root, unit, s):\n"
+                 "    (root / RUNS / 'a-qa.txt').write_text('x')\n",
+                 "probe-runs/<unit>-qa.txt", True),
+                ("a format template", "def save(root, unit, s):\n"
+                 "    p = root / RUNS / NOTE.format(unit=unit)\n    sdlc_md.atomic_write(p, s)\n",
+                 "probe-runs/<unit>-qa.none", True),
+                ("a copy into the directory", "def save(root, unit, s):\n"
+                 "    keep = root / RUNS / s\n    shutil.copy2(unit, keep / 'x.json')\n",
+                 "probe-runs/", True),
+                ("the directory alone", "def save(root, unit, s):\n"
+                 "    (root / RUNS).mkdir(parents=True)\n", "probe-runs/", False),
+                ("a read", "def save(root, unit, s):\n"
+                 "    return (root / RUNS / unit / f'{s}.json').read_text()\n",
+                 "probe-runs/<unit>/<session>.json", False),
+                ("a name bound after the write", "def save(root, unit, s):\n"
+                 "    p = root / 'x.json'\n    p.write_text('x')\n    p = root / RUNS / 'a.json'\n",
+                 "probe-runs/<session>.json", False),
+                ("outside .local", "def save(root, unit, s):\n"
+                 "    (root / 'probe-runs' / f'{s}.json').write_text('x')\n",
+                 "probe-runs/<session>.json", False)):
+            for called in (True, False):
+                files = {"w.py": _RUNS + body, "c.py": "import w\n" + live * called}
+                with self.subTest(case=case, called=called):
+                    self.assertEqual(writes and called,
+                                     not _path_pin_failures([(span, "`w.py`")], files),
+                                     _path_pin_failures([(span, "`w.py`")], files))
+        # a write into a deeper row's directory is that row's, not its parent's
+        deeper = {"w.py": _RUNS + "def save(root, unit, s):\n"
+                              "    (root / RUNS / 'landed' / s / 'x.json').write_text('x')\n"
+                              "save(None, 'u', 's')\n"}
+        both = [("probe-runs/", "`w.py`"), ("probe-runs/landed/<worktree>/", "`w.py`")]
+        self.assertEqual(["probe-runs/: `w.py` does not write it where it runs"],
+                         _path_pin_failures(both, deeper))
+        self.assertEqual([], _path_pin_failures(both[1:], deeper))
+
+    def test_a_directing_script_is_held_to_its_printed_text(self) -> None:
+        """A cell saying the script `directs` the agent holds it to a string, its module-level
+        names filled in, that tells the reader to write under the path; a negated one does not."""
+        cell = "the builder, as the brief `w.py` prints directs"
+        for case, line, writes in (
+                ("an instruction", "f'stop: write {HAND}/{NOTE} with what is done'", True),
+                ("a negated one", "f'do not write {HAND}/{NOTE}'", False),
+                ("the path alone", "f'see {HAND}/{NOTE}'", False),
+                ("an unfilled name", "f'write {other}/{NOTE}'", False)):
+            src = (f"HAND = 'sdlc-studio/.local/probe'\nNOTE = 'HANDOFF.md'\n"
+                   f"def brief(other):\n    return {line}\n")
+            with self.subTest(case=case):
+                failures = _path_pin_failures([("probe/", cell)], {"w.py": src})
+                self.assertEqual(writes, not failures, failures)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,10 @@
 """US1138 (EP0301): the PRD, TRD and TSD describe what 6.3 ships.
 
 The network table is held to a scan of the shipped scripts' imports, so a reader that opens a
-connection fails here until the TRD names it. The state files, the cost model's harness switch
-and the price and lane features are read from the modules that define them. Typed here are the
-unit ids, since no code enumerates which units built a feature, and the phrases each row must say.
+connection fails here until the TRD names it. The six state paths, the cost model's harness
+switch and the meter's harness variable are read from the modules that define them. Typed here
+are the other features' locations, each checked to exist in the skill, the phrases each row must
+say, and the unit ids, since no code enumerates which units built a feature.
 
 Run from the repo root:
     python3 -m pytest tools/tests/test_lean_specs_v63.py

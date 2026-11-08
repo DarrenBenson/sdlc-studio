@@ -602,12 +602,15 @@ closing a record still running `blocked`; `sprint.py boundary --strict` adds ori
 | `lane-runs/<unit>/<session>.json` | `lib/lanes.py`, called by `sprint.py lane run` | One record per headless lane session: the session id, model, normalised usage, first-call context and the files staged, with the CLI's output beside it; `lane return` prices the lane from them. [HIGH] |
 | `lane/` | the builder, in its worktree, as the brief `sprint.py` prints for `lane brief` directs | The lane hand-in: the commit message and the self-check's claims and mutants files that `sprint.py lane land` commits and records from. [HIGH] |
 | `lane/landed/<worktree>/` | `lib/lanes.py`, called by `sprint.py lane land` | The hand-in files copied out of a worktree before it is removed. [HIGH] |
-| `briefs/<unit>-qa.txt` | `lib/lanes.py`, called by `sprint.py lane land` | Each landed unit's QA brief, which `sprint.py lane accept` records the verdict against. [HIGH] |
+| `briefs/<unit>-qa.txt`, `briefs/<unit>-qa.none` | `lib/lanes.py`, called by `sprint.py lane land` | Each landed unit's QA brief, which `sprint.py lane accept` records the verdict against. A unit the landing left with no brief has the `.none` note instead, naming that landing and why, and `lane accept` refuses it with that reason. [HIGH] |
 
 Each writer a row names writes its file under `.local/`, which `test_lean_v61_review_residue.py`
-checks by reading each script's code, where a write counts only at module level or in a function
-shipped code refers to, and each page's instructions, where a line saying it does not write the
-file is not read as writing it. The gate's own `.local/` files are listed under the gate tier (§3). A
+checks for every row by reading each script's code, where a write counts only at module level or
+in a function shipped code refers to, and each page's instructions, where a line saying it does
+not write the file is not read as writing it. A row naming a path is held to a write of that path
+in the cited script's own code, a `<placeholder>` standing for any name and a path ending in `/`
+for a file inside it that no deeper row names; the script a row says directs the agent is held to
+a string it prints telling the agent to write there. The gate's own `.local/` files are listed under the gate tier (§3). A
 `.local/telemetry.jsonl` or `.local/forecasts.jsonl` an older release wrote is read before the
 committed shards until `telemetry.py migrate` moves it into them.
 
@@ -794,8 +797,9 @@ the meter reads the store of the harness running the session (`lib/token_meters.
 Code, Codex CLI, Copilot CLI, OpenCode or Cursor, named by `SDLC_STUDIO_HARNESS`, else the
 one harness the environment signals, else the one store on disk), and each reading says
 with `includes_subagents` whether delegated agents' spend is in it. A reading that holds it
-is the whole figure and one that leaves it out is a lower bound, so tokens warn while
-minutes and units stop a run. See §12.
+is the whole figure and one that leaves it out is a lower bound, because that spend is then
+supplied by each agent's reported total, when one is, rather than observed in the store, so
+tokens warn while minutes and units stop a run. See §12.
 
 ---
 
@@ -1315,8 +1319,9 @@ touches the component. The constraints below span components.
   partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
 - A token budget that gates. The session total is read from the running harness's store,
-  and a reading that leaves delegated agents' spend out is a lower bound, so a number
-  could never be a breaker; tokens warn, minutes and units stop the run.
+  and a reading that leaves delegated agents' spend out is a lower bound, because that spend
+  is then supplied by each agent's reported total, when one is, rather than observed, so a
+  number could never be a breaker; tokens warn, minutes and units stop the run.
 - Auto-refitting of the estimator's fitted constants from the velocity history. Curve-
   fitting a handful of sprints fits noise and dresses it as evidence; a human reads the
   trend and decides. (This is distinct from what the shipped loop DOES do: once a project
