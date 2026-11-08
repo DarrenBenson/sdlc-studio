@@ -21,9 +21,10 @@ Pinned here:
 * BG1246: `CODEX_HOME` names the store when set, a sibling directory sharing the workspace's
   name as a prefix is not the workspace, a locked store is abandoned within `TIMEOUT_SECONDS` by
   the wall clock, and a read leaves the store's bytes unchanged;
-* BG1288: a reading holding a thread whose working directory is a lane's worktree says its
-  delegated spend is in it, so the report counts the lane once, and a reading of the workspace's
-  own threads alone says it is not;
+* BG1288: a thread whose working directory is under the lane worktrees (`lanes.RUN_WORKTREES`)
+  is left out of the reading, so a lane counts once, through its delegated record; an earlier
+  run's lane thread leaves a later run's delegated totals counted; a session in an ordinary
+  subdirectory is counted; and only a spawned thread says delegated spend is in the reading;
 * BG1280: a reading over threads on two models is named `run_state.SESSION_MODEL_MIXED` and
   carries each model's own components (`run_state.BY_MODEL`), the split summing to the reading.
 
@@ -215,47 +216,91 @@ class CodexMeterTests(unittest.TestCase):
         self.assertIsNotNone(stamp, "the fixture store gave no reading")
         return {**stamp, "at": at}
 
-    def test_a_lane_worktree_thread_is_counted_once(self) -> None:
-        """BG1288 AC1. The workspace's own thread grows 11,000 over the run and a `sprint lane
-        run --harness codex` lane's `codex exec` thread, in its worktree under the workspace,
-        spends 44,000, which the lane's delegated record also reports. Mutant: the reading's
-        `includes_subagents` left to the spawn edges alone, so the report adds the delegated
-        44,000 over a meter that already holds it, the observed 99,000."""
+    def run_actual(self, before: tuple, after: tuple, delegated: tuple) -> tuple[dict, tuple]:
+        """The run's meter total and its Tokens actual as `sprint_report` derives it, the store
+        holding the threads `before` at the open stamp and `after` at the close, and one
+        delegated record per (agent, tokens) in `delegated`."""
         import sprint_report  # noqa: PLC0415 - the report's own reader of the Tokens actual
 
-        lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane-us0001"
-        self.store((THREAD, self.root, usage(10_000, 1_000), 11_000))
+        self.store(*before)
         opened = self.stamped("open", "2026-11-08T10:00:00Z")
-        self.store((THREAD, self.root, usage(20_000, 2_000), 22_000),
-                   ("lane", lane, usage(40_000, 4_000), 44_000))
+        self.store(*after)
         closed = self.stamped("close", "2026-11-08T11:00:00Z")
         state = {run_state.TOKEN_STAMPS: [opened, closed],
-                 run_state.DELEGATED: [{"tokens": 44_000, "agent": "lane", "unit": "US0001",
-                                        "provenance": "harness-output"}]}
+                 run_state.DELEGATED: [{"tokens": t, "agent": a, "unit": "US0001",
+                                        "provenance": "harness-output"} for a, t in delegated]}
         total = run_state.run_token_total(state)
-        self.assertEqual(total["tokens"], 55_000, "premise: the meter's delta holds the lane")
-        self.assertEqual(sprint_report._run_tokens_actual(state, total), (55_000, 0))
+        return total, sprint_report._run_tokens_actual(state, total)
+
+    def test_a_lane_worktree_thread_is_counted_once(self) -> None:
+        """BG1288 AC1. The workspace's own thread grows 11,000 over the run and a `sprint lane
+        run --harness codex` lane's `codex exec` thread, in its worktree under the lane
+        worktrees, spends 44,000, which the lane's delegated record also reports. The lane is
+        counted once, through its record: the meter's delta is the workspace's 11,000 and says no
+        delegated spend is in it. Mutants: the worktree thread summed into the reading as well
+        (the observed 99,000), or summed and flagged as holding the delegated spend."""
+        lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane-us0001"
+        total, actual = self.run_actual(
+            ((THREAD, self.root, usage(10_000, 1_000), 11_000),),
+            ((THREAD, self.root, usage(20_000, 2_000), 22_000),
+             ("lane", lane, usage(40_000, 4_000), 44_000)),
+            (("lane", 44_000),))
+        self.assertEqual((total["tokens"], total["includes_subagents"]), (11_000, False),
+                         "the meter's delta leaves the lane's worktree thread out")
+        self.assertEqual(actual, (55_000, 1))
+
+    def test_an_earlier_run_s_lane_thread_leaves_the_delegated_totals_counted(self) -> None:
+        """BG1288. The store holds an earlier run's lane thread under the lane worktrees, and
+        this run's only delegated record is a 30,000-token lane on another harness, so the run
+        reads the workspace's 11,000 and the 30,000: 41,000. Mutant: a reading that holds a
+        lane-worktree thread from any time says delegated spend is in it, so the report drops
+        this run's 30,000 and reads 11,000."""
+        lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane-us0001"
+        old = ("old", lane, usage(40_000, 4_000), 44_000)
+        total, actual = self.run_actual(
+            ((THREAD, self.root, usage(10_000, 1_000), 11_000), old),
+            ((THREAD, self.root, usage(20_000, 2_000), 22_000), old),
+            (("claude-lane", 30_000),))
+        self.assertEqual(actual, (41_000, 1))
+        self.assertEqual((total["tokens"], total["includes_subagents"]), (11_000, False))
+
+    def test_a_subdirectory_session_is_counted_beside_a_delegated_record(self) -> None:
+        """BG1288. A Codex session started in an ordinary subdirectory of the workspace, here
+        `sdlc-studio/`, which holds the lane worktrees but is not one, spends 5,000 and is
+        counted, and the 30,000 of a lane on another harness is added to it: 11,000 + 5,000 +
+        30,000 is 46,000. Mutants: a thread off the workspace's own directory taken to hold
+        delegated spend (16,000), or a subdirectory thread dropped (41,000), whether every one or
+        only those under `sdlc-studio/`."""
+        total, actual = self.run_actual(
+            ((THREAD, self.root, usage(10_000, 1_000), 11_000),),
+            ((THREAD, self.root, usage(20_000, 2_000), 22_000),
+             ("sub", self.root / "sdlc-studio", usage(4_000, 1_000), 5_000)),
+            (("claude-lane", 30_000),))
+        self.assertEqual(actual, (46_000, 1))
+        self.assertEqual((total["tokens"], total["includes_subagents"]), (16_000, False))
 
     def test_a_root_only_reading_holds_no_subagent_spend(self) -> None:
         """BG1288 AC2. Threads whose working directory is the workspace itself, one of them
-        named through a link to it, no spawn edge, and a worktree thread that has spent nothing,
-        so adds nothing. Mutants: the flag set for every reading, set for a working directory
-        spelled otherwise than the workspace although it is the workspace, or set by a thread
-        that spent nothing. The control: a worktree thread that spends sets the flag."""
+        named through a link to it, and no spawn edge: the reading says no delegated spend is in
+        it. A lane-worktree thread that spends is left out and does not set the flag either.
+        Mutants: the flag set for every reading, set for a working directory spelled otherwise
+        than the workspace although it is the workspace, or set by a lane-worktree thread. The
+        control: a spawn edge naming a counted thread sets it."""
         link = self.root.parent / "link-to-repo"
         link.symlink_to(self.root, target_is_directory=True)
         lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane"
         self.store((THREAD, self.root, CAPTURED_USAGE, CAPTURED_TOKENS_USED),
-                   ("again", link, usage(1_000, 10), 1_010), ("idle", lane, None, 0))
+                   ("again", link, usage(1_000, 10), 1_010),
+                   ("lane", lane, usage(1_000, 10), 1_010))
         with self.env(SDLC_STUDIO_HARNESS="codex"):
             got = run_state.session_tokens(self.root)
-        self.assertEqual((got["threads"], got["tokens"]), (3, TOKENS + 1_010), got.get("reason"))
+        self.assertEqual((got["threads"], got["tokens"]), (2, TOKENS + 1_010), got.get("reason"))
         self.assertIs(got["includes_subagents"], False)
-        self.store(("idle", lane, usage(1_000, 10), 1_010))
+        self.store(edges=((THREAD, "again"),))
         with self.env(SDLC_STUDIO_HARNESS="codex"):
             got = run_state.session_tokens(self.root)
-        self.assertEqual(got["threads"], 3, got.get("reason"))
-        self.assertIs(got["includes_subagents"], True, "the control: a worktree thread sets it")
+        self.assertEqual(got["threads"], 2, got.get("reason"))
+        self.assertIs(got["includes_subagents"], True, "the control: a spawned thread sets it")
 
     def test_a_two_model_reading_is_split_per_model(self) -> None:
         """BG1280 AC1. Two threads on one model and a third, with a cache write, on another.

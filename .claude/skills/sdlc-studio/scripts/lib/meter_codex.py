@@ -23,15 +23,15 @@ none), so a dollar figure prices each model at its own rate; a reading over one 
 as it, and one over more than one as `run_state.SESSION_MODEL_MIXED`, never a name joined from
 the set.
 
-A reading sums every thread whose `cwd` is the workspace or a directory under it, a worktree
-under it included, and a spawned thread there is counted with the rest. A reading that counts a
-spawned thread, or a thread whose `cwd` is under the workspace but not the workspace itself (a
-lane's worktree, where `sprint lane run --harness codex` runs `codex exec`), says delegated
-spend is in it (`includes_subagents`), so the report never adds that lane's delegated total over
-it a second time; a thread that has spent nothing does not say so. A missing, locked or
-unreadable store, a store with no thread for the workspace, or a thread that has spent tokens
-whose rollout holds no usable count, is tokens None with the reason, never zero; a thread whose
-`tokens_used` is 0 and whose rollout holds no usable count has spent nothing, and adds nothing.
+A reading sums every thread whose `cwd` is the workspace or a directory under it, and a spawned
+thread there is counted with the rest, except a thread whose `cwd` is under the lane worktrees,
+`lanes.RUN_WORKTREES`, where `sprint lane run --harness codex` runs `codex exec`: it is left
+out, since a lane's spend reaches the run once, through its delegated record. A reading says
+delegated spend is in it (`includes_subagents`) only when it counts a thread a spawn edge names
+as a child. A missing, locked or unreadable store, a store with no thread for the workspace
+outside its lane worktrees, or a thread that has spent tokens whose rollout holds no usable
+count, is tokens None with the reason, never zero; a thread whose `tokens_used` is 0 and whose
+rollout holds no usable count has spent nothing, and adds nothing.
 The store is never written: every open is a `mode=ro` URI, though SQLite may create the store's
 `-wal` and `-shm` files beside it, as any reader of a WAL database may, and leave them. A store
 another process has locked is waited on for `TIMEOUT_SECONDS` at most. Reasons name an error by its type, never by its message.
@@ -96,20 +96,16 @@ def read(repo_root: Path, env: Mapping) -> dict:
         return none(f"the Codex state store {db} could not be read ({type(exc).__name__})")
     if not threads:
         return none(f"the Codex state store {db} holds no thread whose working directory is "
-                    f"{workspace} or under it")
+                    f"{workspace} or under it outside its lane worktrees")
     comps = {"input": 0, "output": 0, "cache_write_5m": 0, "cache_write_1h": 0, "cache_read": 0}
     split: dict[str, dict] = {}
     models = set()
-    delegated = False
-    for thread_id, cwd, rollout, used, model in threads:
+    for thread_id, rollout, used, model in threads:
         usage = _usage(rollout)
         if isinstance(usage, str):
             if not used:
                 continue
             return none(f"Codex thread {thread_id}'s rollout {rollout} {usage}")
-        # A thread off the workspace's own directory is taken to be a lane's, in its worktree:
-        # its spend is delegated spend, and it is already in this reading.
-        delegated = delegated or os.path.realpath(cwd) != workspace
         cached, write = usage["cached_input_tokens"], usage["cache_write_input_tokens"]
         part = {"input": max(usage["input_tokens"] - cached - write, 0),
                 "output": usage["output_tokens"], "cache_write_5m": write, "cache_write_1h": 0,
@@ -134,13 +130,14 @@ def read(repo_root: Path, env: Mapping) -> dict:
                       run_state.SESSION_MODEL_MIXED if models else None),
             run_state.BY_MODEL: split,
             "source": f"the Codex state store {db} and the rollouts it names", "basis": basis,
-            "includes_subagents": bool(spawned) or delegated}
+            "includes_subagents": bool(spawned)}
 
 
 def _threads(db: Path, repo_root: Path) -> tuple[list[tuple], set[str]]:
     """Each thread of the store `db` whose working directory is the workspace `repo_root` or under
-    it, as (id, cwd, rollout path, tokens_used, model), and which of them were spawned. The store is
-    opened read-only; RAISES what SQLite raises."""
+    it but not under its lane worktrees, as (id, rollout path, tokens_used, model), and which of
+    them were spawned. The store is opened read-only; RAISES what SQLite raises."""
+    from . import lanes  # noqa: PLC0415 - lazy: only a reading needs the lane worktrees
     con = sqlite3.connect(f"{db.absolute().as_uri()}?mode=ro", uri=True, timeout=TIMEOUT_SECONDS)
     try:
         rows = con.execute("SELECT id, cwd, rollout_path, tokens_used, model FROM threads "
@@ -149,8 +146,9 @@ def _threads(db: Path, repo_root: Path) -> tuple[list[tuple], set[str]]:
     finally:
         con.close()
     workspace = os.path.realpath(repo_root)
-    mine = [(tid, cwd, db.parent / path, used, model) for tid, cwd, path, used, model in rows
-            if isinstance(cwd, str) and _within(cwd, workspace)]
+    worktrees = os.path.realpath(Path(repo_root) / lanes.RUN_WORKTREES)
+    mine = [(tid, db.parent / path, used, model) for tid, cwd, path, used, model in rows
+            if isinstance(cwd, str) and _within(cwd, workspace) and not _within(cwd, worktrees)]
     return mine, children & {row[0] for row in mine}
 
 
