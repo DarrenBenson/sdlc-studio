@@ -20,7 +20,12 @@ Pinned here:
   open of the store is read-only (AC3);
 * BG1246: `CODEX_HOME` names the store when set, a sibling directory sharing the workspace's
   name as a prefix is not the workspace, a locked store is abandoned within `TIMEOUT_SECONDS` by
-  the wall clock, and a read leaves the store's bytes unchanged.
+  the wall clock, and a read leaves the store's bytes unchanged;
+* BG1288: a reading holding a thread whose working directory is a lane's worktree says its
+  delegated spend is in it, so the report counts the lane once, and a reading of the workspace's
+  own threads alone says it is not;
+* BG1280: a reading over threads on two models is named `run_state.SESSION_MODEL_MIXED` and
+  carries each model's own components (`run_state.BY_MODEL`), the split summing to the reading.
 
 Run from the repo root:
     python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py
@@ -79,6 +84,8 @@ THREAD = "01a1b08f-6aa6-7db1-93e7-b71b8ab17ef6"
 TOKENS, CACHED = 2236 + 5 + 0, 12288
 #: Slack over `TIMEOUT_SECONDS` for a read of a locked store; SQLite's default wait is 5 s.
 MARGIN = 1.5
+#: The model the captured session ran on, and a second model a thread may name.
+SOL, CODEX_53 = "gpt-6.1-sol", "gpt-5.3-codex"
 #: The page that documents each reader's store.
 REFERENCE = Path(__file__).resolve().parents[2] / "reference-sprint.md"
 
@@ -100,6 +107,12 @@ def token_count(usage: dict) -> dict:
                 "model_context_window": 475000}}}
 
 
+def usage(inp: int, out: int) -> dict:
+    """A `token_count` total of `inp` input, none of it cached, and `out` output."""
+    return {"input_tokens": inp, "cached_input_tokens": 0, "cache_write_input_tokens": 0,
+            "output_tokens": out, "reasoning_output_tokens": 0, "total_tokens": inp + out}
+
+
 class CodexMeterTests(unittest.TestCase):
     """A workspace, a fixture Codex home under a temporary HOME and a scrubbed environment."""
 
@@ -118,24 +131,28 @@ class CodexMeterTests(unittest.TestCase):
 
     def store(self, *threads: tuple, edges: tuple = (), codex: Path | None = None) -> None:
         """The state store in `codex`, by default `~/.codex`, WAL as Codex keeps it, with one
-        row per (id, cwd, usage or None, tokens_used) and its rollout holding a `session_meta`
-        line and, unless usage is None, the `token_count` event."""
+        row per (id, cwd, usage or None, tokens_used[, model]), the model `SOL` unless named,
+        and its rollout holding a `session_meta` line and, unless usage is None, the
+        `token_count` event."""
         codex = self.codex if codex is None else codex
         codex.mkdir(parents=True, exist_ok=True)
         con = sqlite3.connect(codex / meter_codex.STATE_DB)
         con.execute("PRAGMA journal_mode=WAL")
-        con.execute(THREADS_DDL)
-        con.execute(EDGES_DDL)
-        for n, (tid, cwd, usage, used) in enumerate(threads):
+        # A second call adds to the store, or replaces a thread's row, as a thread that has
+        # grown since the last reading is in Codex's own store.
+        for ddl in (THREADS_DDL, EDGES_DDL):
+            con.execute(ddl.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS", 1))
+        for n, (tid, cwd, usage, used, *named) in enumerate(threads):
             rollout = codex / "sessions" / f"rollout-{tid}.jsonl"
             rollout.parent.mkdir(exist_ok=True)
             lines = [{"type": "session_meta", "payload": {"id": tid, "cwd": str(cwd),
                                                           "cli_version": "0.160.0"}}]
             lines += [token_count(usage)] if usage is not None else []
             rollout.write_text("".join(json.dumps(x) + "\n" for x in lines), encoding="utf-8")
-            con.execute("INSERT INTO threads VALUES (?, ?, ?, ?, 'exec', 'openai', ?, 'OK', ?, "
-                        "'0.160.0', 'gpt-6.1-sol')",
-                        (tid, str(rollout), 1793963551 + n, 1793963554 + n, str(cwd), used))
+            con.execute("INSERT OR REPLACE INTO threads VALUES (?, ?, ?, ?, 'exec', 'openai', ?, "
+                        "'OK', ?, '0.160.0', ?)",
+                        (tid, str(rollout), 1793963551 + n, 1793963554 + n, str(cwd), used,
+                         named[0] if named else SOL))
         con.executemany("INSERT INTO thread_spawn_edges VALUES (?, ?, 'completed')", edges)
         con.commit()
         con.close()
@@ -190,6 +207,85 @@ class CodexMeterTests(unittest.TestCase):
         self.assertEqual(got["tokens"], 3736 + 45 + 500)
         self.assertEqual(got["threads"], 3)
         self.assertIs(got["includes_subagents"], True)
+
+    def stamped(self, kind: str, at: str) -> dict:
+        """One meter reading of the workspace as a run stamps it, at the time `at`."""
+        with self.env(SDLC_STUDIO_HARNESS="codex"):
+            stamp = run_state._stamp(self.root, kind)
+        self.assertIsNotNone(stamp, "the fixture store gave no reading")
+        return {**stamp, "at": at}
+
+    def test_a_lane_worktree_thread_is_counted_once(self) -> None:
+        """BG1288 AC1. The workspace's own thread grows 11,000 over the run and a `sprint lane
+        run --harness codex` lane's `codex exec` thread, in its worktree under the workspace,
+        spends 44,000, which the lane's delegated record also reports. Mutant: the reading's
+        `includes_subagents` left to the spawn edges alone, so the report adds the delegated
+        44,000 over a meter that already holds it, the observed 99,000."""
+        import sprint_report  # noqa: PLC0415 - the report's own reader of the Tokens actual
+
+        lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane-us0001"
+        self.store((THREAD, self.root, usage(10_000, 1_000), 11_000))
+        opened = self.stamped("open", "2026-11-08T10:00:00Z")
+        self.store((THREAD, self.root, usage(20_000, 2_000), 22_000),
+                   ("lane", lane, usage(40_000, 4_000), 44_000))
+        closed = self.stamped("close", "2026-11-08T11:00:00Z")
+        state = {run_state.TOKEN_STAMPS: [opened, closed],
+                 run_state.DELEGATED: [{"tokens": 44_000, "agent": "lane", "unit": "US0001",
+                                        "provenance": "harness-output"}]}
+        total = run_state.run_token_total(state)
+        self.assertEqual(total["tokens"], 55_000, "premise: the meter's delta holds the lane")
+        self.assertEqual(sprint_report._run_tokens_actual(state, total), (55_000, 0))
+
+    def test_a_root_only_reading_holds_no_subagent_spend(self) -> None:
+        """BG1288 AC2. Threads whose working directory is the workspace itself, one of them
+        named through a link to it, no spawn edge, and a worktree thread that has spent nothing,
+        so adds nothing. Mutants: the flag set for every reading, set for a working directory
+        spelled otherwise than the workspace although it is the workspace, or set by a thread
+        that spent nothing. The control: a worktree thread that spends sets the flag."""
+        link = self.root.parent / "link-to-repo"
+        link.symlink_to(self.root, target_is_directory=True)
+        lane = self.root / "sdlc-studio" / ".local" / "worktrees" / "lane"
+        self.store((THREAD, self.root, CAPTURED_USAGE, CAPTURED_TOKENS_USED),
+                   ("again", link, usage(1_000, 10), 1_010), ("idle", lane, None, 0))
+        with self.env(SDLC_STUDIO_HARNESS="codex"):
+            got = run_state.session_tokens(self.root)
+        self.assertEqual((got["threads"], got["tokens"]), (3, TOKENS + 1_010), got.get("reason"))
+        self.assertIs(got["includes_subagents"], False)
+        self.store(("idle", lane, usage(1_000, 10), 1_010))
+        with self.env(SDLC_STUDIO_HARNESS="codex"):
+            got = run_state.session_tokens(self.root)
+        self.assertEqual(got["threads"], 3, got.get("reason"))
+        self.assertIs(got["includes_subagents"], True, "the control: a worktree thread sets it")
+
+    def test_a_two_model_reading_is_split_per_model(self) -> None:
+        """BG1280 AC1. Two threads on one model and a third, with a cache write, on another.
+        Mutants: the model named `', '.join(sorted(models))`, no split carried, every thread
+        booked under the first model's name, or a thread's components booked under another
+        thread's model. The control: one model is named as itself, its split the whole."""
+        other = {"input_tokens": 3000, "cached_input_tokens": 1000,
+                 "cache_write_input_tokens": 500, "output_tokens": 40,
+                 "reasoning_output_tokens": 10, "total_tokens": 3040}
+        self.store((THREAD, self.root, CAPTURED_USAGE, CAPTURED_TOKENS_USED),
+                   ("second", self.root, usage(1_000, 10), 1_010, CODEX_53),
+                   ("third", self.root, other, 3040))
+        with self.env(SDLC_STUDIO_HARNESS="codex"):
+            got = run_state.session_tokens(self.root)
+            stamp = run_state._stamp(self.root, "open")
+        sol = {"input": 2236 + 1500, "output": 45, "cache_write_5m": 500, "cache_write_1h": 0,
+               "cache_read": 13288}
+        codex = {"input": 1000, "output": 10, "cache_write_5m": 0, "cache_write_1h": 0,
+                 "cache_read": 0}
+        self.assertEqual(got["model"], run_state.SESSION_MODEL_MIXED, got.get("reason"))
+        self.assertEqual(got[run_state.BY_MODEL], {SOL: sol, CODEX_53: codex})
+        self.assertEqual(got["components"], {c: sol[c] + codex[c]
+                                             for c in run_state.TOKEN_COMPONENTS})
+        self.assertEqual(stamp[run_state.BY_MODEL], {SOL: sol, CODEX_53: codex},
+                         "the stamp carries the reader's split, not one it synthesised")
+        self.store(("second", self.root, usage(1_000, 10), 1_010, SOL))
+        with self.env(SDLC_STUDIO_HARNESS="codex"):
+            got = run_state.session_tokens(self.root)
+        self.assertEqual(got["model"], SOL, "the control: one model names itself")
+        self.assertEqual(got[run_state.BY_MODEL], {SOL: got["components"]})
 
     def test_selected_by_the_codex_session_signal(self) -> None:
         """AC2. Mutants: a signal no captured session set (`CODEX_HOME`, say), `codex` left out

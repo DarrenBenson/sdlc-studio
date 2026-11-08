@@ -17,10 +17,18 @@ input and the cache write, never below zero, and the cached input is `cache_read
 captured session recorded one. `output_tokens` holds the reasoning tokens, since the pinned build
 writes `total_tokens` as `input_tokens` + `output_tokens`; a total that is not that sum is refused,
 since its parts could then overlap. A cache write is not split by duration, so each is booked at
-five minutes and priced from `run_state.TOKEN_WEIGHTS` as the figure is formed.
+five minutes and priced from `run_state.TOKEN_WEIGHTS` as the figure is formed. Each thread's
+components are also summed under its own `model` (`run_state.BY_MODEL`, "" for a thread naming
+none), so a dollar figure prices each model at its own rate; a reading over one model is named
+as it, and one over more than one as `run_state.SESSION_MODEL_MIXED`, never a name joined from
+the set.
 
 A reading sums every thread whose `cwd` is the workspace or a directory under it, a worktree
-under it included, and a spawned thread there is counted with the rest. A missing, locked or
+under it included, and a spawned thread there is counted with the rest. A reading that counts a
+spawned thread, or a thread whose `cwd` is under the workspace but not the workspace itself (a
+lane's worktree, where `sprint lane run --harness codex` runs `codex exec`), says delegated
+spend is in it (`includes_subagents`), so the report never adds that lane's delegated total over
+it a second time; a thread that has spent nothing does not say so. A missing, locked or
 unreadable store, a store with no thread for the workspace, or a thread that has spent tokens
 whose rollout holds no usable count, is tokens None with the reason, never zero; a thread whose
 `tokens_used` is 0 and whose rollout holds no usable count has spent nothing, and adds nothing.
@@ -90,18 +98,27 @@ def read(repo_root: Path, env: Mapping) -> dict:
         return none(f"the Codex state store {db} holds no thread whose working directory is "
                     f"{workspace} or under it")
     comps = {"input": 0, "output": 0, "cache_write_5m": 0, "cache_write_1h": 0, "cache_read": 0}
+    split: dict[str, dict] = {}
     models = set()
-    for thread_id, rollout, used, model in threads:
+    delegated = False
+    for thread_id, cwd, rollout, used, model in threads:
         usage = _usage(rollout)
         if isinstance(usage, str):
             if not used:
                 continue
             return none(f"Codex thread {thread_id}'s rollout {rollout} {usage}")
+        # A thread off the workspace's own directory is taken to be a lane's, in its worktree:
+        # its spend is delegated spend, and it is already in this reading.
+        delegated = delegated or os.path.realpath(cwd) != workspace
         cached, write = usage["cached_input_tokens"], usage["cache_write_input_tokens"]
-        comps["input"] += max(usage["input_tokens"] - cached - write, 0)
-        comps["output"] += usage["output_tokens"]
-        comps["cache_write_5m"] += write
-        comps["cache_read"] += cached
+        part = {"input": max(usage["input_tokens"] - cached - write, 0),
+                "output": usage["output_tokens"], "cache_write_5m": write, "cache_write_1h": 0,
+                "cache_read": cached}
+        # The thread's spend under its own model, so the split sums to the reading.
+        held = split.setdefault(model or "", dict.fromkeys(comps, 0))
+        for c, v in part.items():
+            comps[c] += v
+            held[c] += v
         if model:
             models.add(model)
     n = len(threads)
@@ -113,14 +130,16 @@ def read(repo_root: Path, env: Mapping) -> dict:
     return {"tokens": comps["input"] + comps["output"] + comps["cache_write_5m"],
             CACHE_READ: comps["cache_read"], "components": comps,
             "priced": run_state.price(comps), "threads": n,
-            "model": ", ".join(sorted(models)) or None,
+            "model": (next(iter(models)) if len(models) == 1 else
+                      run_state.SESSION_MODEL_MIXED if models else None),
+            run_state.BY_MODEL: split,
             "source": f"the Codex state store {db} and the rollouts it names", "basis": basis,
-            "includes_subagents": bool(spawned)}
+            "includes_subagents": bool(spawned) or delegated}
 
 
 def _threads(db: Path, repo_root: Path) -> tuple[list[tuple], set[str]]:
     """Each thread of the store `db` whose working directory is the workspace `repo_root` or under
-    it, as (id, rollout path, tokens_used, model), and which of them were spawned. The store is
+    it, as (id, cwd, rollout path, tokens_used, model), and which of them were spawned. The store is
     opened read-only; RAISES what SQLite raises."""
     con = sqlite3.connect(f"{db.absolute().as_uri()}?mode=ro", uri=True, timeout=TIMEOUT_SECONDS)
     try:
@@ -130,7 +149,7 @@ def _threads(db: Path, repo_root: Path) -> tuple[list[tuple], set[str]]:
     finally:
         con.close()
     workspace = os.path.realpath(repo_root)
-    mine = [(tid, db.parent / path, used, model) for tid, cwd, path, used, model in rows
+    mine = [(tid, cwd, db.parent / path, used, model) for tid, cwd, path, used, model in rows
             if isinstance(cwd, str) and _within(cwd, workspace)]
     return mine, children & {row[0] for row in mine}
 

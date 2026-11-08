@@ -1648,16 +1648,25 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
 
 def _split_delta(rows: list[dict], span: dict, by_model: dict) -> None:
     """Add one session's per-model delta to `by_model`: each model's component, last reading
-    less first, from the readings' `BY_MODEL` splits. A session whose readings do not all carry
-    a split books its whole `span` under the one model its readings name, else under
-    `SESSION_MODEL_MIXED`, which no price covers."""
+    less first, from the readings' `BY_MODEL` splits, a model a reading's split does not name
+    read as 0 there. A session whose readings do not all carry a split, or whose per-model
+    deltas do not sum to its `span` in every component, books its whole `span` under the one
+    model its readings name, else under `SESSION_MODEL_MIXED`, which no price covers. The second
+    catches a split `_split_fields` synthesised from a name that changed within the span:
+    read per name, it would book the opening reading's whole history as spend under the name
+    that left and the closing reading's whole total under the name that came."""
     if all(isinstance(r.get(BY_MODEL), dict) for r in rows):
+        delta = {}
         for m in sorted({m for r in rows for m in r[BY_MODEL]}):
-            got = by_model.setdefault(m, _zero())
-            for c in TOKEN_COMPONENTS:
-                vals = [int((r[BY_MODEL].get(m) or {}).get(c) or 0) for r in rows]
-                got[c] += max(0, max(vals) - min(vals))
-        return
+            vals = {c: [int((r[BY_MODEL].get(m) or {}).get(c) or 0) for r in rows]
+                    for c in TOKEN_COMPONENTS}
+            delta[m] = {c: max(0, max(v) - min(v)) for c, v in vals.items()}
+        if all(sum(d[c] for d in delta.values()) == span[c] for c in TOKEN_COMPONENTS):
+            for m, d in delta.items():
+                got = by_model.setdefault(m, _zero())
+                for c in TOKEN_COMPONENTS:
+                    got[c] += d[c]
+            return
     named = {r.get("model") for r in rows if r.get("model")}
     key = named.pop() if len(named) == 1 else SESSION_MODEL_MIXED
     got = by_model.setdefault(key, _zero())

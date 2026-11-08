@@ -1154,5 +1154,34 @@ class RunTokenStampTests(unittest.TestCase):
             "a Cursor reading is not re-derived from a Claude transcript")
 
 
+
+class SplitDeltaTests(unittest.TestCase):
+    """BG1280: a session's per-model delta is booked per model only when it sums to the span."""
+
+    @staticmethod
+    def row(model: str, split: dict) -> dict:
+        return {"model": model, run_state.BY_MODEL: {
+            m: {**dict.fromkeys(run_state.TOKEN_COMPONENTS, 0), "input": n}
+            for m, n in split.items()}}
+
+    def booked(self, rows: list[dict], span_input: int) -> dict:
+        span = {**dict.fromkeys(run_state.TOKEN_COMPONENTS, 0), "input": span_input}
+        out: dict = {}
+        run_state._split_delta(rows, span, out)
+        return {m: c["input"] for m, c in out.items()}
+
+    def test_a_split_that_covers_less_than_its_readings_is_booked_whole(self) -> None:
+        """Readings of 100 and then 200 input whose split names only 100 and then 150 of it.
+        Mutant: the guard read as `<=`, which books the split's 50 and loses the other 50 of the
+        span. The control: a split that covers its readings, a model new to the span among
+        them, is booked per model, the new model's absence from the first reading read as 0."""
+        self.assertEqual(self.booked([self.row("a", {"a": 100}), self.row("a", {"a": 150})], 100),
+                         {"a": 100})
+        self.assertEqual(self.booked([self.row("a", {"a": 100}),
+                                      self.row(run_state.SESSION_MODEL_MIXED,
+                                               {"a": 150, "b": 50})], 100),
+                         {"a": 50, "b": 50})
+
+
 if __name__ == "__main__":
     unittest.main()

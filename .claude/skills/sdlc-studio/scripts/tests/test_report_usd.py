@@ -7,6 +7,12 @@ meter reads, `sprint lane return --agent` for a unit's builder, and the page `bu
 derives. Prices come from a fixture table typed in this module, laid in place of the shipped
 one, and the expected dollars are formed here from those typed prices and the fixture's own
 usage records, never from the code under test.
+
+BG1280: a run whose Codex readings bring in a model new to the run prices only that model's own
+spend, read through the Codex reader from a fixture store under a temporary HOME and
+`CODEX_HOME` (never the real `~/.codex`); and a span over two readings whose splits were
+synthesised from one model name each, the names differing, is booked whole, never the opening
+reading's history as a delta.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint_report.py
 from __future__ import annotations
@@ -15,6 +21,8 @@ import contextlib
 import datetime as dt
 import io
 import json
+import os
+import sqlite3
 import subprocess
 import sys
 import unittest
@@ -24,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import test_meter_reads_true as meter  # noqa: E402 - US1091's harness store and workspace
 import gitutil  # noqa: E402 - confines the signed-page test's git calls (BG1255)
+import test_meter_codex as codex_store  # noqa: E402 - the captured Codex store's columns (BG1280)
 
 OPUS, HAIKU, UNPRICED = meter.MODEL, "claude-haiku-5-5", "model-nobody-prices"
 #: US dollars per million tokens, typed here: opus and haiku differ in every component, so a
@@ -527,6 +536,110 @@ class ReportUsdTests(meter._Case):
         got = self._unit(ws.page(), "US0102")["eu_usd"]
         self.assertEqual(self.sr.NOT_MEASURED, got["value"], got)
         self.assertIn("gpt-5.5-codex", got["reason"])
+
+    def _shipped_table(self):
+        """The shipped price table, laid in place of the typed one, and read."""
+        shipped = Path(self.prices.__file__).resolve().parents[2] / "templates" / \
+            "model-prices.json"
+        patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", shipped)
+        patch.start()
+        self.addCleanup(patch.stop)
+        table, error = self.rs.price_table(None)
+        self.assertIsNone(error)
+        return table
+
+    def test_a_model_new_to_the_run_books_only_its_own_spend(self) -> None:
+        """BG1280 AC2, through the Codex reader and the shipped table. Before the run the
+        workspace holds 1,010,000 tokens of history on gpt-5.3-codex; the run adds one thread
+        on gpt-6.1-sol of 51,000. MUTANTS: the reading named `', '.join(sorted(models))` with
+        no split, so the history is booked as a delta under gpt-5.3-codex (the observed $1.89);
+        no split carried; the new thread booked under the old thread's model; a split that
+        holds a model new to the span booked whole rather than per model."""
+        rs, tm = self.rs, meter._live("lib.token_meters")
+        home = self.tmp / "codex-home"
+        codex, repo = home / ".codex", self.tmp / "codex-repo"
+        codex.mkdir(parents=True)
+        repo.mkdir()
+
+        def thread(tid: str, model: str, inp: int, cached: int, out: int) -> None:
+            usage = {"input_tokens": inp, "cached_input_tokens": cached,
+                     "cache_write_input_tokens": 0, "output_tokens": out,
+                     "reasoning_output_tokens": 0, "total_tokens": inp + out}
+            rollout = codex / f"rollout-{tid}.jsonl"
+            rollout.write_text(json.dumps(codex_store.token_count(usage)) + "\n",
+                               encoding="utf-8")
+            with contextlib.closing(sqlite3.connect(codex / "state_5.sqlite")) as con, con:
+                for ddl in (codex_store.THREADS_DDL, codex_store.EDGES_DDL):
+                    con.execute(ddl.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS", 1))
+                con.execute("INSERT INTO threads VALUES (?, ?, 1, 1, 'exec', 'openai', ?, 'OK', "
+                            "?, '0.160.0', ?)", (tid, str(rollout), str(repo), inp + out, model))
+
+        with unittest.mock.patch.dict(os.environ):
+            for v in (*tm.selection_variables(), "CODEX_HOME"):
+                os.environ.pop(v, None)
+            os.environ.update({"HOME": str(home), "XDG_DATA_HOME": str(home),
+                               "CODEX_HOME": str(codex), "SDLC_STUDIO_HARNESS": "codex",
+                               rs.TRANSCRIPTS_ENV: str(self.tmp / "no-transcripts")})
+            thread("history", "gpt-5.3-codex", 1_000_000, 0, 10_000)
+            opened = rs._stamp(repo, "open")
+            thread("run", "gpt-6.1-sol", 60_000, 10_000, 1_000)
+            closed = rs._stamp(repo, "close")
+        self.assertEqual((opened["tokens"], closed["tokens"]), (1_010_000, 1_061_000))
+        total = rs.run_token_total({rs.TOKEN_STAMPS: [{**opened, "at": "2026-11-08T10:00:00Z"},
+                                                      {**closed, "at": "2026-11-08T11:00:00Z"}]})
+        sol = {"input": 50_000, "output": 1_000, "cache_write_5m": 0, "cache_write_1h": 0,
+               "cache_read": 10_000}
+        self.assertEqual(total["tokens"], 51_000, total.get("reason"))
+        self.assertEqual({m: c for m, c in total[rs.BY_MODEL].items() if any(c.values())},
+                         {"gpt-6.1-sol": sol}, "nothing is booked under gpt-5.3-codex")
+        table = self._shipped_table()
+        got = rs.usd(total[rs.BY_MODEL], table)
+        self.assertEqual(([m["model"] for m in got["models"]], got["unpriced"], got["covered"]),
+                         (["gpt-6.1-sol"], [], 1.0))
+        want = sum(sol[c] * OPENAI["gpt-6.1-sol"][c] for c in meter.COMPONENTS) / 1_000_000
+        rows = self.sr._usd_rows(total, [], "state.json",
+                                 {"table": table, "error": None, "today": dt.date.today()})
+        self.assertEqual(rows[0]["est_actual"]["value"], _money(want), rows[0])
+
+    def test_a_synthesised_split_whose_name_changes_is_not_booked_as_history(self) -> None:
+        """BG1280 AC3, for every harness. Two readings carrying no split, each naming one
+        model, the names differing: each stamp's split is synthesised from its one name.
+        MUTANT: a name absent from one reading read as 0, which books the opening reading's
+        1,010,000 tokens of history under its model and the closing reading's whole total under
+        the other, both priced in the typed table."""
+        rs = self.rs
+        history = {"input": 1_000_000, "output": 10_000, "cache_write_5m": 0,
+                   "cache_write_1h": 0, "cache_read": 0}
+        grown = {**history, "input": 1_050_000, "output": 11_000}
+        span = {c: grown[c] - history[c] for c in meter.COMPONENTS}
+
+        def reading(harness: str, model: str, comps: dict) -> dict:
+            cap = {"tokens": comps["input"] + comps["output"] + comps["cache_write_5m"]
+                   + comps["cache_write_1h"], "components": dict(comps),
+                   "priced": rs.price(comps), "model": model, rs.HARNESS: harness,
+                   "source": f"{harness}'s store", "basis": "typed in the test"}
+            return {**cap, rs.METER: rs.METER_BASIS} if harness == rs.CLAUDE else cap
+
+        table, error = rs.price_table(None)
+        self.assertIsNone(error)
+        for harness in meter._live("lib.token_meters").HARNESSES:
+            with self.subTest(harness=harness):
+                stamps = []
+                for kind, at, cap in (("open", "2026-11-08T10:00:00Z",
+                                       reading(harness, OPUS, history)),
+                                      ("close", "2026-11-08T11:00:00Z",
+                                       reading(harness, HAIKU, grown))):
+                    with unittest.mock.patch.object(rs, "session_tokens", return_value=cap):
+                        stamps.append({**rs._stamp(self.tmp, kind), "at": at})
+                self.assertEqual(stamps[0][rs.BY_MODEL], {OPUS: history},
+                                 "premise: the opening split is synthesised from its name")
+                total = rs.run_token_total({rs.TOKEN_STAMPS: stamps})
+                self.assertEqual(total["components"], span, total.get("reason"))
+                self.assertEqual(total[rs.BY_MODEL], {rs.SESSION_MODEL_MIXED: span})
+                got = rs.usd(total[rs.BY_MODEL], table)
+                self.assertIsNone(got["usd"], got)
+                self.assertEqual([u["model"] for u in got["unpriced"]],
+                                 [rs.SESSION_MODEL_MIXED])
 
     def _ask_premium(self, ws) -> None:
         """Stamp 3 premium requests on the run's first reading and 10 on every later one."""
