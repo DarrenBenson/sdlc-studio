@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** tools/bench/runner.py, tools/tests/test_bench_headless.py
+> **Affects:** tools/bench/runner.py, tools/tests/test_bench_headless.py, changelog.d/BG1248.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1128 review rounds 1 and 2, and the orchestrator's friction log (F11, F13)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,16 @@ Before the session, symlink only the operator's credential file into the private
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1128 review rounds 1 and 2 and the orchestrator's friction log (F11, F13).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Before the session, symlink only the operator's credential file into the private directory: `.credentials.json` for Claude Code and `auth.json` for Codex...
+- **AC1:** Given an operator credential at `$CLAUDE_CONFIG_DIR/.credentials.json` (`~/.claude/.credentials.json` when unset) for Claude Code, or `$CODEX_HOME/auth.json` (`~/.codex/auth.json` when unset) for Codex, then `tools/bench/runner.py run` gives the session's private config directory a symlink to that one file and no other entry of the operator's directory, and gives Copilot no copy of its `config.json`. Fails on: a copy rather than a link, or the operator's whole directory linked.
+  - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_only_the_credential_file_is_linked_in
+- **AC2:** Given no credential file and none of the exports the harness authenticates from, then `runner.py run` refuses before any session starts, naming the export the harness needs, and writes no row. Fails on: a session started that cannot authenticate.
+  - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_a_run_with_no_credential_is_refused_naming_the_export
+- **AC3:** Given a `--dest` inside any git work tree (the repository's own, or a directory nested in it), then `runner.py run` refuses before any session starts, naming the enclosing top level; a `--dest` outside every work tree is accepted. Fails on: `--dest <repo>/tools/bench/ws-nested` accepted.
+  - **Verify:** pytest tools/tests/test_bench_headless.py::BenchHeadlessTests::test_a_dest_inside_a_git_work_tree_is_refused
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for the 6.3.0 release bar (D0427): criteria with Verify lines; the changelog fragment joins Affects |

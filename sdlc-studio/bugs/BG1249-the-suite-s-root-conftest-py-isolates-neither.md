@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** conftest.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py
+> **Affects:** conftest.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py, changelog.d/BG1249.md
 > **Evidence:** run seven (RUN-01M6RAP7) US0988 review rounds 1 and 2, and the orchestrator's friction log (F10)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,16 @@ In `pytest_configure`, point `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_ST
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US0988 review rounds 1 and 2 (tagged pre-existing) and the orchestrator's friction log (F10).
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `pytest_configure`, point `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` at directories under the session's private...
+- **AC1:** Given a pytest session under the root `conftest.py`, then `HOME`, `XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` each name a directory under the session's private `TMPDIR`, and `CODEX_HOME`, `COPILOT_HOME`, `CLAUDE_CONFIG_DIR` and `OPENCODE_DB` are unset, in the main process and in an xdist worker. Fails on: a session that leaves `HOME` as the operator's.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_the_session_home_is_private
+- **AC2:** Given the store paths the token-meter selection's step 3 probes for Codex, Copilot and OpenCode, then each resolves inside the session's private directory and none under the operator's home, read from the passwd entry (`pwd.getpwuid(os.getuid()).pw_dir`) rather than `$HOME`. Fails on: a probe that resolves the operator's `~/.codex`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_a_step_three_probe_stays_private
+- **AC3:** Given a fixture repository that commits with no identity of its own, then the commit succeeds under the private home's test identity, and `pytest_unconfigure` restores `HOME` and every variable the session changed or unset to the value it had before. Fails on: a commit refused for want of an identity, or `HOME` left pointing at the private directory after the session.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_a_fixture_commit_has_an_identity .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py::PrivateHomeTests::test_unconfigure_restores_what_it_changed
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for the 6.3.0 release bar (D0427): criteria with Verify lines; the changelog fragment joins Affects |
