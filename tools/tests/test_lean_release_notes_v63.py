@@ -5,9 +5,9 @@ returning its problems, run on the notes and on a control it must refuse: the 6.
 the version changed, a draft composed from the changelog fragments, a theme with its units cut, a
 changed default with its replacement cut, a breaking change no fragment records, a figure with
 its source cut or its value changed. The figures `figure_sources` pins are read from their
-sources when the test runs, never typed here. The release-strategy, lane-brief, stale-selector
-and Cursor-base bullets are then run on the 6.3.0 skill, and the upgrade path by
-running the notes' own steps on a project v6.2.0's `init.py` created.
+sources when the test runs, never typed here. The release-strategy, lane-brief, stale-selector,
+Cursor-base, commit-msg-hook and agent-definition bullets are then run on the 6.3.0 skill, and
+the upgrade path by running the notes' own steps on a project v6.2.0's `init.py` created.
 
 The 6.3.0 skill is the v6.3.0 tag's tree once the tag exists, and before then this tree with its
 version read as 6.3.0, so the checks judge 6.3.0's own CLI before the cut and after it. The
@@ -43,6 +43,7 @@ NOTES_62 = REPO / "docs" / "release-notes-v6.2.0.md"
 CHANGELOG = REPO / "CHANGELOG.md"
 FRAGMENTS = REPO / "changelog.d"
 REPORTS = REPO / "sdlc-studio" / "reports"
+BUGS = REPO / "sdlc-studio" / "bugs"
 
 #: Each theme of the first section -> the units its bullet names, and no others.
 THEMES = {
@@ -74,7 +75,8 @@ CHANGES = {
                   r"`sprint\.py lane land --worktree <path> --units <id>`"),
     "the tool-call budget": (r"tool-call budget", (r"`HANDOFF\.md`",), r"below \d+k tokens"),
     "the agent definitions": (r"`init` drafts the `sdlc-builder` and `sdlc-reviewer`",
-                              (r"`\.claude/agents/`", r"only if absent"), r"`init\.py run` again"),
+                              (r"`\.claude/agents/`", r"only if absent"),
+                              r"delete it and run `init\.py run` again, which changes no other file"),
     "the stale selector": (r"`gate\.py --run-tests` refuses", (r"exits 2 before any test runs",),
                            r"correct or remove the selector"),
     "the meter selection": (r"no longer guesses between harnesses",
@@ -85,8 +87,12 @@ CHANGES = {
                                       r"cleartext"), r"an https base"),
     "the verify workers": (r"runs criteria side by side", (r"`SDLC_VERIFY_WORKERS`",),
                            r"`SDLC_VERIFY_WORKERS=1`"),
-    "the Refs refusal": (r"refuses a `Refs:` line", (r"two or more ids",), r"`Mentions: <id>`"),
-    "the verifier process group": (r"whole process group", (r"SIGTERM, SIGINT and SIGHUP",),
+    "the Refs refusal": (r"given `--write-trailers` refuses a `Refs:` line",
+                         (r"two or more ids", r"runs `--strict` alone, so it meets no new refusal",
+                          r"under `--strict` refuses a `Refs:` line"), r"`Mentions: <id>`"),
+    "the verifier process group": (r"whole process group",
+                                   (r"SIGTERM, SIGINT and SIGHUP", r"listed under Known issues",
+                                    r"no longer reaches a running verifier"),
                                    r"background children"),
     "the light APPROVE": (r"light APPROVE stops counting", (r"`--tier light`",), r"full tier"),
     "the report cost rows": (r"new cost rows", (r"re-derives unchanged",), r"`pricing\.models`"),
@@ -95,6 +101,8 @@ CHANGES = {
                               r"working habits there"),
     "the push-boundary lesson": (r"shipped lesson runs the full suite", (), r"before each push"),
 }
+#: What a bullet naming `--force` must say beside it: the flag rewrites more than one file.
+FORCE_SAYS = re.compile(r"rewrites every file `init` writes, (.+?) among them")
 #: Each pinned figure -> what reads it from the notes, whitespace folded: the first section's,
 #: then the changed-behaviour section's.
 LEAD_FIGURES = {
@@ -106,6 +114,21 @@ CHANGED_FIGURES = {
     "the lane budget": r"a budget of (\d+) calls plus (\d+) per point",
     "the resume ceiling": r"context is below (\d+k) tokens",
 }
+#: Round 1's wording of the three passages its REJECT and BG1190's status refuted.
+ROUND1_REFS = (
+    "- **`engagement_floor.py check-commit-msg` refuses a `Refs:` line no staged file supports.**\n"
+    "  On a subject naming two or more ids, a `Refs:` line naming a unit that owns none of the "
+    "staged\n  files is refused.\n  Instead: write `Mentions: <id>` for an id the commit only "
+    "mentions, and pass\n  `--write-trailers` in your commit-msg hook to have the trailers written "
+    "for you.\n")
+ROUND1_AGENTS = ("  Instead: in an existing project, run `init.py run` again to add them; an edited "
+                 "definition is\n  left alone unless you pass `--force`, and a harness with no agent "
+                 "config falls back to\n  `general-purpose`.\n")
+ROUND1_VERIFIER = (
+    "- **A verifier that outruns its timeout loses its whole process group.** Its children are\n"
+    "  killed with it, and importing `verify_ac` on the main thread installs SIGTERM, SIGINT and\n"
+    "  SIGHUP handlers that kill every running verifier's group.\n"
+    "  Instead: do not rely on a verifier's background children outliving it.\n")
 _FIX: dict[str, Path | str] = {}
 #: A `migrate.py` and `init.py` that report what the notes quote but write files of their own,
 #: the control `step_problems` must refuse on every step.
@@ -298,6 +321,9 @@ def changed_problems(text: str, entries: list[tuple[str, str]],
             problems.append(f"a change named with no replacement: {b[:90]!r}")
         elif len(re.findall(r"\w[\w-]*", b.partition("Instead:")[2])) < 3:
             problems.append(f"a change whose `Instead:` says nothing: {b[:90]!r}")
+        if "`--force`" in b and not FORCE_SAYS.search(b):
+            problems.append(f"a bullet names `--force` and not that it rewrites every file "
+                            f"`init` writes: {b[:90]!r}")
         named = [label for label, (names, _s, _i) in CHANGES.items() if re.search(names, b)]
         if not named:
             problems.append(f"a bullet no listed change names: {b[:90]!r}")
@@ -317,6 +343,31 @@ def changed_problems(text: str, entries: list[tuple[str, str]],
             problems.append(f"{label} is named with no replacement beside it")
     return (problems + pin_problems(body, CHANGED_FIGURES, figures)
             + breaking_problems(text, entries))
+
+
+def bug_status(bug: str, bugs: Path = BUGS) -> str:
+    """The `Status` the bug corpus records for `bug`, or '' where it holds no page for it."""
+    page = next(iter(sorted(bugs.glob(f"{bug}-*.md"))), None)
+    found = page and re.search(r"^> \*\*Status:\*\* (\w+)", page.read_text(encoding="utf-8"), re.M)
+    return found.group(1) if found else ""
+
+
+def open_problems(text: str, status: str | None = None) -> list[str]:
+    """BG1190's fix landed while its review found a regression, so the bug stays Open: the notes
+    say it stays open under Known issues while the corpus does, and list it behind no theme."""
+    if status is None:
+        status = bug_status("BG1190")
+    known = " ".join((section(text, r"^Known issues$") or "").split())
+    says = re.search(r"BG1190 stays open", known)
+    problems = []
+    if status == "Open" and not says:
+        problems.append("BG1190 is Open and the Known issues section does not say it stays open")
+    if status != "Open" and says:
+        problems.append(f"the notes say BG1190 stays open, and the corpus records it {status}")
+    if status == "Open" and re.search(r"^\| The gates and commit checks[^\n]*\bBG1190\b", text,
+                                      re.M):
+        problems.append("BG1190 is Open and the Sources table lists it behind a theme")
+    return problems
 
 
 def _steps(text: str) -> list[tuple[str, list[str]]]:
@@ -467,6 +518,12 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertEqual(1, self.text.count(old), f"mutant anchor not unique: {old[:60]!r}")
         return self.text.replace(old, new)
 
+    def swap(self, start: str, stop: str, new: str) -> str:
+        """The notes with the passage from `start` up to `stop` replaced by `new`."""
+        self.assertEqual(1, self.text.count(start), f"anchor not unique: {start[:60]!r}")
+        i = self.text.index(start)
+        return self.text[:i] + new + self.text[self.text.index(stop, i):]
+
     def assertFlags(self, problems: list[str], expected: str) -> None:
         self.assertTrue([p for p in problems if expected in p],
                         f"no problem naming {expected!r}: {problems}")
@@ -596,6 +653,27 @@ class ReleaseNotesTests(unittest.TestCase):
             "do not state")
         self.assertFlags(changed_problems(self.text, entries + [("Breaking", "- **x.** y\n")],
                                           figs), "but 1 are")
+        refs = ("- **A commit-msg hook given", "- **A verifier that outruns")
+        self.assertFlags(changed_problems(self.swap(*refs, ROUND1_REFS), entries, figs),
+                         "a bullet no listed change names")
+        self.assertFlags(changed_problems(self.swap(*refs, ROUND1_REFS), entries, figs),
+                         "never names the Refs refusal")
+        agents = ("  Instead: in an existing project, run `init.py run`", "- **`gate.py --run-tests`")
+        self.assertFlags(changed_problems(self.swap(*agents, ROUND1_AGENTS), entries, figs),
+                         "names `--force` and not that it rewrites every file")
+        self.assertFlags(changed_problems(self.swap(*agents, ROUND1_AGENTS), entries, figs),
+                         "the agent definitions is named with no replacement")
+        verifier = ("- **A verifier that outruns", "- **A light APPROVE")
+        self.assertFlags(changed_problems(self.swap(*verifier, ROUND1_VERIFIER), entries, figs),
+                         "does not say 'no longer reaches a running verifier'")
+        self.assertEqual("Open", bug_status("BG1190"), "premise: the corpus records BG1190 Open")
+        unsaid = self.swap("BG1190 stays open:", "**v6.3.0 discloses", "")
+        self.assertFlags(open_problems(unsaid, "Open"), "does not say it stays open")
+        self.assertFlags(open_problems(self.text, "Fixed"), "the corpus records it Fixed")
+        self.assertFlags(open_problems(self.mutant("US1133, BG1160, BG1167, BG1183, BG1187, BG1217 |",
+                                                   "US1133, BG1160, BG1167, BG1183, BG1187, BG1190, "
+                                                   "BG1217 |"), "Open"), "behind a theme")
+        self.assertEqual([], open_problems(self.text))
         self.assertEqual([], changed_problems(self.text, entries, figs))
 
         self.needs_cli()
@@ -648,6 +726,87 @@ class ReleaseNotesTests(unittest.TestCase):
         with self.subTest(claim="the control: http on a loopback IP is requested"):
             got = cursor("http://127.0.0.1:9")
             self.assertEqual((None, 1), (got["tokens"], got["calls"]), got)
+        gate_md = (scripts.parent / "help" / "gate.md").read_text(encoding="utf-8")
+        hook = re.findall(r'engagement_floor\.py" check-commit-msg ((?:--[\w-]+ )*)"\$1"', gate_md)
+        self.assertEqual(["--strict "], hook, "the hook help/gate.md gives runs --strict alone")
+        self.commit_msg_claims(scripts, hook[0].split())
+        self.agent_definition_claims(scripts)
+
+    def commit_msg_claims(self, scripts: Path, flags: list[str]) -> None:
+        """The Refs bullet run on a staged fixture where US0101 owns the staged file and US0102
+        owns none: the shipped hook's flags pass each message 6.2.0's check passes
+        and pass the `Refs:` line no staged file supports, and `--write-trailers` refuses it,
+        takes the `Mentions:` line instead, and writes both lines where none were given."""
+        root = self.project()
+        git = lambda *a: subprocess.run(["git", "-C", str(root), *a], capture_output=True,  # noqa: E731
+                                        text=True, check=True, timeout=60, env=gitutil.git_env())
+        git("init", "-q")
+        (root / "src").mkdir()
+        for unit, path in (("US0101", "src/a.py"), ("US0102", "src/b.py")):
+            (root / "sdlc-studio" / "stories" / f"{unit}-w.md").write_text(
+                f"# {unit}: w\n\n> **Status:** Ready\n> **Affects:** {path}\n", encoding="utf-8")
+        (root / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+        git("add", "src/a.py")
+        msg = root.parent / "COMMIT_EDITMSG"
+
+        def floor(skill: Path, text: str, *extra: str) -> tuple[int, str]:
+            msg.write_text(text, encoding="utf-8")
+            r = _cli(skill, root, "engagement_floor.py", "check-commit-msg", *flags, *extra, str(msg))
+            return r.returncode, msg.read_text(encoding="utf-8")
+
+        subject = "feat(US0101, US0102): widget\n"
+        both = subject + "\nRefs: US0101, US0102\n"
+        mention = subject + "\nRefs: US0101\nMentions: US0102\n"
+        for text in (subject, both, mention):
+            with self.subTest(claim="the shipped hook meets no new refusal", message=text):
+                old, new = floor(_FIX["skill62"] / "scripts", text)[0], floor(scripts, text)[0]
+                self.assertFalse(new and not old, f"6.2.0 passes it and 6.3.0 exits {new}")
+        with self.subTest(claim="the shipped hook passes the unsupported Refs: line"):
+            self.assertEqual(0, floor(scripts, both)[0])
+            self.assertEqual(1, floor(scripts, subject)[0], "control: the check runs")
+        with self.subTest(claim="--write-trailers refuses it under --strict; Mentions passes"):
+            self.assertEqual(1, floor(scripts, both, "--write-trailers")[0])
+            self.assertEqual(0, floor(scripts, mention, "--write-trailers")[0])
+        with self.subTest(claim="left out, the flag writes the trailers"):
+            code, written = floor(scripts, subject, "--write-trailers")
+            self.assertEqual(0, code, written)
+            self.assertIn("Refs: US0101", written)
+            self.assertIn("Mentions: US0102", written)
+
+    def agent_definition_claims(self, scripts: Path) -> None:
+        """The agent-definitions bullet run on a 6.2 project: `init.py run` leaves an edited
+        definition alone; deleting it and running `init.py run` again restores the shipped one
+        and changes no other file; `--force` rewrites each file the bullet names."""
+        root = self.project()
+        self.assertEqual(0, _cli(scripts, root, "init.py", "run").returncode)
+        agent = root / AGENTS[0]
+        drafted = agent.read_text(encoding="utf-8")
+        agent.write_text(drafted + "\nedited\n", encoding="utf-8")
+        with self.subTest(claim="an edited definition is left alone"):
+            self.assertEqual(0, _cli(scripts, root, "init.py", "run").returncode)
+            self.assertEqual(drafted + "\nedited\n", agent.read_text(encoding="utf-8"))
+        with self.subTest(claim="delete it and run init.py run again, which changes no other file"):
+            agent.unlink()
+            before = _tree(root)
+            self.assertEqual(0, _cli(scripts, root, "init.py", "run").returncode)
+            after = _tree(root)
+            self.assertEqual([AGENTS[0]], sorted(k for k in set(before) | set(after)
+                                                 if before.get(k) != after.get(k)))
+            self.assertEqual(drafted, agent.read_text(encoding="utf-8"))
+        flat = " ".join(self.text.split())
+        said = FORCE_SAYS.search(flat)
+        self.assertIsNotNone(said, "premise: the bullet names what --force rewrites")
+        named = re.findall(r"`([^`]+)`", said.group(1))
+        self.assertGreater(len(named), 1, "premise: the bullet names what --force rewrites")
+        kept = "\n# us1136 kept line\n"
+        for name in named:
+            hits = [f for f in root.rglob(name) if f.is_file()]
+            self.assertEqual(1, len(hits), f"{name}: {hits}")
+            hits[0].write_text(hits[0].read_text(encoding="utf-8") + kept, encoding="utf-8")
+        self.assertEqual(0, _cli(scripts, root, "init.py", "run", "--force").returncode)
+        for name in named:
+            with self.subTest(claim=f"--force rewrites {name}"):
+                self.assertNotIn(kept, next(root.rglob(name)).read_text(encoding="utf-8"))
 
     def test_the_62_upgrade_path_is_given(self) -> None:
         """AC3. MUTANTS: notes telling a 6.2 project a reinstall is all it needs (no `migrate`

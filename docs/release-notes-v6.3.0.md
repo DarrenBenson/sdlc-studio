@@ -39,7 +39,8 @@ release, start with [that page](existing-users.md).
   self-check and commit message under `sdlc-studio/.local/lane/`, and stops; `sprint.py lane
   land` then commits the lane through the hooks, records its self-check and writes its review
   brief; a repair round that hands in no self-check is reported as not recorded, never given an
-  earlier round's. Lanes and reviews spawn the lean `sdlc-builder` and `sdlc-reviewer` agents that `init`
+  earlier round's. `sprint.py lane accept` refuses to record a verdict for a unit whose latest
+  landing wrote no brief, and quotes why it wrote none. Lanes and reviews spawn the lean `sdlc-builder` and `sdlc-reviewer` agents that `init`
   drafts into `.claude/agents/`, so a builder or reviewer starts without the skill listing and
   tool catalogue it never uses. Delivered by US1126, US1120 and US1132.
 - **The gates and commit checks are faster and truer.** The release verify lane runs its pytest
@@ -77,9 +78,11 @@ new refusal or a changed default, each with what to do instead:
 - **`init` drafts the `sdlc-builder` and `sdlc-reviewer` agent definitions.** It writes them to
   `.claude/agents/` beside `AGENTS.md` and `CLAUDE.md`, each only if absent, and lanes and
   reviews spawn them by name.
-  Instead: in an existing project, run `init.py run` again to add them; an edited definition is
-  left alone unless you pass `--force`, and a harness with no agent config falls back to
-  `general-purpose`.
+  Instead: in an existing project, run `init.py run` again to add them. It leaves a definition
+  you have edited alone; to take the shipped one back, delete it and run `init.py run` again,
+  which changes no other file. Do not pass `--force` for this: it rewrites every file `init`
+  writes, `.config.yaml`, `AGENTS.md`, `CLAUDE.md` and `decisions.md` among them. A harness with
+  no agent config falls back to `general-purpose`.
 - **`gate.py --run-tests` refuses a stale selector.** A path that does not exist, or a node id
   whose test does not exist, is refused by name and exits 2 before any test runs, where under
   pytest-xdist it could let a failing module beside it read green.
@@ -100,14 +103,18 @@ new refusal or a changed default, each with what to do instead:
   per-verifier ceiling, can read red beside other work where one at a time it read green.
   Instead: set `SDLC_VERIFY_WORKERS=1` to run one story at a time, and mark a wall-clock test
   `serial_only` so it runs after the pool.
-- **`engagement_floor.py check-commit-msg` refuses a `Refs:` line no staged file supports.**
-  On a subject naming two or more ids, a `Refs:` line naming a unit that owns none of the staged
-  files is refused.
-  Instead: write `Mentions: <id>` for an id the commit only mentions, and pass
-  `--write-trailers` in your commit-msg hook to have the trailers written for you.
+- **A commit-msg hook given `--write-trailers` refuses a `Refs:` line no staged file supports.**
+  The hook `help/gate.md` gives a project runs `--strict` alone, so it meets no new refusal. Add
+  `--write-trailers` and, on a subject naming two or more ids, the check writes the `Refs:` and
+  `Mentions:` lines the staged files' `Affects` attribute, and under `--strict` refuses a `Refs:`
+  line naming a unit that owns none of the staged files.
+  Instead: write `Mentions: <id>` for an id the commit only mentions, or leave the trailers out
+  and let the flag write them.
 - **A verifier that outruns its timeout loses its whole process group.** Its children are
   killed with it, and importing `verify_ac` on the main thread installs SIGTERM, SIGINT and
-  SIGHUP handlers that kill every running verifier's group.
+  SIGHUP handlers that kill every running verifier's group. The fix's review found a regression,
+  listed under Known issues: a signal sent to the caller's process group no longer reaches a
+  running verifier.
   Instead: do not rely on a verifier's background children outliving it.
 - **A light APPROVE stops counting once the unit's own Affects grow.** Conformance owes the
   full-tier review when the unit's Affects gained a file since its light APPROVE, or when the
@@ -159,6 +166,10 @@ Every open finding this release ships is listed by id on [the disclosure page](k
 which `tools/known_issues.py write` generates from the bug corpus at the cut, together with the
 count below, so the two cannot disagree.
 
+BG1190 stays open: a verifier that times out now has its children killed with it, and the fix's
+review found that a signal sent to the caller's process group no longer reaches a running
+verifier.
+
 **v6.3.0 discloses 245 open defects: 61 Medium, 184 Low.**
 
 ## For contributors to this repository
@@ -181,8 +192,8 @@ Unit ids behind each passage, in this repository.
 | Figures | RPT0027 (`sdlc-studio/reports/`), its Estimates table; `LANE_CALLS_FIXED` and `LANE_CALLS_PER_POINT` in `sprint.py`; `reference-agent-prompt-template.md` |
 | A run's cost is measured on whichever harness ran it | US0986, US0987, US0988, US0989, US0990, US0991, US1121, US1125, US1127, BG1122, BG1236, BG1240, BG1244, BG1246, BG1280, BG1288 |
 | The report states the run's cost in US dollars | US1117, US1122, US1123, US1124, US1135, BG1242, BG1252, BG1254 |
-| A lane runs headless in any harness's CLI | US1118, US1119, US1120, US1126, US1129, US1130, US1131, US1132, BG1114, BG1245, BG1289 |
-| The gates and commit checks are faster and truer | US1112, US1113, US1115, US1133, BG1160, BG1167, BG1183, BG1187, BG1190, BG1217 |
+| A lane runs headless in any harness's CLI | US1118, US1119, US1120, US1126, US1129, US1130, US1131, US1132, BG1114, BG1245, BG1289, BG1290 |
+| The gates and commit checks are faster and truer | US1112, US1113, US1115, US1133, BG1160, BG1167, BG1183, BG1187, BG1217 |
 | Changed defaults and new refusals | BG1224, US1120, US1131, US1132, BG1160, BG1217, US0986, US1127, BG1240, US1112, US1113, US1115, US1133, BG1190, BG1167, US1117, US1123, US1135, US1129, US1130, BG1116 |
 | Security fix | BG1213 |
 | Upgrading from 6.2 | BG1224, US1131 |
