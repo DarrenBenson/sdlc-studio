@@ -1,6 +1,6 @@
 # BG1280: A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG1280.md
@@ -26,10 +26,13 @@ Have `meter_codex` return a real `BY_MODEL` split (sum each thread's components 
 
 - [ ] **AC1** Given a Codex store with threads on two models, when `meter_codex.read` reads it, then the reading's model is `run_state.SESSION_MODEL_MIXED` and it carries a per-model split that sums each thread's components under its own `threads.model`, the split summing to the reading's total. Fails on: the model named `', '.join(sorted(models))` with no split.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_two_model_reading_is_split_per_model
+  - **Verified:** yes (2026-11-08)
 - [ ] **AC2** Given a run whose opening reading holds 1,010,000 tokens of history on gpt-5.3-codex and whose closing reading adds a 51,000-token thread on gpt-6.1-sol, when the report prices the run, then the dollar delta prices only gpt-6.1-sol's 51,000 tokens and books nothing under gpt-5.3-codex. Fails on: the observed $1.89 for a model that spent nothing in the run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_model_new_to_the_run_books_only_its_own_spend
+  - **Verified:** yes (2026-11-08)
 - [ ] **AC3** Given two readings of any harness whose split `_split_fields` synthesised from a single model name, and whose names differ between the span's open and close, when `_split_delta` derives the span, then it books the span whole, or reports it unpriced, never the opening reading's history as a delta. Fails on: a name absent from one reading treated as 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_synthesised_split_whose_name_changes_is_not_booked_as_history
+  - **Verified:** yes (2026-11-08)
 
 ## Revision History
 

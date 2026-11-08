@@ -1,6 +1,6 @@
 # US1137: The help, reference and public pages describe what 6.3 ships
 
-> **Status:** Draft
+> **Status:** Done
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -19,14 +19,19 @@
 
 - **AC1:** Given help/sprint.md's lane section, then it says the lane brief ends with the author self-check, the command that runs the unit's criteria, the line that stages exactly its Affects, and the hand-in files under `sdlc-studio/.local/lane/`. It says `sprint lane land` commits the lane and records its self-check, names the `sdlc-builder` and `sdlc-reviewer` definitions with `general-purpose` as the fallback, and no longer says the brief records the self-check or commits. Fails on: the page keeping 'record the self-check (`critic.py self-check record --unit <id>`) and commit it'.
   - **Verify:** pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_the_lane_help_says_land_commits
+  - **Verified:** yes (2026-11-08)
 - **AC2:** Given help/sprint.md and reference-sprint.md, then the meter paragraph says the meter reads the store of the harness running the session (claude, codex, copilot, opencode or cursor), chosen by `SDLC_STUDIO_HARNESS` or the one harness the environment signals. The `cost --anatomy` text says it reads the open run's window by default, that `--session` reads the whole session, and that a Subagent starts section flags each subagent over `cost.agent_start_budget` (30000; `off` flags none). The dollar section names `templates/model-prices.json` and its `pricing` overrides. Each statement is checked against the code it describes, and reference-sprint.md stays within the line ceiling the push gate holds it to. Fails on: a meter paragraph naming Claude transcripts as the only meter.
   - **Verify:** pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_the_meter_and_cost_pages_name_every_harness_and_the_price_table
+  - **Verified:** yes (2026-11-08)
 - **AC3:** Given README.md, llms.txt and docs/why-sdlc-studio.md, then README says what 6.3 adds (a run's cost, priced in US dollars per point, read from whichever of Claude Code, Codex CLI, Copilot CLI, OpenCode or Cursor ran it; a lane run headless in any of their CLIs); llms.txt names Cursor among the harnesses it installs into and names the five it meters; and the economics section of why-sdlc-studio.md states that every run's report now gives its priced cost per point. Fails on: README naming no 6.3 feature.
   - **Verify:** pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_the_public_pages_name_what_63_adds
+  - **Verified:** yes (2026-11-08)
 - **AC4:** Given docs/existing-users.md, then it has a 'From 6.2 to 6.3' section, first, and a 'From 6.1 to 6.2' section beneath it (the gap BG1175 records). 6.3's section says: reinstall; whether a `migrate` step is owed, checked by running `migrate` on a 6.2-shaped fixture; set `release_strategy: pr-required` to keep a branch and PR per change; and `sprint lane land` now commits a lane. Fails on: a page whose newest section is still 'From 6.0 to 6.1'.
   - **Verify:** pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_existing_users_has_the_62_and_63_upgrade_paths
+  - **Verified:** yes (2026-11-08)
 - **AC5:** Given the changed pages, then `tools/check_links.py`, `tools/lint-style.sh` and `python3 tools/check_budgets.py` pass. Fails on: a broken anchor, an em dash, or a page over its budget.
   - **Verify:** shell python3 tools/check_links.py && bash tools/lint-style.sh && python3 tools/check_budgets.py
+  - **Verified:** yes (2026-11-08)
 
 ## Notes
 

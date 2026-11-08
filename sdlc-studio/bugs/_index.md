@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 249 |
+| Open | 248 |
 | In Progress | 0 |
-| Fixed | 869 |
+| Fixed | 870 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -355,7 +355,7 @@
 | [BG1277](BG1277-the-close-s-closing-review-row-does-not.md) | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1278](BG1278-bg1274-s-parity-test-fixture-names-the-retired.md) | BG1274's parity-test fixture names the retired module audit.py, so the push gate's rename guard is red | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Open | Medium | 2026-11-07 | 2026-11-07 |
-| [BG1280](BG1280-a-codex-reading-names-a-multi-model-session.md) | A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost | Open | High | 2026-11-08 | 2026-11-08 |
+| [BG1280](BG1280-a-codex-reading-names-a-multi-model-session.md) | A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1281](BG1281-remote-gate-sh-push-release-records-an-abbreviated.md) | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for | Open | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1282](BG1282-copilot-home-and-opencode-db-user-configuration-variables.md) | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1283](BG1283-one-old-codex-thread-whose-rollout-file-is.md) | One old Codex thread whose rollout file is gone makes every later Codex reading in that workspace unmetered, permanently | Open | Low | 2026-11-08 | 2026-11-08 |
