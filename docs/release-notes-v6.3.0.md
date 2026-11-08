@@ -117,12 +117,12 @@ new refusal or a changed default, each with what to do instead:
   listed under Known issues: a signal sent to the caller's process group no longer reaches a
   running verifier.
   Instead: do not rely on a verifier's background children outliving it.
-- **A light APPROVE stops counting once the unit's risk band tiers it full.** It stops counting
-  only once `critic.tier_for` derives `full` for the unit's risk band, and then when the tier was
-  forced with `--tier light` or the unit's own Affects gained a file since the APPROVE, or when
-  git cannot name the commit that recorded it, as in a shallow clone; conformance then owes the
-  full-tier review. `critic.py record` warns on stderr when a unit's latest APPROVE is shallower
-  than the tier its risk band now derives.
+- **A light APPROVE can stop counting once the unit's risk band tiers it full.** It stops
+  counting only once `critic.tier_for` derives `full` for the unit's risk band, and then when the
+  tier was forced with `--tier light` or the unit's own Affects gained a file in the commit that
+  recorded the APPROVE or since, or when git cannot name that commit, as in a shallow clone;
+  conformance then owes the full-tier review. `critic.py record` warns on stderr when a unit's
+  latest APPROVE is shallower than the tier its risk band now derives.
   Instead: re-brief and review the unit at the full tier the warning names.
 - **The sprint report has new cost rows.** It gains a Priced column, Dollar cost, Dollars per
   point and Premium requests rows, and the anatomy table in its cost appendix; a page filed

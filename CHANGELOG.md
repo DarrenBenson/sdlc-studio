@@ -617,7 +617,9 @@ replays it; a page filed before it re-derives with the count alone (US1135).
   with that finding as a warning, and under `off` it does not ask. `critic.self_check_gap` sets
   aside a commit whose subject names only another unit, so a change to the unit's Affects
   committed under another unit's id is not read as stale, unless a later commit that is not
-  another unit's, or an uncommitted edit, touches the same file.
+  another unit's, or an uncommitted edit, touches the same file. It sets nothing aside, and
+  reads the content as it stands, when the record names no commit, when that commit is not an
+  ancestor of HEAD, as after a rebase or cherry-pick, or when git cannot answer.
 - `sprint lane land` no longer records an earlier landing's self-check for a repair round
   (BG1289). Each landing copied its hand-in into `sdlc-studio/.local/lane/landed/<worktree>/`
   without clearing it, and `sprint lane run` names every round of a unit's worktree

@@ -94,7 +94,7 @@ CHANGES = {
                                    (r"SIGTERM, SIGINT and SIGHUP", r"listed under Known issues",
                                     r"no longer reaches a running verifier"),
                                    r"background children"),
-    "the light APPROVE": (r"light APPROVE stops counting", (r"`--tier light`",), r"full tier"),
+    "the light APPROVE": (r"light APPROVE can stop counting", (r"`--tier light`",), r"full tier"),
     "the report cost rows": (r"new cost rows", (r"re-derives unchanged",), r"`pricing\.models`"),
     "the AGENTS.md starter": (r"`AGENTS\.md` starter is shorter",
                               (r"`reference-doctrine\.md#working-habits`", r"not rewritten"),

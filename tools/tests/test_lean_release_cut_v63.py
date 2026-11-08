@@ -7,10 +7,10 @@ that last wrote `docs/known-issues.md`. While the cut is being committed, the pa
 tree differs from HEAD's, and the working tree is then the commit about to be made, so it is the
 one judged. AC3's notes link is read against the anchor of the CHANGELOG's own `## [6.3.0]`
 heading. AC5 holds three sentences of the release text to the code they describe: each is read
-where the cut leaves it (BG1290's entry from its fragment before the cut and from the CHANGELOG's
-`## [6.3.0]` section after it), and the behaviour it states is exercised beside it. Each check
-returns its problems and is run on a mutated copy, and on the wording before the cut, which it
-must refuse.
+where the cut leaves it (BG1290's entry from the CHANGELOG's `## [6.3.0]` section once the cut
+has written it, and from its fragment only before then), and the behaviour it states is
+exercised beside it. Each check returns its problems and is run on a mutated copy, and on the
+wording before the cut, which it must refuse.
 
 Run from the repo root:
     python3 -m pytest tools/tests/test_lean_release_cut_v63.py
@@ -80,6 +80,8 @@ LIGHT_SAYS = (
     (r"`full`[^.]*?, and then when the tier was forced with `--tier light` or the unit's own "
      r"Affects gained a file",
      "that it then stops when forced with `--tier light` or when the Affects grew"),
+    (r"gained a file in the commit that recorded the APPROVE or since",
+     "that a file the recording commit itself added counts as a widening"),
 )
 FORCE_SAYS = (
     (r"leaves `sdlc-studio/\.version` alone", "that `--force` leaves `sdlc-studio/.version` alone"),
@@ -90,13 +92,21 @@ BG1290_SAYS = (
      "that `critic.self_check_gap` sets aside a commit whose subject names only another unit"),
     (r"a change to the unit's Affects committed under another unit's id is not read as stale",
      "that a change committed under another unit's id is not read as stale"),
+    (r"reads the content as it stands, when [^.]*?not an ancestor of HEAD[^.]*?or when git "
+     r"cannot answer",
+     "that a record off the line of history, or one git cannot judge, reads the content as it "
+     "stands"),
 )
 #: A claim the code refutes, whitespace folded: (pattern, why).
 OVERCLAIMS = (
     (r"stops counting once the unit's own Affects grow\b",
      "it says a light APPROVE stops counting once the Affects grow, whatever the band"),
     (r"rewrites every file `init` writes", "it says `--force` rewrites every file `init` writes"),
+    (r"stops counting once the unit's risk band tiers it full",
+     "it says a light APPROVE stops counting once the band tiers it full, whatever its Affects"),
 )
+#: The light-APPROVE bullet's bold lead as the cut first wrote it, which OVERCLAIMS refuses.
+LIGHT_R1_LEAD = "A light APPROVE stops counting once the unit's risk band tiers it full."
 
 
 def _env() -> dict:
@@ -196,16 +206,16 @@ def says_problems(text: str, says: tuple, where: str) -> list[str]:
 
 
 def bg1290_entry(changelog: str, fragments: Path) -> str:
-    """BG1290's entry where the cut leaves it: its fragment while one is pending, else the one
-    list item naming it in the CHANGELOG's `## [6.3.0]` section; empty when neither holds it."""
+    """BG1290's entry where the cut leaves it: the one list item naming it in the CHANGELOG's
+    `## [6.3.0]` section once the cut has written that section, its pending fragment only before
+    then (a fragment present after the cut belongs to the next release); empty when neither
+    holds it."""
+    cut = re.search(r"^## \[6\.3\.0\] - .*?(?=^## \[|\Z)", changelog, re.M | re.S)
+    if cut:
+        items = [i for i in re.split(r"(?m)^(?=- )", cut.group(0)) if "(BG1290)" in i]
+        return items[0] if len(items) == 1 else ""
     fragment = fragments / "BG1290.md"
-    if fragment.is_file():
-        return fragment.read_text(encoding="utf-8")
-    cut = re.search(r"^## \[6\.3\.0\] - .*?(?=^## \[)", changelog, re.M | re.S)
-    if not cut:
-        return ""
-    items = [i for i in re.split(r"(?m)^(?=- )", cut.group(0)) if "(BG1290)" in i]
-    return items[0] if len(items) == 1 else ""
+    return fragment.read_text(encoding="utf-8") if fragment.is_file() else ""
 
 
 class ReleaseCutTests(unittest.TestCase):
@@ -219,7 +229,7 @@ class ReleaseCutTests(unittest.TestCase):
         Mutants: each sentence as worded before the cut; the light bullet's `tier_for`
         precondition cut; the `--force` sentence's `_index.md` clause cut; no BG1290 entry."""
         notes = (REPO / NOTES).read_text(encoding="utf-8")
-        light = bullet(notes, "light APPROVE stops counting")
+        light = bullet(notes, "light APPROVE can stop counting")
         force = bullet(notes, "agent definitions")
         entry = bg1290_entry(CHANGELOG.read_text(encoding="utf-8"), REPO / "changelog.d")
         self.assertEqual([], says_problems(light, LIGHT_SAYS, "light-APPROVE bullet"))
@@ -247,6 +257,20 @@ class ReleaseCutTests(unittest.TestCase):
                              says_problems(cut, FORCE_SAYS, "`--force` bullet"))
             self.assertEqual(["no BG1290 entry was found"],
                              says_problems("", BG1290_SAYS, "BG1290 entry"))
+        with self.subTest(mutant="the light bullet's lead as the cut first wrote it"):
+            first = flat(light).replace(flat(light).split("**")[1], LIGHT_R1_LEAD, 1)
+            self.assertIn(LIGHT_R1_LEAD, first)
+            self.assertEqual(["the light-APPROVE bullet claims more than the code: "
+                              + OVERCLAIMS[2][1]],
+                             says_problems(first, LIGHT_SAYS, "light-APPROVE bullet"))
+        with self.subTest(mutant="a BG1290 fragment filed after the cut"):
+            with tempfile.TemporaryDirectory(prefix="us1139_frag_") as tmp:
+                later = Path(tmp)
+                (later / "BG1290.md").write_text(BG1290_BEFORE, encoding="utf-8")
+                changelog = CHANGELOG.read_text(encoding="utf-8")
+                self.assertEqual(entry, bg1290_entry(changelog, later))
+                uncut = re.sub(r"^## \[6\.3\.0\] - ", "## [6.3.0-draft] - ", changelog, flags=re.M)
+                self.assertEqual(BG1290_BEFORE, bg1290_entry(uncut, later))
 
         with self.subTest(claim="a light APPROVE counts until `tier_for` derives `full`"):
             explicit = {"tier": "light" + critic.EXPLICIT_SUFFIX}

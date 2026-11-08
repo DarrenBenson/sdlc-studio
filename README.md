@@ -476,7 +476,7 @@ It also reframes the lifecycle as a loop-engineering problem already solved. An 
 - `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
 - [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
 - [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
-- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - the current release: a run's cost is measured on whichever harness ran it and stated in US dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
+- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - the current release: a run's cost is measured on whichever harness ran it and priced in dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
 - [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md) - a reviewer judges only work its author has self-checked, one command gives a builder its whole brief, a run states what it cost, the gates cost less, and the 6.1 upgrade path
 - [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - a run ends with its signed report, the report states what it measured, a plain install is the latest verified release, and the 6.0 upgrade path
 - [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, what changed since the candidate, both upgrade paths and the known issues
