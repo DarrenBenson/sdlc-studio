@@ -7,7 +7,7 @@ Abena Osei becomes Primary, Copilot, Grok and Composer runs are priced, and wave
 **Verdict: Judged achieved** - Abena Osei is the shipped skill's Primary (US1146), Grok, Composer and Copilot runs are priced (US1143-US1145), and sprint handoff and resume work from a brief of at most 8k tokens (US1140-US1142, BG1312); US1147 was carried and US1134 and BG1300 descoped, none of them a clause of the goal
 
 > **Run:** 2026-11-09T13:11:17Z to 2026-11-09T19:37:34Z (6.4h)
-> **Verified on:** ecb0649867ea12889f88c0affa9048c239d141b9   **Fingerprint:** 924d510e490abfc5
+> **Verified on:** 4574915d6ad735113209451a13573c62eedcfa8d   **Fingerprint:** 15154fd97f127085
 
 ## Estimates
 
@@ -18,14 +18,14 @@ line with no ratio. Ratio is actual over forecast.
 
 | Measure | Forecast | Actual | Ratio | Over |
 | --- | --- | --- | --- | --- |
-| Points | 49 | 49 | 1.0x | 18 of 18 delivered unit(s) |
-| Minutes | 286.0 | 1226.7 | 4.29x | measured active minutes (spans or agent minutes) against their forecast, over the 18 of 18 unit(s) planned or added and not dropped that carry both |
+| Points | 51 | 51 | 1.0x | 19 of 19 delivered unit(s) |
+| Minutes | 297.7 | 1248.6 | 4.19x | measured active minutes (spans or agent minutes) against their forecast, over the 19 of 19 unit(s) planned or added and not dropped that carry both |
 | Wall-clock span | not forecast | 386.3 | no ratio | the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared |
 | Priced cost | not forecast | 46,104,977 | no ratio | priced input-equivalent tokens, the run's headline cost, each component times its weight: input + output + cache write 7,034,693 (input 4,114 x1, output 2,074,532 x5, cache write 5m 4,096,258 x1.25, cache write 1h 859,789 x2, cache read 288,883,021 x0.1); the sum is the Tokens row; read from the main thread and every subagent transcript, once per message |
-| Tokens | 9,126,348 | 7,034,693 | 0.77x | the whole run: forecast over 18 of 18 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 5 delegated total(s) supplied are not added |
-| Priced per point | not forecast | 940,918 | no ratio | the Priced cost row over the 49 point(s) of the 18 delivered unit(s), in priced input-equivalent tokens per point |
+| Tokens | 9,498,852 | 7,034,693 | 0.74x | the whole run: forecast over 19 of 19 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 5 delegated total(s) supplied are not added |
+| Priced per point | not forecast | 904,019 | no ratio | the Priced cost row over the 51 point(s) of the 19 delivered unit(s), in priced input-equivalent tokens per point |
 | Dollar cost | not forecast | $126.64 | no ratio | estimated US dollars: each model's own components in the Priced cost row times that model's list prices; price table effective 2026-11-09; covers 100.0% of the priced tokens |
-| Dollars per point | not forecast | $2.58 | no ratio | the Dollar cost row over the 49 point(s) of the 18 delivered unit(s); price table effective 2026-11-09 |
+| Dollars per point | not forecast | $2.48 | no ratio | the Dollar cost row over the 51 point(s) of the 19 delivered unit(s); price table effective 2026-11-09 |
 
 Each cell names its source. A figure labelled agent minutes or agent tokens sums the agent
 totals tagged to that unit; an unlabelled one is measured over the unit's own open span. The
@@ -52,6 +52,7 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | BG1312 | NOT MEASURED - no agent returned for it was priced from its own transcript | 11.7 | 42.5 | 372,504 | 1,509,452 | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1312 --agent A` |
 | BG1318 | NOT MEASURED - no agent returned for it was priced from its own transcript | 5.8 | 32.1 | 186,252 | 1,014,166 | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1318 --agent A` |
 | BG1320 | NOT MEASURED - no agent returned for it was priced from its own transcript | 5.8 | 31.3 | 186,252 | 548,265 | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1320 --agent A` |
+| BG1329 | NOT MEASURED - no agent returned for it was priced from its own transcript | 11.7 | 21.9 | 372,504 | 183,931 | NOT MEASURED - no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1329 --agent A` |
 
 ## Delivered to plan
 
@@ -59,14 +60,14 @@ spans of units open at the same time overlap, so that sum can exceed the wall-cl
 | --- | --- | --- |
 | Planned | 18 | 53 |
 | Delivered of the plan | 15 | 45 |
-| Added mid-run and delivered | 3 of 3 added | 4 |
+| Added mid-run and delivered | 4 of 4 added | 6 |
 | Dropped | 3 | 8 |
 | Carried undelivered | 0 | 0 |
 
 Points here are the sizes the plan recorded: a unit resized since keeps its planned size and
 shows its current size below, and an added unit is sized when it is added. Added units are work
 outside the plan and are never counted as delivering it. Points delivered at their current
-size, plan and added together: 49.
+size, plan and added together: 51.
 
 | Unit | Planned points | Points | Outcome | Review rounds |
 | --- | --- | --- | --- | --- |
@@ -91,10 +92,11 @@ size, plan and added together: 49.
 | BG1312 | 2 | 2 | added - no reason recorded; delivered | 1 |
 | BG1318 | 1 | 1 | added - no reason recorded; delivered | 1 |
 | BG1320 | 1 | 1 | added - no reason recorded; delivered | 1 |
+| BG1329 | 2 | 2 | added - no reason recorded; delivered | 1 |
 
 ## Known issues handed over
 
-17 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)
+17 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
@@ -113,9 +115,8 @@ size, plan and added together: 49.
 | BG1324 | Low | No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it - not-stop-ship, ruled by orchestrator |
 | BG1325 | Low | A hand-run mutation pass can leave a stale `.pyc` that Python reuses after the source is restored, so a later test run, the commit hook's among them, judges the mutant rather than the code - not-stop-ship, ruled by orchestrator |
 | BG1326 | Low | `sprint.py handoff` writes a resume brief while a lane is still in flight, so the wave boundary reference-sprint.md defines is stated but not enforced, and four files still say no command writes a handoff - not-stop-ship, ruled by orchestrator |
-| BG1327 | Low | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses |
-| BG1328 | Low | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request |
-| checklist | close gap | known-issues: Known issues carried, each with its stop-ship ruling - 2 unruled, 0 malformed row(s) |
+| BG1327 | Low | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses - not-stop-ship, ruled by orchestrator |
+| BG1328 | Low | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request - not-stop-ship, ruled by orchestrator |
 
 ## Sign-off
 
@@ -153,9 +154,9 @@ part's share of the role's priced cost; context is input + cache write + cache r
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 2 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 42676771245/42631225553 - 2 push-triggered run(s) on main in the run window |
-| Lead time for changes | 6h 4m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 25 commit(s) |
-| Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 42676771245/42631225553 - 2 deployment(s); 0 failed on none |
-| Time to restore | no restore needed | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 42676771245/42631225553 - no push-triggered run on main concluded failure |
+| Lead time for changes | 7h 2m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 29 commit(s) |
+| Change failure rate | 50% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 42676771245/42631225553 - 2 deployment(s); 1 failed on d56502a785bb6f32c878a3c8f1fef213827aa970 |
+| Time to restore | not restored | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 42676771245 - main went red at run 42676771245, and no push-triggered run created after it concluded success in the run window |
 
 ### Calibration
 

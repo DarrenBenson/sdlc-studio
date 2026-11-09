@@ -3,7 +3,7 @@
   "report_id": "RPT0028",
   "run_id": "RUN-01M7061X",
   "retro_id": "RETRO0142",
-  "generated_at": "2026-11-09T19:37:34Z",
+  "generated_at": "2026-11-09T20:34:48Z",
   "window_end": "2026-11-09T19:37:34Z",
   "signature": null,
   "sections": [
@@ -48,7 +48,7 @@
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "ecb0649867ea12889f88c0affa9048c239d141b9",
+          "value": "4574915d6ad735113209451a13573c62eedcfa8d",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -68,12 +68,12 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 49,
+            "value": 51,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 49,
+            "value": 51,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -83,7 +83,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "18 of 18 delivered unit(s)",
+            "value": "19 of 19 delivered unit(s)",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -95,22 +95,22 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 286.0,
+            "value": 297.7,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 1226.7,
+            "value": 1248.6,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "4.29x",
+            "value": "4.19x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 18 of 18 unit(s) planned or added and not dropped that carry both",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 19 of 19 unit(s) planned or added and not dropped that carry both",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -176,7 +176,7 @@
           },
           "est_forecast": {
             "key": "est_forecast",
-            "value": 9126348,
+            "value": 9498852,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_actual": {
@@ -186,12 +186,12 @@
           },
           "est_ratio": {
             "key": "est_ratio",
-            "value": "0.77x",
+            "value": "0.74x",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the whole run: forecast over 18 of 18 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 5 delegated total(s) supplied are not added",
+            "value": "the whole run: forecast over 19 of 19 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 5 delegated total(s) supplied are not added",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -208,7 +208,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": 940918,
+            "value": 904019,
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -218,7 +218,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the Priced cost row over the 49 point(s) of the 18 delivered unit(s), in priced input-equivalent tokens per point",
+            "value": "the Priced cost row over the 51 point(s) of the 19 delivered unit(s), in priced input-equivalent tokens per point",
             "source": "sdlc-studio/.local/run-state.json"
           }
         },
@@ -262,7 +262,7 @@
           },
           "est_actual": {
             "key": "est_actual",
-            "value": "$2.58",
+            "value": "$2.48",
             "source": "sdlc-studio/.local/run-state.json"
           },
           "est_ratio": {
@@ -272,7 +272,7 @@
           },
           "est_basis": {
             "key": "est_basis",
-            "value": "the Dollar cost row over the 49 point(s) of the 18 delivered unit(s); price table effective 2026-11-09",
+            "value": "the Dollar cost row over the 51 point(s) of the 19 delivered unit(s); price table effective 2026-11-09",
             "source": "sdlc-studio/.local/run-state.json"
           }
         }
@@ -984,6 +984,45 @@
             "source": "sdlc-studio/bugs/BG1320-test-resume-brief-py-imports-from-tests-import.md",
             "reason": "no agent returned for it was priced from its own transcript"
           }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1329",
+            "source": "sdlc-studio/bugs/BG1329-run-nine-s-close-push-is-refused-by.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 21.9,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 183931,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/.local/run-state.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1329 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1329-run-nine-s-close-push-is-refused-by.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
         }
       ]
     },
@@ -1013,12 +1052,12 @@
         },
         "added_delivered_units": {
           "key": "added_delivered_units",
-          "value": 3,
+          "value": 4,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "added_points": {
           "key": "added_points",
-          "value": 4,
+          "value": 6,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "dropped_units": {
@@ -1043,13 +1082,13 @@
         },
         "added_units": {
           "key": "added_units",
-          "value": 3,
+          "value": 4,
           "source": "sdlc-studio/.local/run-state.json"
         },
         "points_delivered": {
           "key": "points_delivered",
-          "value": 49,
-          "source": "sdlc-studio/bugs/BG1205-us0986-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1264-us1133-s-trailer-check-skips-a-single-id.md, sdlc-studio/stories/US0986-the-token-meter-reads-the-running-harness-s.md, sdlc-studio/stories/US1130-trim-the-shipped-agent-instructions-template-to-5.md, sdlc-studio/stories/US1133-write-the-refs-and-mentions-trailers-the-commit.md, sdlc-studio/stories/US1140-the-run-s-next-action-and-a-resume.md, sdlc-studio/stories/US1141-the-sprint-hands-off-to-a-resume-brief.md, sdlc-studio/stories/US1142-the-sprint-reference-defines-a-wave-boundary-and.md, sdlc-studio/stories/US1143-a-run-on-an-xai-grok-or-cursor.md, sdlc-studio/stories/US1144-a-copilot-run-on-token-billing-is-priced.md, sdlc-studio/stories/US1145-a-project-on-copilot-request-billing-says-so.md, sdlc-studio/stories/US1146-abena-osei-becomes-the-shipped-skill-s-primary.md, sdlc-studio/stories/US1148-the-prd-leads-with-human-in-the-lead.md, sdlc-studio/bugs/BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md, sdlc-studio/bugs/BG1303-sprint-lane-brief-names-a-schema-3-unit.md, sdlc-studio/bugs/BG1312-the-resume-brief-s-known-issues-scan-matches.md, sdlc-studio/bugs/BG1318-us1147-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1320-test-resume-brief-py-imports-from-tests-import.md"
+          "value": 51,
+          "source": "sdlc-studio/bugs/BG1205-us0986-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1264-us1133-s-trailer-check-skips-a-single-id.md, sdlc-studio/stories/US0986-the-token-meter-reads-the-running-harness-s.md, sdlc-studio/stories/US1130-trim-the-shipped-agent-instructions-template-to-5.md, sdlc-studio/stories/US1133-write-the-refs-and-mentions-trailers-the-commit.md, sdlc-studio/stories/US1140-the-run-s-next-action-and-a-resume.md, sdlc-studio/stories/US1141-the-sprint-hands-off-to-a-resume-brief.md, sdlc-studio/stories/US1142-the-sprint-reference-defines-a-wave-boundary-and.md, sdlc-studio/stories/US1143-a-run-on-an-xai-grok-or-cursor.md, sdlc-studio/stories/US1144-a-copilot-run-on-token-billing-is-priced.md, sdlc-studio/stories/US1145-a-project-on-copilot-request-billing-says-so.md, sdlc-studio/stories/US1146-abena-osei-becomes-the-shipped-skill-s-primary.md, sdlc-studio/stories/US1148-the-prd-leads-with-human-in-the-lead.md, sdlc-studio/bugs/BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md, sdlc-studio/bugs/BG1303-sprint-lane-brief-names-a-schema-3-unit.md, sdlc-studio/bugs/BG1312-the-resume-brief-s-known-issues-scan-matches.md, sdlc-studio/bugs/BG1318-us1147-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1320-test-resume-brief-py-imports-from-tests-import.md, sdlc-studio/bugs/BG1329-run-nine-s-close-push-is-refused-by.md"
         }
       },
       "rows": [
@@ -1619,6 +1658,33 @@
             "value": 1,
             "source": "sdlc-studio/reviews/critic-verdicts.md"
           }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1329",
+            "source": "sdlc-studio/bugs/BG1329-run-nine-s-close-push-is-refused-by.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1329-run-nine-s-close-push-is-refused-by.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "added - no reason recorded; delivered",
+            "source": "sdlc-studio/.local/run-state.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
         }
       ],
       "not_measured": null
@@ -1629,7 +1695,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "17 open finding(s) raised in the run, 1 close gap(s), 0 carried unit(s)",
+          "value": "17 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/.local/run-state.json"
         }
       },
@@ -1902,7 +1968,7 @@
           },
           "issue_detail": {
             "key": "issue_detail",
-            "value": "A verdict file's `\\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses",
+            "value": "A verdict file's `\\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses - not-stop-ship, ruled by orchestrator",
             "source": "sdlc-studio/bugs/BG1327-a-verdict-file-s-escape-which-the-review.md"
           }
         },
@@ -1919,25 +1985,8 @@
           },
           "issue_detail": {
             "key": "issue_detail",
-            "value": "`artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request",
+            "value": "`artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request - not-stop-ship, ruled by orchestrator",
             "source": "sdlc-studio/bugs/BG1328-artifact-py-new-type-story-epic-a-done.md"
-          }
-        },
-        {
-          "issue_id": {
-            "key": "issue_id",
-            "value": "checklist",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_priority": {
-            "key": "issue_priority",
-            "value": "close gap",
-            "source": "sdlc-studio/.local/run-state.json"
-          },
-          "issue_detail": {
-            "key": "issue_detail",
-            "value": "known-issues: Known issues carried, each with its stop-ship ruling - 2 unruled, 0 malformed row(s)",
-            "source": "sdlc-studio/.local/run-state.json"
           }
         }
       ],
@@ -2326,7 +2375,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "6h 4m",
+            "value": "7h 2m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2341,7 +2390,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 25 commit(s)",
+            "value": "git history - first to last of 29 commit(s)",
             "source": "git log"
           }
         },
@@ -2353,7 +2402,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "0%",
+            "value": "50%",
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -2368,7 +2417,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 42676771245/42631225553 - 2 deployment(s); 0 failed on none",
+            "value": "forge runs 42676771245/42631225553 - 2 deployment(s); 1 failed on d56502a785bb6f32c878a3c8f1fef213827aa970",
             "source": "gh run list"
           }
         },
@@ -2380,7 +2429,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "no restore needed",
+            "value": "not restored",
             "source": "gh run list"
           },
           "dora_mapping": {
@@ -2395,7 +2444,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "forge runs 42676771245/42631225553 - no push-triggered run on main concluded failure",
+            "value": "forge runs 42676771245 - main went red at run 42676771245, and no push-triggered run created after it concluded success in the run window",
             "source": "gh run list"
           }
         }
@@ -2716,6 +2765,7 @@
       "not_measured": null
     }
   ],
+  "findings_window_end": "2026-11-09T20:34:48Z",
   "record_paths": "portable",
   "token_ratio": "every-delivered-unit-delegated",
   "restore_pairing": "next-success-after-failure",
@@ -3084,5 +3134,5 @@
   },
   "price_table_rule": "replayed-and-digested",
   "premium_usd": "per-request-dollars",
-  "fingerprint": "924d510e490abfc5"
+  "fingerprint": "15154fd97f127085"
 }

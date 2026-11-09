@@ -81,7 +81,11 @@ Delivered: 49 points as planned (44 counting US0986 and BG1205 once). By theme 3
 
 **0 of 21 unit(s) measured; 18 of 21 forecast at plan time.**
 
-**Velocity: 7.42 points/elapsed-hour** (49 points ACCEPTED over 6.6h, operator-supplied, ceremony included). It WROTE 52 point(s): 3 more shipped and were not accepted (US1147), so this rate measures acceptance, not output. This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
+
+**Sprint tokens/point: 143,565** (7,034,693 tokens over 49 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 

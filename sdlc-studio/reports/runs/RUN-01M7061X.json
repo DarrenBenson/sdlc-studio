@@ -23,7 +23,8 @@
     "BG1303",
     "BG1312",
     "BG1318",
-    "BG1320"
+    "BG1320",
+    "BG1329"
   ],
   "plan": "sdlc-studio/.local/sprint-plan.json",
   "handoff": null,
@@ -1866,6 +1867,90 @@
           "priced": 46104977
         }
       }
+    },
+    {
+      "tokens": 197526515,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-09T19:53:54Z",
+      "kind": "unit-start",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 6578709880,
+      "priced": 992759457,
+      "components": {
+        "input": 67242,
+        "output": 18237808,
+        "cache_write_5m": 153080991,
+        "cache_write_1h": 26140474,
+        "cache_read": 6578709880
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 66420,
+          "output": 18189425,
+          "cache_write_5m": 151530036,
+          "cache_write_1h": 26140474,
+          "cache_read": 6534818541
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-sonnet-5-5": {
+          "input": 822,
+          "output": 48383,
+          "cache_write_5m": 1550955,
+          "cache_write_1h": 0,
+          "cache_read": 43891339
+        }
+      }
+    },
+    {
+      "tokens": 197710446,
+      "source": "sha256:7dc733d4cecb",
+      "at": "2026-11-09T20:15:51Z",
+      "kind": "unit-end",
+      "model": "mixed",
+      "harness": "claude",
+      "cache_read": 6587061735,
+      "priced": 994034258,
+      "components": {
+        "input": 67376,
+        "output": 18291814,
+        "cache_write_5m": 153201164,
+        "cache_write_1h": 26150092,
+        "cache_read": 6587061735
+      },
+      "subagents": true,
+      "meter": "once-per-message, main thread and subagent transcripts, priced components",
+      "by_model": {
+        "claude-opus-5-5": {
+          "input": 66554,
+          "output": 18243431,
+          "cache_write_5m": 151650209,
+          "cache_write_1h": 26150092,
+          "cache_read": 6543170396
+        },
+        "<synthetic>": {
+          "input": 0,
+          "output": 0,
+          "cache_write_5m": 0,
+          "cache_write_1h": 0,
+          "cache_read": 0
+        },
+        "claude-sonnet-5-5": {
+          "input": 822,
+          "output": 48383,
+          "cache_write_5m": 1550955,
+          "cache_write_1h": 0,
+          "cache_read": 43891339
+        }
+      }
     }
   ],
   "delegated_tokens": [
@@ -2000,7 +2085,16 @@
       }
     }
   ],
-  "reopened": [],
+  "reopened": [
+    {
+      "at": "2026-11-09T19:53:28Z",
+      "run_id": "RUN-01M7061X",
+      "from_outcome": "running",
+      "was_ended_at": null,
+      "report": "RPT0028",
+      "reason": "D0455: the close push was refused by the full suite on devserver1 - US1142's reflow broke the wsjf-inputs.json writer pin (test_lean_v61_review_residue) and BG1312's known-issues test patches a sprint_report object resume_brief may not use; fixed in-run as BG1329, as D0426 did in run eight"
+    }
+  ],
   "batch_changes": [
     {
       "action": "add",
@@ -2034,6 +2128,11 @@
       "id": "BG1300",
       "reason": "D0454: its tests must run with a temporary HOME, which the worktree guard refuses; run ten builds it once the operator's rule is in place",
       "at": "2026-11-09T18:18:24Z"
+    },
+    {
+      "action": "add",
+      "id": "BG1329",
+      "at": "2026-11-09T19:53:46Z"
     }
   ],
   "rulings": [],
@@ -2203,6 +2302,12 @@
         "planned_points": 1,
         "forecast_tokens": 186252,
         "forecast_minutes": 5.8,
+        "added": true
+      },
+      "BG1329": {
+        "planned_points": 2,
+        "forecast_tokens": 372504,
+        "forecast_minutes": 11.7,
         "added": true
       }
     },
@@ -2421,6 +2526,15 @@
       "open": false,
       "start_source": "sha256:7dc733d4cecb",
       "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
+    },
+    "BG1329": {
+      "minutes": 21.95,
+      "tokens": 183931,
+      "started_at": "2026-11-09T19:53:54Z",
+      "start_tokens": 7070260,
+      "open": false,
+      "start_source": "sha256:7dc733d4cecb",
+      "start_meter": "once-per-message, main thread and subagent transcripts, priced components"
     }
   },
   "review_base": {
@@ -2442,7 +2556,8 @@
     "US1133": 2,
     "BG1320": 0,
     "US1145": 0,
-    "US1142": 0
+    "US1142": 0,
+    "BG1329": 0
   },
   "sprint_goal_verdict": {
     "verdict": "achieved",
@@ -2455,16 +2570,16 @@
       "stages": [
         "checklist"
       ]
-    }
-  ],
-  "close_known_issues": [
+    },
     {
-      "source": "checklist",
-      "detail": "known-issues: Known issues carried, each with its stop-ship ruling - 2 unruled, 0 malformed row(s)"
+      "at": "2026-11-09T20:23:41Z",
+      "outstanding": 0,
+      "stages": []
     }
   ],
+  "close_known_issues": [],
   "close_not_measured": [],
-  "close_tree": "0a78a7343a643bed2137c04b6a86f2c5c325cb2d",
+  "close_tree": "4ec0d6a1cd16c91bff7620c4cb27460bf0616c30",
   "report_gate_clear": [
     "BG1205",
     "BG1264",
@@ -2473,6 +2588,7 @@
     "BG1312",
     "BG1318",
     "BG1320",
+    "BG1329",
     "US0986",
     "US1130",
     "US1133",
@@ -2485,18 +2601,18 @@
     "US1146",
     "US1148"
   ],
-  "verified_sha": "ecb0649867ea12889f88c0affa9048c239d141b9",
+  "verified_sha": "4574915d6ad735113209451a13573c62eedcfa8d",
   "ci_runs": {
     "source": "gh run list",
     "runs": [
       {
-        "conclusion": "",
+        "conclusion": "failure",
         "createdAt": "2026-11-09T18:45:04Z",
         "databaseId": 42676771245,
         "event": "push",
         "headBranch": "main",
         "headSha": "d56502a785bb6f32c878a3c8f1fef213827aa970",
-        "updatedAt": "2026-11-09T18:45:08Z",
+        "updatedAt": "2026-11-09T19:39:07Z",
         "workflowName": "Lint"
       },
       {
@@ -2572,10 +2688,13 @@
     ],
     "BG1320": [
       "2b21802597fa03f8"
+    ],
+    "BG1329": [
+      "aacff24303f866dc"
     ]
   },
   "report_discharged": [],
   "report": "RPT0028",
-  "report_fingerprint": "924d510e490abfc5",
+  "report_fingerprint": "15154fd97f127085",
   "report_window_end": "2026-11-09T19:37:34Z"
 }
