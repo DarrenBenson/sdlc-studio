@@ -47,6 +47,8 @@ Delivered: 49 points as planned (44 counting US0986 and BG1205 once). By theme 3
 | BG1324 | not-stop-ship | orchestrator | 2026-11-09 |
 | BG1325 | not-stop-ship | orchestrator | 2026-11-09 |
 | BG1326 | not-stop-ship | orchestrator | 2026-11-09 |
+| BG1327 | not-stop-ship | orchestrator | 2026-11-09 |
+| BG1328 | not-stop-ship | orchestrator | 2026-11-09 |
 
 ## Estimate vs actual
 
@@ -104,5 +106,3 @@ Forecast by `TOKENS_PER_POINT=186252`, recorded at plan time. OUT-OF-SAMPLE: for
 
 Ratio is estimate / actual: above 1 the plan over-forecast, below 1 it under-forecast. Nothing is re-fitted here - see VELOCITY.md for the trend across sprints, and change the constants only on evidence a human has looked at.
 <!-- accuracy:end -->
-| BG1327 | not-stop-ship | orchestrator | 2026-11-09 |
-| BG1328 | not-stop-ship | orchestrator | 2026-11-09 |
