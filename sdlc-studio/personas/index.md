@@ -28,10 +28,15 @@ review seats that critique artefacts are a separate concern (RFC0016), linked un
   brownfield repo; owns the `audit --profile repo` on-ramp, brownfield runbook, and `migrate` adoption path.
   Well-formed.
 
+## Served (affected by the product without using it)
+
+- [Graham Doyle](graham-doyle-change-approver.md) - chairs the change approval board; approves a
+  release from the evidence it carries and never runs the tool (D0437).
+
 ## Negative (deliberately not designed for)
 
-- [Trevor Hale](trevor-hale-enterprise-pm.md) - enterprise delivery manager wanting a GUI,
-  central governance, and a human gate on every change. A signal to decline, not a backlog.
+- [Trevor Hale](trevor-hale-enterprise-pm.md) - a GUI-first operator wanting non-technical staff
+  to run the tool and a human approval on every change. A signal to decline, not a backlog.
   Well-formed.
 
 ## Review seats
@@ -62,3 +67,4 @@ the design target and is not maintained; this registry is.
 | 2026-10-19 | Claude Opus 5.5 (US1079) | Rowan Achterberg added as Primary for the repository-tooling interface beside Maya for the shipped skill, each card declaring its interface (D0379, after the D0374 stakeholder consult) |
 | 2026-11-01 | Claude Opus 5.5 (US1083) | History put in date order and the missing 2026-07-29 row added; Last updated added; the review seats linked; Rowan's line says when an unnamed mint names him (US1080); the Primary and Secondary headings read for two Primaries |
 | 2026-11-09 | Claude Opus 5.5 (US1146) | Abena Osei added as the shipped skill's Primary on the operator's pick (D0436), listed first so an unnamed mint names her; Maya Okafor moves to Secondary and is now less well served on her End goal 3, driving a whole batch to done autonomously (D0443 narrowed D0436's list to that one); Rowan's card and line, and Trevor's Boundaries, name Abena as the shipped skill's Primary |
+| 2026-11-09 | Claude Opus 5.5 (US1147) | Graham Doyle added as Served, the change approver (D0437); Trevor Hale narrowed to a GUI-first operator, non-technical staff running the tool and a human approval on every change (D0436) |

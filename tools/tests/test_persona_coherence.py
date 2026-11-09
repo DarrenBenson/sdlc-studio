@@ -6,6 +6,8 @@ US1083: the index's history, Last updated line and seat links; the legacy file's
 maintainer link.
 US1146: the head of engineering is the shipped skill's Primary (D0436, D0443) and the
 founder-engineer moves to Secondary; the team lead's card changes only in its Primary line.
+US1147: the change approver joins the cast as Served (D0437), and the Negative narrows to the
+wants the skill still declines (D0436, D0446).
 
 Two failures this guards:
 
@@ -20,6 +22,7 @@ down here, so adding, renaming or removing a registry entry fails this file unti
 is updated to match. The files scanned in the second suite are **listed from the repo**,
 not enumerated by hand, so a new document cannot silently exempt itself.
 """
+import datetime
 import functools
 import importlib.util
 import json
@@ -37,7 +40,7 @@ PRD = REPO / "sdlc-studio" / "prd.md"
 REGISTRY = REPO / "sdlc-studio" / "personas" / "index.md"
 LEGACY = REPO / "sdlc-studio" / "personas.md"
 
-ROLES = ("Primary", "Secondary", "Negative")
+ROLES = ("Primary", "Secondary", "Served", "Negative")
 
 
 def _load_gitutil():
@@ -157,6 +160,69 @@ def flat(text: str) -> str:
 #: time, from the index or from a card's own heading.
 FOUNDER_CARD = REGISTRY.parent / "maya-okafor-founder-engineer.md"
 TEAM_LEAD_CARD = REGISTRY.parent / "jonah-reyes-team-lead.md"
+#: The change approver's card, read by the file name US1147 AC1 fixes. The name it is headed with
+#: is the one that file name spells (`slug_name`), so no persona name is written here either.
+CHANGE_APPROVER_CARD = REGISTRY.parent / "graham-doyle-change-approver.md"
+#: The change approver's Quick Reference rows and End goals as US1147 AC1 states them (D0437).
+CHANGE_APPROVER_ROWS = {
+    "Cast role": "Served",
+    "Role": "Chairs the change approval board in an audited organisation",
+    "Context": "Approves each release from the evidence put in front of him; never runs the tool or "
+               "opens a terminal",
+}
+CHANGE_APPROVER_END_GOALS = (
+    "Approve a change from one document showing what changed, which criteria passed, who reviewed "
+    "it independently, what is known to be wrong, and who is accountable",
+    "Trust that the evidence came from the process, not written after the fact",
+    "See fewer surprises in production over time",
+)
+#: The index's Served heading, the text its bullet carries after the link, and the PRD's Served
+#: bullet after the name (US1147 AC3).
+SERVED_HEADING = "Served (affected by the product without using it)"
+SERVED_INDEX_LINE = ("chairs the change approval board; approves a release from the evidence it "
+                     "carries and never runs the tool (D0437).")
+SERVED_PRD_LINE = ("who chairs the change approval board and approves a release from the evidence "
+                   "it carries, without running the tool.")
+#: The Negative's excluded End goals, Quick Reference rows and one-line summary as US1147 AC5
+#: states them (D0436, D0446).
+NEGATIVE_END_GOALS = (
+    "Drive delivery from a rich GUI with boards, swimlanes, and portfolio dashboards",
+    "Enforce multi-stage human approval and sign-off gates on every change",
+    "Have non-technical staff operate the tool",
+    "Sync the work to Jira, Azure Boards or another enterprise tracker",
+)
+NEGATIVE_ROWS = {
+    "Cast role": "Negative",
+    "Role": "GUI-first delivery manager",
+    "Context": "Runs delivery from a GUI work-tracker and wants non-technical staff operating the "
+               "tool and a human approval on every change",
+}
+NEGATIVE_SUMMARY = ("a GUI-first operator wanting non-technical staff to run the tool and a human "
+                    "approval on every change. A signal to decline, not a backlog.")
+#: The three wants the Negative's Scenario still declines (US1147 AC7).
+DECLINED_WANTS = ("a human approval on every change", "non-technical staff running the tool",
+                  "sync to an enterprise tracker")
+#: The Sprint Goal US1147 AC4 plans for the change approver.
+APPROVER_GOAL = "Approve a release from one document"
+
+
+def slug_name(card: Path) -> str:
+    """The name a card's file name spells: `jane-roe-some-role.md` reads `Jane Roe`."""
+    return " ".join(word.capitalize() for word in card.stem.split("-")[:2])
+
+
+def quick_reference(text: str) -> dict[str, str]:
+    """A card's Quick Reference rows as {attribute: value}, the bold stripped from each attribute."""
+    return {row[0].strip("*").strip(): row[1] for row in
+            table_rows(card_section(text, "Quick Reference")) if len(row) > 1}
+
+
+def the_negative() -> tuple[str, Path]:
+    """The one persona the index lists under `## Negative`, as (name, card path)."""
+    negatives = cards_under("Negative")
+    if len(negatives) != 1:
+        raise AssertionError(f"the index lists {len(negatives)} Negative personas, not one")
+    return negatives[0]
 
 
 def card_heading(card: Path) -> str:
@@ -256,6 +322,33 @@ class PrdTargetUsersTests(unittest.TestCase):
         self.assertEqual([n for n in secondaries if n in shipped.group(1)], [],
                          "the shipped-skill Primary bullet names a Secondary")
 
+    def test_the_served_change_approver_sits_between_the_secondaries_and_the_negative(self) -> None:
+        """US1147 AC3. Mutants: `Served` dropped from ROLES, so the registry parse reads past the
+        Served heading (this test and the derived-names fixture each fail); the index's Served
+        heading moved out from between Secondary and Negative, renamed, or its bullet reworded or
+        naming someone other than the card's file name spells; the PRD's Served bullet dropped while the index lists him, reworded, or not straight after
+        the Secondary bullet."""
+        index = REGISTRY.read_text(encoding="utf-8")
+        cast = [h for h in headings(index) if h.split()[0] in ROLES]
+        self.assertEqual([h.split()[0] for h in cast], ["Primary", "Secondary", "Served", "Negative"],
+                         f"the index's role headings are not Primary, Secondary, Served, Negative: {cast}")
+        self.assertIn(SERVED_HEADING, cast, "the index's Served heading is not the criterion's")
+        served = cards_under("Served")
+        self.assertEqual(self.registry.get("Served"), [n for n, _ in served] or None,
+                         "the registry parse does not read the index's Served entries")
+        approver = [(n, c) for n, c in served if c.resolve() == CHANGE_APPROVER_CARD.resolve()]
+        self.assertEqual(len(approver), 1, "## Served does not list the change approver's card once")
+        name = slug_name(approver[0][1])
+        self.assertIn(f"[{name}]({CHANGE_APPROVER_CARD.name}) - {SERVED_INDEX_LINE}",
+                      bullet_items(card_section(index, re.escape(SERVED_HEADING))),
+                      "the index's Served bullet is not the criterion's")
+        items = bullet_items(self.section)
+        line = f"**{SERVED_HEADING}:** {name}, {SERVED_PRD_LINE}"
+        self.assertIn(line, items, "Target Users has no Served bullet naming the change approver")
+        at = items.index(line)
+        self.assertTrue(at and items[at - 1].startswith("**Secondary"),
+                        "Target Users does not put the Served bullet straight after the Secondary one")
+
     def test_expected_names_are_derived_from_the_registry_not_hardcoded(self) -> None:
         # 1. The parser reads whatever the registry says, rather than knowing an answer.
         stub = REPO / "sdlc-studio" / "personas" / "index.md"  # shape only; body below
@@ -265,6 +358,8 @@ class PrdTargetUsersTests(unittest.TestCase):
             "- [Quimby Vantablack](quimby.md) - stub\n\n"
             "## Secondary (served)\n\n"
             "- [Rowan Fitzhubbard](rowan.md) - stub\n\n"
+            "## Served (affected by the product without using it)\n\n"
+            "- [Odile Pemberthwaite](odile.md) - stub\n\n"
             "## Negative (not designed for)\n\n"
             "- [Sable Wintergreen](sable.md) - stub\n"
         )
@@ -276,6 +371,7 @@ class PrdTargetUsersTests(unittest.TestCase):
             tmp.unlink(missing_ok=True)
         self.assertEqual(parsed, {"Primary": ["Quimby Vantablack"],
                                   "Secondary": ["Rowan Fitzhubbard"],
+                                  "Served": ["Odile Pemberthwaite"],
                                   "Negative": ["Sable Wintergreen"]},
                          "the registry parser did not return the registry's own names")
         self.assertTrue(stub.exists(), f"registry moved from {stub}")
@@ -518,11 +614,12 @@ SPRINT_RUN = re.compile(r"^/sdlc-studio\s+sprint(?:\s+--|$)")
 SIGN_SPAN = re.compile(r"^sprint\.py\s+sign(?:\s|$)")
 
 
-def end_goal_items(text: str) -> dict[str, list[str]]:
-    """A card's End goals by number, each as the lines it is written on."""
+def end_goal_items(text: str, heading: str = "End Goals") -> dict[str, list[str]]:
+    """A card's End goals by number, each as the lines it is written on. `heading` is a pattern,
+    so a Negative card's `End Goals (stated to exclude)` is read by passing it escaped (US1147)."""
     items: dict[str, list[str]] = {}
     current = None
-    for line in card_section(text, "End Goals").splitlines():
+    for line in card_section(text, heading).splitlines():
         numbered = re.match(r"^(\d+)\.\s+(.*\S)\s*$", line)
         if numbered:
             current = items.setdefault(numbered.group(1), [])
@@ -751,6 +848,126 @@ class CardsStateTheRunTests(unittest.TestCase):
                           f"skill's Primary")
 
 
+class ServedAndNegativeTests(unittest.TestCase):
+    """US1147: the change approver is Served (D0437), and the Negative wants only what the skill
+    still declines (D0436, D0446)."""
+
+    def test_the_change_approvers_card_states_the_three_ruled_end_goals(self) -> None:
+        """AC1. Mutants: an End goal reworded, reordered, wrapped onto a second line or missing; a
+        Cast role other than Served; an Interface row; a Quick Reference row reworded; the heading
+        not the name the card's file name spells."""
+        self.assertTrue(CHANGE_APPROVER_CARD.is_file(), f"no card at {CHANGE_APPROVER_CARD.name}")
+        text = CHANGE_APPROVER_CARD.read_text(encoding="utf-8")
+        self.assertEqual(card_heading(CHANGE_APPROVER_CARD), slug_name(CHANGE_APPROVER_CARD),
+                         "the card is not headed with the name its file name spells")
+        rows = quick_reference(text)
+        self.assertEqual({k: rows.get(k) for k in CHANGE_APPROVER_ROWS}, CHANGE_APPROVER_ROWS,
+                         "a Quick Reference row is not the criterion's")
+        self.assertNotIn("Interface", rows, "the change approver's card carries an Interface row")
+        self.assertEqual(interface_of(CHANGE_APPROVER_CARD), "",
+                         "the change approver's card carries an Interface row")
+        self.assertEqual(end_goal_items(text),
+                         {str(n): [goal] for n, goal in enumerate(CHANGE_APPROVER_END_GOALS, 1)},
+                         "the End goals are not the criterion's three, in order, one line each")
+
+    def test_a_goal_serving_the_change_approver_is_not_flagged(self) -> None:
+        """AC4, through the shipped `sprint.py plan` on copies of the PRD and the cards. Mutants:
+        the change approver's card missing, headed with another name, or its Cast role not Served;
+        the Negative control not printing NONE. The name served is the one the card's file name
+        spells, so the CLI, not a read of the card, says whether the card is there."""
+        approver, negative = slug_name(CHANGE_APPROVER_CARD), the_negative()[0]
+        home = Path(tempfile.mkdtemp(prefix="us1147-"))
+        try:
+            root = home / "root"
+            (root / "sdlc-studio").mkdir(parents=True)
+            shutil.copy2(PRD, root / "sdlc-studio" / "prd.md")
+            shutil.copytree(REGISTRY.parent, root / "sdlc-studio" / "personas")
+            env = gitutil.git_env(HOME=str(home), XDG_DATA_HOME=str(home / ".local" / "share"),
+                                  CLAUDE_CONFIG_DIR=str(home / ".claude"))
+
+            def plan(serves: str) -> tuple[list[str], str]:
+                run = subprocess.run([sys.executable, str(SCRIPTS / "sprint.py"), "plan", "--root",
+                                      str(root), "--stories", "Ready", "--sprint-goal", APPROVER_GOAL,
+                                      "--serves", serves, "--no-fetch"],
+                                     capture_output=True, text=True, cwd=str(root), env=env)
+                said = run.stdout + run.stderr
+                return [ln for ln in said.splitlines() if ln.startswith("goal serves:")], said
+
+            lines, said = plan(approver)
+            self.assertIn(f"goal serves: {approver} (Served)", lines, said)
+            self.assertEqual([ln for ln in lines if ln.startswith("goal serves: NONE")], [], said)
+            lines, said = plan(negative)
+            self.assertTrue([ln for ln in lines if ln.startswith("goal serves: NONE")],
+                            f"a goal serving only {negative} is not flagged NONE:\n{said}")
+        finally:
+            shutil.rmtree(home, ignore_errors=True)
+
+    def test_trevor_is_narrowed_to_the_three_wants_the_skill_declines(self) -> None:
+        """AC5. Mutants: a fifth excluded End goal left (the corporate stack, or governing many
+        teams centrally); tracker sync missing; a Quick Reference row not the criterion's; the
+        Why-not naming the founder-engineer, or not the shipped Primary, or not saying audit
+        evidence and the running of several teams are served through her (D0436); the index's or
+        the PRD's line still saying central governance; D0213, `sprint.py sign` or a Primary's
+        link gone."""
+        name, card = the_negative()
+        text = card.read_text(encoding="utf-8")
+        self.assertEqual(end_goal_items(text, r"End Goals \(stated to exclude\)"),
+                         {str(n): [goal] for n, goal in enumerate(NEGATIVE_END_GOALS, 1)},
+                         "the excluded End goals are not the criterion's four, in order")
+        rows = quick_reference(text)
+        self.assertEqual({k: rows.get(k) for k in NEGATIVE_ROWS}, NEGATIVE_ROWS,
+                         "a Quick Reference row is not the criterion's")
+        shipped, _ = shipped_and_tooling()
+        founder = card_heading(FOUNDER_CARD)
+        why = flat(card_section(text, "Why We Are Not Designing For Him"))
+        self.assertIn(shipped, why, f"the Why-not does not name {shipped} as the Primary it would cost")
+        self.assertNotRegex(why, rf"\b(?:{re.escape(founder)}|{re.escape(first_name(founder))})\b",
+                            f"the Why-not still names {founder}")
+        self.assertRegex(why, r"[Aa]udit evidence and the running of several teams are served "
+                              r"through her \(D0436\)")
+        index = REGISTRY.read_text(encoding="utf-8")
+        negative_heading = next(h for h in headings(index) if h.split()[0] == "Negative")
+        self.assertIn(f"[{name}]({card.name}) - {NEGATIVE_SUMMARY} Well-formed.",
+                      bullet_items(card_section(index, re.escape(negative_heading))),
+                      "the index's Negative bullet is not the criterion's")
+        self.assertIn(f"**Negative (deliberately not designed for):** {name}, {NEGATIVE_SUMMARY}",
+                      bullet_items(target_users_section(PRD.read_text(encoding="utf-8"))),
+                      "the PRD's Negative bullet is not the criterion's")
+        self.assertIn("D0213", CITED_ID.findall(text), "the card no longer cites D0213")
+        self.assertTrue([s for s in CODE_SPAN.findall(text) if SIGN_SPAN.match(s)],
+                        "the card no longer names `sprint.py sign`")
+        links = links_from(card, card_section(text, "Boundaries"))
+        self.assertEqual([n for n, c in primary_cards() if c.resolve() not in links], [],
+                         "the Boundaries no longer link each Primary's card")
+
+    def test_trevors_scenario_points_boards_and_dashboards_at_the_read_only_companion_dashboard(
+            self) -> None:
+        """AC7. Mutants: the Scenario still naming an enterprise tool; the companion dashboard
+        named as anything but read-only, or not over the committed record; one of the three
+        declined wants dropped, offered in a sentence that does not decline it, or put on the
+        companion dashboard."""
+        name, card = the_negative()
+        scenario = flat(card_section(card.read_text(encoding="utf-8"), "Scenario"))
+        self.assertTrue(scenario, f"{name}'s card has no Scenario")
+        self.assertNotRegex(scenario, r"(?i)enterprise tool", "the Scenario still names an enterprise tool")
+        before = re.findall(r"(\S+) companion dashboard", scenario)
+        self.assertTrue(before, "the Scenario names no companion dashboard")
+        self.assertEqual([w for w in before if w != "read-only"], [],
+                         "the Scenario names the companion dashboard as something other than read-only")
+        sentences = re.split(r"(?<=[.!?])\s+", scenario)
+        pointed = [s for s in sentences if "read-only companion dashboard over the committed record" in s]
+        self.assertTrue([s for s in pointed if "boards and dashboards" in s and "RFC0063 D6" in s],
+                        "no sentence points his boards and dashboards at the read-only companion "
+                        "dashboard over the committed record (RFC0063 D6)")
+        for want in DECLINED_WANTS:
+            naming = [s for s in sentences if want in s]
+            self.assertTrue(naming, f"the Scenario does not decline {want}")
+            self.assertEqual([s for s in naming if not re.search(r"\bdeclin", s)], [],
+                             f"a sentence names {want} without declining it")
+            self.assertEqual([s for s in naming if "companion dashboard" in s], [],
+                             f"a sentence puts {want} on the companion dashboard")
+
+
 #: The seats `persona_resolve.py resolve --seat` takes, each named by US1083 AC3.
 SEATS = ("engineering", "product", "qa")
 #: A `Last updated` line, bold or plain: `**Last updated:** 2026-11-01`.
@@ -829,6 +1046,24 @@ class RegistryRecordTests(unittest.TestCase):
         stated = LAST_UPDATED.findall(self.text)
         self.assertEqual(len(stated), 1, f"the index carries {len(stated)} Last updated lines")
         self.assertEqual(stated[0], max(dates), "Last updated is not the latest history date")
+
+    def test_the_index_records_the_served_approver_and_the_narrowed_negative(self) -> None:
+        """US1147 AC6. Mutants: the row dropped or its Change reworded; the row dated other than
+        the day the commit adding the change approver's card carries (today, while uncommitted).
+        Date order and Last updated are the two tests above."""
+        change = (f"{slug_name(CHANGE_APPROVER_CARD)} added as Served, the change approver "
+                  f"(D0437); {the_negative()[0]} narrowed to a GUI-first operator, non-technical "
+                  f"staff running the tool and a human approval on every change (D0436)")
+        rows = [row for row in table_rows(card_section(self.text, "Revision History"))
+                if len(row) > 2 and row[2] == change]
+        self.assertEqual(len(rows), 1, "the Revision History has no one row recording US1147's change")
+        log = subprocess.run(["git", "log", "--diff-filter=A", "--date=short", "--format=%ad", "--",
+                              CHANGE_APPROVER_CARD.relative_to(REPO).as_posix()],
+                             cwd=str(REPO), capture_output=True, text=True, check=True,
+                             env=gitutil.git_env())
+        added = log.stdout.split()
+        self.assertEqual(rows[0][0], added[-1] if added else datetime.date.today().isoformat(),
+                         "the row is not dated the day the change approver's card is committed")
 
     def test_the_index_links_the_seat_cards_in_force(self) -> None:
         """AC3, the paths asked of the shipped CLI. Mutants: a seat card linked under a role

@@ -188,8 +188,11 @@ The design target is declared in the persona registry,
   founder-engineer who wants a disciplined, trustworthy lifecycle driven by an agent rather than
   vibe-coding, and the way in for a builder who starts alone; Jonah Reyes, a small-team lead
   adopting sdlc-studio on an inherited brownfield repo.
-- **Negative (deliberately not designed for):** Trevor Hale, an enterprise delivery
-  manager wanting a GUI, central governance and a human gate on every change. A
+- **Served (affected by the product without using it):** Graham Doyle, who chairs the
+  change approval board and approves a release from the evidence it carries, without
+  running the tool.
+- **Negative (deliberately not designed for):** Trevor Hale, a GUI-first operator
+  wanting non-technical staff to run the tool and a human approval on every change. A
   signal to decline, not a backlog.
 
 Each entry links to a full persona card. `tools/tests/test_persona_coherence.py`
