@@ -295,3 +295,4 @@ lists every script with a one-line summary; open the linked page for the full en
 - `reference-*.md` - the workflow references
 
 - `sprint.py lane brief|return` - dispatch a delivery lane with its contract, obligations and proof owed, and accept it back with its own acceptance criteria run. Refuses a unit with no readable contract; forces `blocked` when a criterion did not pass.
+- `sprint.py handoff|resume` - `handoff` writes the open run's resume brief (`lib/resume_brief.py`, at most 8,000 estimated tokens) to `sdlc-studio/.local/resume-brief.md` and prints its path, estimate and next action; `resume` prints it in a fresh session with the next action the tree yields now, naming the brief's as stale when the tree's next action moved. Both refuse with exit 2 and write nothing without an open run.

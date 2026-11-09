@@ -10964,6 +10964,11 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if lp["unplaceable"]:
             print("  not exported (declared no Affects, cannot be placed in a disjoint lane): "
                   + ", ".join(lp["unplaceable"]))
+    if getattr(args, "write", False):
+        # The run is open, so the plan's last word is where the build starts: a fresh session
+        # resumed from the brief, not this planning context carried into wave 1. On stderr
+        # under --format json, so it adds nothing to the JSON on stdout.
+        print(PLAN_NEXT_STEP, file=sys.stderr if args.format == "json" else sys.stdout)
     if charter_refused:
         # 3, not 2: the plan itself was not refused - it ran and the run is open - so this must
         # not read as "nothing happened". A caller that treats any non-zero as "re-plan" would
@@ -12265,6 +12270,95 @@ def cmd_next(args: argparse.Namespace) -> int:
     return 0
 
 
+#: Where `sprint.py handoff` writes the open run's resume brief and `sprint.py resume` reads it.
+RESUME_BRIEF_REL = Path("sdlc-studio") / ".local" / "resume-brief.md"
+
+#: The line `sprint plan --write` ends on: the run is open, and wave 1 starts in a fresh session.
+PLAN_NEXT_STEP = ("next step: `sprint.py handoff`, then start wave 1 in a fresh session with "
+                  "`sprint.py resume`")
+
+
+def _handoff_agents(values: list[str] | None) -> tuple[dict, str | None]:
+    """`--agent <unit>=<agent-id>` values as a map, or the first malformed value's refusal."""
+    agents: dict[str, str] = {}
+    for raw in values or []:
+        unit, sep, agent = str(raw).partition("=")
+        if not sep or not unit.strip() or not agent.strip():
+            return {}, (f"--agent {raw!r} is not <unit>=<agent-id>: each value names a unit, "
+                        f"`=`, and the agent id of its lane")
+        agents[unit.strip()] = agent.strip()
+    return agents, None
+
+
+def cmd_handoff(args: argparse.Namespace) -> int:
+    """Write the open run's resume brief to `RESUME_BRIEF_REL` and print its path, its estimated
+    tokens against `resume_brief.BUDGET_TOKENS` and the next action the brief records. Exit 2, writing nothing, on
+    a malformed `--agent`, no open run, or a brief over the budget. The run state is only read:
+    no handoff record and no `handoff` key, the surface US0978 retired."""
+    from lib import resume_brief  # noqa: PLC0415 - read by these two verbs alone
+    agents, refusal = _handoff_agents(getattr(args, "agent", None))
+    if refusal:
+        print(f"handoff: {refusal}. Nothing was written.", file=sys.stderr)
+        return 2
+    root = Path(args.root)
+    try:
+        text = resume_brief.build(root, agents, list(getattr(args, "issue", None) or []))
+    except resume_brief.ResumeError as exc:
+        print(f"handoff: {exc}. Nothing was written.", file=sys.stderr)
+        return 2
+    recorded = resume_brief.parse(text)
+    path = root / RESUME_BRIEF_REL
+    sdlc_md.atomic_write(path, text)
+    print(f"handoff: wrote {path} (an estimated {resume_brief.estimate_tokens(text):,} tokens "
+          f"of the {resume_brief.BUDGET_TOKENS:,} budget)")
+    print(f"handoff: next action (rung {recorded['rung']}, {recorded['kind']}): "
+          f"{recorded['next_action']}")
+    print("handoff: resume it in a fresh session with `sprint.py resume`")
+    return 0
+
+
+def cmd_resume(args: argparse.Namespace) -> int:
+    """Print the brief `sprint.py handoff` wrote, then the next action the tree yields now; when
+    that differs from the brief's own (a lane landed since the handoff, say), the brief's is named
+    stale beside it. Exit 2 with no brief on disk, a file that is no brief, no open run, or a
+    brief of another run."""
+    from lib import resume_brief  # noqa: PLC0415 - read by these two verbs alone
+    root = Path(args.root)
+    path = root / RESUME_BRIEF_REL
+    if not path.is_file():
+        print(f"resume: no resume brief at {path}; write one with `sprint.py handoff` in the "
+              f"session that hands the run off", file=sys.stderr)
+        return 2
+    text = sdlc_md.read_text_safe(path) or ""
+    try:
+        brief = resume_brief.parse(text)
+    except resume_brief.ResumeError as exc:
+        print(f"resume: {path}: {exc}", file=sys.stderr)
+        return 2
+    state = run_state.read(root) or {}
+    open_id = str(state.get("run_id") or "") if state.get("outcome") == run_state.RUNNING else ""
+    if not open_id:
+        print(f"resume: the brief names {brief['run_id']} and there is no open run at "
+              f"{run_state.path(root)}", file=sys.stderr)
+        return 2
+    if brief["run_id"] != open_id:
+        print(f"resume: the brief names {brief['run_id']}, not the open run {open_id}; write "
+              f"this run's with `sprint.py handoff`", file=sys.stderr)
+        return 2
+    try:
+        step = resume_brief.next_action(root)
+    except resume_brief.ResumeError as exc:
+        print(f"resume: {exc}", file=sys.stderr)
+        return 2
+    print(text, end="" if text.endswith("\n") else "\n")
+    print()
+    print(f"resume: next action (rung {step.rung}, {step.kind}): {step.text}")
+    if (step.rung, step.kind, step.text) != (brief["rung"], brief["kind"], brief["next_action"]):
+        print(f"resume: stale (rung {brief['rung']}, {brief['kind']}), the brief's next action "
+              f"before the tree moved: {brief['next_action']}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio sprint batch selection.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -12737,6 +12831,28 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("--format", choices=("text", "json"), default="text")
     co.add_argument("--root", default=".", help="Repo root (default: .)")
     co.set_defaults(func=cmd_cost)
+
+    ho = sub.add_parser(
+        "handoff",
+        help="Write the open run's resume brief (at most 8,000 estimated tokens) to "
+             "sdlc-studio/.local/resume-brief.md and print its path, its estimate and the next "
+             "action. Exit 2, writing nothing, with no open run, a brief over the budget or a "
+             "malformed --agent. Writes no handoff record and no run-state key.")
+    ho.add_argument("--agent", action="append", metavar="UNIT=AGENT_ID",
+                    help="the agent id of a unit's lane, shown in the brief; repeatable")
+    ho.add_argument("--issue", action="append", metavar="TEXT",
+                    help="a known issue, listed before the open findings raised in the run; "
+                         "repeatable")
+    ho.add_argument("--root", default=".", help="Repo root (default: .)")
+    ho.set_defaults(func=cmd_handoff)
+
+    rs = sub.add_parser(
+        "resume",
+        help="Print the brief `sprint.py handoff` wrote, then the next action the tree yields "
+             "now, naming the brief's own as stale when the tree's next action moved since. Exit 2 with no "
+             "brief on disk or a brief of a run other than the open one.")
+    rs.add_argument("--root", default=".", help="Repo root (default: .)")
+    rs.set_defaults(func=cmd_resume)
 
     sdlc_md.add_global_root(parser)
     return parser

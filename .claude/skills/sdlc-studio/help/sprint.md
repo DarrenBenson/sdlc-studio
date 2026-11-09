@@ -518,6 +518,29 @@ nothing tells you it went nowhere.
 A change nobody recorded is a change the close cannot explain, and the difference between the
 planned batch and the delivered one is the thing a retro is actually for.
 
+## Handing off and resuming in a fresh session
+
+`sprint plan --write` ends by naming its next step: hand the run off, then start wave 1 in a
+fresh session. The same pair carries a run across a compaction or a wave boundary.
+
+```bash
+# write the open run's resume brief, naming each lane's agent and any known issue
+python3 <skill>/scripts/sprint.py handoff --agent <unit>=<agent-id> --issue "<text>"
+# in the fresh session: print the brief and the next action the tree yields now
+python3 <skill>/scripts/sprint.py resume
+```
+
+`handoff` writes the brief to `sdlc-studio/.local/resume-brief.md` and prints its path, its
+estimated tokens against the 8,000 budget and the next action. Both flags repeat and both are
+optional. With no open run, a brief over the budget or an `--agent` value that is not
+`<unit>=<agent-id>`, it exits 2 and writes nothing. It writes no handoff record and no run-state
+key.
+
+`resume` reads only the tree. It prints the brief, then the next action the tree yields now: on
+an unchanged tree that is the action the handoff recorded, and on a tree whose next action
+moved since (a lane landed, say) it names the brief's own action as stale beside the current one. With no
+brief on disk, a file that is not a brief, no open run or a brief of another run, it exits 2.
+
 ## Prerequisites
 
 - A batch to run (CRs/bugs/stories on disk, or a worklist file).

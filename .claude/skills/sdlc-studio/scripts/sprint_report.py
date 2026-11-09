@@ -891,8 +891,11 @@ NON_CEREMONY_VERBS = {
     # checklist feeds, recorded on the report page and the run. A checklist row for it could
     # only ever read pending when the page is composed.
     # `cost` is a read-only report of where a session's tokens went; it certifies nothing.
+    # `handoff` and `resume` carry an open run into a fresh session through its resume brief;
+    # they move no unit and certify nothing.
     "sprint": ("appetite", "close", "boundary", "report", "sign",
-               "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call", "cost"),
+               "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call", "cost",
+               "handoff", "resume"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
     "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
