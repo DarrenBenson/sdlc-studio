@@ -79,7 +79,17 @@ Delivered: 49 points as planned (44 counting US0986 and BG1205 once). By theme 3
 
 **0 of 21 unit(s) measured; 18 of 21 forecast at plan time.**
 
-**Velocity: 8.31 points/elapsed-hour** (49 points ACCEPTED over 5.9h, operator-supplied, ceremony included). It WROTE 52 point(s): 3 more shipped and were not accepted (US1147), so this rate measures acceptance, not output. This is the planning number - points per SESSION within the observed single-session envelope; it is NOT a linear per-point rate to extrapolate to a 1-point or 100-point sprint, and it is descriptive, never a target.
+**Priced cost: 46,104,977 priced input-equivalent tokens**, 940,918 per point over 49 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $126.64, $2.58 per point, covering 100.0% of the priced tokens; price table effective 2026-11-09. Each component is its count times its weight.
+
+- input: 4,114 x1
+- output: 2,074,532 x5
+- cache write 5m: 4,096,258 x1.25
+- cache write 1h: 859,789 x2
+- cache read: 288,883,021 x0.1
+
+**Sprint tokens/point: 143,565** (7,034,693 tokens over 49 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
+
+**Velocity (points/elapsed-hour): UNMEASURED.** No run-state elapsed for this sprint (an interactive sprint's wall-clock would count operator-away gaps as sprint time). Supply a real elapsed with `accuracy --elapsed-hours H` to record it - descriptive, never a target.
 
   secondary (points/worker-hour): UNMEASURED - no runner worker-time records (an interactive sprint has none).
 
