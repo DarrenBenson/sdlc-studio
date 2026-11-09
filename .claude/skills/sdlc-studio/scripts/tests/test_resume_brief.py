@@ -21,7 +21,6 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import critic  # noqa: E402
 import file_finding  # noqa: E402
-import sprint_report  # noqa: E402
 from lib import resume_brief, sdlc_md  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
 import quiet  # noqa: E402 - the shared console-diagnostics capture
@@ -480,9 +479,17 @@ class KnownIssuesTests(unittest.TestCase):
         self.assertEqual(stamp, MID_RUN.format(moment))
         self.assertIsNotNone(sdlc_md.parse_iso8601(moment))
         self.assertIn(uid, self.known())
-        # the brief reads the moment the way the report does: re-read it and the brief follows
-        with mock.patch.object(sprint_report, "_stamp_timestamp", return_value=PRE_RUN) as read:
-            self.assertNotIn(uid, self.known())
+        # the brief reads the moment the way the report does: re-read it and the brief follows.
+        # `resume_brief` imports `sprint_report` when it is called, so the patch goes on the module
+        # that import binds; another test that reloads `sprint_report` into `sys.modules` (as
+        # test_sprint_report.py's CloseReportTests does) leaves an import-time object stale, and a
+        # patch on that one the brief never reads (BG1329). Dropping the entry here stands in
+        # for that reload, so this holds in any import order.
+        with mock.patch.dict(sys.modules):
+            sys.modules.pop("sprint_report", None)
+            import sprint_report  # noqa: PLC0415 - the call-time import `resume_brief` makes
+            with mock.patch.object(sprint_report, "_stamp_timestamp", return_value=PRE_RUN) as read:
+                self.assertNotIn(uid, self.known())
         self.assertIn(stamp, [c.args[0] for c in read.call_args_list])
         # and holds no stamp parser of its own
         source = Path(resume_brief.__file__).read_text(encoding="utf-8")

@@ -317,15 +317,15 @@ on the scoped batch. Epic-scoping is story-only (it errors with `--crs`/`--bugs`
 is Cost of Delay over job size, and both sit on the same modified Fibonacci scale (1, 2, 3, 5, 8,
 13, 20). The job size is the unit's **`Points:`** - the one size vocabulary, recorded on the
 artefact. Cost of Delay is derived from Priority, or supplied by the review seats: consult **Product
-Owner** for value (+ time-criticality, risk-reduction) and **QA** for risk, and write their scores
-to `sdlc-studio/.local/wsjf-inputs.json` (`{<id>: {value, time_criticality, risk_reduction}}`). Seat
-scores replace the derived CoD; they never replace the size, because there is one size vocabulary
-and the seats do not speak a second. `sprint plan --order wsjf` then orders by **WSJF = Cost of
-Delay / Points**, recording the components in the sprint-plan artifact. A unit with no Points scores
-no WSJF and falls to priority order - which is only reachable through the recorded grooming opt-out,
-since the gate otherwise refuses an unsized batch. With no seat inputs (or `--skip-personas`) the
-CoD comes from Priority alone. The seat consult is the isolated-subagent consult; the planner math
-is deterministic.
+Owner** for value (+ time-criticality, risk-reduction) and **QA** for risk, and
+write their scores to `sdlc-studio/.local/wsjf-inputs.json`
+(`{<id>: {value, time_criticality, risk_reduction}}`). Seat scores replace the derived CoD; they
+never replace the size, because there is one size vocabulary and the seats do not speak a second.
+`sprint plan --order wsjf` then orders by **WSJF = Cost of Delay / Points**, recording the
+components in the sprint-plan artifact. A unit with no Points scores no WSJF and falls to priority
+order - which is only reachable through the recorded grooming opt-out, since the gate otherwise
+refuses an unsized batch. With no seat inputs (or `--skip-personas`) the CoD comes from Priority
+alone. The seat consult is the isolated-subagent consult; the planner math is deterministic.
 
 Distinct from this ordering consult, the **Sprint Goal seat read advises**: seats judge whether the
 goal is achievable by this batch, what done means for it, and whether it reads as one increment,
