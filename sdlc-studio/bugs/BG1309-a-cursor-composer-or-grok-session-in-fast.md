@@ -12,7 +12,7 @@
 
 ## Summary
 
-Found building US1143 on 2026-11-09. Cursor's pricing page (`https://cursor.com/docs/models-and-pricing`, read 2026-11-09) makes Fast the default for Composer, and for Grok 4.7 on Premium and higher plans, and bills Fast higher (Composer Fast $3 / $0.50 / $15 per million input / cached / output tokens, against $0.50 / $0.20 / $2.50 standard). A reading carries only the model id the caller launched it with, which is the same for both speeds, so `lib/prices.py` prices every Fast session at the standard rate and under-states its dollar cost several times over. US1143 states the limit in the table's notes and reference-config.md; nothing prices it.
+Found building US1143 on 2026-11-09. Cursor's pricing page (`https://cursor.com/docs/models-and-pricing`, read 2026-11-09) makes Fast the default for Composer, and for Grok 4.7 on Premium and higher plans, and bills Fast higher (Composer Fast $3 / $0.50 / $15 per million input / cached / output tokens, against $0.50 / $0.20 / $2.50 standard). A reading carries only the model id the caller launched it with, which is the same for both speeds, so `lib/prices.py` prices every Fast session at the standard rate and under-states its dollar cost several times over. US1143 states the limit in the table's notes and reference-config.md; nothing prices it. xAI's own page has the same shape: a priority tier billed at twice the standard rate, which an `xai/<model>` reading cannot tell apart either (qa-seat-US1143-r1, non-blocking finding 3, 2026-11-09). The same review's round 2 found the Cursor Fast caveat still on the `xai/grok-4.7`, `xai/grok-4.6` and `xai/grok-4.5` notes, though xAI's page says Fast is not on its public API; the fix moves that caveat to the Cursor slugs alone.
 
 ## Steps to Reproduce
 

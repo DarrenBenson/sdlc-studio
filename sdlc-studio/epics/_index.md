@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 18 |
+| Draft | 16 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 254 |
+| Done | 256 |
 | Superseded | 33 |
 | **Total** | **305** |
 
@@ -24,7 +24,7 @@
 
 | ID | Title | Status | Stories | Deps | Created | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
-| [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Draft | 7 | -- | 2026-10-06 | 2026-10-06 |
+| [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Done | 7 | -- | 2026-10-06 | 2026-10-06 |
 | [EP0275](EP0275-a-versioned-evidence-annex-that-consumers-of-the.md) | A versioned evidence annex that consumers of the committed sprint records can parse against | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0276](EP0276-the-report-of-record-is-reviewable-from-the.md) | The report of record is reviewable from the committed tree and states its cost in money | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0277](EP0277-a-finding-filed-into-the-skill-source-is.md) | A finding filed into the skill source is held to the neutrality rule when it is filed, not first at commit | Draft | 1 | -- | 2026-10-09 | 2026-10-09 |
@@ -53,7 +53,7 @@
 | [EP0300](EP0300-every-consuming-agent-starts-leaner-and-every-commit.md) | Every consuming agent starts leaner and every commit says less, and each harness's dollars are priced | Draft | 7 | -- | 2026-11-06 | 2026-11-06 |
 | [EP0301](EP0301-v6-3-0-ships-with-paperwork-that-matches.md) | v6.3.0 ships with paperwork that matches the code | Done | 4 | -- | 2026-11-08 | 2026-11-08 |
 | [EP0302](EP0302-a-sprint-wave-resumes-in-a-fresh-session.md) | A sprint wave resumes in a fresh session from a bounded on-disk brief | Draft | 3 | -- | 2026-11-09 | 2026-11-09 |
-| [EP0303](EP0303-grok-and-composer-runs-are-priced-in-us.md) | Grok and Composer runs are priced in US dollars from each provider's own dated page | Draft | 1 | -- | 2026-11-09 | 2026-11-09 |
+| [EP0303](EP0303-grok-and-composer-runs-are-priced-in-us.md) | Grok and Composer runs are priced in US dollars from each provider's own dated page | Done | 1 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0304](EP0304-a-copilot-run-is-priced-on-the-basis.md) | A Copilot run is priced on the basis its plan is billed by: tokens in AI credits by default, premium requests only on request billing | Draft | 2 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0305](EP0305-the-persona-registry-and-the-prd-name-abena.md) | The persona registry and the PRD name Abena Osei as the shipped skill's Primary and Graham Doyle as Served | Draft | 3 | -- | 2026-11-09 | 2026-11-09 |
 

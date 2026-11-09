@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 263 |
+| Open | 266 |
 | In Progress | 0 |
-| Fixed | 872 |
+| Fixed | 873 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1309** |
+| **Total** | **1313** |
 
 ## All Bugs
 
@@ -280,7 +280,7 @@
 | [BG1202](BG1202-us0989-s-cursor-reader-leaves-two-guards-unpinned.md) | US0989's Cursor reader leaves two guards unpinned and names an empty usage for a malformed answer | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1203](BG1203-us0991-ac3-s-verify-line-cannot-fail-on.md) | US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1204](BG1204-a-run-metered-by-two-harnesses-adds-the.md) | A run metered by two harnesses adds the supplied delegated totals in full, even over a reading that already holds delegated spend | Open | Low | 2026-11-04 | 2026-11-04 |
-| [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-04 | 2026-11-04 |
+| [BG1205](BG1205-us0986-did-not-converge-in-review-round-2.md) | US0986 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-04 | 2026-11-04 |
 | [BG1206](BG1206-bg1116-s-pins-key-on-literal-wording-the.md) | BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1207](BG1207-bg1197-s-harness-scrub-lives-in-the-root.md) | BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment | Open | Low | 2026-11-04 | 2026-11-04 |
 | [BG1208](BG1208-bg1122-s-meter-memo-leaves-the-unfinished-line.md) | BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth | Open | Low | 2026-11-04 | 2026-11-04 |
@@ -385,6 +385,10 @@
 | [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1309](BG1309-a-cursor-composer-or-grok-session-in-fast.md) | A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1310](BG1310-tools-skill-tests-sh-the-unittest-runner-npm.md) | `tools/skill-tests.sh`, the unittest runner `npm test` uses, loads no conftest, so the harness-variable scrub BG1197 added never runs there and the meter tests fail under a Cursor session | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1311](BG1311-sprint-py-lane-land-removes-the-builder-s.md) | `sprint.py lane land` removes the builder's worktree, so the builder cannot be resumed for a repair after a REJECT and a fresh builder must re-read the unit from cold | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1312](BG1312-the-resume-brief-s-known-issues-scan-matches.md) | The resume brief's known-issues scan matches only a `Raised-in-batch` stamp naming the run id, so a brief written mid-run says no known issues while findings filed during the run are open | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1313](BG1313-the-resume-brief-has-three-edges-its-tests.md) | The resume brief has three edges its tests do not pin: a batch listed out of plan order, a `-qa.none` landing marker read as in flight, and a Sprint Goal holding a newline that breaks `parse` | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # CR-0611: Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0274
 > **Priority:** High
 > **Type:** Feature

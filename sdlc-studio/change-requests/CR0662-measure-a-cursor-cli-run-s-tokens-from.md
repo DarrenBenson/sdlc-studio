@@ -1,6 +1,6 @@
 # CR-0662: Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0274
 > **Priority:** High
 > **Type:** Feature

@@ -1,6 +1,6 @@
 # US0986: The token meter reads the running harness's store, chosen by SDLC_STUDIO_HARNESS or the environment, and never sums two
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0611
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio new
@@ -20,14 +20,19 @@
 
 - **AC1:** Given a fixture Claude transcript and either `SDLC_STUDIO_HARNESS=claude` or no selection with only Claude signalled, when the meter is read, then the reading equals today's `session_tokens` figure for that transcript (input + output + cache creation, cache reads excluded, the main-thread basis), and a malformed usage record still refuses the read. Fails on: the dispatcher re-implementing the Claude sum and counting cache reads, or skipping the malformed record
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_claude_reading_is_unchanged
+  - **Verified:** yes (2026-11-09)
 - **AC2:** Given `SDLC_STUDIO_HARNESS` set to cursor, copilot or opencode and a readable Claude transcript in the same fixture, when the meter is read, then only the chosen harness's reader is consulted, the Claude transcript is never opened, and a harness with no reader installed returns tokens None with a reason naming the harness, never zero. Fails on: falling back to the Claude transcript when the chosen reader returns nothing
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_chosen_harness_never_reads_another_store
+  - **Verified:** yes (2026-11-09)
 - **AC3:** Given no `SDLC_STUDIO_HARNESS`, when exactly one harness is signalled by the environment (`CLAUDECODE`; `CURSOR_AGENT` or a Cursor run id; `COPILOT_HOME`; `OPENCODE` or `OPENCODE_DB`), then that harness is selected even when another harness's store sits on disk; when two are signalled, or none is and two stores are present, the reading is tokens None with a reason naming every candidate and no total is formed. Fails on: choosing by a fixed precedence order, a store on disk outranking an environment signal, or adding two readings
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_two_unselected_harnesses_name_the_candidates
+  - **Verified:** yes (2026-11-09)
 - **AC4:** Given any reader's result, then the reading and every stamp `open_run` or `stamp_tokens` writes name the harness, carry cache reads as a separate figure outside `tokens` (D0346), and a run total never subtracts a reading of one harness from a reading of another. Fails on: stamps keyed by source alone with no harness recorded, or cache reads folded into the headline
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_readings_and_stamps_name_the_harness
+  - **Verified:** yes (2026-11-09)
 - **AC5:** Given a fixture repository with an open run and `SDLC_STUDIO_HARNESS=opencode` where only a Claude transcript exists, when `retro.py accuracy --id <retro> --tokens-from-harness` runs, then no token figure is recorded and the output names opencode and the reason. Fails on: the library honouring the selection while the CLI path still reads the Claude transcript through the `harness_tokens` alias
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessLaneTests::test_accuracy_names_the_harness_it_could_not_read
+  - **Verified:** yes (2026-11-09)
 
 ## Notes
 

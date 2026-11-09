@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 29 |
 | Approved | 0 |
-| In Progress | 32 |
-| Complete | 538 |
+| In Progress | 29 |
+| Complete | 541 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -22,7 +22,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [CR-0609](CR0609-publish-a-versioned-evidence-annex-for-the-committed.md) | Publish a versioned evidence annex for the committed sprint records | In Progress | High | Feature | 2026-10-05 | EP0275 |
 | [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | In Progress | Medium | Feature | 2026-10-05 | EP0276 |
-| [CR-0611](CR0611-read-cursor-copilot-and-opencode-token-meters-when.md) | Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use | In Progress | High | Feature | 2026-10-06 | EP0274 |
+| [CR-0611](CR0611-read-cursor-copilot-and-opencode-token-meters-when.md) | Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use | Complete | High | Feature | 2026-10-06 | EP0274 |
 | [CR-0612](CR0612-check-a-finding-filed-into-the-skill-source.md) | Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit | In Progress | Medium | Improvement | 2026-10-07 | EP0277 |
 | [CR-0613](CR0613-make-a-clone-that-cannot-run-the-gates.md) | Make a clone that cannot run the gates say so at setup, not 50 minutes into a push | Complete | Medium | Improvement | 2026-10-07 | EP0278 |
 | [CR-0614](CR0614-sprint-checklist-waivers-cannot-be-scoped-to-a.md) | Sprint-checklist waivers cannot be scoped to a unit or expire, so a defect in one checklist row has only a permanent project-wide exit | In Progress | Medium | Improvement | 2026-10-07 | EP0279 |
@@ -73,7 +73,7 @@
 | [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | Complete | Low | Feature | 2026-11-02 | EP0297 |
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Complete | High | Improvement | 2026-11-04 | EP0298 |
-| [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | In Progress | High | Feature | 2026-11-04 | EP0274 |
+| [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | Complete | High | Feature | 2026-11-04 | EP0274 |
 | [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Proposed | High | Feature | 2026-11-05 | -- |
 | [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Proposed | Medium | Improvement | 2026-11-05 | -- |
 | [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | Complete | High | Feature | 2026-11-06 | EP0299 |
@@ -101,7 +101,7 @@
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
 | [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
 | [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | In Progress | High | Enhancement | 2026-11-09 | EP0305 |
-| [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | In Progress | High | Enhancement | 2026-11-09 | EP0303 |
+| [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Complete | High | Enhancement | 2026-11-09 | EP0303 |
 
 ## Archived Releases
 
