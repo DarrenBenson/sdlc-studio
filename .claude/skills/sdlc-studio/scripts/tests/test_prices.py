@@ -250,16 +250,30 @@ OPENCODE_UNLISTED = "opencode/deepseek-v4.1-flash"
 FIXTURES = SCRIPTS / "tests" / "fixtures" / "harness_usage"
 #: US1143. The id each harness's reading carries for a Grok or Composer model: Cursor CLI prints
 #: no model, so its reading carries the `--model` slug `sprint lane run --harness cursor` passes;
-#: OpenCode's carries its `<provider>/<model>` id. Any other form is an id no reading carries.
+#: OpenCode's carries its `<provider>/<model>` id. The table lists Grok under OpenCode's `xai/`
+#: id alone: an OpenCode reading can also carry a Zen id (`opencode/grok-4.7`), but that is a
+#: OpenCode's resale of the model, and AC1 takes Grok's rates from xAI's page only.
 GROK_OR_COMPOSER = re.compile(r"grok|composer", re.I)
 CURSOR_SLUG = re.compile(r"^(?:grok|composer)-[\w.-]+$")
 OPENCODE_XAI = re.compile(r"^xai/grok-[\w.-]+$")
+#: Every model xAI's Text API table prices per token (https://docs.x.ai/developers/pricing, read
+#: 2026-11-09), each of which OpenCode's catalogue carries as `xai/<model>`; and the three Grok
+#: models Cursor's page offers, under the slug a Cursor lane passes.
+XAI_TEXT_MODELS = ("grok-4.7", "grok-build-0.1", "grok-4.6", "grok-4.5", "grok-4.3",
+                   "grok-4.20-multi-agent-0309", "grok-4.20-0309-reasoning",
+                   "grok-4.20-0309-non-reasoning")
+CURSOR_GROK_SLUGS = ("grok-4.7", "grok-4.6", "grok-4.5")
+#: The full set of Grok ids the table prices, so a dropped id (or one listed unread) fails AC1.
+PRICED_GROK = frozenset(CURSOR_GROK_SLUGS) | frozenset(f"xai/{m}" for m in XAI_TEXT_MODELS)
 #: Each Grok and Composer entry's (input, cache_read, output) US dollars per million, typed from
 #: xAI's and Cursor's pages as read on 2026-11-09, so a changed rate fails here.
 GROK_COMPOSER_RATES = {
     "grok-4.7": (2.0, 0.5, 6.0), "grok-4.6": (2.0, 0.5, 6.0), "grok-4.5": (2.0, 0.3, 6.0),
     "xai/grok-4.7": (2.0, 0.5, 6.0), "xai/grok-4.6": (2.0, 0.5, 6.0),
-    "xai/grok-4.5": (2.0, 0.3, 6.0), "composer-2.5": (0.5, 0.2, 2.5)}
+    "xai/grok-4.5": (2.0, 0.3, 6.0), "xai/grok-build-0.1": (1.0, 0.2, 2.0),
+    "xai/grok-4.3": (1.25, 0.2, 2.5), "xai/grok-4.20-multi-agent-0309": (1.25, 0.2, 2.5),
+    "xai/grok-4.20-0309-reasoning": (1.25, 0.2, 2.5),
+    "xai/grok-4.20-0309-non-reasoning": (1.25, 0.2, 2.5), "composer-2.5": (0.5, 0.2, 2.5)}
 #: Cursor's first captured reading (9,046 input, 6,016 cached, 31 output) priced by hand.
 CURSOR_READING_USD = {"grok-4.7": (9_046 * 2.0 + 6_016 * 0.5 + 31 * 6.0) / 1e6,
                       "composer-2.5": (9_046 * 0.5 + 6_016 * 0.2 + 31 * 2.5) / 1e6}
@@ -354,9 +368,11 @@ class NonClaudePriceTests(unittest.TestCase):
                 "opencode": (FIXTURES / "opencode.jsonl").read_text(encoding="utf-8")}
 
     def test_every_grok_and_composer_price_names_its_provider_page_and_the_day_read(self) -> None:
-        """US1143 AC1. MUTANTS: a Grok or Composer entry dropped; one sourced from another
-        provider's page or a reseller's, or undated; one under an id no reading carries (such as
-        `opencode/grok-4.7`); a cache-write slot at a rate the provider does not bill it at."""
+        """US1143 AC1. MUTANTS: a Grok entry dropped or added (the pinned id set), or a Composer
+        entry dropped; one sourced from another provider's page or a reseller's, or undated; one
+        under an id that is neither a Cursor slug nor OpenCode's `xai/<model>` (OpenCode's Zen
+        `opencode/grok-4.7` is one a reading carries, but its price is a reseller's, so AC1's
+        sourcing rule keeps it out); a cache-write slot at a rate the provider does not bill."""
         lanes = __import__("lib.lanes", fromlist=["headless_command"])
         harness_usage = __import__("lib.harness_usage", fromlist=["parse"])
         captures = self._captures()
@@ -364,6 +380,8 @@ class NonClaudePriceTests(unittest.TestCase):
         ids = [e["model"] for e in entries]
         for prefix in ("grok-", "xai/grok-", "composer-"):
             self.assertTrue(any(i.startswith(prefix) for i in ids), f"premise: a {prefix} entry")
+        self.assertEqual(PRICED_GROK, frozenset(i for i in ids if "grok" in i.lower()),
+                         "every text model on xAI's page under xai/, and Cursor's three slugs")
         with tempfile.TemporaryDirectory() as tmp:
             for entry in entries:
                 model = entry["model"]
@@ -371,7 +389,7 @@ class NonClaudePriceTests(unittest.TestCase):
                     harness, flag = (("cursor", "--model") if CURSOR_SLUG.match(model) else
                                      ("opencode", "-m") if OPENCODE_XAI.match(model) else
                                      (None, None))
-                    self.assertIsNotNone(harness, f"{model!r} is no id a harness's reading carries")
+                    self.assertIsNotNone(harness, f"{model!r} is not a Cursor slug or xai/<model>")
                     argv = lanes.headless_command(harness, "brief", model, Path(tmp))
                     self.assertEqual(model, argv[argv.index(flag) + 1])
                     reading = harness_usage.parse(harness, captures[harness], model=model)
