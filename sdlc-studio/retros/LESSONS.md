@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-06
+**Last Updated:** 2026-11-09
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0468: Run run ten's orchestrator in a fresh session started from `sprint.py handoff`, now that US1141 ships it
+
+- **Added:** 2026-11-09
+- **Review-by:** 2027-02-07
+
+Run run ten's orchestrator in a fresh session started from `sprint.py handoff`, now that US1141 ships it.
+
+Recorded from retro RETRO0142.
+
+## L-0467: Fast-forward each lane's worktree to main before `lane land`, and normalise mutant test paths with the fragment surfaces before the commit…
+
+- **Added:** 2026-11-09
+- **Review-by:** 2027-02-07
+
+Fast-forward each lane's worktree to main before `lane land`, and normalise mutant test paths with the fragment surfaces before the commit (CR0683's first criterion).
+
+Recorded from retro RETRO0142.
+
+## L-0466: Before grooming a change to a shared surface (hook output, a top-level verb), grep every test that asserts that surface and put each in…
+
+- **Added:** 2026-11-09
+- **Review-by:** 2027-02-07
+
+Before grooming a change to a shared surface (hook output, a top-level verb), grep every test that asserts that surface and put each in Affects, with the points to match.
+
+Recorded from retro RETRO0142.
 
 ## L-0465: Wait for the forge's CI on the parent before pushing again, or have the pre-push check name an in-progress run (BG1272)
 

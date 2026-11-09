@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 271 |
+| Open | 275 |
 | In Progress | 0 |
 | Fixed | 879 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1324** |
+| **Total** | **1328** |
 
 ## All Bugs
 
@@ -400,6 +400,10 @@
 | [BG1322](BG1322-the-commit-msg-trailer-check-still-refuses-commit.md) | The commit-msg trailer check still refuses commit 089008d5's `Refs: US1090`, whose only record is a waiver row in decisions.md | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1323](BG1323-the-commit-msg-hook-misses-git-s-scissors.md) | The commit-msg hook misses git's scissors line under a non-default `core.commentChar`, the multi-id rule still reads trailers below it, and `_ledger_rows` and BG1264's fragment say an edited ledger row owns nothing | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1324](BG1324-no-test-replays-a-page-filed-before-the.md) | No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1325](BG1325-a-hand-run-mutation-pass-can-leave-a.md) | A hand-run mutation pass can leave a stale `.pyc` that Python reuses after the source is restored, so a later test run, the commit hook's among them, judges the mutant rather than the code | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1326](BG1326-sprint-py-handoff-writes-a-resume-brief-while.md) | `sprint.py handoff` writes a resume brief while a lane is still in flight, so the wave boundary reference-sprint.md defines is stated but not enforced, and four files still say no command writes a handoff | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1327](BG1327-a-verdict-file-s-escape-which-the-review.md) | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

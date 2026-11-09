@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0468: Run run ten's orchestrator in a fresh session started from `sprint.py handoff`, now that US1141 ships it**
+- **L-0467: Fast-forward each lane's worktree to main before `lane land`, and normalise mutant test paths with the fragment surfaces before the commit…**
+- **L-0466: Before grooming a change to a shared surface (hook output, a top-level verb), grep every test that asserts that surface and put each in…**
 - **L-0465: Wait for the forge's CI on the parent before pushing again, or have the pre-push check name an in-progress run (BG1272)**
 - **L-0464: Serialise units that edit the same function into one lane or strict sequence at planning, not only the same file (BG1269)**
 - **L-0463: A pre-review sweep that runs, for every unit, the tests and Verify lines that read each file the unit changed, so a cut prose rule or a…**

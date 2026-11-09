@@ -212,3 +212,4 @@
 | US1148 | agent-a738b8cbad3aadd31 | 2026-11-09 | TRUE 34, FALSE 0, UNVERIFIABLE 0 | killed 25, survived 1 | 93758d0d99048635 at 77edb6283f91 |
 | BG1320 | agent-a097bf8ee0820df94 | 2026-11-09 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 1 | 5aede75d6381bd68 at c464def52234 |
 | US1145 | agent-ae2e44a5ca45735aa | 2026-11-09 | TRUE 19, FALSE 0, UNVERIFIABLE 3 | killed 17, survived 0 | c94333015ca99fae at f4e3a8c5f275 |
+| US1142 | agent-a99b480f496e31d57 | 2026-11-09 | TRUE 24, FALSE 0, UNVERIFIABLE 2 | killed 24, survived 0 | 415441519aea71e1 at 22b0974b3a26 |

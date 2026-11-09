@@ -1,7 +1,7 @@
 # EP0302: A sprint wave resumes in a fresh session from a bounded on-disk brief
 
-> **Status:** Draft
-> **Derived Point Total:** 10
+> **Status:** In Progress
+> **Derived Point Total:** 15
 > **Parent:** CR0670
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
@@ -16,7 +16,8 @@ Decomposed from CR0670. Delivers the work CR0670 requested.
 
 - [x] [US1140: The run's next action and a resume brief of at most 8k tokens are derived from disk alone](../stories/US1140-the-run-s-next-action-and-a-resume.md)
 - [x] [US1141: The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action](../stories/US1141-the-sprint-hands-off-to-a-resume-brief.md)
-- [ ] [US1142: The sprint reference defines a wave boundary and runs the close in its own fresh session](../stories/US1142-the-sprint-reference-defines-a-wave-boundary-and.md)
+- [x] [US1142: The sprint reference defines a wave boundary and runs the close in its own fresh session](../stories/US1142-the-sprint-reference-defines-a-wave-boundary-and.md)
+- [ ] [US1149: The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call](../stories/US1149-the-sprint-entry-names-the-projected-re-read.md)
 
 ## Acceptance Criteria (Epic Level)
 
