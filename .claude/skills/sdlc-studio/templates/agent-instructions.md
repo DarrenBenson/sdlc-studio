@@ -66,8 +66,8 @@ per interaction before any code. Opt out with `engagement_floor: judgement` in
    - **A story reaches Done only when its executable ACs pass**: `transition -> Done` is
      gated on its `Verify:` lines.
 
-The other habits (index conventions, fan-out, temp files) are in the Working habits
-section of `<skill>/reference-doctrine.md`.
+The other habits (index conventions, fan-out, foundation first) are in the Working
+habits section of `<skill>/reference-doctrine.md`.
 
 ## Project specifics
 

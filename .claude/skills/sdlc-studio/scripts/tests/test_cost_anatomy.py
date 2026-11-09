@@ -323,6 +323,15 @@ class CostAnatomyTests(meter._Case):
         self.assertIsNone(got["start_context"])
         self.assertIn("main thread start context: not available",
                       meter._live("lib.cost_anatomy").render(got))
+        # the transcript path too: a main thread whose usage records carry no message id
+        ws = self.workspace(agents=False)
+        ws.tx.main.write_text(_assistant(None, meter.MAIN_1, [{"type": "text"}]) + "\n",
+                              encoding="utf-8")
+        rc, out = _cli(ws, "--format", "json")
+        self.assertEqual(0, rc, out)
+        self.assertIsNone(json.loads(out)["start_context"])
+        rc, text = _cli(ws)
+        self.assertIn("main thread start context: not available", text.split("\n\n", 1)[0])
 
     def test_a_subagent_over_its_start_budget_is_flagged(self) -> None:
         """US1132 AC4. MUTANTS: the flag comparing an agent's largest call (h5's), its last or its

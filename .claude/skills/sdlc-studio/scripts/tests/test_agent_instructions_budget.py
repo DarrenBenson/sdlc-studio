@@ -28,19 +28,33 @@ import init  # noqa: E402
 
 #: The ceiling, in characters, of the whole template file as shipped (10,892 before US1130).
 CAP = 5_000
-#: Each gate the `## Non-negotiable gates` section states, by the words that state it.
+#: Each gate the `## Non-negotiable gates` section states, by its whole rule sentence rather than
+#: its heading or opt-out alone, so a gate whose rule is cut or reworded while its heading stays
+#: fails here (qa-seat-US1130-r1 round 1). Matched with runs of whitespace folded to one space.
 GATES = (
-    "`/sdlc-studio reconcile --verify`",
-    "`/sdlc-studio review`",
-    "PRD - TRD - TSD - Persona - CODE",
-    "files a `bug`",
-    "Review is independent of the author",
-    "`critic.py record`",
-    "`sprint sign`",
-    "Commit each unit to `main` when its gate passes and push `main`",
-    "No ad-hoc coding",
-    "engagement_floor: judgement",
+    "**Never release until the full pre-release gate is green.** In order, before any tag:",
+    "`/sdlc-studio reconcile --verify` runs every story's `Verify:` expression and fails on any "
+    "`no` or `stale`.",
+    "`/sdlc-studio review` runs all five legs, **PRD - TRD - TSD - Persona - CODE**",
+    "The CODE leg is not optional.",
+    "Fix the findings before tagging. Even a production hotfix files a `bug`",
+    "**Review is independent of the author.** One independent reviewer, a fresh context that did "
+    "not write the change, records each unit's verdict with `critic.py record`, and its APPROVE "
+    "decides the unit.",
+    "The run is signed once, with `sprint sign`, by its reviewer of record",
+    "never a unit's author or reviewer.",
+    "Commit each unit to `main` when its gate passes and push `main`; open no PR and push no "
+    "branch unless `release_strategy` is `pr-required`.",
+    "**No ad-hoc coding.** Every change flows CR / RFC -> Epic -> Story -> code plan -> code "
+    "implement -> code verify -> reconcile -> review.",
+    "Default to TDD: write the `Verify:` expression or the failing test first.",
+    "A change to more than one source file names every existing requirement it interacts with, "
+    "and how each is resolved, and writes one acceptance criterion per interaction before any "
+    "code.",
+    "Opt out with `engagement_floor: judgement`",
 )
+#: BG0280's shared-temp-path rule, which the template keeps as one line in its `## Don't` list.
+TEMP_RULE = "Share a temp path: name it per agent or run, or keep it in your worktree."
 #: The habits the template moved out, each stated in the doctrine section it points at.
 MOVED = ("canonical status summary", "Verify: manual", "pre-wired scaffolds", "Foundation first",
          "namespace it per agent or per run", "version_check.enabled: false")
@@ -56,26 +70,42 @@ def _section(text: str, heading: str) -> str:
 class AgentInstructionsBudgetTests(unittest.TestCase):
 
     def test_the_template_fits_and_keeps_its_gates(self) -> None:
-        """AC1. MUTANTS: CAP raised above 5,000; the template grown past it; any gate in GATES
-        cut from `## Non-negotiable gates`; the doctrine pointer dropped, or pointing at a
-        section the doctrine lacks or that does not hold the moved habits."""
+        """AC1. MUTANTS: CAP raised above 5,000; the template grown past it; any gate's rule
+        sentence in GATES cut or reworded (the engagement floor's rule with its opt-out kept, the
+        CR / RFC -> Epic -> Story flow, "not optional" made "optional"); the doctrine pointer
+        dropped, or pointing at a section the doctrine lacks or that does not hold the moved
+        habits; the temp-path rule deleted, moved into the leading comment, or listed as shed
+        by the pointer; the doctrine intro saying the starter carries none of the habits, or
+        naming an item that is not the temp-file habit (BG1258)."""
         text = TEMPLATE.read_text(encoding="utf-8")
         self.assertLessEqual(CAP, 5_000)
         self.assertLessEqual(len(text), CAP, f"the template is {len(text):,} chars")
         self.assertIn("\n## Operating doctrine\n", text)
-        gates = _section(text, "## Non-negotiable gates")
+        gates = re.sub(r"\s+", " ", _section(text, "## Non-negotiable gates"))
         for gate in GATES:
             self.assertIn(gate, gates, f"the gate list dropped: {gate}")
         # The pointer names the page and its section in prose: a `<skill>/...md#anchor` code span
         # reads as an unresolvable link to the links lane, and a consuming project has no relative path.
         flat = re.sub(r"\s+", " ", text)
         self.assertIn("Working habits section of `<skill>/reference-doctrine.md`", flat)
-        # BG0280 put the shared-temp-path rule in the template; BG1258 pins that it stays there.
-        self.assertIn("Share a temp path: name it per agent or run, or keep it in your worktree.", flat)
+        # BG0280 put the shared-temp-path rule in the template; it stays in the `## Don't` list,
+        # not the leading comment init strips, and the pointer does not list it among the shed.
+        self.assertIn(TEMP_RULE, re.sub(r"\s+", " ", _section(text, "## Don't")))
+        shed = re.search(r"The other habits \(([^)]*)\) are in the Working habits section", flat)
+        self.assertIsNotNone(shed, "the pointer no longer names the habits it sheds")
+        self.assertNotIn("temp", shed.group(1).lower(), "the pointer lists the kept temp rule as shed")
         habits = re.sub(r"\s+", " ", _section(DOCTRINE.read_text(encoding="utf-8"),
                                               "## Working habits {#working-habits}"))
         for moved in MOVED:
             self.assertIn(moved, habits, f"the doctrine does not hold the moved: {moved}")
+        # The doctrine's intro names the one habit the starter keeps, by an item that is that habit.
+        intro = habits.split(" 1. ", 1)[0]
+        self.assertNotIn("rather than carries", intro)
+        kept = re.search(r"it keeps item (\d+) as one line", intro)
+        self.assertIsNotNone(kept, intro)
+        item = re.search(rf" {kept.group(1)}\. (.*?)(?: {int(kept.group(1)) + 1}\. |$)", habits)
+        self.assertIsNotNone(item, f"the doctrine has no item {kept.group(1)}")
+        self.assertIn("namespace it per agent or per run", item.group(1))
 
     def test_an_initialised_project_s_agents_md_still_validates(self) -> None:
         """AC2. MUTANTS: the trunk rule split over two lines or stripped of its commit clause or
@@ -98,6 +128,7 @@ class AgentInstructionsBudgetTests(unittest.TestCase):
             agents = (repo / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("\n## Operating doctrine\n", agents)
             self.assertIn(trunk[0], agents.splitlines())
+            self.assertIn(TEMP_RULE, re.sub(r"\s+", " ", agents))  # BG0280: the agent's own brief
             env = dict(os.environ, HOME=d, XDG_DATA_HOME=d)
             run = subprocess.run([sys.executable, str(SCRIPTS / "validate.py"), "instructions",
                                   "--root", str(repo), "--format", "json"],
