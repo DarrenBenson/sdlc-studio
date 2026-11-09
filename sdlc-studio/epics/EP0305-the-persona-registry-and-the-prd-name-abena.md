@@ -14,7 +14,7 @@ Decomposed from CR0689. Delivers the work CR0689 requested.
 
 ## Story Breakdown
 
-- [ ] [US1146: Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary](../stories/US1146-abena-osei-becomes-the-shipped-skill-s-primary.md)
+- [x] [US1146: Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary](../stories/US1146-abena-osei-becomes-the-shipped-skill-s-primary.md)
 - [ ] [US1147: Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines](../stories/US1147-graham-doyle-joins-the-registry-as-served-and.md)
 - [ ] [US1148: The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle](../stories/US1148-the-prd-leads-with-human-in-the-lead.md)
 

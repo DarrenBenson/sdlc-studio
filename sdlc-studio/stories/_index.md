@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 79 |
-| Ready | 10 |
+| Ready | 9 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 876 |
+| Done | 877 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -183,7 +183,7 @@
 | [US1143](US1143-a-run-on-an-xai-grok-or-cursor.md) | A run on an xAI Grok or Cursor Composer model reads a dollar cost from dated provider prices, not "not priced" | Done | EP0303 | 2026-11-09 | 2026-11-09 |
 | [US1144](US1144-a-copilot-run-on-token-billing-is-priced.md) | A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit | Ready | EP0304 | 2026-11-09 | 2026-11-09 |
 | [US1145](US1145-a-project-on-copilot-request-billing-says-so.md) | A project on Copilot request billing says so in its config, and only then are its premium requests priced in dollars | Ready | EP0304 | 2026-11-09 | 2026-11-09 |
-| [US1146](US1146-abena-osei-becomes-the-shipped-skill-s-primary.md) | Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
+| [US1146](US1146-abena-osei-becomes-the-shipped-skill-s-primary.md) | Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
 

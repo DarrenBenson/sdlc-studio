@@ -12,7 +12,7 @@
 
 ## Summary
 
-From US1140's QA review (qa-seat-US1140-r1, non-blocking findings 3-5, 2026-11-09). (3) Five code mutants survive `test_resume_brief.py`; the main gap is that no fixture lists its batch in a different order from its plan, so an ordering mutant goes unseen. (4) A landing that wrote a `<unit>-qa.none` marker (no brief written) still reads as in flight rather than as landed with no brief. (5) A Sprint Goal containing a newline breaks the brief's round trip through `resume_brief.parse`.
+From US1140's QA review (qa-seat-US1140-r1, non-blocking findings 3-5, 2026-11-09). (3) Five code mutants survive `test_resume_brief.py`; the main gap is that no fixture lists its batch in a different order from its plan, so an ordering mutant goes unseen. (4) A landing that wrote a `<unit>-qa.none` marker (no brief written) still reads as in flight rather than as landed with no brief. (5) A Sprint Goal containing a newline breaks the brief's round trip through `resume_brief.parse`. BG1312's review (qa-seat-BG1312-r1, findings 1-2) adds two: no test checks the 'run's findings cannot be placed' note is absent when the run has a start time, and no test pins the word boundary on the run-id stamp match.
 
 ## Steps to Reproduce
 

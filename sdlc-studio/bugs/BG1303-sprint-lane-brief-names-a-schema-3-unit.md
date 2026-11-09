@@ -1,6 +1,6 @@
 # BG1303: `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1303.md
@@ -26,10 +26,13 @@ Key every lane file (hand-in names, brief path, land's lookup) by `sdlc_md.norm_
 
 - [ ] **AC1** The hand-in names the lane brief prints (`_lane_hand_in_files`, .claude/skills/sdlc-studio/scripts/sprint.py:2809-2811) and the names `lane land` reads (`_record_and_brief`, .claude/skills/sdlc-studio/scripts/lib/lanes.py:200) are keyed by one spelling, `sdlc_md.norm_id`, whichever spelling `--units` was given: for `US-01M6XQJF` both name `US01M6XQJF-claims.json` and `US01M6XQJF-mutants.json`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneHandInSpellingTests::test_the_briefs_hand_in_names_are_the_names_land_reads_for_a_schema3_unit
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: in a schema-3 project, a hyphenated story briefed with `sprint.py lane brief --units <id as written>`, handed in under the names that brief prints and landed with `sprint.py lane land --worktree <wt> --units <id as written>`, has its self-check recorded and its QA brief written, and land prints no `self-check NOT RECORDED` line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_schema3_unit_landed_by_its_hyphenated_id_records_its_self_check_and_writes_its_qa_brief
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC3** The existing refusal still holds under the normalised key: a schema-3 unit landed by its hyphenated id whose hand-in lacks the claims or mutants file is still named `self-check NOT RECORDED`, with the missing file named by the spelling land looked for.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_schema3_hand_in_missing_its_files_is_still_named_by_the_spelling_land_read
+  - **Verified:** yes (2026-11-09)
 
 ## Revision History
 

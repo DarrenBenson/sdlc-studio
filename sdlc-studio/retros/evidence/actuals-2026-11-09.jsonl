@@ -7,3 +7,7 @@
 {"id": "CR0611", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0662", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0690", "type": "cr", "project": "sdlc-studio"}
+{"id": "US1146", "type": "story", "project": "sdlc-studio"}
+{"id": "BG1302", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG1303", "type": "bug", "project": "sdlc-studio"}
+{"id": "BG1312", "type": "bug", "project": "sdlc-studio"}

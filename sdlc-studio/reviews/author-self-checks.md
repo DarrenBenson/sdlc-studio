@@ -200,3 +200,6 @@
 | BG1303 | agent-a16ddfb962a271222 | 2026-11-09 | TRUE 14, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 2 | 48478cc637d08af8 at ab054eb1a003 |
 | US1146 | agent-a87db08ba19908b9d | 2026-11-09 | TRUE 33, FALSE 0, UNVERIFIABLE 0 | killed 34, survived 4 | 33a4f9bd0c9f2022 at 4975eb19428d |
 | US1143 | agent-a86886b1310758718 | 2026-11-09 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 0 | fa32add835c7f392 at 3b6df6951479 |
+| BG1312 | agent-a5e961724fb473d0a | 2026-11-09 | TRUE 31, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 2 | 6d2e6200b541ddbf at 15020d9c9119 |
+| US1130 | agent-ab3ddf10b0c79df6d | 2026-11-09 | TRUE 28, FALSE 0, UNVERIFIABLE 0 | killed 26, survived 1 | 225af9ee42045a68 at 75325b85b131 |
+| US1141 | agent-a5b509ecd103c0a2c | 2026-11-09 | TRUE 24, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | a884ce0ea470151f at 35344523e730 |

@@ -1,6 +1,6 @@
 # BG1312: The resume brief's known-issues scan matches only a `Raised-in-batch` stamp naming the run id, so a brief written mid-run says no known issues while findings filed during the run are open
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/resume_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1312.md
@@ -28,10 +28,13 @@ Place a finding in the run the way `sprint_report` does: by the moment carried a
 
 - [ ] **AC1** Given an open run and a bug filed with `file_finding.py file` while it is open (so stamped `none open - raised outside a delivery batch, <moment>` with a moment inside the run's start and end), when `resume_brief.build` renders the brief, then its known-issues section names that bug. Fails on: the section saying none while such a bug is open.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_a_finding_filed_mid_run_is_listed_by_its_moment
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC2** Given the same run, then a bug whose stamp's moment falls before the run's start, and a bug already Fixed, are both left out of the known-issues section, while a bug whose stamp names the run id is still listed. Fails on: a pre-run or closed finding listed; a run-id stamp no longer matched.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_pre_run_and_closed_findings_are_left_out_and_a_run_stamp_still_matches
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC3** Given `lib/resume_brief.py`, then it reads a finding's moment through the helper `sprint_report` uses to place a finding in a run, not a second parser of the stamp, and the fixtures in `test_resume_brief.py` use the stamp shape `file_finding` writes mid-run. Fails on: a second stamp regex in resume_brief.py; a fixture stamp no tool writes.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_the_moment_is_read_through_the_report_helper
+  - **Verified:** yes (2026-11-09)
 
 ## Revision History
 

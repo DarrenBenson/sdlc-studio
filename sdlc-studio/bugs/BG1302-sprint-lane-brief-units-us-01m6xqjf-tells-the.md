@@ -1,6 +1,6 @@
 # BG1302: `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1302.md
@@ -26,10 +26,13 @@ Normalise each id with the same function the run state uses before deduplicating
 
 - [ ] **AC1** `lane_dispatch` (.claude/skills/sdlc-studio/scripts/sprint.py:2628) normalises every id with `sdlc_md.norm_id`, the function the run state uses, before deduplicating the seam scope, so a schema-3 unit the run state holds as `US01M6XQJF` and the command line names as `US-01M6XQJF` enters the scope once.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneSeamScopeTests::test_a_schema3_unit_named_with_its_hyphen_enters_the_scope_once
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: in a schema-3 project with a one-story run opened by `sprint plan --worklist <file> --write`, `sprint.py lane brief --units <that id as written> --format json` prints an empty `seams` list.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_one_unit_schema3_batch_briefed_by_its_hyphenated_id_has_no_seam
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC3** No brief reports a seam between a unit and itself: `_batch_seams` drops a seam whose units name one unit under `sdlc_md.norm_id`, so the text brief prints no `Seam with` line for it, while a two-unit schema-3 batch whose stories share a file still names its seam with the other unit by id.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeamBriefTests::test_a_schema3_unit_has_no_seam_with_itself_and_a_real_seam_is_still_named
+  - **Verified:** yes (2026-11-09)
 
 ## Revision History
 
