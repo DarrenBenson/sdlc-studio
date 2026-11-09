@@ -8,6 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py
 > **Epic:** EP0302
 > **Points:** 3
+> **Depends on:** US1140
 > **Persona:** Maya Okafor
 
 ## User Story

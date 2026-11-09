@@ -8,6 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py
 > **Epic:** EP0304
 > **Points:** 2
+> **Depends on:** US1144
 > **Persona:** Maya Okafor
 
 ## User Story

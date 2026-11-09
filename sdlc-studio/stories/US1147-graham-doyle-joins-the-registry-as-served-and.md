@@ -8,6 +8,7 @@
 > **Affects:** sdlc-studio/personas/graham-doyle-change-approver.md, sdlc-studio/personas/trevor-hale-enterprise-pm.md, sdlc-studio/personas/index.md, sdlc-studio/prd.md, tools/tests/test_persona_coherence.py
 > **Epic:** EP0305
 > **Points:** 3
+> **Depends on:** US1146
 > **Persona:** Maya Okafor
 
 ## User Story

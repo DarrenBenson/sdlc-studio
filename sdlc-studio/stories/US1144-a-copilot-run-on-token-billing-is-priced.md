@@ -8,6 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py
 > **Epic:** EP0304
 > **Points:** 3
+> **Depends on:** US1143
 > **Persona:** Maya Okafor
 
 ## User Story

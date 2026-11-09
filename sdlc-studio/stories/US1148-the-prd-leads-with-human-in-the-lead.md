@@ -8,6 +8,7 @@
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
 > **Epic:** EP0305
 > **Points:** 3
+> **Depends on:** US1147
 > **Persona:** Maya Okafor
 
 ## User Story

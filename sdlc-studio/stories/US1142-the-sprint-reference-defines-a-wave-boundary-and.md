@@ -8,6 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py
 > **Epic:** EP0302
 > **Points:** 2
+> **Depends on:** US1141
 > **Persona:** Maya Okafor
 
 ## User Story
