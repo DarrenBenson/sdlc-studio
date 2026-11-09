@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 256 |
+| Open | 257 |
 | In Progress | 0 |
 | Fixed | 872 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1302** |
+| **Total** | **1303** |
 
 ## All Bugs
 
@@ -378,6 +378,7 @@
 | [BG1300](BG1300-conftest-s-move-home-writes-the-test-identity.md) | conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author | Open | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1301](BG1301-the-release-cut-leaves-this-repository-s-own.md) | The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1303](BG1303-sprint-lane-brief-names-a-schema-3-unit.md) | `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 
