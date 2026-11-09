@@ -17,6 +17,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 import io
+import json
 import os
 import re
 import shlex
@@ -205,6 +206,35 @@ class BuilderBriefTests(_Isolated):
                                         lambda *a, **k: None):
             out = _brief(root, "US0101")
         self.assertIn("Seat: no engineering seat card resolves", out)
+
+    def test_a_one_unit_schema3_batch_briefed_by_its_hyphenated_id_has_no_seam(self) -> None:
+        """BG1302's recorded steps: a schema-3 run opened by `sprint plan --worklist --write`
+        holds the id without its hyphen, and the brief asked for by the id as written paired
+        the unit with itself."""
+        uid = "US-01M6XQJF"
+        root = Path(self._tmp.name) / "repo"
+        (root / "src").mkdir(parents=True)
+        (root / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+        (root / "sdlc-studio").mkdir()
+        (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n",
+                                                           encoding="utf-8")
+        _story(root, uid, "src/app.py")
+        (root / "w.txt").write_text(uid + "\n", encoding="utf-8")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            planned = sprint.main(["plan", "--worklist", str(root / "w.txt"), "--write",
+                                   "--no-fetch", "--root", str(root)])
+            self.assertEqual(0, planned, err.getvalue())
+            self.assertEqual(["US01M6XQJF"], run_state.read(root)["batch"])
+            out.truncate(0)
+            out.seek(0)
+            rc = sprint.main(["lane", "brief", "--units", uid, "--format", "json",
+                              "--root", str(root)])
+        self.assertEqual(0, rc, err.getvalue())
+        printed = json.loads(out.getvalue())
+        self.assertEqual([], printed["seams"])
+        self.assertEqual([[]], [b["seams"] for b in printed["briefs"]])
+        self.assertNotIn("Seam with", _brief(root, uid))
 
     def _seat_paths(self, out: str) -> list[str]:
         """The card each Seat line names as the work render to adopt."""

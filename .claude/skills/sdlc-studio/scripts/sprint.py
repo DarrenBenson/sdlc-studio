@@ -2625,7 +2625,10 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
         approved, scope_note = [], ("the run state could not be read, so the seam scope is the "
                                     "units named here rather than the approved batch - UNKNOWN, "
                                     "not empty")
-    scope = list(dict.fromkeys([*approved, *(unit_ids or [])]))
+    # Deduplicated by `sdlc_md.norm_id`, the key the run state stores: a schema-3 batch holds
+    # `US01M6XQJF` while the command line names `US-01M6XQJF`, and raw strings let both in.
+    scope = list(dict.fromkeys(key for key in (sdlc_md.norm_id(str(u))
+                                               for u in [*approved, *(unit_ids or [])]) if key))
     seams = _batch_seams(root, scope)
     # The builder's own section, from the tools that own it: the self-check is the section
     # `critic.py brief` prints on stderr (`critic.author_self_check`), never a copy that could
@@ -2667,10 +2670,13 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
 
 
 def _batch_seams(root: Path, unit_ids: list[str]) -> list[dict]:
-    """The batch's seam map, or [] when it cannot be computed - a brief must still be issued."""
+    """The batch's seam map, or [] when it cannot be computed - a brief must still be issued.
+    A seam whose units name one unit under `sdlc_md.norm_id` is dropped: a unit has no seam
+    with itself, and a brief would print it as `Seam with :` naming no other unit."""
     try:
         import refine  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
-        return refine.seam_map(root, unit_ids)
+        return [s for s in refine.seam_map(root, unit_ids)
+                if len({sdlc_md.norm_id(str(u)) for u in s.get("units") or []}) > 1]
     except Exception as exc:  # noqa: BLE001 - a seam read must never block a dispatch
         sdlc_md.debug("sprint._batch_seams", exc)
         return []
@@ -2807,8 +2813,11 @@ def lane_call_budget(points: int | None) -> int | None:
 
 
 def _lane_hand_in_files(uid: str) -> tuple[str, str]:
-    """The claims and mutants files `uid` hands in, under LANE_HAND_IN."""
-    return f"{LANE_HAND_IN}/{uid}-claims.json", f"{LANE_HAND_IN}/{uid}-mutants.json"
+    """The claims and mutants files `uid` hands in, under LANE_HAND_IN, named by
+    `lanes.hand_in_names`, the function `lane land` reads them by."""
+    from lib import lanes  # noqa: PLC0415 - one key for the brief and the landing
+    claims, mutants = lanes.hand_in_names(uid)
+    return f"{LANE_HAND_IN}/{claims}", f"{LANE_HAND_IN}/{mutants}"
 
 
 def _hand_in_self_check(text: str | None, uid: str) -> str | None:

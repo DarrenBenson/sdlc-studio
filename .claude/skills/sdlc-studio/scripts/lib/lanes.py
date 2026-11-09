@@ -195,9 +195,17 @@ def _remove(root_top: Path, wt_top: Path, branch: str) -> str | None:
     return None
 
 
+def hand_in_names(unit: str) -> tuple[str, str]:
+    """The claims and mutants file names `unit` hands in, keyed by `sdlc_md.norm_id`: the lane
+    brief names them and the landing reads them through this one function, so both agree
+    whichever spelling of the id `--units` was given (`US-01M6XQJF` and `US01M6XQJF` alike)."""
+    key = sdlc_md.norm_id(unit)
+    return f"{key}-claims.json", f"{key}-mutants.json"
+
+
 def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tuple[bool, str]:
     """Record one unit's self-check on the root and write its QA brief; (ok, the unit's line)."""
-    claims, mutants = keep / f"{unit}-claims.json", keep / f"{unit}-mutants.json"
+    claims, mutants = (keep / name for name in hand_in_names(unit))
     missing = [p.name for p in (claims, mutants) if not p.is_file()]
     if missing:
         return False, (f"{unit}: self-check NOT RECORDED and no brief written - the hand-in "

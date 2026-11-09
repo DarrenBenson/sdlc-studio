@@ -16,6 +16,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -29,13 +30,15 @@ import loader  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
-from lib import lanes  # noqa: E402
+from lib import lanes, run_state, sdlc_md  # noqa: E402
 
 SPRINT = SCRIPTS / "sprint.py"
 critic = loader.load_script("critic")
 sprint = loader.load_script("sprint")
 
 A, B = "US0101", "US0102"
+#: A schema-3 id as a schema-3 project spells it; `sdlc_md.norm_id` drops its hyphen.
+V3 = "US-01M6XQJF"
 BRANCH = "lane-us0101"
 LANE = "sdlc-studio/.local/lane"
 REFUSAL = "stub pre-commit: REFUSED src/refuse.py"
@@ -388,6 +391,71 @@ class LaneLandTests(unittest.TestCase):
         self.assertIn(f"the worktree {self.wt} was left in place", r.stderr)
         self.assertTrue((self.wt / "src/stray.py").is_file(), "the stray change was deleted")
         self.assertIn(BRANCH, self._branches())
+
+    # -- a schema-3 unit, named as written (BG1303) ---------------------------------------
+
+    def _schema3_brief(self) -> dict[str, str]:
+        """Make the project schema 3 with a hyphenated story on main, open a run on it and brief
+        it by its id as written: the hand-in paths that brief prints, keyed by kind."""
+        _write(self.root, "sdlc-studio/.config.yaml",
+               "schema_version: 3\nreview:\n  author_self_check: block\n")
+        _story(self.root, V3, "src/a.py, tests/test_a.py")
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["commit", "-q", "-m", f"chore: {V3} on a schema-3 project"], self.root)
+        transcripts = Path(self._tmp.name) / "transcripts"
+        transcripts.mkdir()
+        out, err = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(transcripts)}), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            run_state.open_run(self.root, batch=[V3], goal="g")
+            rc = sprint.main(["lane", "brief", "--units", V3, "--root", str(self.root)])
+        self.assertEqual(0, rc, err.getvalue())
+        printed = dict(re.findall(rf"^ +({LANE}/\S+-(claims|mutants)\.json) - ", out.getvalue(),
+                                  re.M))
+        named = {kind: path for path, kind in printed.items()}
+        self.assertEqual({"claims", "mutants"}, set(named), out.getvalue())
+        return named
+
+    def _schema3_hand_in(self, files: dict[str, str]) -> None:
+        self._stage("src/a.py", "A = 2\n")
+        _write(self.wt, f"{LANE}/commit-msg.txt", f"feat({V3}): a is two\n")
+        body = {"claims": [{"surface": "commit message", "claim": "a is two", "ruling": "TRUE"}],
+                "mutants": [{"mutant": "a stays one", "test": "tests/test_a.py::test_a",
+                             "result": "killed"}]}
+        for kind, rel in files.items():
+            _write(self.wt, rel, json.dumps(body[kind]))
+
+    def test_a_schema3_unit_landed_by_its_hyphenated_id_records_its_self_check_and_writes_its_qa_brief(
+            self) -> None:
+        named = self._schema3_brief()
+        self._schema3_hand_in(named)
+        r = self._land(V3)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertNotIn("self-check NOT RECORDED", r.stdout + r.stderr)
+        self.assertEqual(["US01M6XQJF"], [sdlc_md.norm_id(row["unit"])
+                                         for row in critic.read_self_checks(self.root)])
+        line = [ln for ln in r.stdout.splitlines() if ln.startswith(f"{V3}: ")]
+        self.assertEqual(1, len(line), r.stdout)
+        brief = re.search(r"self-check recorded; QA brief (\S+), review tier", line[0])
+        self.assertIsNotNone(brief, line[0])
+        self.assertTrue((self.root / brief.group(1)).is_file(), f"no QA brief at {brief.group(1)}")
+
+    def test_a_schema3_hand_in_missing_its_files_is_still_named_by_the_spelling_land_read(
+            self) -> None:
+        """The mutants file under the brief's name and the claims file under the hyphenated
+        spelling: land reads only the brief's key, so the claims file is the one named."""
+        named = self._schema3_brief()
+        self._schema3_hand_in({"claims": f"{LANE}/{V3}-claims.json",
+                               "mutants": named["mutants"]})
+        r = self._land(V3)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        line = [ln for ln in r.stderr.splitlines() if ln.startswith(f"{V3}: ")]
+        self.assertEqual(1, len(line), r.stderr)
+        self.assertIn("self-check NOT RECORDED", line[0])
+        self.assertTrue(line[0].endswith("the hand-in carries no US01M6XQJF-claims.json"),
+                        line[0])
+        self.assertEqual([], critic.read_self_checks(self.root))
+        self.assertEqual([], sorted((self.root / lanes.BRIEFS).glob("*-qa.txt")))
 
 
 if __name__ == "__main__":

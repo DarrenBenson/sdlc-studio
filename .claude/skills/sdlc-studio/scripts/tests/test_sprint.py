@@ -10399,6 +10399,45 @@ class SeamBriefTests(unittest.TestCase):
             self._unit(root, "US0002", "src/thing.py")
             self.assertEqual(len(mod.lane_dispatch(root, ["US0001", "US0002"])["seams"]), 1)
 
+    def test_a_schema3_unit_has_no_seam_with_itself_and_a_real_seam_is_still_named(self) -> None:
+        """BG1302. A scope holding one schema-3 unit under both spellings made the map pair the
+        unit with itself, and the brief printed `Seam with : you both touch ...` naming no other
+        unit. `_batch_seams` drops that pair whoever hands it the scope; two units sharing a
+        file are still a seam, named by the other unit's id."""
+        mod = _load()
+        root = _schema3_project(self, {"US-01M6XQJF": "src/thing.py",
+                                       "US-01M6XQJG": "src/thing.py"})
+        self.assertEqual([], mod._batch_seams(root, ["US01M6XQJF", "US-01M6XQJF"]),
+                         "a unit was handed a seam with itself")
+        mod.run_state.open_run(root, batch=["US01M6XQJF"])
+        alone = mod.lane_dispatch(root, ["US-01M6XQJF"])
+        self.assertEqual([], alone["seams"])
+        self.assertNotIn("Seam with", mod.lane_brief_text(alone["briefs"][0]))
+        mod.run_state.open_run(root, batch=["US01M6XQJF", "US01M6XQJG"])
+        paired = mod.lane_dispatch(root, ["US-01M6XQJF"])
+        text = mod.lane_brief_text(paired["briefs"][0])
+        self.assertEqual([["US01M6XQJF", "US01M6XQJG"]], [s["units"] for s in paired["seams"]])
+        self.assertEqual(1, text.count("Seam with"), text)
+        self.assertIn("Seam with US01M6XQJG: you both touch", text)
+
+
+def _schema3_project(test: unittest.TestCase, affects: dict[str, str]) -> Path:
+    """A throwaway schema-3 project with one Ready story per `{id: affects}`, filed under its
+    hyphenated id as a schema-3 project spells it; `run_state.open_run` stores it without one."""
+    root = Path(tempfile.mkdtemp(prefix="schema3_"))
+    test.addCleanup(shutil.rmtree, root, ignore_errors=True)
+    (root / "sdlc-studio" / ".local").mkdir(parents=True)
+    (root / "sdlc-studio" / ".config.yaml").write_text("schema_version: 3\n", encoding="utf-8")
+    stories = root / "sdlc-studio" / "stories"
+    stories.mkdir()
+    for uid, files in affects.items():
+        (stories / f"{uid}-x.md").write_text(
+            f"# {uid}: x\n\n> **Status:** Ready\n> **Affects:** {files}\n\n"
+            "## Acceptance Criteria\n\n### AC1: it works\n\n"
+            "- **Then** something observable happens\n- **Verify:** shell true\n",
+            encoding="utf-8")
+    return root
+
 
 class LaneInFlightTests(unittest.TestCase):
     """BG0355. A lane that dies mid-flight leaves real code in the working tree behind a unit
@@ -10895,6 +10934,58 @@ class LaneSeamScopeTests(unittest.TestCase):
         dispatch = sprint.lane_dispatch(root, ["US0003"])
         self.assertEqual([], dispatch["briefs"][0]["seams"],
                          "US0003 shares no file, so it must be handed no pair")
+
+    def test_a_schema3_unit_named_with_its_hyphen_enters_the_scope_once(self) -> None:
+        """BG1302. The run state holds a schema-3 id with its hyphen dropped and the command
+        line names it as written, so deduplicating the raw strings let both in. Asserted on the
+        scope `_batch_seams` is handed, since its own self-pair guard would hide a scope that
+        still held both spellings."""
+        sprint = _load()
+        root = _schema3_project(self, {"US-01M6XQJF": "src/shared.py",
+                                       "US-01M6XQJG": "src/other.py"})
+        sprint.run_state.open_run(root, batch=["US01M6XQJF", "US01M6XQJG"])
+        scopes, real = [], sprint._batch_seams
+
+        def spy(at, ids):
+            scopes.append(list(ids))
+            return real(at, ids)
+        with unittest.mock.patch.object(sprint, "_batch_seams", spy):
+            dispatch = sprint.lane_dispatch(root, ["US-01M6XQJF", "us01m6xqjf"])
+        self.assertEqual([["US01M6XQJF", "US01M6XQJG"]], scopes,
+                         "a unit entered the seam scope under more than one spelling")
+        self.assertEqual(["US01M6XQJF", "US01M6XQJF"], [b["id"] for b in dispatch["briefs"]])
+        # the run state's side too: a state file holding the id as written (by hand, since
+        # `open_run` normalises what it stores) enters the scope once as well
+        state = root / "sdlc-studio" / ".local" / "run-state.json"
+        held = json.loads(state.read_text(encoding="utf-8"))
+        held["batch"] = ["US-01M6XQJF", "US01M6XQJG"]
+        state.write_text(json.dumps(held), encoding="utf-8")
+        scopes.clear()
+        with unittest.mock.patch.object(sprint, "_batch_seams", spy):
+            sprint.lane_dispatch(root, ["US01M6XQJF"])
+        self.assertEqual([["US01M6XQJF", "US01M6XQJG"]], scopes)
+
+
+class LaneHandInSpellingTests(unittest.TestCase):
+    """BG1303. The brief named a schema-3 unit's hand-in files under the normalised id and
+    `lane land` read them under the id as `--units` spelt it, so a builder who followed its
+    brief handed in files the landing never read."""
+
+    def test_the_briefs_hand_in_names_are_the_names_land_reads_for_a_schema3_unit(self) -> None:
+        sprint = _load()
+        from lib import lanes  # noqa: PLC0415 - on the path once sprint is loaded
+        want = ("US01M6XQJF-claims.json", "US01M6XQJF-mutants.json")
+        self.assertEqual(sprint.LANE_HAND_IN, lanes.HAND_IN.as_posix())
+        with tempfile.TemporaryDirectory() as d:
+            keep = Path(d)
+            for spelling in ("US-01M6XQJF", "US01M6XQJF", "us-01m6xqjf"):
+                with self.subTest(spelling=spelling):
+                    briefed = sprint._lane_hand_in_files(spelling)
+                    self.assertEqual(tuple(f"{sprint.LANE_HAND_IN}/{n}" for n in want), briefed)
+                    ok, line = lanes._record_and_brief(keep, keep, spelling, "builder")
+                    self.assertFalse(ok, line)
+                    self.assertIn(f"the hand-in carries no {want[0]} or {want[1]}", line)
+            self.assertEqual([], list(keep.iterdir()), "a refused hand-in wrote a file")
 
 
 class CloseDryRunTests(unittest.TestCase):
