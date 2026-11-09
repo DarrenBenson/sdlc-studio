@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 32 |
+| Proposed | 33 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 538 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **689** |
+| **Total** | **690** |
 
 ## All Changes
 
@@ -101,6 +101,7 @@
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
 | [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
 | [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | Proposed | High | Enhancement | 2026-11-09 | -- |
+| [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Proposed | High | Enhancement | 2026-11-09 | -- |
 
 ## Archived Releases
 
