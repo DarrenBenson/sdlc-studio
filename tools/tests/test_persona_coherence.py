@@ -202,6 +202,14 @@ NEGATIVE_SUMMARY = ("a GUI-first operator wanting non-technical staff to run the
 #: The three wants the Negative's Scenario still declines (US1147 AC7).
 DECLINED_WANTS = ("a human approval on every change", "non-technical staff running the tool",
                   "sync to an enterprise tracker")
+#: A clause that declines: from the verb to the colon or the end of its sentence.
+DECLINING_CLAUSE = re.compile(r"\bdeclines?\b[^:.!?]*")
+#: A word that turns a declining clause into an offer: "declines A and B, but offers C".
+CLAUSE_TURN = re.compile(r"(?i)\b(?:offers?|offering|but|except|however|yet|instead|unless|"
+                         r"though|although|while|whereas|provides?|supports?|adds?|enables?|"
+                         r"allows?)\b")
+#: A negation that inverts the verb ahead of it in its sentence: "does not decline".
+NEGATION = re.compile(r"(?i)\b(?:not|never|no longer)\b|n't\b")
 #: The Sprint Goal US1147 AC4 plans for the change approver.
 APPROVER_GOAL = "Approve a release from one document"
 
@@ -944,8 +952,9 @@ class ServedAndNegativeTests(unittest.TestCase):
             self) -> None:
         """AC7. Mutants: the Scenario still naming an enterprise tool; the companion dashboard
         named as anything but read-only, or not over the committed record; one of the three
-        declined wants dropped, offered in a sentence that does not decline it, or put on the
-        companion dashboard."""
+        declined wants dropped, named anywhere outside a clause that declines it ("offers A and
+        declines B and C"), offered inside that clause ("declines A and B, but offers C"),
+        declined under a negation ("does not decline"), or put on the companion dashboard."""
         name, card = the_negative()
         scenario = flat(card_section(card.read_text(encoding="utf-8"), "Scenario"))
         self.assertTrue(scenario, f"{name}'s card has no Scenario")
@@ -959,12 +968,17 @@ class ServedAndNegativeTests(unittest.TestCase):
         self.assertTrue([s for s in pointed if "boards and dashboards" in s and "RFC0063 D6" in s],
                         "no sentence points his boards and dashboards at the read-only companion "
                         "dashboard over the committed record (RFC0063 D6)")
+        clauses = list(DECLINING_CLAUSE.finditer(scenario))
+        self.assertTrue(clauses, "the Scenario has no clause that declines his wants")
+        for clause in clauses:
+            lead = re.split(r"[.!?:]", scenario[:clause.start()])[-1]
+            self.assertNotRegex(lead, NEGATION, f"a negation inverts the clause: {lead}{clause[0]}")
+            self.assertNotRegex(clause[0], CLAUSE_TURN, f"the declining clause turns to offer: {clause[0]}")
+        outside = DECLINING_CLAUSE.sub(" | ", scenario)
         for want in DECLINED_WANTS:
-            naming = [s for s in sentences if want in s]
-            self.assertTrue(naming, f"the Scenario does not decline {want}")
-            self.assertEqual([s for s in naming if not re.search(r"\bdeclin", s)], [],
-                             f"a sentence names {want} without declining it")
-            self.assertEqual([s for s in naming if "companion dashboard" in s], [],
+            self.assertTrue([c for c in clauses if want in c[0]], f"the Scenario does not decline {want}")
+            self.assertNotIn(want, outside, f"the Scenario names {want} outside the clause declining it")
+            self.assertEqual([s for s in sentences if want in s and "companion dashboard" in s], [],
                              f"a sentence puts {want} on the companion dashboard")
 
 
