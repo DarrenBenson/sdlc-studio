@@ -5,7 +5,7 @@
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
+> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/US1148.md
 > **Epic:** EP0305
 > **Points:** 3
 > **Depends on:** US1147
@@ -39,3 +39,4 @@
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-09 | Claude Opus 5.5 (run nine grooming) | Acceptance criteria and Verify lines authored at grooming |
 | 2026-11-09 | Claude Opus 5.5 (plan approval, D0446) | O10 also names each specification's accountable owner, so it covers all of Abena Osei's End goal 2 (the operator's ruling on the product seat's dissent) |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

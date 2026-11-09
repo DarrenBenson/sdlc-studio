@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1303.md
 > **Evidence:** RUN-01M6YSAV, 2026-11-09: lane land output for US-01M6XQJF at 37139ea; the brief's hand-in names US01M6XQJF-claims.json and US01M6XQJF-mutants.json
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Key every lane file (hand-in names, brief path, land's lookup) by `sdlc_md.norm_
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

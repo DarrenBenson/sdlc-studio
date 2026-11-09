@@ -5,7 +5,7 @@
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py
+> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, changelog.d/US1144.md
 > **Epic:** EP0304
 > **Points:** 3
 > **Depends on:** US1143
@@ -34,3 +34,4 @@
 | --- | --- | --- |
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-09 | Claude Opus 5.5 (run nine grooming) | Acceptance criteria and Verify lines authored at grooming |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

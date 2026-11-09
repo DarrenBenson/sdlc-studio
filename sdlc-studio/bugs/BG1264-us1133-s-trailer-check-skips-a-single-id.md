@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/enable-hooks.sh, tools/tests/test_commit_msg_mentions.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/enable-hooks.sh, tools/tests/test_commit_msg_mentions.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG1264.md
 > **Evidence:** run eight (RUN-01M6RZQZ) US1133 review round 1 ([new]), and the orchestrator's friction log (R8-F13)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Either run the contradiction check for a single-id subject too, or say in the fr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

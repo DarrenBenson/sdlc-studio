@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** conftest.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py
+> **Affects:** conftest.py, .claude/skills/sdlc-studio/scripts/tests/test_token_env_isolation.py, changelog.d/BG1300.md
 > **Evidence:** ~/.gitconfig.sdlc-test-leak-2026-11-08 (68 bytes, mtime 13:30); `git log --format='%an' f43e2698^..f95e02aa` gives 23 commits by sdlc-studio tests
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Write the identity to `Path(private, PRIVATE_HOME["HOME"], ".gitconfig")`, built
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

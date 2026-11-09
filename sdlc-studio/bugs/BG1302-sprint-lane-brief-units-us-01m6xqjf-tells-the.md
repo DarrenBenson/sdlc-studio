@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1302.md
 > **Evidence:** RUN-01M6YSAV lane brief for US-01M6XQJF, 2026-11-09: run-state batch ['US01M6XQJF'], seams[0].units ['US01M6XQJF', 'US01M6XQJF']
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Normalise each id with the same function the run state uses before deduplicating
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

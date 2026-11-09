@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 262 |
+| Open | 263 |
 | In Progress | 0 |
 | Fixed | 872 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1308** |
+| **Total** | **1309** |
 
 ## All Bugs
 
@@ -384,6 +384,7 @@
 | [BG1306](BG1306-critic-py-brief-never-tells-a-reviewer-probing.md) | `critic.py brief` never tells a reviewer probing confinement or environment-isolation code to run its mutants with HOME set to a temporary directory, so a mutant can write outside the scratch tree | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1309](BG1309-a-cursor-composer-or-grok-session-in-fast.md) | A Cursor Composer or Grok session in Fast mode is priced at the standard rate, because the model id a reading carries cannot tell Fast from standard | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

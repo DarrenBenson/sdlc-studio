@@ -5,7 +5,7 @@
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py
+> **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py, changelog.d/US1142.md
 > **Epic:** EP0302
 > **Points:** 2
 > **Depends on:** US1141
@@ -32,3 +32,4 @@
 | --- | --- | --- |
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-09 | Claude Opus 5.5 (run nine grooming) | Acceptance criteria and Verify lines authored at grooming |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |

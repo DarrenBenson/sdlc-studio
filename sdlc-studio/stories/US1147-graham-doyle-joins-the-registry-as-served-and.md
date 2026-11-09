@@ -5,7 +5,7 @@
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/personas/graham-doyle-change-approver.md, sdlc-studio/personas/trevor-hale-enterprise-pm.md, sdlc-studio/personas/index.md, sdlc-studio/prd.md, tools/tests/test_persona_coherence.py
+> **Affects:** sdlc-studio/personas/graham-doyle-change-approver.md, sdlc-studio/personas/trevor-hale-enterprise-pm.md, sdlc-studio/personas/index.md, sdlc-studio/prd.md, tools/tests/test_persona_coherence.py, changelog.d/US1147.md
 > **Epic:** EP0305
 > **Points:** 3
 > **Depends on:** US1146
@@ -41,3 +41,4 @@
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-09 | Claude Opus 5.5 (run nine grooming) | Acceptance criteria and Verify lines authored at grooming |
 | 2026-11-09 | Claude Opus 5.5 (plan approval, D0446) | Trevor keeps sync to an enterprise tracker as an excluded End goal, and his Scenario points boards and dashboards at the read-only companion dashboard (the operator's rulings at plan approval) |
+| 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |
