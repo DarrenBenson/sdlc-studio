@@ -88,15 +88,15 @@ Every decision of direction below was taken by the operator on 2026-11-09. What 
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
 | D1 | Who the Primary is | A keep Maya; B accountable engineering lead; C two editions | Operator | Operator call | Decided: B (operator, 2026-11-09) |
-| D2 | The Primary's card | Promote Jonah Reyes and widen his card to an audited organisation with several three-person teams; or write a new card and keep Jonah as Secondary | Product seat | Consult the seats against the cast; operator confirms | Open |
-| D3 | The change approver's form | A served persona with standing criteria (CR0621), never designed for as an operator; or a Secondary persona | Product seat | Consult | Open; leaning served persona |
-| D4 | New PRD outcomes | Proposed O10 to O13 below, wording to be settled | Product seat | Stakeholder consult, then operator | Open |
+| D2 | The Primary's card | Promote Jonah Reyes and widen his card to an audited organisation with several three-person teams; or write a new card and keep Jonah as Secondary | Product seat | Consult the seats against the cast; operator confirms | Resolved: Decided by the operator (D0436): a new Primary card for a head of engineering in an audited organisation leading several three-person teams, named by the seats; Jonah stays Secondary unchanged; Maya moves to Secondary |
+| D3 | The change approver's form | A served persona with standing criteria (CR0621), never designed for as an operator; or a Secondary persona | Product seat | Consult | Resolved: Decided by the operator (D0437): the change approver joins as a Served persona with three End goals, standing criteria when EP0285 lands |
+| D4 | New PRD outcomes | Proposed O10 to O13 below, wording to be settled | Product seat | Stakeholder consult, then operator | Resolved: Decided by the operator (D0438): O10-O13 start from the operator's draft; the seats refine the wording only, dissent shown at plan approval |
 | D5 | Vocabulary | "Three Amigos" for the people, "seats" for the agent personas; template file names may stay | Operator | Operator call | Decided (operator, 2026-11-09) |
 | D6 | The human view | The read-only companion dashboard in place of a tracker; no tracker sync | Operator | Operator call | Decided (operator, 2026-11-09) |
 | D7 | The 6.4 goal | Evidence and cost first: EP0280, EP0276, EP0275, CR0670, EP0300, CR0685; RFC0062 accepted | Operator | Operator call | Decided (operator, 2026-11-09) |
-| D8 | Machinery guardrail strength | Report the mix in the plan and the report only; or refuse a plan over the cap without a recorded maintenance declaration | Engineering seat | Spike against the run archive, then operator | Open; leaning report and declare, no refusal |
-| D9 | What counts as machinery | A declared path map (loop scripts, `tools/`, `.githooks/`, `.github/`) or a per-unit tag set at refine | Engineering seat | Spike: re-bucket the v6 units both ways | Open |
-| D10 | The dashboard contract | The evidence annex (EP0275) carries a schema version the dashboard pins; or the dashboard adapts per schema, as its RFC-01M46B5Y proposes | Engineering seat | Cross-repo consult with the dashboard | Open |
+| D8 | Machinery guardrail strength | Report the mix in the plan and the report only; or refuse a plan over the cap without a recorded maintenance declaration | Engineering seat | Spike against the run archive, then operator | Resolved: Decided by the operator (D0440): report and declare; the plan and report show points by area, and a plan over a third machinery records a maintenance declaration; nothing refuses |
+| D9 | What counts as machinery | A declared path map (loop scripts, `tools/`, `.githooks/`, `.github/`) or a per-unit tag set at refine | Engineering seat | Spike: re-bucket the v6 units both ways | Resolved: Decided by the operator (D0439): a per-unit area tag set at refine, with a path map flagging a tag that disagrees with the files touched |
+| D10 | The dashboard contract | The evidence annex (EP0275) carries a schema version the dashboard pins; or the dashboard adapts per schema, as its RFC-01M46B5Y proposes | Engineering seat | Cross-repo consult with the dashboard | Resolved: Decided by the operator (D0441): the evidence annex carries a schema version the dashboard pins; the dashboard upgrades its workspace first |
 
 Proposed outcomes for D4, each citing an End goal on the new cards:
 
@@ -190,3 +190,9 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Darren Benson; drafted with Claude Opus 5.5 | RFC drafted from the operator's strategy review: context with measured evidence, three options, the operator's decisions (D1, D5, D6, D7), six open decisions, proposed outcomes O10 to O13, impact, risks and eight workstreams |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D2 - Decided by the operator (D0436): a new Primary card for a head of engineering in an audited organisation leading several three-person teams, named by the seats; Jonah stays Secondary unchanged; Maya moves to Secondary |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D3 - Decided by the operator (D0437): the change approver joins as a Served persona with three End goals, standing criteria when EP0285 lands |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D4 - Decided by the operator (D0438): O10-O13 start from the operator's draft; the seats refine the wording only, dissent shown at plan approval |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D9 - Decided by the operator (D0439): a per-unit area tag set at refine, with a path map flagging a tag that disagrees with the files touched |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D8 - Decided by the operator (D0440): report and declare; the plan and report show points by area, and a plan over a third machinery records a maintenance declaration; nothing refuses |
+| 2026-11-09 | rfc resolve (operator decision) | resolve: D10 - Decided by the operator (D0441): the evidence annex carries a schema version the dashboard pins; the dashboard upgrades its workspace first |
