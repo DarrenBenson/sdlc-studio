@@ -1,6 +1,6 @@
 # Persona Index
 
-**Last updated:** 2026-11-01
+**Last updated:** 2026-11-09
 
 Goal-directed design personas for sdlc-studio itself (the Cooper model, RFC0017). The registry covers
 two interfaces, one Primary each (D0379): the shipped skill, and this repository's own tooling, which
@@ -9,16 +9,21 @@ review seats that critique artefacts are a separate concern (RFC0016), linked un
 
 ## Primary (the design targets, one per interface)
 
-- [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer; wants a disciplined,
-  trustworthy lifecycle driven by an agent, not vibe-coding. Well-formed.
+- [Abena Osei](abena-osei-head-of-engineering.md) - head of engineering in an audited
+  organisation; leads several three-person teams directing the agents the organisation licenses,
+  and answers for every release at a change approval board. Primary for the shipped skill (D0436).
+  Well-formed.
 - [Rowan Achterberg](rowan-achterberg-skill-maintainer.md) - maintainer of this repository; Primary for
   the repository-tooling interface (this repository's `tools/`, `.githooks/` and `.github/`, and the
   forward-port to the installed copy), which does not ship. A story minted with no persona names
   him when its Affects, test modules and changelog fragments set aside, lie wholly under those three
-  paths (US1080). Listed second, he is never the fallback: every other unnamed mint names Maya.
+  paths (US1080). Listed second, he is never the fallback: every other unnamed mint names Abena.
 
 ## Secondary (served, never at either Primary's expense)
 
+- [Maya Okafor](maya-okafor-founder-engineer.md) - solo founder-engineer; wants a disciplined,
+  trustworthy lifecycle driven by an agent, not vibe-coding, and is the way in for a builder who
+  starts alone. Well-formed.
 - [Jonah Reyes](jonah-reyes-team-lead.md) - small-team lead adopting sdlc-studio on an inherited
   brownfield repo; owns the `audit --profile repo` on-ramp, brownfield runbook, and `migrate` adoption path.
   Well-formed.
@@ -56,3 +61,4 @@ the design target and is not maintained; this registry is.
 | 2026-07-29 | Claude Opus 5 (BG0307) | Jonah Reyes's line names the `audit --profile repo` on-ramp where it named the retired `review generate` |
 | 2026-10-19 | Claude Opus 5.5 (US1079) | Rowan Achterberg added as Primary for the repository-tooling interface beside Maya for the shipped skill, each card declaring its interface (D0379, after the D0374 stakeholder consult) |
 | 2026-11-01 | Claude Opus 5.5 (US1083) | History put in date order and the missing 2026-07-29 row added; Last updated added; the review seats linked; Rowan's line says when an unnamed mint names him (US1080); the Primary and Secondary headings read for two Primaries |
+| 2026-11-09 | Claude Opus 5.5 (US1146) | Abena Osei added as the shipped skill's Primary on the operator's pick (D0436), listed first so an unnamed mint names her; Maya Okafor moves to Secondary and is now less well served on her End goal 3, driving a whole batch to done autonomously (D0443 narrowed D0436's list to that one); Rowan's card and line, and Trevor's Boundaries, name Abena as the shipped skill's Primary |

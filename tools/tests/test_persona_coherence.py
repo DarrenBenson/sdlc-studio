@@ -4,6 +4,8 @@ US1080: a story minted with no persona follows the paths those Interface rows de
 US1081: the shipped skill's Primary and the Negative state the run as it now runs.
 US1083: the index's history, Last updated line and seat links; the legacy file's Role fields and
 maintainer link.
+US1146: the head of engineering is the shipped skill's Primary (D0436, D0443) and the
+founder-engineer moves to Secondary; the team lead's card changes only in its Primary line.
 
 Two failures this guards:
 
@@ -19,6 +21,7 @@ is updated to match. The files scanned in the second suite are **listed from the
 not enumerated by hand, so a new document cannot silently exempt itself.
 """
 import functools
+import importlib.util
 import json
 import re
 import shutil
@@ -35,6 +38,19 @@ REGISTRY = REPO / "sdlc-studio" / "personas" / "index.md"
 LEGACY = REPO / "sdlc-studio" / "personas.md"
 
 ROLES = ("Primary", "Secondary", "Negative")
+
+
+def _load_gitutil():
+    """The shipped git-fixture helper, loaded rather than copied (LC-020)."""
+    spec = importlib.util.spec_from_file_location("_persona_coherence_gitutil",
+                                                  SCRIPTS / "tests" / "gitutil.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+gitutil = _load_gitutil()
 LEGACY_LABEL = re.compile(r"legacy|supersede|historical|deprecat", re.I)
 
 
@@ -135,6 +151,37 @@ def flat(text: str) -> str:
     return " ".join(text.split())
 
 
+#: Two cards read by file name rather than by role (US1146): US1081's End goal pins are the
+#: founder-engineer's whichever cast role she holds, and the team lead's card is held to
+#: GOALS_BASE. No persona name is written here: each one a check compares is read at check
+#: time, from the index or from a card's own heading.
+FOUNDER_CARD = REGISTRY.parent / "maya-okafor-founder-engineer.md"
+TEAM_LEAD_CARD = REGISTRY.parent / "jonah-reyes-team-lead.md"
+
+
+def card_heading(card: Path) -> str:
+    """A card's `# ` heading: the person's name as the card states it."""
+    match = re.search(r"^#\s+(.+?)\s*$", card.read_text(encoding="utf-8"), re.M)
+    return match.group(1) if match else ""
+
+
+def opening_quote(text: str) -> str:
+    """The `> ` quote a card opens with, above its first section, its lines joined into one."""
+    match = re.search(r"^(?:>.*(?:\n|$))+", text.split("\n## ", 1)[0], re.M)
+    return flat(re.sub(r"^>\s?", "", match.group(0), flags=re.M)) if match else ""
+
+
+def bullet_items(section: str) -> list[str]:
+    """A section's `- ` bullets, each with its wrapped lines joined onto it."""
+    items: list[str] = []
+    for line in section.splitlines():
+        if re.match(r"-\s+", line):
+            items.append(line[1:].strip())
+        elif items and line.startswith("  ") and line.strip():
+            items[-1] += " " + line.strip()
+    return items
+
+
 class PrdTargetUsersTests(unittest.TestCase):
     """AC1/AC2 of US0450."""
 
@@ -190,6 +237,24 @@ class PrdTargetUsersTests(unittest.TestCase):
                               f"the index bullet for {name} omits {path} from the card's Interface row")
             self.assertNotRegex(outcomes.group(1), rf"\b(?:{re.escape(name)}|{re.escape(first_name(name))})\b",
                                 f"a PRD outcome cites {name}, whose interface does not ship (D0380)")
+
+    def test_target_users_names_the_secondaries_in_index_order(self) -> None:
+        """US1146 AC5. Mutants: the shipped-skill label naming a Secondary (the founder-engineer
+        left there); the Secondary label missing a Secondary, or naming them out of the order the
+        index lists them."""
+        secondaries = [name for name, _ in cards_under("Secondary")]
+        self.assertTrue(secondaries, "the index lists no Secondary")
+        section = flat(self.section)
+        label = re.search(r"\*\*Secondary \(served, never at the shipped skill's Primary's "
+                          r"expense\):\*\* (.*?)(?= - \*\*|$)", section)
+        self.assertIsNotNone(label, "Target Users has no Secondary bullet with its label")
+        where = [label.group(1).find(name) for name in secondaries]
+        self.assertNotIn(-1, where, f"the Secondary bullet omits one of {secondaries}")
+        self.assertEqual(where, sorted(where), "the Secondary bullet does not follow the index's order")
+        shipped = re.search(r"\*\*Primary for the shipped skill[^*]*:\*\* (.*?)(?= - \*\*|$)", section)
+        self.assertIsNotNone(shipped, "Target Users has no shipped-skill Primary bullet")
+        self.assertEqual([n for n in secondaries if n in shipped.group(1)], [],
+                         "the shipped-skill Primary bullet names a Secondary")
 
     def test_expected_names_are_derived_from_the_registry_not_hardcoded(self) -> None:
         # 1. The parser reads whatever the registry says, rather than knowing an answer.
@@ -337,12 +402,111 @@ class TwoPrimaryCastTests(unittest.TestCase):
                                        rf"repository-only surface, never by shipped surface",
                              f"{name}'s card does not keep his want to repository-only surface")
 
+    def test_the_shipped_primary_leads_the_cast_and_the_founder_leads_the_secondaries(self) -> None:
+        """US1146 AC2 and AC3. Mutants: the tooling Primary listed first under `## Primary`; the
+        founder-engineer's card still declaring `Primary`, or keeping an `Interface` row, beside
+        the shipped Primary; the team lead listed above her under `## Secondary`; the tooling
+        Primary's index bullet sending every other unnamed mint to anyone but the shipped
+        Primary; his card's opening quote naming anyone else as the shipped skill's Primary."""
+        shipped, tooling = shipped_and_tooling()
+        self.assertTrue(shipped and len(tooling) == 1, "no shipped and tooling Primary pair")
+        self.assertEqual([n for n, _ in primary_cards()][:2], [shipped, tooling[0][0]],
+                         "## Primary does not list the shipped skill's Primary first and the "
+                         "tooling Primary second")
+        secondaries = cards_under("Secondary")
+        listed = [c.resolve() for _, c in secondaries]
+        self.assertIn(FOUNDER_CARD.resolve(), listed, "## Secondary does not list the founder-engineer")
+        self.assertIn(TEAM_LEAD_CARD.resolve(), listed, "## Secondary does not list the team lead")
+        self.assertLess(listed.index(FOUNDER_CARD.resolve()), listed.index(TEAM_LEAD_CARD.resolve()),
+                        "## Secondary lists the team lead above the founder-engineer")
+        for name, card in secondaries:
+            role = CAST_ROLE_ROW.search(card.read_text(encoding="utf-8"))
+            self.assertEqual(role.group(1).strip() if role else "", "Secondary",
+                             f"{name}'s card, listed under ## Secondary, declares another Cast role")
+            self.assertEqual(interface_of(card), "", f"{name}'s card, a Secondary, declares an Interface row")
+        index = REGISTRY.read_text(encoding="utf-8")
+        name, card = tooling[0]
+        bullet = re.search(rf"^- \[{re.escape(name)}\]\(.*?(?=^- \[|^## |\Z)", index, re.M | re.S)
+        self.assertIsNotNone(bullet, f"the index has no bullet for {name}")
+        self.assertIn(f"every other unnamed mint names {first_name(shipped)}.", flat(bullet.group(0)),
+                      f"{name}'s index bullet does not send every other unnamed mint to {shipped}")
+        self.assertIn(f"{shipped} is Primary for the shipped skill",
+                      opening_quote(card.read_text(encoding="utf-8")),
+                      f"{name}'s card does not open by naming {shipped} as the shipped skill's Primary")
 
-#: The commit the shipped Primary's End goals 1 to 4 are held to, word for word (US1081 AC1).
+    def test_jonahs_cast_lines_name_the_declared_primary_and_nothing_else_changes(self) -> None:
+        """US1146 AC7 (D0446: the product seat's dissent). Mutants: the team lead's `- **Primary:**`
+        line still pointing at the founder-engineer's card, or naming her; his served or
+        ceremony clause naming anyone but the shipped Primary; any other line of his card
+        changed from GOALS_BASE, End goals included, so O6-O9 keep their citations."""
+        shipped, _ = shipped_and_tooling()
+        self.assertTrue(shipped, "no shipped-skill Primary to expect")
+        primary_card = dict(primary_cards())[shipped]
+        base = committed_text(GOALS_BASE, TEAM_LEAD_CARD).splitlines()
+        now = TEAM_LEAD_CARD.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(end_goal_items("\n".join(now)), end_goal_items("\n".join(base)),
+                         f"the team lead's End goals differ from {GOALS_BASE}")
+        cast = [i for i, line in enumerate(now) if line.startswith("- **Primary:**")]
+        was = [i for i, line in enumerate(base) if line.startswith("- **Primary:**")]
+        self.assertEqual((len(cast), len(was)), (1, 1), "not one `- **Primary:**` line before and after")
+        self.assertEqual(now[:cast[0]] + now[cast[0] + 1:], base[:was[0]] + base[was[0] + 1:],
+                         f"a line of the team lead's card other than its Primary line differs "
+                         f"from {GOALS_BASE}")
+        line, lead, primary = now[cast[0]], first_name(card_heading(TEAM_LEAD_CARD)), first_name(shipped)
+        self.assertEqual([s for s in CODE_SPAN.findall(line) if s.endswith(".md")], [primary_card.name],
+                         "the Primary line does not point at the shipped Primary's card alone")
+        self.assertIn(shipped, line, f"the Primary line does not name {shipped}")
+        self.assertIn(f"{lead} is served, but never at {primary}'s expense", line)
+        self.assertIn(f"a feature that helps {lead} by adding ceremony for {primary} is declined", line)
+        others = [card_heading(c) for _, c in cards_under("Primary") + cards_under("Secondary")
+                  if c.resolve() not in (primary_card.resolve(), TEAM_LEAD_CARD.resolve())]
+        self.assertEqual([n for n in others if first_name(n) in line], [],
+                         "the Primary line names another persona")
+
+
+#: The commit the founder-engineer's End goals 1 to 4 are held to, word for word (US1081 AC1),
+#: and the team lead's whole card but its Primary line (US1146 AC7).
 GOALS_BASE = "7f3e91a9"
 #: End goal 5 as US1081 AC1 states it (D0383), so the test holds the criterion's words.
 END_GOAL_5 = ("Keep the process small enough to serve the work - every check earns its keep, "
               "and one that catches nothing is retired")
+#: The opening quote of the founder-engineer's card once she is Secondary (US1146 AC4).
+FOUNDER_QUOTE = ("A specific person, not a type. The Secondary is served fully, but never at the "
+                 "Primary's expense.")
+#: The shipped Primary's six End goals as US1146 AC1 states them (D0436, D0443), in order, each
+#: held word for word as END_GOAL_5 holds the founder-engineer's fifth.
+SHIPPED_PRIMARY_END_GOALS = (
+    "Every release passes the change board on the evidence the run produced, with no separate "
+    "write-up",
+    "Every specification and every change names an accountable person, not 'the agent'",
+    "Know what each team's delivery costs per point and hold it to a monthly budget, whichever "
+    "harness a team uses",
+    "A defect that escapes to production is traced to where it got through, and the mistake is "
+    "not repeated",
+    "People who never open a terminal can follow progress without someone translating for them",
+    "The process stays small enough to serve the work; every step earns its place",
+)
+#: The shipped Primary's Quick Reference rows as US1146 AC1 states them.
+SHIPPED_PRIMARY_ROWS = {
+    "Cast role": "Primary",
+    "Role": "Head of engineering in an audited organisation",
+    "Context": "Leads several three-person teams (product owner, engineer, QA) directing agents the "
+               "organisation already licenses; every release passes a change approval board",
+}
+#: The ids each of the shipped Primary's `End goal N:` Evidence lines cites, and no others, with
+#: the phrase a line carries beside its RFC0063 workstream (US1146 AC1).
+SHIPPED_PRIMARY_EVIDENCE = {
+    "1": ({"D0436", "EP0275", "EP0276"}, ""),
+    "2": ({"D0436", "RFC0063"}, "RFC0063 WS2, the owner field"),
+    "3": ({"D0436", "CR0685", "CR0690"}, ""),
+    "4": ({"D0436", "RFC0061", "RFC0063"}, "RFC0063 WS6, the escape loop"),
+    "5": ({"D0436", "D0441"}, ""),
+    "6": ({"D0443"}, ""),
+}
+#: The ids the card's own closing Evidence line cites.
+SHIPPED_PRIMARY_CARD_EVIDENCE = {"D0436", "D0443", "RFC0063"}
+#: The sprint run the shipped Primary's Scenario has one of her teams make (US1146 AC4).
+SHIPPED_PRIMARY_RUN = "/sdlc-studio sprint --crs Proposed --goal done"
 CODE_SPAN = re.compile(r"`([^`\n]+)`")
 #: A `script.py verb` span: an optional `python3` and directory, the script, then a word that is
 #: not a flag.
@@ -372,7 +536,7 @@ def end_goal_items(text: str) -> dict[str, list[str]]:
 
 def committed_text(commit: str, path: Path) -> str:
     run = subprocess.run(["git", "show", f"{commit}:{path.relative_to(REPO).as_posix()}"],
-                         cwd=str(REPO), capture_output=True, text=True)
+                         cwd=str(REPO), capture_output=True, text=True, env=gitutil.git_env())
     if run.returncode:
         raise AssertionError(f"cannot read {path.name} at {commit}: {run.stderr.strip()}")
     return run.stdout
@@ -431,63 +595,121 @@ class CardsStateTheRunTests(unittest.TestCase):
         self.assertTrue(self.shipped and self.tooling, "no shipped and tooling Primaries")
         self.card = dict(primary_cards())[self.shipped]
         self.text = self.card.read_text(encoding="utf-8")
+        # US1146: the founder-engineer's card and the shipped Primary's, each checked once.
+        self.both = list(dict.fromkeys([FOUNDER_CARD.resolve(), self.card.resolve()]))
 
     def test_mayas_end_goals_keep_their_numbers_and_gain_the_fifth(self) -> None:
-        """AC1. Mutants: End goal 1 to 4 reworded or renumbered; End goal 5 missing, reworded
-        or wrapped onto a second line, which BG1107 truncates."""
-        base = end_goal_items(committed_text(GOALS_BASE, self.card))
+        """US1081 AC1, read from the founder-engineer's card by file name (US1146). Mutants: End
+        goal 1 to 4 reworded or renumbered; End goal 5 missing, reworded or wrapped onto a second
+        line, which BG1107 truncates; her opening quote still calling her the Primary (US1146
+        AC4)."""
+        text = FOUNDER_CARD.read_text(encoding="utf-8")
+        base = end_goal_items(committed_text(GOALS_BASE, FOUNDER_CARD))
         self.assertEqual(sorted(base), ["1", "2", "3", "4"], f"the {GOALS_BASE} baseline moved")
-        now = end_goal_items(self.text)
+        now = end_goal_items(text)
         self.assertEqual({n: now.get(n) for n in base}, base,
                          f"End goals 1 to 4 differ from {GOALS_BASE}")
         self.assertEqual(now.get("5"), [END_GOAL_5], "End goal 5 is not the criterion's one line")
+        self.assertEqual(opening_quote(text), FOUNDER_QUOTE,
+                         "the founder-engineer's card does not open with the Secondary's quote")
+
+    def test_the_shipped_primarys_six_end_goals_stand_with_evidence(self) -> None:
+        """US1146 AC1. Mutants: an End goal reworded, reordered, wrapped onto a second line or
+        missing; an End goal with no `End goal N:` Evidence line, or one citing other ids; the
+        card's own closing Evidence line gone; any id on the card that resolves to nothing; a
+        Quick Reference row reworded; the heading not the name the index gives."""
+        self.assertEqual(card_heading(self.card), self.shipped,
+                         "the card's heading is not the name the index lists")
+        rows = {row[0].strip("*").strip(): row[1] for row in
+                table_rows(card_section(self.text, "Quick Reference")) if len(row) > 1}
+        self.assertEqual({k: rows.get(k) for k in SHIPPED_PRIMARY_ROWS}, SHIPPED_PRIMARY_ROWS,
+                         "a Quick Reference row is not the criterion's")
+        self.assertEqual(end_goal_items(self.text),
+                         {str(n): [goal] for n, goal in enumerate(SHIPPED_PRIMARY_END_GOALS, 1)},
+                         "the End goals are not the criterion's six, in order, one line each")
+        items = bullet_items(card_section(self.text, "Evidence"))
+        lines = {m.group(1): item for item in items if (m := re.match(r"End goal (\d+):", item))}
+        self.assertEqual(sorted(lines, key=int), sorted(SHIPPED_PRIMARY_EVIDENCE, key=int),
+                         "not one `End goal N:` Evidence line per End goal")
+        for number, (ids, phrase) in SHIPPED_PRIMARY_EVIDENCE.items():
+            self.assertEqual(set(CITED_ID.findall(lines[number])), ids,
+                             f"End goal {number}'s Evidence line cites other ids")
+            self.assertIn(phrase, lines[number], f"End goal {number}'s Evidence line omits {phrase!r}")
+        itself = [item for item in items if item.startswith("The card itself:")]
+        self.assertEqual(len(itself), 1, "the Evidence section has no one line for the card itself")
+        self.assertEqual(set(CITED_ID.findall(itself[0])), SHIPPED_PRIMARY_CARD_EVIDENCE,
+                         "the card's own Evidence line cites other ids")
+        cited = CITED_ID.findall(self.text)
+        self.assertEqual([c for c in cited if not id_resolves(c)], [],
+                         "the card cites id(s) that resolve to nothing")
 
     def test_mayas_card_names_shipped_commands_and_the_sign_step(self) -> None:
         """AC2, each `script.py verb` span asked of that script's own `--help`. Mutants: a span
         naming a verb the script does not take (`sprint.py sigh`) or a script that does not ship;
         a span naming a path in the tooling Primary's Interface row (`.githooks/pre-push`); the
-        Scenario naming no `sprint` run (an autosprint), or naming `sprint.py sign` before it."""
-        spans = CODE_SPAN.findall(self.text)
-        verbs = [m.groups() for m in map(SCRIPT_VERB.match, spans) if m]
-        self.assertTrue(verbs, "the card names no `script.py verb` span")
-        self.assertEqual([f"{s} {v}" for s, v in verbs if not verb_accepted(s, v)], [],
-                         "a span names a verb the shipped scripts do not accept")
-        commands = [m.group(1) for m in map(SKILL_COMMAND.match, spans) if m]
-        self.assertEqual([c for c in commands
-                          if not (SCRIPTS.parent / "help" / f"{c}.md").is_file()], [],
-                         "a span names a skill command with no help file")
+        Scenario naming no `sprint` run (an autosprint), or naming `sprint.py sign` before it.
+        US1146 AC4: checked on the founder-engineer's card and the shipped Primary's; the shipped
+        Primary's Scenario runs SHIPPED_PRIMARY_RUN, then signs, then passes the change approval
+        board with no separate write-up, in that order."""
         paths = [p for _, card in self.tooling for p in interface_paths(card)]
         self.assertTrue(paths, "the tooling Primary's Interface row declares no path")
-        self.assertEqual([s for s in spans if any(names_path(s, p) for p in paths)], [],
-                         "a span names a path in the tooling Primary's interface")
-        scenario = CODE_SPAN.findall(card_section(self.text, "Scenario"))
-        runs = [i for i, s in enumerate(scenario) if SPRINT_RUN.match(s)]
-        signs = [i for i, s in enumerate(scenario) if SIGN_SPAN.match(s)]
-        self.assertTrue(runs, f"the Scenario names no `sprint` run: {scenario}")
-        self.assertTrue(signs, f"the Scenario names no `sprint.py sign`: {scenario}")
-        self.assertLess(runs[0], signs[0], "the Scenario signs before it runs the sprint")
+        for card in self.both:
+            text = card.read_text(encoding="utf-8")
+            spans = CODE_SPAN.findall(text)
+            verbs = [m.groups() for m in map(SCRIPT_VERB.match, spans) if m]
+            self.assertTrue(verbs, f"{card.name} names no `script.py verb` span")
+            self.assertEqual([f"{s} {v}" for s, v in verbs if not verb_accepted(s, v)], [],
+                             f"a span on {card.name} names a verb the shipped scripts do not accept")
+            commands = [m.group(1) for m in map(SKILL_COMMAND.match, spans) if m]
+            self.assertEqual([c for c in commands
+                              if not (SCRIPTS.parent / "help" / f"{c}.md").is_file()], [],
+                             f"a span on {card.name} names a skill command with no help file")
+            self.assertEqual([s for s in spans if any(names_path(s, p) for p in paths)], [],
+                             f"a span on {card.name} names a path in the tooling Primary's interface")
+            scenario = CODE_SPAN.findall(card_section(text, "Scenario"))
+            runs = [i for i, s in enumerate(scenario) if SPRINT_RUN.match(s)]
+            signs = [i for i, s in enumerate(scenario) if SIGN_SPAN.match(s)]
+            self.assertTrue(runs, f"{card.name}'s Scenario names no `sprint` run: {scenario}")
+            self.assertTrue(signs, f"{card.name}'s Scenario names no `sprint.py sign`: {scenario}")
+            self.assertLess(runs[0], signs[0], f"{card.name}'s Scenario signs before it runs the sprint")
+        scenario = flat(card_section(self.text, "Scenario"))
+        run = scenario.find(f"`{SHIPPED_PRIMARY_RUN}`")
+        sign = scenario.find("`sprint.py sign`", max(run, 0))
+        board = scenario.find("change approval board", max(sign, 0))
+        self.assertGreaterEqual(run, 0, f"the shipped Primary's Scenario never runs {SHIPPED_PRIMARY_RUN}")
+        self.assertGreater(sign, run, "the shipped Primary's Scenario does not sign after the sprint runs")
+        self.assertGreater(board, sign, "the release does not pass the change approval board after the "
+                                        "signature")
+        self.assertIn("no separate write-up", scenario[board:],
+                      "the board's approval is not on the signed report's evidence alone")
 
     def test_mayas_boundaries_table_the_primary_for_each_interface(self) -> None:
         """AC3, with the mixed row also asked of the shipped mint. Mutants: no link to another
         Primary's card; the mixed row naming the tooling Primary (the rule reversed); an
         interface cell that is not the name the card's Interface row gives; the index listing
-        the tooling Primary first, which moves both the reading and the mint."""
+        the tooling Primary first, which moves both the reading and the mint.
+        US1146 AC4: checked on the founder-engineer's card and the shipped Primary's, so neither
+        table names the founder-engineer for the shipped skill or for both."""
         cards = primary_cards()
-        boundary = card_section(self.text, "Boundaries")
-        self.assertTrue(boundary.strip(), "the card has no Boundaries section")
-        links = links_from(self.card, boundary)
-        self.assertEqual([n for n, c in cards if c.resolve() != self.card.resolve()
-                          and c.resolve() not in links], [],
-                         "Boundaries does not link every other Primary's card")
-        rows = table_rows(boundary)
-        expected = [[interface_name(c), n] for n, c in cards]
-        self.assertEqual([e for e in expected if e not in rows], [],
-                         f"no row maps each interface to its Primary: {rows}")
-        mixed = [r for r in rows if r not in expected]
-        self.assertEqual(len(mixed), 1, f"want one row for a unit touching both: {rows}")
-        self.assertRegex(mixed[0][0], r"(?i)\bboth\b")
-        self.assertEqual(mixed[0][1:], [cards[0][0]],
-                         "a unit touching both is not the Primary the index lists first")
+        mixed = []
+        for card in self.both:
+            boundary = card_section(card.read_text(encoding="utf-8"), "Boundaries")
+            self.assertTrue(boundary.strip(), f"{card.name} has no Boundaries section")
+            links = links_from(card, boundary)
+            self.assertEqual([n for n, c in cards if c.resolve() != card.resolve()
+                              and c.resolve() not in links], [],
+                             f"{card.name}'s Boundaries does not link every other Primary's card")
+            rows = table_rows(boundary)
+            expected = [[interface_name(c), n] for n, c in cards]
+            self.assertEqual([e for e in expected if e not in rows], [],
+                             f"no row on {card.name} maps each interface to its Primary: {rows}")
+            both = [r for r in rows if r not in expected]
+            self.assertEqual(len(both), 1, f"want one row for a unit touching both: {rows}")
+            self.assertRegex(both[0][0], r"(?i)\bboth\b")
+            self.assertEqual(both[0][1:], [cards[0][0]],
+                             f"on {card.name}, a unit touching both is not the Primary the index "
+                             f"lists first")
+            mixed = both
         home = Path(tempfile.mkdtemp(prefix="us1081-"))
         try:
             shutil.copytree(REGISTRY.parent, home / "sdlc-studio" / "personas",
@@ -507,7 +729,8 @@ class CardsStateTheRunTests(unittest.TestCase):
 
     def test_trevors_card_names_the_one_signature_and_each_primary(self) -> None:
         """AC4. Mutants: the card left without the `sprint.py sign` span or without D0213; an id
-        it cites that resolves to nothing; a Primary's card not linked."""
+        it cites that resolves to nothing; a Primary's card not linked from its Boundaries, or the
+        shipped skill's Primary not named there by a link to her card (US1146 AC4)."""
         negatives = cards_under("Negative")
         self.assertTrue(negatives, "the index lists no Negative persona")
         for name, card in negatives:
@@ -519,9 +742,13 @@ class CardsStateTheRunTests(unittest.TestCase):
             self.assertIn("D0213", cited, f"{name}'s card does not cite D0213")
             self.assertEqual([c for c in cited if not id_resolves(c)], [],
                              f"{name}'s card cites id(s) that resolve to nothing")
-            links = links_from(card, text)
+            boundary = card_section(text, "Boundaries")
+            links = links_from(card, boundary)
             self.assertEqual([n for n, c in primary_cards() if c.resolve() not in links], [],
-                             f"{name}'s card does not link each Primary's card")
+                             f"{name}'s Boundaries does not link each Primary's card")
+            self.assertIn(f"[{self.shipped}]({self.card.name})", boundary,
+                          f"{name}'s Boundaries does not name {self.shipped} as the shipped "
+                          f"skill's Primary")
 
 
 #: The seats `persona_resolve.py resolve --seat` takes, each named by US1083 AC3.

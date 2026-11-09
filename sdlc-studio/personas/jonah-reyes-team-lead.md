@@ -65,5 +65,5 @@ workspace stays consistent while the team keeps shipping.
 
 ---
 
-- **Primary:** see `maya-okafor-founder-engineer.md` - Jonah is served, but never at Maya's expense; a feature that helps Jonah by adding ceremony for Maya is declined.
+- **Primary:** see `abena-osei-head-of-engineering.md` - Abena Osei is the shipped skill's Primary; Jonah is served, but never at Abena's expense; a feature that helps Jonah by adding ceremony for Abena is declined.
 - **Negative persona:** see `trevor-hale-enterprise-pm.md` - Jonah wants shared discipline held by the tool; Trevor wants central governance held by a bureaucracy. The line between them bounds this card.

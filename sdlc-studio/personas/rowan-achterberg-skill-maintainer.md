@@ -1,7 +1,7 @@
 # Rowan Achterberg
 
-> A specific person, not a type. Rowan is Primary for the repository-tooling interface; Maya
-> Okafor is Primary for the shipped skill (one Primary per interface, D0379).
+> A specific person, not a type. Rowan is Primary for the repository-tooling interface;
+> Abena Osei is Primary for the shipped skill (one Primary per interface, D0379; D0436).
 
 ## Quick Reference
 
@@ -76,11 +76,11 @@ ends.
 
 ## Boundaries
 
-- **Maya Okafor is Primary for the shipped skill.** A unit that touches a shipped path
-  (`.claude/skills/sdlc-studio/`) is judged against Maya. Rowan's want is met in repository-only
-  surface, never by shipped surface Maya pays for.
+- **Abena Osei is Primary for the shipped skill.** A unit that touches a shipped path
+  (`.claude/skills/sdlc-studio/`) is judged against Abena. Rowan's want is met in repository-only
+  surface, never by shipped surface Abena's teams pay for.
 - **The interfaces meet in the shipped gate.** `gate.py`'s push boundary ships, so a change there
-  is Maya's, even when Rowan is the one who asked for it.
+  is Abena's, even when Rowan is the one who asked for it.
 - **Trevor Hale is the Negative persona on both interfaces.** An approver on every change is still
   his want, not Rowan's: Rowan's goals are outcomes a unit can fail against, never a gate added
   for its own sake.

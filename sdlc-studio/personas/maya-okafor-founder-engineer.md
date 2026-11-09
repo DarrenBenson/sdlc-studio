@@ -1,13 +1,12 @@
 # Maya Okafor
 
-> A specific person, not a type. The Primary is the one the product is designed *for*.
+> A specific person, not a type. The Secondary is served fully, but never at the Primary's expense.
 
 ## Quick Reference
 
 | Attribute | Value |
 | --- | --- |
-| **Cast role** | Primary |
-| **Interface** | The shipped skill: what installs into a project's skill directory (`.claude/skills/sdlc-studio/`) and runs in her own repository |
+| **Cast role** | Secondary |
 | **Role** | Solo founder-engineer building a SaaS product |
 | **Context** | Works in a terminal with an AI coding agent; long sessions, frequent context resets |
 
@@ -70,20 +69,26 @@ surprised her.
 
 ## Boundaries
 
+- **[Abena Osei](abena-osei-head-of-engineering.md) is Primary for the shipped skill**, the
+  interface Maya uses (D0436). Maya is served fully, but never at Abena's expense. She is less well
+  served on her End goal 3, driving a whole batch to done autonomously, because owner fields,
+  evidence packs and budget views add process a solo builder did not ask for (D0443 narrowed D0436's
+  list to that one goal).
 - **[Rowan Achterberg](rowan-achterberg-skill-maintainer.md) is Primary for this repository's own
   tooling**, which does not ship and which Maya never sees. His want is met there, never by adding
   a step to her run.
 - A unit is judged against the Primary of the interface its Affects touch. A unit touching both
-  touches a shipped path, so it is Maya's; a story minted with no `--persona` names her too, as the
+  touches a shipped path, so it is Abena's; a story minted with no `--persona` names her too, as the
   Primary the persona index lists first.
 
 | A unit touching | Is judged against |
 | --- | --- |
-| The shipped skill | Maya Okafor |
+| The shipped skill | Abena Osei |
 | Repository tooling | Rowan Achterberg |
-| Both interfaces | Maya Okafor |
+| Both interfaces | Abena Osei |
 
 ---
 
+- **Primary:** see `abena-osei-head-of-engineering.md` - Maya is served, but never at Abena's expense.
 - **Negative persona:** see `trevor-hale-enterprise-pm.md` - who we are deliberately not designing for.
 - **Customer / Served:** for Maya, the buyer and the user are the same person; no separate Customer persona is needed.

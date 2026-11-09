@@ -37,7 +37,7 @@ to decline**, not a backlog.
 ## Boundaries
 
 - **He is the Negative persona on both interfaces:** the shipped skill, whose Primary is
-  [Maya Okafor](maya-okafor-founder-engineer.md), and this repository's own tooling, whose Primary
+  [Abena Osei](abena-osei-head-of-engineering.md), and this repository's own tooling, whose Primary
   is [Rowan Achterberg](rowan-achterberg-skill-maintainer.md).
 - **A run carries one signature (D0213).** The operator signs it once, after the close, with
   `sprint.py sign`, which refuses a principal who is a unit's author or a reviewer recorded on it.
