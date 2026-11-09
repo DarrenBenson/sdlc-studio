@@ -9,9 +9,11 @@
 #   - commit-msg  WRITES the trailers a subject naming more than one work-item id
 #                 (US/BG/CR) owes, from the staged files' Affects: a `Refs: <id>` per
 #                 owning id, so the engagement floor can attribute a shared commit per id,
-#                 and a `Mentions: <id>` for an id that owns none. It refuses a commit no
-#                 named id owns a staged file of, and a `Refs:` line naming a unit that
-#                 owns none, printing the lines to paste. A single-id subject, and a merge / revert /
+#                 and a `Mentions: <id>` for an id that owns none (a review ledger row
+#                 the commit adds makes that row's unit an owner). On a subject naming two
+#                 or more ids it refuses a commit no named id owns a staged file of, and a
+#                 `Refs:` line naming a unit that owns none, printing the lines to paste.
+#                 A single-id subject, its `Refs:` line included, and a merge / revert /
 #                 rebase replay, pass untouched. It then runs the unit suites, which sit
 #                 here rather than in pre-commit because git writes the commit message
 #                 after pre-commit has run: a message defect must not cost a full suite.

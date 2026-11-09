@@ -795,6 +795,78 @@ class CommitMsgCheckTests(unittest.TestCase):
         # The note and `..` owners' own `Refs:` lines stand, as the base hook let them.
         self.assertEqual(refs["contradicted"], [])
 
+    def _owned_pair(self, root: Path, stage: tuple[str, ...]) -> None:
+        """US0001 owns src/a.py and US0002 owns src/b.py by their Affects; both sources and
+        US0001's changelog fragment are seeded, then each path in `stage` is changed and
+        staged, so the staged files alone decide who owns the commit."""
+        gitutil.git(["init", "-q"], cwd=root)
+        _write_unit(root, "story", 1, status="In Progress", affects=["src/a.py"])
+        _write_unit(root, "story", 2, status="In Progress", affects=["src/b.py"])
+        for rel in ("src/a.py", "src/b.py", "changelog.d/US0001.md"):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text("x = 1\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+        gitutil.git(["commit", "-q", "-m", "seed"], cwd=root)
+        for rel in stage:
+            (root / rel).write_text("x = 2\n", encoding="utf-8")
+        gitutil.git(["add", "-A"], cwd=root)
+
+    def _check_msg(self, root: Path, text: str) -> tuple[subprocess.CompletedProcess, str]:
+        """`check-commit-msg --strict --write-trailers` on `text`, as a hook passes it."""
+        msg = root / "COMMIT_EDITMSG"
+        msg.write_text(text, encoding="utf-8")
+        r = subprocess.run(
+            [sys.executable, str(SCRIPT), "check-commit-msg", "--strict", "--write-trailers",
+             str(msg), "--root", str(root)],
+            cwd=root, capture_output=True, text=True, env=gitutil.git_env(), timeout=60)
+        return r, msg.read_text(encoding="utf-8")
+
+    def test_a_file_named_for_its_unit_is_owned_by_that_unit(self):
+        # BG1264 AC3. A unit's changelog fragment carries its id in its own name, and that alone
+        # makes the unit its owner, whatever its Affects declares. Must fail on: dropping
+        # `_path_owner(f) == rid` from `owns()`, which refuses US0001's true `Refs:` line and
+        # writes `Mentions: US0001` where `Refs:` is owed.
+        subject = "US0001 US0002: the fragment"
+        right = f"{subject}\n\nRefs: US0001\nMentions: US0002\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._owned_pair(root, ("changelog.d/US0001.md",))
+            r, after = self._check_msg(root, right)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, right)
+            r, after = self._check_msg(root, f"{subject}\n")
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(after, right, "derived from the filename alone")
+            # Positive control: US0002 has an artefact and owns none of the staged files.
+            wrong = f"{subject}\n\nRefs: US0001\nRefs: US0002\n"
+            r, after = self._check_msg(root, wrong)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("Refs: US0002 names a unit that owns none", r.stderr)
+        self.assertNotIn("Refs: US0001 names", r.stderr)
+        self.assertEqual(after, wrong)
+
+    def test_a_refs_id_with_no_artefact_is_not_contradicted(self):
+        # BG1264 AC3. An id with no artefact in this workspace (another tracker's, or a typo)
+        # has no declarations to deny a `Refs:` line, so it is never reported contradicted.
+        # Must fail on: dropping `i in fp`, which refuses `Refs: US0099` as owning nothing.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._owned_pair(root, ("src/a.py",))
+            foreign = ("US0001 US0099: beside an id from elsewhere\n\n"
+                       "Refs: US0001\nRefs: US0099\n")
+            r, after = self._check_msg(root, foreign)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertNotIn("owns none", r.stderr)
+            self.assertEqual(after, foreign)
+            self.assertEqual(_load().derive_trailers(root, foreign, staged=["src/a.py"])
+                             ["contradicted"], [])
+            # Positive control: US0002 has an artefact and owns none of the staged files.
+            wrong = "US0001 US0002: the pair\n\nRefs: US0001\nRefs: US0002\n"
+            r, after = self._check_msg(root, wrong)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("Refs: US0002 names a unit that owns none", r.stderr)
+        self.assertEqual(after, wrong)
+
 
 class ForwardCutoffTests(unittest.TestCase):
     """F2 (critic reject): a forward cutoff (adopt_after above the highest existing id) is a

@@ -719,6 +719,32 @@ class DerivedTrailerTests(unittest.TestCase):
                     self.assertEqual(after.count(f"Refs: {rid}\n"), 1, after)
                     self.assertNotIn(f"Mentions: {rid}", after)
 
+    def test_a_verbose_diff_below_the_scissors_is_neither_read_nor_written_into(self):
+        # Round-1 REJECT of US1133 (BG1263). `git commit -v` puts the staged diff below git's
+        # scissors line, and git drops everything below it. A diff context line reading
+        # ` Refs: US0005` is git's text, not the author's, so it states no ownership; and the
+        # derived trailers go into the author's text above git's scaffolding, never after the
+        # diff where git would drop them. Must fail on: the derivation reading a `Refs:` line
+        # below the scissors (refused as contradicting ownership), or the trailers written
+        # below the diff.
+        units = (("stories", "US0001", "src/a.py"), ("bugs", "BG0002", "bin/gate"),
+                 ("stories", "US0005", "docs/x.md"))
+        files = ("src/a.py", "bin/gate", "docs/x.md")
+        subject = "fix(US0001, BG0002): verbose"
+        scaffold = ("\n# Please enter the commit message for your changes.\n"
+                    "# ------------------------ >8 ------------------------\n"
+                    "# Do not modify or remove the line above.\n"
+                    "# Everything below it will be ignored.\n"
+                    "diff --git a/src/a.py b/src/a.py\n"
+                    " Refs: US0005\n"
+                    "-x = 1\n"
+                    "+x = 2\n")
+        with tempfile.TemporaryDirectory() as d:
+            repo = self._fixture(d, stage=("src/a.py",), units=units, files=files)
+            r, after = self._hook(repo, f"{subject}\n{scaffold}")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(after, f"{subject}\n\nRefs: US0001\nMentions: BG0002\n{scaffold}")
+
 class HookInvocationHermeticityTests(unittest.TestCase):
     """BG0595 AC4/AC5. No test may invoke the hook against the repository under development."""
 

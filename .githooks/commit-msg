@@ -17,7 +17,8 @@
 # by the engagement floor's git leg - it cannot attribute a file to one id among several -
 # so an understated `Affects` would go uncaught. The hook WRITES those trailers first, from
 # the staged files' ownership: `Refs:` for each named id whose `Affects` declares a staged file
-# (or whose id a staged filename carries), `Mentions:` for each that owns none. It refuses only
+# (or whose id a staged filename carries, or whose row a staged review ledger gains),
+# `Mentions:` for each that owns none. It refuses only
 # what that map cannot attribute - no named id owns a staged file - and a `Refs:` line naming a
 # unit that owns none of them, printing the lines to paste. A refusal costs one retry; not
 # enforcing costs an unattributable commit the floor cannot check.

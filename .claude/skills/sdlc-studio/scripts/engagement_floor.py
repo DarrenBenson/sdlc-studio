@@ -921,6 +921,40 @@ def unnamed_unit_attribution(repo_root: Path | str, message: str,
 _TRAILER_LINE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*:[ \t]")
 #: The line below which a verbose commit's message file carries git's diff, never the author's.
 _SCISSORS_RE = re.compile(r"^# -+ >8 -+$")
+#: The review ledgers a paperwork commit stages. Each row opens with the unit it records, so a
+#: row the commit adds is that unit's paperwork.
+_RECORD_LEDGERS = ("sdlc-studio/reviews/critic-verdicts.md",
+                   "sdlc-studio/reviews/author-self-checks.md")
+#: An added table row in `git diff` output, capturing its first cell.
+_ADDED_ROW_RE = re.compile(r"^\+\|\s*([^|]+?)\s*\|")
+
+
+def _scissors_cut(lines: list[str]) -> int:
+    """The index of git's scissors line in `lines`, or `len(lines)` when there is none. Above it
+    is the author's text; below it, git's diff, which git drops from the commit. Both
+    `derive_trailers` (reading) and `with_trailers` (writing) cut here."""
+    return next((n for n, ln in enumerate(lines) if _SCISSORS_RE.match(ln)), len(lines))
+
+
+def _ledger_rows(root: Path, paths: list[str]) -> dict[str, set[str]]:
+    """{staged review ledger -> the normalised unit ids whose rows this commit ADDS to it}.
+
+    Only the added rows count: a unit with an older row in the ledger owns nothing of this
+    commit. A ledger git cannot diff contributes no owner."""
+    rows: dict[str, set[str]] = {}
+    for path in (p for p in paths if p in _RECORD_LEDGERS):
+        try:
+            out = subprocess.run(
+                ["git", "-C", str(root), "-c", "core.quotepath=false", "diff", "--cached",
+                 "--no-color", "--no-ext-diff", "-U0", "--", path],
+                capture_output=True, text=True, timeout=_GIT_TIMEOUT, check=False)
+        except (OSError, subprocess.SubprocessError) as exc:
+            sdlc_md.debug("engagement_floor._ledger_rows", exc)
+            continue
+        ids = {sdlc_md.norm_id(m.group(1))
+               for m in map(_ADDED_ROW_RE.match, out.stdout.splitlines()) if m}
+        rows[path] = {i for i in ids if _JUDGED_NORM_ID_RE.fullmatch(i)}
+    return rows
 
 
 def declaration_covers(path: str, declared: str) -> bool:
@@ -939,30 +973,37 @@ def derive_trailers(repo_root: Path | str, message: str, staged: list[str] | Non
     subject naming two or more judged ids.
 
     An id OWNS a staged file when its `Affects` covers the file (`declaration_covers`: the path,
-    a directory it sits under or a glob it matches) or the file carries its id in its own name
-    (its artefact, its changelog fragment). Each named id no trailer accounts for gets
-    `Refs:` when it owns one and `Mentions:` when it owns none. Nothing is derived when no id the
-    message names owns a staged file, nothing is staged, or git cannot be asked: the map then
-    attributes the commit to nobody, and the author states it as before.
+    a directory it sits under or a glob it matches), the file carries its id in its own name
+    (its artefact, its changelog fragment), or the file is a review ledger
+    (`critic-verdicts.md`, `author-self-checks.md`) the commit adds that unit's row to. Each
+    named id no trailer accounts for gets `Refs:` when it owns one and `Mentions:` when it owns
+    none. Nothing is derived when no id the message names owns a staged file, nothing is staged,
+    or git cannot be asked: the map then attributes the commit to nobody, and the author states
+    it as before. Only the author's text is read: what sits below git's scissors line is git's.
 
-    `contradicted` lists the ids a written `Refs:` line names that are units of this workspace
-    owning none of the staged files: a statement of ownership the declarations deny. Returns
-    {"refs": [...], "mentions": [...], "contradicted": [...]}, each id as the message wrote it."""
+    On a subject naming two or more ids, `contradicted` lists the ids a written `Refs:` line
+    names that are units of this workspace owning none of the staged files: a statement of
+    ownership the declarations deny. A single-id subject is not judged, so its `Refs:` line is
+    never contradicted. Returns {"refs": [...], "mentions": [...], "contradicted": [...]}, each
+    id as the message wrote it."""
     root = Path(repo_root)
-    body = _strip_comments(message)
+    lines = message.splitlines()
+    authored = "\n".join(lines[:_scissors_cut(lines)])
+    body = _strip_comments(authored)
     written: dict[str, str] = {}
-    for i in _JUDGED_ID_RE.findall(_subject_line(message)):
+    for i in _JUDGED_ID_RE.findall(_subject_line(authored)):
         written.setdefault(sdlc_md.norm_id(i), i)
     result: dict[str, list[str]] = {"refs": [], "mentions": [], "contradicted": []}
     paths = _staged_paths(root) if staged is None else staged
     if len(written) <= 1 or not paths:
         return result
     fp = unit_footprints(root) if footprints is None else footprints
+    ledgers = _ledger_rows(root, paths)
 
     # Each staged path as the index reports it, repo-relative: the form the close guard compares.
     def owns(rid: str) -> bool:
-        return any(_path_owner(f) == rid or any(declaration_covers(f, d) for d in fp.get(rid, ()))
-                   for f in paths)
+        return any(_path_owner(f) == rid or rid in ledgers.get(f, ())
+                   or any(declaration_covers(f, d) for d in fp.get(rid, ())) for f in paths)
 
     refs, mentions = _refs_ids(body), _mentions_ids(body)
     for m in _REFS_LINE_RE.finditer(body):
@@ -982,7 +1023,7 @@ def with_trailers(message: str, lines: list[str]) -> str:
     already a trailer block (so git reads one block, not two), else after a blank line, and in
     either case above git's comment scaffolding and any verbose diff."""
     all_lines = message.splitlines()
-    cut = next((n for n, ln in enumerate(all_lines) if _SCISSORS_RE.match(ln)), len(all_lines))
+    cut = _scissors_cut(all_lines)
     head, tail = all_lines[:cut], all_lines[cut:]
     last = max((n for n, ln in enumerate(head)
                 if ln.strip() and not ln.lstrip().startswith("#")), default=-1)
@@ -1036,9 +1077,10 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
             sdlc_md.debug("engagement_floor.derive_trailers", exc)
     for rid in contradicted:
         print(f"engagement floor (commit-msg): Refs: {rid} names a unit that owns none of the "
-              f"staged files (its Affects declares none of them and none carries its id). Add "
-              f"the file to {rid}'s Affects if the work is its, or write Mentions: {rid} in "
-              "place of that Refs: line.", file=sys.stderr)
+              f"staged files (its Affects declares none of them, none carries its id and no "
+              f"staged review ledger gains its row). Add the file to {rid}'s Affects if the "
+              f"work is its, or write Mentions: {rid} in place of that Refs: line.",
+              file=sys.stderr)
     code, warning = check_commit_message(message, strict=args.strict)
     if contradicted and args.strict:
         code = 1
@@ -1050,8 +1092,9 @@ def cmd_check_commit_msg(args: argparse.Namespace) -> int:
     # The attribution advisory is REPORTED, never returned as the exit code - not even under
     # --strict. Ownership is inferred from a declared footprint, and a gate that refused on an
     # inference would be switched off within a week. The refusals are the multi-id rule and,
-    # under --write-trailers, a Refs: line naming a unit that owns none of the staged files: an
-    # explicit statement the declarations deny, which Mentions: or an amended Affects answers.
+    # under --write-trailers on a subject naming two or more ids, a Refs: line naming a unit
+    # that owns none of the staged files: an explicit statement the declarations deny, which
+    # Mentions: or an amended Affects answers.
     try:
         for note in unnamed_unit_attribution(root, message, footprints=footprints):
             print(f"engagement floor (attribution): {note['note']}", file=sys.stderr)
