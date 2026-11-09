@@ -1,6 +1,7 @@
 # CR-0689: The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0305
 > **Parent:** RFC0063
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
@@ -22,7 +23,7 @@ Every later unit is judged against the persona this sets (RFC0063). Today work f
 
 - [ ] A new card under sdlc-studio/personas/, named by the seats, is the shipped skill's Primary: a head of engineering in an audited organisation who leads several three-person teams (product owner, engineer, QA) directing agents the organisation licenses, every release passing a change approval board. Its End goals are D0436's five, in order, then End goal 6, "The process stays small enough to serve the work; every step earns its place." (D0443), each with an Evidence line citing an id that resolves.
 - [ ] A change-approver card carries the Served cast role and D0437's three End goals; the index lists it under a Served heading, and `tools/tests/test_persona_coherence.py` reads Served as a role.
-- [ ] Maya Okafor's card and the index move her to Secondary; Jonah Reyes's card is unchanged; Trevor Hale's card is narrowed to a GUI-first operator, non-technical staff running the tool and a human approval on every change; the index's history records the operator's pick (D0436) and names Maya's End goals 3 and 5 as less well served.
+- [ ] Maya Okafor's card and the index move her to Secondary; Jonah Reyes's card changes only in its closing cast lines, which name Abena Osei as the Primary, so his End goals and O6-O9's citations stand (D0446); Trevor Hale's card is narrowed to a GUI-first operator, non-technical staff running the tool, a human approval on every change and sync to an enterprise tracker, and his Scenario points his wants for boards and dashboards at the read-only companion dashboard (D0446); the index's history records the operator's pick (D0436) and names Maya's End goal 3 as less well served (D0443 narrowed D0436's list).
 - [ ] The PRD's Mission leads with "human in the lead, not just in the loop"; Target Users names the new Primary, Maya and Jonah as Secondary, the change approver as Served and Trevor as Negative; Outcomes gain O10-O13 from D0438's draft as the seats word them, citing each End goal of the two new cards exactly once; O6-O9 keep their citations of Jonah.
 - [ ] O5 cites Maya Okafor's End goal 5 and the new Primary's End goal 6, `;`-separated. The O5 pin in `tools/tests/test_lean_prd_refresh.py` (`O5_CITES`, today Maya Okafor End goal 5 alone) becomes that pair, so O5 citing exactly those two End goals passes, O5 citing either one alone fails, and every End goal of each cited card is still cited exactly once.
 - [ ] `tools/tests/test_persona_coherence.py` and `tools/tests/test_lean_prd_refresh.py` pass on the changed registry and PRD, and `sprint.py plan` on a Sprint Goal serving O10 names the new Primary or the change approver under goal serves, not NONE.
@@ -33,3 +34,4 @@ Every later unit is judged against the persona this sets (RFC0063). Today work f
 | --- | --- | --- |
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-09 | Claude Opus 5.5 (operator instruction) | The counterweight is the new Primary's End goal 6, not a frustration (D0443); O5 cites it beside Maya Okafor's End goal 5, and the O5 pin in test_lean_prd_refresh.py widens to the pair |
+| 2026-11-09 | Claude Opus 5.5 (plan approval, D0446) | AC3 follows the operator's rulings on the product seat's dissents: Jonah's cast lines name Abena, Trevor keeps tracker sync as declined and his Scenario points at the companion dashboard |

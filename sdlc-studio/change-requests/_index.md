@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 33 |
+| Proposed | 29 |
 | Approved | 0 |
-| In Progress | 28 |
+| In Progress | 32 |
 | Complete | 538 |
 | Rejected | 30 |
 | Deferred | 0 |
@@ -81,7 +81,7 @@
 | [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | Complete | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | Complete | Medium | Feature | 2026-11-06 | EP0299 |
 | [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | Complete | High | Improvement | 2026-11-06 | EP0299 |
-| [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | Proposed | High | Feature | 2026-11-06 | -- |
+| [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | In Progress | High | Feature | 2026-11-06 | EP0302 |
 | [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | Proposed | High | Improvement | 2026-11-06 | -- |
 | [CR-0672](CR0672-add-a-deterministic-sprint-py-drive-loop-that.md) | Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end. | Proposed | High | Feature | 2026-11-06 | -- |
 | [CR-0673](CR0673-replace-the-author-s-and-the-reviewer-s.md) | Replace the author's and the reviewer's hand-rolled mutation passes with one shipped runner (`mutation.py` with drop-conjunct and prose-polarity operators, plus arbitrary file, old and new edits), and have `critic.py self-check record` take its report and refuse unanswered survivors. | Proposed | High | Improvement | 2026-11-06 | -- |
@@ -96,12 +96,12 @@
 | [CR-0682](CR0682-make-the-author-self-check-prove-each-acceptance.md) | Make the author self-check prove each acceptance criterion at the observable it names through the shipped entry point, list the docs outside Affects that name what the diff changed, require a captured producer sample for a unit that parses another tool's output, and tag each blocking finding with its defect class. | Proposed | Medium | Improvement | 2026-11-06 | -- |
 | [CR-0683](CR0683-fix-three-run-seven-frictions-in-which-a.md) | Fix three run-seven frictions in which a shipped step leaves state the next step refuses: `lane land` checks the self-check hand-in only after it commits, `verify_ac run` in a builder worktree stamps the story file outside the unit's Affects, and `file_finding --parent` leaves the parent RFC's spawned-work cell unsynced. | Proposed | Medium | Bug | 2026-11-06 | -- |
 | [CR-0684](CR0684-prevent-or-retire-lesson-lc-015-a-retirement.md) | Prevent or retire lesson LC-015 (a retirement outruns the deletion) | Proposed | Medium | Improvement | 2026-11-06 | -- |
-| [CR-0685](CR0685-price-a-github-copilot-run-per-token-in.md) | Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0685](CR0685-price-a-github-copilot-run-per-token-in.md) | Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request | In Progress | Medium | Improvement | 2026-11-06 | EP0304 |
 | [CR-0686](CR0686-carry-the-hand-back-contract-in-a-project.md) | Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats | Proposed | Low | Improvement | 2026-11-06 | -- |
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
 | [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
-| [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | Proposed | High | Enhancement | 2026-11-09 | -- |
-| [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Proposed | High | Enhancement | 2026-11-09 | -- |
+| [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | In Progress | High | Enhancement | 2026-11-09 | EP0305 |
+| [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | In Progress | High | Enhancement | 2026-11-09 | EP0303 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # CR-0670: Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0302
 > **Parent:** RFC0062
 > **Priority:** High
 > **Type:** Feature

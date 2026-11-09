@@ -24,9 +24,12 @@ Normalise each id with the same function the run state uses before deduplicating
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `lane_dispatch` (.claude/skills/sdlc-studio/scripts/sprint.py:2628) builds the seam scope as `dict.fromkeys([*approved, *unit_ids])`, deduplicating the raw...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a schema-3 project, open a run with one story whose id carries a hyphen (`sprint plan --worklist <file> --write`), then run `sprint.py lane brief --units...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Normalise each id with the same function the run state uses before deduplicating the scope, and have `seam_map` skip a pair whose two ids name the same unit.
+- [ ] **AC1** `lane_dispatch` (.claude/skills/sdlc-studio/scripts/sprint.py:2628) normalises every id with `sdlc_md.norm_id`, the function the run state uses, before deduplicating the seam scope, so a schema-3 unit the run state holds as `US01M6XQJF` and the command line names as `US-01M6XQJF` enters the scope once.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneSeamScopeTests::test_a_schema3_unit_named_with_its_hyphen_enters_the_scope_once
+- [ ] **AC2** Following the recorded steps no longer reproduces the defect: in a schema-3 project with a one-story run opened by `sprint plan --worklist <file> --write`, `sprint.py lane brief --units <that id as written> --format json` prints an empty `seams` list.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_one_unit_schema3_batch_briefed_by_its_hyphenated_id_has_no_seam
+- [ ] **AC3** No brief reports a seam between a unit and itself: `_batch_seams` drops a seam whose units name one unit under `sdlc_md.norm_id`, so the text brief prints no `Seam with` line for it, while a two-unit schema-3 batch whose stories share a file still names its seam with the other unit by id.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SeamBriefTests::test_a_schema3_unit_has_no_seam_with_itself_and_a_real_seam_is_still_named
 
 ## Revision History
 

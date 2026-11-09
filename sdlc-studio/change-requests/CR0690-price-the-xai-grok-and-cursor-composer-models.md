@@ -1,6 +1,7 @@
 # CR-0690: Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0303
 > **Parent:** RFC0063
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio new
