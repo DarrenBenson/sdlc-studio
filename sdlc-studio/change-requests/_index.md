@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-07
+**Last Updated:** 2026-11-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 30 |
+| Proposed | 31 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 538 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **687** |
+| **Total** | **688** |
 
 ## All Changes
 
@@ -99,6 +99,7 @@
 | [CR-0685](CR0685-price-a-github-copilot-run-per-token-in.md) | Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request | Proposed | Medium | Improvement | 2026-11-06 | -- |
 | [CR-0686](CR0686-carry-the-hand-back-contract-in-a-project.md) | Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats | Proposed | Low | Improvement | 2026-11-06 | -- |
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
+| [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
 
 ## Archived Releases
 
