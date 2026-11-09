@@ -3,9 +3,10 @@
 The outcomes are read by the planner's own reader (`sprint.prd_outcomes`) and the persona
 cards by `sprint.persona_cards`, so this file holds no second parser of either; `end_goals_text`
 only slices a card's End goals as written, for a word-for-word comparison. Outside
-`OutcomeCitationTests` and the two citations it pins (`O5_CITES`, `UPGRADE_GOAL`, US1082), it
-pins no persona or End goal by hand: a card that gains, loses or renumbers an End goal moves
-what an outcome may cite. Every
+`OutcomeCitationTests` and what it pins (`O5_CITES` and `UPGRADE_GOAL`, US1082; the cited
+personas, the kept citations, O10 to O13's words and the tooling Primary, US1148), it pins no
+persona or End goal by hand: a card that gains, loses or renumbers an End goal moves what an
+outcome may cite. Every
 `<script>.py <subcommand>` the loop sections name is checked against that script's own `--help`,
 so a retired subcommand cannot stay described as current. `PrdBaselineTests` (US1103) reads the
 release the PRD's baseline must name from package.json (US1111), reads its capability set from
@@ -39,6 +40,13 @@ _spec = importlib.util.spec_from_file_location("check_versions",
                                                REPO / "tools" / "check_versions.py")
 check_versions = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(check_versions)
+#: The shipped git-fixture helper, loaded rather than copied (LC-020): the plan the O10 check
+#: runs gets its confined environment.
+_gitutil_spec = importlib.util.spec_from_file_location("_lean_prd_refresh_gitutil",
+                                                       SCRIPTS / "tests" / "gitutil.py")
+gitutil = importlib.util.module_from_spec(_gitutil_spec)
+sys.modules[_gitutil_spec.name] = gitutil
+_gitutil_spec.loader.exec_module(gitutil)
 
 #: One citation inside an outcome: `(Maya Okafor, End goal 4)`; several are `;`-separated.
 _CITE_RE = re.compile(r"([A-Z][\w'-]*(?: [A-Z][\w'-]*)+), End goal (\d+)")
@@ -58,11 +66,37 @@ _LOOP_MARKERS = {
 }
 _RETIRED = ("a learning loop that must produce work",
             "lifted into the store the next `sprint plan` prints unasked")
-#: The two citations US1082 AC2 pins: O5 on the End goal D0383 rules, and the End goal CR0648
-#: names as having no outcome. Pinned by name, since `outcome_problems` asks of a citation only
-#: that its card and End goal number exist.
-O5_CITES = ("Maya Okafor", "5")
+#: The citations US1082 AC2 pins: O5 on the pair D0443 rules (Maya Okafor's End goal 5 and
+#: Abena Osei's End goal 6, the counterweight, in either order; US1148 AC3), and the End goal
+#: CR0648 names as having no outcome. Pinned by name, since `outcome_problems` asks of a citation
+#: only that its card and End goal number exist.
+O5_CITES = (("Maya Okafor", "5"), ("Abena Osei", "6"))
 UPGRADE_GOAL = ("Jonah Reyes", "4")
+#: The personas every End goal of whom one outcome cites, cited or not (US1148 AC4), and the
+#: citations O1 to O4 and O6 to O9 keep (D0438: O1-O9 stay).
+CITED_PERSONAS = ("Maya Okafor", "Jonah Reyes", "Abena Osei", "Graham Doyle")
+KEPT_CITES = {**{f"O{n}": [("Maya Okafor", str(n))] for n in range(1, 5)},
+              **{f"O{n + 5}": [("Jonah Reyes", str(n))] for n in range(1, 5)}}
+#: O10 to O13 word for word, as D0438 drafts them and D0446 rules them (US1148 AC2).
+NEW_OUTCOMES = {
+    "O10": ("A change that reaches a change board carries one evidence pack, built from what the "
+            "run recorded rather than written afterwards and readable without running the tool: "
+            "what changed, which criteria passed, who reviewed it independently, what is known to "
+            "be wrong, and the person accountable for it, never 'the agent'; every specification "
+            "it rests on names its accountable owner the same way (Abena Osei, End goal 1; Abena "
+            "Osei, End goal 2; Graham Doyle, End goal 1; Graham Doyle, End goal 2)"),
+    "O11": ("Each team sees what its delivery costs per point, in money, against a monthly budget "
+            "it declares, whichever harness ran the work (Abena Osei, End goal 3)"),
+    "O12": ("A defect that escapes to production is traced to the unit and the verdict that let "
+            "it through, and the next plan, build and review carry what it taught, so the same "
+            "mistake does not ship twice (Abena Osei, End goal 4; Graham Doyle, End goal 3)"),
+    "O13": ("The committed record of reports, run records, verdicts and lessons is versioned and "
+            "complete, so people who never open a terminal follow progress, evidence and cost on "
+            "the read-only companion dashboard, without the operator's machine or anyone to "
+            "translate (Abena Osei, End goal 5)"),
+}
+#: The tooling Primary, whose interface does not ship, so no outcome names him (D0380).
+TOOLING_PRIMARY = "Rowan Achterberg"
 #: The commit Jonah Reyes's End goals 1 to 4 are held to, word for word (US1082 AC3).
 GOALS_BASE = "7f3e91a9"
 
@@ -87,9 +121,10 @@ def outcome_problems(root: Path) -> list[str]:
     return problems
 
 
-def citation_problems(root: Path) -> list[str]:
-    """Why the outcomes do not cite every End goal of each persona they cite, once each; empty
-    when they do. A pair cited twice inside one outcome is one outcome's citation."""
+def citation_problems(root: Path, required: tuple[str, ...] = ()) -> list[str]:
+    """Why the outcomes do not cite every End goal of each persona they cite or `required` names,
+    once each; empty when they do. A pair cited twice inside one outcome is one outcome's
+    citation, and a `required` persona whose card states no End goal is a problem of its own."""
     goals = {c["name"]: [n for n, _ in c["end_goals"]] for c in sprint.persona_cards(root)}
     cited: dict[tuple[str, str], list[str]] = {}
     for oid, text in sprint.prd_outcomes(root).items():
@@ -97,10 +132,51 @@ def citation_problems(root: Path) -> list[str]:
             cited.setdefault(pair, []).append(oid)
     problems = [f"{name} End goal {number} is cited by {', '.join(oids)}"
                 for (name, number), oids in cited.items() if len(oids) > 1]
-    for name in dict.fromkeys(name for name, _ in cited):
+    problems += [f"{name} has no card that states an End goal"
+                 for name in required if not goals.get(name)]
+    for name in dict.fromkeys([*required, *(name for name, _ in cited)]):
         problems += [f"no outcome cites {name} End goal {number}"
                      for number in goals.get(name, []) if (name, number) not in cited]
     return problems
+
+
+def kept_citation_problems(root: Path) -> list[str]:
+    """Why an outcome `KEPT_CITES` names does not cite exactly what it cited before O10 to O13
+    were added; empty when each does."""
+    outcomes = sprint.prd_outcomes(root)
+    return [f"{oid} cites {_CITE_RE.findall(outcomes.get(oid, ''))}, not {want}"
+            for oid, want in KEPT_CITES.items()
+            if _CITE_RE.findall(outcomes.get(oid, "")) != want]
+
+
+def new_outcome_problems(root: Path) -> list[str]:
+    """Why O10 to O13 are not each the one line `- **On:** <text>` with `NEW_OUTCOMES`'s text,
+    straight after O9 and in order, or why an outcome names `TOOLING_PRIMARY`; empty when
+    neither holds."""
+    prd = (root / "sdlc-studio" / "prd.md").read_text(encoding="utf-8")
+    outcomes = sprint.prd_outcomes(root)
+    problems = [f"{oid} is not the one line `- **{oid}:** ` and the ruled text"
+                for oid, text in NEW_OUTCOMES.items()
+                if _outcome_line(prd, oid) != f"- **{oid}:** {text}"]
+    ids = list(outcomes)
+    after = ids[ids.index("O9") + 1:][:len(NEW_OUTCOMES)] if "O9" in ids else []
+    if after != list(NEW_OUTCOMES):
+        problems.append(f"the outcomes after O9 are {after}, not {list(NEW_OUTCOMES)}")
+    problems += [f"{oid} names {TOOLING_PRIMARY} (D0380)" for oid, text in outcomes.items()
+                 if TOOLING_PRIMARY in text]
+    return problems
+
+
+def o10_trace_problems(said: str) -> list[str]:
+    """Why `sprint.py plan --serves O10` output `said` does not print one `goal serves: O10 -`
+    line naming Abena Osei and Graham Doyle with no `goal serves: NONE` line; empty when it
+    does (US1148 AC5)."""
+    lines = [ln for ln in said.splitlines() if ln.startswith("goal serves:")]
+    o10 = [ln for ln in lines if ln.startswith("goal serves: O10 -")]
+    problems = [] if len(o10) == 1 else [f"{len(o10)} lines start `goal serves: O10 -`"]
+    problems += [f"the goal serving O10 does not name {name}"
+                 for name in ("Abena Osei", "Graham Doyle") if not any(name in ln for ln in o10)]
+    return problems + [ln for ln in lines if ln.startswith("goal serves: NONE")]
 
 
 def card_of(name: str) -> Path | None:
@@ -224,15 +300,17 @@ class PrdRefreshTests(unittest.TestCase):
 
 
 def ruled_citation_problems(root: Path) -> list[str]:
-    """Why O5 does not cite `O5_CITES` alone, no outcome cites `UPGRADE_GOAL`, or a card no
-    longer states the End goal one of them names; empty when none of these holds."""
+    """Why O5 does not cite exactly the `O5_CITES` pair (in either order, and nothing beside
+    it), no outcome cites `UPGRADE_GOAL`, or a card no longer states the End goal one of them
+    names; empty when none of these holds."""
     outcomes = sprint.prd_outcomes(root)
     goals = {c["name"]: dict(c["end_goals"]) for c in sprint.persona_cards(root)}
     problems = [f"{name}'s card states no End goal {number}"
-                for name, number in (O5_CITES, UPGRADE_GOAL) if number not in goals.get(name, {})]
+                for name, number in (*O5_CITES, UPGRADE_GOAL) if number not in goals.get(name, {})]
     o5 = _CITE_RE.findall(outcomes.get("O5", ""))
-    if o5 != [O5_CITES]:
-        problems.append(f"O5 cites {o5}, not {O5_CITES[0]} End goal {O5_CITES[1]} alone")
+    if sorted(o5) != sorted(O5_CITES):
+        problems.append(f"O5 cites {o5}, not exactly "
+                        + " and ".join(f"{n} End goal {g}" for n, g in O5_CITES))
     if not any(UPGRADE_GOAL in _CITE_RE.findall(text) for text in outcomes.values()):
         problems.append(f"no outcome cites {UPGRADE_GOAL[0]} End goal {UPGRADE_GOAL[1]}")
     return problems
@@ -260,8 +338,10 @@ def _outcome_line(prd: str, oid: str) -> str:
 
 class OutcomeCitationTests(unittest.TestCase):
     """US1082: O5 and Jonah Reyes's upgrade goal are cited as ruled, and each End goal of a
-    persona the outcomes cite has one outcome. The three checks are also run on mutated copies
-    of the PRD and the cards, so each is shown able to refuse."""
+    persona the outcomes cite has one outcome. US1148: O5 cites the counterweight pair, O10 to
+    O13 read as ruled, every End goal of the four cited personas has one outcome, and a goal
+    serving O10 names Abena Osei and Graham Doyle. Each check is also run on mutated copies of
+    the PRD and the cards, so each is shown able to refuse."""
 
     def setUp(self):
         self.prd = PRD.read_text(encoding="utf-8")
@@ -280,12 +360,18 @@ class OutcomeCitationTests(unittest.TestCase):
                 if UPGRADE_GOAL in _CITE_RE.findall(text)]
 
     def test_every_end_goal_is_cited_once(self):
-        """AC1. Mutants: O5 back on the End goal O3 cites (Maya Okafor's End goal 3), so a
-        pair is cited twice and End goal 5 by none; the outcome citing Jonah Reyes's End goal 4
-        removed; End goals required of a persona no outcome cites."""
-        self.assertEqual([], citation_problems(REPO))
-        self.assertEqual([], self.problems_with(citation_problems, self.prd))
-        name, number = O5_CITES
+        """US1082 AC1 and US1148 AC4. Mutants: O5's Maya Okafor citation back on the End goal O3
+        cites (her End goal 3), so a pair is cited twice and End goal 5 by none; the outcome
+        citing Jonah Reyes's End goal 4 removed; O12 losing Graham Doyle's End goal 3; O11 also
+        citing Abena Osei's End goal 1; every Graham Doyle citation dropped, which only the
+        required personas refuse; O1 and O2 trading citations, which only the kept citations
+        refuse; Graham Doyle's card removed with his citations, which only the required
+        personas' card check refuses."""
+        cited_once = functools.partial(citation_problems, required=CITED_PERSONAS)
+        self.assertEqual([], cited_once(REPO))
+        self.assertEqual([], kept_citation_problems(REPO))
+        self.assertEqual([], self.problems_with(cited_once, self.prd))
+        name, number = O5_CITES[0]
         o5_line = _outcome_line(self.prd, "O5")
         o3 = _CITE_RE.findall(self.outcomes.get("O3", ""))
         self.assertTrue(o5_line and o3, "no O5, or an O3 that cites no End goal")
@@ -297,32 +383,69 @@ class OutcomeCitationTests(unittest.TestCase):
             sorted([f"{held[0]} End goal {held[1]} is cited by "
                     f"{', '.join(sorted(holders + ['O5']))}",
                     f"no outcome cites {name} End goal {number}"]),
-            sorted(self.problems_with(citation_problems, self.prd.replace(o5_line, back, 1))))
+            sorted(self.problems_with(cited_once, self.prd.replace(o5_line, back, 1))))
         upgrade = self.upgrade_outcomes()
         self.assertTrue(upgrade, f"no outcome cites {UPGRADE_GOAL[0]} End goal {UPGRADE_GOAL[1]}")
         dropped = self.prd
         for oid in upgrade:
             dropped = dropped.replace(_outcome_line(self.prd, oid) + "\n", "", 1)
         self.assertEqual([f"no outcome cites {UPGRADE_GOAL[0]} End goal {UPGRADE_GOAL[1]}"],
-                         self.problems_with(citation_problems, dropped))
+                         self.problems_with(cited_once, dropped))
+        o11, o12 = _outcome_line(self.prd, "O11"), _outcome_line(self.prd, "O12")
+        lost = o12.replace("; Graham Doyle, End goal 3", "", 1)
+        self.assertNotEqual(o12, lost)
+        self.assertEqual(["no outcome cites Graham Doyle End goal 3"],
+                         self.problems_with(cited_once, self.prd.replace(o12, lost, 1)))
+        also = o11.replace("(Abena Osei, End goal 3)", "(Abena Osei, End goal 1; Abena Osei, "
+                           "End goal 3)", 1)
+        self.assertNotEqual(o11, also)
+        self.assertEqual(["Abena Osei End goal 1 is cited by O10, O11"],
+                         self.problems_with(cited_once, self.prd.replace(o11, also, 1)))
+        no_graham = re.sub(r"; Graham Doyle, End goal \d+", "", self.prd)
+        self.assertNotEqual(self.prd, no_graham)
+        self.assertEqual([], self.problems_with(citation_problems, no_graham))
+        self.assertEqual([f"no outcome cites Graham Doyle End goal {n}" for n in "123"],
+                         self.problems_with(cited_once, no_graham))
+        o1, o2 = _outcome_line(self.prd, "O1"), _outcome_line(self.prd, "O2")
+        traded = self.prd.replace(o1, o1.replace("End goal 1)", "End goal 2)"), 1).replace(
+            o2, o2.replace("End goal 2)", "End goal 1)"), 1)
+        self.assertEqual([], self.problems_with(cited_once, traded))
+        self.assertEqual(["O1 cites [('Maya Okafor', '2')], not [('Maya Okafor', '1')]",
+                          "O2 cites [('Maya Okafor', '1')], not [('Maya Okafor', '2')]"],
+                         self.problems_with(kept_citation_problems, traded))
         # one outcome naming a pair twice is one outcome's citation, not two
-        first = _outcome_line(self.prd, "O1")
-        m = _CITE_RE.search(first)
-        twice = first.replace(m.group(0), f"{m.group(0)}; {m.group(0)}", 1)
-        self.assertEqual([], self.problems_with(citation_problems,
-                                                self.prd.replace(first, twice, 1)))
+        m = _CITE_RE.search(o1)
+        twice = o1.replace(m.group(0), f"{m.group(0)}; {m.group(0)}", 1)
+        self.assertEqual([], self.problems_with(cited_once, self.prd.replace(o1, twice, 1)))
+        # a required persona whose card is gone is refused, cited or not
+        (self.root / "sdlc-studio" / "personas" / card_of("Graham Doyle").name).unlink()
+        self.assertEqual(["Graham Doyle has no card that states an End goal"],
+                         self.problems_with(cited_once, no_graham))
 
     def test_o5_and_jonahs_upgrade_goal_are_cited(self):
-        """AC2. Mutants: O5 re-pointed to another End goal, or citing a second beside End goal
-        5; no outcome citing Jonah Reyes's End goal 4; a card that no longer states the End goal
-        cited. The goals' words are read from the cards, never written here."""
+        """US1082 AC2 and US1148 AC3. Mutants: O5 citing either End goal of the pair alone;
+        either re-pointed to another End goal; a third citation beside the pair, another End
+        goal or a repeat of the pair's first; no outcome
+        citing Jonah Reyes's End goal 4; a card that no longer states End goal 5 or End goal 6.
+        The pair in the other order passes. The goals' words are read from the cards, never
+        written here."""
         self.assertEqual([], ruled_citation_problems(REPO))
         self.assertEqual([], self.problems_with(ruled_citation_problems, self.prd))
-        name, number = O5_CITES
         o5_line = _outcome_line(self.prd, "O5")
-        cite = f"{name}, End goal {number}"
-        for other in ("3", "4", f"{number}; {name}, End goal 1"):
-            moved = self.prd.replace(o5_line, o5_line.replace(cite, f"{name}, End goal {other}"), 1)
+        group = re.search(r"\(([^()]*)\)$", o5_line)
+        self.assertIsNotNone(group, "O5 ends on no parenthesised citation")
+        given = group.group(1).split("; ")
+        (maya, five), (abena, six) = O5_CITES
+        swapped = self.prd.replace(o5_line, o5_line.replace(
+            group.group(0), f"({'; '.join(reversed(given))})"), 1)
+        self.assertNotEqual(self.prd, swapped)
+        self.assertEqual([], self.problems_with(ruled_citation_problems, swapped))
+        for other in (f"{maya}, End goal {five}", f"{abena}, End goal {six}",
+                      f"{maya}, End goal 3; {abena}, End goal {six}",
+                      f"{maya}, End goal {five}; {abena}, End goal 4",
+                      f"{group.group(1)}; {maya}, End goal 1",
+                      f"{group.group(1)}; {maya}, End goal {five}"):
+            moved = self.prd.replace(o5_line, o5_line.replace(group.group(0), f"({other})"), 1)
             self.assertNotEqual(self.prd, moved)
             problems = self.problems_with(ruled_citation_problems, moved)
             self.assertEqual(1, len(problems), other)
@@ -332,12 +455,77 @@ class OutcomeCitationTests(unittest.TestCase):
             dropped = dropped.replace(_outcome_line(self.prd, oid) + "\n", "", 1)
         self.assertEqual([f"no outcome cites {UPGRADE_GOAL[0]} End goal {UPGRADE_GOAL[1]}"],
                          self.problems_with(ruled_citation_problems, dropped))
-        card = self.root / "sdlc-studio" / "personas" / card_of(name).name
-        text = card.read_text(encoding="utf-8")
-        card.write_text(re.sub(rf"^{number}\. .*\n", "", text, count=1, flags=re.M),
-                        encoding="utf-8")
-        self.assertEqual([f"{name}'s card states no End goal {number}"],
-                         self.problems_with(ruled_citation_problems, self.prd))
+        for name, number in O5_CITES:
+            card = self.root / "sdlc-studio" / "personas" / card_of(name).name
+            text = card.read_text(encoding="utf-8")
+            cut = re.sub(rf"^{number}\. .*\n", "", text, count=1, flags=re.M)
+            self.assertNotEqual(text, cut)
+            card.write_text(cut, encoding="utf-8")
+            try:
+                self.assertEqual([f"{name}'s card states no End goal {number}"],
+                                 self.problems_with(ruled_citation_problems, self.prd))
+            finally:
+                card.write_text(text, encoding="utf-8")
+
+    def test_o10_to_o13_read_as_ruled(self):
+        """US1148 AC2. Mutants: a word of any of O10 to O13 changed; any of them missing,
+        wrapped onto a second line, or bulleted `- **On**:`; O10 placed before O9; an outcome
+        naming Rowan Achterberg."""
+        self.assertEqual([], new_outcome_problems(REPO))
+        self.assertEqual([], self.problems_with(new_outcome_problems, self.prd))
+        for oid, text in NEW_OUTCOMES.items():
+            line = _outcome_line(self.prd, oid)
+            words = text.split(" ")
+            k = len(words) // 2
+            reworded = " ".join([*words[:k], "altered", *words[k + 1:]])
+            for mutant in (line.replace(text, reworded), "", line.replace(", ", ",\n  ", 1),
+                           line.replace(f"- **{oid}:** ", f"- **{oid}**: ", 1)):
+                self.assertNotEqual(line, mutant)
+                problems = self.problems_with(new_outcome_problems,
+                                              self.prd.replace(line, mutant, 1))
+                self.assertIn(f"{oid} is not the one line `- **{oid}:** ` and the ruled text",
+                              problems, mutant)
+        o9, o10 = _outcome_line(self.prd, "O9"), _outcome_line(self.prd, "O10")
+        early = self.prd.replace(o10 + "\n", "", 1).replace(o9, f"{o10}\n{o9}", 1)
+        self.assertEqual([f"the outcomes after O9 are {list(NEW_OUTCOMES)[1:]}, "
+                          f"not {list(NEW_OUTCOMES)}"],
+                         self.problems_with(new_outcome_problems, early))
+        rowan = o9.replace(")", f"; {TOOLING_PRIMARY}, End goal 1)", 1)
+        self.assertNotEqual(o9, rowan)
+        self.assertEqual([f"O9 names {TOOLING_PRIMARY} (D0380)"],
+                         self.problems_with(new_outcome_problems, self.prd.replace(o9, rowan, 1)))
+
+    def test_a_goal_serving_o10_names_the_primary_and_the_approver(self):
+        """US1148 AC5, through the shipped `sprint.py plan` on copies of the PRD and the cards,
+        with HOME and the harness stores confined to the fixture. Mutants run here: O10 citing
+        Abena Osei alone, so the line does not name Graham Doyle; O10's line removed, which the
+        plan reports as no outcome O10 and flags as serving NONE."""
+        home = self.root / "home"
+        env = gitutil.git_env(HOME=str(home), XDG_DATA_HOME=str(home / ".local" / "share"),
+                              CLAUDE_CONFIG_DIR=str(home / ".claude"),
+                              COPILOT_HOME=str(home / ".copilot"), CODEX_HOME=str(home / ".codex"),
+                              OPENCODE_DB=str(home / "opencode.db"))
+
+        def plan(prd_text: str) -> str:
+            (self.root / "sdlc-studio" / "prd.md").write_text(prd_text, encoding="utf-8")
+            run = subprocess.run([sys.executable, str(SCRIPTS / "sprint.py"), "plan", "--root",
+                                  str(self.root), "--stories", "Ready", "--sprint-goal",
+                                  "One evidence pack per change", "--serves", "O10",
+                                  "--no-fetch"], capture_output=True, text=True,
+                                 cwd=str(self.root), env=env, check=False)
+            return run.stdout + run.stderr
+
+        said = plan(self.prd)
+        self.assertEqual([], o10_trace_problems(said), said)
+        o10 = _outcome_line(self.prd, "O10")
+        one = o10.replace("; Graham Doyle, End goal 1; Graham Doyle, End goal 2)", ")", 1)
+        self.assertNotEqual(o10, one)
+        said = plan(self.prd.replace(o10, one, 1))
+        self.assertEqual(["the goal serving O10 does not name Graham Doyle"],
+                         o10_trace_problems(said), said)
+        said = plan(self.prd.replace(o10 + "\n", "", 1))
+        self.assertIn("the PRD lists no outcome O10", said)
+        self.assertIn("goal serves: NONE", "\n".join(o10_trace_problems(said)), said)
 
     def test_jonahs_end_goals_are_unchanged(self):
         """AC3. Mutants: Jonah Reyes's End goal 4 reworded to fit an outcome, extended on its

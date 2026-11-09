@@ -25,6 +25,8 @@
 
 ## Mission
 
+**Human in the lead, not just in the loop.**
+
 SDLC Studio takes a deliberate position against the prevailing direction of AI
 coding tools. A wave of frameworks is inventing new, AI-native ways to deliver
 software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the
@@ -93,7 +95,7 @@ class LC-008).
 ## Outcomes
 
 What the product is for, numbered so a Sprint Goal can name the one it serves
-(`sprint.py plan --serves O3`, or `O3` in the goal). Each outcome cites the persona
+(`sprint.py plan --serves O3`, or `O3` in the goal). Each outcome cites each persona
 End goal it answers, numbered as on that persona's card in
 [`sdlc-studio/personas/`](./personas/index.md).
 
@@ -101,11 +103,15 @@ End goal it answers, numbered as on that persona's card in
 - **O2:** The true state of the work is on disk and one command away after any session, reset or compaction (Maya Okafor, End goal 2)
 - **O3:** A sprint runs from one approved plan to one signed report, pausing only for a decision that is genuinely the operator's (Maya Okafor, End goal 3)
 - **O4:** Specs, indexes and code stay reconciled, and drift is reported when it happens rather than found later (Maya Okafor, End goal 4)
-- **O5:** The process stays small enough to serve the work: a repeated failure is fixed in the code path, and a check that catches nothing is deleted (Maya Okafor, End goal 5)
+- **O5:** The process stays small enough to serve the work: a repeated failure is fixed in the code path, and a check that catches nothing is deleted (Maya Okafor, End goal 5; Abena Osei, End goal 6)
 - **O6:** An inherited codebase yields a specification validated against its code that the team can trust (Jonah Reyes, End goal 1)
 - **O7:** A team adopts the lifecycle a piece at a time, read-only first, with no big-bang migration (Jonah Reyes, End goal 2)
 - **O8:** Humans and agents are held to the same artefacts and the same gates (Jonah Reyes, End goal 3)
 - **O9:** A project upgrades to a new skill release with the mechanical changes made for it and the judgement calls reported rather than guessed (Jonah Reyes, End goal 4)
+- **O10:** A change that reaches a change board carries one evidence pack, built from what the run recorded rather than written afterwards and readable without running the tool: what changed, which criteria passed, who reviewed it independently, what is known to be wrong, and the person accountable for it, never 'the agent'; every specification it rests on names its accountable owner the same way (Abena Osei, End goal 1; Abena Osei, End goal 2; Graham Doyle, End goal 1; Graham Doyle, End goal 2)
+- **O11:** Each team sees what its delivery costs per point, in money, against a monthly budget it declares, whichever harness ran the work (Abena Osei, End goal 3)
+- **O12:** A defect that escapes to production is traced to the unit and the verdict that let it through, and the next plan, build and review carry what it taught, so the same mistake does not ship twice (Abena Osei, End goal 4; Graham Doyle, End goal 3)
+- **O13:** The committed record of reports, run records, verdicts and lessons is versioned and complete, so people who never open a terminal follow progress, evidence and cost on the read-only companion dashboard, without the operator's machine or anyone to translate (Abena Osei, End goal 5)
 
 ---
 
