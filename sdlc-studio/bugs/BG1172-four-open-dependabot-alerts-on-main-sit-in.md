@@ -12,7 +12,7 @@
 
 ## Summary
 
-2026-11-02, the push of 519d125c. GitHub reported 4 vulnerabilities on the default branch (1 high, 1 moderate, 2 low). The Dependabot alerts API names them: #26 markdown-it High and #27 markdown-it Low (first patched 14.3.3), #25 smol-toml Medium (1.9.0) and #24 katex Low (0.18.2), all in package-lock.json at development scope. package.json's overrides hold markdown-it at ^14.3.1, below the patched release. An installed skill carries no `node_modules`, so no consuming project is exposed. The markdownlint toolchain that the gate and CI run is.
+2026-11-02, the push of 519d125c. GitHub reported 4 vulnerabilities on the default branch (1 high, 1 moderate, 2 low). The Dependabot alerts API names them: #26 markdown-it High and #27 markdown-it Low (first patched 14.3.3), #25 smol-toml Medium (1.9.0) and #24 katex Low (0.18.2), all in package-lock.json at development scope. package.json's overrides hold markdown-it at ^14.3.1, below the patched release. An installed skill carries no `node_modules`, so no consuming project is exposed. The markdownlint toolchain that the gate and CI run is. On 2026-11-08 a fifth joined: #29 minimatch Medium (GHSA-g3hv-75wg-m249, 7.0.0 to below 11.0.1, first patched 11.0.1), also transitive at development scope; the push of ed79b0d9 reported 5 (1 high, 2 moderate, 2 low).
 
 ## Steps to Reproduce
 
@@ -21,7 +21,7 @@
 
 ## Proposed Fix
 
-Raise the overrides to the first patched releases (markdown-it ^14.3.3, smol-toml ^1.9.0, katex ^0.18.2), as BG0876 did for brace-expansion and markdown-it, refresh package-lock.json, and confirm `npm run lint` and `npm audit` are clean.
+Raise the overrides to the first patched releases (markdown-it ^14.3.3, smol-toml ^1.9.0, katex ^0.18.2, minimatch ^11.0.1), as BG0876 did for brace-expansion and markdown-it, refresh package-lock.json, and confirm `npm run lint` and `npm audit` are clean.
 
 ## Acceptance Criteria
 
@@ -37,3 +37,4 @@ The markdown lint toolchain runs vulnerable parsers on this repository's own tra
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-08 | Claude Opus 5.5 | Added Dependabot alert #29 (minimatch, Medium) to the summary and the fix; AC1 already covers it |

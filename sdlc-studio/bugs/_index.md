@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-08
+**Last Updated:** 2026-11-09
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 251 |
+| Open | 256 |
 | In Progress | 0 |
 | Fixed | 872 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1297** |
+| **Total** | **1302** |
 
 ## All Bugs
 
@@ -373,6 +373,11 @@
 | [BG1295](BG1295-no-test-pins-lane-accept-s-off-and.md) | No test pins `lane accept`'s `off` and unrecognised `review.author_self_check` branches, so asking for the self-check gap under `off`, or reading a mistyped mode as off, survives every lane accept test | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1296](BG1296-sprint-lane-land-names-a-unit-s-brief.md) | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.txt` and leaves the canonical brief in place | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1297](BG1297-the-6-3-0-release-notes-test-checks.md) | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1298](BG1298-the-trd-s-path-row-pin-checks-its.md) | The TRD's path-row pin checks its depth rule in one direction only, so loosening `_matches` to accept the directory itself or a deeper file leaves the suite green | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1299](BG1299-a-commit-that-changes-sdlc-studio-trd-md.md) | A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1300](BG1300-conftest-s-move-home-writes-the-test-identity.md) | conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1301](BG1301-the-release-cut-leaves-this-repository-s-own.md) | The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 
