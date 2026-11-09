@@ -591,9 +591,9 @@ The cost axis reads the store of ONE harness, the one running the session (`lib/
 
 1. `SDLC_STUDIO_HARNESS` set to `claude`, `cursor`, `copilot`, `opencode` or `codex` chooses
    outright; any other non-blank value reads nothing.
-2. Otherwise exactly one harness signalled by the environment: `CLAUDECODE`; `CURSOR_AGENT`;
-   `COPILOT_HOME`; `OPENCODE` or `OPENCODE_DB`; `CODEX_THREAD_ID`. A reader may name further
-   signals.
+2. Otherwise exactly one harness signalled by the environment: `CLAUDECODE`; `CURSOR_AGENT` or
+   `SDLC_STUDIO_CURSOR_AGENT_ID`, with or without the Cursor reader; `COPILOT_HOME`; `OPENCODE` or
+   `OPENCODE_DB`; `CODEX_THREAD_ID`. A reader may name further signals.
 3. Otherwise exactly one harness whose store for this repo is on disk.
 4. Otherwise Claude, which names the directory it found no transcript in.
 

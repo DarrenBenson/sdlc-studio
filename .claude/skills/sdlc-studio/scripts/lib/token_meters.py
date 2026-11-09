@@ -53,11 +53,16 @@ HARNESS_ENV = "SDLC_STUDIO_HARNESS"
 CLAUDE, CURSOR, COPILOT, OPENCODE, CODEX = "claude", "cursor", "copilot", "opencode", "codex"
 #: Every harness a reading can be taken for, in the order a refusal names them.
 HARNESSES = (CLAUDE, CURSOR, COPILOT, OPENCODE, CODEX)
+#: The variable naming a Cursor cloud run's agent id, which `meter_cursor` reads that run's usage
+#: by. It signals Cursor here, not only through that reader's `SIGNALS`, so a run signalled by its
+#: id alone is Cursor's whether or not the reader is installed.
+CURSOR_RUN_ID = "SDLC_STUDIO_CURSOR_AGENT_ID"
 #: The environment variables that signal each harness is the one running this process. A
 #: reader module adds to its own harness's with a `SIGNALS` tuple. Codex's is the thread id a
 #: codex-cli 0.160.0 session set in the shell its command ran in, read from a captured session.
-SIGNALS = {CLAUDE: ("CLAUDECODE",), CURSOR: ("CURSOR_AGENT",), COPILOT: ("COPILOT_HOME",),
-           OPENCODE: ("OPENCODE", "OPENCODE_DB"), CODEX: ("CODEX_THREAD_ID",)}
+SIGNALS = {CLAUDE: ("CLAUDECODE",), CURSOR: ("CURSOR_AGENT", CURSOR_RUN_ID),
+           COPILOT: ("COPILOT_HOME",), OPENCODE: ("OPENCODE", "OPENCODE_DB"),
+           CODEX: ("CODEX_THREAD_ID",)}
 #: The key a reading, and each stamp taken from one, names its harness under.
 HARNESS = "harness"
 #: The key a reading and a stamp carry the cache reads under, outside `tokens`.

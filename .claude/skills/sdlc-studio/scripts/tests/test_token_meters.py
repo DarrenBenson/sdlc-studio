@@ -11,10 +11,12 @@ Pinned here:
   signal or no selection at all, and a malformed record still refuses it (AC1);
 * a chosen harness is the only one read: no reader, or a reader with nothing to report, is
   tokens None naming it, and the Claude transcript is never opened (AC2);
-* exactly one signal chooses, over any store on disk; two signals, or two stores and no
-  signal, name every candidate and read nothing (AC3);
+* exactly one signal chooses, over any store on disk, a Cursor run id included with no Cursor
+  reader installed; two signals, or two stores and no signal, name every candidate and read
+  nothing, and the `SDLC_STUDIO_HARNESS` the refusal names reads the harness it names (AC3);
 * every reading and every stamp names its harness and carries cache reads apart from `tokens`,
-  and a run total never pairs readings of two harnesses (AC4);
+  a run total never pairs readings of two harnesses, and no other harness's reading is handed
+  to the Claude transcript re-derivation or refused by its counting-basis rebase (AC4);
 * the close's CLI path inherits the selection through `retro.harness_tokens` (AC5).
 
 Each harness other than Claude is stubbed by a module placed at `lib.meter_<harness>` in
@@ -198,7 +200,8 @@ class HarnessSelectionTests(_Fixture):
 
     def test_two_unselected_harnesses_name_the_candidates(self) -> None:
         """AC3. Mutants: a fixed precedence picking the first signalled or first stored
-        harness, a store on disk outranking a signal, or the two readings added."""
+        harness, a store on disk outranking a signal, the two readings added, the Cursor run id
+        signalling only through an installed reader, or a refusal naming no way out."""
         cursor = stub(cursor_reading(), signals=("STUB_CURSOR_RUN_ID",))
         with installed(cursor=cursor):
             named = token_meters.selection_variables()
@@ -214,6 +217,17 @@ class HarnessSelectionTests(_Fixture):
                                  "one signal chooses over the Claude store on disk")
                 self.assertIn(next(iter(values)), got["selected_by"])
                 self.assert_claude_untouched(spy)
+        # A Cursor cloud run's id is a signal of this module's own, so a run signalled by it
+        # alone is Cursor's with no Cursor reader installed, never the Claude store's on disk.
+        with installed(cursor=None):
+            self.assertIn("SDLC_STUDIO_CURSOR_AGENT_ID", token_meters.selection_variables())
+        with installed(cursor=None), self.env(SDLC_STUDIO_CURSOR_AGENT_ID="bc-1"), \
+                self.claude_spy() as spy:
+            got = run_state.session_tokens(self.root)
+            self.assertEqual((got["tokens"], got[token_meters.HARNESS]), (None, "cursor"))
+            self.assertIn("SDLC_STUDIO_CURSOR_AGENT_ID", got["selected_by"])
+            self.assertIn("no cursor token reader is installed", got["reason"])
+            self.assert_claude_untouched(spy)
         with self.env(CURSOR_AGENT=""):
             self.assertEqual(run_state.session_tokens(self.root)["tokens"], TOKENS,
                              "an empty variable signals nothing")
@@ -222,7 +236,8 @@ class HarnessSelectionTests(_Fixture):
             self.assertEqual((got["tokens"], got[token_meters.HARNESS]), (None, "opencode"))
         pairs = ({"CLAUDECODE": "1", "CURSOR_AGENT": "1"},
                  {"COPILOT_HOME": "/x/copilot", "OPENCODE": "1"},
-                 {"CLAUDECODE": "1", "OPENCODE": "1"})
+                 {"CLAUDECODE": "1", "OPENCODE": "1"},
+                 {"CLAUDECODE": "1", "COPILOT_HOME": "/x/copilot"})
         for values in pairs:
             both = stub(cursor_reading())
             with self.subTest(signals=values), installed(cursor=both, copilot=both,
@@ -238,8 +253,15 @@ class HarnessSelectionTests(_Fixture):
                     self.assertIn(h, got["reason"])
                 for v in values:
                     self.assertIn(v, got["reason"])
+                self.assertIn(f"set {token_meters.HARNESS_ENV} to the harness", got["reason"])
                 self.assertNotIn("read", both.calls)
                 self.assert_claude_untouched(spy)
+            # The remedy the refusal names reads the harness it names, whatever else is set:
+            # the way out for a Claude Code session with COPILOT_HOME exported (BG1282).
+            with self.subTest(remedy=values), installed(cursor=both, copilot=both,
+                                                        opencode=both), \
+                    self.env(SDLC_STUDIO_HARNESS="claude", **values):
+                self.assertEqual(run_state.session_tokens(self.root)["tokens"], TOKENS)
         stored = stub(cursor_reading(), store="/x/cursor/projects/repo")
         with installed(cursor=stored), self.env(), self.claude_spy() as spy:
             got = run_state.session_tokens(self.root)
@@ -263,8 +285,9 @@ class HarnessSelectionTests(_Fixture):
 
     def test_readings_and_stamps_name_the_harness(self) -> None:
         """AC4. Mutants: a stamp without its harness, cache reads folded into `tokens`, a run
-        total pairing readings by source alone, or a legacy baseline folded into another
-        harness's session of the same source."""
+        total pairing readings by source alone, a legacy baseline folded into another
+        harness's session of the same source, the counting-basis rebase applied to a Cursor
+        session, or a Cursor stamp or baseline handed to the Claude re-derivation."""
         with self.env(SDLC_STUDIO_HARNESS="claude"):
             got = run_state.session_tokens(self.root)
             run_state.open_run(self.root, batch=["BG0001"], goal="g")
@@ -285,6 +308,26 @@ class HarnessSelectionTests(_Fixture):
             self.assertEqual(row[token_meters.HARNESS], "cursor")
             self.assertEqual((row["tokens"], row[token_meters.CACHE_READ], row["source"]),
                              (900, 4_000, "cursor agent bc-1"))
+        # The same run read on in a Claude session. The counting bases, and the transcript
+        # re-derivation that reconciles them, are the Claude reader's: no Cursor stamp or
+        # baseline is handed to the re-derivation, and the Claude session's current-basis
+        # stamps never refuse the Cursor session as one read on an earlier basis.
+        with installed(cursor=stub(cursor_reading(tokens=1_300))), \
+                self.env(SDLC_STUDIO_HARNESS="cursor"):
+            run_state.stamp_tokens(other, "handoff")
+        with self.env(SDLC_STUDIO_HARNESS="claude"):
+            run_state.stamp_tokens(other, "resume")
+            self._write("s1.jsonl", *USAGES, {"input_tokens": 70_000})
+            run_state.stamp_tokens(other, "report")
+        stamps = run_state.read(other)[run_state.TOKEN_STAMPS]
+        self.assertEqual([s for s in stamps if s.get("kind") == run_state.REDERIVED], [],
+                         "a Cursor reading was handed to the Claude transcript re-derivation")
+        self.assertEqual([token_meters.harness_of(s) for s in stamps],
+                         ["cursor", "cursor", "cursor", "claude", "claude"])
+        total = run_state.run_token_total(run_state.read(other))
+        self.assertEqual(total["tokens"], 400 + 70_000, total["reason"])
+        self.assertEqual(total["sessions"], sorted([str(self.transcript),
+                                                    "cursor agent bc-1 (cursor)"]))
 
         def at(n: int, **row) -> dict:
             return {"at": f"2026-11-04T10:0{n}:00Z", "source": "S", **row}
