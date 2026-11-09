@@ -36,6 +36,8 @@ Read this at plan time. `sprint plan` prints it.
 | Accept its return | `sprint.py lane return --units <id>` | reading the builder's diff or transcript into the orchestrating context |
 | Land a builder's staged worktree | `sprint.py lane land --worktree <path> --units <id>`: commits through the hooks, rebases, fast-forwards, removes the worktree, records each self-check and writes each QA brief | committing, rebasing and briefing by hand, or paying the hook's minutes in an agent's context |
 | Finish a reviewed unit | `sprint.py lane accept --unit <id> --verdict <file> --reviewer <name>`: records the verdict against the saved brief; on an APPROVE runs the criteria, moves the unit to Done or Fixed and returns its lane | four hand-run commands, or a script reading the fingerprint and tier out of the brief's footer |
+| Hand over at a wave boundary (every lane of the wave accepted, none in flight) | `sprint.py handoff [--agent <unit>=<agent id>] [--issue <text>]`: writes the run's resume brief to `sdlc-studio/.local/resume-brief.md` | running the next wave, or the close, in the session that built the last one |
+| Start the next wave, or the close, in a fresh session | `sprint.py resume`: prints the resume brief and the next action the tree yields now, naming the brief's own stale when the two differ | rebuilding the run's state from a transcript or by hand |
 | Allocate an id | `next_id.py allocate --type <type>` | reading `_index.md` for the highest |
 | Create an artefact | `artifact.py new --type <t> --fields-file <doc>` | writing the markdown by hand |
 | Run the criteria | `verify_ac.py run --id <id>` | claiming they pass |
