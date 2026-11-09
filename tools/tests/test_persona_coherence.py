@@ -204,10 +204,10 @@ DECLINED_WANTS = ("a human approval on every change", "non-technical staff runni
                   "sync to an enterprise tracker")
 #: A clause that declines: from the verb to the colon or the end of its sentence.
 DECLINING_CLAUSE = re.compile(r"\bdeclines?\b[^:.!?]*")
-#: A word that turns a declining clause into an offer: "declines A and B, but offers C".
-CLAUSE_TURN = re.compile(r"(?i)\b(?:offers?|offering|but|except|however|yet|instead|unless|"
-                         r"though|although|while|whereas|provides?|supports?|adds?|enables?|"
-                         r"allows?)\b")
+#: All a declining clause may hold once the declined wants are taken out of it: the verb, commas
+#: and "and". Any other word offers, inverts or qualifies a want, whatever that word is: "and C
+#: is offered", "and ships C", "declines none of", "declines, then accepts" (BG1318).
+DECLINING_REST = re.compile(r"\Adeclines?(?:[\s,]|\band\b)*\Z")
 #: A negation that inverts the verb ahead of it in its sentence: "does not decline".
 NEGATION = re.compile(r"(?i)\b(?:not|never|no longer)\b|n't\b")
 #: The Sprint Goal US1147 AC4 plans for the change approver.
@@ -953,8 +953,12 @@ class ServedAndNegativeTests(unittest.TestCase):
         """AC7. Mutants: the Scenario still naming an enterprise tool; the companion dashboard
         named as anything but read-only, or not over the committed record; one of the three
         declined wants dropped, named anywhere outside a clause that declines it ("offers A and
-        declines B and C"), offered inside that clause ("declines A and B, but offers C"),
-        declined under a negation ("does not decline"), or put on the companion dashboard."""
+        declines B and C"), declined under a negation ("does not decline"), or put on the
+        companion dashboard; a declining clause holding any word besides its verb, the three
+        wants, commas and "and", so a want offered inside it fails whatever the offering word
+        ("but offers C", "and C is offered", "and ships C", "declines none of A, B and C",
+        "declines, then accepts, A, B and C"). The wants are matched in the criterion's own
+        wording, so a want offered in other words ("It offers him Jira sync.") is not caught."""
         name, card = the_negative()
         scenario = flat(card_section(card.read_text(encoding="utf-8"), "Scenario"))
         self.assertTrue(scenario, f"{name}'s card has no Scenario")
@@ -973,7 +977,11 @@ class ServedAndNegativeTests(unittest.TestCase):
         for clause in clauses:
             lead = re.split(r"[.!?:]", scenario[:clause.start()])[-1]
             self.assertNotRegex(lead, NEGATION, f"a negation inverts the clause: {lead}{clause[0]}")
-            self.assertNotRegex(clause[0], CLAUSE_TURN, f"the declining clause turns to offer: {clause[0]}")
+            rest = clause[0]
+            for want in DECLINED_WANTS:
+                rest = rest.replace(want, "")
+            self.assertRegex(rest, DECLINING_REST,
+                             f"the declining clause holds more than its verb and the wants: {clause[0]}")
         outside = DECLINING_CLAUSE.sub(" | ", scenario)
         for want in DECLINED_WANTS:
             self.assertTrue([c for c in clauses if want in c[0]], f"the Scenario does not decline {want}")
