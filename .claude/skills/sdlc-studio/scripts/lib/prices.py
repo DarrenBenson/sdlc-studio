@@ -21,6 +21,13 @@ Beside the token prices the table may carry one price per Copilot premium reques
 (`PREMIUM_REQUEST`), dated and sourced the same way and refused on the same terms; a table
 without it prices no request, and a request count is never priced at $0 for want of one.
 
+GitHub Copilot bills by tokens in AI credits. The table's `COPILOT` block carries the US-dollar
+value of one credit, dated and sourced, and each model's five component rates in AI credits per
+million tokens under the id the Copilot CLI records (`claude-sonnet-5.5`, dotted, where the
+Anthropic API's is `claude-sonnet-5-5`). `load` turns each rate into US dollars at the credit's
+value and prices the id beside the `models` entries; an id in both is refused, so a lookup by id
+alone is never ambiguous, and a gap in the block is refused by name, never read as zero.
+
 Pure stdlib. The project config is read through `config.get` only when `load` is given a repo
 root, and that loader degrades to no override, with a warning, where PyYAML is absent.
 """
@@ -48,7 +55,15 @@ PREMIUM_REQUEST = "premium_request"
 REQUEST_REQUIRED = ("usd", "effective", "source")
 #: The age, in days, past which the table reads as stale when `pricing.stale_after_days` is unset.
 DEFAULT_STALE_AFTER_DAYS = 90
+#: The table's key of GitHub Copilot's token billing, kept apart from the provider-API `models`.
+COPILOT = "copilot_token_billing"
+#: Every field the Copilot block must carry, in the order a refusal checks them.
+COPILOT_REQUIRED = ("credit_usd", "effective", "source", "models")
+#: Every field a Copilot model rate must carry; it may carry a `note` beside them.
+COPILOT_RATE_REQUIRED = ("model",) + COMPONENTS
 _PER = 1_000_000
+_USD = "US dollars per million tokens"
+_CREDITS = "AI credits per million tokens"
 
 
 class PriceTableError(ValueError):
@@ -80,6 +95,17 @@ class RequestPrice:
 
 
 @dataclass(frozen=True)
+class CreditBilling:
+    """GitHub Copilot's token billing: the US-dollar value of one AI credit, and each Copilot
+    model's five component rates in AI credits per million tokens, by the Copilot CLI's id."""
+    credit_usd: float
+    effective: dt.date
+    source: str
+    rates: Mapping[str, Mapping[str, float]]
+    note: str = ""
+
+
+@dataclass(frozen=True)
 class PriceTable:
     """The shipped table with a project's `pricing.models` laid over it. `premium_request` is
     the price of one premium request, None when the table carries none."""
@@ -88,6 +114,7 @@ class PriceTable:
     origin: str
     overridden: tuple[str, ...] = field(default=())
     premium_request: RequestPrice | None = None
+    copilot: CreditBilling | None = None
 
     @property
     def newest_effective(self) -> dt.date | None:
@@ -103,13 +130,13 @@ class Cost(NamedTuple):
     unpriced: str | None
 
 
-def _price(value, where: str, name: str) -> float:
+def _price(value, where: str, name: str, unit: str = _USD) -> float:
     if value is None:
         raise PriceTableError(f"{where} has no '{name}' price")
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
             or value < 0:
-        raise PriceTableError(f"{where} has '{name}' {value!r}, not a price: give US dollars per "
-                              "million tokens as a number of 0 or more")
+        raise PriceTableError(f"{where} has '{name}' {value!r}, not a price: give {unit} as a "
+                              "number of 0 or more")
     return float(value)
 
 
@@ -179,7 +206,54 @@ def request_price(raw, where: str = PREMIUM_REQUEST) -> RequestPrice:
     return RequestPrice(usd=float(usd), effective=effective, source=source, note=note)
 
 
-def _shipped(path: Path) -> tuple[dict[str, Price], RequestPrice | None]:
+def credit_billing(raw, where: str = COPILOT) -> CreditBilling:
+    """Validate a Copilot token-billing block: `credit_usd`, `effective`, `source` and a `models`
+    list of rates, each a `model` id and its five components in AI credits per million tokens,
+    with an optional `note` on the block and on each rate. Raises `PriceTableError` naming
+    `where` and the field; a missing value is refused, never read as 0."""
+    if not isinstance(raw, Mapping):
+        raise PriceTableError(f"{where} is not a mapping of fields")
+    unknown = sorted(set(raw) - set(COPILOT_REQUIRED) - set(OPTIONAL))
+    if unknown:
+        raise PriceTableError(f"{where} has unknown field(s) {', '.join(map(repr, unknown))}; "
+                              f"it carries {', '.join(COPILOT_REQUIRED)}")
+    credit = _price(raw.get("credit_usd"), where, "credit_usd", "US dollars per AI credit")
+    effective, source, note = _dated(raw, where)
+    rows = raw.get("models")
+    if not isinstance(rows, list) or not rows:
+        raise PriceTableError(f"{where} has no 'models' list of rates in {_CREDITS}")
+    rates: dict[str, dict[str, float]] = {}
+    for n, row in enumerate(rows, start=1):
+        at = f"{where}: model {n}"
+        if not isinstance(row, Mapping):
+            raise PriceTableError(f"{at} is not a mapping of fields")
+        model = row.get("model")
+        if not isinstance(model, str) or not model.strip():
+            raise PriceTableError(f"{at} has no 'model' id")
+        model = model.strip()
+        at = f"{at} ({model})"
+        unknown = sorted(set(row) - set(COPILOT_RATE_REQUIRED) - set(OPTIONAL))
+        if unknown:
+            raise PriceTableError(f"{at} has unknown field(s) {', '.join(map(repr, unknown))}; "
+                                  f"a rate carries {', '.join(COPILOT_RATE_REQUIRED)}")
+        if not isinstance(row.get("note") or "", str):
+            raise PriceTableError(f"{at} has a 'note' that is not text")
+        if model in rates:
+            raise PriceTableError(f"{at} repeats model {model!r}")
+        rates[model] = {c: _price(row.get(c), at, c, _CREDITS) for c in COMPONENTS}
+    return CreditBilling(credit_usd=credit, effective=effective, source=source, rates=rates,
+                         note=note)
+
+
+def _in_dollars(model: str, billing: CreditBilling) -> Price:
+    """A Copilot model's credit rates as US-dollar prices: each rate times the credit's value."""
+    rates = billing.rates[model]
+    return Price(model=model, effective=billing.effective, source=billing.source,
+                 note=f"Copilot token billing in AI credits at ${billing.credit_usd:g} a credit",
+                 **{c: rates[c] * billing.credit_usd for c in COMPONENTS})
+
+
+def _shipped(path: Path) -> tuple[dict[str, Price], RequestPrice | None, CreditBilling | None]:
     try:
         doc = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
@@ -194,8 +268,18 @@ def _shipped(path: Path) -> tuple[dict[str, Price], RequestPrice | None]:
             raise PriceTableError(f"{Path(path).name}: entry {n} repeats model {price.model!r}")
         table[price.model] = price
     request = doc.get(PREMIUM_REQUEST)
-    return table, (None if request is None else
-                   request_price(request, f"{Path(path).name}: {PREMIUM_REQUEST}"))
+    request = (None if request is None else
+               request_price(request, f"{Path(path).name}: {PREMIUM_REQUEST}"))
+    billing = None
+    if COPILOT in doc:
+        billing = credit_billing(doc[COPILOT], f"{Path(path).name}: {COPILOT}")
+        for model in billing.rates:
+            if model in table:
+                raise PriceTableError(f"{Path(path).name}: {COPILOT} prices {model!r}, which "
+                                      "the table's models list prices too, so a lookup by id "
+                                      "would be ambiguous")
+            table[model] = _in_dollars(model, billing)
+    return table, request, billing
 
 
 def _pricing_block(repo_root) -> dict:
@@ -211,13 +295,15 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
 
     `pricing.models` maps a model id to a complete entry (every field but `model`); it adds the
     model or replaces the shipped entry whole, and is refused on the same terms as a shipped
-    entry. `pricing.premium_request` replaces the shipped premium-request price whole.
+    entry, a Copilot id among them. `pricing.premium_request` replaces the shipped
+    premium-request price whole. The shipped table's Copilot block prices its ids in US dollars
+    beside the `models` entries, each rate times the credit's value (`credit_billing`).
     `pricing.stale_after_days` is a whole number of days of 1 or more.
 
     Raises `PriceTableError` naming the entry and the field, or the file when the table itself
     cannot be read."""
     path = Path(path) if path is not None else TABLE_PATH
-    models, request = _shipped(path)
+    models, request, billing = _shipped(path)
     if pricing is None:
         pricing = _pricing_block(repo_root) if repo_root is not None else {}
     if pricing is None:
@@ -240,7 +326,8 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
                               "1 or more")
     origin = str(path) + (" with the project's pricing.models" if overridden else "")
     return PriceTable(models=models, stale_after_days=days, origin=origin,
-                      overridden=tuple(sorted(overridden)), premium_request=request)
+                      overridden=tuple(sorted(overridden)), premium_request=request,
+                      copilot=billing)
 
 
 def cost(model: str | None, components: Mapping[str, int],

@@ -92,8 +92,12 @@ class PriceTableTests(unittest.TestCase):
                 dt.date.fromisoformat(entry["effective"])
                 self.assertRegex(entry["source"], r"^https://", "a source names where it was read")
         table = prices.load()
-        self.assertEqual(set(table.models), {e["model"] for e in raw})
-        self.assertEqual(len(table.models), len(raw), "a duplicate shipped id was folded in")
+        # US1144: the Copilot block's ids are priced through the same map, none of them a models id.
+        copilot = set(table.copilot.rates) if table.copilot else set()
+        self.assertFalse(copilot & {e["model"] for e in raw})
+        self.assertEqual(set(table.models), {e["model"] for e in raw} | copilot)
+        self.assertEqual(len(table.models), len(raw) + len(copilot),
+                         "a duplicate shipped id was folded in")
 
         # Each required field, removed from one entry or set to null, is refused by name.
         for field in REQUIRED:
@@ -468,6 +472,203 @@ class NonClaudePriceTests(unittest.TestCase):
             for needed in ("--model", "<provider>/<model>", "xai/", "Grok", "Composer"):
                 with self.subTest(where=where, needed=needed):
                     self.assertIn(needed, prose)
+
+
+# GitHub's Copilot token billing, read 2026-11-09 from COPILOT_PRICING_PAGE: the page prints each
+# rate in US dollars per million tokens beside "1 AI credit = $0.01 USD"; typed here in AI
+# credits, as (input, cached input, cache write, output), under the id the Copilot CLI records
+# (GitHub's CLI command reference). A page with no cache-write rate bills a written token as input.
+COPILOT_PRICING_PAGE = ("https://docs.github.com/en/copilot/reference/copilot-billing/"
+                        "models-and-pricing")
+COPILOT_CREDIT_USD = 0.01
+COPILOT_CREDIT_RATES = {
+    "claude-sonnet-5.5": (200, 10, 250, 1000),
+    "claude-opus-5.5": (400, 20, 500, 2000),
+    "claude-haiku-5.5": (10, 1, 12.5, 50),
+    "claude-haiku-4.5": (100, 10, 125, 500),
+    "claude-sonnet-4.6": (300, 30, 375, 1500),
+    "gpt-5.6-luna": (20, 2, 25, 120),
+    "gemini-3.8-flash": (75, 7.5, 75, 375),
+}
+# The Copilot CLI ids the Codex CLI records too: `models` prices them at OpenAI's rate, which is
+# Copilot's for every component a Copilot reading carries (it splits no one-hour write).
+COPILOT_SHARED_IDS = {
+    "gpt-6.1-sol": (200, 10, 250, 1000),
+    "gpt-6.1-terra": (100, 5, 125, 500),
+    "gpt-6-astra": (1000, 100, 1250, 5000),
+    "gpt-6-luna": (10, 1, 12.5, 50),
+    "gpt-5.3-codex": (175, 17.5, 175, 1400),
+}
+COPILOT_CAPTURE = SCRIPTS / "tests" / "fixtures" / "harness_usage" / "copilot.jsonl"
+
+
+class CopilotTokenPriceTests(unittest.TestCase):
+    """US1144: a Copilot run on token billing is priced from AI credits, in US dollars."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.doc = json.loads(SHIPPED.read_text(encoding="utf-8"))
+        self.block = self.doc[prices.COPILOT]
+        self.table = prices.load(path=SHIPPED, pricing={})
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def _write(self, block: dict) -> Path:
+        path = self.tmp / "prices.json"
+        path.write_text(json.dumps(dict(self.doc, **{prices.COPILOT: block})), encoding="utf-8")
+        return path
+
+    def _reading(self):
+        """The captured Copilot reading and its components as `sprint lane run`'s return line
+        prices them (`lanes.run_readings` builds them with `lanes._components`)."""
+        from lib import harness_usage, lanes  # noqa: PLC0415
+        r = harness_usage.parse("copilot", COPILOT_CAPTURE.read_text(encoding="utf-8"))
+        return r, lanes._components({"input": r.input, "output": r.output,
+                                     "cache_read": r.cache_read, "cache_write": r.cache_write,
+                                     "cache_write_1h": r.cache_write_1h})
+
+    @staticmethod
+    def _credits(components: dict, rates: tuple) -> float:
+        inp, cached, write, out = rates
+        return (components.get("input", 0) * inp + components.get("cache_read", 0) * cached
+                + (components.get("cache_write_5m", 0) + components.get("cache_write_1h", 0))
+                * write + components.get("output", 0) * out) / 1_000_000
+
+    def test_copilot_credit_rates_are_dated_sourced_and_keyed_by_the_copilot_id(self) -> None:
+        """US1144 AC1. MUTANTS: a rate in dollars, or the credit's value dropped; the date or the
+        source dropped, or undated; a Copilot rate filed under the API's hyphened id; an id in
+        both blocks."""
+        block = self.block
+        self.assertEqual(COPILOT_CREDIT_USD, block["credit_usd"])
+        effective = dt.date.fromisoformat(block["effective"])
+        self.assertTrue(block["source"].startswith(COPILOT_PRICING_PAGE + " ("), block["source"])
+        self.assertIn(f"read {effective.isoformat()}", block["source"])
+        self.assertIn("1 AI credit = $0.01", block["source"])
+        got = self.table.copilot
+        self.assertEqual((COPILOT_CREDIT_USD, effective, block["source"]),
+                         (got.credit_usd, got.effective, got.source))
+        rows = {row["model"]: row for row in block["models"]}
+        self.assertEqual(len(rows), len(block["models"]), "no Copilot id repeats")
+        self.assertEqual(set(COPILOT_CREDIT_RATES), set(rows))
+        self.assertEqual(set(COPILOT_CREDIT_RATES), set(got.rates))
+        self.assertFalse(set(rows) & {e["model"] for e in self.doc["models"]},
+                         "no id is in both blocks")
+        for model, (inp, cached, write, out) in COPILOT_CREDIT_RATES.items():
+            with self.subTest(model=model):
+                row = rows[model]
+                self.assertRegex(model, r"^[a-z]+-[a-z0-9.-]*\d\.\d", "the CLI's dotted id")
+                self.assertEqual({"model", "note", *PRICE_FIELDS}, set(row))
+                self.assertEqual((inp, out, cached, write, write),
+                                 tuple(row[c] for c in PRICE_FIELDS))
+                # One cache-write rate, or none, on GitHub's page, and no write split by duration.
+                self.assertIn("cache-write", row["note"])
+                if write == inp:
+                    self.assertIn("billed as input", row["note"])
+                price = self.table.models[model]
+                for c in PRICE_FIELDS:
+                    self.assertTrue(math.isclose(getattr(price, c),
+                                                 row[c] * COPILOT_CREDIT_USD, rel_tol=1e-12), c)
+                self.assertEqual((effective, block["source"]), (price.effective, price.source))
+        for model, rates in COPILOT_SHARED_IDS.items():
+            with self.subTest(shared=model):
+                self.assertNotIn(model, rows)
+                self.assertIn(model, block["note"])
+                reading = {"input": 3_000, "cache_read": 5_000, "cache_write_5m": 7_000,
+                           "output": 11_000}
+                self.assertTrue(math.isclose(
+                    prices.cost(model, reading, self.table).usd,
+                    self._credits(reading, rates) * COPILOT_CREDIT_USD, rel_tol=1e-12))
+        clash = dict(block, models=block["models"] + [dict(rows["claude-sonnet-5.5"],
+                                                           model="claude-sonnet-5-5")])
+        with self.assertRaisesRegex(prices.PriceTableError,
+                                    rf"{prices.COPILOT}.*'claude-sonnet-5-5'.*models"):
+            prices.load(path=self._write(clash), pricing={})
+
+    def test_a_recorded_copilot_reading_is_priced_from_credits_in_dollars(self) -> None:
+        """US1144 AC2. MUTANTS: the reading read as not priced; priced at the Anthropic API's
+        `claude-sonnet-5-5` rate; its credit count reported as dollars; a component dropped."""
+        r, components = self._reading()
+        self.assertEqual("claude-sonnet-5.5", r.model)
+        self.assertTrue(components["input"] and components["cache_write_5m"]
+                        and components["output"], "premise: three components carry tokens")
+        # 4 input, 27,578 written to the cache and 4 output, at 200, 250 and 1,000 credits.
+        credits = (4 * 200 + 27_578 * 250 + 4 * 1_000) / 1_000_000
+        self.assertTrue(math.isclose(credits, self._credits(
+            components, COPILOT_CREDIT_RATES["claude-sonnet-5.5"]), rel_tol=1e-12))
+        nano = None
+        for line in COPILOT_CAPTURE.read_text(encoding="utf-8").splitlines():
+            event = json.loads(line)
+            if event.get("type") in ("session.usage_checkpoint", "session.shutdown"):
+                snap = event["data"]["accountingSnapshot"]["modelMetrics"]["claude-sonnet-5.5"]
+                nano = snap["totalNanoAiu"]
+        self.assertTrue(math.isclose(credits, nano / 1e9, rel_tol=1e-12),
+                        "the CLI's own count of the session's AI credits, in billionths")
+        expected = credits * COPILOT_CREDIT_USD
+        got = prices.cost(r.model, components, prices.load(self.tmp))
+        self.assertIsNone(got.unpriced)
+        self.assertTrue(math.isclose(got.usd, expected, rel_tol=1e-12), f"{got.usd!r}")
+        run = run_state.usd({r.model: components}, self.table)
+        self.assertEqual(([], 1.0), (run["unpriced"], run["covered"]))
+        self.assertTrue(math.isclose(run["usd"], expected, rel_tol=1e-12), f"{run['usd']!r}")
+        # The figure follows the Copilot block and its credit value, not the API's entry.
+        for scale, block in (
+                (2, dict(self.block, models=[
+                    dict(m, **{c: m[c] * 2 for c in PRICE_FIELDS})
+                    if m["model"] == r.model else m for m in self.block["models"]])),
+                (3, dict(self.block, credit_usd=COPILOT_CREDIT_USD * 3))):
+            with self.subTest(scale=scale):
+                moved = prices.cost(r.model, components,
+                                    prices.load(path=self._write(block), pricing={}))
+                self.assertTrue(math.isclose(moved.usd, expected * scale, rel_tol=1e-12))
+
+    def test_a_partial_copilot_block_is_refused_by_name_and_the_shipped_one_loads(self) -> None:
+        """US1144 AC3. MUTANTS: a missing field read as 0 or skipped; the block dropped silently
+        on a gap. The control: the shipped block loads and prices AC2's reading."""
+        block, first = self.block, self.block["models"][0]
+        cases = [(name, {k: v for k, v in block.items() if k != name}, block)
+                 for name in ("credit_usd", "effective", "source", "models")]
+        cases.append(("credit_usd", dict(block, credit_usd=None), block))
+        cases += [(name, dict(block, models=[{k: v for k, v in first.items() if k != name}]
+                              + block["models"][1:]), first) for name in PRICE_FIELDS]
+        r, components = self._reading()
+        for name, broken, _ in cases:
+            with self.subTest(missing=name, value=broken.get(name, "absent")):
+                with self.assertRaises(prices.PriceTableError) as caught:
+                    prices.load(path=self._write(broken), pricing={})
+                message = str(caught.exception)
+                self.assertIn(prices.COPILOT, message)
+                self.assertIn(f"'{name}'", message)
+                if name in PRICE_FIELDS:
+                    self.assertIn(first["model"], message)
+        control = prices.cost(r.model, components, prices.load(path=self._write(block),
+                                                               pricing={}))
+        self.assertIsNone(control.unpriced)
+        self.assertTrue(math.isclose(control.usd, (4 * 200 + 27_578 * 250 + 4 * 1_000) / 1e6
+                                     * COPILOT_CREDIT_USD, rel_tol=1e-12))
+
+    def test_an_unlisted_copilot_id_is_not_priced_beside_a_listed_one(self) -> None:
+        """US1144 AC4. MUTANTS: a dotted id matched onto the API table by dot-to-hyphen or by
+        nearest name, or read as $0. The control: a listed Copilot id is priced."""
+        reading = {"input": 1_000_000, "output": 0, "cache_read": 0, "cache_write_5m": 0,
+                   "cache_write_1h": 0}
+        listed = prices.cost("claude-sonnet-5.5", reading, self.table)
+        self.assertIsNone(listed.unpriced)
+        self.assertTrue(math.isclose(listed.usd, 200 * COPILOT_CREDIT_USD, rel_tol=1e-12))
+        for unlisted, near in (("claude-opus-4.8", "claude-opus-4-8"),
+                               ("claude-fable-5.1", "claude-fable-5-1"),
+                               ("claude-sonnet-5.5-preview", "claude-sonnet-5.5")):
+            with self.subTest(unlisted=unlisted):
+                self.assertIn(near, self.table.models, "premise: a similar name is priced")
+                got = prices.cost(unlisted, reading, self.table)
+                self.assertIsNone(got.usd)
+                self.assertIn(unlisted, got.unpriced or "")
+        run = run_state.usd({"claude-sonnet-5.5": reading, "claude-opus-4.8": reading},
+                            self.table)
+        self.assertEqual(["claude-opus-4.8"], [u["model"] for u in run["unpriced"]])
+        self.assertTrue(math.isclose(run["usd"], listed.usd, rel_tol=1e-12))
+        self.assertTrue(math.isclose(run["covered"], 0.5))
 
 
 if __name__ == "__main__":
