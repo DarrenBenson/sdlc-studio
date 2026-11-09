@@ -13,6 +13,11 @@ spend, read through the Codex reader from a fixture store under a temporary HOME
 `CODEX_HOME` (never the real `~/.codex`); and a span over two readings whose splits were
 synthesised from one model name each, the names differing, is booked whole, never the opening
 reading's history as a delta.
+
+US1145: a Copilot run's tokens are priced from the AI-credit rates and its premium requests counted
+but not priced under `pricing.copilot_billing: tokens`, the default; under `requests` the premium
+requests are priced and the tokens read not priced, so the run is never billed twice. The fixture
+Copilot block, its credit's value and the run's usage are typed here.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint_report.py
 from __future__ import annotations
@@ -22,6 +27,7 @@ import datetime as dt
 import io
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -51,6 +57,12 @@ BUILD_2 = meter._usage(200, 3_000, 10_000, 0, 300_000)
 MAIN_UNPRICED = meter._usage(400, 6_000, 0, 30_000, 1_000_000)
 #: US dollars per Copilot premium request, typed here.
 REQUEST_USD = 0.04
+#: US1145. A Copilot CLI id, its rates in AI credits per million tokens and the US-dollar value
+#: of one credit, typed here as the fixture table's Copilot block; and the Copilot run's usage.
+COPILOT_ID, CREDIT_USD = "claude-sonnet-5.5", 0.01
+CREDITS = {"input": 200, "output": 1000, "cache_read": 10, "cache_write_5m": 250,
+           "cache_write_1h": 250}
+COPILOT_USE = meter._usage(2_000, 30_000, 40_000, 0, 1_500_000)
 #: OpenAI's Standard, short-context rates for two models behind Codex CLI, as its published
 #: price page states them (developers.openai.com/api/docs/pricing, read 2026-11-06), typed here
 #: and never read from the code under test: gpt-6.1-sol bills its 30-minute and 12-hour cache
@@ -66,6 +78,12 @@ CODEX = meter._usage(1_000, 20_000, 50_000, 0, 2_000_000)
 
 def _dollars(model: str, parts: dict) -> float:
     return sum(parts[c] * PRICES[model][c] for c in meter.COMPONENTS) / 1_000_000
+
+
+def _credit_dollars(parts: dict) -> float:
+    """A Copilot reading's dollars: each component's tokens times its typed credit rate, times
+    the typed credit's value."""
+    return sum(parts[c] * CREDITS[c] * CREDIT_USD for c in meter.COMPONENTS) / 1_000_000
 
 
 def _money(v: float) -> str:
@@ -86,17 +104,22 @@ class ReportUsdTests(meter._Case):
         self.table(dt.date.today())
 
     def table(self, effective: dt.date, scale: float = 1.0,
-              request: float | None = REQUEST_USD) -> None:
+              request: float | None = REQUEST_USD, copilot: bool = False) -> None:
         """Lay the typed table in place of the shipped one, every entry dated `effective` and
         every price times `scale` (a revision of the table), with a premium-request price of
-        `request` times `scale`, or none when `request` is None."""
-        path = self.tmp / f"prices-{effective.isoformat()}-{scale:g}-{request}.json"
+        `request` times `scale`, or none when `request` is None, and the typed Copilot block
+        when `copilot` is set."""
+        path = self.tmp / f"prices-{effective.isoformat()}-{scale:g}-{request}-{copilot}.json"
         path.write_text(json.dumps({"models": [
             {"model": m, **{c: v * scale for c, v in p.items()},
              "effective": effective.isoformat(), "source": "typed in the test"}
             for m, p in PRICES.items()], **({"premium_request": {
                 "usd": request * scale, "effective": effective.isoformat(),
-                "source": "typed in the test"}} if request is not None else {})}),
+                "source": "typed in the test"}} if request is not None else {}),
+            **({"copilot_token_billing": {
+                "credit_usd": CREDIT_USD, "effective": effective.isoformat(),
+                "source": "typed in the test",
+                "models": [{"model": COPILOT_ID, **CREDITS}]}} if copilot else {})}),
             encoding="utf-8")
         patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", path)
         patch.start()
@@ -653,8 +676,9 @@ class ReportUsdTests(meter._Case):
         """US1135 AC4. MUTANTS: the premium dollars summed into the Dollar cost row; the row
         priced at another price than the table's, or without its date; an absent request price
         read as $0. The control: with no request price the row reads not priced and still
-        states the count."""
+        states the count. US1145: the requests are priced only on request billing."""
         ws = self._run()
+        self._bill(ws, "requests")
         before = ws.page()
         self._ask_premium(ws)
         after = ws.page()
@@ -676,9 +700,11 @@ class ReportUsdTests(meter._Case):
         """LC-017, US1135. MUTANTS: the mark dropped from the envelope, so a page filed under it
         re-derives with it off; the rule hard-wired on in `revalidate`; the request price left
         out of the page's table, so a revision of the table re-prices a filed page. The control:
-        the page with its mark removed reads INVALIDATED."""
+        the page with its mark removed reads INVALIDATED. US1145: on request billing, the one
+        basis that prices the requests."""
         sr = self.sr
         ws = self._run()
+        self._bill(ws, "requests")
         self._ask_premium(ws)
         page = sr.build_report(ws.root, meter.RETRO)
         self.assertEqual(sr.PREMIUM_PRICED, page[sr.PREMIUM_USD_RULE])
@@ -696,6 +722,118 @@ class ReportUsdTests(meter._Case):
         dropped = {k: v for k, v in page.items() if k not in (sr.PREMIUM_USD_RULE, "fingerprint")}
         check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
         self.assertFalse(check["valid"], "the rule moves no figure on this fixture")
+
+    @staticmethod
+    def _bill(ws, basis: str) -> None:
+        """Set the project's `pricing.copilot_billing` to `basis`."""
+        (ws.root / "sdlc-studio" / ".config.yaml").write_text(
+            f"pricing:\n  copilot_billing: {basis}\n", encoding="utf-8")
+
+    def _copilot_run(self, basis: str | None = None):
+        """A Copilot run on the typed table with its Copilot block: one main-thread message in
+        `COPILOT_ID` after the run opens, the stories Done, a closing reading stamped, 7 premium
+        requests across its readings, and `pricing.copilot_billing` set to `basis` (unset when
+        None)."""
+        self.table(dt.date.today(), copilot=True)
+        ws = self.workspace()
+        ws.open()
+        ws.tx._append(ws.tx.main, [_line("c_1", COPILOT_USE, COPILOT_ID)])
+        for f in (ws.root / "sdlc-studio" / "stories").glob("US*.md"):
+            f.write_text(f.read_text(encoding="utf-8").replace("Ready", "Done"), encoding="utf-8")
+        self.assertIsNotNone(self.rs.stamp_tokens(ws.root, "close"))
+        self._ask_premium(ws)
+        if basis is not None:
+            self._bill(ws, basis)
+        return ws
+
+    def _billed(self, ws, page: dict) -> list[str]:
+        """The dollars a page bills the run: the Dollar cost row's figure and the Premium
+        requests row's estimate, each only where the page states it."""
+        value = ws.row(page, "Dollar cost")["est_actual"]["value"]
+        return (([] if value == self.sr.NOT_MEASURED else [value])
+                + re.findall(r"estimated (\$[\d,.]+) at",
+                             ws.row(page, "Premium requests")["est_basis"]["value"]))
+
+    def test_token_billing_prices_copilot_tokens_and_counts_premium_requests_unpriced(
+            self) -> None:
+        """US1145 AC1. MUTANTS: the premium requests priced at the request price on token
+        billing, or summed into the Dollar cost row; the Copilot tokens left unpriced by
+        default; the row's basis silent on token billing or on the key that switches it. The
+        control: the same run on request billing prices the requests (AC2, AC3)."""
+        ws = self._copilot_run()
+        page = ws.page()
+        tokens = _credit_dollars(meter._parts(COPILOT_USE))
+        self.assertEqual([_money(tokens)], self._billed(ws, page))
+        row = ws.row(page, "Premium requests")
+        self.assertEqual(7, row["est_actual"]["value"])
+        basis = row["est_basis"]["value"]
+        for said in ("not priced", "token billing", "pricing.copilot_billing: requests"):
+            self.assertIn(said, basis)
+        for priced in ("$", "per request"):
+            self.assertNotIn(priced, basis)
+
+    def test_request_billing_prices_premium_requests_and_leaves_copilot_tokens_unpriced(
+            self) -> None:
+        """US1145 AC2. MUTANTS: both bases priced at once, so the run is billed twice; the
+        Copilot tokens read as $0 or at the credit rates; the request price stated without its
+        date; `prices.cost` pricing a Copilot id on request billing. The control: the same run
+        on token billing prices the tokens (AC1, AC3)."""
+        ws = self._copilot_run("requests")
+        page = ws.page()
+        row = ws.row(page, "Premium requests")
+        self.assertEqual(7, row["est_actual"]["value"])
+        basis = row["est_basis"]["value"]
+        self.assertIn(f"{_money(7 * REQUEST_USD)} at {_money(REQUEST_USD)} per request", basis)
+        self.assertIn(f"effective {dt.date.today().isoformat()}", basis)
+        self.assertEqual([_money(7 * REQUEST_USD)], self._billed(ws, page), "billed once")
+        dollars = ws.row(page, "Dollar cost")["est_actual"]
+        self.assertIn("the plan bills by request", dollars["reason"])
+        self.assertNotIn("$", dollars["reason"])
+        tokens = _credit_dollars(meter._parts(COPILOT_USE))
+        self.assertNotIn(_money(tokens), json.dumps(page))
+        got = self.prices.cost(COPILOT_ID, meter._parts(COPILOT_USE),
+                               self.prices.load(ws.root))
+        self.assertIsNone(got.usd)
+        self.assertIn("the plan bills by request", got.unpriced)
+
+    def test_one_copilot_run_prices_differently_under_each_basis(self) -> None:
+        """US1145 AC3. MUTANTS: the basis ignored, so both reports state one figure; a basis
+        priced at the other's rate. The control: the two figures the test types differ."""
+        tokens = _money(_credit_dollars(meter._parts(COPILOT_USE)))
+        requests = _money(7 * REQUEST_USD)
+        self.assertNotEqual(tokens, requests, "premise: the two bases differ on this run")
+        ws = self._copilot_run("tokens")
+        self.assertEqual([tokens], self._billed(ws, ws.page()))
+        self._bill(ws, "requests")
+        self.assertEqual([requests], self._billed(ws, ws.page()))
+
+    def test_the_billing_basis_round_trips(self) -> None:
+        """LC-017, US1145. MUTANTS: the basis or the ids it leaves unpriced dropped from the
+        page's price table, or not replayed, so a page filed on request billing re-prices on
+        the basis in force; a page built before the premium rule billed on the basis in force
+        rather than every model priced, as it was filed. The control: the page's table with
+        either removed reads INVALIDATED."""
+        sr = self.sr
+        ws = self._copilot_run("requests")
+        before = sr.build_report(ws.root, meter.RETRO, premium_usd_rule=False)
+        self.assertNotIn(self.prices.COPILOT_BILLING, before[sr.PRICE_TABLE])
+        self.assertEqual([_money(_credit_dollars(meter._parts(COPILOT_USE)))],
+                         self._billed(ws, before))
+        page = sr.build_report(ws.root, meter.RETRO)
+        record = page[sr.PRICE_TABLE]
+        self.assertEqual("requests", record[self.prices.COPILOT_BILLING])
+        self.assertEqual([COPILOT_ID], record[sr.BILLED_BY_REQUEST])
+        filed = sr.file_report(ws.root, page)
+        self._bill(ws, "tokens")
+        check = sr.revalidate(ws.root, filed)
+        self.assertTrue(check["valid"], check["changes"])
+        for key in (self.prices.COPILOT_BILLING, sr.BILLED_BY_REQUEST):
+            with self.subTest(dropped=key):
+                table = {k: v for k, v in record.items() if k != key}
+                dropped = {**{k: v for k, v in page.items() if k != "fingerprint"},
+                           sr.PRICE_TABLE: table}
+                check = sr.revalidate(ws.root, sr.file_report(ws.root, dropped))
+                self.assertFalse(check["valid"], "the basis moves a figure on this fixture")
 
     def test_premium_requests_are_their_own_unit(self) -> None:
         """AC5. MUTANTS: premium requests dropped from the page, added into the tokens or the

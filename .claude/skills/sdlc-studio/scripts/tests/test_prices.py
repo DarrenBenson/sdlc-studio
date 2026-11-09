@@ -670,6 +670,42 @@ class CopilotTokenPriceTests(unittest.TestCase):
         self.assertTrue(math.isclose(run["usd"], listed.usd, rel_tol=1e-12))
         self.assertTrue(math.isclose(run["covered"], 0.5))
 
+    def test_copilot_billing_takes_tokens_or_requests_and_refuses_anything_else(self) -> None:
+        """US1145 AC4. MUTANTS: an unknown value read as `tokens` or as `requests`; the refusal
+        silent on the key or on either value it takes; the default changed from `tokens`. The
+        control: each of the two values loads, and an unset key reads as `tokens`."""
+        reading = {"input": 1_000_000}
+        self.assertEqual("tokens", self.table.copilot_billing, "unset, the basis is tokens")
+        for basis, priced in (("tokens", True), ("requests", False)):
+            with self.subTest(basis=basis):
+                table = prices.load(path=SHIPPED, pricing={"copilot_billing": basis})
+                self.assertEqual(basis, table.copilot_billing)
+                self.assertEqual(priced, prices.cost("claude-sonnet-5.5", reading,
+                                                     table).usd is not None)
+        for value in ("request", "Tokens", "credits", "", 0, True, ["requests"], {"a": 1}):
+            with self.subTest(value=value):
+                with self.assertRaises(prices.PriceTableError) as caught:
+                    prices.load(path=SHIPPED, pricing={"copilot_billing": value})
+                said = str(caught.exception)
+                for word in ("pricing.copilot_billing", "tokens", "requests"):
+                    self.assertIn(word, said)
+
+    def test_the_configuration_reference_states_the_copilot_billing_basis(self) -> None:
+        """US1145 AC5. MUTANTS: the key's row dropped, or its default not `tokens`; the plans
+        each value is for, or the day GitHub moved Copilot to AI credits, left out."""
+        text = REF_CONFIG.read_text(encoding="utf-8")
+        section = text[text.index("## Model Prices {#pricing}"):]
+        section = section[:section.index("\n## ", 1)]
+        row = re.search(r"^\|\s*`pricing\.copilot_billing`\s*\|\s*`?(\w+)`?\s*\|(.*)\|$",
+                        section, re.M)
+        self.assertIsNotNone(row, "reference-config.md#pricing does not state the key")
+        self.assertEqual("tokens", row.group(1))
+        notes = row.group(2)
+        self.assertRegex(notes, r"`requests`[^|]*Copilot Pro or Pro\+ annual plan[^|]*"
+                                r"request-based billing")
+        self.assertRegex(notes, r"`tokens`[^|]*every other plan")
+        self.assertRegex(notes, r"1 June 2026[^|]*token billing in AI credits")
+
 
 if __name__ == "__main__":
     unittest.main()

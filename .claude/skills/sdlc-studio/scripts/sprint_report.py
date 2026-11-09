@@ -3839,24 +3839,37 @@ def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict
     return out
 
 
-def _table_record(table, premium_rule: bool) -> dict:
+def _table_record(table, premium_rule: bool, billing: str | None = None) -> dict:
     """The price table as the page carries it (`run_state.table_record`), with its request
-    price under `PREMIUM_USD_RULE` (None when it has none), so a re-derivation replays it."""
+    price under `PREMIUM_USD_RULE` (None when it has none), and the Copilot billing basis and
+    the ids it leaves unpriced when the page bills on one (`BILLED_BY_REQUEST`), so a
+    re-derivation replays them."""
     out = run_state.table_record(table)
     if premium_rule:
         price = table.premium_request
         out[prices.PREMIUM_REQUEST] = None if price is None else {
             "usd": price.usd, "effective": price.effective.isoformat(), "source": price.source}
+        if billing is not None:
+            out[prices.COPILOT_BILLING] = billing
+            out[BILLED_BY_REQUEST] = list(table.billed_by_request)
     return out
 
 
 def _premium_basis(count, usd: dict) -> str:
     """The Premium requests row's basis under `PREMIUM_USD_RULE`: the count's dollars at the
     table's per-request price and its date, never summed into the Dollar cost row; not priced,
-    and never $0, when the table carries no request price or cannot be read."""
+    and never $0, when the table carries no request price or cannot be read. On token billing
+    (`pricing.copilot_billing: tokens`, the default) the requests are counted, not priced: the
+    Dollar cost row prices the Copilot tokens, and pricing both would bill the run twice."""
     tail = "; in their own unit, never summed into the Dollar cost row or the priced tokens"
     if usd["error"]:
         return f"not priced: the price table cannot be read: {usd['error']}{tail}"
+    if usd.get("billing") == prices.TOKEN_BILLING:
+        key = f"pricing.{prices.COPILOT_BILLING}"
+        return (f"counted, not priced: the plan is on token billing in AI credits ({key}: "
+                f"{prices.TOKEN_BILLING}, the default), so the Dollar cost row prices its "
+                f"Copilot tokens; set {key}: {prices.REQUEST_BILLING} for a plan kept on "
+                f"request-based billing{tail}")
     price = usd["table"].premium_request
     if price is None:
         return f"not priced: the price table carries no {prices.PREMIUM_REQUEST} price{tail}"
@@ -4439,6 +4452,12 @@ TABLE_REPLAYED = "replayed-and-digested"
 #: cost row. A page filed before it re-derives with the count alone.
 PREMIUM_USD_RULE = "premium_usd"
 PREMIUM_PRICED = "per-request-dollars"
+#: US1145. Under `PREMIUM_USD_RULE` the page's price table also carries the project's Copilot
+#: billing basis (`prices.COPILOT_BILLING`) and, under this key, the ids that basis leaves
+#: unpriced, so a re-derivation bills the run on the basis it was filed on. A table filed
+#: without the basis replays as it was filed: every model it lists priced, and the premium
+#: requests priced at the request price.
+BILLED_BY_REQUEST = "billed_by_request"
 
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
@@ -4569,18 +4588,25 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # with (`filed_prices`, handed in by `revalidate` under `TABLE_RULE`); none, the live one.
         record = readings["price_table"] if filed is not None else filed_prices
         table, error = run_state.price_table(root, record)
+        billing = table.copilot_billing if table is not None else None
         if table is not None and isinstance(record, dict) and isinstance(
                 record.get("models"), dict):
-            # A filed table's request price is the page's own (`_table_record`), none if absent.
+            # A filed table's request price and billing basis are the page's own
+            # (`_table_record`), none if absent (`BILLED_BY_REQUEST`).
+            billing = record.get(prices.COPILOT_BILLING)
             try:
                 table = dataclasses.replace(table, premium_request=None if record.get(
                     prices.PREMIUM_REQUEST) is None else prices.request_price(
                         record[prices.PREMIUM_REQUEST],
-                        f"the page's price table, {prices.PREMIUM_REQUEST}"))
+                        f"the page's price table, {prices.PREMIUM_REQUEST}"),
+                    billed_by_request=tuple(record.get(BILLED_BY_REQUEST) or ()))
             except prices.PriceTableError as exc:
                 table, error = None, str(exc)
+        if not premium_usd_rule and table is not None:
+            # A page filed before the premium rule predates the basis: every model is priced.
+            billing, table = None, dataclasses.replace(table, billed_by_request=())
         usd = {"table": table, "error": error, "today": end.date() if end else None,
-               "premium_rule": premium_usd_rule}
+               "premium_rule": premium_usd_rule, "billing": billing}
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
                           agent_minutes_rule)
@@ -4631,7 +4657,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {}),
               **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {}),
               **({USD_RULE: USD_PER_MODEL} if usd_rule else {}),
-              **({PRICE_TABLE: _table_record(usd["table"], premium_usd_rule)}
+              **({PRICE_TABLE: _table_record(usd["table"], premium_usd_rule,
+                                             usd["billing"])}
                  if usd and usd["table"] is not None else {}),
               **({TABLE_RULE: TABLE_REPLAYED}
                  if table_rule and usd and usd["table"] is not None else {}),

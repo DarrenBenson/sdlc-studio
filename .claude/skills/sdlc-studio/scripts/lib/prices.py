@@ -28,6 +28,12 @@ Anthropic API's is `claude-sonnet-5-5`). `load` turns each rate into US dollars 
 value and prices the id beside the `models` entries; an id in both is refused, so a lookup by id
 alone is never ambiguous, and a gap in the block is refused by name, never read as zero.
 
+A plan bills Copilot on one basis, never both: `pricing.copilot_billing` is `tokens` (the
+default), where the block's ids are priced and a premium request is not, or `requests`, for a
+plan kept on request-based billing, where every id the block rates reads not priced, saying
+the plan bills by request, and the report prices the premium requests instead. Any other
+value is refused, naming the key and the two values it takes.
+
 Pure stdlib. The project config is read through `config.get` only when `load` is given a repo
 root, and that loader degrades to no override, with a warning, where PyYAML is absent.
 """
@@ -61,6 +67,11 @@ COPILOT = "copilot_token_billing"
 COPILOT_REQUIRED = ("credit_usd", "effective", "source", "models")
 #: Every field a Copilot model rate must carry; it may carry a `note` beside them.
 COPILOT_RATE_REQUIRED = ("model",) + COMPONENTS
+#: The `pricing` key naming the basis a project's Copilot plan bills on, and the two values
+#: it takes: token billing in AI credits, the default, and request-based billing.
+COPILOT_BILLING = "copilot_billing"
+TOKEN_BILLING, REQUEST_BILLING = "tokens", "requests"
+BILLING_BASES = (TOKEN_BILLING, REQUEST_BILLING)
 _PER = 1_000_000
 _USD = "US dollars per million tokens"
 _CREDITS = "AI credits per million tokens"
@@ -108,13 +119,17 @@ class CreditBilling:
 @dataclass(frozen=True)
 class PriceTable:
     """The shipped table with a project's `pricing.models` laid over it. `premium_request` is
-    the price of one premium request, None when the table carries none."""
+    the price of one premium request, None when the table carries none. `copilot_billing` is
+    the basis the project's Copilot plan bills on, and `billed_by_request` the ids `cost` reads
+    as not priced because that plan bills them by request (none on token billing)."""
     models: Mapping[str, Price]
     stale_after_days: int
     origin: str
     overridden: tuple[str, ...] = field(default=())
     premium_request: RequestPrice | None = None
     copilot: CreditBilling | None = None
+    copilot_billing: str = TOKEN_BILLING
+    billed_by_request: tuple[str, ...] = field(default=())
 
     @property
     def newest_effective(self) -> dt.date | None:
@@ -298,7 +313,9 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
     entry, a Copilot id among them. `pricing.premium_request` replaces the shipped
     premium-request price whole. The shipped table's Copilot block prices its ids in US dollars
     beside the `models` entries, each rate times the credit's value (`credit_billing`).
-    `pricing.stale_after_days` is a whole number of days of 1 or more.
+    `pricing.stale_after_days` is a whole number of days of 1 or more. `pricing.copilot_billing`
+    is `tokens` (unset or null) or `requests`, which leaves every id the Copilot block rates
+    unpriced (`billed_by_request`), a `pricing.models` entry for one among them.
 
     Raises `PriceTableError` naming the entry and the field, or the file when the table itself
     cannot be read."""
@@ -324,10 +341,18 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
     if isinstance(days, bool) or not isinstance(days, int) or days < 1:
         raise PriceTableError(f"pricing.stale_after_days is {days!r}: give a whole number of days, "
                               "1 or more")
+    basis = pricing.get(COPILOT_BILLING)
+    basis = TOKEN_BILLING if basis is None else basis
+    if not isinstance(basis, str) or basis not in BILLING_BASES:
+        raise PriceTableError(f"pricing.{COPILOT_BILLING} is {basis!r}: give {TOKEN_BILLING} "
+                              f"(GitHub's token billing in AI credits, the default) or "
+                              f"{REQUEST_BILLING} (a plan kept on request-based billing)")
+    by_request = (tuple(sorted(billing.rates))
+                  if basis == REQUEST_BILLING and billing is not None else ())
     origin = str(path) + (" with the project's pricing.models" if overridden else "")
     return PriceTable(models=models, stale_after_days=days, origin=origin,
                       overridden=tuple(sorted(overridden)), premium_request=request,
-                      copilot=billing)
+                      copilot=billing, copilot_billing=basis, billed_by_request=by_request)
 
 
 def cost(model: str | None, components: Mapping[str, int],
@@ -335,7 +360,8 @@ def cost(model: str | None, components: Mapping[str, int],
     """A reading's estimated cost in US dollars: each component's tokens times its price per
     million, summed. A component the reading omits counts as no tokens; one the table does not
     know, or a count that is not a whole number of 0 or more, raises ValueError rather than
-    dropping out of the sum. A model the table does not list costs `usd=None`, naming it."""
+    dropping out of the sum. A model the table does not list costs `usd=None`, naming it, and
+    so does one the plan bills by request (`billed_by_request`), saying so."""
     for name, tokens in components.items():
         if name not in COMPONENTS:
             raise ValueError(f"reading component {name!r} is not one of {', '.join(COMPONENTS)}")
@@ -345,6 +371,10 @@ def cost(model: str | None, components: Mapping[str, int],
     name = (model or "").strip()
     if not name:
         return Cost(None, model, "not priced: the reading names no model")
+    if name in table.billed_by_request:
+        return Cost(None, model, f"not priced: the plan bills by request "
+                                 f"(pricing.{COPILOT_BILLING}: {REQUEST_BILLING}), so model "
+                                 f"{name}'s tokens carry no price and the premium requests do")
     price = table.models.get(name)
     if price is None:
         return Cost(None, model, f"not priced: model {name} is not in the price table "
