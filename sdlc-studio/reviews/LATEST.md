@@ -24,7 +24,9 @@
   and reference-sprint.md defines the wave boundary (US1142).
 - **6.3's carried units reached Done** on round-2 APPROVEs from the seats that rejected them:
   US0986, US1130 and US1133 (with BG1264). Lane fixes for schema-3 ids: BG1302, BG1303. BG1320
-  fixed a test-import collision the run itself introduced.
+  fixed a test-import collision the run itself introduced. The first close's push was refused by two
+  test regressions (US1142's reflow, BG1312's patch target); the run was reopened (D0455) and BG1329
+  fixed both before the re-close.
 
 ## What is owed
 

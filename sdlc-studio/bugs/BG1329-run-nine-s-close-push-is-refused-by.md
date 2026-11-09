@@ -1,6 +1,6 @@
 # BG1329: Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py, changelog.d/BG1329.md
@@ -27,10 +27,13 @@ Rewrap reference-sprint.md so the wsjf-inputs.json writer sentence sits on one l
 
 - [ ] **AC1** Given reference-sprint.md, then the sentence telling the agent to write `sdlc-studio/.local/wsjf-inputs.json` reads on one line again, the page stays at 859 lines, and US1142's wave-boundary text and every grepped sentence stand. Fails on: the writer sentence split across lines; the page over budget.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC2** Given `test_the_moment_is_read_through_the_report_helper`, then it patches the `sprint_report` object `resume_brief` itself uses, so it passes alone, in the full parallel suite and under the unittest runner. Fails on: the patch applied to a sprint_report object resume_brief does not read.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py
+  - **Verified:** yes (2026-11-09)
 - [ ] **AC3** Given the wave-boundary pages, then US1142's own test still passes.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py
+  - **Verified:** yes (2026-11-09)
 
 ## Revision History
 
