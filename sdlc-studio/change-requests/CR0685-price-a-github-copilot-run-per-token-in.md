@@ -1,6 +1,6 @@
 # CR-0685: Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0304
 > **Priority:** Medium
 > **Type:** Improvement

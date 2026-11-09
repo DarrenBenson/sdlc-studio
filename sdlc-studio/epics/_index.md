@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 16 |
+| Draft | 15 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 256 |
+| Done | 257 |
 | Superseded | 33 |
 | **Total** | **305** |
 
@@ -54,7 +54,7 @@
 | [EP0301](EP0301-v6-3-0-ships-with-paperwork-that-matches.md) | v6.3.0 ships with paperwork that matches the code | Done | 4 | -- | 2026-11-08 | 2026-11-08 |
 | [EP0302](EP0302-a-sprint-wave-resumes-in-a-fresh-session.md) | A sprint wave resumes in a fresh session from a bounded on-disk brief | Draft | 3 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0303](EP0303-grok-and-composer-runs-are-priced-in-us.md) | Grok and Composer runs are priced in US dollars from each provider's own dated page | Done | 1 | -- | 2026-11-09 | 2026-11-09 |
-| [EP0304](EP0304-a-copilot-run-is-priced-on-the-basis.md) | A Copilot run is priced on the basis its plan is billed by: tokens in AI credits by default, premium requests only on request billing | Draft | 2 | -- | 2026-11-09 | 2026-11-09 |
+| [EP0304](EP0304-a-copilot-run-is-priced-on-the-basis.md) | A Copilot run is priced on the basis its plan is billed by: tokens in AI credits by default, premium requests only on request billing | Done | 2 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0305](EP0305-the-persona-registry-and-the-prd-name-abena.md) | The persona registry and the PRD name Abena Osei as the shipped skill's Primary and Graham Doyle as Served | Draft | 3 | -- | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases

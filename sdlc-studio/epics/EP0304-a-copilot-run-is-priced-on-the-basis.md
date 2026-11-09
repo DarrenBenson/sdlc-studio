@@ -1,6 +1,6 @@
 # EP0304: A Copilot run is priced on the basis its plan is billed by: tokens in AI credits by default, premium requests only on request billing
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0685
 > **Created:** 2026-11-09
@@ -14,8 +14,8 @@ Decomposed from CR0685. Delivers the work CR0685 requested.
 
 ## Story Breakdown
 
-- [ ] [US1144: A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit](../stories/US1144-a-copilot-run-on-token-billing-is-priced.md)
-- [ ] [US1145: A project on Copilot request billing says so in its config, and only then are its premium requests priced in dollars](../stories/US1145-a-project-on-copilot-request-billing-says-so.md)
+- [x] [US1144: A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit](../stories/US1144-a-copilot-run-on-token-billing-is-priced.md)
+- [x] [US1145: A project on Copilot request billing says so in its config, and only then are its premium requests priced in dollars](../stories/US1145-a-project-on-copilot-request-billing-says-so.md)
 
 ## Acceptance Criteria (Epic Level)
 

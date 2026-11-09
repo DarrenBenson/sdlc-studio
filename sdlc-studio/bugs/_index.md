@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 266 |
+| Open | 271 |
 | In Progress | 0 |
-| Fixed | 876 |
+| Fixed | 879 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1316** |
+| **Total** | **1324** |
 
 ## All Bugs
 
@@ -339,7 +339,7 @@
 | [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1267](BG1267-sprint-py-lane-return-prints-a-two-model.md) | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before | Open | Low | 2026-11-06 | 2026-11-06 |
@@ -392,6 +392,14 @@
 | [BG1314](BG1314-two-us1146-persona-checks-cannot-catch-a-swapped.md) | Two US1146 persona checks cannot catch a swapped Primary, and `validate.py personas` compares the whole Interface cell, so a card reverted to Primary passes AC2's own Verify | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1315](BG1315-help-sprint-md-still-names-a-lane-hand.md) | `help/sprint.md` still names a lane hand-in `<unit>-claims.json` under the id as typed, which BG1303's landing now keys by the normalised id, and `refine seams` still pairs a schema-3 unit with itself | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1316](BG1316-sprint-py-handoff-silently-drops-an-agent-naming.md) | `sprint.py handoff` silently drops an `--agent` naming a unit outside the batch, both new verbs crash on an unreadable run state, and the next-step line's stream is unpinned | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1317](BG1317-a-copilot-credit-usd-of-0-is-accepted.md) | A Copilot `credit_usd` of 0 is accepted and prices every Copilot reading at $0, and reference-sprint.md's list of price sources omits the newer ones | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1318](BG1318-us1147-did-not-converge-in-review-round-2.md) | US1147 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1319](BG1319-five-copilot-model-ids-priced-from-the-shared.md) | Five Copilot model ids priced from the shared OpenAI entries stay token-priced under `pricing.copilot_billing: requests`, so a request-billed Copilot run on one of them is billed twice | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1320](BG1320-test-resume-brief-py-imports-from-tests-import.md) | `test_resume_brief.py` imports `from tests import quiet`, which resolves to `tools/tests` when a run collects it with a repository-tooling test, so the commit hook and the push gate error on collection | Fixed | High | 2026-11-09 | 2026-11-09 |
+| [BG1321](BG1321-trevor-hale-s-scenario-check-misses-a-capitalised.md) | Trevor Hale's Scenario check misses a capitalised offer and a negation outside its word list, so changelog.d/US1147.md claims more than the AC7 test holds | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1322](BG1322-the-commit-msg-trailer-check-still-refuses-commit.md) | The commit-msg trailer check still refuses commit 089008d5's `Refs: US1090`, whose only record is a waiver row in decisions.md | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1323](BG1323-the-commit-msg-hook-misses-git-s-scissors.md) | The commit-msg hook misses git's scissors line under a non-default `core.commentChar`, the multi-id rule still reads trailers below it, and `_ledger_rows` and BG1264's fragment say an edited ledger row owns nothing | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1324](BG1324-no-test-replays-a-page-filed-before-the.md) | No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 
