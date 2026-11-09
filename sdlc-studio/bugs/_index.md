@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 265 |
+| Open | 266 |
 | In Progress | 0 |
 | Fixed | 876 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1315** |
+| **Total** | **1316** |
 
 ## All Bugs
 
@@ -391,6 +391,7 @@
 | [BG1313](BG1313-the-resume-brief-has-three-edges-its-tests.md) | The resume brief has three edges its tests do not pin: a batch listed out of plan order, a `-qa.none` landing marker read as in flight, and a Sprint Goal holding a newline that breaks `parse` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1314](BG1314-two-us1146-persona-checks-cannot-catch-a-swapped.md) | Two US1146 persona checks cannot catch a swapped Primary, and `validate.py personas` compares the whole Interface cell, so a card reverted to Primary passes AC2's own Verify | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1315](BG1315-help-sprint-md-still-names-a-lane-hand.md) | `help/sprint.md` still names a lane hand-in `<unit>-claims.json` under the id as typed, which BG1303's landing now keys by the normalised id, and `refine seams` still pairs a schema-3 unit with itself | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1316](BG1316-sprint-py-handoff-silently-drops-an-agent-naming.md) | `sprint.py handoff` silently drops an `--agent` naming a unit outside the batch, both new verbs crash on an unreadable run state, and the next-step line's stream is unpinned | Open | Low | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

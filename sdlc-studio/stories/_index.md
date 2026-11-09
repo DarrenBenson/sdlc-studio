@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 79 |
-| Ready | 9 |
+| Ready | 7 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 877 |
+| Done | 879 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -167,7 +167,7 @@
 | [US1127](US1127-the-meter-recognises-a-codex-cli-run-and.md) | The meter recognises a Codex CLI run and reads its token actual from the Codex store | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1128](US1128-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage it prints | Done | EP0299 | 2026-11-06 | 2026-11-06 |
 | [US1129](US1129-cut-agents-md-to-7-000-chars-and.md) | Cut AGENTS.md to 7,000 chars and gate the always-loaded files by size | Done | EP0300 | 2026-11-06 | 2026-11-06 |
-| [US1130](US1130-trim-the-shipped-agent-instructions-template-to-5.md) | Trim the shipped agent-instructions template to 5,000 chars and name the start context a delivery session pays | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1130](US1130-trim-the-shipped-agent-instructions-template-to-5.md) | Trim the shipped agent-instructions template to 5,000 chars and name the start context a delivery session pays | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1131](US1131-ship-sdlc-builder-and-sdlc-reviewer-agent-definitions.md) | Ship sdlc-builder and sdlc-reviewer agent definitions and draft them into each project's .claude/agents | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1132](US1132-spawn-lanes-and-reviews-with-the-lean-definitions.md) | Spawn lanes and reviews with the lean definitions and carry the builder traps in the lane brief | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1133](US1133-write-the-refs-and-mentions-trailers-the-commit.md) | Write the Refs and Mentions trailers the commit-msg hook now refuses for | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
@@ -178,7 +178,7 @@
 | [US1138](US1138-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.3 ships | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 | [US1139](US1139-v6-3-0-is-cut-version-changelog-known.md) | v6.3.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 | [US1140](US1140-the-run-s-next-action-and-a-resume.md) | The run's next action and a resume brief of at most 8k tokens are derived from disk alone | Done | EP0302 | 2026-11-09 | 2026-11-09 |
-| [US1141](US1141-the-sprint-hands-off-to-a-resume-brief.md) | The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action | Ready | EP0302 | 2026-11-09 | 2026-11-09 |
+| [US1141](US1141-the-sprint-hands-off-to-a-resume-brief.md) | The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action | Done | EP0302 | 2026-11-09 | 2026-11-09 |
 | [US1142](US1142-the-sprint-reference-defines-a-wave-boundary-and.md) | The sprint reference defines a wave boundary and runs the close in its own fresh session | Ready | EP0302 | 2026-11-09 | 2026-11-09 |
 | [US1143](US1143-a-run-on-an-xai-grok-or-cursor.md) | A run on an xAI Grok or Cursor Composer model reads a dollar cost from dated provider prices, not "not priced" | Done | EP0303 | 2026-11-09 | 2026-11-09 |
 | [US1144](US1144-a-copilot-run-on-token-billing-is-priced.md) | A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit | Ready | EP0304 | 2026-11-09 | 2026-11-09 |

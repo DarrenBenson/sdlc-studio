@@ -15,7 +15,7 @@ Decomposed from CR0670. Delivers the work CR0670 requested.
 ## Story Breakdown
 
 - [x] [US1140: The run's next action and a resume brief of at most 8k tokens are derived from disk alone](../stories/US1140-the-run-s-next-action-and-a-resume.md)
-- [ ] [US1141: The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action](../stories/US1141-the-sprint-hands-off-to-a-resume-brief.md)
+- [x] [US1141: The sprint hands off to a resume brief and resumes from it in a fresh session at the same next action](../stories/US1141-the-sprint-hands-off-to-a-resume-brief.md)
 - [ ] [US1142: The sprint reference defines a wave boundary and runs the close in its own fresh session](../stories/US1142-the-sprint-reference-defines-a-wave-boundary-and.md)
 
 ## Acceptance Criteria (Epic Level)
