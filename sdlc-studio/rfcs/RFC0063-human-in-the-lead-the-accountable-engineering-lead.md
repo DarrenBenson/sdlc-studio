@@ -1,6 +1,7 @@
 # RFC-0063: Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read
 
 > **Status:** Draft
+> **Decomposed-into:** CR0689
 > **Priority:** High
 > **Size:** XL
 > **Author:** Darren Benson (operator); drafted with Claude Opus 5.5

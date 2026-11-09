@@ -26,7 +26,8 @@ Decomposed from CR0609. Delivers the work CR0609 requested.
 - [ ] The fingerprint algorithm is stated canonically enough that a consumer can recompute it, and a test recomputes it from the annex text against a filed report
 - [ ] An `evidence_schema` version is stamped where a consumer can read it without running the skill
 - [ ] A conformance test fails when an emitted report, run record or lessons line drifts from the annex
-- [ ] The annex states a compatibility policy: an added field is minor, a removed or renamed one is major and carries a migration note
+- [ ] The annex states when the `evidence_schema` version changes: an added field raises the minor version, and any field renamed or removed means a new major version, which carries a migration note (D0441)
+- [ ] A reader must refuse an `evidence_schema` major version it does not know, naming the version it read and the major versions it knows, rather than read the record as a known one: the annex states this rule, the skill's own readers follow it, and a test stamps a report with an unknown major version and sees the refusal
 
 > Carried from the request. Author each story's own ACs against its
 > slice while grooming - these are the epic's completion bar, not any
@@ -37,3 +38,4 @@ Decomposed from CR0609. Delivers the work CR0609 requested.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-09 | Claude Opus 5.5 (operator instruction) | The compatibility criterion states when the schema version changes (any field renamed or removed is a new major version), and a new criterion requires a reader to refuse a major version it does not know (RFC0063 D10, D0441) |

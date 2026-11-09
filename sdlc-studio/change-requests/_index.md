@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 31 |
+| Proposed | 32 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 538 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **688** |
+| **Total** | **689** |
 
 ## All Changes
 
@@ -100,6 +100,7 @@
 | [CR-0686](CR0686-carry-the-hand-back-contract-in-a-project.md) | Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats | Proposed | Low | Improvement | 2026-11-06 | -- |
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
 | [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
+| [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | Proposed | High | Enhancement | 2026-11-09 | -- |
 
 ## Archived Releases
 

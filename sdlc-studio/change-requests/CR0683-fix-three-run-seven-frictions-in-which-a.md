@@ -24,7 +24,7 @@ Each costs an orchestrator or builder hand-fix per unit or per filing; F2 lands 
 
 - [ ] `lane land` validates the hand-in's self-check claims before it commits and refuses with the offending label, leaving no commit, and the lane brief names one label for a fragment claim; a fixture with US1122's CHANGELOG labels is refused before any commit.
 - [ ] `verify_ac run` in a lane worktree changes no file outside the unit's Affects: after a fixture run, `git status --porcelain` lists nothing outside them.
-- [ ] `file_finding --parent <RFC>` updates the parent's spawned-work cell in the same write, so `reconcile --dry-run` reports no drift after filing.
+- [ ] `file_finding --parent <RFC>` and `artifact.py new --parent <RFC>` each update the parent's spawned-work cell in the same write, so `reconcile --dry-run` reports no drift after filing.
 
 ## Recommendation
 
@@ -35,3 +35,4 @@ Move lane land's self-check validation ahead of the commit and give the brief on
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Raised |
+| 2026-11-09 | Claude Opus 5.5 | AC3 names `artifact.py new --parent` too: filing CR0689 under RFC0063 left the spawned-work cell unsynced and the commit refused on reconcile drift |
