@@ -230,17 +230,41 @@ class PriceTableTests(unittest.TestCase):
         self.assertEqual(int(row.group(1)), prices.DEFAULT_STALE_AFTER_DAYS)
 
 
+#: US1143. xAI's own price page for Grok and Cursor's for Composer.
+XAI_PAGE = "https://docs.x.ai/developers/pricing"
+CURSOR_PAGE = "https://cursor.com/docs/models-and-pricing"
 #: US1135. Each non-Claude provider's own published price page, by the prefix of the model ids it
 #: prices: OpenAI's for the models behind Codex CLI, OpenCode's for its Zen (Console) models,
 #: which the OpenCode reader names `opencode/<model>`. GitHub's prices Copilot premium requests.
+#: US1143 adds xAI's for Grok, under the Cursor slug and the OpenCode `xai/<model>` id, and
+#: Cursor's for Composer.
 PROVIDER_PAGES = (("gpt-", "https://developers.openai.com/api/docs/pricing"),
-                  ("opencode/", "https://opencode.ai/docs/"))
+                  ("opencode/", "https://opencode.ai/docs/"),
+                  ("grok-", XAI_PAGE), ("xai/grok-", XAI_PAGE), ("composer-", CURSOR_PAGE))
 COPILOT_PAGE = "https://docs.github.com/en/copilot/"
 READ_ON = re.compile(r"\bread (\d{4}-\d{2}-\d{2})\b")
 #: The free model of OpenCode's captured session (`fixtures/harness_usage/opencode.jsonl`), as
 #: the OpenCode reader names it, and a paid OpenCode model the table does not list.
 FREE = "opencode/deepseek-v4.1-flash-free"
 OPENCODE_UNLISTED = "opencode/deepseek-v4.1-flash"
+FIXTURES = SCRIPTS / "tests" / "fixtures" / "harness_usage"
+#: US1143. The id each harness's reading carries for a Grok or Composer model: Cursor CLI prints
+#: no model, so its reading carries the `--model` slug `sprint lane run --harness cursor` passes;
+#: OpenCode's carries its `<provider>/<model>` id. Any other form is an id no reading carries.
+GROK_OR_COMPOSER = re.compile(r"grok|composer", re.I)
+CURSOR_SLUG = re.compile(r"^(?:grok|composer)-[\w.-]+$")
+OPENCODE_XAI = re.compile(r"^xai/grok-[\w.-]+$")
+#: Each Grok and Composer entry's (input, cache_read, output) US dollars per million, typed from
+#: xAI's and Cursor's pages as read on 2026-11-09, so a changed rate fails here.
+GROK_COMPOSER_RATES = {
+    "grok-4.7": (2.0, 0.5, 6.0), "grok-4.6": (2.0, 0.5, 6.0), "grok-4.5": (2.0, 0.3, 6.0),
+    "xai/grok-4.7": (2.0, 0.5, 6.0), "xai/grok-4.6": (2.0, 0.5, 6.0),
+    "xai/grok-4.5": (2.0, 0.3, 6.0), "composer-2.5": (0.5, 0.2, 2.5)}
+#: Cursor's first captured reading (9,046 input, 6,016 cached, 31 output) priced by hand.
+CURSOR_READING_USD = {"grok-4.7": (9_046 * 2.0 + 6_016 * 0.5 + 31 * 6.0) / 1e6,
+                      "composer-2.5": (9_046 * 0.5 + 6_016 * 0.2 + 31 * 2.5) / 1e6}
+#: An unlisted id beside its listed sibling: each Fast variant bills at its own rate.
+UNLISTED_SIBLINGS = (("grok-4.7-fast", "grok-4.7"), ("composer-2.5-fast", "composer-2.5"))
 
 
 class NonClaudePriceTests(unittest.TestCase):
@@ -319,6 +343,113 @@ class NonClaudePriceTests(unittest.TestCase):
                 with self.subTest(model=entry["model"]):
                     self.assertTrue(entry["model"].endswith("-free"), entry["model"])
                     self.assertIn("free", entry.get("note", "").lower())
+
+    # --- US1143 ------------------------------------------------------------------------------
+    def _grok_and_composer(self) -> list[dict]:
+        return [e for e in self.doc["models"] if GROK_OR_COMPOSER.search(e["model"])]
+
+    def _captures(self) -> dict[str, str]:
+        cursor = json.loads((FIXTURES / "cursor.json").read_text(encoding="utf-8"))
+        return {"cursor": cursor["captures"][0]["stdout"],
+                "opencode": (FIXTURES / "opencode.jsonl").read_text(encoding="utf-8")}
+
+    def test_every_grok_and_composer_price_names_its_provider_page_and_the_day_read(self) -> None:
+        """US1143 AC1. MUTANTS: a Grok or Composer entry dropped; one sourced from another
+        provider's page or a reseller's, or undated; one under an id no reading carries (such as
+        `opencode/grok-4.7`); a cache-write slot at a rate the provider does not bill it at."""
+        lanes = __import__("lib.lanes", fromlist=["headless_command"])
+        harness_usage = __import__("lib.harness_usage", fromlist=["parse"])
+        captures = self._captures()
+        entries = self._grok_and_composer()
+        ids = [e["model"] for e in entries]
+        for prefix in ("grok-", "xai/grok-", "composer-"):
+            self.assertTrue(any(i.startswith(prefix) for i in ids), f"premise: a {prefix} entry")
+        with tempfile.TemporaryDirectory() as tmp:
+            for entry in entries:
+                model = entry["model"]
+                with self.subTest(model=model):
+                    harness, flag = (("cursor", "--model") if CURSOR_SLUG.match(model) else
+                                     ("opencode", "-m") if OPENCODE_XAI.match(model) else
+                                     (None, None))
+                    self.assertIsNotNone(harness, f"{model!r} is no id a harness's reading carries")
+                    argv = lanes.headless_command(harness, "brief", model, Path(tmp))
+                    self.assertEqual(model, argv[argv.index(flag) + 1])
+                    reading = harness_usage.parse(harness, captures[harness], model=model)
+                    self.assertEqual((model, "caller"), (reading.model, reading.model_source))
+                    self._sourced(entry, CURSOR_PAGE if "composer" in model else XAI_PAGE)
+                    # Neither page prices a cache write: a written token is billed as input.
+                    self.assertEqual((entry["input"],) * 2,
+                                     (entry["cache_write_5m"], entry["cache_write_1h"]))
+                    self.assertIn("cache-write", entry.get("note", ""))
+
+    def test_a_recorded_grok_and_composer_reading_is_priced_in_dollars(self) -> None:
+        """US1143 AC2. MUTANTS: an entry's rate changed or another model's; the reading read as
+        not priced or at $0; a component dropped from the sum."""
+        harness_usage = __import__("lib.harness_usage", fromlist=["parse"])
+        captures = self._captures()
+        self.assertEqual(set(GROK_COMPOSER_RATES), {e["model"] for e in self._grok_and_composer()},
+                         "every Grok and Composer entry has its rates typed here")
+        for model, (inp, cached, out) in GROK_COMPOSER_RATES.items():
+            harness = "opencode" if model.startswith("xai/") else "cursor"
+            with self.subTest(model=model):
+                r = harness_usage.parse(harness, captures[harness], model=model)
+                components = {"input": r.input, "cache_read": r.cache_read, "output": r.output,
+                              "cache_write_5m": r.cache_write or 0,
+                              "cache_write_1h": r.cache_write_1h or 0}
+                self.assertTrue(r.input and r.cache_read and r.output, "premise: three components")
+                writes = components["cache_write_5m"] + components["cache_write_1h"]
+                expected = (r.input * inp + r.cache_read * cached + r.output * out
+                            + writes * inp) / 1_000_000
+                got = prices.cost(r.model, components, self.table)
+                self.assertIsNone(got.unpriced)
+                self.assertGreater(got.usd, 0)
+                self.assertTrue(math.isclose(got.usd, expected, rel_tol=1e-12),
+                                f"{got.usd!r} != {expected!r}")
+                if model in CURSOR_READING_USD:
+                    self.assertTrue(math.isclose(got.usd, CURSOR_READING_USD[model],
+                                                 rel_tol=1e-12))
+
+    def test_an_unlisted_grok_or_composer_id_is_not_priced_beside_a_listed_one(self) -> None:
+        """US1143 AC3. MUTANTS: an unlisted id priced by prefix or nearest name at its listed
+        sibling's rate, or read as free. The control: the listed sibling is priced."""
+        million = {"input": 1_000_000, "output": 0, "cache_read": 0, "cache_write_5m": 0,
+                   "cache_write_1h": 0}
+        by_model = {}
+        for unlisted, listed in UNLISTED_SIBLINGS:
+            with self.subTest(unlisted=unlisted):
+                self.assertTrue(unlisted.startswith(listed), "premise: a listed id plus a suffix")
+                control = prices.cost(listed, million, self.table)
+                self.assertEqual((GROK_COMPOSER_RATES[listed][0], None),
+                                 (control.usd, control.unpriced))
+                got = prices.cost(unlisted, million, self.table)
+                self.assertIsNone(got.usd)
+                self.assertIn(unlisted, got.unpriced or "")
+            by_model[listed] = dict(million, input=2_000)
+            by_model[unlisted] = dict(million, input=1_000)
+        run = run_state.usd(by_model, self.table)
+        self.assertEqual(sorted(u for u, _ in UNLISTED_SIBLINGS),
+                         sorted(u["model"] for u in run["unpriced"]))
+        for row in run["unpriced"]:
+            self.assertTrue(math.isclose(row["share"], 1 / 6), row)
+        self.assertEqual(sorted(s for _, s in UNLISTED_SIBLINGS),
+                         sorted(m["model"] for m in run["models"]))
+        self.assertTrue(math.isclose(run["usd"], 2_000 * (2.0 + 0.5) / 1e6, rel_tol=1e-12))
+        self.assertTrue(math.isclose(run["covered"], 2 / 3))
+
+    def test_the_configuration_reference_names_the_grok_and_composer_sources(self) -> None:
+        """US1143 AC4. MUTANTS: xAI's or Cursor's page, or either harness's id form, dropped from
+        the reference or the table's `about`. The control: OpenAI's and OpenCode's still named."""
+        text = REF_CONFIG.read_text(encoding="utf-8")
+        section = text.split("## Model Prices {#pricing}", 1)[1].split("\n## ", 1)[0]
+        for where, prose in (("reference-config.md#pricing", section),
+                             ("the table's about", self.doc["about"])):
+            sentence = next((s for s in re.split(r"(?<=[.;])\s+", prose) if "OpenAI's" in s), "")
+            for needed in ("OpenAI's", "OpenCode's", "xAI's", "Cursor's"):
+                with self.subTest(where=where, needed=needed):
+                    self.assertIn(needed, sentence, "the sentence naming the non-Claude sources")
+            for needed in ("--model", "<provider>/<model>", "xai/", "Grok", "Composer"):
+                with self.subTest(where=where, needed=needed):
+                    self.assertIn(needed, prose)
 
 
 if __name__ == "__main__":
