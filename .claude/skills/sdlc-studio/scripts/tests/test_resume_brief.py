@@ -23,7 +23,8 @@ import critic  # noqa: E402
 import file_finding  # noqa: E402
 import sprint_report  # noqa: E402
 from lib import resume_brief, sdlc_md  # noqa: E402
-from tests import quiet  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for quiet
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 RUN = "RUN-01TESTRUN"
 #: Every lane in these fixtures was briefed at this moment, so a QA brief written as the fixture
