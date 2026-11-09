@@ -283,15 +283,28 @@ def _ruling(value) -> str:
     return str(value)
 
 
-def _findings(root: Path, run_id: str) -> list[str]:
-    """Each open bug or CR whose `Raised-in-batch` stamp names the run."""
-    named = re.compile(rf"(?<![\w-]){re.escape(run_id)}(?![\w-])")
+def _findings(root: Path, state: dict) -> list[str]:
+    """Each open bug or CR raised in the run: one `sprint_report` places in the run by the moment
+    its `Raised-in-batch` stamp records, or one whose stamp names the run.
+
+    `file_finding` names the run only when the close files for it; a finding filed while the run
+    is open is stamped `none open - raised outside a delivery batch, <moment>`, so the moment is
+    what makes it the run's. It is read through the report's own placement, never a second parser
+    of the stamp, so the brief places a finding by its moment exactly as the report does. With no
+    recorded start nothing can be placed by its moment, and the list says so rather than none."""
+    import sprint_report  # noqa: PLC0415 - sibling script that owns finding placement
+    run_id = str(state["run_id"])
     out = []
     with sdlc_md.corpus_cache():
+        placed, _ = sprint_report._open_findings(root, state)  # noqa: SLF001 - ONE placement
+        by_moment = set(placed or ())
         for type_ in ("bug", "cr"):
             for path, text in sdlc_md.iter_artifact_files(type_, root):
                 text = text if text is not None else sdlc_md.read_text_safe(path)
-                if not named.search(sdlc_md.extract_field(text, "Raised-in-batch") or ""):
+                uid = sdlc_md.norm_id(sdlc_md.extract_record_id(path.stem) or "")
+                stamp = sdlc_md.extract_field(text, "Raised-in-batch") or ""
+                if uid not in by_moment and run_id not in sprint_report._STAMP_RUN_RE.findall(
+                        stamp):  # noqa: SLF001 - the report's grammar for a run id in a stamp
                     continue
                 raw = sdlc_md.extract_field(text, "Status") or ""
                 status = sdlc_md.canonical_status(raw, sdlc_md.status_vocab(type_, root)) or raw
@@ -299,6 +312,9 @@ def _findings(root: Path, run_id: str) -> list[str]:
                     continue
                 rid = sdlc_md.extract_record_id(path.stem) or path.stem
                 out.append(f"{sdlc_md.extract_h1_title(text) or rid} ({status})")
+    if placed is None:
+        out.append("findings filed during the run cannot be placed in it: the run state records "
+                   "no start time, so this list may be incomplete")
     return out
 
 
@@ -334,7 +350,7 @@ def build(root: Path | str, agents: dict | None = None, issues: list | None = No
     lines += ["", "## Pending", "", *(pending or ["- none"])]
     rulings = [f"- {_ruling(v)}" for v in state.get("rulings") or []]
     lines += ["", "## Rulings", "", *(rulings or ["- none"])]
-    known = [f"- {i}" for i in issues or []] + [f"- {f}" for f in _findings(root, run_id)]
+    known = [f"- {i}" for i in issues or []] + [f"- {f}" for f in _findings(root, state)]
     lines += ["", "## Known issues", "", *(known or ["- none"])]
     text = "\n".join(lines) + "\n"
     estimate = estimate_tokens(text)

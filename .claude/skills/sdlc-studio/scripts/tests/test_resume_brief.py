@@ -9,16 +9,21 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import critic  # noqa: E402
+import file_finding  # noqa: E402
+import sprint_report  # noqa: E402
 from lib import resume_brief, sdlc_md  # noqa: E402
+from tests import quiet  # noqa: E402
 
 RUN = "RUN-01TESTRUN"
 #: Every lane in these fixtures was briefed at this moment, so a QA brief written as the fixture
@@ -26,6 +31,13 @@ RUN = "RUN-01TESTRUN"
 STARTED = "2026-01-01T00:00:00Z"
 STARTED_EPOCH = 1767225600  # STARTED as seconds since the epoch
 BEFORE_STARTED = STARTED_EPOCH - 86400
+#: The `Raised-in-batch` stamp `file_finding` writes on a finding filed while a run is open: the
+#: absence of a batch, then the moment of filing as its last token. A run's own close is the only
+#: writer that names the run (`<run id> close, <moment>`). `KnownIssuesTests` pins MID_RUN against
+#: a real filing, so no fixture here carries a stamp no tool writes.
+MID_RUN = "none open - raised outside a delivery batch, {}"
+#: Before the fixture run's start.
+PRE_RUN = "2025-12-31T23:59:59Z"
 DIRS = {"US": "stories", "BG": "bugs", "CR": "change-requests"}
 TERMINAL = {"US": "Done", "BG": "Fixed", "CR": "Complete"}
 OPEN = {"US": "Ready", "BG": "Open", "CR": "Approved"}
@@ -41,7 +53,8 @@ class Tree:
         self.root = Path(tmp)
         self.local = self.root / "sdlc-studio" / ".local"
         self.local.mkdir(parents=True)
-        self.state = {"schema": 1, "run_id": RUN, "outcome": "running", "goal": "done",
+        self.state = {"schema": 1, "run_id": RUN, "started_at": STARTED, "outcome": "running",
+                      "goal": "done",
                       "batch": list(batch), "sprint_goal": goal, "rulings": list(rulings),
                       "lanes_in_flight": [], "plan": "sdlc-studio/.local/sprint-plan.json"}
         plan = {"waves": [list(w) for w in (waves or [batch])]}
@@ -268,14 +281,16 @@ class ResumeBriefTests(unittest.TestCase):
         t.fly("BG0006")
         t.land("BG0006")
         t.verdict("BG0006", "REJECT")
-        # findings raised in this run, in another run, and in this run but already closed
+        # findings raised in this run, in another run, and in this run but already closed; the
+        # other run's close stamped its finding at that run's end, before this one opened
         t.artefact("BG0099", "Open", "Gate host times out",
                    f"> **Raised-in-batch:** {RUN} close, 2026-01-03T00:00:00Z")
         t.artefact("CR0096", "Approved", "Name the agent in the brief",
-                   f"> **Raised-in-batch:** {RUN}")
-        t.artefact("BG0098", "Fixed", "Already fixed", f"> **Raised-in-batch:** {RUN}")
+                   f"> **Raised-in-batch:** {MID_RUN.format('2026-01-02T09:30:00Z')}")
+        t.artefact("BG0098", "Fixed", "Already fixed",
+                   f"> **Raised-in-batch:** {MID_RUN.format('2026-01-02T10:00:00Z')}")
         t.artefact("CR0097", "Approved", "Another run's finding",
-                   "> **Raised-in-batch:** RUN-01OTHERRN close, 2026-01-03T00:00:00Z")
+                   "> **Raised-in-batch:** RUN-01OTHERRN close, 2025-12-31T23:00:00Z")
 
         text = resume_brief.build(t.root, agents={"US0002": "agent-a2e3b739"},
                                   issues=["the push gate is red on main"])
@@ -394,6 +409,84 @@ class ResumeBriefTests(unittest.TestCase):
         self.assertEqual(len(twice.splitlines()), len(text.splitlines()) + 1)
         self.assertEqual(resume_brief.parse(twice)["units"],
                          {"US01M6XQJF": "terminal", "US0002": "terminal", "US0003": "unbriefed"})
+
+
+class KnownIssuesTests(unittest.TestCase):
+    """BG1312: a finding filed while the run is open is the run's by the moment its stamp records,
+    placed by the reader `sprint_report` places it with, as well as by a stamp naming the run."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.t = Tree(self._tmp.name, ["US0001"])
+        file_finding.ensure_index(self.t.root, "bug", "2026-01-02")
+
+    def file(self, title: str, status: str | None = None,
+             moment: str | None = None) -> tuple[str, Path]:
+        """File a bug through `file_finding` while the run is open, as a session does mid-run.
+        `moment` re-dates the stamp it wrote, keeping its shape; `status` closes the bug."""
+        with quiet.diagnostics():
+            res = file_finding.file_finding(
+                self.t.root, "bug", title,
+                {"summary": "s", "severity": "Medium", "steps": "s", "fix": "f",
+                 "acs": ["Given x, then y"], "affects": "lib/x.py, tests/test_x.py",
+                 "points": "1"}, counted=False)
+        path = Path(res["path"])
+        text = path.read_text(encoding="utf-8")
+        stamp = sdlc_md.extract_field(text, "Raised-in-batch")
+        if moment:
+            text = text.replace(stamp, MID_RUN.format(moment))
+        if status:
+            text = text.replace("> **Status:** Open", f"> **Status:** {status}")
+        path.write_text(text, encoding="utf-8")
+        return res["id"], path
+
+    def known(self) -> str:
+        return resume_brief.build(self.t.root).split("## Known issues", 1)[1]
+
+    def test_a_finding_filed_mid_run_is_listed_by_its_moment(self):
+        uid, path = self.file("Gate host times out mid-run")
+        stamp = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Raised-in-batch")
+        self.assertNotIn(RUN, stamp)   # nothing but the moment places it in the run
+        known = self.known()
+        self.assertIn(f"{uid}: Gate host times out mid-run (Open)", known)
+        self.assertNotIn("- none", known)
+        # with no recorded start the moment can place nothing, and the section says so
+        del self.t.state["started_at"]
+        self.t.save()
+        known = self.known()
+        self.assertNotIn("- none", known)
+        self.assertIn("no start time", known)
+
+    def test_pre_run_and_closed_findings_are_left_out_and_a_run_stamp_still_matches(self):
+        mid, _ = self.file("Filed inside the run")
+        before, _ = self.file("Filed before the run opened", moment=PRE_RUN)
+        fixed, _ = self.file("Filed inside the run and already fixed", status="Fixed")
+        # the close's stamp names the run, which makes the finding the run's whatever its moment
+        self.t.artefact("CR0096", "Approved", "The run's graduation CR",
+                        f"> **Raised-in-batch:** {RUN} close, {PRE_RUN}")
+        known = self.known()
+        self.assertIn(f"{mid}: Filed inside the run (Open)", known)
+        self.assertNotIn(before, known)
+        self.assertNotIn(fixed, known)
+        self.assertIn("CR0096: The run's graduation CR (Approved)", known)
+
+    def test_the_moment_is_read_through_the_report_helper(self):
+        uid, path = self.file("Filed inside the run")
+        stamp = sdlc_md.extract_field(path.read_text(encoding="utf-8"), "Raised-in-batch")
+        moment = stamp.rsplit(", ", 1)[-1]
+        # the fixtures' stamp is the one `file_finding` writes mid-run, to the character
+        self.assertEqual(stamp, MID_RUN.format(moment))
+        self.assertIsNotNone(sdlc_md.parse_iso8601(moment))
+        self.assertIn(uid, self.known())
+        # the brief reads the moment the way the report does: re-read it and the brief follows
+        with mock.patch.object(sprint_report, "_stamp_timestamp", return_value=PRE_RUN) as read:
+            self.assertNotIn(uid, self.known())
+        self.assertIn(stamp, [c.args[0] for c in read.call_args_list])
+        # and holds no stamp parser of its own
+        source = Path(resume_brief.__file__).read_text(encoding="utf-8")
+        self.assertNotRegex(source, r"\\d\{[24]\}")
+        self.assertNotIn("re.", inspect.getsource(resume_brief._findings))  # noqa: SLF001
 
 
 if __name__ == "__main__":
