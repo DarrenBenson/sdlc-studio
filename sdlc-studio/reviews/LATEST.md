@@ -1,11 +1,16 @@
 <!-- close-status:begin -->
-> **RUN-01M7061X closed running.** 19 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M7061X closed goal-reached.** 19 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
+
+Signed on 2026-11-10 over RPT0028 (fingerprint 15154fd97f127085). The operator was remote and said
+"I am remote, I authorise you to sign for me", so the orchestrator entered
+`sprint sign --principal "Darren Benson"` on that instruction.
+
 > **RUN-01M7061X, run nine and the first 6.4 run.** Goal: "Abena Osei becomes Primary, Copilot,
 > Grok and Composer runs are priced, and waves resume from a short brief." Planned at 18 units and
-> 53 points (D0446); delivered 17 units, 49 points (44 counting US0986 and BG1205 once), each on an
-> independent QA APPROVE. A declared maintenance run (D0445): by theme 3 points machinery (6%); by
+> 53 points (D0446); delivered 19 units, 51 points (15 of the plan's units for 45 points, and 4
+> added mid-run for 6), each on an independent APPROVE. A declared maintenance run (D0445): by theme 3 points machinery (6%); by
 > path loop machinery 32 points (65%), cost metering 5 (10%), other 12 (24%).
 
 ## What landed
