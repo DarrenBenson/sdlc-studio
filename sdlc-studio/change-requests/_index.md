@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-09
+**Last Updated:** 2026-11-10
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 29 |
+| Proposed | 33 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 542 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **690** |
+| **Total** | **694** |
 
 ## All Changes
 
@@ -102,6 +102,10 @@
 | [CR-0688](CR0688-lessons-py-has-no-command-to-rebuild-a.md) | `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run | Proposed | Low | Enhancement | 2026-11-09 | -- |
 | [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | In Progress | High | Enhancement | 2026-11-09 | EP0305 |
 | [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Complete | High | Enhancement | 2026-11-09 | EP0303 |
+| [CR-0691](CR0691-the-engineering-seat-s-brief-carries-reliability-and.md) | The engineering seat's brief carries reliability and observability checks drawn from the TRD | Proposed | Medium | enhancement | 2026-11-10 | -- |
+| [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | Proposed | High | feature | 2026-11-10 | -- |
+| [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Proposed | High | feature | 2026-11-10 | -- |
+| [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | Proposed | High | enhancement | 2026-11-10 | -- |
 
 ## Archived Releases
 

@@ -1,7 +1,7 @@
 # RFC-0063: Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read
 
 > **Status:** Draft
-> **Decomposed-into:** CR0689, CR0690
+> **Decomposed-into:** CR0689, CR0690, CR0691, CR0692, CR0693, CR0694
 > **Priority:** High
 > **Size:** XL
 > **Author:** Darren Benson (operator); drafted with Claude Opus 5.5
@@ -10,7 +10,7 @@
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Darren Benson (operator), drafted with Claude Opus 5.5; human; v1
 > **Spans:** sdlc-studio (personas, PRD, docs, sprint and report scripts) + the companion dashboard (a consuming project; read side only)
-> **Related:** RFC0060, RFC0061, RFC0062, EP0275, EP0276, EP0280, EP0281, EP0287, EP0300, CR0621, CR0629, CR0670, CR0672, CR0680, CR0685; the companion dashboard's RFC-01M46B5Y
+> **Related:** RFC0060, RFC0061, RFC0062, RFC0064, EP0275, EP0276, EP0280, EP0281, EP0287, EP0300, CR0621, CR0629, CR0670, CR0672, CR0680, CR0685; the companion dashboard's RFC-01M46B5Y
 > **Supersedes / Superseded by:** none
 
 ## Summary
@@ -28,7 +28,7 @@ Every decision of direction below was taken by the operator on 2026-11-09. What 
 - **The ratchet is coming back.** A rough count of the 832 stories and bugs created since 2026-09-23, bucketed by their `Affects` paths, puts about 44% on sprint, review and gate machinery, 16% on repository-only tooling and 1% on public docs. Since 2026-10-20 repository-only tooling is 22% of new units, and Rowan Achterberg is named on 16 of 53 new stories. Of the 59 open change requests, 29 are machinery, 8 repository-only tooling and 2 adoption. The back-to-basics review (2026-09-23) found 82% of the last 116 v5 units on machinery; O5 says a check that catches nothing is deleted, but nothing measures the mix as it builds up.
 - **The front door is written for no one in particular.** The README is 5,209 words for five audiences and leads with "the antidote to vibe coding". The website's evidence page stops at RPT0011 (2026-09-29) with no dollars, while 25 signed reports exist and RPT0027 states $2.89 a point. 6 of the last 7 runs (RPT0021 to RPT0027) were judged partial, and the page shows none of them. SUPPORT.md still installs by copying into Claude Code only.
 - **The words disagree with the practice.** In the skill, "Three Amigos" names the agent seats (Dani, Sam, Lena). In the operator's practice it names the three people who each own one specification (product owner the PRD, engineer the TRD, QA the TSD) and to whom the seats report. The website's Three Amigos page never assigns a specification to a human.
-- **What the analyst probed, and what is missing.** Asked how a model choice is justified ("based on what data?"), the honest answer today is per-run cost and an opt-in tier map, with no comparison across runs. Asked how the system learns, the answer is retros and failure classes, but a production escape is not traced back to the unit and verdict that let it through (the analyst cited a case where feeding root-cause reports back cut defect escapes by 31%). Asked who owns AI-generated artefacts, the skill has no field that names the accountable human.
+- **What the analyst probed, and what is missing.** Asked how a model choice is justified ("based on what data?"), the honest answer today is per-run cost and an opt-in tier map, with no comparison across runs. Asked how the system learns, the answer is retros and failure classes, but a production escape is not traced back to the unit and verdict that let it through (the analyst cited a case that reported a 31% lower change failure rate after moving to agent-driven delivery, credited to reliability, observability and review agents informed by production incident history together, not to any one of them). Asked who owns AI-generated artefacts, the skill has no field that names the accountable human.
 - **The human view is a separate product, and it has fallen behind.** The companion dashboard, a consuming project, is a read-only view over the committed `sdlc-studio/` files. Its last commit is 2026-10-06, its workspace is on skill 6.1, and its 13 change requests are unstarted. Its observability gap analysis (RV0003) raised CR0609 and CR0610 here, now EP0275 and EP0276.
 - **The models the operator recommends cannot be priced.** `templates/model-prices.json` holds no xAI Grok or Cursor Composer entry, so a run on the recommended delivery model reads "not priced".
 
@@ -144,9 +144,9 @@ O1 to O9 stay; their persona citations are re-pointed if D2 renumbers a card's E
 | WS1 | Persona registry and PRD: the new Primary (D2), the change approver (D3), Maya Secondary, Trevor narrowed; PRD Mission, Target Users and Outcomes O10 to O13 (D4) | sdlc-studio | CR (new) | - |
 | WS2 | Role model and vocabulary: the Three Amigos are the people, seats are the agent personas; an owner field naming the accountable human on the PRD, TRD and TSD | sdlc-studio | CR (new) | WS1 |
 | WS3 | The front door: README cut to about 1,500 words with three routes in (evaluate, try, upgrade); SUPPORT.md current and honest about support; the evidence page generated from the reports with partial verdicts and waiting time explained; a page for engineering leaders (change approval, separation of duties, the signed report, cost); the white paper refreshed with 6.3 cost data; release notes led by plain-English bullets; a guide to running the discovery track beside delivery | sdlc-studio | CR (new) | WS1; WS2 for the role-model wording |
-| WS4 | Evidence that stands up: EP0280, EP0276, EP0275 in 6.4; then EP0281 and a change evidence pack per release | sdlc-studio | Existing epics; CR (new) for the evidence pack | - |
+| WS4 | Evidence that stands up: EP0280, EP0276, EP0275 in 6.4; then EP0281 and a change evidence pack per release | sdlc-studio | Existing epics; CR0692 for the evidence pack | RFC0064 D4, D5 (CR0692 only) |
 | WS5 | Cost you can predict: RFC0062 with CR0670 and EP0300; CR0685; xAI Grok and Cursor Composer pricing; then CR0672, CR0680 and a monthly team budget view | sdlc-studio | Existing CRs and epics; CR (new) for pricing; CR (new) for the budget view | - |
-| WS6 | Learning that compounds: EP0287 (CR0632, CR0633); then an escape loop (O12) and a model scorecard per seat and model from signed runs (rounds, rejections upheld, escapes, dollars a point) | sdlc-studio | Existing epic; CR (new) each for the escape loop and the scorecard | WS4 (EP0280) |
+| WS6 | Learning that compounds: EP0287 (CR0632, CR0633); then an escape loop (O12) and a model scorecard per seat and model from signed runs (rounds, rejections upheld, escapes, dollars a point) | sdlc-studio | Existing epic; CR0693 for the escape loop; CR (new) for the scorecard | WS4 (EP0280); RFC0064 D1 (CR0693) |
 | WS7 | Machinery guardrail: points by area in the plan and on the report; a recorded maintenance declaration over the cap (one third of the run's points); gate yield reviewed at each retro (O5) | sdlc-studio | CR (new) | D8, D9 |
 | WS8 | The dashboard contract: the evidence annex and the committed report as the versioned record the dashboard reads; the dashboard upgrades its workspace and builds its views against it | sdlc-studio + the companion dashboard | EP0275, EP0276 here; the dashboard's existing change requests there | WS4 |
 
@@ -171,6 +171,7 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 | RFC | RFC0060 | the dark factory | Accepted | sibling: where the line stops for a human |
 | RFC | RFC0061 | Personas become accountable team members | Accepted | sibling: seat scoring that WS6 extends |
 | RFC | RFC0062 | Token-efficient delivery | Draft | workstream WS5 |
+| RFC | RFC0064 | Production learning and risk-proportionate review | Draft | sibling: decides the incident record (D1) and the risk class (D4, D5) that WS4's evidence pack and WS6's escape loop wait on |
 | EP | EP0275 | A versioned evidence annex | Draft | workstreams WS4, WS8 |
 | EP | EP0276 | The report of record is reviewable from the committed tree | Draft | workstreams WS4, WS8 |
 | EP | EP0280 | A recorded review verdict is what the reviewer wrote | Draft | workstream WS4 |
@@ -197,3 +198,4 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D9 - Decided by the operator (D0439): a per-unit area tag set at refine, with a path map flagging a tag that disagrees with the files touched |
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D8 - Decided by the operator (D0440): report and declare; the plan and report show points by area, and a plan over a third machinery records a maintenance declaration; nothing refuses |
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D10 - Decided by the operator (D0441): the evidence annex carries a schema version the dashboard pins; the dashboard upgrades its workspace first |
+| 2026-11-10 | Darren Benson (operator); drafted with Claude Opus 5.5 | Corrected Context & Problem: the analyst's case reported a 31% lower change failure rate after moving to agent-driven delivery, credited to reliability, observability and review agents informed by production incident history together, not a 31% cut in defect escapes from feeding root-cause reports back. Linked RFC0064, which WS4's evidence pack (CR0692) and WS6's escape loop (CR0693) now depend on (D0456) |
