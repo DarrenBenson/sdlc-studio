@@ -102,7 +102,7 @@ that depends on it.
 | # | Decision | Options | Owner | How it resolves | Status |
 | --- | --- | --- | --- | --- | --- |
 | D1 | The incident record's form | A new artefact type; an issue triaged with a root-cause section; an import from an external incident tool | Operator | Operator call after the engineering seat's view | Resolved: Decided by the operator (D0457): an incident is an issue with a root-cause section, triaged into escaped bugs naming the release, unit and verdict; no new artefact type; an import may later feed issues -> CR0693 |
-| D2 | How a root cause reaches agents | A failure class or lesson injected into briefs; a library queried at plan time. Weighed against RFC0062's context budget | Engineering seat | Measure each option's brief cost on a fixture, then operator | Open |
+| D2 | How a root cause reaches agents | A failure class or lesson injected into briefs; a library queried at plan time. Weighed against RFC0062's context budget | Engineering seat | Measure each option's brief cost on a fixture, then operator | Resolved: Decided by the operator (D0462): a root cause becomes a failure class or lesson; at plan time each unit's files are matched against them and only the matches go into its build and review briefs, under a token cap the engineering seat measures -> CR0693 |
 | D3 | The source for change failure rate | The deploy log plus incidents linked to a release; and who records a deploy | Operator | Operator call | Resolved: Decided by the operator (D0458): a release is the deploy; change failure rate is releases with a linked incident over releases, recorded by the release cut -> CR0695 |
 | D4 | Who sets the risk level and compliance flag | Refine proposes and a human confirms; or a declared map of components (payments, personal data) | Operator | Operator call | Resolved: Decided by the operator (D0459): a declared component map proposes the class at refine, the plan flags a disagreeing tag, the operator confirms at plan approval -> CR0696 |
 | D5 | What a risk class changes | Grouping in the change evidence pack only; extra review for high-risk units; or both. A human approval on every change stays out (Trevor Hale's card) | Operator | Operator call | Resolved: Decided by the operator (D0460): both; the pack lists high-risk changes first and high-risk units get a second review seat whose yield each retro reports; no approval on every change -> CR0692, CR0696 |
@@ -135,7 +135,7 @@ that depends on it.
 
 | WS | Workstream | Repo | Becomes | Depends on |
 | --- | --- | --- | --- | --- |
-| WS1 | Incident intake: an incident and its root cause become a failure class or lesson that reaches the next plan, build and review | sdlc-studio | CR0693 (RFC0063 WS6's escape loop) | D2; D1 decided (D0457); EP0280 |
+| WS1 | Incident intake: an incident and its root cause become a failure class or lesson that reaches the next plan, build and review | sdlc-studio | CR0693 (RFC0063 WS6's escape loop) | D1, D2 decided (D0457, D0462); EP0280; BG1268 |
 | WS2 | Change failure rate on the report and the scorecard, beside escapes per 100 points | sdlc-studio | CR0695 | WS1; D3 decided (D0458) |
 | WS3 | A risk and compliance class on each unit, with the change evidence pack grouped by it | sdlc-studio | CR0696 for the class at refine and the second review seat; CR0692 (RFC0063 WS4's evidence pack) for the grouping | D4, D5 decided (D0459, D0460) |
 
@@ -163,7 +163,7 @@ RFC as the review half of the combination the published case credits.
 | EP | EP0287 | Personas become accountable team members | Draft | the scorecard WS2 extends |
 | CR | CR0691 | The engineering seat's brief carries reliability and observability checks | Proposed | sibling: the review half |
 | CR | CR0692 | A change evidence pack per release | Proposed | WS3: groups by class, high-risk first (D0460) |
-| CR | CR0693 | An escaped defect is traced and its cause reaches the next build | Proposed | WS1; depends on D2 |
+| CR | CR0693 | An escaped defect is traced and its cause reaches the next build | Proposed | WS1 (D0457, D0462) |
 | CR | CR0695 | Change failure rate on the report and the scorecard | Proposed | WS2 (D0458) |
 | CR | CR0696 | A risk and compliance class on each unit, and a second review seat for a high class | Proposed | WS3 (D0459, D0460) |
 
@@ -178,3 +178,4 @@ RFC as the review half of the combination the published case credits.
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D3 - Decided by the operator (D0458): a release is the deploy; change failure rate is releases with a linked incident over releases, recorded by the release cut |
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D4 - Decided by the operator (D0459): a declared component map proposes the class at refine, the plan flags a disagreeing tag, the operator confirms at plan approval |
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D5 - Decided by the operator (D0460): both; the pack lists high-risk changes first and high-risk units get a second review seat whose yield each retro reports; no approval on every change |
+| 2026-11-10 | rfc resolve (operator decision) | resolve: D2 - Decided by the operator (D0462): a root cause becomes a failure class or lesson; at plan time each unit's files are matched against them and only the matches go into its build and review briefs, under a token cap the engineering seat measures |
