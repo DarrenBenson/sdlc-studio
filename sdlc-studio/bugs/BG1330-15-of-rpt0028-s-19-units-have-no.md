@@ -29,8 +29,15 @@ RPT0028's per-unit table reads 'NOT MEASURED - no agent returned for it was pric
 - [ ] **AC1** The behaviour described is corrected: RPT0028's per-unit table reads 'NOT MEASURED - no agent returned for it was priced from its own transcript' for 15 of 19 units.
 - [ ] **AC2** The proposed fix lands, pinned by a test: `lane land` records the builder's return from its worktree's agent id when that agent's transcript is readable, or `lane accept` warns while a unit has none...
 
+## Evidence
+
+A consuming project's measured cost, delivering with Grok 4.7 through Cursor and priced at xAI's API rates (double for a prompt of 200k tokens or more), from its usage exports of 6 to 10 November 2026 (supplied by the operator, 2026-11-10). One agent running the whole sprint: $282.09 over 2,181 requests for 79 points ($3.57 a point). Prompts of 200k tokens or more were 29% of its requests and 57% of its cost, and $157.11 (56%) could not be tied to any unit, because the export stamped whole runs with one time until 9 November. A fresh agent per batch: batch A cost $25.72 for 8 points ($3.22 a point; 32% of the cost in long prompts). Batch B cost $23.08 for 5 points ($4.62 a point) counting the run that prepared its units, or $12.98 ($2.60 a point) for its delivery run alone, where long prompts were still 72% of the cost. Coordinator usage ($82.54 across all batches) is outside these figures, and batch C waits on an export past 11:41 GMT on 2026-11-10. The samples are small (8 and 5 points).
+
+The data is in `sdlc-studio/change-requests/evidence/consumer-sprint-cost-2026-11-10.tar.gz`: per-request and per-unit CSVs, batch summaries, and the time windows and script that built them (the script imports a pricing module the bundle does not include). It is a scrubbed copy of the bundle supplied (SHA-256 fc960de33f14a39f; the copy 1d814234b30c426f): the project's repository name, two other project names, the operator's name and two local paths were replaced, and every figure is unchanged. The 56% that no unit carries is this bug's gap seen from a consuming project.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
+| 2026-11-10 | Darren Benson (operator) | Evidence: a consuming project's batch cost figures |
