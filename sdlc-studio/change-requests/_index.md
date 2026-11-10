@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 33 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 542 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **694** |
+| **Total** | **696** |
 
 ## All Changes
 
@@ -106,6 +106,8 @@
 | [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | Proposed | High | feature | 2026-11-10 | -- |
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Proposed | High | feature | 2026-11-10 | -- |
 | [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | Proposed | High | enhancement | 2026-11-10 | -- |
+| [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Proposed | High | feature | 2026-11-10 | -- |
+| [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Proposed | High | feature | 2026-11-10 | -- |
 
 ## Archived Releases
 
