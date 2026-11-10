@@ -29,8 +29,13 @@
 
 CR0670's AC4 and AC5, deferred from run nine's first slice (D0435): the fresh-session warning at the sprint entry, and the before/after cost check measured on the next sprint. Delivers: CR0670.
 
+## Planning notes
+
+- Evidence for the threshold, 2026-11-10: a consuming project delivering with Grok 4.7 through Cursor ran a whole sprint in one agent, and requests over 200k tokens made up 58% of its bill. A fresh agent every five or so units, from one short handoff file, with one blocking CI watch in place of polling (CR0697), brought it to about $2.58 a unit. Groom the warning's threshold and its default against this, and against the 200k price step some models charge above (xAI's long-context rate; BG1331).
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-10 | Darren Benson (operator) | Planning note: a consuming project's cost evidence for the session budget |

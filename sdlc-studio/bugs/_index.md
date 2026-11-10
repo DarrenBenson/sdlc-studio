@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 276 |
+| Open | 277 |
 | In Progress | 0 |
 | Fixed | 880 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1330** |
+| **Total** | **1331** |
 
 ## All Bugs
 
@@ -406,6 +406,7 @@
 | [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1329](BG1329-run-nine-s-close-push-is-refused-by.md) | Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use | Fixed | High | 2026-11-09 | 2026-11-09 |
 | [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Open | Medium | 2026-11-10 | 2026-11-10 |
+| [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Open | Medium | 2026-11-10 | 2026-11-10 |
 
 ## Archived Releases
 
