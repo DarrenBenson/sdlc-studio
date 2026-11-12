@@ -1,6 +1,6 @@
 # US1013: A verdict that differs from its issued file, or was recorded before, is named
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given an issued, unrecorded file for US0001 and a block recorded for US0001 with `--brief <fp>` by `--from-verdict -` or by `--verdict` and `--issues`, when `record` runs, then a block that drops or changes a finding is written as transcribed with a warning naming the issued file and the first finding that differs, and a block with the same findings in the same order, reflowed only, is written with no warning.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_drift.py::VerdictDriftTests::test_a_transcription_that_differs_from_the_issued_file_warns_and_a_reflow_does_not
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given bare `VERDICT: APPROVE` / `ISSUES: none` / `BLOCKING: none` blocks for US0001 and US0002, each at its own issued path under its own header, when both are recorded, then both rows are written; and given a file whose hash an earlier row carries, or whose UNIT or BRIEF line names another unit or another issued file, `record` refuses with exit 2, names the earlier row or the mismatch, and writes nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_drift.py::VerdictDriftTests::test_a_replayed_or_misheaded_file_is_refused_and_bare_approves_are_not
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given one recorded issued file edited afterwards and another deleted, when `critic.py show` runs, then it names the first as changed since it was recorded and the second as missing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_drift.py::VerdictDriftTests::test_show_names_a_verdict_file_changed_or_missing_since_it_was_recorded
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 
