@@ -152,3 +152,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0140](RETRO0140-run-seven-measured-every-harness-the-same-way.md) | Run seven measured every harness the same way and found where the tokens go | 2026-11-06 | -- | -- |
 | [RETRO-0141](RETRO0141-run-eight-hardened-the-cost-features-and-shipped.md) | Run eight hardened the cost features and shipped the first consumer savings | 2026-11-06 | -- | -- |
 | [RETRO-0142](RETRO0142-run-nine-abena-osei-becomes-primary-copilot-grok.md) | Run nine: Abena Osei becomes Primary, Copilot, Grok and Composer runs are priced, and waves resume from a short brief | 2026-11-09 | -- | -- |
+| [RETRO-0143](RETRO0143-run-ten-verdict-binding-and-the-report-of.md) | Run ten: verdict binding and the report of record | 2026-11-12 | -- | -- |
