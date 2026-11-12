@@ -2943,6 +2943,44 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertFalse(verify_ac._is_markdown(name))
 
+    def test_a_verdict_file_is_prose_and_a_source_file_is_not(self) -> None:
+        # BG1334: US1011's verdict files are a reviewer's prose saved as .txt under
+        # sdlc-studio/reviews/verdicts/, so a grep over them proves a sentence was written.
+        # The controls beside it: a .py source file and a .txt file outside verdicts/ each
+        # still license their grep, so the rule is the verdicts directory, not the suffix.
+        tmp = Path(tempfile.mkdtemp(prefix="verify_ac_verdicts_"))
+        try:
+            reviews = tmp / "prose" / "sdlc-studio" / "reviews"
+            verdict = reviews / "verdicts" / "US0001" / "5cc309a731f1-86354028.txt"
+            verdict.parent.mkdir(parents=True)
+            verdict.write_text("VERDICT: APPROVE\n")
+            (reviews / "LATEST.md").write_text("x\n")
+            source = tmp / "code"
+            source.mkdir()
+            (source / "impl.py").write_text("code\n")
+            notes = tmp / "notes"
+            notes.mkdir()
+            (notes / "out.txt").write_text("x\n")
+            for expr in (f'grep "APPROVE" {reviews}/', f'grep "APPROVE" {reviews}/verdicts',
+                         f'grep "APPROVE" {verdict}', f"file {verdict}"):
+                with self.subTest(refused=expr):
+                    self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, tmp))
+            for expr in (f'grep "code" {source}/', f'grep "x" {notes}/'):
+                with self.subTest(allowed=expr):
+                    self.assertIsNone(verify_ac.lint_markdown_evidence(expr, tmp))
+            # One predicate decides it, so the walk and a named file agree by construction.
+            self.assertTrue(verify_ac._is_markdown(verdict))
+            for name in ("sdlc-studio/reviews/verdicts/US0001/a-b.txt",
+                         "sdlc-studio\\reviews\\verdicts\\US0001\\a-b.txt"):
+                with self.subTest(prose=name):
+                    self.assertTrue(verify_ac._is_markdown(name))
+            for name in ("sdlc-studio/reviews/a.txt", "x/verdicts/a.txt",
+                         "reviews/verdicts/a.txt", "notes/out.txt"):
+                with self.subTest(not_prose=name):
+                    self.assertFalse(verify_ac._is_markdown(name))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_an_uppercase_extension_directory_is_refused(self) -> None:
         tmp = Path(tempfile.mkdtemp(prefix="verify_ac_case_"))
         try:

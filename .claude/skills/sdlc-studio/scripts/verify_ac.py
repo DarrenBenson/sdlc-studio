@@ -726,8 +726,19 @@ def _is_markdown(path) -> bool:
     result - and the two disagreed on case, so a mutant dropping the walk's `.lower()` flipped
     a real verdict while every test stayed green. Two implementations of one rule is the exact
     defect this whole guard exists to catch, and it had taken up residence inside it.
+
+    A file under an `sdlc-studio/reviews/verdicts/` directory counts as markdown too, whatever
+    its suffix. Those are the verdict files a review brief issues under that directory, saved as
+    `.txt`: a reviewer's prose, so a grep over them proves only that a sentence was written.
+    The rule is the directory, not the suffix, so a `.txt` anywhere else is still not prose.
+    `revert_targets` reads this predicate as well, so a declared verdict file is filed as docs.
     """
-    return str(path).lower().endswith(".md")
+    text = str(path).replace("\\", "/")
+    if text.lower().endswith(".md"):
+        return True
+    parents = text.split("/")[:-1]
+    return any(parents[i:i + 3] == ["sdlc-studio", "reviews", "verdicts"]
+               for i in range(len(parents)))
 
 
 def _reads_a_non_markdown_file(targets: list[str], cwd) -> bool:
