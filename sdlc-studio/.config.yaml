@@ -266,7 +266,9 @@ gate_budget:
 triage:
   enabled: true
   # D0296: raised from 20 - a whole-backlog run (RUN-01M3VF2J) files more than 20 findings.
-  session_cap: 40
+  # D0468: raised from 40 - RUN-01M77177 filed each of its 39 findings as its own bug at the
+  # operator's ruling, and a blocker found at its close then had no id to take.
+  session_cap: 50
   low_consolidation: false
 
 # D0128: raised from the default 4 because BG0516 made four close rounds unactionable -

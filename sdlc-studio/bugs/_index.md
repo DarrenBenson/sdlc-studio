@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 315 |
+| Open | 320 |
 | In Progress | 0 |
 | Fixed | 884 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1373** |
+| **Total** | **1378** |
 
 ## All Bugs
 
@@ -449,6 +449,11 @@
 | [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1374](BG1374-the-report-s-prices-table-prints-a-price.md) | The report's Prices table prints a price source URL bare in the Markdown twin, so a filed report fails markdownlint MD034 and its close paperwork cannot be committed | Open | High | 2026-11-12 | 2026-11-12 |
+| [BG1375](BG1375-us1015-s-run-state-floor-and-its-write.md) | US1015's run-state floor and its Write, MultiEdit, NotebookEdit, Read and Bash evidence cases have no tests | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1376](BG1376-us1015-s-brief-bound-counts-any-round-s.md) | US1015's brief bound counts any round's issued path, not the round being recorded | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1377](BG1377-the-hooks-replay-of-a-refusal-s-stderr.md) | The hooks' replay of a refusal's stderr is not pinned | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1378](BG1378-us1134-s-ac3-skips-markdownlint-without-saying-so.md) | US1134's AC3 skips markdownlint without saying so when the binary is missing | Open | Low | 2026-11-12 | 2026-11-12 |
 
 ## Archived Releases
 
