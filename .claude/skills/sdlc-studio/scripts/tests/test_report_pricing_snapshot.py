@@ -40,6 +40,13 @@ IDLE = "claude-idle-5-5"
 CONFIGURED = {"input": 15.0, "output": 75.0, "cache_read": 1.5, "cache_write_5m": 18.75,
               "cache_write_1h": 30.0}
 SOURCE = "the operator's own rate card"
+#: A source in the shipped table's own shape: a web address, then a note naming a second one,
+#: and a third the note's closing bracket ends.
+URL_SOURCE = ("https://example.com/pricing (Model pricing table, where https://example.com/rates"
+              " redirects, read 2026-11-06; see https://example.com/terms)")
+#: That source as the Markdown twin states it: each address an autolink, the note as typed.
+URL_CELL = ("<https://example.com/pricing> (Model pricing table, where <https://example.com/rates>"
+            " redirects, read 2026-11-06; see <https://example.com/terms>)")
 #: The configured entry's effective date, ten days before the typed table's entries (dated
 #: today): the table's own date is its newest entry's, so a row stating the table's date in
 #: place of its entry's reads today on the opus row and fails.
@@ -79,12 +86,13 @@ class PricingSnapshotTests(meter._Case):
         #: The rates the page should state: the typed table with the configured opus entry.
         self.rates = {**usd_case.PRICES, OPUS: CONFIGURED}
 
-    def configure(self, root: Path, input_price: float) -> None:
-        """The project's `pricing.models` entry for the session model, at `input_price`."""
+    def configure(self, root: Path, input_price: float, source: str = SOURCE) -> None:
+        """The project's `pricing.models` entry for the session model, at `input_price`, read
+        from `source`."""
         entry = {**CONFIGURED, "input": input_price}
         lines = ["pricing:", "  models:", f"    {OPUS}:"]
         lines += [f"      {k}: {v}" for k, v in entry.items()]
-        lines += [f"      effective: '{CONFIGURED_ON}'", f"      source: {SOURCE}"]
+        lines += [f"      effective: '{CONFIGURED_ON}'", f"      source: {source}"]
         (root / "sdlc-studio" / ".config.yaml").write_text("\n".join(lines) + "\n",
                                                            encoding="utf-8")
 
@@ -93,12 +101,12 @@ class PricingSnapshotTests(meter._Case):
                         "-c", "commit.gpgsign=false", *argv], cwd=root, check=True,
                        capture_output=True, env=gitutil.git_env())
 
-    def _metered_run(self):
+    def _metered_run(self, source: str = SOURCE):
         """US1123's run (opus and haiku on the main thread, US0101 built by agent b7 in haiku,
-        read from its transcript), its stories Done, under the configured opus entry; the
-        meter reads every subagent transcript."""
+        read from its transcript), its stories Done, under the configured opus entry read from
+        `source`; the meter reads every subagent transcript."""
         ws = self.workspace()
-        self.configure(ws.root, 15)
+        self.configure(ws.root, 15, source)
         ws.open()
         ws.tx._append(ws.tx.main, [usd_case._line("m_opus", usd_case.MAIN_OPUS, OPUS),
                                    usd_case._line("m_haiku", usd_case.MAIN_HAIKU, HAIKU)])
@@ -274,6 +282,56 @@ class PricingSnapshotTests(meter._Case):
             meter._live("sprint")._write_the_signature(ws.root, rid, "Maya Okafor")
         self.git(ws.root, "add", "-A")
         self.git(ws.root, "commit", "-qm", "sign the report")
+
+    def test_a_url_source_is_an_autolink_in_the_markdown_twin(self) -> None:
+        """BG1374. A bare web address in the twin fails markdownlint's MD034 (no-bare-urls),
+        and the twin is committed, so the close's paperwork could not land. MUTANTS: the twin
+        printing the source bare; only a source that is wholly one address linked, which leaves
+        the shipped shape (an address, then a note naming another) bare; the link written into
+        the figure, which moves the fingerprint and the HTML page; the HTML page linked; the
+        closing bracket read into the last address; a source already written as an autolink
+        linked twice; a cell other than the source linked, which would move a committed twin
+        whose other figure holds an address. The controls: the haiku row's typed source reads
+        as typed, the filed page re-derives as filed, and an edit inside the linked cell is
+        still caught."""
+        sr, ws = self.sr, self._metered_run(URL_SOURCE)
+        rid = self._close(ws)
+        page = sr.read_report(ws.root, rid)
+        rows = {r["price_model"]["value"]: r for r in self._prices(page)["rows"]}
+        self.assertEqual({OPUS, HAIKU}, set(rows), "premise: both models are priced")
+        self.assertEqual(URL_SOURCE, rows[OPUS]["price_source"]["value"],
+                         "the figure keeps the source as the table states it")
+        self.assertEqual("typed in the test", rows[HAIKU]["price_source"]["value"])
+        path = next((ws.root / "sdlc-studio" / "reports").glob(f"{rid}*.md"))
+        twin = path.read_text(encoding="utf-8")
+        opus = next(t for t in twin.splitlines() if t.startswith(f"| {OPUS} | $15.00 |"))
+        self.assertIn(f"| {rows[OPUS]['price_effective']['value']} | {URL_CELL} | "
+                      f"{rows[OPUS]['price_usd']['value']} |", opus)
+        self.assertEqual([], re.findall(r"(?<!<)https?://\S*", twin),
+                         "no bare web address anywhere in the twin (MD034)")
+        self.assertIn(f"| {rows[HAIKU]['price_effective']['value']} | typed in the test | ",
+                      twin, "a source that is no address reads as typed")
+        html = sr.render_html(page)
+        self.assertIn(f"<td>{URL_SOURCE}</td>", html, "the HTML page states the source as before")
+        self.assertNotIn("<https://", html)
+        self.assertNotIn("&lt;https://", html)
+        other = json.loads(json.dumps(page))
+        held = next(r for r in self._prices(other)["rows"] if r["price_model"]["value"] == OPUS)
+        held["price_effective"]["value"] = "https://example.com/effective"
+        held["price_source"]["value"] = "<https://example.com/pricing>"
+        self.assertIn("| https://example.com/effective | <https://example.com/pricing> | ",
+                      sr.render_markdown(other), "only the source is linked, and only once")
+        self.assertEqual(sr.render_markdown(sr.read_report(ws.root, rid)), twin,
+                         "the filed page re-renders as its committed twin")
+        check = sr.revalidate(ws.root, rid)
+        self.assertTrue(check["valid"], check["changes"])
+        self.assertEqual([], check["edited"], "the linked cell reads as no edit of the figure")
+        path.write_text(twin.replace(URL_CELL, URL_CELL.replace("11-06", "11-07")),
+                        encoding="utf-8")
+        moved = sr.revalidate(ws.root, rid)
+        self.assertFalse(moved["valid"], "control: an edit inside the linked cell is caught")
+        self.assertIn("cost_prices.price_source", " ".join(
+            e["figure"] for e in moved["edited"]))
 
     def test_a_price_change_after_the_close_moves_nothing(self) -> None:
         """AC3, LC-017's round trip for the price rows. MUTANTS: the rows re-reading today's

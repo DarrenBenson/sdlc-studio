@@ -5444,8 +5444,28 @@ _ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues
               "lane_yield": "lane_yield", "unmeasured": "unmeasured"}
 
 
-def _render(report: dict, template: str, revalidation: dict | None) -> str:
+#: The row cells whose text may carry a web address. The Markdown twin prints each address in
+#: one as an autolink, because a bare one fails markdownlint's MD034 and the twin is committed;
+#: the figure keeps the text as filed, so the fingerprint and the HTML page read as before.
+_MD_LINKED_CELLS = frozenset({"price_source"})
+#: A web address not already inside an autolink, ending before trailing punctuation, so the
+#: `)` closing a note or the comma after an address is not read as part of it.
+_BARE_URL = re.compile(r"(?<!<)https?://[^\s<>]*[^\s<>.,;:!?'\")\]]")
+
+
+def _md_links(rows: dict) -> dict:
+    """`rows` with each web address in a `_MD_LINKED_CELLS` cell as `<address>`."""
+    return {name: [{k: _BARE_URL.sub(r"<\g<0>>", v)
+                    if k in _MD_LINKED_CELLS and isinstance(v, str) else v
+                    for k, v in row.items()} for row in listed]
+            for name, listed in rows.items()}
+
+
+def _render(report: dict, template: str, revalidation: dict | None,
+            markdown: bool = False) -> str:
     scope, rows, flags = render_context(report, revalidation)
+    if markdown:
+        rows = _md_links(rows)
     seen: set = set()
     out = _emit(_parse_blocks(template), scope, rows, flags, seen)
     if seen:
@@ -5471,7 +5491,7 @@ def render_markdown(report: dict, template: str | None = None,
     """The committed twin, from `templates/core/sprint-report.md`."""
     if template is None:
         template = template_path(MD_TEMPLATE).read_text(encoding="utf-8")
-    out = _render(report, template, revalidation)
+    out = _render(report, template, revalidation, markdown=True)
     # A repeat block that emits NOTHING - the invalidation banner on a valid report is the
     # ordinary case - leaves its surrounding blank line behind, and two blank lines in a row
     # fail this project's own markdownlint (MD012). The twin is COMMITTED, so a page the repo
