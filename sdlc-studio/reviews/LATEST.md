@@ -1,53 +1,52 @@
 <!-- close-status:begin -->
-> **RUN-01M77177 closed running.** 18 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M77177 closed goal-reached.** 18 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-Signed on 2026-11-10 over RPT0028 (fingerprint 15154fd97f127085). The operator was remote and said
-"I am remote, I authorise you to sign for me", so the orchestrator entered
-`sprint sign --principal "Darren Benson"` on that instruction.
+Signed on 2026-11-12 over RPT0029 (fingerprint 92ed4ae3b01b2bf2). During the run the operator
+answered "Authorise you to sign" when asked how the run should be signed, so the orchestrator
+entered `sprint sign --principal "Darren Benson"` on that authorisation, for this run only (D0467).
 
-> **RUN-01M7061X, run nine and the first 6.4 run.** Goal: "Abena Osei becomes Primary, Copilot,
-> Grok and Composer runs are priced, and waves resume from a short brief." Planned at 18 units and
-> 53 points (D0446); delivered 19 units, 51 points (15 of the plan's units for 45 points, and 4
-> added mid-run for 6), each on an independent APPROVE. A declared maintenance run (D0445): by theme 3 points machinery (6%); by
-> path loop machinery 32 points (65%), cost metering 5 (10%), other 12 (24%).
+> **RUN-01M77177, run ten.** Goal: "A signed report's verdicts are provably the reviewers' own,
+> and the report is reviewable from the committed tree." Planned at 16 units and 55 points (D0465,
+> D0466); delivered 18 units, 57 points, each on an independent APPROVE, with BG1334 and BG1374
+> added in-run. Machinery share by theme 3 points (5%), by path all 57. Cost 45.1M priced tokens,
+> 791k per point, $126.37 ($2.22 per point) against run nine's 904k and $2.48; the re-close reused
+> the first meter reading, so BG1374's fix is not counted. Wall-clock 9.6 h.
 
 ## What landed
 
-- **Human in the lead (RFC0063 WS1, CR0689).** Abena Osei, a head of engineering in an audited
-  organisation, is the shipped skill's Primary with six End goals (US1146, D0436, D0443); Maya
-  Okafor moves to Secondary and Jonah Reyes's card changes only in its cast lines. Graham Doyle
-  joins as the Served change approver and Trevor Hale narrows (US1147, carried at the review cap as
-  BG1318 and fixed in-run). The PRD leads with "Human in the lead" and gains O10-O13 (US1148).
-- **Cost a team can read.** Grok and Composer are priced from xAI's and Cursor's own pages (US1143),
-  a Copilot run per token in AI credits (US1144), and request billing only where a project keeps it
-  (US1145). The meter reads the running harness's store (US0986 with BG1205).
-- **A wave resumes from a short brief (CR0670's first slice).** `lib/resume_brief.py` derives the
-  next action and a brief of at most 8k tokens from disk (US1140), `sprint.py handoff` and
-  `sprint.py resume` use it (US1141), the brief places mid-run findings as the report does (BG1312),
-  and reference-sprint.md defines the wave boundary (US1142).
-- **6.3's carried units reached Done** on round-2 APPROVEs from the seats that rejected them:
-  US0986, US1130 and US1133 (with BG1264). Lane fixes for schema-3 ids: BG1302, BG1303. BG1320
-  fixed a test-import collision the run itself introduced. The first close's push was refused by two
-  test regressions (US1142's reflow, BG1312's patch target); the run was reopened (D0455) and BG1329
-  fixed both before the re-close.
+- **Verdict binding (EP0280, with BG1030).** A review brief names the verdict file its reviewer
+  writes (US1011); a recorded verdict is bound to that file's bytes (US1012), drift or a replay is
+  named (US1013), the agent that wrote it is read from the harness transcript (US1014), and a
+  verdict from the context that edited the unit records as a self-review (US1015). `--rejoinder`
+  with no file quotes the seat's standing REJECT from the ledger (US1016). Prose after
+  `BLOCKING: none` and a `RULINGS:` line now record as rulings (BG1030).
+- **The report of record (EP0276, with BG1010).** The close cites the committed run record
+  (US0997), names the plan by digest (US0998), states each priced model's frozen prices and prices
+  delegated totals (US1000), and freezes the lane-yield tally (US1001); `build --run` renders the
+  named run (BG1010). US0999 is deferred to run eleven (D0465).
+- **Run nine's carries.** US1134 (one line on a passing commit), US1149 (the fresh-session check),
+  US1147 (Done on its rejecting seat's APPROVE) and BG1300 (the test identity is seeded under the
+  private directory; built in the main checkout because Claude Code's worktree check refuses a
+  temporary HOME and cannot be turned off).
+- **In-run fixes.** BG1334 (US1011's verdict files broke the markdown-evidence lint and turned main
+  red) and BG1374 (the report twin printed a bare price-source URL, so the run was reopened once).
 
 ## What is owed
 
-- **Descoped to run ten:** US1134 (its quiet-hooks change reaches eight test modules beyond its
-  Affects; re-grooming note on the story, D0453) and BG1300 (its tests need a temporary HOME, which
-  the worktree guard refuses until the operator's permission rule is in place, D0454).
-- **US1147** stays Ready with qa-seat-US1147-r1's round-2 REJECT unanswered; BG1318 fixed its
-  defect, and it reaches Done when that seat approves a redelivery (D0433's pattern).
-- **Known issues carried, all not-stop-ship** (RETRO0142): BG1309-BG1311, BG1313-BG1317, BG1319,
-  BG1321-BG1327. Filed before the run opened: BG1304-BG1308.
-- **Cost:** priced from the session meter at the close; the orchestrator ran in the long 6.3
-  session, its largest share. Run ten should start in a fresh session from `sprint.py handoff`.
+- **Known issues carried, all not-stop-ship** (RETRO0143): BG1335-BG1373 and BG1375-BG1381, every
+  finding of the run filed as its own bug at the operator's ruling. The triage cap is now 50
+  (D0468). One close gap is handed over: the tick-verification item reads US1147, a
+  re-review-only carried unit, as unsupported (filed).
+- **Run eleven** per D0461: EP0275, the cost pair CR0694 and BG1330, US0999, and BG1333 first;
+  CR0699 (effort setting), CR0700 (instruction audit) and CR0701 (ownership trial) are filed (D0464).
 
 ## Learned the hard way
 
-- Groom a change to a shared surface with every test that pins it, and each unit's changelog
-  fragment, in its Affects (US1134, US1141, thirteen fragments added mid-run).
-- Fast-forward a lane's worktree to main before landing it, and run mutants with
-  PYTHONDONTWRITEBYTECODE=1 (US1145 refused twice; BG1325).
+- Grep the whole tests tree for every function, string and ledger cell a unit changes, including
+  tests landed earlier in the same run: five units reached a test outside their Affects.
+- Fast-forward each lane's worktree to main first and again before `lane land` commits: harness
+  worktrees start at origin's commit, and a lane committed at its old base is judged on old code.
+- Send a repair to a fresh builder; resuming a 190k-token builder for a one-test change cost about
+  2.4M priced tokens twice.
