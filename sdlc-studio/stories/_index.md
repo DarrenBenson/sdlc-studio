@@ -7,8 +7,8 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 80 |
-| Ready | 2 |
+| Draft | 69 |
+| Ready | 13 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -34,11 +34,11 @@
 | [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1002](US1002-filing-into-the-skill-source-refuses-a-blocklisted.md) | Filing into the skill source refuses a blocklisted project name before an id is spent | Draft | EP0277 | 2026-10-09 | 2026-10-09 |
 | [US1003](US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md) | enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter | Done | EP0278 | 2026-10-09 | 2026-10-09 |
 | [US1004](US1004-ci-and-the-checker-read-one-list-of.md) | CI and the checker read one list of suite prerequisites | Done | EP0278 | 2026-10-09 | 2026-10-09 |
@@ -48,12 +48,12 @@
 | [US1008](US1008-a-sprint-checklist-waiver-scoped-to-a-unit.md) | A sprint-checklist waiver scoped to a unit in one run answers that unit's part of a row and nothing else | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1009](US1009-a-sprint-checklist-waiver-can-carry-an-expiry.md) | A sprint-checklist waiver can carry an expiry date, after which its row is enforced again | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1010](US1010-decisions-py-waive-says-exactly-which-subjects-take.md) | decisions.py waive says exactly which subjects take a scope tail and what an unscoped waiver covers, and refuses a tail nothing reads | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
-| [US1011](US1011-a-review-brief-names-the-file-the-reviewer.md) | A review brief names the file the reviewer writes its verdict to | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1012](US1012-a-recorded-verdict-is-bound-to-the-bytes.md) | A recorded verdict is bound to the bytes of the file its brief issued | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1013](US1013-a-verdict-that-differs-from-its-issued-file.md) | A verdict that differs from its issued file, or was recorded before, is named | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1014](US1014-a-recorded-verdict-names-the-agent-that-was.md) | A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1015](US1015-a-verdict-written-by-the-context-that-edited.md) | A verdict written by the context that edited the unit is a self-review, whatever seat it names | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1016](US1016-critic-py-brief-rejoinder-with-no-file-quotes.md) | critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger | Draft | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1011](US1011-a-review-brief-names-the-file-the-reviewer.md) | A review brief names the file the reviewer writes its verdict to | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1012](US1012-a-recorded-verdict-is-bound-to-the-bytes.md) | A recorded verdict is bound to the bytes of the file its brief issued | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1013](US1013-a-verdict-that-differs-from-its-issued-file.md) | A verdict that differs from its issued file, or was recorded before, is named | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1014](US1014-a-recorded-verdict-names-the-agent-that-was.md) | A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1015](US1015-a-verdict-written-by-the-context-that-edited.md) | A verdict written by the context that edited the unit is a self-review, whatever seat it names | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1016](US1016-critic-py-brief-rejoinder-with-no-file-quotes.md) | critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1017](US1017-transition-set-refuses-a-unit-at-done-or.md) | transition set refuses a unit at Done or Fixed when none of its criteria fail with its change reverted | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
 | [US1018](US1018-the-close-and-the-sign-judge-each-unit.md) | The close and the sign judge each unit once, a preview never reverts, and the sign prints what the transition reported | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
 | [US1019](US1019-a-lane-s-return-runs-the-revert-check.md) | A lane's return runs the revert check, so the builder learns its tests cannot fail before a reviewer does | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
@@ -186,7 +186,7 @@
 | [US1146](US1146-abena-osei-becomes-the-shipped-skill-s-primary.md) | Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Done | EP0305 | 2026-11-09 | 2026-11-09 |
-| [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Draft | EP0302 | 2026-11-09 | 2026-11-09 |
+| [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Ready | EP0302 | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

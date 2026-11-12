@@ -1,11 +1,11 @@
 # US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0615
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-review.md, changelog.d/US1016.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-review.md, changelog.d/US1016.md
 > **Epic:** EP0280
 > **Points:** 3
 > **Depends on:** US1012
@@ -28,15 +28,16 @@
 
 ## Notes
 
-- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
+- Release: after 6.3.0, in run ten (D0461); 6.3.0 shipped without it (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: quoting the row's issues cell instead of the stored file, or fingerprinting the quoted prior verdict as well as the base brief
 - AC2 must fail on: dropping the BLOCKING findings the row carries in its issues cell, or presenting the rebuild as the reviewer's own words
-- AC3 must fail on: choosing with `standing_rejects`, which returns the latest REJECT even when every one is answered (critic.py:819); falling back to another seat's REJECT; or reading rows from an earlier delivery
-- Checked at HEAD: `--rejoinder ledger` refuses with 'No such file or directory: ledger', and a bare `--rejoinder` is an argparse error. `cmd_brief` (critic.py:3095) reads a file or stdin only.
+- AC3 must fail on: choosing with `standing_rejects`, which returns the latest REJECT even when every one is answered (critic.py:886); falling back to another seat's REJECT; or reading rows from an earlier delivery
+- Checked at HEAD (2026-11-12), by running both: `--rejoinder ledger` refuses with `No such file or directory: 'ledger'`, and a bare `--rejoinder` is an argparse error (`expected one argument`). `cmd_brief` (critic.py:4131-4136) reads a file or stdin only; the flag is declared at critic.py:4530. No criterion is met. That a file argument and `-` keep working already holds and stays pinned.
 - `--rejoinder` becomes `nargs='?'` with the ledger as its constant, and `ledger` is accepted as a spelling. A file argument and `-` keep working, as the existing rejoinder tests in test_critic.py pin, so CR0615 AC3 needs no new test.
-- The REJECT is chosen with `_unanswered_rejects` over `delivery_rounds` (the unit's current delivery), filtered to reviewers that `seat_for` maps to the briefed seat. With no declared seats and exactly one candidate, that one is used; with several, the brief refuses and names them. This stays right under G10's per-seat rounds.
-- A plain `brief` for a seat holding an unanswered REJECT prints a notice naming `--rejoinder` (panel, Q7). `rebrief_notice` and the rejoinder footer print the bare `--rejoinder` (critic.py:2519).
-- BG0950 changes how a BLOCKING finding is recorded (once, as a flag on its ISSUES entry), so the rebuild reads whatever BG0950 writes.
+- The REJECT is chosen with `_unanswered_rejects` (critic.py:831) over `delivery_rounds` (critic.py:697, the unit's current delivery), filtered to reviewers that `seat_for` (critic.py:2444) maps to the briefed seat. With no declared seats and exactly one candidate, that one is used; with several, the brief refuses and names them. This stays right under G10's per-seat rounds.
+- A plain `brief` for a seat holding an unanswered REJECT prints a notice naming `--rejoinder` (panel, Q7). `rebrief_notice` prints `--rejoinder <prior verdict file>` today (critic.py:3304) and prints the bare `--rejoinder` after this story; the rejoinder footer (critic.py:4157-4162) prints only the record command.
+- BG0950 is Fixed: a BLOCKING finding is recorded once, as a `BLOCKING:` prefix (with its trailing space) on its ISSUES entry (`_mark_blocking`, critic.py:3666), so the rebuild reads BLOCKING back from those prefixes.
+- Existing tests this change reaches: test_critic.py holds the rejoinder tests that keep a file and `-` working (lines 882-930 and 3782-3857); test_lean_rebrief.py:186 asserts the rebrief notice names `--rejoinder`.
 
 ## Triage (2026-10-21)
 
@@ -51,3 +52,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G6 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: HEAD behaviour re-run, line references moved to HEAD, BG0950 noted Fixed, release line set to run ten, Affects gains test_critic.py and test_lean_rebrief.py |

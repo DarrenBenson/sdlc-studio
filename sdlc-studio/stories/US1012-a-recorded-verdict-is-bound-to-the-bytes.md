@@ -1,11 +1,11 @@
 # US1012: A recorded verdict is bound to the bytes of the file its brief issued
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1012.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_supersede_by_brief.py, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/US1012.md
 > **Epic:** EP0280
 > **Points:** 5
 > **Depends on:** US1011
@@ -30,18 +30,20 @@
 
 ## Notes
 
-- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
+- Release: after 6.3.0, in run ten (D0461); 6.3.0 shipped without it (D0355 breakdown G6, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: hashing the parsed issues text rather than the file, or normalising line endings or trailing whitespace before hashing
 - AC2 must fail on: a directory test (any file under `verdicts/` reads as issued), or hashing whichever file `--from-verdict` names
-- AC3 must fail on: the new column named `Verdict` (the migration's `| {name} |` test at critic.py:502 then never adds it, and the parsed key overwrites APPROVE and REJECT), or the ninth cell added to `row_identity`'s digest
+- AC3 must fail on: the new column named `Verdict` (the migration's `| {name} |` test at critic.py:546 then never adds it, and the parsed key overwrites APPROVE and REJECT), or the ninth cell added to `row_identity`'s digest
 - AC4 must fail on: the label 'reviewer-written', which claims a writer nothing has checked (the authoring session can write an issued path itself), or `show` omitting the source
-- Checked at HEAD: `cmd_record` (critic.py:3265) stores only the parsed verdict and issues, with newlines and pipes folded (`_clean`), so the ledger cannot give back the reviewer's block.
+- Checked at HEAD (2026-11-12): `cmd_record` (critic.py:4315) stores only the parsed verdict and issues, with newlines and pipes folded (`_clean`, critic.py:314), so the ledger cannot give back the reviewer's block. No `Source` column or `source` key exists, so no criterion is met.
 - The ninth column is `Source`, not `Verdict`: `_TABLE` already has a `Verdict` column. Its cell grammar is fixed here, so stories 4 to 6 parse one format: space-separated tokens, `sha256:<16 hex> <basename>` first; then `session:<id> agent:<id>` (story 5); `self-review:<repo path>` (story 6). `-` means transcribed. Round rulings stay where BG1003 records them, below the table (`_append_ruling`). `show` and story 4 find the file from the cell (`verdicts/<UNIT>/<basename>`), never by scanning.
-- One migration widens the ledger once. This story adds `Source` by generalising `_ensure_eighth_column`'s pad-not-rewrite loop. `row_identity` (critic.py:599-610) stays over the original eight cells, because `REVIEW_ROWS` freezes them into signed run records (sprint_report.py:3328-3332). This repository's ledger has 1,552 eight-cell rows.
+- One migration widens the ledger once. This story adds `Source` by generalising `_ensure_eighth_column`'s pad-not-rewrite loop. `row_identity` (critic.py:666-677) stays over the original eight cells, because `REVIEW_ROWS` (sprint_report.py:3384-3388) freezes them into signed run records through `freeze_review_rows` (sprint_report.py:3454-3466), and `_row_keys` (critic.py:970) keys the round rulings by them. This repository's ledger has 1,814 rows, all eight cells. The historical plan-review ledger takes nothing new (critic.py:79-82).
 - Issued means the path is one `note_brief` recorded. `.local/briefs.jsonl` is per machine, so a file briefed in another clone reads `transcribed`: it fails towards the weaker label. The label claims no writer until story 5 reads one.
 - The verdict file is committed with its ledger row. Otherwise a fresh clone's `show` reports every file missing (story 3).
-- The changelog names the mixed-version effect: a 6.1 reader treats every nine-cell row as malformed and skips it (critic.py:594), so a teammate on an older install sees no verdicts. That fails closed, as the Tier column did. Correct the stale comment at critic.py:826 ('the row parser reads 6 or 5 cells').
-- `provisional_verdict` (the `transition set --verdict` path) and `record_verdict` (`artifact.py close --verdict`) write through `_write_verdict` too, so they write the ninth cell, as `-`.
+- The changelog names the mixed-version effect: a reader on 6.3.0 or earlier treats every nine-cell row as malformed and skips it (critic.py:650-655), so a teammate on an older install sees no verdicts. That fails closed, as the Tier column did. Correct the stale comment at critic.py:893 ('the row parser reads 6 or 5 cells') and the warning's 'expected 6 or 5' at critic.py:654.
+- `provisional_verdict` (the `transition set --verdict` path) and `record_verdict` (`artifact.py close --verdict`) write through `_write_verdict` (critic.py:365) too, so they write the ninth cell, as `-`.
+- Keep `record`'s `recorded <ID> <VERDICT> [delivery] round N` line as its prefix and print the transcribed notice on its own line: `sprint lane accept` parses that line (lib/lanes.py:421).
+- Existing tests this change reaches: test_critic.py holds the Tier migration (lines 448-457), the pre-Brief widening test (line 2791) and the `show` listings (lines 1770-1788 and 3371-3385, one line per row); test_supersede_by_brief.py seeds ledgers from `critic._TABLE` with eight-cell rows (lines 41-50). test_lean_signed_report_stable.py:695-720 pins `row_identity` over the eight cells and must pass unchanged.
 
 ## Triage (2026-10-21)
 
@@ -56,3 +58,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G6 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: line references moved to HEAD, ledger count 1,814, release line set to run ten, Affects gains test_critic.py and test_supersede_by_brief.py, lane accept's parsed line named |

@@ -8,7 +8,6 @@
 > **Affects:** sdlc-studio/personas/graham-doyle-change-approver.md, sdlc-studio/personas/trevor-hale-enterprise-pm.md, sdlc-studio/personas/index.md, sdlc-studio/prd.md, tools/tests/test_persona_coherence.py, changelog.d/US1147.md
 > **Epic:** EP0305
 > **Points:** 3
-> **Depends on:** US1146
 > **Persona:** Maya Okafor
 
 ## User Story
@@ -34,6 +33,16 @@
 - **AC7:** Given Trevor's `## Scenario`, then it no longer points him at an enterprise tool that fits: it points his wants for boards and dashboards at the read-only companion dashboard over the committed record (RFC0063 D6), and still declines a human approval on every change, non-technical staff running the tool and sync to an enterprise tracker. Fails on: the Scenario still naming an enterprise tool; the companion dashboard named as anything but read-only; any of the three declined wants offered.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedAndNegativeTests::test_trevors_scenario_points_boards_and_dashboards_at_the_read_only_companion_dashboard
 
+## Redelivery note (run ten)
+
+Checked at HEAD 508e2408 against the verdict ledger.
+
+- **The REJECT's one BLOCKING finding is answered.** The REJECT is qa-seat-US1147-r1's round 2 (`sdlc-studio/reviews/critic-verdicts.md:1838`, brief 783a0b3628d5). Its BLOCKING finding was that the AC7 test's `CLAUSE_TURN` word list let a declined want offered inside the declining clause pass ("is offered", "ships", "gives him", "declines none of", "declines, then accepts"). BG1318 (Fixed, 897b4c63) replaced that list with `DECLINING_REST` (`tools/tests/test_persona_coherence.py:210`, asserted at `:983`). qa-seat-BG1318-r1 approved it (`critic-verdicts.md:1839`, brief 10373ae44eec), re-running all six round-2 mutants and both round-1 mutants, and every one now fails. The REJECT's other finding, Jonah Reyes's line, is item (3) of open BG1314 and does not hold this unit.
+- **No criterion has moved since.** qa-seat-BG1318-r1 ran the persona coherence module and `PersonaWellFormedTests` at 897b4c63: 53 passed. Since then, only US1148's 77edb628 has touched this unit's files. It edited other parts of `sdlc-studio/prd.md`, and the Served and Negative bullets AC3 and AC5 pin are unchanged at `prd.md:197-202`. No later commit touches the persona reader or `sprint.py plan --serves`.
+- **The author self-check is current.** It was recorded at c4d53913, and `critic.self_check_gap` finds it current, because the own-change view sets BG1318's and US1148's commits aside as other units' work. `critic.py brief --rejoinder` is therefore not refused under `review.author_self_check: block`.
+- **The redelivery is the rejecting seat's next round only.** No builder change is needed. Brief the seat with `critic.py brief --unit US1147 --seat qa --rejoinder <file>`, where the file holds row 1838's verdict as a VERDICT, ISSUES and BLOCKING block. `critic.py show --unit US1147` prints that row as a record, not as such a block. Record the verdict with `critic.py record`. As in D0433, Done follows that seat's APPROVE.
+- **One gap is left, which the seat reports rather than blocks on.** BG1321 (Open, Low, 1 point) records two gaps that this unit's own repair c4d53913 brought in. First, the check for a want named outside the declining clause is case-sensitive (`:988`), so a Scenario that appends "Sync to an enterprise tracker is offered." passes AC7. Second, `NEGATION` is a word list (`:212`, asserted at `:979`), so "seldom declines" passes. As a result, `changelog.d/US1147.md:14-17` claims more than the test holds. BG1321's Affects lie inside this unit's. Because the gap is recorded in an open bug, the seat reports it by id rather than blocking on it. Landing BG1321 before the rejoinder would remove the one claim the seat could still find over-stated.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -42,3 +51,4 @@
 | 2026-11-09 | Claude Opus 5.5 (run nine grooming) | Acceptance criteria and Verify lines authored at grooming |
 | 2026-11-09 | Claude Opus 5.5 (plan approval, D0446) | Trevor keeps sync to an enterprise tracker as an excluded End goal, and his Scenario points boards and dashboards at the read-only companion dashboard (the operator's rulings at plan approval) |
 | 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |
+| 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: redelivery note added (BG1318 answers the round-2 REJECT's blocking finding, every criterion still holds, the self-check is current, so the redelivery is qa-seat-US1147-r1's rejoinder round alone; BG1321 is the residual); criteria, Affects and Points unchanged |

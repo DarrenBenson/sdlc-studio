@@ -4,7 +4,7 @@
 > **Supersedes:** BG1076
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py, changelog.d/BG1030.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_trailing_prose.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_contract_roundtrip.py, .claude/skills/sdlc-studio/reference-scripts-review.md, changelog.d/BG1030.md
 > **Created:** 2026-10-13
 > **Created-by:** sdlc-studio file
 > **Raised-by:** Claude Opus 5.5 (triage); human; v1
@@ -21,6 +21,11 @@ Record `VERDICT: APPROVE\nISSUES: none\nBLOCKING: none\nRULINGS: AC2 is satisfie
 ## Proposed Fix
 
 Read BLOCKING as none when its first item is `none`, and either accept `RULINGS:` as a contract token or say in the contract where rulings go; never fold text after `none` into blocking items.
+
+- Checked at HEAD (2026-11-12): the defect still reproduces, and no criterion is met. `parse_verdict_block` (critic.py:3584) reads BLOCKING with `_block_field` (critic.py:3573), bounded only by `_BLOCK_TOKENS` (critic.py:3570), and reads it as none only when the whole field is `none` (critic.py:3607). The Steps block, `BLOCKING: none.` followed by a sentence, and `BLOCKING: none` followed by a blank line and a sentence are each refused by `_mark_blocking` (critic.py:3666) as an untagged item quoting no finding.
+- The rejoinder brief (`rejoinder_brief`, critic.py:3540-3566) ends with the unchanged `_RETURN_CONTRACT` and names no RULINGS line. Put the rejoinder's RULINGS line in its own constant printed after `_RETURN_CONTRACT`, so the contract stays one constant: `neutrality_violations` strips it by exact match (critic.py:2204), and US1011 prints the verdict path after it.
+- Existing pins: test_verdict_contract_roundtrip.py drives `record --from-verdict` over contract-shaped blocks, runs a rejoinder (line 252) and reads `_RETURN_CONTRACT` (line 342); test_critic.py holds the `--from-verdict` tests (lines 731-857) and the rejoinder tests (lines 882-930). reference-scripts-review.md:107 and :111 describe the parse and the rejoinder's contract. `lib/lanes.py` `_blocking` (lib/lanes.py:380) parses through `parse_verdict_block` and needs no change.
+- Builds first in EP0280: US1011 depends on it, and every EP0280 unit changes critic.py.
 
 ## Acceptance Criteria
 
@@ -41,3 +46,4 @@ An APPROVE with rulings, the shape a careful reviewer returns, is refused and mu
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1076 |
+| 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: reproduced at HEAD, line references added, Affects gains test_verdict_contract_roundtrip.py and reference-scripts-review.md, the RULINGS line placed after the unchanged contract |

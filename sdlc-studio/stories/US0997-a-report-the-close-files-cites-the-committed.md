@@ -1,14 +1,14 @@
 # US0997: A report the close files cites the committed run record, never .local/run-state.json
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py, changelog.d/US0997.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/US0997.md
 > **Epic:** EP0276
 > **Points:** 3
-> **Persona:** Maya Okafor
+> **Persona:** Graham Doyle
 
 ## User Story
 
@@ -29,17 +29,22 @@
 
 ## Notes
 
-- Release: 6.3 (D0388; was 6.2) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
+- Release: 6.4, run ten (D0461); was 6.3 (D0388) (D0355 breakdown G2, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: build_report keeps citing state_rel, the path `_run_state_for` happened to read the record from, which at a close is the live .local file
-- AC2 must fail on: `_ci_runs` returning the frozen reading's own source alone (sprint_report.py:2985), so ten to fifteen DORA figures per page cite a command and no committed file
-- AC3 must fail on: citing a path the close never files: the .local run archive, or a record name built differently from run_state.tracked_path
+- AC2 must fail on: `_ci_runs` returning the frozen reading's own source alone (sprint_report.py:3039-3041), so ten to fifteen DORA figures per page cite a command and no committed file
+- AC3 must fail on: citing a path the close never files: the .local run archive, or a record name built differently from run_state.tracked_path (lib/run_state.py:571)
 - AC4 must fail on: comparing each figure's source on re-derivation, or refusing a .local source at check, either of which turns every earlier signed page INVALID
-- Serves Jonah's End goal 3, 'one artefact workspace, one set of gates' (jonah-reyes-team-lead.md:28).
-- BG0993 already files the record at sdlc-studio/reports/runs/<RUN-ID>.json from the close onward (`_file_awaiting_record`, defined at sprint.py:8763 and called at :9310, after the page is filed), so the cited path exists in the close's commit; this story re-points the citations only.
-- Sources are outside the fingerprint (sprint_report.py:2837 digests [section, key, value] only). The panel's probe: a re-derivation in a fresh clone already cites the tracked record on all 55 run-record figures with an identical fingerprint, so this story makes the filed page match what every clone re-derives.
-- Keep `_run_state_for`'s returned read path for revalidate's tracked and archived judgements (sprint_report.py:5310 and 5326); cite through a separate value set once in build_report (sprint_report.py:4114).
-- The fourth criterion is the guard BG1007's option A would need: whichever BG1007 option is ruled, this story builds first.
-- Build first in this epic: the plan-digest, money and lane-yield stories cite the same record.
+- Serves Jonah's End goal 3, 'one artefact workspace, one set of gates' (jonah-reyes-team-lead.md:28). D0461 names Graham Doyle's End goal 2 for EP0276.
+- Checked at HEAD 508e2408 (2026-11-12): nothing is met yet. RPT0028.json cites `sdlc-studio/.local/run-state.json` on 267 figures, `gh run list` on 15 and `sdlc-studio/.local/refusals.jsonl, git log` on 11 (the last is US1001's). The first half of AC4 holds today by construction (sources are not digested); its second half fails until the change.
+- The close derives its page with no `record` (`_file_the_report`, sprint.py:10011, build_report call at :10050-10051), so `_run_state_for` answers the live path (sprint_report.py:2931-2933).
+- BG0993 already files the record at sdlc-studio/reports/runs/<RUN-ID>.json from the close onward (`_file_awaiting_record`, defined at sprint.py:9325 and called at :9874, after `_file_the_report` at :9868), so the cited path exists in the close's commit; this story re-points the citations only.
+- Citing the tracked path before `_file_awaiting_record` writes it does not refuse the build: `_source_resolves` accepts any `sdlc-studio/` path, written or not (WORKSPACE_PREFIXES, sprint_report.py:4676).
+- Sources are outside the fingerprint: `digest_entries` (sprint_report.py:2881-2889) digests (section, key, value) and, under TABLE_RULE, the page's price table; `fingerprint` is at :2892. A re-derivation in a fresh clone already cites the tracked record, since `_run_state_for` falls through to it (:2934-2941), so this story makes the filed page match what every clone re-derives.
+- Keep `_run_state_for`'s returned read path for revalidate's tracked and archived judgements (call at sprint_report.py:5702, judgements at :5773-5774 and :5789) and for `cmd_build`'s `--write` refusal (:6070-6071); cite through a separate value set once in build_report (:4521).
+- Existing tests that pin the .local citation and change with it: test_sprint_report.py:3474 (`ReportIsDerivedTests::test_figures_come_from_the_artefacts_not_the_retros_prose`, `run-state.json` in planned_units' source) and test_sprint.py:17200 (`PrepareRefusesTests::test_a_gate_clear_run_still_at_review_produces_its_report`, `run-state.json` in a close-filed page's unit_outcome source).
+- reference-scripts.md:280-282 still says the run record lives in `.local/` and is not versioned, so verifying a signature needs the signing clone's record; already untrue since BG0993, and this story is where it is corrected.
+- BG1007 is Superseded; the fourth criterion stands on its own as the guard that every earlier signed page still checks VALID.
+- Build first in this epic: the money and lane-yield stories cite the same record. BG1010 also edits `cmd_build` and test_sprint_report.py; it fixes `run_id` only, so the two do not collide, but they share a file and land one after the other.
 
 ## Triage (2026-10-21)
 
@@ -55,3 +60,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G2 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: line references corrected (sprint_report.py and sprint.py moved by 400 to 600 lines); Affects gains test_sprint_report.py and test_sprint.py, which pin the .local citation, and reference-scripts.md, whose run-record paragraph this makes stale; BG1007 noted Superseded; release set to 6.4 (D0461); criteria unchanged |
