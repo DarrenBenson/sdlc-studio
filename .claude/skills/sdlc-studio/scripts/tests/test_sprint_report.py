@@ -3876,6 +3876,109 @@ class CostRowTests(ReportOfRecordBase):
         self.assertIn(run_state.rebased_note({"rebased": 1}), shape)
 
 
+class ReopenedRunCostTests(unittest.TestCase):
+    """BG1279: a close after `sprint reopen` re-reads the meter over the run's whole window.
+
+    A re-close keeps the first close's window and reading (BG0913), which is right for the
+    paperwork after a close and wrong for the work a reopen lets in: RUN-01M6RZQZ's second close
+    re-filed its page at the first close's 44,550,286 priced, short the reopened unit's spend.
+    Each test runs the real `sprint.py close` (`test_lean_close._close`) over a transcript and
+    a clock it controls."""
+
+    FIRST, REOPEN, SECOND, THIRD = ("2026-09-23T06:00:00Z", "2026-09-23T06:30:00Z",
+                                    "2026-09-23T07:00:00Z", "2026-09-23T08:00:00Z")
+
+    def setUp(self) -> None:
+        import test_lean_close as lean  # noqa: PLC0415 - the close fixture, loaded when used
+        self.lean = lean
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name) / "repo"
+        self.root.mkdir()
+        self.transcripts = Path(self._tmp.name) / "transcripts"
+        self.transcripts.mkdir()
+        self.rs = lean._live("lib.run_state")
+        env = mock.patch.dict(os.environ, {self.rs.TRANSCRIPTS_ENV: str(self.transcripts)})
+        env.start()
+        self.addCleanup(env.stop)
+        lean._fixture(self.root)
+        self.spend(1000)
+        with mock.patch.object(self.rs.sdlc_md, "now_iso8601", lambda: "2026-09-23T00:00:00Z"):
+            self.rs.stamp_tokens(self.root, "open")
+        self.spend(4000)                                 # the run's work before its first close
+
+    def spend(self, tokens: int) -> None:
+        with (self.transcripts / "session.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"message": {"model": "m", "usage": {
+                "input_tokens": tokens, "output_tokens": 0}}}) + "\n")
+
+    def at(self, when: str) -> contextlib.ExitStack:
+        stack = contextlib.ExitStack()
+        mods = {id(m): m for m in (self.lean._live("lib.sdlc_md"), self.rs.sdlc_md,
+                                   self.lean._live("sprint").sdlc_md,
+                                   self.lean._live("sprint_report").sdlc_md)}
+        for m in mods.values():
+            stack.enter_context(mock.patch.object(m, "now_iso8601", lambda: when))
+        return stack
+
+    def close_at(self, when: str) -> dict:
+        with self.at(when):
+            rc, out, err = self.lean._close(self.root)
+        self.assertEqual(0, rc, out + err)
+        state = self.lean._read(self.root)
+        return self.lean._live("sprint_report").read_report(self.root, state["report"])
+
+    def reopen_at(self, when: str) -> None:
+        with self.at(when):
+            self.rs.reopen_run(self.root, "a late fix belongs to this run")
+
+    @staticmethod
+    def priced(page: dict) -> dict:
+        for sec in page["sections"]:
+            for row in sec.get("rows") or []:
+                if (row.get("est_measure") or {}).get("value") == "Priced cost":
+                    return row
+        raise AssertionError("the page carries no Priced cost row")
+
+    def test_a_close_after_a_reopen_re_reads_the_meter_over_the_whole_window(self) -> None:
+        """AC1. MUTANTS: HEAD, which keeps the first close's window and reading after a reopen
+        (window 06:00, 4,000); re-reading without saying so on the page; widening the window
+        but taking no new reading (the 9,000 spent after the reopen is not in any stamp)."""
+        first = self.close_at(self.FIRST)
+        before = self.priced(first)["est_actual"]["value"]
+        self.assertEqual(self.FIRST, first["window_end"])
+        self.assertNotIn("reopen", self.priced(first)["est_basis"]["value"])
+        self.reopen_at(self.REOPEN)
+        self.spend(9000)                                 # the reopened unit's work
+        again = self.close_at(self.SECOND)
+        self.assertEqual(first["report_id"], again["report_id"])
+        self.assertEqual(self.SECOND, again["window_end"], "the window runs to the second close")
+        after = self.priced(again)["est_actual"]["value"]
+        self.assertGreater(after, before, "the second page carries the first close's figure")
+        self.assertEqual(13 * before // 4, after, "open to second close, not the reopen alone")
+        basis = self.priced(again)["est_basis"]["value"]
+        self.assertIn(f"the meter was re-read at the close of {self.SECOND}, after the run was "
+                      f"reopened at {self.REOPEN}", basis)
+        # The round trip: the re-read page re-derives from the record as filed.
+        check = self.lean._live("sprint_report").revalidate(self.root, again["report_id"])
+        self.assertTrue(check["valid"], check.get("changes"))
+
+    def test_a_re_close_with_no_reopen_since_keeps_the_re_read_window(self) -> None:
+        """AC1's boundary: only a reopen AFTER the filed page's window re-reads. MUTANT: re-read
+        on any reopen in the run's history (the third close, with none since the second, moves
+        to 08:00 and counts the paperwork after it)."""
+        self.close_at(self.FIRST)
+        self.reopen_at(self.REOPEN)
+        self.spend(9000)
+        second = self.close_at(self.SECOND)
+        self.spend(20000)                                # paperwork after the second close
+        third = self.close_at(self.THIRD)
+        self.assertEqual(self.SECOND, third["window_end"])
+        self.assertEqual(self.priced(second)["est_actual"]["value"],
+                         self.priced(third)["est_actual"]["value"])
+        self.assertIn("re-read", self.priced(third)["est_basis"]["value"])
+
+
 class TheSealDoesNotMoveTheWindowTests(ReportOfRecordBase):
     """BG0718: the act of SEALING must not invalidate the page it seals.
 

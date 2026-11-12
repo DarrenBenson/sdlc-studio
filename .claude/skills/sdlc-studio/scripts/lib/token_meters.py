@@ -252,3 +252,58 @@ def read(repo_root: Path | str, claude, env: Mapping | None = None) -> dict:
                 f"the {harness} reader raised {type(exc).__name__} rather than returning a "
                 f"reason, so no reading is taken")}
     return {**got, HARNESS: harness, "selected_by": choice["selected_by"]}
+
+
+#: A reading's optional per-request split: one `{"model", "components"}` per model request, where
+#: the store keeps each request's own usage. A provider may bill a request by its prompt's size
+#: (xAI's Long context), which a total cannot show, so these are what price such a model exactly.
+REQUESTS = "requests"
+#: The components a request's prompt is made of: everything it sent, its output apart.
+_PROMPT = ("input", "cache_read", "cache_write_5m", "cache_write_1h")
+
+
+def prompt_tokens(components: Mapping) -> int:
+    """A request's prompt size: its input, cache-read and cache-write tokens, never its output."""
+    return sum(int(components.get(c) or 0) for c in _PROMPT)
+
+
+def book(requests, table) -> dict:
+    """`requests` as a per-model split in `run_state.BY_MODEL`'s shape, each request's components
+    added under the id its prompt size is billed at (`prices.request_id`): a request at or past
+    its model's long-context threshold under that model's long-context id, so the split prices
+    every token of it at that rate wherever the split is priced."""
+    from lib import prices  # noqa: PLC0415 - only the dollar figure needs the table
+    split: dict = {}
+    for req in requests or []:
+        comps = req.get("components") or {}
+        model = req.get("model") or ""
+        key = prices.request_id(model, prompt_tokens(comps), table) if model else model
+        held = split.setdefault(key, {})
+        for name, n in comps.items():
+            held[name] = held.get(name, 0) + n
+    return split
+
+
+def dollars(reading: Mapping, table) -> dict:
+    """A reading's US-dollar figure, `{usd, lower_bound, unpriced}`. A reading carrying
+    `REQUESTS` is priced request by request, each at the rate its own prompt bills, so its figure
+    is exact. Otherwise its per-model split (`by_model`) is priced from totals, and where a model
+    is billed at a higher rate past a prompt size, `lower_bound` says the figure is a lower bound
+    and why. `usd` is None when nothing is priced; a model the table does not price is named in
+    `unpriced`, never summed in as 0."""
+    from lib import prices  # noqa: PLC0415 - only the dollar figure needs the table
+    if reading.get(REQUESTS):
+        rows = [(r.get("model"), r.get("components") or {},
+                 prompt_tokens(r.get("components") or {})) for r in reading[REQUESTS]]
+    else:
+        rows = [(m, c, None) for m, c in (reading.get("by_model") or {}).items()]
+    usd, lower, unpriced = None, [], []
+    for model, comps, prompt in rows:
+        got = prices.cost(model, comps, table, prompt_tokens=prompt)
+        if got.usd is None:
+            unpriced.append(got.unpriced)
+            continue
+        usd = (usd or 0.0) + got.usd
+        if got.lower_bound and got.lower_bound not in lower:
+            lower.append(got.lower_bound)
+    return {"usd": usd, "lower_bound": "; ".join(lower) or None, "unpriced": unpriced}

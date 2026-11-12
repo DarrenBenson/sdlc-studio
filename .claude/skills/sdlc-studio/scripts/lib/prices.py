@@ -55,6 +55,12 @@ COMPONENTS = ("input", "output", "cache_read", "cache_write_5m", "cache_write_1h
 REQUIRED = ("model",) + COMPONENTS + ("effective", "source")
 #: Fields an entry may carry beyond the required ones.
 OPTIONAL = ("note",)
+#: An entry's optional block of its provider's long-context rates: the five component prices,
+#: `from_prompt_tokens` (the prompt size from which they apply) and its own effective date and
+#: source. A request whose prompt is that size or more is billed at them for all its tokens.
+LONG_CONTEXT = "long_context"
+#: The id `load` prices an entry's long-context block under, beside the entry: its model + this.
+LONG_CONTEXT_ID = "@long-context"
 #: The table's key, and the `pricing` key, of the price of one Copilot premium request.
 PREMIUM_REQUEST = "premium_request"
 #: Every field a premium-request price must carry, in the order a refusal checks them.
@@ -94,6 +100,10 @@ class Price:
     effective: dt.date
     source: str
     note: str = ""
+    #: On a long-context price, the prompt size in tokens from which it applies; None otherwise.
+    from_prompt_tokens: int | None = None
+    #: The entry's long-context price (`LONG_CONTEXT`), which `load` also lists under its own id.
+    long_context: "Price | None" = None
 
 
 @dataclass(frozen=True)
@@ -139,10 +149,12 @@ class PriceTable:
 
 class Cost(NamedTuple):
     """A reading's estimated cost. `usd` is None when the model has no price, and `unpriced` then
-    says which model; a priced reading has `unpriced` None."""
+    says which model; a priced reading has `unpriced` None. `lower_bound` says why a figure priced
+    from a total, for a model with a long-context rate, may fall short of the bill; else None."""
     usd: float | None
     model: str | None
     unpriced: str | None
+    lower_bound: str | None = None
 
 
 def _price(value, where: str, name: str, unit: str = _USD) -> float:
@@ -160,7 +172,7 @@ def _entry(raw, where: str, model: str | None) -> Price:
     (a config key), or None to read it from the entry's own `model` field."""
     if not isinstance(raw, Mapping):
         raise PriceTableError(f"{where} is not a mapping of fields")
-    unknown = sorted(set(raw) - set(REQUIRED) - set(OPTIONAL))
+    unknown = sorted(set(raw) - set(REQUIRED) - set(OPTIONAL) - {LONG_CONTEXT})
     if unknown:
         raise PriceTableError(f"{where} has unknown field(s) {', '.join(map(repr, unknown))}; "
                               f"an entry carries {', '.join(REQUIRED)}")
@@ -174,7 +186,40 @@ def _entry(raw, where: str, model: str | None) -> Price:
         raise PriceTableError(f"{where} names model {raw['model']!r}, not its key {model!r}")
     values = {name: _price(raw.get(name), where, name) for name in COMPONENTS}
     effective, source, note = _dated(raw, where)
-    return Price(model=model, effective=effective, source=source, note=note, **values)
+    long = (None if raw.get(LONG_CONTEXT) is None else
+            _long_context(raw[LONG_CONTEXT], f"{where} {LONG_CONTEXT}", model))
+    return Price(model=model, effective=effective, source=source, note=note, long_context=long,
+                 **values)
+
+
+def _long_context(raw, where: str, model: str) -> Price:
+    """An entry's long-context block as a price under `model` + `LONG_CONTEXT_ID`, refused by
+    name on the same terms as an entry, and when its threshold is not a whole number of 1 or
+    more."""
+    if not isinstance(raw, Mapping):
+        raise PriceTableError(f"{where} is not a mapping of fields")
+    known = set(COMPONENTS) | {"from_prompt_tokens", "effective", "source"} | set(OPTIONAL)
+    unknown = sorted(set(raw) - known)
+    if unknown:
+        raise PriceTableError(f"{where} has unknown field(s) {', '.join(map(repr, unknown))}")
+    least = raw.get("from_prompt_tokens")
+    if isinstance(least, bool) or not isinstance(least, int) or least < 1:
+        raise PriceTableError(f"{where} has 'from_prompt_tokens' {least!r}: give the prompt "
+                              "size in tokens from which the rates apply, a whole number of 1 "
+                              "or more")
+    values = {name: _price(raw.get(name), where, name) for name in COMPONENTS}
+    effective, source, note = _dated(raw, where)
+    return Price(model=model + LONG_CONTEXT_ID, effective=effective, source=source, note=note,
+                 from_prompt_tokens=least, **values)
+
+
+def _list(models: dict, price: Price) -> None:
+    """Add `price` to `models` with its long-context price under its own id, replacing whatever
+    either id held, so an entry replaced whole loses a long-context price it no longer carries."""
+    models[price.model] = price
+    models.pop(price.model + LONG_CONTEXT_ID, None)
+    if price.long_context is not None:
+        models[price.long_context.model] = price.long_context
 
 
 def _dated(raw: Mapping, where: str) -> tuple[dt.date, str, str]:
@@ -281,7 +326,7 @@ def _shipped(path: Path) -> tuple[dict[str, Price], RequestPrice | None, CreditB
         price = _entry(raw, f"{Path(path).name}: entry {n}", None)
         if price.model in table:
             raise PriceTableError(f"{Path(path).name}: entry {n} repeats model {price.model!r}")
-        table[price.model] = price
+        _list(table, price)
     request = doc.get(PREMIUM_REQUEST)
     request = (None if request is None else
                request_price(request, f"{Path(path).name}: {PREMIUM_REQUEST}"))
@@ -333,7 +378,7 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
     overridden = []
     for model, raw in extra.items():
         model = str(model).strip()
-        models[model] = _entry(raw, f"pricing.models.{model}", model)
+        _list(models, _entry(raw, f"pricing.models.{model}", model))
         overridden.append(model)
     if pricing.get(PREMIUM_REQUEST) is not None:
         request = request_price(pricing[PREMIUM_REQUEST], f"pricing.{PREMIUM_REQUEST}")
@@ -355,13 +400,37 @@ def load(repo_root: Path | str | None = None, *, path: Path | str | None = None,
                       copilot=billing, copilot_billing=basis, billed_by_request=by_request)
 
 
+def long_context(model: str | None, table: PriceTable) -> Price | None:
+    """`model`'s long-context price, listed under its `LONG_CONTEXT_ID` id; None for a model
+    priced at one rate whatever its prompt size."""
+    name = (model or "").strip()
+    if not name or name.endswith(LONG_CONTEXT_ID):
+        return None
+    return table.models.get(name + LONG_CONTEXT_ID)
+
+
+def request_id(model: str | None, prompt_tokens: int, table: PriceTable) -> str | None:
+    """The id one request of `model` is priced under: its long-context id when its prompt of
+    `prompt_tokens` reaches that price's `from_prompt_tokens`, else `model`."""
+    long = long_context(model, table)
+    if long is not None and long.from_prompt_tokens and prompt_tokens >= long.from_prompt_tokens:
+        return long.model
+    return model
+
+
 def cost(model: str | None, components: Mapping[str, int],
-         table: PriceTable | None = None) -> Cost:
+         table: PriceTable | None = None, prompt_tokens: int | None = None) -> Cost:
     """A reading's estimated cost in US dollars: each component's tokens times its price per
     million, summed. A component the reading omits counts as no tokens; one the table does not
     know, or a count that is not a whole number of 0 or more, raises ValueError rather than
     dropping out of the sum. A model the table does not list costs `usd=None`, naming it, and
-    so does one the plan bills by request (`billed_by_request`), saying so."""
+    so does one the plan bills by request (`billed_by_request`), saying so.
+
+    `prompt_tokens` is given when `components` are ONE request's, of a prompt that size: a
+    model with a long-context price is then priced at the rate that prompt bills, for all its
+    tokens (`request_id`). Without it the components are a total, which cannot tell a long
+    request from a short one, so such a model is priced at its own rate and `lower_bound` says
+    the figure may fall short."""
     for name, tokens in components.items():
         if name not in COMPONENTS:
             raise ValueError(f"reading component {name!r} is not one of {', '.join(COMPONENTS)}")
@@ -369,6 +438,8 @@ def cost(model: str | None, components: Mapping[str, int],
             raise ValueError(f"reading component {name!r} is {tokens!r}, not a token count")
     table = table if table is not None else load()
     name = (model or "").strip()
+    if name and prompt_tokens is not None:
+        name = request_id(name, prompt_tokens, table)
     if not name:
         return Cost(None, model, "not priced: the reading names no model")
     if name in table.billed_by_request:
@@ -380,7 +451,15 @@ def cost(model: str | None, components: Mapping[str, int],
         return Cost(None, model, f"not priced: model {name} is not in the price table "
                                  f"(add it under pricing.models)")
     usd = sum(components.get(c, 0) * getattr(price, c) for c in COMPONENTS) / _PER
-    return Cost(usd, model, None)
+    long = long_context(name, table) if prompt_tokens is None else None
+    if long is None:
+        return Cost(usd, model, None)
+    reach = (f"{long.from_prompt_tokens:,} tokens or more" if long.from_prompt_tokens else
+             "past its long-context threshold")
+    return Cost(usd, model, None, f"a lower bound for {name}: its provider bills a request "
+                                  f"whose prompt is {reach} at the long-context rate for all its "
+                                  f"tokens, and a total cannot tell those requests apart, so "
+                                  f"every token here is priced at the shorter prompts' rate")
 
 
 def stale(table: PriceTable, today: dt.date | None = None) -> str | None:

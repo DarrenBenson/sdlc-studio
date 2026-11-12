@@ -445,6 +445,62 @@ RETRO = """# RETRO-9002: a measured sprint
 """
 
 
+class GrokLongContextPricingTests(unittest.TestCase):
+    """BG1331 AC2: xAI bills a request whose prompt is 200k tokens or more at its Long context
+    rate for every token of it. A reading carrying each request's usage prices each request at
+    the rate its prompt bills; one carrying a session total cannot tell those requests apart, so
+    its Grok dollar figure is labelled a lower bound. The rates are typed here, not read from the
+    table: grok-4.7 short 2.00 input, 0.50 cached input, 6.00 output; long 4.00, 1.00, 12.00."""
+
+    #: A prompt of exactly 200,000 (150,000 input + 50,000 cache reads) and one a token short.
+    AT = {"input": 150_000, "cache_read": 50_000, "output": 10_000}
+    UNDER = {"input": 149_999, "cache_read": 50_000, "output": 10_000}
+    AT_USD = (150_000 * 4.00 + 50_000 * 1.00 + 10_000 * 12.00) / 1e6
+    UNDER_USD = (149_999 * 2.00 + 50_000 * 0.50 + 10_000 * 6.00) / 1e6
+
+    def setUp(self) -> None:
+        from lib import prices  # noqa: PLC0415 - only this class prices
+        self.prices = prices
+        self.table = prices.load(path=prices.TABLE_PATH)
+
+    def test_each_request_is_priced_at_the_rate_its_prompt_bills(self) -> None:
+        """MUTANTS: the threshold read as more than 200k (the request at exactly 200,000 priced
+        short); the prompt counted without its cache reads (150,000, so short); the long rate
+        applied to the input alone, not every token; the output counted as prompt (the request
+        a token short priced long)."""
+        reading = {"tokens": 1, token_meters.REQUESTS: [
+            {"model": "grok-4.7", "components": self.AT},
+            {"model": "grok-4.7", "components": self.UNDER},
+            {"model": "grok-4.7", "components": self.UNDER}]}   # two short: the split adds them
+        self.assertEqual(200_000, token_meters.prompt_tokens(self.AT))
+        self.assertEqual(199_999, token_meters.prompt_tokens(self.UNDER))
+        got = token_meters.dollars(reading, self.table)
+        self.assertAlmostEqual(self.AT_USD + 2 * self.UNDER_USD, got["usd"], places=9)
+        self.assertIsNone(got["lower_bound"], "a per-request figure is exact")
+        # The split a reader books from those requests prices the same through the report's path.
+        split = token_meters.book(reading[token_meters.REQUESTS], self.table)
+        self.assertEqual({"grok-4.7", "grok-4.7" + self.prices.LONG_CONTEXT_ID}, set(split))
+        self.assertAlmostEqual(self.AT_USD + 2 * self.UNDER_USD,
+                               run_state.usd(split, self.table)["usd"], places=9)
+
+    def test_a_session_total_grok_figure_is_labelled_a_lower_bound(self) -> None:
+        """MUTANTS: the label dropped; the label on a model with no long-context rate; a
+        session total priced at the long rate."""
+        total = {k: self.AT[k] + self.UNDER[k] for k in self.AT}
+        got = token_meters.dollars({"tokens": 1, run_state.BY_MODEL: {"grok-4.7": total}},
+                                   self.table)
+        short = (total["input"] * 2.00 + total["cache_read"] * 0.50
+                 + total["output"] * 6.00) / 1e6
+        self.assertAlmostEqual(short, got["usd"], places=9)
+        self.assertIn("lower bound", got["lower_bound"])
+        self.assertIn("grok-4.7", got["lower_bound"])
+        self.assertIn("200,000", got["lower_bound"])
+        claude = token_meters.dollars(
+            {"tokens": 1, run_state.BY_MODEL: {"claude-opus-4-7": total}}, self.table)
+        self.assertIsNotNone(claude["usd"], "premise: the control model is priced")
+        self.assertIsNone(claude["lower_bound"], "a model with one rate is exact from a total")
+
+
 class HarnessLaneTests(_Fixture):
 
     def test_accuracy_names_the_harness_it_could_not_read(self) -> None:

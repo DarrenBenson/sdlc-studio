@@ -3072,6 +3072,34 @@ def _metered(state: dict, end: "datetime | None") -> dict:
         if not (isinstance(s, dict) and end and _at(s.get("at")) and _at(s.get("at")) > end)]}
 
 
+#: The run record's note of a close that re-read the meter after `sprint reopen`,
+#: `{"reopened_at", "read_at"}`. A reopen lets run work in, not paperwork, so that close measures
+#: the page from the run's open to itself; a record without the note was never re-read so, and
+#: its page reads as it did.
+METER_REREAD = "meter_reread_after_reopen"
+
+
+def reopened_since(state: dict, window_end: str | None) -> str | None:
+    """The time of the run's latest reopen after `window_end`, the window its filed page
+    measured to; None when no page was filed or the run has not been reopened since."""
+    end = _at(window_end)
+    for rec in reversed(state.get("reopened") or [] if end else []):
+        at = _at(rec.get("at")) if isinstance(rec, dict) else None
+        if at and at > end:
+            return rec["at"]
+    return None
+
+
+def _reread_note(state: dict) -> str | None:
+    """The Priced cost row's word that a close after a reopen re-read the meter (`METER_REREAD`)."""
+    got = state.get(METER_REREAD)
+    if not isinstance(got, dict) or not got.get("read_at"):
+        return None
+    return (f"the meter was re-read at the close of {got['read_at']}, after the run was "
+            f"reopened at {got.get('reopened_at')}, so this figure runs from the run's open to "
+            f"that close")
+
+
 def _at(value) -> "datetime | None":
     if not isinstance(value, str) or not value.strip():
         return None
@@ -4090,6 +4118,8 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     head = (_priced_row(run_tokens, state_rel, (tokens or 0) - (run_tokens.get("tokens") or 0),
                         agents) if priced_rule else None)
     if head:
+        if reread := _reread_note(state):
+            head["est_basis"]["value"] += f"; {reread}"
         rows.append(head)
     rows.append(_estimate_row(
         "Tokens", f, tokens or None, basis,

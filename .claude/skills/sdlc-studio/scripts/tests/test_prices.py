@@ -95,8 +95,10 @@ class PriceTableTests(unittest.TestCase):
         # US1144: the Copilot block's ids are priced through the same map, none of them a models id.
         copilot = set(table.copilot.rates) if table.copilot else set()
         self.assertFalse(copilot & {e["model"] for e in raw})
-        self.assertEqual(set(table.models), {e["model"] for e in raw} | copilot)
-        self.assertEqual(len(table.models), len(raw) + len(copilot),
+        # BG1331: an entry's long-context block is priced under its own id beside the entry.
+        long = {e["model"] + prices.LONG_CONTEXT_ID for e in raw if prices.LONG_CONTEXT in e}
+        self.assertEqual(set(table.models), {e["model"] for e in raw} | copilot | long)
+        self.assertEqual(len(table.models), len(raw) + len(copilot) + len(long),
                          "a duplicate shipped id was folded in")
 
         # Each required field, removed from one entry or set to null, is refused by name.
@@ -500,6 +502,64 @@ COPILOT_SHARED_IDS = {
     "gpt-5.3-codex": (175, 17.5, 175, 1400),
 }
 COPILOT_CAPTURE = SCRIPTS / "tests" / "fixtures" / "harness_usage" / "copilot.jsonl"
+
+#: xAI's Long context rates (Text API, docs.x.ai/developers/pricing, read 2026-11-12), typed here
+#: and nowhere in the code under test: input, cached input and output, US dollars per million, for
+#: a request whose prompt is 200k tokens or more, every token of it.
+GROK_LONG = {"grok-4.7": (4.00, 1.00, 12.00), "grok-4.6": (4.00, 1.00, 12.00),
+             "grok-4.5": (4.00, 0.60, 12.00)}
+
+
+class GrokLongContextRatesTests(unittest.TestCase):
+    """BG1331 AC1: the table records xAI's Long context rates beside the Short context ones."""
+
+    def test_each_grok_id_carries_its_long_context_rates_dated_and_sourced(self) -> None:
+        """MUTANTS: a long-context rate dropped or mistyped (grok-4.5's cached input at 1.00,
+        as its siblings'); the threshold at 128k; the block undated or sourced elsewhere; the
+        short rates replaced by the long ones."""
+        doc = json.loads(prices.TABLE_PATH.read_text(encoding="utf-8"))
+        raw = {e["model"]: e for e in doc["models"]}
+        table = prices.load(path=prices.TABLE_PATH)
+        for base, (inp, cached, out) in GROK_LONG.items():
+            for model in (base, f"xai/{base}"):
+                with self.subTest(model=model):
+                    self.assertIn(prices.LONG_CONTEXT, raw[model], "recorded beside the short")
+                    long = prices.long_context(model, table)
+                    self.assertIsNotNone(long, f"{model} has no long-context rate")
+                    self.assertEqual((inp, cached, out),
+                                     (long.input, long.cache_read, long.output))
+                    # The page prices no cache write: a written token is billed as input.
+                    self.assertEqual((inp, inp), (long.cache_write_5m, long.cache_write_1h))
+                    self.assertEqual(200_000, long.from_prompt_tokens)
+                    self.assertEqual(dt.date(2026, 11, 12), long.effective)
+                    self.assertTrue(long.source.startswith(XAI_PAGE), long.source)
+                    for word in ("Text API", base, "Long context", "read 2026-11-12"):
+                        self.assertIn(word, long.source)
+                    short = table.models[model]
+                    self.assertEqual((2.0, 6.0), (short.input, short.output),
+                                     "the Short context rates stay the entry's own")
+                    self.assertIsNone(short.from_prompt_tokens)
+
+    def test_a_malformed_long_context_block_is_refused_by_name(self) -> None:
+        """A threshold that is not a whole number of tokens, or a block missing a price, is
+        refused naming the entry, never read as zero or as no threshold."""
+        doc = json.loads(prices.TABLE_PATH.read_text(encoding="utf-8"))
+        entry = next(e for e in doc["models"] if e["model"] == "grok-4.7")
+        for bad, word in (({"from_prompt_tokens": "200k"}, "from_prompt_tokens"),
+                          ({"from_prompt_tokens": 0}, "from_prompt_tokens"),
+                          ({"output": None}, "output")):
+            with self.subTest(bad=bad), tempfile.TemporaryDirectory() as tmp:
+                broken = json.loads(json.dumps(doc))
+                target = next(e for e in broken["models"] if e["model"] == entry["model"])
+                target[prices.LONG_CONTEXT].update(bad)
+                if bad.get("output", 1) is None:
+                    del target[prices.LONG_CONTEXT]["output"]
+                path = Path(tmp) / "model-prices.json"
+                path.write_text(json.dumps(broken), encoding="utf-8")
+                with self.assertRaises(prices.PriceTableError) as caught:
+                    prices.load(path=path)
+                self.assertIn("grok-4.7", str(caught.exception))
+                self.assertIn(word, str(caught.exception))
 
 
 class CopilotTokenPriceTests(unittest.TestCase):

@@ -10040,6 +10040,11 @@ def _file_the_report(root, retro_id):
     # from this clone's refusal log and run archive, is frozen beside them over the window the
     # page will state, so a clone holding neither reads the tally the close read.
     first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
+    # A REOPEN since that window let run work in, not paperwork: this close re-reads the meter
+    # and measures from the run's open to now, as a first close does, and the page says so.
+    reopened = sprint_report.reopened_since(run_state.read(root) or {}, first_end)
+    if reopened:
+        first_end = None
     try:
         sprint_report.freeze_ci_runs(root)
         sprint_report.freeze_review_rows(root)
@@ -10059,8 +10064,11 @@ def _file_the_report(root, retro_id):
     # checklist does, so a finding filed since is on the page (`FINDINGS_END`).
     try:
         if not first_end:
-            if run_state.stamp_tokens(root, "report"):
+            if stamp := run_state.stamp_tokens(root, "report"):
                 run_state.stamp_cost_roles(root)   # the page's spend by role, frozen here
+                if reopened:
+                    run_state.update(root, **{sprint_report.METER_REREAD: {
+                        "reopened_at": reopened, "read_at": stamp.get("at")}})
     except sdlc_md.AllocationLockTimeout as exc:   # the close goes on; the missing stamp is said
         print(f"warning: the report-time token stamp was not recorded - {exc.reason}",
               file=sys.stderr)

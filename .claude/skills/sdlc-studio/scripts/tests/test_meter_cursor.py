@@ -815,5 +815,77 @@ class CursorHookLedgerTests(_Fixture):
                       f"http on a loopback IP address, else no request is made", override[0])
 
 
+class LedgerCarriesTheModelTests(_Fixture):
+    """BG1305: the hook writes each response's model on its ledger line, and the meter read the
+    counts and dropped it, so a ledger reading named no model and was never priced. It now sums
+    each line under its own model, `run_state.BY_MODEL` as the Codex meter does, "" for a line
+    naming none. Rates are typed here: composer-2.5 0.50 input, 0.20 cache read, 0.50 cache
+    write, 2.50 output; grok-4.7 short 2.00, 0.50, 2.00, 6.00 and long 4.00, 1.00, 4.00, 12.00,
+    US dollars per million tokens."""
+
+    hook = CursorHookLedgerTests.hook
+    cli_reading = CursorHookLedgerTests.cli_reading
+
+    def setUp(self) -> None:
+        """The hook ledger fixture, then the shipped price table."""
+        super().setUp()
+        (self.root / "sdlc-studio").mkdir()
+        from lib import prices  # noqa: PLC0415 - only this class prices
+        self.prices = prices
+        self.table = prices.load(path=prices.TABLE_PATH)
+
+    def test_a_model_bearing_ledger_is_priced_and_a_line_naming_none_is_not(self) -> None:
+        """AC1. MUTANTS: the model dropped (HEAD: no split, so not priced); every line booked
+        under the first line's model (the unnamed line priced); a model's lines overwritten
+        rather than summed; the split's components booked as the payload's raw input_tokens."""
+        for n, inp, out, read, write in ((1, 54_000, 200, 50_000, 3_000),
+                                         (2, 12_000, 100, 10_000, 0)):
+            self.assertEqual(0, self.hook(response(n, inp, out, read, write,
+                                                   model="composer-2.5")).returncode)
+        self.assertEqual(0, self.hook(response(3, 5_000, 50, 0, 0, model=None)).returncode)
+        got = self.cli_reading()
+        composer = {"input": 3_000, "output": 300, "cache_write_5m": 3_000, "cache_write_1h": 0,
+                    "cache_read": 60_000}
+        unnamed = {"input": 5_000, "output": 50, "cache_write_5m": 0, "cache_write_1h": 0,
+                   "cache_read": 0}
+        self.assertEqual({"composer-2.5": composer, "": unnamed}, got[run_state.BY_MODEL])
+        self.assertEqual("composer-2.5", got["model"])
+        usd = run_state.usd(got[run_state.BY_MODEL], self.table)
+        self.assertEqual(["composer-2.5"], [m["model"] for m in usd["models"]])
+        self.assertAlmostEqual((3_000 * 0.50 + 300 * 2.50 + 3_000 * 0.50 + 60_000 * 0.20) / 1e6,
+                               usd["usd"], places=9)
+        self.assertEqual(["no model named"], [u["model"] for u in usd["unpriced"]])
+        self.assertIn("names no model", usd["unpriced"][0]["reason"])
+        # The stamp carries the split, so the run's dollar figure is formed from it.
+        with self.env(None, **{meter_cursor.KEY_ENV: None}):
+            run_state.open_run(self.root, batch=["BG0001"], goal="g")
+        opening = run_state.read(self.root)[run_state.TOKEN_STAMPS][0]
+        self.assertEqual({"composer-2.5": composer, "": unnamed}, opening[run_state.BY_MODEL])
+
+    def test_a_ledger_naming_no_model_still_reads_not_priced(self) -> None:
+        """AC1's control. MUTANT: a line naming no model booked under a default model."""
+        self.assertEqual(0, self.hook(response(1, 5_000, 50, 0, 0, model=None)).returncode)
+        got = self.cli_reading()
+        self.assertIsNone(got["model"])
+        usd = run_state.usd(got[run_state.BY_MODEL], self.table)
+        self.assertIsNone(usd["usd"])
+        self.assertIn("names no model", usd["reason"])
+
+    def test_a_grok_response_of_200k_prompt_tokens_is_booked_at_the_long_context_rate(self) -> None:
+        """Each line is one response and its input_tokens is that response's whole prompt, so a
+        Grok response of 200,000 prompt tokens or more is booked under the long-context id and
+        priced at that rate for all its tokens. MUTANTS: every line booked under the plain model;
+        the prompt read as the uncached input alone (2,000, so short)."""
+        self.hook(response(1, 200_000, 1_000, 198_000, 0, model="grok-4.7"))
+        self.hook(response(2, 199_999, 1_000, 197_999, 0, model="grok-4.7"))
+        got = self.cli_reading()
+        self.assertEqual("grok-4.7", got["model"], "the reading names the model, not its rate")
+        split = got[run_state.BY_MODEL]
+        self.assertEqual({"grok-4.7", "grok-4.7" + self.prices.LONG_CONTEXT_ID}, set(split))
+        long = (2_000 * 4.00 + 1_000 * 12.00 + 198_000 * 1.00) / 1e6
+        short = (2_000 * 2.00 + 1_000 * 6.00 + 197_999 * 0.50) / 1e6
+        self.assertAlmostEqual(long + short, run_state.usd(split, self.table)["usd"], places=9)
+
+
 if __name__ == "__main__":
     unittest.main()

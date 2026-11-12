@@ -178,11 +178,20 @@ def read_ledger(ledger: Path) -> dict:
     reads and writes, so its uncached input is `input_tokens` less both, never below zero, as
     the CLI's own print-mode usage line forms it. The payload does not split a cache write by
     duration, so each is booked at five minutes, as an unsplit Claude write is, and priced from
-    `run_state.TOKEN_WEIGHTS` as the figure is formed."""
-    from . import run_state  # noqa: PLC0415 - lazy: run_state loads this reader
+    `run_state.TOKEN_WEIGHTS` as the figure is formed.
+
+    Each line's components are also summed under the model it names (`run_state.BY_MODEL`, ""
+    for a line naming none), so a dollar figure prices each model at its own rate and a line
+    naming no model is not priced; the reading is named as its one model, or as
+    `run_state.SESSION_MODEL_MIXED` over more. A line is one response, and its `input_tokens` is
+    that response's whole prompt, so a response whose prompt reaches its model's long-context
+    threshold in the shipped price table is booked under that model's long-context id
+    (`token_meters.book`) and priced at that rate for all its tokens."""
+    from . import run_state, token_meters  # noqa: PLC0415 - lazy: run_state loads this reader
 
     sums = dict.fromkeys(LEDGER_FIELDS, 0)
     read = skipped = uncached = 0
+    requests: list[dict] = []
     try:
         with ledger.open("rb") as fh:
             for raw in fh:
@@ -198,8 +207,15 @@ def read_ledger(ledger: Path) -> dict:
                 read += 1
                 for f in LEDGER_FIELDS:
                     sums[f] += row[f]
-                uncached += max(row["input_tokens"] - row["cache_read_tokens"]
-                                - row["cache_write_tokens"], 0)
+                own = max(row["input_tokens"] - row["cache_read_tokens"]
+                          - row["cache_write_tokens"], 0)
+                uncached += own
+                model = row.get("model")
+                requests.append({"model": model.strip() if isinstance(model, str) else "",
+                                 "components": {"input": own, "output": row["output_tokens"],
+                                                "cache_write_5m": row["cache_write_tokens"],
+                                                "cache_write_1h": 0,
+                                                "cache_read": row["cache_read_tokens"]}})
     except OSError as exc:
         return {"tokens": None, "reason": f"the Cursor CLI hook ledger {ledger} could not be "
                                           f"read ({type(exc).__name__}), so this run's tokens "
@@ -219,11 +235,26 @@ def read_ledger(ledger: Path) -> dict:
              f"each cache write at the five-minute weight since the payload does not split it")
     if skipped:
         basis += f"; {lines}, so it is a LOWER BOUND on what the run cost"
+    models = {r["model"] for r in requests if r["model"]}
     return {"tokens": comps["input"] + comps["output"] + comps["cache_write_5m"],
             CACHE_READ: comps["cache_read"], "components": comps,
             "priced": run_state.price(comps), "responses": read, "skipped": skipped,
+            "model": (next(iter(models)) if len(models) == 1 else
+                      run_state.SESSION_MODEL_MIXED if models else None),
+            run_state.BY_MODEL: token_meters.book(requests, _rates()),
             "source": f"the Cursor CLI hook ledger {ledger}", "basis": basis,
             "includes_subagents": False}
+
+
+def _rates():
+    """The shipped price table, whose long-context thresholds `read_ledger` books each response
+    by; an empty one when it cannot be read, so every response is booked under its own model."""
+    from . import prices  # noqa: PLC0415 - only the per-model split needs it
+    try:
+        return prices.load()
+    except prices.PriceTableError:
+        return prices.PriceTable(models={}, stale_after_days=prices.DEFAULT_STALE_AFTER_DAYS,
+                                 origin="no readable price table")
 
 
 def _tables(db: Path) -> set[str] | None:
