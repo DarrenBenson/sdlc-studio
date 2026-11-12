@@ -1,6 +1,6 @@
 # US0997: A report the close files cites the committed run record, never .local/run-state.json
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a run closed through `sprint close`, when the filed RPT JSON is read, then every figure derived from the run record cites `sdlc-studio/reports/runs/<RUN-ID>.json`, and none cites `sdlc-studio/.local/run-state.json`, including the not-measured reasons the Markdown twin prints as the source it consulted.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py::CommittedRecordCitationTests::test_close_cites_the_tracked_run_record
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given a run whose CI runs the close froze on its record, when the filed page is read, then each DORA figure derived from those runs cites the tracked run record first, followed by the forge reading that filled it (`gh run list`, or its failure reason), while the figures counted from git history keep citing it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py::CommittedRecordCitationTests::test_frozen_ci_figures_cite_the_tracked_record
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given that run signed with `sprint sign` and committed, when a fresh clone holding no `.local/` reads the page, then the run-record path its figures cite exists in that clone and carries the signature the page carries, and `sprint_report check` there reads VALID.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py::CommittedRecordCitationTests::test_the_cited_record_opens_in_a_fresh_clone
+  - **Verified:** yes (2026-11-12)
 - **AC4:** Given a signed page whose figures cite `sdlc-studio/.local/run-state.json`, as every page filed before this change does, and a page filed after the change, when `sprint_report check` runs on each in a fresh clone, then both read VALID and only the later page cites the tracked record.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_cites_committed_record.py::CommittedRecordCitationTests::test_a_page_citing_local_still_checks_valid
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

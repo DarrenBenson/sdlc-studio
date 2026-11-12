@@ -14,8 +14,8 @@ Decomposed from CR0610. Delivers the work CR0610 requested.
 
 ## Story Breakdown
 
-- [ ] [US0997: A report the close files cites the committed run record, never .local/run-state.json](../stories/US0997-a-report-the-close-files-cites-the-committed.md)
-- [ ] [US0998: The committed run record names its sprint plan by digest, not by a .local path](../stories/US0998-the-committed-run-record-names-its-sprint-plan.md)
+- [x] [US0997: A report the close files cites the committed run record, never .local/run-state.json](../stories/US0997-a-report-the-close-files-cites-the-committed.md)
+- [x] [US0998: The committed run record names its sprint plan by digest, not by a .local path](../stories/US0998-the-committed-run-record-names-its-sprint-plan.md)
 - [ ] [US0999: A delegated agent's token total records the model that spent it](../stories/US0999-a-delegated-agent-s-token-total-records-the.md)
 - [ ] [US1000: The cost section states the run's cost in money from a pricing snapshot frozen at the close](../stories/US1000-the-cost-section-states-the-run-s-cost.md)
 - [ ] [US1001: The lane-yield appendix is read from the committed run record, as the close froze it](../stories/US1001-the-lane-yield-appendix-is-read-from-the.md)

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 69 |
-| Ready | 12 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 885 |
+| Done | 889 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -34,8 +34,8 @@
 | [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
@@ -49,7 +49,7 @@
 | [US1009](US1009-a-sprint-checklist-waiver-can-carry-an-expiry.md) | A sprint-checklist waiver can carry an expiry date, after which its row is enforced again | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1010](US1010-decisions-py-waive-says-exactly-which-subjects-take.md) | decisions.py waive says exactly which subjects take a scope tail and what an unscoped waiver covers, and refuses a tail nothing reads | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1011](US1011-a-review-brief-names-the-file-the-reviewer.md) | A review brief names the file the reviewer writes its verdict to | Done | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1012](US1012-a-recorded-verdict-is-bound-to-the-bytes.md) | A recorded verdict is bound to the bytes of the file its brief issued | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1012](US1012-a-recorded-verdict-is-bound-to-the-bytes.md) | A recorded verdict is bound to the bytes of the file its brief issued | Done | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1013](US1013-a-verdict-that-differs-from-its-issued-file.md) | A verdict that differs from its issued file, or was recorded before, is named | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1014](US1014-a-recorded-verdict-names-the-agent-that-was.md) | A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1015](US1015-a-verdict-written-by-the-context-that-edited.md) | A verdict written by the context that edited the unit is a self-review, whatever seat it names | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
@@ -186,7 +186,7 @@
 | [US1146](US1146-abena-osei-becomes-the-shipped-skill-s-primary.md) | Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Done | EP0305 | 2026-11-09 | 2026-11-09 |
-| [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Ready | EP0302 | 2026-11-09 | 2026-11-09 |
+| [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Done | EP0302 | 2026-11-09 | 2026-11-09 |
 
 ## Archived Releases
 

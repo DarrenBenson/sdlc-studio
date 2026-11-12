@@ -1,3 +1,9 @@
 {"id": "BG1030", "type": "bug", "project": "sdlc-studio"}
 {"id": "BG1010", "type": "bug", "project": "sdlc-studio"}
 {"id": "US1011", "type": "story", "project": "sdlc-studio"}
+{"id": "US0997", "type": "story", "project": "sdlc-studio"}
+{"id": "US1149", "type": "story", "project": "sdlc-studio"}
+{"id": "US0998", "type": "story", "project": "sdlc-studio"}
+{"id": "US1012", "type": "story", "project": "sdlc-studio"}
+{"id": "EP0302", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0670", "type": "cr", "project": "sdlc-studio"}

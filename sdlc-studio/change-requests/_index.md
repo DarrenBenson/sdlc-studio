@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 40 |
 | Approved | 0 |
-| In Progress | 28 |
-| Complete | 542 |
+| In Progress | 27 |
+| Complete | 543 |
 | Rejected | 30 |
 | Deferred | 0 |
 | Superseded | 61 |
@@ -81,7 +81,7 @@
 | [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | Complete | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | Complete | Medium | Feature | 2026-11-06 | EP0299 |
 | [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | Complete | High | Improvement | 2026-11-06 | EP0299 |
-| [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | In Progress | High | Feature | 2026-11-06 | EP0302 |
+| [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | Complete | High | Feature | 2026-11-06 | EP0302 |
 | [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | Proposed | High | Improvement | 2026-11-06 | -- |
 | [CR-0672](CR0672-add-a-deterministic-sprint-py-drive-loop-that.md) | Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end. | Proposed | High | Feature | 2026-11-06 | -- |
 | [CR-0673](CR0673-replace-the-author-s-and-the-reviewer-s.md) | Replace the author's and the reviewer's hand-rolled mutation passes with one shipped runner (`mutation.py` with drop-conjunct and prose-polarity operators, plus arbitrary file, old and new edits), and have `critic.py self-check record` take its report and refuse unanswered survivors. | Proposed | High | Improvement | 2026-11-06 | -- |

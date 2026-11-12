@@ -1,6 +1,6 @@
 # US1012: A recorded verdict is bound to the bytes of the file its brief issued
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a block at a path the brief issued, opening with its UNIT and BRIEF lines and carrying prose beyond the VERDICT, ISSUES and BLOCKING fields, when `critic.py record --from-verdict <path>` runs, then the new row's `Source` cell is `sha256:<first 16 hex digits of the file's exact bytes> <file basename>`, and the file is byte-identical afterwards.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::VerdictFileBindingTests::test_an_issued_file_is_hashed_as_written
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given the same verdict given by `--verdict` and `--issues`, by `--from-verdict -`, from a file outside `sdlc-studio/reviews/verdicts/`, or from `sdlc-studio/reviews/verdicts/US0001/mine.txt`, which no brief issued, when `record` writes it, then the row's `Source` cell is `-` and `record` prints that the verdict was transcribed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::VerdictFileBindingTests::test_a_verdict_from_no_issued_file_is_marked_transcribed
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given an eight-column ledger and the row identities a run record froze from it, when `critic.py record` writes the first verdict after the change, then a ninth `Source` column is added, every earlier row is padded with `-` and keeps its cells, the `Verdict` column still parses as APPROVE or REJECT, and every frozen identity is still found among the ledger's rows.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::VerdictFileBindingTests::test_the_source_column_moves_no_frozen_row_identity
+  - **Verified:** yes (2026-11-12)
 - **AC4:** Given one row recorded from an issued file and one transcribed row, when `critic.py show` runs, then the first row's line reads 'from the brief's verdict file (writer unread)' and names the file, the second reads 'transcribed', and `--format json` carries the same as a field.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::VerdictFileBindingTests::test_show_says_where_each_verdict_came_from_and_claims_no_writer
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # US0998: The committed run record names its sprint plan by digest, not by a .local path
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given a run opened with `sprint plan --write` and closed with `sprint close`, when the tracked run record is read, then `plan_digest` holds `sha256:` and the full 64-hex digest of the sprint-plan.json that plan wrote, `plan` is null, and no value in the record names a path under `.local/`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_record_plan_digest.py::PlanDigestTests::test_plan_write_records_a_content_digest
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given a run whose batch a second `sprint plan --write` grows before its goal is judged, when the run is closed, then `plan_digest` is the digest of the plan the second write left, not the first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_record_plan_digest.py::PlanDigestTests::test_a_replan_moves_the_digest_to_the_last_write
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given a rolling run whose next cycle is opened by `sprint boundary`, when that cycle's run record is filed, then its `plan_digest` is the digest of that cycle's own plan, not the previous cycle's and not a path.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_record_plan_digest.py::PlanDigestTests::test_the_next_cycle_records_its_own_plan_digest
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 
