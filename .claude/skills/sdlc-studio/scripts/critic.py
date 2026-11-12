@@ -146,14 +146,80 @@ def brief_fingerprint(brief_text: str) -> str:
     between two identical briefs can never be compared, which would make the field decorative.
 
     The file-history section is left out: it moves when another unit sharing a file lands, so
-    digesting it would change the fingerprint between briefing and recording.
+    digesting it would change the fingerprint between briefing and recording. So is the verdict
+    file section: its path is unique per briefing, so digesting it would give every brief of one
+    scope its own fingerprint. Stripped here rather than in `cmd_brief`, because readers of a
+    saved brief's whole stdout (`lanes._brief_of`, `resume_brief._approved`) hash through here.
     """
     import hashlib  # noqa: PLC0415 - local; only this path needs it
     import reconcile  # noqa: PLC0415 - sibling; the section's renderer owns its shape
-    normalised = " ".join(reconcile.strip_file_history(brief_text or "").split())
+    text = strip_verdict_file(brief_text or "")
+    normalised = " ".join(reconcile.strip_file_history(text).split())
     if not normalised:
         return ""
     return hashlib.sha256(normalised.encode("utf-8")).hexdigest()[:12]
+
+
+#: The section `critic.py brief` prints after the return contract, naming the file the reviewer
+#: writes its block to. Its last three lines are the path and the two header lines the file
+#: opens with; the strip below matches from the mark through the BRIEF line. The mark is not
+#: shaped `--- NAME ---`, so it is never read as one of the brief's own tier sections.
+_VERDICT_FILE_MARK = "Your verdict file, fresh for this brief:"
+_VERDICT_FILE_RE = re.compile(r"\s*^Your verdict file, fresh for this brief:\n(?:[^\n]*\n){0,4}?"
+                              r"UNIT: [^\n]*\nBRIEF: [^\n]*$", re.M)
+#: The header lines a verdict file opens with, before its VERDICT line.
+_VERDICT_HEADER_RE = re.compile(r"\A\s*(?:(?:UNIT|BRIEF):[^\n]*(?:\n|\Z))+")
+VERDICTS_DIR_REL = Path("sdlc-studio") / "reviews" / "verdicts"
+
+
+def strip_verdict_file(text: str) -> str:
+    """`text` without the verdict file section `verdict_file_section` rendered into it. The LAST
+    match is the section, as `cmd_brief` prints it after everything else."""
+    matches = list(_VERDICT_FILE_RE.finditer(text))
+    if not matches:
+        return text
+    m = matches[-1]
+    return text[:m.start()] + text[m.end():]
+
+
+def verdict_file_section(path: Path, unit: str, stem: str) -> str:
+    """The lines after the return contract naming the reviewer's own verdict file. Worded with
+    no verdict word or severity label, so `neutrality_violations` passes without stripping it."""
+    return (f"{_VERDICT_FILE_MARK}\n"
+            "Write the block the contract above asks for to the file named below, which no other\n"
+            "brief names, opening it with the two lines under the path; then return the same block.\n"
+            f"{path}\nUNIT: {unit}\nBRIEF: {stem}")
+
+
+def verdict_root(root: Path | str) -> Path:
+    """The checkout a verdict file lives in: the main worktree when `root` is the top of a
+    linked one, so a reviewer briefed in a worktree writes where the recorder reads; otherwise
+    `root` itself, absolute. `_git` runs under the scrubbed environment, so a hook's inherited
+    `GIT_DIR` cannot answer for another repository."""
+    here = Path(root).resolve()
+    res = _git(here, "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir")
+    if res is None or res.returncode != 0:
+        return here
+    lines = res.stdout.decode("utf-8", "replace").splitlines()
+    if len(lines) < 2 or Path(lines[0]).resolve() != here:
+        return here
+    common = Path(lines[1]).resolve()
+    return common.parent if common.name == ".git" else here
+
+
+def issue_verdict_file(root: Path | str, unit: str, fp: str) -> Path:
+    """A fresh absolute path `<main checkout>/sdlc-studio/reviews/verdicts/<UNIT>/<fp>-<token>.txt`
+    no file holds yet, with its folder made (best-effort). The token is 32 random bits, so two
+    briefs of one scope, or a rejoinder after a first brief, name different files."""
+    import secrets  # noqa: PLC0415 - local; only this path needs it
+    folder = verdict_root(root) / VERDICTS_DIR_REL / sdlc_md.display_id(root, unit)
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    while (path := folder / f"{fp}-{secrets.token_hex(4)}.txt").exists():
+        continue
+    return path
 
 def verdicts_path(repo_root: Path | str, phase: str = "delivery") -> Path:
     return Path(repo_root) / "sdlc-studio" / "reviews" / _FILE[phase]
@@ -3253,11 +3319,14 @@ def _brief_scope(root: Path, unit: str) -> dict:
 
 
 def note_brief(root: Path | str, unit: str, seat: str, tier: str, fp: str,
-               rejoinder: bool, explicit: bool) -> None:
-    """Append what this brief was taken over. Best-effort: a brief is never refused for it."""
+               rejoinder: bool, explicit: bool, verdict_file: str | None = None) -> None:
+    """Append what this brief was taken over, and the verdict file it issued, so an issued file
+    can be told from a hand-made one. Best-effort: a brief is never refused for it."""
     try:
         row = {"fp": fp, "unit": sdlc_md.norm_id(unit), "seat": seat, "tier": tier,
                "explicit": explicit, "rejoinder": rejoinder, **_brief_scope(Path(root), unit)}
+        if verdict_file:
+            row["verdict_file"] = verdict_file
         path = Path(root) / BRIEF_NOTES_REL
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as fh:
@@ -3566,13 +3635,16 @@ def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
     verdict is accepted too (a legitimate post-approval re-review)."""
     parse_verdict_block(prior_verdict_text, strict=False)  # form only; ValueError on malformed
     base = brief(repo_root, unit, seat, tier)
+    # The earlier file's UNIT/BRIEF header is dropped from the quote: it is not the verdict, and
+    # a reviewer copying it would head the new file with the earlier brief's name.
+    prior = _VERDICT_HEADER_RE.sub("", prior_verdict_text, count=1).strip()
     return f"""{base}
 
 --- RE-REVIEW (rejoinder) ---
 
 This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, verbatim:
 
-{prior_verdict_text.strip()}
+{prior}
 
 The author's repairs summary (if any) accompanies this brief separately. It is a CLAIM,
 not evidence: before you may approve, RE-EXECUTE the probes and mutants your prior
@@ -4164,6 +4236,28 @@ def cmd_caller_check(args: argparse.Namespace) -> int:
     return 1 if findings else 0
 
 
+def _print_with_verdict_file(root: Path | str, unit: str, text: str, fp: str) -> Path:
+    """Print the brief, then the section naming a fresh verdict file after its return contract,
+    which stays byte-identical so `neutrality_violations` still strips it exactly. Returns the
+    issued path."""
+    path = issue_verdict_file(root, unit, fp)
+    print(f"{text}\n\n{verdict_file_section(path, sdlc_md.display_id(root, unit), path.stem)}")
+    return path
+
+
+def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: str,
+                   path: Path) -> str:
+    """The tier and fingerprint lines (`lib/lanes.py` parses both) and the record command, which
+    reads the reviewer's own file, so what is recorded is what the reviewer wrote. The tier is
+    carried INTO that command: a tier printed and not recorded is the state this flag was in."""
+    how = "chosen" if explicit else "derived from the unit's risk band"
+    return (f"\nreview tier: {tier} ({how})\n"
+            f"brief fingerprint: {fp}\n"
+            f"  record the verdict with:  critic.py record --unit "
+            f"{sdlc_md.display_id(root, unit)} --from-verdict {shlex.quote(str(path))} "
+            f"--brief {fp} --tier {tier}{' --tier-explicit' if explicit else ''} ...")
+
+
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
         if getattr(args, "rejoinder", None):
@@ -4179,23 +4273,18 @@ def cmd_brief(args: argparse.Namespace) -> int:
             if "CLAIM INVENTORY" in TIER_SECTIONS[tier]:
                 assert_brief_claim_pass(text)
             notice = _self_check_gate(args.root, args.unit)
-            print(text)
             # the footer the delivery rejoinder never printed: a re-review's verdict needs the
             # same provenance as the first one, and a fingerprint the reviewer can quote back
             fp = rejoinder_fingerprint(text)
+            path = _print_with_verdict_file(args.root, args.unit, text, fp)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=True,
-                       explicit=explicit)
+                       explicit=explicit, verdict_file=str(path))
             # A repair is the author's work too, so a re-review is preceded by the same check.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
             if notice:
                 print(notice, file=sys.stderr)
-            how = "chosen" if explicit else "derived from the unit's risk band"
-            print(f"\nreview tier: {tier} ({how})\n"
-                  f"brief fingerprint: {fp}\n"
-                  f"  record the verdict with:  critic.py record --unit "
-                  f"{sdlc_md.display_id(args.root, args.unit)} --verdict <APPROVE|REJECT> "
-                  f"--brief {fp} --tier {tier}"
-                  f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path),
+                  file=sys.stderr)
         else:
             # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
             # in the parser: a default there is indistinguishable from a choice, and the
@@ -4215,10 +4304,10 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # The author's recorded self-check, judged here so a refusal under `block` reaches
             # neither stdout nor the brief notes.
             notice = _self_check_gate(args.root, args.unit)
-            print(text)
             fp = brief_fingerprint(text)
+            path = _print_with_verdict_file(args.root, args.unit, text, fp)
             note_brief(args.root, args.unit, args.seat, tier, fp, rejoinder=False,
-                       explicit=explicit)
+                       explicit=explicit, verdict_file=str(path))
             # The author's self-check, on stderr so the brief a reviewer reads from a file
             # carries none of it and its fingerprint is unmoved.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
@@ -4227,13 +4316,8 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
-            how = "chosen" if explicit else "derived from the unit's risk band"
-            print(f"\nreview tier: {tier} ({how})\n"
-                  f"brief fingerprint: {fp}\n"
-                  f"  record the verdict with:  critic.py record --unit "
-                  f"{sdlc_md.display_id(args.root, args.unit)} --verdict <APPROVE|REJECT> "
-                  f"--brief {fp} --tier {tier}"
-                  f"{' --tier-explicit' if explicit else ''} ...", file=sys.stderr)
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path),
+                  file=sys.stderr)
     except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2

@@ -94,8 +94,8 @@ therefore names two distinct roles:
 
 - **Adversarial reviewer** (the seat subagent): always runs; its pass is recorded as the
   unit's **delivery verdict** - verdict, findings, reviewer seat, author - with `critic.py
-  record` (or `--from-verdict` to capture the returned block). The verdict is input to the
-  run's signature, never the signature.
+  record --from-verdict` reading the file the brief named, the reviewer's own. The verdict is
+  input to the run's signature, never the signature.
 - **Reviewer of record** (an independent principal): the operator, who reads the run's
   report and signs the run once with `sprint.py sign --principal`. A principal who is a
   unit's author or a reviewer recorded on it is refused, with nothing written. There is

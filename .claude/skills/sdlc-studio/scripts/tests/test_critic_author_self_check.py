@@ -87,11 +87,12 @@ class AuthorStepsTests(unittest.TestCase):
             self.assertEqual(0, r.returncode, r.stderr)
             _section(r.stderr)
             self.assertNotIn(HEADING, r.stdout)
-            # The whole of stdout is the brief and nothing else, so no part of the section can
-            # reach it; a line-by-line search would trip on the brief's own claim inventory and
-            # practices, which the section quotes by design (AC3).
+            # The whole of stdout is the brief and its verdict file lines (US1011) and nothing
+            # else, so no part of the section can reach it; a line-by-line search would trip on
+            # the brief's own claim inventory and practices, which the section quotes by design.
             brief = critic.brief(root, "US0101", "qa", "full")
-            self.assertEqual(brief + "\n", r.stdout, "stdout carries more than the brief")
+            self.assertEqual(brief + "\n", critic.strip_verdict_file(r.stdout),
+                             "stdout carries more than the brief")
             expected = critic.brief_fingerprint(brief)
             self.assertIn(f"brief fingerprint: {expected}", r.stderr,
                           "the printed brief no longer fingerprints as critic.brief() does")

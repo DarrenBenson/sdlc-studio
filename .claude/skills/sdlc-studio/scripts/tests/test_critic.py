@@ -3861,7 +3861,8 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
                 label = " ".join(argv)
                 rc, out, err = self._run(mod, root, *argv)
                 self.assertEqual(rc, 0, f"{label}: {err}")
-                self.assertEqual(out, render + "\n", label)
+                # the brief, then only the verdict file lines it names (US1011)
+                self.assertEqual(mod.strip_verdict_file(out), render + "\n", label)
                 footers[label] = re.search(r"brief fingerprint: ([0-9a-f]+)", err)
             m = footers["--tier full"]
             self.assertIsNotNone(m, "the full-tier brief printed no fingerprint footer")

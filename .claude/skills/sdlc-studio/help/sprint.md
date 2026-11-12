@@ -289,7 +289,9 @@ invent a target the data cannot defend. Read `retro.py velocity` and decide per 
 ## The review point
 
 Each unit is reviewed by an independent seat, and its delivery verdict is recorded with
-`critic.py record`: one verdict ledger says whether a unit was reviewed. Each finding in
+`critic.py record`: one verdict ledger says whether a unit was reviewed. `critic.py brief` names
+a fresh file under `sdlc-studio/reviews/verdicts/<unit>/` for the reviewer's own block, and the
+record command its footer prints reads it with `--from-verdict`. By hand, each finding in
 `--issues` carries an origin tag, and the items are separated by semicolons:
 
 ```bash

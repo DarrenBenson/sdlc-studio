@@ -255,7 +255,10 @@ class MutationLedgerRetiredTests(unittest.TestCase):
                 self.assertEqual(0, r.returncode, r.stdout + r.stderr)
                 gaps = sprint.claimed_proof_gaps(root, ["US0101"])
                 rc, said = _close(root)
-                seen[label] = {"brief": r.stdout.replace(d, "<root>"), "gaps": gaps,
+                # the verdict file lines name a fresh path for every brief (US1011), so the two
+                # briefs are compared without them
+                brief = _live("critic").strip_verdict_file(r.stdout)
+                seen[label] = {"brief": brief.replace(d, "<root>"), "gaps": gaps,
                                "rc": rc, "close": said}
         with_ledger, without = seen["ledger"], seen["none"]
         self.assertNotIn("WITHDRAWN", with_ledger["brief"])
