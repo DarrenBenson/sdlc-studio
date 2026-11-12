@@ -230,3 +230,4 @@
 | US1001 | agent-a4a223abb716c121c | 2026-11-12 | TRUE 19, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 0 | 022266a71a13a340 at a0c64e4aede2 |
 | US1014 | agent-ac7e43b4d18629b12 | 2026-11-12 | TRUE 23, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 1 | c75c61b7b1025b57 at 7d1cf5a00cca |
 | US1000 | agent-a853fc9204801d1ea | 2026-11-12 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | e6d6b5461bad9a0a at d3f6e3f3c292 |
+| US1015 | agent-a8c808ffeaf53ebd3 | 2026-11-12 | TRUE 27, FALSE 0, UNVERIFIABLE 0 | killed 15, survived 0 | 95a05d88fdb55384 at a2ad5d66643e |

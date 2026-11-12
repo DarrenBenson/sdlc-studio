@@ -1,6 +1,6 @@
 # CR-0615: critic.py brief --rejoinder should read the prior verdict from the ledger instead of a hand-written file
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0280
 > **Priority:** Low

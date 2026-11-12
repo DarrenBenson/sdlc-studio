@@ -1,6 +1,6 @@
 # US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given fixture Claude Code transcripts in which subagent `r1` received the issued verdict path and wrote that file with its Write tool, when `critic.py record --from-verdict <path>` runs with `SDLC_STUDIO_HARNESS=claude` and that session id, then the row's `Source` cell carries `session:<id> agent:r1` after the hash, and `show` labels the verdict as written by agent r1.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_the_briefed_agent_that_wrote_the_file_is_named_on_the_row
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given that the file's bytes differ from the content `r1`'s write carried, or that a later write to the path sits in another context's transcript (the main thread's), when `record` runs, then it writes the row and warns, naming the briefed agent and the context that last wrote the file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_a_file_rewritten_by_another_context_warns
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given a harness whose store is not read (`SDLC_STUDIO_HARNESS=cursor`), or Claude transcripts holding no write of the path, when `record` runs, then the row's provenance reads `unknown`, `record` says why, and the row never names an agent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_provenance.py::VerdictProvenanceTests::test_an_unread_store_records_unknown_provenance
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

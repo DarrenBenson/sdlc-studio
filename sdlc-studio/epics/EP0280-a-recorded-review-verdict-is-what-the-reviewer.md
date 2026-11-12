@@ -1,6 +1,6 @@
 # EP0280: A recorded review verdict is what the reviewer wrote, bound to its bytes and to the agent that wrote it
 
-> **Status:** Draft
+> **Status:** Done
 > **Parent:** CR0615
 > **Derived Point Total:** 23
 > **Parent:** CR0619
@@ -18,8 +18,8 @@ Decomposed from CR0619. Delivers the work CR0619 requested.
 - [x] [US1011: A review brief names the file the reviewer writes its verdict to](../stories/US1011-a-review-brief-names-the-file-the-reviewer.md)
 - [x] [US1012: A recorded verdict is bound to the bytes of the file its brief issued](../stories/US1012-a-recorded-verdict-is-bound-to-the-bytes.md)
 - [x] [US1013: A verdict that differs from its issued file, or was recorded before, is named](../stories/US1013-a-verdict-that-differs-from-its-issued-file.md)
-- [ ] [US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript](../stories/US1014-a-recorded-verdict-names-the-agent-that-was.md)
-- [ ] [US1015: A verdict written by the context that edited the unit is a self-review, whatever seat it names](../stories/US1015-a-verdict-written-by-the-context-that-edited.md)
+- [x] [US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript](../stories/US1014-a-recorded-verdict-names-the-agent-that-was.md)
+- [x] [US1015: A verdict written by the context that edited the unit is a self-review, whatever seat it names](../stories/US1015-a-verdict-written-by-the-context-that-edited.md)
 - [x] [US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger](../stories/US1016-critic-py-brief-rejoinder-with-no-file-quotes.md)
 
 ## Acceptance Criteria (Epic Level)

@@ -1,6 +1,6 @@
 # US1015: A verdict written by the context that edited the unit is a self-review, whatever seat it names
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given fixture transcripts in which the main thread edited `src/unit.py` (the unit's Affects) and then wrote the issued verdict file, when `critic.py record --reviewer "Tomas Reinholt (qa)" --author engineering` runs, then the row is written with `self-review:src/unit.py` in its `Source` cell, `show` says so, and the row is no independent review where independence is judged: `critic.is_independent` reads it False, `sprint.uncovered_units` (the close's review-coverage step) names US0001, and `sprint.seal_bar_unmet` (the review bar `sprint.py sign` stops on) is unmet for it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_the_editing_context_is_a_self_review_whatever_the_seat_name
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given the same editing main thread, when it runs `transition.py set US0001 --status Done --verdict APPROVE --reviewer "Tomas Reinholt (qa)" --author engineering`, then the verdict row it writes carries `self-review:src/unit.py` in its `Source` cell and the command warns naming the edited file; the transition is not refused for it (D0388 adds no gate at Done), and `sprint.uncovered_units` and `sprint.seal_bar_unmet` name US0001 as not independently reviewed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_the_one_call_close_from_the_editing_thread_records_a_self_review
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given reviewer subagent `r1`, which received the brief and afterwards applied a mutant with its Edit tool to `src/unit.py` in its own worktree, reverted it, and wrote the issued verdict file, when `record` runs, then the row is independent and carries no self-review token.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_reviewer_mutating_its_own_worktree_after_the_brief_stays_independent
+  - **Verified:** yes (2026-11-12)
 - **AC4:** Given author subagent `a1`, which edited `src/unit.py` inside its worktree at `.claude/worktrees/agent-a1` and was never briefed, when `a1` writes a verdict file for the unit, then the row is a self-review naming `src/unit.py`; and in the same test, subagent `r1`, which edited nothing, writing the next round's file records as independent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_review_by_context.py::SelfReviewByContextTests::test_a_worktree_author_is_matched_to_the_units_files
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 
