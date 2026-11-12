@@ -133,14 +133,19 @@ class KnownIssuesTests(unittest.TestCase):
         APPROVE in the closing-review row; or blame the work for the review anchor a first
         close has yet to write. Each hands a clean run a close gap again."""
         issues = _section(self.clean_report, "known_issues")
-        self.assertEqual([], [row["issue_detail"]["value"] for row in issues["rows"]],
+        # BG1330: no agent's priced return covers the story, so its unmeasured cost is the one
+        # gap a clean run hands over
+        unpriced = (f"{self.story}: its cost is NOT MEASURED - no agent returned for it was "
+                    f"priced from its own transcript; price one with `sprint.py lane return "
+                    f"--units {self.story} --agent A`")
+        self.assertEqual([unpriced], [row["issue_detail"]["value"] for row in issues["rows"]],
                          "a clean run handed over known issues")
         scan = issues["figures"]["findings_scan"]["value"]
-        self.assertIn("0 close gap(s)", scan)
+        self.assertIn("1 close gap(s)", scan)
         self.assertIn("0 carried unit(s)", scan)
         page = _page(self.clean)
         handed = page.split("## Known issues handed over", 1)[1].split("\n## ", 1)[0]
-        self.assertIn("No open finding, close gap or carried unit is recorded.", handed)
+        self.assertIn(f"{self.story}: its cost is NOT MEASURED", handed)
 
     def test_unmeasurable_rows_go_to_the_appendix_and_a_red_lane_stays(self) -> None:
         """AC2. Mutants: relabel the unmeasured cost row `answered` (it leaves the appendix),

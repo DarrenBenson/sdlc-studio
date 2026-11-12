@@ -3998,6 +3998,17 @@ def _premium_basis(count, usd: dict) -> str:
             f"{price.effective.isoformat()}{tail}")
 
 
+def unpriced_units(root: Path | str, state: dict) -> list[str]:
+    """The units the per-unit table reads NOT MEASURED for want of a priced return, read as the
+    page reads them (`_unit_ledger`): listed on it, not dropped, and no agent returned for it
+    priced from its own transcript. The close names each one as a gap."""
+    root = Path(root)
+    ledger = _unit_ledger(root, state, run_state.REL.as_posix(), None,
+                          (state.get("started_at"), state.get("ended_at")))
+    return [sdlc_md.display_id(root, u["id"]) for u in ledger
+            if not u["dropped"] and (u["in_plan"] or u["measured"]) and u["priced"] is None]
+
+
 def _unit_usd(u: dict, usd: dict) -> dict:
     """A unit's estimated dollars: its priced agents' per-model split (`run_state.usd`), NOT
     MEASURED with the reason when none is priced."""

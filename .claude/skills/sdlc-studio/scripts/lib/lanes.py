@@ -8,7 +8,10 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
    under the root, since removing the worktree removes them, emptying that directory first so
    nothing an earlier landing of the same worktree name left there survives, and removing each
    unit's QA brief, so a brief found after the landing is one this landing wrote;
-2. commit the staged change in the worktree through the repository's hooks, never a bypass;
+2. discard the unstaged edit `verify_ac.py run` leaves in each unit's own story or bug, which no
+   commit of the Affects carries and the root's verify rewrites, and replay the staged change
+   onto the root's branch, still staged, so the hooks judge it on the code it lands on; then
+   commit it in the worktree through the repository's hooks, never a bypass;
 3. rebase the worktree's branch onto the root's branch, aborting and naming the files on a
    conflict;
 4. fast-forward the root's branch to it;
@@ -17,7 +20,11 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
 7. write each unit's QA brief with `critic.py brief --seat qa` to
    `sdlc-studio/.local/briefs/<unit>-qa.txt`, printing its review tier and fingerprint. A unit
    left with no brief has `<unit>-qa.none` beside it instead, naming this landing and why it
-   wrote none.
+   wrote none;
+8. from a worktree named `agent-<id>`, the harness's name for a builder agent's worktree,
+   record each unit's return priced from that agent's transcript through the `price` the
+   caller hands in (`sprint lane land` hands in what `lane return --agent <id>` records), and
+   name each unit it could not price.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -27,7 +34,8 @@ After the fast-forward nothing stops: a worktree that cannot be removed unforced
 place, and a unit whose self-check or brief is refused is named while the others are briefed.
 
 Exit 2 is a refusal before anything was committed, 1 a landing that stopped part way or a unit
-whose self-check or brief was not written, 0 a landed lane with every unit briefed.
+whose self-check or brief was not written, 0 a landed lane with every unit briefed, priced or
+not.
 
 `sprint lane accept` finishes the unit once its reviewer has answered that brief: it records the
 verdict file with `critic.py record` against the brief's fingerprint and tier, and on an APPROVE
@@ -69,6 +77,8 @@ LANDED = HAND_IN / "landed"
 BRIEFS = Path("sdlc-studio") / ".local" / "briefs"
 #: beside a unit whose latest landing wrote no brief: that landing, and why it wrote none
 NO_BRIEF = "{unit}-qa.none"
+#: a builder agent's worktree as the harness names it, `agent-<id>`: the id names its transcript
+AGENT_WORKTREE = re.compile(r"agent-([A-Za-z0-9_-]+)")
 COMMIT_MSG = "commit-msg.txt"
 SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
@@ -165,6 +175,52 @@ def _commit(wt_top: Path, keep: Path, target: str) -> str:
     return _git(wt_top, "rev-parse", "--short", "HEAD").stdout.strip()
 
 
+def _discard_own_artefacts(wt_top: Path, units: list[str]) -> None:
+    """Drop the unstaged edit `verify_ac.py run` makes to each unit's own story or bug in the
+    worktree, so it cannot stop the rebase. That file is outside the Affects the builder staged,
+    so no commit of the lane carries it, and the root's own verify rewrites it after the
+    landing. Only the unstaged part goes: what the builder staged of it is committed as staged,
+    and an unstaged edit to any other file is left for the rebase to refuse."""
+    edited = set(_git(wt_top, "diff", "--name-only", "-z").stdout.split("\0"))
+    for unit in units:
+        hit = sdlc_md.find_by_id(wt_top, unit)
+        try:
+            rel = Path(hit[0]).resolve().relative_to(wt_top).as_posix() if hit else None
+        except ValueError:
+            rel = None
+        if rel in edited and not _git(wt_top, "checkout", "--", rel).returncode:
+            _say(f"discarded {rel}: the unstaged edit verify_ac leaves in {unit}'s own "
+                 f"artefact, which the root's verify rewrites")
+
+
+def _carry(wt_top: Path, target: str) -> bool:
+    """Replay the staged change onto `target` before it is committed, leaving it staged, so the
+    hooks judge it on the code it lands on, not the base the builder started from. The replay
+    goes through a scratch commit no hook runs for and nothing lands: it is unwound to a staged
+    change again. A replay git refuses (a conflict, an unstaged edit) is undone, leaving the
+    staged change on its old base for the commit and the rebase after it to report as before.
+    Whether a change is still staged: none is when `target` already holds it."""
+    if not _git(wt_top, "merge-base", "--is-ancestor", target, "HEAD").returncode:
+        return True
+    head = _git(wt_top, "rev-parse", "HEAD").stdout.strip()
+    tree = _git(wt_top, "write-tree").stdout.strip()
+    scratch = _git(wt_top, "commit-tree", tree, "-p", head, "-m",
+                   "lane land: the staged change, replayed").stdout.strip()
+    if not scratch or _git(wt_top, "reset", "--soft", scratch).returncode:
+        return True
+    # kept when empty and when main holds the same patch, so HEAD~1 is always what it replayed on
+    if _git(wt_top, "rebase", "--empty=keep", "--reapply-cherry-picks", target).returncode:
+        _git(wt_top, "rebase", "--abort")
+        _git(wt_top, "reset", "--soft", head)
+        return True
+    _git(wt_top, "reset", "--soft", "HEAD~1")
+    if _git(wt_top, "diff", "--cached", "--quiet").returncode == 0:
+        _say(f"the staged change is already on {target}: nothing is left to commit")
+        return False
+    _say(f"replayed the staged change onto {target} before the commit")
+    return True
+
+
 def _rebase(wt_top: Path, branch: str, target: str) -> None:
     rebased = _git(wt_top, "rebase", target)
     if not rebased.returncode:
@@ -235,7 +291,22 @@ def _unbrief(root_top: Path, unit: str, why: str) -> None:
     sdlc_md.atomic_write(root_top / BRIEFS / NO_BRIEF.format(unit=unit), why + "\n")
 
 
-def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> int:
+def _price(root_top: Path, name: str, units: list[str], price) -> None:
+    """Step 8: from an `agent-<id>` worktree, each unit's return priced from that agent's
+    transcript by `price(root, units, agent id)`, which answers each unit with (priced, what it
+    said); a unit left unpriced is named, and the landing stands either way."""
+    agent = AGENT_WORKTREE.fullmatch(name)
+    if price is None or agent is None:
+        return
+    for unit, (priced, said) in price(root_top, units, agent.group(1)).items():
+        if priced:
+            _say(f"{unit}'s return priced from {name}'s transcript: {said}")
+        else:
+            _say(f"{unit}'s return UNPRICED: {said}", err=True)
+
+
+def _land(root: Path, worktree: Path, units: list[str], author: str | None,
+          price=None) -> int:
     root_top, wt_top, branch, target = _resolve(root, worktree)
     hand_in = wt_top / HAND_IN
     staged = _git(wt_top, "diff", "--cached", "--quiet").returncode == 1
@@ -263,6 +334,9 @@ def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> i
     for unit in units:
         _unbrief(root_top, unit, f"{landing} wrote no brief: it stopped before it briefed "
                                  f"{unit}")
+    _discard_own_artefacts(wt_top, units)
+    if staged:
+        staged = _carry(wt_top, target)
     if staged:
         _say(f"committed {_commit(wt_top, keep, target)} in {wt_top} through the hooks")
     _rebase(wt_top, branch, target)
@@ -287,12 +361,14 @@ def _land(root: Path, worktree: Path, units: list[str], author: str | None) -> i
             _unbrief(root_top, unit, f"{landing} wrote no brief: {line}")
         failed += 0 if ok else 1
         _say(line, err=not ok)
+    _price(root_top, wt_top.name, units, price)
     return 1 if failed else 0
 
 
 def land(root: Path | str, worktree: Path | str | None, units: list[str],
-         author: str | None = None) -> int:
-    """Land one builder's lane; the exit status, with every step and refusal printed."""
+         author: str | None = None, price=None) -> int:
+    """Land one builder's lane; the exit status, with every step and refusal printed. `price`
+    records each unit's priced return from an `agent-<id>` worktree's transcript (`_price`)."""
     units = [u.strip() for u in units or [] if u and u.strip()]
     try:
         if not worktree:
@@ -300,7 +376,7 @@ def land(root: Path | str, worktree: Path | str | None, units: list[str],
         if not units:
             raise LandError("name the lane's units with --units: each one's self-check is "
                             "recorded and its brief written, so none is assumed", 2)
-        return _land(Path(root), Path(worktree), units, author)
+        return _land(Path(root), Path(worktree), units, author, price)
     except LandError as exc:
         _say(f"sprint lane land: {exc}", err=True)
         return exc.code

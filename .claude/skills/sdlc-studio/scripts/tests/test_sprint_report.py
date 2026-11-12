@@ -2546,6 +2546,60 @@ class CloseReportTests(unittest.TestCase):
                         f"an absent cost was silently dropped:\n{out}")
 
 
+class UnpricedUnitIsAGapTests(unittest.TestCase):
+    """BG1330. RPT0028 read 15 of its 19 units NOT MEASURED for want of a priced return, and its
+    close reported 0 gaps. Two units are planned here and one is priced from its builder's
+    transcript: the close runs through `sprint.py close` (the chain's steps stubbed, as the
+    close tests stub them) and must name the other as a gap, which the page then counts."""
+
+    def _run(self, root: Path) -> None:
+        import test_sprint as ts  # noqa: PLC0415 - the close tests' own fixture
+        # US0103 was dropped: off the page's per-unit table, so no gap
+        ts._close_state(root, batch=["US0101", "US0102"], report=None, plan_snapshot={"units": {
+            uid: {"planned_points": 5, "forecast_minutes": 30.0, "forecast_tokens": 1000}
+            for uid in ("US0101", "US0102", "US0103")}}, batch_changes=[
+                {"id": "US0103", "action": "drop", "reason": "out of appetite"}])
+        ts._close_story(root)
+        # US0102 is carried, still at Review: a unit the run did not deliver is priced or not too
+        (root / "sdlc-studio" / "stories" / "US0102-s.md").write_text(
+            "# US0102: s\n\n> **Status:** Review\n> **Points:** 3\n", encoding="utf-8")
+        _story(root, "US0103", 2)
+        ts._close_retro(root)
+        run_state.record_delegated_tokens(
+            root, 5_000, agent="agent-b7", unit="US0101", provenance=run_state.READ_FROM_TRANSCRIPT,
+            reading={"priced": 9_000, "source": "/fixture/agent-b7.jsonl", "model": "claude-x",
+                     "components": {"input": 100, "output": 900, "cache_write_5m": 4_000,
+                                    "cache_write_1h": 0, "cache_read": 40_000}})
+        self.sprint = ts._load()
+        out, err = io.StringIO(), io.StringIO()
+        with ts._patch_close_steps(self.sprint), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
+            self.rc = self.sprint.main(["close", "--retro", "RETRO0001", "--root", str(root)])
+        self.out, self.err = out.getvalue(), err.getvalue()
+
+    def test_the_close_names_each_unpriced_unit_among_its_gaps(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._run(root)
+            self.assertEqual(0, self.rc, self.err)
+            state = run_state.read(root)
+            self.assertEqual({"US0101"}, set(run_state.unit_agent_totals(state)),
+                             "the fixture's priced return was not recorded")
+            gaps = [g for g in state.get(run_state.CLOSE_KNOWN_ISSUES) or []
+                    if "NOT MEASURED" in str(g.get("detail"))]
+            self.assertEqual(1, len(gaps), state.get(run_state.CLOSE_KNOWN_ISSUES))
+            self.assertTrue(gaps[0]["detail"].startswith("US0102: "), gaps[0])
+            self.assertIn(gaps[0]["detail"], self.err, "the close did not name the gap")
+            # the page reads the same unit NOT MEASURED and counts the gap the close recorded
+            secs = {s["key"]: s for s in sr.build_report(root, "RETRO0001")["sections"]}
+            priced = {row["unit_id"]["value"]: row["eu_priced"]["value"]
+                      for row in secs["estimates"]["unit_rows"]}
+            self.assertEqual("NOT MEASURED", priced["US0102"])
+            self.assertNotEqual("NOT MEASURED", priced["US0101"])
+            scan = secs["known_issues"]["figures"]["findings_scan"]["value"]
+            self.assertIn(f"{len(state[run_state.CLOSE_KNOWN_ISSUES])} close gap(s)", scan)
+
+
 class TruncationIsMarkedTests(unittest.TestCase):
     """BG0463: a silent cap reads as "that is all there was".
 

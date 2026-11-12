@@ -10988,6 +10988,38 @@ class LaneHandInSpellingTests(unittest.TestCase):
             self.assertEqual([], list(keep.iterdir()), "a refused hand-in wrote a file")
 
 
+class LaneBriefVerifiesWithoutWritingTests(unittest.TestCase):
+    """BG1336. The brief had a builder run `verify_ac.py run --id <unit>`, which writes its
+    Verified lines into the unit's own story, outside the Affects the builder stages, so the
+    landing's rebase met an unstaged edit no commit of the lane could carry."""
+
+    STORY = ("# US0101: lane\n\n> **Status:** In Progress\n> **Points:** 1\n\n"
+             "## Acceptance Criteria\n\n### AC1: works\n- **Verify:** shell true\n")
+
+    def test_the_briefs_criteria_command_leaves_the_units_story_unwritten(self) -> None:
+        sprint = _load()
+        line = next(ln for ln in sprint._lane_builder_commands("US0101", ["src/a.py"], 1)
+                    if "Run its criteria:" in ln)
+        argv = line.split("Run its criteria:", 1)[1].split()
+        self.assertEqual(["verify_ac.py", "run", "--id", "US0101"], argv[:4], line)
+        scripts = Path(__file__).resolve().parent.parent
+        # the brief's own command, and beside it the same run without its flags as the control
+        # that this fixture's verify does write the story
+        for args, written in ((argv, False), (argv[:4], True)):
+            with self.subTest(args=args), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                story = root / "sdlc-studio/stories/US0101-lane.md"
+                story.parent.mkdir(parents=True)
+                story.write_text(self.STORY, encoding="utf-8")
+                gitutil.git(["init", "-q", "-b", "main"], root)
+                r = subprocess.run([sys.executable, "-B", str(scripts / args[0]), *args[1:],
+                                    "--root", str(root)], capture_output=True, text=True,
+                                   timeout=300, cwd=str(root), env=gitutil.git_env(),
+                                   check=False)
+                self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+                self.assertEqual(written, story.read_text(encoding="utf-8") != self.STORY,
+                                 r.stdout + r.stderr)
+
 class CloseDryRunTests(unittest.TestCase):
     """US0555. `close` runs seven steps and stops at the first unmet prerequisite; RUN-01KYMJEM
     took three attempts, two of them stopping on a refusal, and each restart re-ran the steps

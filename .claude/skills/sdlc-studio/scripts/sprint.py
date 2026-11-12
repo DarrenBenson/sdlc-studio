@@ -2864,7 +2864,8 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     subject."""
     claims, mutants = _lane_hand_in_files(uid)
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
-             f"  Run its criteria: verify_ac.py run --id {uid}",
+             # dry: a builder's run writes nothing into the unit's own file, outside its Affects
+             f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
              f"  Hand in, under {LANE_HAND_IN}/ at the project root:",
              f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
              f"    {mutants} - the mutation pass above, each as "
@@ -8621,6 +8622,31 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
               file=sys.stderr)
 
 
+def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tuple[bool, str]]:
+    """`lane land`'s pricing: the landed units' returns priced from builder `agent`'s own
+    transcript through `_lane_agent_totals`, the record `lane return --agent` writes, so a later
+    return reading the same transcript for the unit replaces it rather than counting it twice.
+    Each unit answers (priced, what was said), the warnings `_lane_agent_totals` printed carried
+    in what was said rather than printed beside it. Several units share one transcript, so none
+    of them is priced: one total cannot be split between them."""
+    results = [{"unit": u, "outcome": "landed"} for u in units]
+    said = io.StringIO()
+    with contextlib.redirect_stderr(said):
+        _lane_agent_totals(Path(root), argparse.Namespace(agent=agent, tokens=None, minutes=None),
+                           results)
+    warned = " ".join(said.getvalue().replace("WARNING ", "").split())
+    out = {}
+    for res in results:
+        got = res.get("agent_total")
+        if isinstance(got, dict) and got.get("priced") is not None:
+            out[res["unit"]] = (True, f"{got['tokens']:,} tokens, {got['priced']:,} "
+                                      f"{run_state.PRICED_LABEL}"
+                                      + (f"; {warned}" if warned else ""))
+        else:
+            out[res["unit"]] = (False, warned or "no priced return was recorded")
+    return out
+
+
 #: `lane return` and `lane accept`'s per-verifier timeout in seconds when `--timeout` is not given.
 LANE_VERIFY_TIMEOUT = 300
 
@@ -9092,7 +9118,8 @@ def cmd_lane(args: argparse.Namespace) -> int:
     if args.action == "land":
         from lib import lanes  # noqa: PLC0415 - only the landing needs it
         return lanes.land(args.root, getattr(args, "worktree", None),
-                          getattr(args, "units", None) or [], getattr(args, "author", None))
+                          getattr(args, "units", None) or [], getattr(args, "author", None),
+                          price=_lane_land_price)
     if args.action == "accept":
         from lib import lanes  # noqa: PLC0415 - only the accept needs it
         # handed to the `lane return` an APPROVE ends with, exactly as given here
@@ -9838,6 +9865,21 @@ def cmd_close(args: argparse.Namespace) -> int:
     for line in close_goal_judgement(root, state):
         print(f"  {line}")
     known += _close_forward_port(root, pre)
+    # A unit no priced return measured reads NOT MEASURED on the page: each is a gap the close
+    # names, so a run whose units went unpriced does not hand over 0 gaps.
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as everywhere else in this module
+    try:
+        unpriced = sprint_report.unpriced_units(root, run_state.read(root) or state)
+    except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own reading
+        unpriced = []
+        print(f"close: unpriced units: UNMEASURED - they could not be read "
+              f"({type(exc).__name__}: {exc})", file=sys.stderr)
+    for uid in unpriced:
+        detail = (f"{uid}: its cost is NOT MEASURED - no agent returned for it was priced from "
+                  f"its own transcript; price one with `sprint.py lane return --units {uid} "
+                  f"--agent A`")
+        known.append({"source": "unpriced", "detail": detail})
+        print(f"close: unpriced unit: known issue - {detail}", file=sys.stderr)
     # What this close itself cost, on BOTH paths and before the decision, so the next reduction
     # is measured against a number rather than an impression. Read from the execution ledger:
     # an unrecorded component reads as UNMEASURED, never as zero seconds.
@@ -11254,8 +11296,11 @@ def cmd_boundary(args: argparse.Namespace) -> int:
     # A close that FINISHED with known issues is a finished close, not a clean one. A hand-run
     # close hands those issues to a signer; a rolling boundary has no signer before the next
     # cycle opens, so it halts rather than rolling on over them unread.
+    # An unpriced unit is a gap in what the page measured, not in what the cycle delivered: the
+    # page names and counts it for the signer, so a rolling boundary does not halt on it.
     gaps = [g for g in (run_state.read(root) or {}).get(run_state.CLOSE_KNOWN_ISSUES) or []
-            if not _cost_cause_named(root, g)]
+            if not _cost_cause_named(root, g)
+            and not (isinstance(g, dict) and g.get("source") == "unpriced")]
     if gaps:
         return _boundary_stop(
             root, "close-gate",

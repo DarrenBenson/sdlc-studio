@@ -405,7 +405,8 @@ class CostIssueHandOverTests(_Case):
         named = self.tree(AC1_ROWS, cost="\n## Cost\n\n" + COST_BULLET)
         rc, out = self.close(named)
         self.assertEqual(0, rc, out)
-        self.assertEqual(["cost"], [g["source"] for g in
+        # beside it, a gap for each measured unit no priced return covers (BG1330)
+        self.assertEqual(["cost", "unpriced", "unpriced"], [g["source"] for g in
                                     self.rs.read(named).get(self.rs.CLOSE_KNOWN_ISSUES)])
         rc, said = _out(self.sprint.main, ["sign", "--principal", "Darren Benson", "--author",
                                            "Claude Opus 5", "--root", str(named)])
@@ -418,7 +419,7 @@ class CostIssueHandOverTests(_Case):
             root = self.tree(AC1_ROWS, cost="\n## Cost\n\n" + COST_BULLET)
             rc, out = self.close(root)
             self.assertEqual(0, rc, out)
-            self.assertEqual(["cost"], [g["source"] for g in
+            self.assertEqual(["cost", "unpriced", "unpriced"], [g["source"] for g in
                                         self.rs.read(root).get(self.rs.CLOSE_KNOWN_ISSUES)])
             if stops:
                 self.set_cost(root, "")

@@ -27,6 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 import loader  # noqa: E402
+import test_meter_reads_true as meter  # noqa: E402 - the fixture harness store and its weights
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
@@ -51,6 +52,17 @@ fi
 exit 0
 """
 
+RED = "stub pre-commit: tests/test_a.py is red"
+#: refuses a commit whose checkout holds a failing tests/test_a.py, as a suite run would
+RED_HOOK = """#!/bin/sh
+git rev-parse --show-toplevel >> "{log}"
+if grep -q 'assert False' tests/test_a.py; then
+  echo "%s" >&2
+  exit 1
+fi
+exit 0
+""" % RED
+
 
 def _write(root: Path, rel: str, body: str) -> None:
     path = root / rel
@@ -69,13 +81,16 @@ def _git(cwd: Path, *args: str) -> str:
     return gitutil.git(list(args), cwd, text=True).stdout.strip()
 
 
-class LaneLandTests(unittest.TestCase):
+class _LaneFixture(unittest.TestCase):
+    """The throwaway repository, its stub hook and the builder's worktree every case lands."""
+
+    #: the worktree's directory name: `lane-<unit>`, as `sprint lane run` names it every round
+    WORKTREE = BRANCH
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         base = Path(self._tmp.name).resolve()
-        # the worktree is named `lane-<unit>`, as `sprint lane run` names it for every round
-        self.root, self.wt, self.log = base / "repo", base / BRANCH, base / "hook.log"
+        self.root, self.wt, self.log = base / "repo", base / self.WORKTREE, base / "hook.log"
         _write(self.root, "src/a.py", "A = 1\n")
         _write(self.root, "src/b.py", "B = 1\n")
         _write(self.root, "tests/test_a.py", "def test_a():\n    assert True\n")
@@ -128,7 +143,11 @@ class LaneLandTests(unittest.TestCase):
             [sys.executable, "-B", str(SPRINT), "lane", "land", "--worktree", str(self.wt),
              "--units", *units, *named, "--root", str(self.root)],
             capture_output=True, text=True, timeout=600, cwd=str(self.root),
-            env=gitutil.git_env(), check=False)
+            env=self._env(), check=False)
+
+    def _env(self) -> dict:
+        """The environment every command here runs in: the operator's git configuration set aside."""
+        return gitutil.git_env()
 
     def _hook_runs_in_the_worktree(self) -> int:
         lines = self.log.read_text(encoding="utf-8").splitlines() if self.log.exists() else []
@@ -153,6 +172,9 @@ class LaneLandTests(unittest.TestCase):
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertFalse(self.wt.exists(), "the landed round's worktree was not removed")
         gitutil.git(["worktree", "add", "-q", "-b", BRANCH, str(self.wt), "main"], self.root)
+
+
+class LaneLandTests(_LaneFixture):
 
     # -- the criteria ---------------------------------------------------------------------
 
@@ -392,6 +414,89 @@ class LaneLandTests(unittest.TestCase):
         self.assertTrue((self.wt / "src/stray.py").is_file(), "the stray change was deleted")
         self.assertIn(BRANCH, self._branches())
 
+    # -- a worktree the builder verified in, and one behind main --------------------------
+
+    def _verify_in_the_worktree(self) -> str:
+        """`verify_ac.py run --id <unit>` in the worktree, as the lane brief has a builder run it:
+        it writes its Verified lines into the unit's story, outside the Affects the builder
+        staged. The story's path, relative to the worktree."""
+        rel = f"sdlc-studio/stories/{A}-lane.md"
+        before = (self.wt / rel).read_text(encoding="utf-8")
+        r = subprocess.run([sys.executable, "-B", str(SCRIPTS / "verify_ac.py"), "run", "--id",
+                            A, "--root", str(self.wt)], capture_output=True, text=True,
+                           timeout=300, cwd=str(self.wt), env=gitutil.git_env(), check=False)
+        self.assertNotEqual(before, (self.wt / rel).read_text(encoding="utf-8"),
+                            f"verify_ac wrote nothing into the story:\n{r.stdout}{r.stderr}")
+        return rel
+
+    def test_verify_acs_artefact_edit_does_not_block_the_land(self) -> None:
+        moved = self._move_main("src/b.py", "B = 2\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        story = self._verify_in_the_worktree()
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertNotIn("unstaged changes", out)
+        self.assertEqual(moved, _git(self.root, "rev-parse", "HEAD^"))
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual(["src/a.py"],
+                         _git(self.root, "show", "--name-only", "--format=", "HEAD").split(),
+                         "verify_ac's edit to the story was committed outside the Affects")
+        self.assertIn(f"discarded {story}", out, "the discarded edit was not named")
+        self.assertFalse(self.wt.exists(), "the worktree was not removed")
+
+    def test_an_unstaged_edit_to_any_other_file_is_kept_and_still_stops_the_land(self) -> None:
+        main_before = self._move_main("src/b.py", "B = 2\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        self._verify_in_the_worktree()
+        _write(self.wt, "tests/test_a.py", "def test_a():\n    assert 1\n")
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertNotEqual(0, r.returncode, out)
+        self.assertIn("unstaged changes", out)
+        self.assertEqual(main_before, _git(self.root, "rev-parse", "HEAD"))
+        self.assertEqual("def test_a():\n    assert 1\n",
+                         (self.wt / "tests/test_a.py").read_text(encoding="utf-8"),
+                         "an unstaged edit outside the unit's own artefact was discarded")
+        # the replay git refused is undone: the lane holds its own commit and nothing else
+        self.assertEqual([f"feat({A}): a is two"],
+                         _git(self.wt, "log", "--format=%s", "main..HEAD").splitlines())
+
+    def test_a_lane_behind_main_is_judged_on_mains_code(self) -> None:
+        self._move_main("tests/test_a.py", "def test_a():\n    assert False\n")
+        gitutil.git(["merge", "-q", "--ff-only", "main"], self.wt)  # the lane's base is red
+        fixed = self._move_main("tests/test_a.py", "def test_a():\n    assert True\n")
+        # from here the hook refuses a commit whose checkout still holds the red test
+        _write(Path(self._tmp.name), "hooks/pre-commit", RED_HOOK.format(log=self.log))
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertNotIn(RED, out)
+        self.assertEqual(1, self._hook_runs_in_the_worktree(),
+                         "the commit did not run the pre-commit hook in the worktree")
+        self.assertEqual(f"feat({A}): a is two", _git(self.root, "log", "-1", "--format=%s"))
+        self.assertEqual(fixed, _git(self.root, "log", "-1", "--format=%P"),
+                         "the lane was not landed as one commit on main's fixed head")
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual("def test_a():\n    assert True\n",
+                         (self.root / "tests/test_a.py").read_text(encoding="utf-8"))
+
+    def test_a_staged_change_main_already_holds_leaves_nothing_to_commit(self) -> None:
+        moved = self._move_main("src/a.py", "A = 2\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertIn("the staged change is already on main", out)
+        self.assertEqual(0, self._hook_runs_in_the_worktree(), "an empty change was committed")
+        self.assertEqual(moved, _git(self.root, "rev-parse", "HEAD"))
+        self.assertFalse(self.wt.exists(), "the worktree was not removed")
+
     # -- a schema-3 unit, named as written (BG1303) ---------------------------------------
 
     def _schema3_brief(self) -> dict[str, str]:
@@ -456,6 +561,104 @@ class LaneLandTests(unittest.TestCase):
                         line[0])
         self.assertEqual([], critic.read_self_checks(self.root))
         self.assertEqual([], sorted((self.root / lanes.BRIEFS).glob("*-qa.txt")))
+
+
+#: the builder's two messages, in the harness's usage shape
+BUILD_1 = meter._usage(40, 400, 5_000, 0, 120_000)
+BUILD_2 = meter._usage(15, 150, 800, 0, 30_000)
+
+
+class LandPricesTheBuilderTests(_LaneFixture):
+    """BG1330. `lane land` read the builder's id off its `agent-<id>` worktree only as the
+    self-check's author and recorded no return, so a unit no one returned by hand with `lane
+    return --agent` read NOT MEASURED. Each case lands through `sprint.py lane land` with HOME,
+    CLAUDE_CONFIG_DIR and XDG_DATA_HOME on a temporary harness store, never the operator's, and
+    prices against the fixture store's own weight table (`test_meter_reads_true`)."""
+
+    AGENT = "a1b2c3d4e5f6"
+    WORKTREE = f"agent-{AGENT}"
+
+    def setUp(self) -> None:
+        super().setUp()
+        base = Path(self._tmp.name).resolve()
+        self.home = base / "home"
+        self.tx = meter._Transcripts(self.home / ".claude" / "projects"
+                                     / run_state.harness_project_slug(self.root))
+        # the orchestrating session's own transcript, whose subagents directory holds the builder's
+        meter._Transcripts._append(self.tx.main, self.tx._records("msg_main", meter.MAIN_1, None,
+                                                                  str(self.root)))
+        (base / "no-transcripts").mkdir()
+        with unittest.mock.patch.dict(os.environ,
+                                      {run_state.TRANSCRIPTS_ENV: str(base / "no-transcripts")}):
+            run_state.open_run(self.root, batch=[A, B], goal="g")
+        self.builder = self.tx.subagents / f"agent-{self.AGENT}.jsonl"
+
+    def _env(self) -> dict:
+        env = {k: v for k, v in gitutil.git_env().items() if k != run_state.TRANSCRIPTS_ENV}
+        env.update(HOME=str(self.home), CLAUDE_CONFIG_DIR=str(self.home / ".claude"),
+                   XDG_DATA_HOME=str(self.home / ".local" / "share"))
+        return env
+
+    def _builder_says(self, *usages: dict) -> None:
+        lines = [ln for n, usage in enumerate(usages)
+                 for ln in self.tx._records(f"msg_build_{n}", usage, None, str(self.wt))]
+        meter._Transcripts._append(self.builder, lines)
+
+    def _returns(self, unit: str = A) -> list[dict]:
+        return [r for r in run_state.read(self.root).get(run_state.DELEGATED) or []
+                if r.get("unit") == unit]
+
+    def test_a_landed_unit_is_priced_from_its_builders_transcript(self) -> None:
+        self._builder_says(BUILD_1, BUILD_2)
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        parts = meter._sum(BUILD_1, BUILD_2)
+        landed = self._returns()
+        self.assertEqual(1, len(landed), r.stdout + r.stderr)
+        self.assertEqual((meter._priced(parts), meter._tokens(parts), str(self.builder),
+                          f"agent-{self.AGENT}"),
+                         tuple(landed[0].get(k) for k in ("priced", "tokens", "transcript",
+                                                          "agent")))
+        self.assertIn(f"{A}'s return priced from {self.WORKTREE}'s transcript: "
+                      f"{meter._tokens(parts):,} tokens", r.stdout)
+        # `lane return --agent` reading the same transcript writes the same record, in its place
+        back = subprocess.run([sys.executable, "-B", str(SPRINT), "lane", "return", "--units", A,
+                               "--agent", self.AGENT, "--root", str(self.root)],
+                              capture_output=True, text=True, timeout=600, cwd=str(self.root),
+                              env=self._env(), check=False)
+        returned = self._returns()
+        self.assertEqual(1, len(returned), back.stdout + back.stderr)
+        for key in ("tokens", "priced", "components", run_state.BY_MODEL, "transcript", "agent",
+                    "provenance"):
+            with self.subTest(key=key):
+                self.assertEqual(returned[0].get(key), landed[0].get(key))
+
+    def test_a_worktree_whose_transcript_cannot_be_read_still_lands_and_names_the_unit_unpriced(
+            self) -> None:
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual([], self._returns())
+        self.assertIn(f"{A}'s return UNPRICED: ", r.stderr)
+        self.assertIn(f"agent-{self.AGENT}.jsonl in {self.tx.subagents}", r.stderr)
+
+    def test_a_lane_of_several_units_prices_none_of_them_from_one_transcript(self) -> None:
+        self._builder_says(BUILD_1)
+        for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
+                          ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
+            self._stage(rel, body)
+        self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
+        r = self._land(A, B)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        for unit in (A, B):
+            with self.subTest(unit=unit):
+                self.assertEqual([], self._returns(unit))
+                self.assertIn(f"{unit}'s return UNPRICED: --agent was not recorded: one total "
+                              f"cannot be split between 2 units", r.stderr)
 
 
 if __name__ == "__main__":
