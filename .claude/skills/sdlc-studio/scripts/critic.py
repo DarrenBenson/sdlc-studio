@@ -26,7 +26,7 @@ import sys
 from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import run_state, sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md, verdict_provenance  # noqa: E402
 
 APPROVE, REJECT = "APPROVE", "REJECT"
 #: The only words a verdict row may carry. Every writer checks this one tuple.
@@ -108,7 +108,8 @@ _COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
 _DELIVERY_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "issues")
 _PLAN_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "kind", "issues")
 #: A delivery row with its ninth cell, `Source`: `sha256:<16 hex> <basename>` of the file its
-#: brief issued, then any later tokens, space-separated; `-` when the verdict was transcribed.
+#: brief issued, then any later tokens, space-separated (the writer read from the harness's
+#: transcripts, `verdict_provenance.read`); `-` when the verdict was transcribed.
 #: `_DELIVERY_COLS` above stays the eight cells `row_identity` digests, so the column moves no
 #: identity a signed run record froze.
 _LEDGER_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "source",
@@ -3357,9 +3358,13 @@ def _noted_row(root: Path | str, uid: str, fp: str | None = None) -> dict | None
     return noted
 
 
-#: What `show` says of a row whose `Source` names the file its brief issued. It claims no
-#: writer: the authoring session can write an issued path itself, and nothing reads who did.
+#: What `show` says of a row whose `Source` names the file its brief issued and carries no
+#: provenance after it: recorded before the writer was read, or where no harness was chosen.
+#: It claims no writer, since the authoring session can write an issued path itself.
 ISSUED_SOURCE = "from the brief's verdict file (writer unread)"
+#: What `show` says of a bound row whose `Source` carries the writer read from the harness's
+#: transcripts (`verdict_provenance.label` gives the words in brackets).
+ISSUED_BY = "from the brief's verdict file ({})"
 #: What `show` says of a row whose `Source` is `-`: the verdict reached the ledger some other way.
 TRANSCRIBED_SOURCE = "transcribed"
 
@@ -3514,12 +3519,15 @@ def source_cell(path: Path | str, data: bytes) -> str:
 
 
 def verdict_source(root: Path | str, row: dict) -> tuple[str, str | None]:
-    """(label, file) for a delivery row: `ISSUED_SOURCE` and the issued file's repo-relative path,
-    found from the `Source` cell as `verdicts/<UNIT>/<basename>` and never by scanning; or
-    `TRANSCRIBED_SOURCE` and None for `-`, an absent cell, or one naming no file."""
+    """(label, file) for a delivery row: the issued file's label and repo-relative path, found
+    from the `Source` cell as `verdicts/<UNIT>/<basename>` and never by scanning; or
+    `TRANSCRIBED_SOURCE` and None for `-`, an absent cell, or one naming no file. The label
+    names the writer the cell's later tokens carry (`ISSUED_BY`), else `ISSUED_SOURCE`."""
     if tokens := _source_tokens(row):
         unit = sdlc_md.display_id(root, str(row.get("unit") or ""))
-        return ISSUED_SOURCE, (VERDICTS_DIR_REL / unit / tokens[1]).as_posix()
+        words = verdict_provenance.label(str(row.get("source") or "").split()[2:])
+        return (ISSUED_BY.format(words) if words else ISSUED_SOURCE,
+                (VERDICTS_DIR_REL / unit / tokens[1]).as_posix())
     return TRANSCRIBED_SOURCE, None
 
 
@@ -4760,13 +4768,18 @@ def cmd_record(args: argparse.Namespace) -> int:
         return 2
 
     carry_failed: list[str] = []
+    # Who wrote the file, read from the harness's transcripts once, for the first bound unit.
+    provenance: dict = {}
 
     def write(unit: str) -> None:
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
         # Bound to the file only when a brief issued it for THIS unit; anything else, `-`.
-        source = (source_cell(*read_from) if read_from
-                  and issued_by_brief(args.root, unit, read_from[0]) else "-")
+        bound = bool(read_from) and issued_by_brief(args.root, unit, read_from[0])
+        if bound and not provenance:
+            provenance.update(verdict_provenance.read(args.root, *read_from))
+        source = (" ".join([source_cell(*read_from), *provenance["tokens"]]) if bound
+                  else "-")
         # Read before the write: a transcribed row names no file, so it changes no candidate.
         drift = (transcription_drift(args.root, unit, brief, args.verdict, args.issues)
                  if source == "-" and brief else None)
@@ -4783,6 +4796,11 @@ def cmd_record(args: argparse.Namespace) -> int:
         at = f" round {n}" if n is not None else ""
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
               f"[delivery]{at} -> {path}{note}")
+        if bound:
+            # its own line: `sprint lane accept` parses the line above as it stands
+            print(f"note: {sdlc_md.norm_id(unit)}'s verdict file {provenance['note']}")
+            if provenance.get("warning"):
+                print(f"WARNING: {provenance['warning']}", file=sys.stderr)
         if source == "-":
             # its own line: `sprint lane accept` parses the line above as it stands
             print(f"note: {sdlc_md.norm_id(unit)}'s verdict was {TRANSCRIBED_SOURCE}: it was not "
