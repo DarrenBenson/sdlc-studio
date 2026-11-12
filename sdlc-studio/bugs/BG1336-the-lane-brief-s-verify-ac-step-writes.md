@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1336.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1336.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md
 > **Evidence:** RUN-01M77177, 2026-11-12: BG1010, BG1030 and US1149 lands
 > **Created:** 2026-11-12
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Have the brief run `verify_ac` in a mode that does not write the artefact, or ha
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | At-HEAD triage (D0469): live; Affects gains templates/agents/sdlc-builder.md, which still tells a builder to run verify_ac in its worktree |

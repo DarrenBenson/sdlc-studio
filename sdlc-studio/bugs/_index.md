@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 322 |
+| Open | 321 |
 | In Progress | 0 |
 | Fixed | 885 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 47 |
+| Won't Fix | 48 |
 | Superseded | 40 |
 | **Total** | **1381** |
 
@@ -356,7 +356,7 @@
 | [BG1278](BG1278-bg1274-s-parity-test-fixture-names-the-retired.md) | BG1274's parity-test fixture names the retired module audit.py, so the push gate's rename guard is red | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Open | Medium | 2026-11-07 | 2026-11-07 |
 | [BG1280](BG1280-a-codex-reading-names-a-multi-model-session.md) | A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost | Fixed | High | 2026-11-08 | 2026-11-08 |
-| [BG1281](BG1281-remote-gate-sh-push-release-records-an-abbreviated.md) | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for | Open | Medium | 2026-11-08 | 2026-11-08 |
+| [BG1281](BG1281-remote-gate-sh-push-release-records-an-abbreviated.md) | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for | Won't Fix | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1282](BG1282-copilot-home-and-opencode-db-user-configuration-variables.md) | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1283](BG1283-one-old-codex-thread-whose-rollout-file-is.md) | One old Codex thread whose rollout file is gone makes every later Codex reading in that workspace unmetered, permanently | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1284](BG1284-dollars-per-point-omits-the-coverage-its-dollar.md) | Dollars per point omits the coverage its dollar figure has, and the Priced cost row's reach sentence uses Claude-transcript wording for every harness | Open | Low | 2026-11-08 | 2026-11-08 |

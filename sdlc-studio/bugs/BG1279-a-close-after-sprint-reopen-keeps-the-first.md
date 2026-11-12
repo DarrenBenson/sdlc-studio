@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1279.md
 > **Evidence:** run eight (RUN-01M6RZQZ): first close bca8b1e6 and second close 2151a7b7 both report 44,550,286 priced; RPT0027 fingerprint 17a047f494e68304
 > **Created:** 2026-11-07
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ On a close after a reopen, re-read the meter over the run's full window (open to
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: RUN-01M6RZQZ was closed, reopened for BG1278 (D0426) and closed again.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Close a run, `sprint reopen` it, do some agent work, close it again, and compare the report's Priced cost row with the meter over the run's whole window.
-- [ ] **AC3** The proposed fix lands, pinned by a test: On a close after a reopen, re-read the meter over the run's full window (open to the new close), or add the reopen span's reading to the first, and say on the...
+- [ ] **AC1** Given a run closed, then reopened with `sprint reopen`, with meter readings dated after the first close, when it is closed again, then the report's Priced cost covers the run's whole window from its open to the second close, and the report says the meter was re-read after a reopen. Fails on: the second report carrying the first close's figure unchanged.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReopenedRunCostTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-07 | Claude Opus 5.5 | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

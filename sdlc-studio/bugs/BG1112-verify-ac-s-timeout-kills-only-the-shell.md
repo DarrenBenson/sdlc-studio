@@ -4,9 +4,9 @@
 > **Created:** 2026-10-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py, changelog.d/BG1112.md
 > **Severity:** Medium
-> **Points:** 2
+> **Points:** 1
 
 ## Summary
 
@@ -34,3 +34,4 @@ A timed-out verifier keeps running and writing after the gate has judged it, con
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | At-HEAD triage (D0469): the group kill landed in e451cd7c (BG1190), but the test this criterion names does not exist, so the criterion cannot pass; kept at 1 point to add that test |

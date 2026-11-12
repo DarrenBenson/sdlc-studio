@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1262.md
 > **Evidence:** run eight (RUN-01M6RZQZ) BG1245 review round 1 ([new] and [pre-existing]), and the orchestrator's friction log (R8-F5)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,16 @@ In `_kill_group` send `SIGTERM` to the group, wait the grace for it to empty, th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1245's review, outside its regression (filed separately).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: (1) Run `sprint.py lane run --timeout 1` five times with a fake CLI that loops `git add` on a growing file: at least one run leaves `index.lock`, and `git...
-- [ ] **AC3** The proposed fix lands, pinned by a test: In `_kill_group` send `SIGTERM` to the group, wait the grace for it to empty, then `SIGKILL`, and pin the grace with a child that traps `SIGTERM` and writes a...
+- [ ] **AC1** Given a lane that times out while its CLI's child traps SIGTERM and writes a marker, when the timeout fires, then the group is sent SIGTERM first and the marker is written before any SIGKILL; and a timed-out lane whose CLI loops `git add` leaves no `index.lock` in its worktree. Fails on: SIGKILL with no SIGTERM first, or the grace mutant `deadline = time.monotonic() - 1` passing the test.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneTimeoutTermsFirstTests
+- [ ] **AC2** Given a CLI that exits 0 while a background child it started is still running, when the lane records, then that child is killed before the staged set is read and no file it would stage is in the index afterwards. Fails on: a file staged after the record.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneLeftoverChildTests
+- [ ] **AC3** Given a CLI that cannot be executed (a shebang naming a missing interpreter), `lane run` refuses naming the CLI path and the unit is no longer in flight; and the test module's PATH holds only the fake bin and the system directories git and Python need, so a missing fake fails in setUp rather than reaching a real harness CLI. Fails on: a traceback with the unit left in flight, or the operator's PATH reaching a test.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneExecFailureTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

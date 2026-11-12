@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py
+> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, changelog.d/BG1331.md
 > **Evidence:** templates/model-prices.json grok-4.7 note; a consuming project's Cursor cost data, 2026-11-10
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -26,11 +26,14 @@ Record xAI's long-context rates, dated, beside the short-context ones. Where a r
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: templates/model-prices.json prices grok-4.7, grok-4.6 and grok-4.5 (and their xai/ ids) from xAI's Short context rates only.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Record xAI's long-context rates, dated, beside the short-context ones.
+- [ ] **AC1** templates/model-prices.json records xAI's Long context rates beside the Short context ones for grok-4.7, grok-4.6, grok-4.5 and their xai/ ids, dated and sourced: input 4.00, cached input 1.00 (0.60 for grok-4.5) and output 12.00 US dollars per million tokens, for a request whose prompt is 200k tokens or more, billed at that rate for all its tokens (docs.x.ai/developers/pricing, Text API, read 2026-11-12). Fails on: a long-context rate missing, or differing from those figures.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::GrokLongContextRatesTests
+- [ ] **AC2** Where a reading carries each request's prompt size, a Grok request of 200k prompt tokens or more is priced at the long-context rate for all its tokens and one under 200k at the short rate; where a reading carries only a session total, its Grok dollar figure is labelled a lower bound rather than presented as exact. Fails on: a request of 200k or more priced at the short rate, or a session-total Grok figure shown without the lower-bound label.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::GrokLongContextPricingTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

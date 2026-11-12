@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, changelog.d/BG1305.md
 > **Evidence:** `grep -c model lib/meter_cursor.py` is 0 while `cursor_usage_hook.py` names model 3 times (2026-11-09); the run nine pricing groomer's report
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -26,11 +26,12 @@ Carry each ledger line's model through the Cursor meter into the per-model split
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Found grooming run nine's pricing stories on 2026-11-09.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Carry each ledger line's model through the Cursor meter into the per-model split the other meters produce, and add a test that a ledger line naming a priced...
+- [ ] **AC1** Given a Cursor usage ledger whose lines name a priced model, when the Cursor meter reads it, the reading carries a per-model split in the shape the other meters produce and `lib/prices.py` prices it; beside it, a ledger line naming no model still reads as not priced. Fails on: a model-bearing ledger read as not priced, or a line with no model priced.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::LedgerCarriesTheModelTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG1333.md
 > **Evidence:** BG1224; v6.2.0 templates/config-defaults.yaml release_strategy: pr-required; templates/agent-instructions.md:43; a consuming project's Cursor agent, 2026-11-10
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -26,11 +26,14 @@ Add a hygiene rule that AGENTS.md states the integration rule matching the proje
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: SDLC Studio is designed for trunk-based delivery.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a hygiene rule that AGENTS.md states the integration rule matching the project's `release_strategy`, and have the upgrade report it with the exact line to...
+- [ ] **AC1** Given a project whose AGENTS.md lacks the integration rule that templates/agent-instructions.md carries ('Integrate continuously. ...'), when `validate.py check` runs, then it reports a hygiene finding naming AGENTS.md and the exact line to add, read from the template; beside it, a project whose AGENTS.md carries the line, and a project with no AGENTS.md, report no such finding. Fails on: no finding for the missing line, or a finding on a project that carries it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::IntegrationRuleHygieneTests
+- [ ] **AC2** Given the same project, when `project_upgrade.py` runs, its report names the missing integration rule with the exact line to add, and AGENTS.md is left byte for byte unchanged. Fails on: an upgrade report silent on the rule, or AGENTS.md rewritten.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::IntegrationRuleReportTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

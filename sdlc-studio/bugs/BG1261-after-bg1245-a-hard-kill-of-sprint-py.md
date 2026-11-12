@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1261.md
 > **Evidence:** run eight (RUN-01M6RZQZ) BG1245 review round 1 ([regression]), and the orchestrator's friction log (R8-F5)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,12 @@ Give the lane a parent-liveness watchdog that kills the lane's group when `sprin
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Following the recorded steps no longer reproduces the defect: Start `sprint.py lane run` under `setsid` for a unit whose fake CLI sleeps and then stages a file, and send `SIGKILL` to that group (`kill -KILL -<pgid>`)...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Give the lane a parent-liveness watchdog that kills the lane's group when `sprint.py` dies (a pipe held open by `sprint.py` whose end-of-file the watchdog...
+- [ ] **AC1** Given `sprint.py lane run` running a unit whose fake CLI sleeps and then stages a file, when `sprint.py` itself is killed with SIGKILL, then the lane's CLI and every process it started are gone within the watchdog's grace and the file is never staged; beside it, a control run in which `sprint.py` lives lets the same CLI finish and stage its file. Fails on: the CLI or a child still running, or the file staged, after `sprint.py` died.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneDiesWithItsCallerTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

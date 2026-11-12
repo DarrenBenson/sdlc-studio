@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1330.md
 > **Evidence:** sdlc-studio/reports/RPT0028-sprint-report-run-01m7061x.md (per-unit table); RUN-01M7061X
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -26,8 +26,10 @@ RPT0028's per-unit table reads 'NOT MEASURED - no agent returned for it was pric
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: RPT0028's per-unit table reads 'NOT MEASURED - no agent returned for it was priced from its own transcript' for 15 of 19 units.
-- [ ] **AC2** The proposed fix lands, pinned by a test: `lane land` records the builder's return from its worktree's agent id when that agent's transcript is readable, or `lane accept` warns while a unit has none...
+- [ ] **AC1** Given a lane worktree named `agent-<id>` whose builder transcript is readable in a fixture harness store (CLAUDE_CONFIG_DIR set to a temporary directory), when `sprint lane land` lands it, then each landed unit has a return recorded and priced from that transcript, as `lane return --agent <id>` records one; beside it, a worktree whose transcript cannot be read still lands and names the unit as unpriced. Fails on: a landed unit with a readable transcript left with no priced return.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests
+- [ ] **AC2** Given a closed run whose report reads a unit as NOT MEASURED for want of a priced return, the close counts that unit among the gaps it reports and names it. Fails on: the close reporting 0 gaps while a unit's cost is not measured.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::UnpricedUnitIsAGapTests
 
 ## Evidence
 
@@ -41,3 +43,4 @@ The data is in `sdlc-studio/change-requests/evidence/consumer-sprint-cost-2026-1
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
 | 2026-11-10 | Darren Benson (operator) | Evidence: a consuming project's batch cost figures |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |

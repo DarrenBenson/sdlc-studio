@@ -1,6 +1,6 @@
 # BG1281: `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_release.py
@@ -34,3 +34,4 @@ In `cmd_push`, resolve the sha before connecting: resolve it with `git rev-parse
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
 | 2026-11-08 | Claude Opus 5.5 | The proposed fix reworded without a command substitution, which the shell-hazard guard refuses in an artefact field |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | At-HEAD triage (D0469): closed, not a real issue. `tools/remote-gate.sh` cmd_push resolves the commit with `git rev-parse --verify` before connecting (since 1a5a9f1b, US1075, 2026-10-19), so the sha it records green is the full one; only a direct `release_cut.py record-green` call stores its argument unchanged, which no automated caller does |
