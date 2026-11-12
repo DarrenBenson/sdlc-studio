@@ -17,6 +17,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -86,6 +87,31 @@ class BuildNamedRunTests(unittest.TestCase):
         # A clean clone: no `.local`, so no live record; only the tracked one.
         shutil.rmtree(self.root / "sdlc-studio" / ".local")
         self._assert_older(self._build("--run", OLDER_RUN, "--id", tsr.FIX_RETRO))
+
+    def test_naming_the_live_run_keeps_its_forge_read(self) -> None:
+        """A mid-run preview reads the forge's CI runs, named or not (qa-seat-BG1010-r1).
+
+        The live run here is OPEN and has frozen no CI runs, the state a preview runs in before
+        the close's prepare freezes them; the fixture freezes them, which is how the first fix
+        passed while `--run <the live run>` lost its DORA rows. MUTANT: pass `run_id=args.run`
+        whenever `--run` is given; `_ci_runs` then takes its named-run branch and the named
+        preview reads no forge, so the stub is called once for three builds."""
+        live = json.loads(run_state.path(self.root).read_text(encoding="utf-8"))
+        live.pop(sr.CI_RUNS)
+        live.update(ended_at=None, outcome="running")
+        run_state.path(self.root).write_text(json.dumps(live, indent=2), encoding="utf-8")
+        source = "gh run list - the stub forge"
+        with mock.patch.object(sr, "fetch_ci_runs",
+                               return_value=(tsr.FIX_CI_ROWS, source)) as forge:
+            for args in ((), ("--run", tsr.FIX_RUN), ("--run", tsr.FIX_RUN.lower())):
+                with self.subTest(args=args):
+                    calls = forge.call_count
+                    rep = self._build(*args, "--id", tsr.FIX_RETRO)
+                    self.assertEqual(forge.call_count, calls + 1,
+                                     "the live run's preview did not read the forge")
+                    dora = {s["key"]: s for s in rep["sections"]}["dora"]
+                    self.assertTrue(dora.get("rows"), f"no DORA rows: {dora}")
+                    self.assertIn(source, json.dumps(dora))
 
 
 if __name__ == "__main__":

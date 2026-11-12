@@ -6067,15 +6067,17 @@ def cmd_build(args: argparse.Namespace) -> int:
     root = Path(args.root)
     try:
         state, state_rel = _run_state_for(root, getattr(args, "run", None))
+        archived = state_rel != _rel(root, run_state.path(root))
         if args.write:
-            archived = state_rel != _rel(root, run_state.path(root))
             print(f"error: {_filed_by_close_only(state, args.id or 'RETROxxxx', archived)}",
                   file=sys.stderr)
             return 2
-        # The named run's page, read from the record `_run_state_for` resolved for it: unnamed,
-        # `build_report` reads the live run, which in a clean clone does not exist.
+        # A run other than the live one is built from the record `_run_state_for` resolved for
+        # it: unnamed, `build_report` reads the live run, which in a clean clone does not exist.
+        # The live run, named or not, is built unnamed, so `_ci_runs` still reads the forge for
+        # it until the close freezes its CI runs.
         report = build_report(root, args.id or _retro_for_run(root, state),
-                              run_id=getattr(args, "run", None))
+                              run_id=getattr(args, "run", None) if archived else None)
     except ReportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
