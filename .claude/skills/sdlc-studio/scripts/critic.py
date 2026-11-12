@@ -1951,7 +1951,7 @@ def carried_criteria(unit: str, text: str, row: dict) -> tuple[list[str], list[s
     """
     import verify_ac  # noqa: PLC0415 - needed only when a unit is carried
     findings = [f for f in split_items(str(row.get("issues") or "").strip())
-                if f.strip(" -")]
+                if f.strip(" -") and not _RULINGS_ITEM.match(f)]
     acs = [f"The round {row.get('round')} REJECT finding no longer holds: {f}" for f in findings]
     verify = [CARRIED_FINDING_CHECK] * len(acs)
     for block in verify_ac.criteria_blocks(text):
@@ -2043,6 +2043,8 @@ def parse_findings(issues: str) -> list[dict]:
     # tag is written raw). They were added to the whole cell last, so they come off it first,
     # before the `;` split, and each finding reads as written.
     for item in split_items(_unescape_outside_spans(text)):
+        if _RULINGS_ITEM.match(item):
+            continue
         m = _ORIGIN_TAG.match(item)
         if m:
             origin = m.group(1).lower().replace(" ", "-")
@@ -2050,6 +2052,19 @@ def parse_findings(issues: str) -> list[dict]:
         else:
             out.append({"origin": None, "text": item})
     return out
+
+
+#: The one Issues item that is not a finding: the reviewer's rulings and any prose after
+#: `BLOCKING: none`, which `--from-verdict` keeps on the row as a single `RULINGS:` item.
+_RULINGS_ITEM = re.compile(r"^\s*RULINGS\s*:\s*(.*)$", re.IGNORECASE | re.DOTALL)
+
+
+def row_rulings(issues: str) -> str:
+    """The rulings a row's Issues cell keeps, read as `parse_findings` reads the cell, or ''."""
+    for item in split_items(_unescape_outside_spans((issues or "").strip())):
+        if m := _RULINGS_ITEM.match(item):
+            return m.group(1).strip()
+    return ""
 
 
 def unclassified_findings(issues: str) -> list[str]:
@@ -2491,7 +2506,11 @@ ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carry
         brackets or a code span closed within that finding enclose it; write \\; to keep one.
 BLOCKING: <the subset that must be fixed before Done, or 'none'. Each item quotes the start
           of its ISSUES finding (no tag needed), and that finding is recorded once, marked
-          blocking>"""
+          blocking>
+RULINGS: <optional. On a re-review, each prior finding ruled CLOSED, OVER-CLAIMED or MOVED,
+         quoting its start; otherwise any remark that is not a finding. Kept on the row as
+         rulings and never read as a finding, so a defect that survived is an ISSUES finding
+         too>"""
 
 
 # --- Standing review-brief practices ---------------------------------------------------
@@ -3561,13 +3580,14 @@ verdict named - re-apply each mutant and watch its killing test FAIL, re-run eac
 probe - and confirm the tree is byte-identical after your mutations. A repair whose
 killing test cannot fail is vacuous; two such tests have shipped before.
 
+Rule each finding of your prior verdict on the RULINGS line, not by re-emitting it.
 Then return the SAME contract as before:
 
 {_RETURN_CONTRACT}"""
 
 
 _VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
-_BLOCK_TOKENS = ("VERDICT", "ISSUES", "BLOCKING")
+_BLOCK_TOKENS = ("VERDICT", "ISSUES", "BLOCKING", "RULINGS")
 
 
 def _block_field(text: str, token: str) -> str:
@@ -3603,12 +3623,28 @@ def parse_verdict_block(text: str, strict: bool = True) -> tuple[str, str]:
         raise ValueError(f"unknown verdict {verdict!r} - APPROVE or REJECT only")
     after = text[m.end():]
     issues = _block_field(after, "ISSUES")
-    blocking = _block_field(after, "BLOCKING")
+    blocking, remark = _none_and_remark(_block_field(after, "BLOCKING"))
     if blocking and blocking.lower() != "none":
         issues = _mark_blocking(issues, blocking, strict)
     elif _ANY_ORIGIN_TAG.search(issues):
         issues = "; ".join(_escape_item(f) for f in _split_block_findings(issues))
+    rulings = " ".join("; ".join(
+        part for part in (remark, _block_field(after, "RULINGS")) if part).split())
+    if rulings:
+        item = _escape_item(f"RULINGS: {rulings}")
+        issues = item if issues.strip().lower() in _NO_FINDINGS else f"{issues}; {item}"
     return verdict, issues
+
+
+def _none_and_remark(blocking: str) -> tuple[str, str]:
+    """`(blocking, remark)`: a BLOCKING that opens with the word `none` is none, and the rest is
+    a remark kept on the row as rulings, never folded into blocking items. A no-findings phrase
+    (`none blocking`) comes back as it was, and so does a rest that carries an origin tag: that
+    is a finding and stays in BLOCKING, so no tagged item is ever swallowed into a remark."""
+    m = re.match(r"none\b(.*)\Z", blocking, re.IGNORECASE | re.DOTALL)
+    if (not m or blocking.lower() in _NO_FINDINGS or _ANY_ORIGIN_TAG.search(m.group(1))):
+        return blocking, ""
+    return "none", m.group(1).lstrip(" \t\r\n.,;:-").rstrip()
 
 
 def _finding_key(text: str) -> str:
