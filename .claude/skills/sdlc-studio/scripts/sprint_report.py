@@ -6072,7 +6072,10 @@ def cmd_build(args: argparse.Namespace) -> int:
             print(f"error: {_filed_by_close_only(state, args.id or 'RETROxxxx', archived)}",
                   file=sys.stderr)
             return 2
-        report = build_report(root, args.id or _retro_for_run(root, state))
+        # The named run's page, read from the record `_run_state_for` resolved for it: unnamed,
+        # `build_report` reads the live run, which in a clean clone does not exist.
+        report = build_report(root, args.id or _retro_for_run(root, state),
+                              run_id=getattr(args, "run", None))
     except ReportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
