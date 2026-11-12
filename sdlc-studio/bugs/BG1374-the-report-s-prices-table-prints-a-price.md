@@ -1,6 +1,6 @@
 # BG1374: The report's Prices table prints a price source URL bare in the Markdown twin, so a filed report fails markdownlint MD034 and its close paperwork cannot be committed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py, changelog.d/BG1374.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -25,6 +25,7 @@ Render a source that is a URL as a Markdown autolink (<https://...>) in the Mark
 
 - [ ] **AC1** Given a report whose price table source is a URL, when the close files it, then the Markdown twin's Source cell carries the URL as an autolink and the filed page passes markdownlint MD034, while a non-URL source and the HTML page render as before. Fails on: a bare URL in the Markdown Source cell.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py::PricingSnapshotTests::test_a_url_source_is_an_autolink_in_the_markdown_twin
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 
