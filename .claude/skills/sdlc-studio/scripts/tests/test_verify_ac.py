@@ -187,7 +187,7 @@ class DSLTests(unittest.TestCase):
         kind, cmd = verify_ac._build_command(
             "pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py -k override_warn")
         self.assertEqual(kind, "pytest")
-        self.assertEqual(cmd, ["pytest", "-q",
+        self.assertEqual(cmd, ["pytest", "-q", "-rfEs",
                                 ".claude/skills/sdlc-studio/scripts/tests/test_config.py",
                                 "-k", "override_warn"])
 

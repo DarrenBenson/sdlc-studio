@@ -194,7 +194,8 @@ class VerifyLaneBatchTests(unittest.TestCase):
         self.assertIn("batch resolved 0 of 1 pytest verifier(s)", skipped["detail"])
         self.assertIn("its 2 reported test(s) answered none of them, so each ran on its own",
                       skipped["detail"])
-        self.assertEqual(0, skipped["count"], "a skip beside a pass passes on its own run")
+        self.assertEqual(1, skipped["count"], "a skip beside a pass fails its own run: the "
+                                              "criterion ran only in part")
 
     def test_a_batched_node_over_the_per_verifier_ceiling_reads_red(self) -> None:
         """AC4. MUTANT: a batch result trusted whatever its junit duration, which would let a

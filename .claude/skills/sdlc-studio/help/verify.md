@@ -59,7 +59,8 @@ writes the report.
 3. For each AC with a `Verify:` line, builds a subprocess command
    from the DSL prefix and runs it with `cwd=--repo-root`
 4. Classifies the result: passed (verifier exit 0), failed (non-zero),
-   manual (no `Verify:` line)
+   manual (no `Verify:` line). A `pytest` verifier that skips any test it
+   selects fails, and its FAIL line names each skipped test and the reason
 5. Updates story files in place unless `--dry-run`:
    - passing AC whose `Verified:` was missing gets a new line
    - passing AC whose `Verified:` was `no` or `stale` gets upgraded
@@ -158,6 +159,29 @@ A unit's criteria and their `Verify:` selectors are its whole test plan. The
 naming it. A `## Test Plan` section left in an older artefact is plain text: `run` verifies the
 criteria around it, and `revert-check` exempts a criterion only through a reasoned
 `Revert-check-exempt` field, never through a plan row.
+
+### revert-check
+
+`verify_ac.py revert-check --unit <id>` reverts the unit's production files to the base ref
+(the open run's, or `--base <ref>`), re-runs the unit's own verifiers, and restores the files. A
+criterion that goes red proves its tests reach the change; one that stays green proves they do
+not. A verifier that times out, cannot start, runs no test or skips part of what it selects is
+`unmeasured` and decides nothing.
+
+| Verdict | Exit | When |
+| --- | --- | --- |
+| pass | 0 | at least one measured criterion goes red without the change |
+| refused | 1 | every measured criterion stays green without the change |
+| not judged | 3 | nothing to measure: `Affects` names no production file (a directory there is not one), the revert changes no byte, or no criterion was measured |
+| error | 1 | no unit with that id, or no base ref that resolves |
+
+```text
+verify_ac.py revert-check --unit US0001 --base HEAD~1        # exit 0: its test goes red
+verify_ac.py revert-check --unit US0002 --base HEAD~1        # exit 1: its test stays green
+verify_ac.py revert-check --unit US0001 --base HEAD          # exit 3: the revert changes no byte
+verify_ac.py revert-check --unit US0003 --base HEAD~1        # exit 3: Affects names a directory
+verify_ac.py revert-check --unit US0001 --base no-such-ref   # exit 1: the base does not resolve
+```
 
 ### report
 

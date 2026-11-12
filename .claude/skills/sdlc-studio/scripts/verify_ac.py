@@ -161,6 +161,10 @@ def parse_story(text: str) -> list[ACBlock]:
             continue
         if line.startswith("## "):
             section = line[3:].strip()
+            # A criterion ends with its section. Left open, it took every later `Verify:` line
+            # (a `## Closed <date>` record, an update note) as its own and executed it.
+            flush()
+            current = None
 
         m = AC_HEADING_RE.match(line)
         if m:
@@ -259,6 +263,30 @@ def criteria_blocks(text: str) -> list[ACBlock]:
     if not has_criteria_section(text):
         return blocks
     return [b for b in blocks if _in_section(b)]
+
+
+def stray_verify_lines(text: str) -> list[tuple[int, str, str]]:
+    """`(line number, heading, expression)` for each `Verify:` line OUTSIDE `## Acceptance
+    Criteria` that no criterion holds: a history or update note's line, which no run executes.
+    A fenced line is an illustration, and a line under a misplaced criterion is named with that
+    criterion, so neither is listed. Empty when the section is absent, as `misplaced_criteria`."""
+    if not has_criteria_section(text):
+        return []
+    out: list[tuple[int, str, str]] = []
+    fence, section, in_block = None, "", False   # walked as `parse_story` walks it
+    for i, line in enumerate(text.splitlines()):
+        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
+        if is_fence_line or fence is not None:
+            continue
+        if line.startswith("## "):
+            section, in_block = line[3:].strip(), False
+        if AC_HEADING_RE.match(line) or AC_BULLET_RE.match(line):
+            in_block = True
+            continue
+        m = VERIFY_RE.match(line)
+        if m and not in_block and not section.lower().startswith("acceptance criteria"):
+            out.append((i + 1, section, m.group(2).strip()))
+    return out
 
 
 def misplaced_criteria(text: str) -> list[tuple[str, str]]:
@@ -393,6 +421,53 @@ def _pytest_all_skipped(blob: str) -> bool:
     return bool(_PYTEST_ONLY_SKIPPED.search(blob))
 
 
+# A run that skips SOME of its selected tests is not vacuous, since one ran, but the criterion
+# ran only in part, and the skipped test is often the one carrying its behaviour (a render test
+# behind an `importorskip` the gate's interpreter lacks). Judged for the `pytest` verb alone,
+# whose command asks pytest for its skip report (`-rfEs`); a `shell` line keeps its own verdict.
+# The summary line's count decides; the report's lines only name what it counted.
+_PYTEST_SUMMARY = re.compile(r"^(?:=+ )?(\d+ \w+(?:, \d+ \w+)*) in \d", re.M)
+_PYTEST_SKIP_FOLDED = re.compile(r"^SKIPPED \[(\d+)\] (.+?):(\d+): (.*)$", re.M)
+_PYTEST_SKIP_NODE = re.compile(r"^SKIPPED (\S+::\S+) - (?:Skipped: )?(.*)$", re.M)
+_TEST_DEFS = (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+
+
+def _enclosing_test(cwd: Path, path: str, line: int) -> str:
+    """`path::Class::test` for the test whose source, decorators included, holds `path:line`;
+    `path:line` when the file will not parse or no test holds the line (a module-level skip).
+    pytest's skip report folds by location, so this is how a report line names its test."""
+    try:
+        body = ast.parse((cwd / path).read_text(encoding="utf-8")).body
+    except (OSError, SyntaxError, ValueError):
+        return f"{path}:{line}"
+    names: list[str] = []
+    while hit := next((n for n in body if isinstance(n, _TEST_DEFS)
+                       and min([n.lineno] + [d.lineno for d in n.decorator_list])
+                       <= line <= (n.end_lineno or n.lineno)), None):
+        names.append(hit.name)
+        if not isinstance(hit, ast.ClassDef):
+            break
+        body = hit.body
+    return "::".join([path, *names]) if names else f"{path}:{line}"
+
+
+def _pytest_partial_skips(stdout: str, stderr: str, cwd: Path) -> str:
+    """The partial-skip verdict for a clean pytest run naming each skipped test as `name
+    (reason)`; empty when it skipped none. A skip the report does not list (a `-r` on the
+    Verify line replacing ours) still counts."""
+    blob = f"{stdout}\n{stderr}"
+    count = max((_summary_count(seg, "skipped") for seg in _PYTEST_SUMMARY.findall(blob)),
+                default=0)
+    if not count:
+        return ""
+    named = [f"{node} ({reason})" for node, reason in _PYTEST_SKIP_NODE.findall(blob)]
+    for n, path, line, reason in _PYTEST_SKIP_FOLDED.findall(blob):
+        name = _enclosing_test(cwd, path, int(line))
+        named.append(f"{name} ({reason})" if n == "1" else f"{name} x{n} ({reason})")
+    names = "; ".join(named) or "the run's report named none of them (add -rs)"
+    return _PARTLY_SKIPPED_MSG.format(n=count, names=names)
+
+
 def _summary_count(segment: str, word: str) -> int:
     """Total of `<n> <word>` counts in one runner summary segment."""
     return sum(int(n) for n in re.findall(_COUNT_WORD.format(word), segment))
@@ -456,6 +531,11 @@ _VACUOUS_MSG = ("verifier exited 0 but ran NO tests - a filter that matches noth
 _SKIPPED_MSG = ("verifier exited 0 but every selected test was SKIPPED - a skipped test "
                 "proves exactly as much as one that never ran. Un-skip it, or re-point the "
                 "Verify line at a test that runs in this environment.")
+
+# The names lead, so the report's 500-character cut takes the remedy before them.
+_PARTLY_SKIPPED_MSG = ("verifier exited 0 but SKIPPED {n} selected test(s): {names} - the "
+                       "criterion ran only in part. Un-skip them, or narrow the Verify line to "
+                       "tests that run in this environment.")
 
 
 # Seconds a signalled verifier group gets to end by itself before it is sent SIGKILL: time for
@@ -663,8 +743,13 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
         msg = (_SKIPPED_MSG if (vacuous and not unresolved
                                 and _all_skipped(kind, stdout, stderr))
                else _VACUOUS_MSG)
+        # A clean pytest run that skipped some of what it selected is not a pass either.
+        skips = ("" if vacuous or result.returncode or kind != "pytest"
+                 else _pytest_partial_skips(result.stdout, result.stderr, cwd))
+        if skips:
+            stderr = f"{skips}\n{stderr}".strip()
         return VerifierResult(
-            ok=(result.returncode == 0 and not vacuous),
+            ok=(result.returncode == 0 and not vacuous and not skips),
             kind=kind,
             exit_code=result.returncode,
             stdout=stdout,
@@ -1846,7 +1931,7 @@ def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[s
     tail = parts[1] if len(parts) > 1 else ""
 
     if head == "pytest" and tail:
-        return "pytest", ["pytest", "-q"] + shlex.split(tail)
+        return "pytest", ["pytest", "-q", "-rfEs"] + shlex.split(tail)
     if head == "jest" and tail:
         return "jest", ["jest", "-t", tail.strip('"\'')]
     if head == "vitest" and tail:
@@ -4009,6 +4094,11 @@ def cmd_lint(args: argparse.Namespace) -> int:
             print(f"{p.name} {ac_id}: unreviewable - sits under `## {heading or '(no heading)'}`, outside "
                   f"`## Acceptance Criteria`: the runner skips it, the brief never shows it and the Done "
                   f"gate refuses it - move it into the section")
+        for lineno, heading, expr in stray_verify_lines(text):
+            flagged += 1
+            print(f"{p.name}:{lineno}: Verify line {expr!r} sits under `## {heading or '(no heading)'}`, "
+                  f"outside `## Acceptance Criteria`: no criterion holds it and no run executes it - "
+                  f"move it into a criterion, or reword it so it is not a `**Verify:**` line")
         for block in criteria_blocks(text):
             stacked = lint_stacked_verifiers(block) if authoring else None
             if stacked:
@@ -4779,6 +4869,28 @@ def _release_signals(previous: dict) -> None:
             continue
 
 
+#: Exits that say a runner never reached a verdict: it timed out, or could not be executed.
+_NO_VERDICT_EXITS = (124, 126, 127)
+
+
+def _revert_state(res: VerifierResult) -> str:
+    """`green`, `red` or `unmeasured` for one verifier run against the reverted tree.
+
+    Red is the proof that the tests reach the change, so it is granted only to a runner that ran
+    to a verdict and reported a failure: a non-zero exit from a parsed, permitted expression whose
+    run was not empty. Every other result that is not a pass did not measure the change and is
+    `unmeasured`: an expression that would not parse (`invalid`), one the trust boundary refused
+    (`blocked`), a run of nothing (`vacuous`), a timeout or a runner that could not start (an exit
+    in `_NO_VERDICT_EXITS`), and a clean exit that is still no pass, as when pytest skipped part
+    of what it selected. Counted red, each passed a unit on a criterion that never measured it.
+    """
+    if res.ok:
+        return "green"
+    ran_red = (res.exit_code not in (0, *_NO_VERDICT_EXITS) and not res.vacuous
+               and res.kind not in ("invalid", "blocked"))
+    return "red" if ran_red else "unmeasured"
+
+
 def revert_check(root, unit: str, base_ref: str | None = None, *,
                  timeout: int = 600, allow_shell: bool = True) -> dict:
     """Revert a unit's production files to `base_ref` and re-run ITS OWN verifiers.
@@ -4904,9 +5016,10 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
         for rel in targets["production"]:
             st = (root / rel).stat()
             snapshot[rel] = ((root / rel).read_bytes(), stat.S_IMODE(st.st_mode))
+        blobs: dict = {}
         for rel in targets["production"]:
             try:
-                blob = _base_blob(root, base, rel)
+                blobs[rel] = _base_blob(root, base, rel)
             except _BaseUnreadable as exc:
                 result["status"] = "reported"
                 result["errors"].append(
@@ -4914,6 +5027,16 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
                     f"treated as absent: reading a git failure as `did not exist at base` "
                     f"deletes the file and manufactures the red this gate looks for")
                 return result
+        if all(blobs[rel] == snapshot[rel][0] for rel in blobs):
+            # Nothing would be removed: the base holds these files byte for byte as they stand
+            # (a run planned from HEAD, before the unit is committed). Every criterion would stay
+            # green, and refusing the unit for a change that was never reverted is no verdict.
+            result["status"] = "reported"
+            result["errors"].append(
+                f"{uid}: not judged - reverting {', '.join(blobs)} to {base} changes no byte, so "
+                f"there is no change to remove. Name a base before the change with `--base <ref>`")
+            return result
+        for rel, blob in blobs.items():
             if blob is None:
                 (root / rel).unlink()
             else:
@@ -4928,19 +5051,7 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
                              every=True)
             for ln, (_line, res) in zip(runnable, runs):
                 ln["kind"] = res.kind
-                if res.ok:
-                    ln["state"] = "green"
-                elif res.kind in ("invalid", "blocked") or res.vacuous:
-                    # NOT RED. `run_verifier` already distinguishes an expression it could not
-                    # parse, one the trust boundary refused to execute, and a runner that exited
-                    # clean having run nothing - and every one of those is a verifier that did
-                    # not RUN, not a test that noticed the change. Counting them red made a unit
-                    # whose `Verify:` line was a typo pass the one check that asks whether its
-                    # tests reach anything. AC5 states the rule for an unresolvable selector;
-                    # this is the same rule, and the discriminating data was already in hand.
-                    ln["state"] = "unmeasured"
-                else:
-                    ln["state"] = "red"
+                ln["state"] = _revert_state(res)
             # One red line proves the criterion's tests reach the change, as one red criterion
             # does for the unit; a line that stays green is still named in `lines`.
             states = [ln["state"] for ln in runnable]
