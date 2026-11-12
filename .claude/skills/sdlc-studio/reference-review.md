@@ -580,7 +580,7 @@ The row itself stays in the table, byte for byte. A `SUPERSEDED` record is appen
 the retired row (date, verdict, reviewer, author), the reason, the authoriser, the trust boundary
 and the correction date. It is prose, not a table row, because the parser reads every pipe-delimited
 line - an errata table would read as malformed verdicts, so no row gains a cell for a correction
-(its ninth, `Source`, says where `record` read the verdict). Later verdicts land in one table.
+(its ninth, `Source`, says where `record` read the verdict). Later verdicts land in one table. `record` reads `Source` back: it refuses a `--from-verdict` file, exit 2 and writing nothing, when an earlier row's `Source` carries its hash, its `UNIT` line names another unit, or, on a file a brief issued, its `BRIEF` line names another file. A block transcribed with `--brief <fp>` is set, verdict and findings in order with reflow ignored, against each existing file a brief here issued the unit under `<fp>` that no row records; unless one matches, a warning names the newest and its first differing finding, and the row reads transcribed. `show` marks a bound row `(changed since it was recorded)` or `(missing)` when its file no longer holds the hashed bytes.
 
 Refusals, all loud, all writing nothing:
 

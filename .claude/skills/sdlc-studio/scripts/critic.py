@@ -3372,21 +3372,138 @@ def issued_by_brief(root: Path | str, unit: str, path: Path | str) -> bool:
     target = Path(path).resolve()
     if target.parent.parent.parts[-len(VERDICTS_DIR_REL.parts):] != VERDICTS_DIR_REL.parts:
         return False
+    return any(Path(str(row["verdict_file"])).resolve() == target
+               for row in _issuing_notes(root, unit))
+
+
+def _issuing_notes(root: Path | str, unit: str) -> list[dict]:
+    """The brief notes here that issued a verdict file for `unit`, oldest first. A line that does
+    not parse costs only itself; no notes file reads as no notes."""
     try:
         lines = (Path(root) / BRIEF_NOTES_REL).read_text(encoding="utf-8",
                                                          errors="replace").splitlines()
     except OSError:
-        return False
-    uid = sdlc_md.norm_id(unit)
+        return []
+    uid, out = sdlc_md.norm_id(unit), []
     for line in lines:
         try:
             row = json.loads(line)
         except ValueError:
             continue
-        if (isinstance(row, dict) and row.get("unit") == uid and row.get("verdict_file")
-                and Path(str(row["verdict_file"])).resolve() == target):
-            return True
-    return False
+        if isinstance(row, dict) and row.get("unit") == uid and row.get("verdict_file"):
+            out.append(row)
+    return out
+
+
+def _source_tokens(row: dict) -> list[str]:
+    """A delivery row's `Source` cell as `[sha256:<16 hex>, <basename>]` for a bound row, or []."""
+    tokens = str(row.get("source") or "").split()
+    return tokens[:2] if len(tokens) > 1 and tokens[0].startswith("sha256:") else []
+
+
+def _header_lines(text: str) -> dict[str, str]:
+    """The `UNIT` and `BRIEF` lines a verdict file opens with, by name, first of each kept; {}
+    for a block that opens with neither."""
+    m = _VERDICT_HEADER_RE.match(text)
+    out: dict[str, str] = {}
+    for line in m.group(0).splitlines() if m else []:
+        name, _, value = line.partition(":")
+        out.setdefault(name.strip(), value.strip())
+    return out
+
+
+def verdict_file_refusal(root: Path | str, path: Path, data: bytes,
+                         units: list[str]) -> str | None:
+    """Why `record --from-verdict <path>` must not record this file for `units`, or None.
+
+    Three refusals, in this order. Bytes some earlier row's `Source` already carries are a
+    replay, decided on the hash and never the path, so a copy at a fresh issued path is refused
+    too; the brief's header lines are what make two bare APPROVEs' bytes differ. A `UNIT` line
+    naming a unit outside `units` is a block written for another unit, wherever it was saved. A
+    `BRIEF` line naming a stem other than the file's own is a file written for another review
+    when a brief here issued this file; a block saved anywhere else carries the header of the
+    file it was written to truthfully, and records as transcribed. A line the file lacks names
+    nothing and is not checked."""
+    digest = source_cell(path, data).split()[0]
+    for row in read_verdicts(root):
+        if _source_tokens(row)[:1] == [digest]:
+            return (f"{path} holds the bytes the row {row['unit']} {row['verdict']} "
+                    f"({row['date']}, Source {row['source']}) was recorded from; a verdict file "
+                    f"is recorded once, so brief the unit again for a fresh one")
+    head = _header_lines(data.decode("utf-8", "replace").replace("\r\n", "\n"))
+    if named := head.get("UNIT"):
+        if other := [u for u in units if sdlc_md.norm_id(u) != sdlc_md.norm_id(named)]:
+            return (f"{path} opens with UNIT: {named}, so it is not {sdlc_md.norm_id(other[0])}'s "
+                    f"verdict; record it for the unit it names")
+    if ((stem := head.get("BRIEF")) and stem != path.stem
+            and any(issued_by_brief(root, u, path) for u in units)):
+        return (f"{path} opens with BRIEF: {stem}, the header of another issued file (this one "
+                f"is {path.stem}); record the file that header names")
+    return None
+
+
+def _finding_keys(issues: str) -> list[str]:
+    """The findings a block or an `--issues` value carries, as the ledger reads them (no
+    `RULINGS:` item, no `BLOCKING:` label, the origin tag's spelling settled), each with its
+    whitespace folded: what a transcription has to keep, and nothing a reflow moves."""
+    return [(f"[{f['origin']}] " if f["origin"] else "") + " ".join(f["text"].split())
+            for f in parse_findings(issues)]
+
+
+def transcription_drift(root: Path | str, unit: str, fp: str, verdict: str,
+                        issues: str) -> str | None:
+    """The warning for a transcribed block whose verdict or findings, in order, match none of
+    the files a brief here issued for `unit` under fingerprint `fp` that exist, parse and no row
+    records; None when one matches or there is none. Re-briefs of one scope share `fp`, so every
+    such file is compared, and the warning names the newest and the first difference from it."""
+    recorded = {tokens[1] for row in read_verdicts(root) if (tokens := _source_tokens(row))}
+    want = (verdict.upper(), _finding_keys(issues))
+    newest = None
+    for note in _issuing_notes(root, unit):
+        path = Path(str(note["verdict_file"]))
+        if note.get("fp") != fp or path.name in recorded:
+            continue
+        try:
+            got, found = parse_verdict_block(path.read_text(encoding="utf-8"), strict=False)
+        except (OSError, ValueError):
+            continue  # never written, or no block in it: nothing a transcription could copy
+        if (got, _finding_keys(found)) == want:
+            return None
+        newest = (path, got, _finding_keys(found))
+    if newest is None:
+        return None
+    path, got, have = newest
+    if got != want[0]:
+        diff = f"its verdict is {got} and the recorded one {want[0]}"
+    else:
+        i = next(i for i in range(max(len(have), len(want[1])))
+                 if have[i:i + 1] != want[1][i:i + 1])
+        diff = (f"its finding {i + 1}, \"{have[i]}\", is not the recorded block's finding {i + 1}"
+                if i < len(have) else
+                f"the recorded block's finding {i + 1}, \"{want[1][i]}\", is not in it")
+    return (f"WARNING: {sdlc_md.norm_id(unit)}'s transcribed verdict differs from {path}, the "
+            f"newest unrecorded verdict file a brief here issued for it under {fp}: {diff}. The "
+            f"row is written as transcribed; record from the file to keep what the reviewer wrote")
+
+
+#: What `show` adds to a bound row's line when its file no longer holds the bytes it recorded.
+VERDICT_FILE_NOTES = {"changed": "changed since it was recorded", "missing": "missing"}
+
+
+def verdict_file_state(root: Path | str, row: dict, vroot: Path) -> str | None:
+    """`unchanged`, `changed` or `missing` for a row bound to an issued file, found under `vroot`
+    (`verdict_root`, where briefs issue them) at the path `verdict_source` names: the file's
+    bytes now, hashed and set against the hash the row's `Source` recorded, never against
+    themselves; a file absent or unreadable is missing. None for a transcribed row."""
+    _label, rel = verdict_source(root, row)
+    if rel is None:
+        return None
+    path, digest = vroot / rel, _source_tokens(row)[0]
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return "missing"
+    return "unchanged" if source_cell(path, data).split()[0] == digest else "changed"
 
 
 def source_cell(path: Path | str, data: bytes) -> str:
@@ -3400,8 +3517,7 @@ def verdict_source(root: Path | str, row: dict) -> tuple[str, str | None]:
     """(label, file) for a delivery row: `ISSUED_SOURCE` and the issued file's repo-relative path,
     found from the `Source` cell as `verdicts/<UNIT>/<basename>` and never by scanning; or
     `TRANSCRIBED_SOURCE` and None for `-`, an absent cell, or one naming no file."""
-    tokens = str(row.get("source") or "").split()
-    if len(tokens) > 1 and tokens[0].startswith("sha256:"):
+    if tokens := _source_tokens(row):
         unit = sdlc_md.display_id(root, str(row.get("unit") or ""))
         return ISSUED_SOURCE, (VERDICTS_DIR_REL / unit / tokens[1]).as_posix()
     return TRANSCRIBED_SOURCE, None
@@ -4506,6 +4622,14 @@ def cmd_record(args: argparse.Namespace) -> int:
             print(f"record refused: {exc}", file=sys.stderr)
             return 2
         args.verdict, args.issues = verdict, issues
+        if read_from:
+            try:
+                units = batch_units(args, "record")
+            except BatchRefused:
+                units = []  # `_run_batch` refuses it below, by the same words
+            if why := verdict_file_refusal(args.root, *read_from, units):
+                print(f"record refused: {why}. Nothing was written", file=sys.stderr)
+                return 2
     elif not args.verdict:
         print("record refused: give --verdict, or --from-verdict FILE|- with the "
               "reviewer's returned block", file=sys.stderr)
@@ -4548,6 +4672,9 @@ def cmd_record(args: argparse.Namespace) -> int:
         # Bound to the file only when a brief issued it for THIS unit; anything else, `-`.
         source = (source_cell(*read_from) if read_from
                   and issued_by_brief(args.root, unit, read_from[0]) else "-")
+        # Read before the write: a transcribed row names no file, so it changes no candidate.
+        drift = (transcription_drift(args.root, unit, brief, args.verdict, args.issues)
+                 if source == "-" and brief else None)
         try:
             path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
                                    args.issues, brief=brief,
@@ -4565,6 +4692,8 @@ def cmd_record(args: argparse.Namespace) -> int:
             # its own line: `sprint lane accept` parses the line above as it stands
             print(f"note: {sdlc_md.norm_id(unit)}'s verdict was {TRANSCRIBED_SOURCE}: it was not "
                   f"read from a verdict file a brief here issued for the unit, so its Source is -")
+        if drift:
+            print(drift, file=sys.stderr)
         if bug:
             print(carried_notice(unit, bug))
 
@@ -4606,19 +4735,33 @@ def cmd_show(args: argparse.Namespace) -> int:
                 args.root, args.unit)}, indent=2))
         else:
             rows = read_verdicts(args.root)
+            state = _file_states(args.root, rows)
             for v in rows:
                 v["provenance"], v["verdict_file"] = verdict_source(args.root, v)
+                v["verdict_file_state"] = state(v)
             print(json.dumps(rows, indent=2))
         return 0
     if args.unit:
         v = verdict_for(args.root, args.unit)
         print(v if v else f"no verdict for {args.unit}")
     else:
-        for v in read_verdicts(args.root):
+        rows = read_verdicts(args.root)
+        state = _file_states(args.root, rows)
+        for v in rows:
             label, named = verdict_source(args.root, v)
+            # on the row's own line: one line per row names its unit
+            note = VERDICT_FILE_NOTES.get(state(v) or "")
             print(f"{v['unit']} {v['verdict']} ({v['date']}) {label}"
-                  f"{f': {named}' if named else ''}{_superseded_suffix(v)}")
+                  f"{f': {named}' if named else ''}{f' ({note})' if note else ''}"
+                  f"{_superseded_suffix(v)}")
     return 0
+
+
+def _file_states(root: Path | str, rows: list[dict]):
+    """`verdict_file_state` over `rows`, with `verdict_root` asked once and only when a row is
+    bound to a file, so a ledger of transcribed rows runs no git."""
+    vroot = verdict_root(root) if any(_source_tokens(v) for v in rows) else Path(root)
+    return lambda v: verdict_file_state(root, v, vroot)
 
 
 def _superseded_suffix(verdict: dict) -> str:
