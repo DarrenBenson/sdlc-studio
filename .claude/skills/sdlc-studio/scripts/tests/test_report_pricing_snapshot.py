@@ -40,6 +40,10 @@ IDLE = "claude-idle-5-5"
 CONFIGURED = {"input": 15.0, "output": 75.0, "cache_read": 1.5, "cache_write_5m": 18.75,
               "cache_write_1h": 30.0}
 SOURCE = "the operator's own rate card"
+#: The configured entry's effective date, ten days before the typed table's entries (dated
+#: today): the table's own date is its newest entry's, so a row stating the table's date in
+#: place of its entry's reads today on the opus row and fails.
+CONFIGURED_ON = (dt.date.today() - dt.timedelta(days=10)).isoformat()
 #: The five components in the order the page states them, with their row keys.
 COLUMNS = (("price_input", "input"), ("price_output", "output"),
            ("price_cache_write_5m", "cache_write_5m"), ("price_cache_write_1h", "cache_write_1h"),
@@ -80,7 +84,7 @@ class PricingSnapshotTests(meter._Case):
         entry = {**CONFIGURED, "input": input_price}
         lines = ["pricing:", "  models:", f"    {OPUS}:"]
         lines += [f"      {k}: {v}" for k, v in entry.items()]
-        lines += [f"      effective: '{dt.date.today().isoformat()}'", f"      source: {SOURCE}"]
+        lines += [f"      effective: '{CONFIGURED_ON}'", f"      source: {SOURCE}"]
         (root / "sdlc-studio" / ".config.yaml").write_text("\n".join(lines) + "\n",
                                                            encoding="utf-8")
 
@@ -159,7 +163,9 @@ class PricingSnapshotTests(meter._Case):
         the page's `price_table` (the idle model gains a row, or a row drops the configured
         15); a row with no unit or no effective date; rows built from the cost section's stamp
         grouping, which reads `mixed` for this session, rather than the models the dollars
-        priced; a model's dollars taken from the run's total; the twin left without the rows."""
+        priced; a model's dollars taken from the run's total; the twin left without the rows; the
+        HTML row dropping its Effective, Source or Dollars cell; a row stating the table's own
+        (newest) date in place of its entry's, which the opus entry dated apart exposes."""
         sr, ws = self.sr, self._metered_run()
         rid = self._close(ws)
         page = sr.read_report(ws.root, rid)
@@ -185,6 +191,11 @@ class PricingSnapshotTests(meter._Case):
                              row["price_usd"]["value"], model)
         self.assertEqual("$15.00", rows[OPUS]["price_input"]["value"])
         self.assertEqual(SOURCE, rows[OPUS]["price_source"]["value"])
+        newest = max(e["effective"] for e in table.values())
+        self.assertNotEqual(newest, table[OPUS]["effective"],
+                            "premise: the opus entry is dated apart from the table's own date")
+        self.assertEqual(CONFIGURED_ON, rows[OPUS]["price_effective"]["value"],
+                         "the opus row states its entry's date, not the table's")
         whole = sum(_at(m, spent[m], self.rates) for m in spent)
         self.assertEqual(usd_case._money(whole), ws.row(page, "Dollar cost")["est_actual"]["value"])
         twin = next((ws.root / "sdlc-studio" / "reports").glob(f"{rid}*.md"))
@@ -195,7 +206,13 @@ class PricingSnapshotTests(meter._Case):
                     row["price_effective"]["value"], row["price_source"]["value"],
                     row["price_usd"]["value"]]
                 if text.startswith("<"):
-                    self.assertIn("".join(f'<td class="num">{c}</td>' for c in cells[:5]), text)
+                    # The whole row, all nine cells in order: dropping the Effective, Source
+                    # or Dollars cell fails here, not only a price cell.
+                    self.assertRegex(text, "".join(
+                        [rf'<tr><th scope="row" class="mono">{re.escape(model)}</th>']
+                        + [rf'<td class="num">{re.escape(c)}</td>' for c in cells[:5]]
+                        + [rf"\s*<td>{re.escape(cells[5])}</td><td>{re.escape(cells[6])}</td>",
+                           rf'<td class="num">{re.escape(cells[7])}</td></tr>']), model)
                 else:
                     self.assertIn(f"| {model} | " + " | ".join(cells) + " |", text)
 
