@@ -2510,6 +2510,32 @@ def delegated_total(state: dict) -> int:
     return sum(r["tokens"] for r in delegated_records(state))
 
 
+def delegated_split(state: dict) -> dict:
+    """The run's delegated records as a dollar figure prices them: `{BY_MODEL, "read",
+    "unpriced"}`. A record read from an agent's transcript carries its per-model split, summed
+    into `BY_MODEL`; one with its components and no split books them under no model named,
+    which no price covers; `read` counts the records booked either way. A supplied total with
+    neither is listed in `unpriced` as `{"tokens", "agent", "unit"}`, never priced at a guessed
+    rate or as $0. The caller folds `BY_MODEL` into the meter's split it hands `usd`, and only
+    where the Tokens row adds these totals: over a meter that read the subagent transcripts
+    they are in it already."""
+    split: dict[str, dict] = {}
+    read, unpriced = 0, []
+    for r in delegated_records(state):
+        got = r.get(BY_MODEL) if isinstance(r.get(BY_MODEL), dict) and r.get(BY_MODEL) else (
+            {"": r["components"]} if isinstance(r.get("components"), dict) else None)
+        if got is None:
+            unpriced.append({"tokens": r["tokens"], "agent": str(r.get("agent") or ""),
+                             "unit": str(r.get("unit") or "")})
+            continue
+        read += 1
+        for m, comps in got.items():
+            held = split.setdefault(m, _zero())
+            for c in TOKEN_COMPONENTS:
+                held[c] += int((comps or {}).get(c) or 0)
+    return {BY_MODEL: split, "read": read, "unpriced": unpriced}
+
+
 def unit_agent_totals(state: dict) -> dict[str, dict]:
     """Per unit, the delegated totals tagged to it: `{unit: {"tokens", "minutes", "agents",
     "timed", "priced", "priced_agents"}}`. `priced` sums the priced cost of the `priced_agents`

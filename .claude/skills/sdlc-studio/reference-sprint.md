@@ -667,17 +667,17 @@ connectors a delivery session does not use is recommended, not enforced; a claud
 ### Dollar cost {#dollar-cost}
 
 The report states estimated US dollars beside the priced tokens - Dollar cost and Dollars per point rows, and each unit
-row's dollars, in the HTML page and its Markdown twin - priced per model (`run_state.usd` over `lib/prices.py`) from the
-components the meter keeps by model, so a `mixed` reading is never priced at one model's rate. The table is
-`templates/model-prices.json`: Anthropic's Claude list prices, OpenAI's standard rates for the models behind Codex CLI and
-OpenCode's free model at $0, each dated and sourced. A project adds or replaces a model under `pricing.models`, and
-`pricing.premium_request` and `pricing.stale_after_days` override the rest ([config](reference-config.md#pricing)). A
-`sprint lane run` unit is priced per session, each model at its own rate from the split its lane record keeps where the CLI
-names several; a session naming none reads NOT MEASURED. A model the table does not list is named with its share of the
-priced tokens, never summed in as $0. The row states the table's effective date, marked STALE when `prices.stale` says so on
-the run's end date. A signed page re-derives at the table it carries, so a price revision cannot invalidate it; an unsigned
-page re-derives at the table in force. Premium requests are their own row, priced per request, never in Dollar cost. The
-retro's priced line states dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
+row's dollars, in the HTML page and its Markdown twin - priced per model (`run_state.usd` over `lib/prices.py`), so a
+`mixed` reading is never priced at one model's rate. The table is `templates/model-prices.json`: Claude list prices,
+OpenAI's standard rates for the models behind Codex CLI and OpenCode's free model at $0, each dated and sourced. A project
+adds or replaces a model under `pricing.models`; `pricing.premium_request` and `pricing.stale_after_days` override the rest
+([config](reference-config.md#pricing)). A `sprint lane run` unit is priced per session, each model at its own rate; a
+session naming none reads NOT MEASURED. Where the Tokens row adds delegated totals, Dollar cost adds those read from an
+agent's transcript at their models' rates and names a supplied total, which has no per-model split, as unpriced with its
+token count. An unlisted model is named with its share of the priced tokens; neither is summed in as $0. The row states
+the table's date, marked STALE when `prices.stale` says so on the run's end date, and the appendix's Prices table lists
+each priced model's five prices (US dollars per million tokens), date and source from the table the page carries, so a
+filed page, signed or not, re-derives at its own prices. Premium requests are their own row, never in Dollar cost. The retro's priced line states dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
 
 ## Cost regression at the close {#cost-regression}
 

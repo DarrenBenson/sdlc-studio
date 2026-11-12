@@ -146,6 +146,23 @@ NOT MEASURED - {{cost_reason}}
 
 Delegated: {{tokens_delegated}}.
 <!-- end -->
+<!-- when: cost_prices_present -->
+<!-- when: cost_prices_measured -->
+
+**Prices.** Each model the Dollar cost row priced, at the prices this page was filed with (its
+own price table), in US dollars per million tokens, beside that model's dollars.
+
+| Model | Input | Output | Cache write 5m | Cache write 1h | Cache read | Effective | Source | Dollars |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+<!-- repeat: cost_prices -->
+| {{price_model}} | {{price_input}} | {{price_output}} | {{price_cache_write_5m}} | {{price_cache_write_1h}} | {{price_cache_read}} | {{price_effective}} | {{price_source}} | {{price_usd}} |
+<!-- end -->
+<!-- end -->
+<!-- unless: cost_prices_measured -->
+
+**Prices: NOT MEASURED** - {{cost_prices_reason}}
+<!-- end -->
+<!-- end -->
 <!-- when: cost_roles_present -->
 <!-- when: cost_roles_measured -->
 

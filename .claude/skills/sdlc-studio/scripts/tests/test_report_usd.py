@@ -400,10 +400,11 @@ class ReportUsdTests(meter._Case):
         return (_dollars(OPUS, meter._parts(MAIN_OPUS))
                 + _dollars(HAIKU, meter._sum(MAIN_HAIKU, BUILD_1, BUILD_2)))
 
-    def _unsigned(self):
-        """The fixture run's page, filed by `file_report` as the close files it, and unsigned."""
+    def _unsigned(self, **rules):
+        """The fixture run's page, filed by `file_report` as the close files it, and unsigned,
+        under every rule but those `rules` turns off."""
         ws = self._run()
-        page = self.sr.build_report(ws.root, meter.RETRO)
+        page = self.sr.build_report(ws.root, meter.RETRO, **rules)
         rid = self.sr.file_report(ws.root, page)
         self.assertIsNone(self.sr.read_report(ws.root, rid).get("signature"), "premise: unsigned")
         return ws, page, rid
@@ -436,24 +437,32 @@ class ReportUsdTests(meter._Case):
         (`digest_entries` without its envelope entry), so an edit that moves no figure reads
         valid and one that re-prices the dollars reads INVALIDATED rather than edited; the
         fallback naming an unnamed figure rather than the table. The control: the page as
-        filed reads valid."""
+        filed reads valid. A source moves no figure on a page filed before US1000's
+        `PRICES_RULE`; under it the source is a price row's figure, and the edit names it."""
         sr = self.sr
-        ws, page, rid = self._unsigned()
-        self.assertTrue(sr.revalidate(ws.root, rid)["valid"], "control: valid as filed")
-        path = sr.report_dir(ws.root) / f"{rid}.json"
-        filed = path.read_text(encoding="utf-8")
 
-        def edit(change) -> dict:
-            stored = json.loads(filed)
+        def edit(rid: str, change) -> dict:
+            path = sr.report_dir(ws.root) / f"{rid}.json"
+            stored = json.loads(path.read_text(encoding="utf-8"))
             change(stored[sr.PRICE_TABLE]["models"])
             path.write_text(json.dumps(stored, indent=2), encoding="utf-8")
             return sr.revalidate(ws.root, rid)
 
-        quiet = edit(lambda models: models[OPUS].update(source="edited after the close"))
+        def resource(models: dict) -> None:
+            models[OPUS].update(source="edited after the close")
+        ws, page, rid = self._unsigned(prices_rule=False)
+        self.assertTrue(sr.revalidate(ws.root, rid)["valid"], "control: valid as filed")
+        quiet = edit(rid, resource)
         self.assertFalse(quiet["valid"], "an edit that moves no figure is still an edit")
         self.assertIn(f"envelope.{sr.PRICE_TABLE}", [e["figure"] for e in quiet["edited"]])
         self.assertEqual([], quiet["changes"], "premise: no figure moved")
-        loud = edit(lambda models: models[HAIKU].update(input=models[HAIKU]["input"] * 2))
+        rid = sr.file_report(ws.root, sr.build_report(ws.root, meter.RETRO))
+        self.assertTrue(sr.revalidate(ws.root, rid)["valid"], "control: valid as filed")
+        named = edit(rid, resource)
+        self.assertFalse(named["valid"])
+        self.assertTrue(any(e["figure"].startswith("cost_prices.price_source")
+                            for e in named["edited"]), named["edited"])
+        loud = edit(rid, lambda models: models[HAIKU].update(input=models[HAIKU]["input"] * 2))
         self.assertFalse(loud["valid"])
         self.assertTrue(any(repr(_money(self._whole())) in e["detail"]
                             for e in loud["edited"]), loud["edited"])

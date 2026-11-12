@@ -202,6 +202,23 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="unmeasured"><b>NOT MEASURED</b> - {{cost_reason}}</p>
   <p class="lede">Delegated: {{tokens_delegated}}.</p>
 <!-- end -->
+<!-- when: cost_prices_present -->
+<!-- when: cost_prices_measured -->
+  <p class="lede"><strong>Prices.</strong> Each model the Dollar cost row priced, at the prices this page was filed with (its own price table), in US dollars per million tokens, beside that model's dollars.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Model</th><th scope="col" class="num">Input</th><th scope="col" class="num">Output</th><th scope="col" class="num">Cache write 5m</th><th scope="col" class="num">Cache write 1h</th><th scope="col" class="num">Cache read</th><th scope="col">Effective</th><th scope="col">Source</th><th scope="col" class="num">Dollars</th></tr></thead>
+    <tbody>
+<!-- repeat: cost_prices -->
+      <tr><th scope="row" class="mono">{{price_model}}</th><td class="num">{{price_input}}</td><td class="num">{{price_output}}</td><td class="num">{{price_cache_write_5m}}</td><td class="num">{{price_cache_write_1h}}</td><td class="num">{{price_cache_read}}</td>
+        <td>{{price_effective}}</td><td>{{price_source}}</td><td class="num">{{price_usd}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+<!-- unless: cost_prices_measured -->
+  <p class="unmeasured"><b>Prices: NOT MEASURED</b> - {{cost_prices_reason}}</p>
+<!-- end -->
+<!-- end -->
 <!-- when: cost_roles_present -->
 <!-- when: cost_roles_measured -->
   <p class="lede"><strong>Cost by role.</strong> The session's spend by role, each cell as <span class="mono">sprint cost --anatomy</span> prints it, from {{roles_session}}; total {{roles_total}}. Priced in input-equivalent tokens; split is each part's share of the role's priced cost; context is input + cache write + cache read per call.</p>

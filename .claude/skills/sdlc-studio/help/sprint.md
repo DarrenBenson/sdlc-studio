@@ -81,8 +81,8 @@ same figure, each with the input + output + cache-write sum beside it as a compo
 delegated total that the `Tokens` row adds is outside the priced figure, and both say so.
 Beside them the report states estimated US dollars (the Dollar cost and Dollars per point rows,
 and each unit's dollars), priced per model from the dated table in `templates/model-prices.json`
-([dollar cost](../reference-sprint.md#dollar-cost)). A model the table does not list is named,
-never counted as $0, and premium requests have a row of their own. A
+([dollar cost](../reference-sprint.md#dollar-cost)), adding a delegated total read from an agent's transcript and naming a supplied one unpriced with its token count; the appendix lists each priced model's prices.
+A model the table does not list is named, never counted as $0, and premium requests have a row of their own. A
 session whose subagents directory is absent, or holds no `agent-*.jsonl`, reads the main thread
 alone and says so, as a lower bound. Once a run holds a reading by this meter, each reading an
 earlier meter took for it, in any session, is re-derived from its transcript up to the moment

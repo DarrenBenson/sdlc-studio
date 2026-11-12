@@ -3815,17 +3815,57 @@ def _table_note(got: dict) -> str:
                if got["stale"] else ""))
 
 
-def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict) -> list[dict]:
+def _run_usd(run_tokens: dict, usd: dict, delegated: dict | None = None) -> dict:
+    """`run_state.usd` over the meter's per-model split, with the delegated totals read from an
+    agent's transcript folded in when `delegated` (`run_state.delegated_split`) is given, which
+    `_estimates_section` does under `PRICES_RULE` only where the Tokens row adds them over a
+    meter that leaves them out. A meter with no split of its own is priced as it was, so the
+    dollars never stand for the agents alone."""
+    split = run_tokens.get(run_state.BY_MODEL)
+    if delegated and isinstance(split, dict) and split:
+        merged = {m: dict(c) for m, c in split.items()}
+        for m, comps in delegated[run_state.BY_MODEL].items():
+            held = merged.setdefault(m, dict.fromkeys(run_state.TOKEN_COMPONENTS, 0))
+            for c in run_state.TOKEN_COMPONENTS:
+                held[c] = int(held.get(c) or 0) + int(comps.get(c) or 0)
+        split = merged
+    return run_state.usd(split, usd["table"], usd["today"])
+
+
+def _delegated_reach(delegated: dict) -> str:
+    """What the Dollar cost row adds of the delegated totals the Tokens row adds, and the
+    supplied totals it leaves unpriced, each named with its token count, as one clause."""
+    out = []
+    if delegated["read"]:
+        out.append(f"adds the totals of {delegated['read']} delegated agent(s) read from their "
+                   f"own transcripts, each model at its own prices")
+    gone = delegated["unpriced"]
+    if gone:
+        who = "; ".join(f"{' '.join(p for p in (r['unit'], r['agent']) if p) or 'untagged'}: "
+                        f"{r['tokens']:,} tokens" for r in gone)
+        out.append(f"not priced, and never counted as $0: {len(gone)} supplied delegated "
+                   f"total(s) with no per-model split ({who}), so the dollars leave "
+                   f"{sum(r['tokens'] for r in gone):,} tokens unpriced")
+    return "; ".join(out)
+
+
+def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict,
+              delegated: dict | None = None) -> list[dict]:
     """`[Dollar cost, Dollars per point, Premium requests]` under `USD_RULE`: the Priced cost
     row's tokens in estimated US dollars, each model's own components priced from the table
     (`run_state.usd`), never the priced total at one rate; the same over the delivered points;
-    and the premium requests the readings carry, in their own unit, only when they carry any."""
+    and the premium requests the readings carry, in their own unit, only when they carry any.
+    `delegated` adds the delegated totals the Tokens row adds (`_run_usd`) and names what it
+    leaves unpriced (`_delegated_reach`). The pricing lands on `usd["got"]`, which the page's
+    price rows list (`_prices_section`)."""
     table, error = usd["table"], usd["error"]
-    got = run_state.usd(run_tokens.get(run_state.BY_MODEL), table, usd["today"])
+    got = _run_usd(run_tokens, usd, delegated)
     points = sum(u["points"] for u in delivered if _num(u["points"]))
     why = (f"the price table cannot be read: {error}" if error else
            got["reason"] if got["usd"] is None else None)
+    usd["got"], usd["why"] = got, why
     note = "" if error else f"; {_table_note(got)}"
+    reach = _delegated_reach(delegated) if delegated and why is None else ""
 
     def row(measure: str, actual: dict, basis: str) -> dict:
         return {"est_measure": fig("est_measure", measure, state_rel),
@@ -3837,7 +3877,8 @@ def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict
                unmeasured("est_actual", state_rel, why),
                "estimated US dollars: each model's own components in the Priced cost row "
                f"times that model's list prices{note}"
-               + (f"; {_usd_reach(got)}" if why is None else ""))]
+               + (f"; {_usd_reach(got)}" if why is None else "")
+               + (f"; {reach}" if reach else ""))]
     if why is not None:
         per = unmeasured("est_actual", state_rel, why)
     elif not points:
@@ -3854,6 +3895,40 @@ def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict
                        "premium requests the harness bills as their own unit, beside the "
                        "priced tokens and the dollars above, never converted into either"))
     return out
+
+
+def _price_text(v: float) -> str:
+    """A price in US dollars per million tokens: cents, or six significant figures for a price
+    finer than a cent."""
+    return f"${v:,.2f}" if round(v, 2) == v else f"${v:g}"
+
+
+def _prices_section(record: dict | None, usd: dict | None, state_rel: str) -> dict:
+    """US1000. Each model the Dollar cost row priced (`usd["got"]`, `_usd_rows`), with its five
+    component prices in US dollars per million tokens, its entry's effective date and its
+    source, read from `record`, the price table the page carries (`PRICE_TABLE`), never from
+    today's config or the shipped table, beside that model's dollars. NOT MEASURED with the
+    reason when the page states no Dollar cost or the row priced no model."""
+    models = (record or {}).get("models") or {}
+    got = (usd or {}).get("got") or {}
+    priced = [m for m in got.get("models") or [] if m["model"] in models]
+    if not priced:
+        return _section("cost_prices", "Prices", not_measured=unmeasured(
+            "cost_prices", PRICES_SOURCE, (usd or {}).get("why") or (
+                "the Dollar cost row priced no model" if got else
+                "the page states no Dollar cost row, which needs a priced reading")))
+    rows = []
+    for m in priced:
+        entry = models[m["model"]]
+        rows.append({"price_model": fig("price_model", m["model"], PRICES_SOURCE),
+                     **{f"price_{c}": fig(f"price_{c}", _price_text(entry[c]), PRICES_SOURCE)
+                        for c in run_state.TOKEN_COMPONENTS},
+                     "price_effective": fig("price_effective", entry["effective"],
+                                            PRICES_SOURCE),
+                     "price_source": fig("price_source", entry["source"], PRICES_SOURCE),
+                     "price_usd": fig("price_usd", _usd_text(m["usd"]),
+                                      f"{state_rel}, {PRICES_SOURCE}")})
+    return _section("cost_prices", "Prices", {}, rows)
 
 
 def _table_record(table, premium_rule: bool, billing: str | None = None) -> dict:
@@ -3913,7 +3988,8 @@ def _unit_usd(u: dict, usd: dict) -> dict:
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
                        delegated_rule: bool = True, priced_rule: bool = True,
-                       priced_unit_rule: bool = True, usd: dict | None = None) -> dict:
+                       priced_unit_rule: bool = True, usd: dict | None = None,
+                       prices_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -4027,8 +4103,11 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     if head and priced_unit_rule:
         rows.append(_priced_point_row(run_tokens, delivered, state_rel))
     # The dollars follow the token rows they price, so the Priced cost row still leads them.
+    # Under `PRICES_RULE` the Dollar cost row prices the delegated totals the Tokens row adds;
+    # over a meter that read the subagent transcripts it adds none, so none is priced twice.
     if head and usd is not None:
-        rows += _usd_rows(run_tokens, delivered, state_rel, usd)
+        rows += _usd_rows(run_tokens, delivered, state_rel, usd,
+                          run_state.delegated_split(state) if prices_rule and agents else None)
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -4469,6 +4548,18 @@ TABLE_REPLAYED = "replayed-and-digested"
 #: cost row. A page filed before it re-derives with the count alone.
 PREMIUM_USD_RULE = "premium_usd"
 PREMIUM_PRICED = "per-request-dollars"
+
+#: US1000. The envelope mark of a page whose cost section lists each model its Dollar cost row
+#: priced, with that model's five prices, effective date and source read from the page's own
+#: price table (`_prices_section`), and whose Dollar cost row adds the delegated totals read
+#: from an agent's transcript where the Tokens row adds them, naming a supplied total it cannot
+#: price (`_run_usd`, `_delegated_reach`). A page filed before it re-derives as it was filed.
+PRICES_RULE = "usd_prices"
+PRICES_STATED = "per-model-prices-and-delegated-dollars"
+#: Where a price row's figures come from: the shipped table with the project's `pricing` block
+#: laid over it, as the page's own `PRICE_TABLE` carries them from the close.
+PRICES_SOURCE = ("sdlc-studio/.config.yaml, "
+                 ".claude/skills/sdlc-studio/templates/model-prices.json")
 #: US1145. Under `PREMIUM_USD_RULE` the page's price table also carries the project's Copilot
 #: billing basis (`prices.COPILOT_BILLING`) and, under this key, the ids that basis leaves
 #: unpriced, so a re-derivation bills the run on the basis it was filed on. A table filed
@@ -4503,7 +4594,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  cancelled_rule: bool = True, findings_end: str | None = None,
                  priced_rule: bool = True, priced_unit_rule: bool = True,
                  usd_rule: bool = True, table_rule: bool = True,
-                 filed_prices: dict | None = None, premium_usd_rule: bool = True) -> dict:
+                 filed_prices: dict | None = None, premium_usd_rule: bool = True,
+                 prices_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4530,8 +4622,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     (`PRICED_RULE`), and `priced_unit_rule` adds the priced cost per delivered point and each
     unit's agents' priced cost (`PRICED_UNIT_RULE`), and `usd_rule` states the dollars, the
     premium requests and the spend by role (`USD_RULE`), priced from the table a signed page
-    carries (`PRICE_TABLE`) and stale-checked on the window's end; a re-derivation passes what
-    the page carries. `findings_end` bounds the
+    carries (`PRICE_TABLE`) and stale-checked on the window's end, and `prices_rule` lists each
+    priced model's prices from that table and prices the delegated totals the Tokens row adds
+    (`PRICES_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
@@ -4629,19 +4722,25 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     ledger = _unit_ledger(root, state, state_rel, readings["points"],
                           (state.get("started_at"), _iso(end)), discharge_rule,
                           agent_minutes_rule)
+    # The table as the page carries it: the envelope's `PRICE_TABLE` and the price rows read it.
+    table_rec = (_table_record(usd["table"], premium_usd_rule, usd["billing"])
+                 if usd and usd["table"] is not None else None)
+    estimates = _estimates_section(state, state_rel, ledger, tokens,
+                                   round((end - start).total_seconds() / 60, 1) if start and end
+                                   else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
+                                   delegated_rule=delegated_rule, priced_rule=priced_rule,
+                                   priced_unit_rule=priced_unit_rule, usd=usd,
+                                   prices_rule=prices_rule)
     sections = [
         _section("goal", "Goal", goal_figs),
-        _estimates_section(state, state_rel, ledger, tokens,
-                           round((end - start).total_seconds() / 60, 1) if start and end
-                           else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
-                           delegated_rule=delegated_rule, priced_rule=priced_rule,
-                           priced_unit_rule=priced_unit_rule, usd=usd),
+        estimates,
         _delivered_section(root, state_rel, ledger),
         _known_issues_section(root, state, state_rel, ledger,
                               state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
         _cost_section(metered, state_rel, tokens),
+        _prices_section(table_rec, usd, state_rel) if usd_rule and prices_rule else None,
         _cost_roles_section(metered, state_rel, readings["roles"]) if usd_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
                       restore_rule=restore_rule, cancelled_rule=cancelled_rule),
@@ -4676,12 +4775,11 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({PRICED_RULE: PRICED_HEADLINE} if priced_rule else {}),
               **({PRICED_UNIT_RULE: PRICED_PER_POINT} if priced_unit_rule else {}),
               **({USD_RULE: USD_PER_MODEL} if usd_rule else {}),
-              **({PRICE_TABLE: _table_record(usd["table"], premium_usd_rule,
-                                             usd["billing"])}
-                 if usd and usd["table"] is not None else {}),
+              **({PRICE_TABLE: table_rec} if table_rec is not None else {}),
               **({TABLE_RULE: TABLE_REPLAYED}
                  if table_rule and usd and usd["table"] is not None else {}),
-              **({PREMIUM_USD_RULE: PREMIUM_PRICED} if premium_usd_rule and usd_rule else {})}
+              **({PREMIUM_USD_RULE: PREMIUM_PRICED} if premium_usd_rule and usd_rule else {}),
+              **({PRICES_RULE: PRICES_STATED} if prices_rule and usd_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5743,6 +5841,7 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          usd_rule=basis.get(USD_RULE) == USD_PER_MODEL,
                          table_rule=replays,
                          premium_usd_rule=basis.get(PREMIUM_USD_RULE) == PREMIUM_PRICED,
+                         prices_rule=basis.get(PRICES_RULE) == PRICES_STATED,
                          # Unsigned, the page's own table is the one its digest covers.
                          filed_prices=stored.get(PRICE_TABLE)
                          if replays and anchor is None else None)
