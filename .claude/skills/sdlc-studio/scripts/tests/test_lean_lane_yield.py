@@ -265,14 +265,26 @@ class LaneYieldTests(unittest.TestCase):
                     "fingerprint": report["fingerprint"],
                     "out": _unmeasured(re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", out)),
                     "err": _unmeasured(re.sub(r"\S*" + re.escape(d) + r"\S*", "<root>", err)),
-                    "rows": _yield_rows(report), "section": _section_of(report)}
-        listed = {lane for lane, r in closes[True]["rows"].items()
+                    "rows": _yield_rows(report), "section": _section_of(report),
+                    "frozen": state.get("lane_yield", "absent")}
+                if not logged:
+                    # The close found no log and froze that: a log turning up later in this
+                    # clone does not put a section on a re-derivation of the page.
+                    _refusals(root, ("markdown", "2026-09-20T09:00:00Z", ["docs/a.md"]))
+                    closes[logged]["rebuilt"] = _section_of(_live("sprint_report").build_report(
+                        root, RETRO, window_end="2026-09-24T12:00:00Z"))
+        listed ={lane for lane, r in closes[True]["rows"].items()
                   if r["yield_verdict"].startswith("delete")}
         self.assertEqual({"markdown"}, listed, closes[True]["rows"])
         self.assertIn("links", closes[True]["rows"], "the pending-only lane is not shown")
         # No log at all - every consuming project - and the section is left out, not shown
         # NOT MEASURED for ever.
         self.assertIsNone(closes[False]["section"])
+        # The close froze what it read on the run record: the tally with the log, null without.
+        self.assertIsNone(closes[False]["frozen"])
+        self.assertIsNone(closes[False]["rebuilt"])
+        self.assertEqual(sorted(closes[True]["rows"]),
+                         [r["lane"] for r in closes[True]["frozen"]["rows"]])
         for key in ("rc", "new_files", "known_issues", "fingerprint", "out", "err"):
             self.assertEqual(closes[False][key], closes[True][key], key)
         self.assertEqual(0, closes[True]["rc"], closes[True]["err"])
@@ -308,6 +320,24 @@ class LaneYieldTests(unittest.TestCase):
         self.assertEqual(0, rc, err)
         nm = _section_of(self._report(unreadable))["not_measured"]
         self.assertIn("could not be read", nm["reason"])
+        # The reason the close froze is the fault, never the log's path under `.local/`.
+        self.assertNotIn(".local/", json.dumps(nm))
+
+    def test_the_freeze_counts_the_window_the_page_states(self) -> None:
+        """A re-close hands the freezer the first page's end. MUTANT: ignore it and count to
+        now - the `tool-tests` refusal at 17:00, after that end, is counted in the run."""
+        _classed_run(self.root)
+        _run_state(self.root, ended_at=None)
+        sr = _live("sprint_report")
+        frozen = sr.freeze_lane_yield(self.root, window_end="2026-09-20T13:00:00Z")
+        lanes = ["gate", "links", "stamps-staged", "style"]
+        self.assertEqual(lanes, [r["lane"] for r in frozen["rows"]])
+        state = json.loads((self.root / "sdlc-studio" / ".local" / "run-state.json")
+                           .read_text(encoding="utf-8"))
+        self.assertEqual(frozen, state[sr.LANE_YIELD])
+        # Unbounded, an open run counts to now, and the 17:00 refusal is in it.
+        self.assertEqual([*lanes, "tool-tests"], sorted(
+            r["lane"] for r in sr.freeze_lane_yield(self.root)["rows"]))
 
     def test_an_unreadable_history_reads_not_measured(self) -> None:
         """MUTANT: read a failed `git log` as no commits - every refusal reads pending and the

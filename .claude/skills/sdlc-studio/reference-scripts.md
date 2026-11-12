@@ -280,7 +280,8 @@ lists every script with a one-line summary; open the linked page for the full en
   re-derived from the tree throughout. The anchor defends against edits committed to the page;
   every figure from the run record cites `sdlc-studio/reports/runs/<RUN-ID>.json`, which the close
   commits, so it opens in any clone. The lessons and lane-yield appendices are shown as filed and
-  never checked
+  never checked; the lane yield is the closing clone's refusal log and run archive as the close
+  read them, frozen on that run record, so a clone holding neither shows the same tally
 - `handoff.py` - The remaining-work join, read-only (`show`): a JOIN over the run's own evidence
   naming every remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement
   tag. It writes nothing: the signed report hands over the remaining work, and `sprint plan

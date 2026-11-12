@@ -10018,10 +10018,14 @@ def _file_the_report(root, retro_id):
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     # The forge and the verdict ledger are read HERE, fresh, and frozen on the run: the page and
     # every later re-derivation of it read the CI runs and the rows each unit's rounds count
-    # from the record, never a per-clone cache or a later run's record.
+    # from the record, never a per-clone cache or a later run's record. The lane yield, read
+    # from this clone's refusal log and run archive, is frozen beside them over the window the
+    # page will state, so a clone holding neither reads the tally the close read.
+    first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
     try:
         sprint_report.freeze_ci_runs(root)
         sprint_report.freeze_review_rows(root)
+        sprint_report.freeze_lane_yield(root, window_end=first_end)
     except sprint_report.ReportError as exc:
         print(f"close: the run cannot be reported yet - {exc}", file=sys.stderr)
         return "", ""
@@ -10035,7 +10039,6 @@ def _file_the_report(root, retro_id):
     # filed page ended at: the work done after that close is paperwork about the run, not the
     # run's cost. Its open findings, waivers and DORA run to the re-close, as the close's
     # checklist does, so a finding filed since is on the page (`FINDINGS_END`).
-    first_end = (run_state.read(root) or {}).get(REPORT_WINDOW_END)
     try:
         if not first_end:
             if run_state.stamp_tokens(root, "report"):

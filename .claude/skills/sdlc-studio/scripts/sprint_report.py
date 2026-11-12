@@ -4750,7 +4750,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
         # or after the run cannot move a signed page.
         _waivers_section(root, _iso(f_end), _iso(start), readings["waivers"],
                          units=_units_ever_in_batch(state)),
-        _lane_yield_section(root, state, start, end),
+        _lane_yield_section(root, state, state_rel, start, end),
         _lessons_section(root, state.get("run_id")),
         _unmeasured_section(state, state_rel),
     ]
@@ -5156,29 +5156,29 @@ def _yield_windows(root: Path, state: dict, start, end) -> list[tuple]:
     return windows
 
 
-def _lane_yield_section(root: Path, state: dict, start, end) -> dict | None:
+#: The run-state key PREPARE records the lane-yield tally under (`freeze_lane_yield`): the rows
+#: this clone's refusal log and run archive gave the close, or null when it held no log.
+LANE_YIELD = "lane_yield"
+
+
+def _lane_yield_tally(root: Path, state: dict, start, end) -> dict | None:
     """Per commit lane: this run's refusals, candidate catches and paperwork, and whether the
-    lane refused across the last three runs without one candidate catch. A MEASURE, never a
-    gate: a lane is listed for deletion here and nothing refuses, files or exits on it, and no
-    fault in the log or the history can raise out of the close - it reads NOT MEASURED instead.
-    None when there is no log, so a clone without the hooks shows no section at all. Outside
-    the digest (SECTIONS_OUTSIDE_THE_DIGEST): the log is per clone and a refusal's class moves
-    when the next commit lands."""
+    lane refused across the last three runs without one candidate catch, as plain values:
+    `{rows: [{lane, refusals, catches, paperwork, verdict}], in_run, skipped}`, or `{reason}`
+    when the log or the history cannot be read. A MEASURE, never a gate: no fault in the log or
+    the history raises out of it. None when there is no log."""
     path = root / REFUSALS_REL
     if not path.is_file():
         return None
-    src = f"{REFUSALS_REL}, git log"
-
-    def unread(why: str) -> dict:
-        return _section("lane_yield", "Lane yield",
-                        not_measured=unmeasured("lane_yield", REFUSALS_REL, why))
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
-        return unread(f"the refusal log could not be read: {exc}")
+        # The reason, never the path: a page states no file under `.local/`.
+        return {"reason": f"the refusal log could not be read: "
+                          f"{exc.strerror or type(exc).__name__}"}
     if start is None or start.tzinfo is None:
-        return unread("the run records no start time with a zone, so no refusal can be placed "
-                      "in it")
+        return {"reason": "the run records no start time with a zone, so no refusal can be "
+                          "placed in it"}
     end = end if end is not None and end.tzinfo is not None else None
     logged, bad = [], 0
     for line in filter(str.strip, text.splitlines()):
@@ -5194,7 +5194,8 @@ def _lane_yield_section(root: Path, state: dict, start, end) -> dict | None:
     logged = [r for r in logged if any(_in_window(r["ts"], s, e) for s, e in windows)]
     classes = classify_refusals(root, logged)
     if isinstance(classes, str):
-        return unread(f"the refusals could not be joined to the commits after them: {classes}")
+        return {"reason": f"the refusals could not be joined to the commits after them: "
+                          f"{classes}"}
     tally: dict[str, dict] = {}
     for rec, cls in zip(logged, classes):
         t = tally.setdefault(str(rec["lane"]), {"run": [], "all": []})
@@ -5209,16 +5210,67 @@ def _lane_yield_section(root: Path, state: dict, start, end) -> dict | None:
                    f"delete candidate: {len(t['all'])} refusal(s) over {YIELD_RUNS} runs and no "
                    f"candidate catch" if paper and not caught else
                    f"{caught} candidate catch(es) over {YIELD_RUNS} runs")
-        rows.append({"yield_lane": fig("yield_lane", lane, src),
-                     "yield_refusals": fig("yield_refusals", len(t["run"]), src),
-                     "yield_catches": fig("yield_catches", t["run"].count("catch"), src),
-                     "yield_paperwork": fig("yield_paperwork", t["run"].count("paperwork"), src),
-                     "yield_verdict": fig("yield_verdict", verdict, src)})
-    note = (f"{sum(len(t['run']) for t in tally.values())} refusal(s) in this run. A refusal "
-            f"is a candidate catch when the next commit changed code or a test from what was "
-            f"refused, paperwork when it changed only artefacts, baselines, indexes or docs, and "
-            f"pending until a commit follows it."
-            + (f" {bad} unparseable line(s) in the log were skipped." if bad else ""))
+        rows.append({"lane": lane, "refusals": len(t["run"]), "catches": t["run"].count("catch"),
+                     "paperwork": t["run"].count("paperwork"), "verdict": verdict})
+    return {"rows": rows, "in_run": sum(len(t["run"]) for t in tally.values()), "skipped": bad}
+
+
+def freeze_lane_yield(root: Path, window_end: str | None = None) -> dict | None:
+    """PREPARE's reading of this clone's refusal log and run archive, recorded on the live run
+    as `LANE_YIELD`: the tally `_lane_yield_section` shows, over the window the page will state
+    (`window_end`, the first page's end on a re-close, else the run's end or now). Re-read on
+    every prepare, as the CI runs are; null when the clone holds no log, so a re-derivation in a
+    clone that has one shows no section either. Writes no file of its own and prints nothing.
+    Returns what was recorded."""
+    root = Path(root)
+    try:
+        state = run_state.read(root) or {}
+        end = _at(window_end) if window_end else (
+            _at(state.get("ended_at")) or _at(sdlc_md.now_iso8601()))
+        frozen = _lane_yield_tally(root, state, _at(state.get("started_at")), end)
+        run_state.update(root, **{LANE_YIELD: frozen})
+    except (run_state.RunStateError, OSError) as exc:
+        raise ReportError(f"the lane yield could not be frozen on the run record: {exc}"
+                          ) from exc
+    return frozen
+
+
+def _lane_yield_section(root: Path, state: dict, state_rel: str, start, end) -> dict | None:
+    """The lane-yield appendix: per commit lane, this run's refusals, candidate catches and
+    paperwork, and the three-run verdict (`_lane_yield_tally`). A lane is listed for deletion
+    here and nothing refuses, files or exits on it; a fault reads NOT MEASURED.
+
+    From the record whenever the close froze it (`LANE_YIELD`), cited to the record first and
+    then `git log`, which classed each refusal, so the page reads the same in every clone and
+    says the tally is the closing clone's log; none when the close found no log. Read live from
+    this clone's log only for a record that froze nothing - an open run before its close, or a
+    run sealed before the freeze - and None when there is no log, so a clone without the hooks
+    shows no section. Outside the digest (SECTIONS_OUTSIDE_THE_DIGEST): the log is per clone and
+    each prepare refreshes the tally."""
+    if LANE_YIELD in state:
+        tally, src, cited = state[LANE_YIELD], f"{state_rel}, git log", state_rel
+        held = " The tally is this clone's refusal log as the close read it."
+    else:
+        tally, src, cited = (_lane_yield_tally(root, state, start, end),
+                             f"{REFUSALS_REL}, git log", REFUSALS_REL)
+        held = ""
+    if not isinstance(tally, dict):
+        return None
+    if tally.get("reason"):
+        return _section("lane_yield", "Lane yield",
+                        not_measured=unmeasured("lane_yield", cited, str(tally["reason"])))
+    rows = [{"yield_lane": fig("yield_lane", r.get("lane"), src),
+             "yield_refusals": fig("yield_refusals", r.get("refusals"), src),
+             "yield_catches": fig("yield_catches", r.get("catches"), src),
+             "yield_paperwork": fig("yield_paperwork", r.get("paperwork"), src),
+             "yield_verdict": fig("yield_verdict", r.get("verdict"), src)}
+            for r in tally.get("rows") or [] if isinstance(r, dict)]
+    bad = tally.get("skipped") or 0
+    note = (f"{tally.get('in_run') or 0} refusal(s) in this run. A refusal is a candidate "
+            f"catch when the next commit changed code or a test from what was refused, "
+            f"paperwork when it changed only artefacts, baselines, indexes or docs, and pending "
+            f"until a commit follows it."
+            + (f" {bad} unparseable line(s) in the log were skipped." if bad else "") + held)
     return _section("lane_yield", "Lane yield", {"lane_yield_note": fig("lane_yield_note",
                                                                         note, src)}, rows)
 
