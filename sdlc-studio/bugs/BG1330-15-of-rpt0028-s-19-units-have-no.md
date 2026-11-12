@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1330.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1330.md, .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py
 > **Evidence:** sdlc-studio/reports/RPT0028-sprint-report-run-01m7061x.md (per-unit table); RUN-01M7061X
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -44,3 +44,4 @@ The data is in `sdlc-studio/change-requests/evidence/consumer-sprint-cost-2026-1
 | 2026-11-10 | Darren Benson (operator) | Filed |
 | 2026-11-10 | Darren Benson (operator) | Evidence: a consuming project's batch cost figures |
 | 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Mid-run ruling (D0467's pattern): AC2 reaches two tests outside the Affects whose assertions contradict it (CostIssueHandOverTests, KnownIssuesTests); both join the Affects, each changed only as far as AC2 requires |
