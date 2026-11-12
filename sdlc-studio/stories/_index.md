@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 69 |
-| Ready | 13 |
+| Ready | 12 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 884 |
+| Done | 885 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -48,7 +48,7 @@
 | [US1008](US1008-a-sprint-checklist-waiver-scoped-to-a-unit.md) | A sprint-checklist waiver scoped to a unit in one run answers that unit's part of a row and nothing else | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1009](US1009-a-sprint-checklist-waiver-can-carry-an-expiry.md) | A sprint-checklist waiver can carry an expiry date, after which its row is enforced again | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
 | [US1010](US1010-decisions-py-waive-says-exactly-which-subjects-take.md) | decisions.py waive says exactly which subjects take a scope tail and what an unscoped waiver covers, and refuses a tail nothing reads | Draft | EP0279 | 2026-10-09 | 2026-10-09 |
-| [US1011](US1011-a-review-brief-names-the-file-the-reviewer.md) | A review brief names the file the reviewer writes its verdict to | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1011](US1011-a-review-brief-names-the-file-the-reviewer.md) | A review brief names the file the reviewer writes its verdict to | Done | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1012](US1012-a-recorded-verdict-is-bound-to-the-bytes.md) | A recorded verdict is bound to the bytes of the file its brief issued | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1013](US1013-a-verdict-that-differs-from-its-issued-file.md) | A verdict that differs from its issued file, or was recorded before, is named | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1014](US1014-a-recorded-verdict-names-the-agent-that-was.md) | A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript | Ready | EP0280 | 2026-10-09 | 2026-10-09 |

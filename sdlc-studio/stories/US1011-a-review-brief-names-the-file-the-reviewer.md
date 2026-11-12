@@ -1,6 +1,6 @@
 # US1011: A review brief names the file the reviewer writes its verdict to
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0619
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a fixture unit and a working directory that is not the repository root, when `critic.py brief --unit US0001 --seat qa --root <root>` runs, then after the unchanged return contract the brief names an absolute path under `<root>/sdlc-studio/reviews/verdicts/US0001/`, with the `UNIT: US0001` and `BRIEF: <file stem>` lines the file must open with, and the record command the footer prints reads that path with `--from-verdict`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_verdict_path.py::BriefVerdictPathTests::test_the_brief_names_an_absolute_verdict_path_and_records_from_it
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given two briefs of the same unit and seat, when both are printed, then they name different verdict paths and print the same fingerprint, and `critic.py record --brief-file` on either saved brief stores that fingerprint.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_verdict_path.py::BriefVerdictPathTests::test_two_briefs_share_a_fingerprint_and_not_a_path
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given a round-1 REJECT recorded from the file its brief named, when the rejoinder brief for round 2 is printed, then it names a new path and never the round-1 file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_verdict_path.py::BriefVerdictPathTests::test_a_rejoinder_never_names_an_earlier_rounds_file
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

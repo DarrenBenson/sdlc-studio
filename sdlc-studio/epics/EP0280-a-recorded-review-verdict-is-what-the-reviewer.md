@@ -15,7 +15,7 @@ Decomposed from CR0619. Delivers the work CR0619 requested.
 
 ## Story Breakdown
 
-- [ ] [US1011: A review brief names the file the reviewer writes its verdict to](../stories/US1011-a-review-brief-names-the-file-the-reviewer.md)
+- [x] [US1011: A review brief names the file the reviewer writes its verdict to](../stories/US1011-a-review-brief-names-the-file-the-reviewer.md)
 - [ ] [US1012: A recorded verdict is bound to the bytes of the file its brief issued](../stories/US1012-a-recorded-verdict-is-bound-to-the-bytes.md)
 - [ ] [US1013: A verdict that differs from its issued file, or was recorded before, is named](../stories/US1013-a-verdict-that-differs-from-its-issued-file.md)
 - [ ] [US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript](../stories/US1014-a-recorded-verdict-names-the-agent-that-was.md)
