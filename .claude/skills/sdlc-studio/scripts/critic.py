@@ -41,10 +41,10 @@ PRE_GATE = "pre-gate"
 # stays readable.
 PHASES = ("delivery", "plan-review")
 _FILE = {"delivery": "critic-verdicts.md", "plan-review": "plan-review-verdicts.md"}
-# Delivery header is byte-identical to the original (a freshly created delivery log must not
-# change); the historical plan-review log has its own title and eighth column.
-_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
-          "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+# The delivery log's ninth column, `Source`, says where the verdict was read from; the
+# historical plan-review log has its own title and eighth column, and takes nothing new.
+_TABLE = ("| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
+          "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 #: The review depths. `full` is the adversarial pass - mutations, boundaries, silent-failure
 #: paths, claims verified by execution. `light` is the bounded pass a low-risk unit earns.
 TIERS = ("full", "light")
@@ -107,6 +107,12 @@ HEADER = _HEADERS["delivery"]
 _COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "issues")
 _DELIVERY_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "issues")
 _PLAN_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "kind", "issues")
+#: A delivery row with its ninth cell, `Source`: `sha256:<16 hex> <basename>` of the file its
+#: brief issued, then any later tokens, space-separated; `-` when the verdict was transcribed.
+#: `_DELIVERY_COLS` above stays the eight cells `row_identity` digests, so the column moves no
+#: identity a signed run record froze.
+_LEDGER_COLS = ("unit", "verdict", "reviewer", "author", "date", "brief", "tier", "source",
+                "issues")
 #: Each phase's own eight-column shape. The two logs diverge because they record different
 #: facts - a delivery verdict has a review DEPTH, a plan review has an ARTEFACT - and forcing
 #: one schema on both would put a meaningless column in each.
@@ -416,12 +422,13 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
 
 
 def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
-            tier=None, tier_explicit=False, ruling=None) -> tuple[Path, int | None, str | None]:
+            tier=None, tier_explicit=False, ruling=None,
+            source="-") -> tuple[Path, int | None, str | None]:
     """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
     the row's round in its delivery (None off the delivery phase) and the carried bug's id
     (None when nothing was carried)."""
     path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, tier, tier_explicit, ruling)
+                                brief, tier, tier_explicit, ruling, source)
     if phase != "delivery":
         return path, None, None
     rounds = delivery_rounds(repo_root, unit)
@@ -429,10 +436,11 @@ def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delive
 
 
 def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief,
-                   tier, tier_explicit, ruling=None) -> tuple[Path, str]:
+                   tier, tier_explicit, ruling=None, source="-") -> tuple[Path, str]:
     """Check and write one verdict row, returning the ledger path AND the row it wrote. A
     delivery verdict's round is checked under the ledger lock, so two writers cannot both take
-    the last round."""
+    the last round. A delivery row's `Source` cell is `source`: `-` (transcribed) unless
+    `critic.py record` read the verdict from a file its brief issued (`source_cell`)."""
     if str(verdict or "").upper() not in VERDICTS:
         raise ValueError(f"{verdict!r} is not a verdict - expected one of {', '.join(VERDICTS)}")
     if phase not in PHASES:
@@ -452,6 +460,8 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     recorded = (f"{tier}{EXPLICIT_SUFFIX if tier_explicit else ''}"
                 if tier and phase == "delivery" else "-")
     extra_cell = f"{_clean(recorded)} | "
+    if phase == "delivery":
+        extra_cell += f"{_clean(source) or '-'} | "
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {extra_cell}"
@@ -467,7 +477,9 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
         if not path.exists():
             sdlc_md.atomic_write(path, _header(phase))
         _ensure_brief_column(path)
-        _ensure_eighth_column(path, "Kind" if phase == "plan-review" else "Tier")
+        _ensure_column(path, "Kind" if phase == "plan-review" else "Tier", 7)
+        if phase == "delivery":
+            _ensure_column(path, "Source", 8)
         _write_verdict_row(path, row)
         if past_cap:
             _append_ruling(path, unit, ruling, reviewer)
@@ -564,43 +576,23 @@ def _ensure_brief_column(path: Path) -> None:
     cannot say which brief produced it. The log stays append-only in the sense that matters -
     no judgement anybody recorded is altered or removed.
     """
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines(keepends=True)
-    for i, line in enumerate(lines):
-        if not line.lstrip().startswith("| Unit |"):
-            continue
-        if "| Brief |" in line:
-            return
-        lines[i] = line.replace("| Issues |", "| Brief | Issues |", 1)
-        if i + 1 < len(lines) and set(lines[i + 1].strip()) <= set("|-: "):
-            lines[i + 1] = lines[i + 1].replace("| --- |", "| --- | --- |", 1)
-        for j in range(i + 2, len(lines)):
-            if not lines[j].lstrip().startswith("|"):
-                break
-            cells = sdlc_md.table_cells(lines[j])
-            if len(cells) != 6:
-                continue
-            body = lines[j].rstrip("\n").rstrip()
-            body = body[:-1].rstrip() if body.endswith("|") else body
-            head, _, last = body.rpartition("|")
-            lines[j] = f"{head}| - |{last.rstrip()} |\n"
-        sdlc_md.atomic_write(path, "".join(lines))
-        return
+    _ensure_column(path, "Brief", 6)
 
 
-def _ensure_eighth_column(path: Path, name: str) -> None:
-    """Widen a seven-column verdict table in place, padding existing rows with `-`.
+def _ensure_column(path: Path, name: str, width: int) -> None:
+    """Widen a verdict table with column `name` in place, before `Issues`, padding each row of
+    `width` cells with `-`; a table whose header already names `name` is left as it is.
 
-    ONE migration for both logs, because they grew their eighth column for the same reason and
-    would otherwise carry two copies of this loop (LL0016). `name` is `Kind` on the historical
-    plan-review log and `Tier` on the delivery one; `-` is what a row written before the column
-    honestly means, because a verdict taken then cannot say what the column records.
+    ONE migration for every column either log grew (LL0016): `Brief` over six cells; `Kind` on
+    the historical plan-review log or `Tier` on the delivery one over seven; `Source` on the
+    delivery log over eight. `-` is what a row written before a column honestly means, because a
+    verdict taken then cannot say what the column records.
 
-    The header is written once, when a log is created, so a log that predates the column keeps a
-    seven-column header while new rows carry eight - not a valid markdown table, and markdownlint
-    MD056 refuses the commit.
+    The header is written once, when a log is created, so a log that predates the column keeps
+    its narrower header while new rows carry one more cell - not a valid markdown table, and
+    markdownlint MD056 refuses the commit.
 
-    This PADS rather than rewrites: every recorded cell keeps its value and its position. This
+    This PADS rather than rewrites: every recorded cell keeps its value and its order. This
     sprint already watched a column added to VELOCITY.md shift every historical row, so that the
     estimate column read back the actual - the same mistake, one file over.
     """
@@ -617,12 +609,13 @@ def _ensure_eighth_column(path: Path, name: str) -> None:
         for j in range(i + 2, len(lines)):
             if not lines[j].lstrip().startswith("|"):
                 break
-            if len(sdlc_md.table_cells(lines[j])) != 7:
+            if len(sdlc_md.table_cells(lines[j])) != width:
                 continue
             body = lines[j].rstrip("\n").rstrip()
             body = body[:-1].rstrip() if body.endswith("|") else body
-            head, _, last = body.rpartition("|")
-            lines[j] = f"{head}| - |{last.rstrip()} |\n"
+            # before the last UNESCAPED pipe: an escaped one inside Issues is the cell's text
+            at = max(m.start() for m in re.finditer(r"(?<!\\)\|", body))
+            lines[j] = f"{body[:at]}| - |{body[at + 1:].rstrip()} |\n"
         sdlc_md.atomic_write(path, "".join(lines))
         return
 
@@ -661,11 +654,12 @@ def _ledger_text(path: Path) -> str:
 
 def read_verdicts(repo_root: Path | str, phase: str = "delivery") -> list[dict]:
     """All recorded verdicts for `phase`, in order, as
-    {unit, verdict, reviewer, author, date, issues} plus the supersession annotation
+    {unit, verdict, reviewer, author, date, brief, issues} (a delivery row adds tier and
+    source) plus the supersession annotation
     {superseded, superseded_reason, superseded_by, superseded_at}.
 
-    Reads both the current 6-column rows and any legacy 5-column rows (no Author) that
-    pre-date the independence gate; a legacy row's author is the empty string. A retired
+    Reads the current 9-cell delivery rows, the 8-cell rows written before `Source`, and the
+    older 7-, 6- and 5-cell shapes; a row's tier and source it predates read as empty. A retired
     row is still returned, marked - dropping it would lose the record that it happened,
     which is the reason the log is append-only in the first place.
 
@@ -687,7 +681,9 @@ def _parse_verdicts(repo_root: Path | str, phase: str) -> list[dict]:
         cells = sdlc_md.table_cells(line)  # escaped-pipe-aware
         if not cells or cells[0] in ("Unit",):
             continue
-        if len(cells) == 8:
+        if len(cells) == 9 and phase == "delivery":
+            out.append(dict(zip(_LEDGER_COLS, cells)))
+        elif len(cells) == 8:
             out.append(dict(zip(_COLS_BY_PHASE[phase], cells)))
         elif len(cells) == 7:
             row = dict(zip(_COLS, cells))
@@ -714,11 +710,17 @@ def _parse_verdicts(repo_root: Path | str, phase: str) -> list[dict]:
                 legacy["tier"] = ""
             out.append(legacy)
         else:
-            # A row that is neither current (6 cols) nor legacy (5) - a torn write from a
-            # crash mid-append. Surface it: silently dropping a verdict is a false "no
-            # verdict" signal at the gate. Report and skip, never swallow.
-            print(f"warning: malformed row in {path} ({len(cells)} cells, expected 6 or 5), "
+            # A row of no shape the log was ever written in - a torn write from a crash
+            # mid-append. Surface it: silently dropping a verdict is a false "no verdict"
+            # signal at the gate. Report and skip, never swallow.
+            shapes = "9, 8, 7, 6 or 5" if phase == "delivery" else "8, 7, 6 or 5"
+            print(f"warning: malformed row in {path} ({len(cells)} cells, expected {shapes}), "
                   f"skipped: {' | '.join(cells)[:100]}", file=sys.stderr)
+    if phase == "delivery":
+        for row in out:
+            # absent on a row written before the column: it names no file, so it reads as
+            # transcribed, the weaker label
+            row.setdefault("source", "")
     rows = _number_rounds(_annotate_superseded(out, read_supersessions(repo_root, phase)))
     if phase == "delivery":
         rulings = {r["row"]: r["ruling"] for r in read_round_rulings(repo_root) if r["row"]}
@@ -956,8 +958,8 @@ def standing_rejects(repo_root: Path | str, unit: str, phase: str = "delivery") 
 # A verdict row can record an event that did not happen - a reviewer mis-entered, a verdict
 # filed against the wrong unit. The log's authority comes from nobody editing it, so the
 # correction is made by ADDING a record that retires the row, never by deleting the row or
-# widening it with another column (the row parser reads 6 or 5 cells and warns on anything
-# else, so a 7th column would turn every row into a torn-write warning). The record is
+# adding a cell to it (the row parser reads only the shapes the log was written in and warns
+# on anything else, so an extra cell turns the row into a torn-write warning). The record is
 # written below the table as prose for the same reason: a pipe-delimited erratum would be
 # read as a malformed verdict.
 SUPERSEDE_HEADING = "## Supersessions"
@@ -3355,6 +3357,56 @@ def _noted_row(root: Path | str, uid: str, fp: str | None = None) -> dict | None
     return noted
 
 
+#: What `show` says of a row whose `Source` names the file its brief issued. It claims no
+#: writer: the authoring session can write an issued path itself, and nothing reads who did.
+ISSUED_SOURCE = "from the brief's verdict file (writer unread)"
+#: What `show` says of a row whose `Source` is `-`: the verdict reached the ledger some other way.
+TRANSCRIBED_SOURCE = "transcribed"
+
+
+def issued_by_brief(root: Path | str, unit: str, path: Path | str) -> bool:
+    """True when `path` is a verdict file `critic.py brief` issued for `unit`: a brief note here
+    names it, and it sits in a unit folder under `sdlc-studio/reviews/verdicts/`. Any other file
+    in that folder was issued by nobody. The notes are per machine, so a file briefed in another
+    clone is not issued here and its verdict reads as transcribed, the weaker label."""
+    target = Path(path).resolve()
+    if target.parent.parent.parts[-len(VERDICTS_DIR_REL.parts):] != VERDICTS_DIR_REL.parts:
+        return False
+    try:
+        lines = (Path(root) / BRIEF_NOTES_REL).read_text(encoding="utf-8",
+                                                         errors="replace").splitlines()
+    except OSError:
+        return False
+    uid = sdlc_md.norm_id(unit)
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if (isinstance(row, dict) and row.get("unit") == uid and row.get("verdict_file")
+                and Path(str(row["verdict_file"])).resolve() == target):
+            return True
+    return False
+
+
+def source_cell(path: Path | str, data: bytes) -> str:
+    """The `Source` cell of a verdict read from an issued file: the first 16 hex digits of the
+    SHA-256 of the file's exact bytes, as read, then its basename."""
+    import hashlib  # noqa: PLC0415 - local; only this path needs it
+    return f"sha256:{hashlib.sha256(data).hexdigest()[:16]} {Path(path).name}"
+
+
+def verdict_source(root: Path | str, row: dict) -> tuple[str, str | None]:
+    """(label, file) for a delivery row: `ISSUED_SOURCE` and the issued file's repo-relative path,
+    found from the `Source` cell as `verdicts/<UNIT>/<basename>` and never by scanning; or
+    `TRANSCRIBED_SOURCE` and None for `-`, an absent cell, or one naming no file."""
+    tokens = str(row.get("source") or "").split()
+    if len(tokens) > 1 and tokens[0].startswith("sha256:"):
+        unit = sdlc_md.display_id(root, str(row.get("unit") or ""))
+        return ISSUED_SOURCE, (VERDICTS_DIR_REL / unit / tokens[1]).as_posix()
+    return TRANSCRIBED_SOURCE, None
+
+
 def noted_brief(root: Path | str, unit: str) -> str | None:
     """The fingerprint of the last brief `critic.py brief` noted here for `unit`, or None."""
     row = _noted_row(root, sdlc_md.norm_id(unit))
@@ -4433,6 +4485,7 @@ def _run_batch(args: argparse.Namespace, verb: str, write) -> int:
 
 
 def cmd_record(args: argparse.Namespace) -> int:
+    read_from: tuple[Path, bytes] | None = None
     if getattr(args, "from_verdict", None):
         if args.verdict or args.issues:
             print("record refused: --from-verdict and an explicit --verdict/--issues are "
@@ -4440,8 +4493,14 @@ def cmd_record(args: argparse.Namespace) -> int:
             return 2
         src = args.from_verdict
         try:
-            raw = (sys.stdin.read() if src == "-"
-                   else Path(src).read_text(encoding="utf-8"))
+            if src == "-":
+                raw = sys.stdin.read()
+            else:
+                # Read ONCE: the bytes hashed into the row's Source are the bytes parsed. The
+                # parse sees them as `read_text` would, with universal newlines.
+                data = Path(src).read_bytes()
+                raw = data.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+                read_from = (Path(src), data)
             verdict, issues = parse_verdict_block(raw)
         except (OSError, ValueError) as exc:
             print(f"record refused: {exc}", file=sys.stderr)
@@ -4486,12 +4545,15 @@ def cmd_record(args: argparse.Namespace) -> int:
     def write(unit: str) -> None:
         note = ("" if _id(args.author) != _id(args.reviewer)
                 else "  (WARNING: self-review - blocked at the gate)")
+        # Bound to the file only when a brief issued it for THIS unit; anything else, `-`.
+        source = (source_cell(*read_from) if read_from
+                  and issued_by_brief(args.root, unit, read_from[0]) else "-")
         try:
             path, n, bug = _record(args.root, unit, args.verdict, args.reviewer, args.author,
                                    args.issues, brief=brief,
                                    tier=getattr(args, "tier", None),
                                    tier_explicit=getattr(args, "tier_explicit", False),
-                                   ruling=getattr(args, "ruling", None))
+                                   ruling=getattr(args, "ruling", None), source=source)
         except CarryFailed as exc:
             carry_failed.append(unit)
             print(f"record: {exc}", file=sys.stderr)
@@ -4499,6 +4561,10 @@ def cmd_record(args: argparse.Namespace) -> int:
         at = f" round {n}" if n is not None else ""
         print(f"recorded {sdlc_md.norm_id(unit)} {args.verdict.upper()} "
               f"[delivery]{at} -> {path}{note}")
+        if source == "-":
+            # its own line: `sprint lane accept` parses the line above as it stands
+            print(f"note: {sdlc_md.norm_id(unit)}'s verdict was {TRANSCRIBED_SOURCE}: it was not "
+                  f"read from a verdict file a brief here issued for the unit, so its Source is -")
         if bug:
             print(carried_notice(unit, bug))
 
@@ -4539,14 +4605,19 @@ def cmd_show(args: argparse.Namespace) -> int:
             print(json.dumps({"unit": args.unit, "verdict": verdict_for(
                 args.root, args.unit)}, indent=2))
         else:
-            print(json.dumps(read_verdicts(args.root), indent=2))
+            rows = read_verdicts(args.root)
+            for v in rows:
+                v["provenance"], v["verdict_file"] = verdict_source(args.root, v)
+            print(json.dumps(rows, indent=2))
         return 0
     if args.unit:
         v = verdict_for(args.root, args.unit)
         print(v if v else f"no verdict for {args.unit}")
     else:
         for v in read_verdicts(args.root):
-            print(f"{v['unit']} {v['verdict']} ({v['date']}){_superseded_suffix(v)}")
+            label, named = verdict_source(args.root, v)
+            print(f"{v['unit']} {v['verdict']} ({v['date']}) {label}"
+                  f"{f': {named}' if named else ''}{_superseded_suffix(v)}")
     return 0
 
 

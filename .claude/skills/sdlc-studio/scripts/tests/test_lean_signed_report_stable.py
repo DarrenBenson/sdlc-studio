@@ -583,7 +583,7 @@ class SignedReportStableTests(unittest.TestCase):
         self._assert_valid(rid)                  # the positive control
 
         self._replace(self.root / self.LEDGER,
-                      "| US0001 | REJECT | a seat | author | 2026-09-20 | - | - | - |\n", "")
+                      "| US0001 | REJECT | a seat | author | 2026-09-20 | - | - | - | - |\n", "")
         rc, out = self._check(rid)
         self.assertEqual(1, rc, out)
         self.assertIn("INVALID", out)
@@ -595,7 +595,7 @@ class SignedReportStableTests(unittest.TestCase):
         ignore the run's own review base - US0002's earlier-run REJECT counts as a second round.
         A run from before review bases keeps the date alone."""
         day = self._run_ending_now()
-        row = "| {} | {} | a seat | author | %s | - | - | - |\n" % day
+        row = "| {} | {} | a seat | author | %s | - | - | - | - |\n" % day
         earlier = (row.format("US0005", "REJECT") * 2) + row.format("US0002", "REJECT")
         ledger = self.root / self.LEDGER
         head, sep, tail = ledger.read_text(encoding="utf-8").partition("| US0001 | REJECT")
@@ -627,7 +627,7 @@ class SignedReportStableTests(unittest.TestCase):
 
     # --- BG0788: the rounds a report counts are frozen as row identities at PREPARE ----------
 
-    REJECT_ROW = "| US0001 | REJECT | a seat | author | {} | - | - | - |\n"
+    REJECT_ROW = "| US0001 | REJECT | a seat | author | {} | - | - | - | - |\n"
 
     def _frozen_signed_run(self) -> tuple[str, str]:
         """The fixture run on today's date, its counted rows frozen on the record as PREPARE

@@ -579,8 +579,8 @@ python3 scripts/critic.py supersede --unit US0276 --date 2026-07-20 \
 The row itself stays in the table, byte for byte. A `SUPERSEDED` record is appended below it naming
 the retired row (date, verdict, reviewer, author), the reason, the authoriser, the trust boundary
 and the correction date. It is prose, not a table row, because the parser reads every pipe-delimited
-line - an errata table would read as malformed verdicts, and for the same reason the verdict row is
-never widened. Later verdicts still land inside the table, which stays one contiguous block.
+line - an errata table would read as malformed verdicts, so no row gains a cell for a correction
+(its ninth, `Source`, says where `record` read the verdict). Later verdicts land in one table.
 
 Refusals, all loud, all writing nothing:
 

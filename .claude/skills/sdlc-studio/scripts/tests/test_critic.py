@@ -3522,10 +3522,12 @@ class CodeSpanEdgeSpaceTests(unittest.TestCase):
     blocked by a row its committer did not write. Padding the span is no remedy (one space each
     side is stripped on render, two still raise MD038), so the shared `_clean` refuses it."""
 
+    # The nine-column shape `record` writes since US1012, so the seeded head stays byte-for-byte.
     _HEAD = ("# Critic Verdicts\n\n"
-             "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Issues |\n"
-             "| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-    _SEEDED = "| US0002 | APPROVE | qa seat | author | 2026-09-14 | - | full | an earlier row |\n"
+             "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
+             "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+    _SEEDED = ("| US0002 | APPROVE | qa seat | author | 2026-09-14 | - | full | - "
+               "| an earlier row |\n")
     BIN = REPO_ROOT / "node_modules" / ".bin" / "markdownlint"
     CONFIG = REPO_ROOT / ".markdownlint.json"
 

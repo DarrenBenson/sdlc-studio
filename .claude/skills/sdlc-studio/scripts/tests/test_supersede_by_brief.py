@@ -39,8 +39,9 @@ OPERATOR = "Darren Benson (operator)"
 
 
 def _row(brief: str, issues: str, unit: str = UNIT, verdict: str = "REJECT") -> str:
+    """A row in `critic._TABLE`'s nine-cell shape, its Source `-` (transcribed)."""
     return (f"| {unit} | {verdict} | {REVIEWER} | engineering-seat-triage | {DATE} | {brief} "
-            f"| full | {issues} |\n")
+            f"| full | - | {issues} |\n")
 
 
 def _seed(root: Path, *rows: str) -> Path:
