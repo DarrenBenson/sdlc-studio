@@ -602,6 +602,20 @@ def portable(value, repo_root: Path | str):
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
 
 
+#: The run record's key for the sprint plan the run was opened from, named by its content: the
+#: plan file sits under `.local/`, which no other clone holds, so the record keeps a digest that
+#: matches a copy of that plan wherever it turns up, and leaves `plan` null. Not
+#: `lessons.plan_digest`, which digests lessons for a plan and is unrelated.
+PLAN_DIGEST = "plan_digest"
+
+
+def content_digest(path: Path | str) -> str:
+    """`sha256:` and the full 64-hex SHA-256 of the bytes at `path`, read back from disk so the
+    digest is of the file as written. Full length, unlike `portable`'s 12 hex, which names a
+    path rather than identifying content."""
+    return "sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
 def file_tracked(repo_root: Path | str, state: dict) -> Path:
     """File a run's record at `tracked_path`, through `portable`: still running when the close
     files it, sealed when `sign` does. Returns the path."""

@@ -212,6 +212,17 @@ class NextActionTests(unittest.TestCase):
             resume_brief._ladder([stray])
         self.assertIn("US0001 is not terminal", str(caught.exception))
 
+    def test_a_null_plan_still_reads_the_waves(self):
+        """US0998: a run record leaves `plan` null and names the plan by `plan_digest`, so the
+        waves are read from the plan's one path. Mutant: `_waves` with no fallback for a null
+        `plan`, which reads no waves and puts both units in wave 1."""
+        t = self.tree(["US0001", "US0002"], [["US0002"], ["US0001"]])
+        t.state["plan"] = None
+        t.state["plan_digest"] = "sha256:" + "0" * 64
+        t.save()
+        step = resume_brief.next_action(t.root)
+        self.assertEqual((step.rung, step.kind, step.units), (3, "brief", ("US0002",)))
+
     def test_the_wave_boundary_holds_only_with_every_lane_accepted_and_none_in_flight(self):
         t = self.tree(["US0001", "US0002", "US0003"], [["US0001", "US0002"], ["US0003"]])
         # nothing briefed yet: no lane is open, so the run stands between waves

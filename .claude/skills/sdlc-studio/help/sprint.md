@@ -194,7 +194,7 @@ next sprint" resolves to `--goal design` (the goals are cumulative stop-points).
 | `--serves O-ID\|PERSONA` | (with `plan`, repeatable) the PRD outcome (from the PRD's `## Outcomes` section, `- **O1:** ...`) or persona card the Sprint Goal serves; naming one as a whole word in the goal traces it too. The plan prints `goal serves: ...`, or `goal serves: NONE` naming what the goal could serve when it serves none or only a Negative persona - advice, never a refusal. Nothing is printed when the project has no outcomes and no persona cards | none |
 | `--order` | `priority` / `wsjf` (priority over complexity) / `manual` | `priority` |
 | `--epic EPxxxx` | (with `--stories`, repeatable) scope a story plan to one or more epics, not the whole status class | all epics |
-| `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json` | off |
+| `--write` | (with `plan`) persist the sprint plan to `.local/sprint-plan.json`; the run record names it by `plan_digest` (`sha256:` and 64 hex), never by that path | off |
 | `--strict` | (with `plan`) refuse to plan when the index has drift (reconcile-before-plan) | off |
 | `--autonomous` | unattended mode: the deterministic guardrails (cap, repetition-breaker, completion oracle) enforce stop/stall instead of model discretion | off |
 

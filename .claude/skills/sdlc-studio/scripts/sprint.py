@@ -10813,8 +10813,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
     state = None
     if write:
         try:
+            # No `plan=`: the path is under `.local/`, so the record names the plan by the
+            # digest recorded after the write below instead (US0998).
             state = run_state.open_run(args.root, batch=[u["id"] for u in data["batch"]],
-                                       goal=getattr(args, "goal", None), plan=str(out))
+                                       goal=getattr(args, "goal", None))
             # The pre-plan census verdict, recorded ON THE RUN rather than only printed. The
             # sprint checklist's first row asks whether this batch was selected against a
             # drift-free index, and a warning on someone's terminal answers that for nobody.
@@ -10880,7 +10882,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
             print("sprint plan: keeping the appetite set by `appetite resize` "
                   f"({appetite.get('minutes'):g}min/{appetite.get('units')}units) - a recorded "
                   "resize outranks a re-resolution from the standing capacity")
-        extra: dict = {"appetite": appetite}
+        # The digest of the plan this write left, on every write: a re-plan rewrites the file,
+        # so a digest kept from the open would name a plan that no longer exists.
+        extra: dict = {"appetite": appetite, run_state.PLAN_DIGEST: run_state.content_digest(out)}
         # Never erase a recorded goal on a mid-run re-cut: like open_run's rung goal,
         # an absent value preserves, only a stated one writes (run_state never-discard).
         if data.get("sprint_goal") is not None:
@@ -11169,9 +11173,11 @@ def _open_next_cycle(root, policy: dict, data: dict, prev: dict) -> dict:
     # The previous run is closed, so this mints a fresh identity and a fresh batch - the
     # cumulative-batch rule applies within a run, never across cycles.
     state = run_state.open_run(root, batch=[u["id"] for u in data["batch"]],
-                               goal=policy.get("goal"), plan=str(out))
+                               goal=policy.get("goal"))
     cap = data["capacity"]["appetite"]
     extra = {
+        # this cycle's own plan, by content: the path is under `.local/` (US0998)
+        run_state.PLAN_DIGEST: run_state.content_digest(out),
         "policy": policy,
         "cycle": {"index": index, "remaining": remaining,
                   # the run that recorded the policy - the thread joining every cycle
