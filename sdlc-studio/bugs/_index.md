@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 277 |
+| Open | 315 |
 | In Progress | 0 |
-| Fixed | 883 |
+| Fixed | 884 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
 | Superseded | 40 |
-| **Total** | **1334** |
+| **Total** | **1373** |
 
 ## All Bugs
 
@@ -375,7 +375,7 @@
 | [BG1297](BG1297-the-6-3-0-release-notes-test-checks.md) | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1298](BG1298-the-trd-s-path-row-pin-checks-its.md) | The TRD's path-row pin checks its depth rule in one direction only, so loosening `_matches` to accept the directory itself or a deeper file leaves the suite green | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1299](BG1299-a-commit-that-changes-sdlc-studio-trd-md.md) | A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push | Open | Low | 2026-11-09 | 2026-11-09 |
-| [BG1300](BG1300-conftest-s-move-home-writes-the-test-identity.md) | conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1300](BG1300-conftest-s-move-home-writes-the-test-identity.md) | conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1301](BG1301-the-release-cut-leaves-this-repository-s-own.md) | The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1303](BG1303-sprint-lane-brief-names-a-schema-3-unit.md) | `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing | Fixed | Low | 2026-11-09 | 2026-11-09 |
@@ -410,6 +410,45 @@
 | [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Open | High | 2026-11-10 | 2026-11-10 |
 | [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
+| [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1339](BG1339-sprint-py-lane-accept-has-no-path-for.md) | sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1340](BG1340-critic-py-brief-rejoinder-with-no-file-reads.md) | critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1341](BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md) | reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1342](BG1342-sprint-py-plan-write-format-json-prints-its.md) | sprint.py plan --write --format json prints its run-opening lines on stdout before the JSON | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1343](BG1343-moving-a-story-to-ready-does-not-refuse.md) | Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1344](BG1344-a-unit-whose-tests-must-run-under-a.md) | A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1345](BG1345-the-review-brief-does-not-tell-a-reviewer.md) | The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1346](BG1346-the-first-verdict-recorded-after-the-ledger-gained.md) | The first verdict recorded after the ledger gained its Source column pads every row, and the commit-msg hook credits that change to every unit the subject names | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1347](BG1347-a-second-rulings-line-in-a-verdict-block.md) | A second RULINGS: line in a verdict block is silently dropped | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1348](BG1348-critic-py-s-none-blocking-guard-has-no.md) | critic.py's 'none blocking' guard has no test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1349](BG1349-no-test-pins-that-a-verdict-file-stays.md) | No test pins that a verdict file stays under --root inside a larger git repository | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1350](BG1350-sprint-report-cited-record-s-run-archive-branch.md) | sprint_report._cited_record's run-archive branch has no test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1351](BG1351-us1149-s-tests-have-no-fixture-with-two.md) | US1149's tests have no fixture with two synthetic records in a row | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1352](BG1352-us1013-s-in-order-comparison-of-a-verdict.md) | US1013's in-order comparison of a verdict and its issued file has no pinning test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1353](BG1353-two-branches-of-us1016-s-rejoinder-selection-have.md) | Two branches of US1016's rejoinder selection have no test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1354](BG1354-the-close-s-re-close-window-end-wiring.md) | The close's re-close window_end wiring has no test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1355](BG1355-four-branches-us1014-s-claims-name-have-no.md) | Four branches US1014's claims name have no test | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1356](BG1356-us1000-s-ac2-test-holds-one-read-record.md) | US1000's AC2 test holds one read record per model, so replacing components across records survives | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1357](BG1357-the-report-s-prices-not-measured-reasons-and.md) | The report's Prices NOT MEASURED reasons and _run_usd's no-split guard are unpinned | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1358](BG1358-us0997-s-changelog-and-reference-scripts-md-say.md) | US0997's changelog and reference-scripts.md say the close commits the run record, but it files it | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1359](BG1359-help-sprint-md-says-the-run-record-never.md) | help/sprint.md says the run record never names the plan by its .local path, but a run opened before 509850a1 still does | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1360](BG1360-reference-scripts-review-md-says-row-identity-digests.md) | reference-scripts-review.md says row_identity digests the first eight cells, but in a nine-cell row it digests every cell except Source | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1361](BG1361-us1001-s-note-says-this-clone-s-refusal.md) | US1001's note says 'this clone's refusal log', which misleads in a fresh clone | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1362](BG1362-bg1334-s-changelog-and-docstring-claim-more-than.md) | BG1334's changelog and docstring claim more than the path-as-written match | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1363](BG1363-the-us1000-report-s-price-rows-cite-the.md) | The US1000 report's price rows cite the config while their values come from the page's own price table | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1364](BG1364-fresh-session-no-or-false-reads-as-off.md) | fresh_session: no or false reads as off, though the help and US1149's AC2 say any other value reads as warn | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1365](BG1365-sprint-report-py-build-of-a-signed-run.md) | sprint_report.py build of a signed run ignores the time window saved on its signed page | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1366](BG1366-the-verdict-file-header-check-misses-a-byte.md) | The verdict-file header check misses a byte order mark, a lower-case header or a leading prose line | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1367](BG1367-the-replay-refusal-tells-a-lane-accept-retry.md) | The replay refusal tells a lane accept retry to re-brief when only the verify and the move are owed | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1368](BG1368-after-the-rejecting-reviewer-s-round-2-approve.md) | After the rejecting reviewer's round-2 APPROVE, rebrief_notice names a bare --rejoinder that exits 2 | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1369](BG1369-verify-ac-s-markdown-evidence-lint-matches-the.md) | verify_ac's markdown-evidence lint matches the verdicts path as written, so reviews/../reviews/ and a symlink get through | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1370](BG1370-a-later-rewrite-of-a-verdict-file-is.md) | A later rewrite of a verdict file is attributed to the reviewer when its last write was an Edit | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Open | Medium | 2026-11-12 | 2026-11-12 |
 
 ## Archived Releases
 

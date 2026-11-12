@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 12 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 260 |
+| Done | 261 |
 | Superseded | 33 |
 | **Total** | **305** |
 
@@ -50,7 +50,7 @@
 | [EP0297](EP0297-a-commit-subject-can-mention-a-work-item.md) | A commit subject can mention a work-item id without attributing the commit's files to it | Done | 2 | -- | 2026-11-02 | 2026-11-02 |
 | [EP0298](EP0298-a-sprint-costs-about-a-million-priced-tokens.md) | A sprint costs about a million priced tokens per point | Done | 4 | -- | 2026-11-05 | 2026-11-05 |
 | [EP0299](EP0299-every-run-is-measured-the-same-way-in.md) | Every run is measured the same way in every supported harness, in tokens and in dollars | Done | 7 | -- | 2026-11-06 | 2026-11-06 |
-| [EP0300](EP0300-every-consuming-agent-starts-leaner-and-every-commit.md) | Every consuming agent starts leaner and every commit says less, and each harness's dollars are priced | Draft | 7 | -- | 2026-11-06 | 2026-11-06 |
+| [EP0300](EP0300-every-consuming-agent-starts-leaner-and-every-commit.md) | Every consuming agent starts leaner and every commit says less, and each harness's dollars are priced | Done | 7 | -- | 2026-11-06 | 2026-11-06 |
 | [EP0301](EP0301-v6-3-0-ships-with-paperwork-that-matches.md) | v6.3.0 ships with paperwork that matches the code | Done | 4 | -- | 2026-11-08 | 2026-11-08 |
 | [EP0302](EP0302-a-sprint-wave-resumes-in-a-fresh-session.md) | A sprint wave resumes in a fresh session from a bounded on-disk brief | Done | 4 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0303](EP0303-grok-and-composer-runs-are-priced-in-us.md) | Grok and Composer runs are priced in US dollars from each provider's own dated page | Done | 1 | -- | 2026-11-09 | 2026-11-09 |

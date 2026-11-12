@@ -1,6 +1,6 @@
 # US1134: Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0681
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a commit whose lanes all pass, then `pre-commit` and `commit-msg` each print one summary line, the last line each prints, and no `ok <lane>` line; the only lines a pass prints above it are the two an author learns from nowhere else: the stamps-staged lane's re-read list (printed by the hook's `verdict()` on a pass since BG0779) and the settle step's report of the drift it restaged or left unstaged (US0899). Given a failing lane, or `SDLC_GATE_VERBOSE=1`, they print the per-lane list with the failing lane's rule, detail and fix. CONTRIBUTING.md's paragraph on the commit gate names `SDLC_GATE_VERBOSE=1` as the way to see the lanes and the 90-second budget report on a pass. Fails on: the summary printed on failure too, hiding the failing lane; the `ok <lane>` lines still printed on success; a pass that hides the re-read list or the settle report.
   - **Verify:** pytest tools/tests/test_quiet_hooks.py::QuietHookTests::test_success_is_one_line_and_failure_is_verbose tools/tests/test_quiet_hooks.py::QuietHookTests::test_a_pass_still_shows_the_re_read_list_and_the_settle_report
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given a fixture where each succeeds, then `critic.py self-check record`, `verify_ac.py run`, `docgen.py surface`, `docgen.py reading-guides` and `sprint.py lane return` print at most two lines; given a refusal, each prints its full reason. Fails on: any success path over two lines, or a refusal path cut to the same two lines.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py::QuietSuccessTests::test_each_command_is_quiet_on_success_and_verbose_on_refusal
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given an argument carrying a URL, then the markdown `file_finding.py`, `critic.py record` and the retro write passes the markdown lane's rules unedited, with no bare URL. Fails on: a producer writing a bare URL (the BG1227 shape) or a line the markdown lane refuses.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py::QuietSuccessTests::test_the_producers_write_lint_clean_markdown
+  - **Verified:** yes (2026-11-12)
 - **AC4:** Given the 17 existing modules that drive the real hooks over a commit (under `tools/tests/`: `test_commit_msg_hook`, `test_commit_msg_mentions`, `test_pre_commit_docgen`, `test_precommit_stamps_advisory`, `test_lean_precommit_parallel`, `test_precommit_window_guard`, `test_lean_commit_lanes`, `test_lean_index_drift`, `test_lean_tsd_script_pin`, `test_message_first_gate`, `test_precommit_scope_collapse_lane`, `test_precommit_budget_recording`, `test_precommit_floor_pending`, `test_repo_writes` and `test_lean_refusal_log`; under the skill's `scripts/tests/`: `test_lean_advisory_warnings` and `test_lean_test_selection`), then each passes, and each assertion it makes on a passing hook's per-lane, SKIP, note, budget or advisory output either runs that hook with `SDLC_GATE_VERBOSE=1` or asserts the summary line; the re-read list and the settle report AC1 keeps are asserted without it. Fails on: any of them red; a pass-path `assertNotIn` left reading the summary line alone, where it holds whatever the hook does (`test_lean_refusal_log.py:119`, `test_repo_writes.py:332`); an assertion on a refusal removed or loosened.
   - **Verify:** pytest tools/tests/test_precommit_window_guard.py tools/tests/test_lean_commit_lanes.py tools/tests/test_lean_tsd_script_pin.py tools/tests/test_precommit_scope_collapse_lane.py tools/tests/test_precommit_stamps_advisory.py .claude/skills/sdlc-studio/scripts/tests/test_lean_advisory_warnings.py .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py tools/tests/test_message_first_gate.py tools/tests/test_lean_refusal_log.py tools/tests/test_lean_index_drift.py tools/tests/test_commit_msg_hook.py tools/tests/test_commit_msg_mentions.py tools/tests/test_pre_commit_docgen.py tools/tests/test_lean_precommit_parallel.py tools/tests/test_precommit_budget_recording.py tools/tests/test_precommit_floor_pending.py tools/tests/test_repo_writes.py
+  - **Verified:** yes (2026-11-12)
 
 ## Re-grooming note (run nine, D0453)
 

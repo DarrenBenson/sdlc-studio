@@ -1,6 +1,6 @@
 # CR-0677: Budget every always-loaded instruction file by size: cut AGENTS.md to at most 7,000 chars and the consuming-project template to at most 5,000 chars, gate both and SKILL.md's token size, and recommend a project settings file that disables unused plugins for delivery sessions
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0300
 > **Parent:** RFC0062
 > **Priority:** Medium

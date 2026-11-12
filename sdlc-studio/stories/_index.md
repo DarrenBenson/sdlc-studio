@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 69 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 896 |
+| Done | 897 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -171,7 +171,7 @@
 | [US1131](US1131-ship-sdlc-builder-and-sdlc-reviewer-agent-definitions.md) | Ship sdlc-builder and sdlc-reviewer agent definitions and draft them into each project's .claude/agents | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1132](US1132-spawn-lanes-and-reviews-with-the-lean-definitions.md) | Spawn lanes and reviews with the lean definitions and carry the builder traps in the lane brief | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1133](US1133-write-the-refs-and-mentions-trailers-the-commit.md) | Write the Refs and Mentions trailers the commit-msg hook now refuses for | Done | EP0300 | 2026-11-06 | 2026-11-06 |
-| [US1134](US1134-print-one-line-on-success-from-the-hooks.md) | Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown | Ready | EP0300 | 2026-11-06 | 2026-11-06 |
+| [US1134](US1134-print-one-line-on-success-from-the-hooks.md) | Print one line on success from the hooks and the commands agents filter, and emit lint-clean markdown | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1135](US1135-price-the-non-claude-models-the-meters-read.md) | Price the non-Claude models the meters read, each from a dated provider source | Done | EP0300 | 2026-11-06 | 2026-11-06 |
 | [US1136](US1136-the-v6-3-release-notes-lead-with-what.md) | The v6.3 release notes lead with what changed for the person using it | Done | EP0301 | 2026-11-08 | 2026-11-08 |
 | [US1137](US1137-the-help-reference-and-public-pages-describe-what.md) | The help, reference and public pages describe what 6.3 ships | Done | EP0301 | 2026-11-08 | 2026-11-08 |

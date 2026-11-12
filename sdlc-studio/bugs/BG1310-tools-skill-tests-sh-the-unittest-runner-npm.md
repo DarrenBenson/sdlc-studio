@@ -29,6 +29,10 @@ Have the unittest runner apply the same harness-variable scrub the conftest appl
 - [ ] **AC1** The behaviour described is corrected: Found rebuilding US0986 with BG1205 in run nine (2026-11-09).
 - [ ] **AC2** The proposed fix lands, pinned by a test: Have the unittest runner apply the same harness-variable scrub the conftest applies before it loads any test module (one shared helper both call), and add a...
 
+## Further evidence
+
+- 2026-11-12 (RUN-01M77177, qa-seat-US1014-r1): three US1012 and US1016 tests fail under `npm test` (tools/skill-tests.sh) in a Claude Code shell, because harness detection reads the shell's environment; they pass under pytest and on the gate host.
+
 ## Revision History
 
 | Date | Author | Change |

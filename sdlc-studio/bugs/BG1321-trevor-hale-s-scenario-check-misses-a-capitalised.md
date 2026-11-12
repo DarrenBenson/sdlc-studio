@@ -28,6 +28,10 @@ Match the wants case-insensitively in the outside check, and require the declini
 - [ ] **AC1** The behaviour described is corrected: From BG1318's QA review (qa-seat-BG1318-r1, non-blocking findings 1 and 3, 2026-11-09; both present before BG1318).
 - [ ] **AC2** The proposed fix lands, pinned by a test: Match the wants case-insensitively in the outside check, and require the declining verb to stand with no qualifier rather than listing negations; reword the...
 
+## Further evidence
+
+- 2026-11-12 (RUN-01M77177, qa-seat-US1147-r1 round 3): AC7's verifier still passes a capitalised 'Sync' sentence and negations its word list misses ('Nobody declines', 'seldom declines'). Reported against this bug at review, not blocking US1147.
+
 ## Revision History
 
 | Date | Author | Change |

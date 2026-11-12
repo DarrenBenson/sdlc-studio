@@ -1,6 +1,6 @@
 # CR-0674: Ship restricted-tool agent definitions for builders, reviewers and repairs and spawn every lane and review with them, carrying a hand-back contract (commands in the foreground, at most three lines, detail on disk) and the run's builder notes folded into the shipped lane brief
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0300
 > **Parent:** RFC0062
 > **Priority:** High

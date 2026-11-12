@@ -20,3 +20,9 @@
 {"id": "EP0280", "type": "epic", "project": "sdlc-studio"}
 {"id": "CR0615", "type": "cr", "project": "sdlc-studio"}
 {"id": "CR0619", "type": "cr", "project": "sdlc-studio"}
+{"id": "US1134", "type": "story", "project": "sdlc-studio"}
+{"id": "BG1300", "type": "bug", "project": "sdlc-studio"}
+{"id": "EP0300", "type": "epic", "project": "sdlc-studio"}
+{"id": "CR0674", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0677", "type": "cr", "project": "sdlc-studio"}
+{"id": "CR0681", "type": "cr", "project": "sdlc-studio"}
