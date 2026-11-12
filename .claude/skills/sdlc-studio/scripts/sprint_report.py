@@ -2947,6 +2947,21 @@ def _run_state_for(root: Path, run_id: str | None,
                       f"and the run archive beside it")
 
 
+def _cited_record(root: Path, state: dict, read_rel: str) -> str:
+    """The path a page cites for every figure it derives from the run record.
+
+    The record the close files at `run_state.tracked_path`, committed beside the page, so the
+    citation opens in any clone. `read_rel` is where `_run_state_for` read the record, which at
+    a close is the live `.local/run-state.json` no other clone holds; it stays the path
+    revalidation judges by. A record read from the `.local` run archive, which no commit holds,
+    is cited where it was read. Sources are outside the fingerprint, so a page filed citing
+    `.local` still checks VALID."""
+    run_id = state.get("run_id")
+    if not run_id or read_rel == _rel(root, run_state.archive_path(root, run_id)):
+        return read_rel
+    return _rel(root, run_state.tracked_path(root, run_id))
+
+
 def _retro_for_run(root: Path, state: dict) -> str:
     """The retro whose Batch names this run's units. The report is keyed by retro because the
     retro is the artefact a close produces; the run record is what it is checked against."""
@@ -3032,13 +3047,15 @@ def freeze_ci_runs(root: Path) -> dict:
 
 def _ci_runs(root: Path, state: dict, state_rel: str, run_id: str | None
              ) -> tuple[list[dict], str]:
-    """The CI runs this page reads, and their source. From the record whenever it froze them;
-    none for a named run or a sealed record that froze none, so `check` never reads the forge;
-    live from the forge only for an unfrozen preview of the open run."""
+    """The CI runs this page reads, and their source. From the record whenever it froze them,
+    cited to the record first and then the forge reading that filled it (`gh run list`, or why
+    it could not answer); none for a named run or a sealed record that froze none, so `check`
+    never reads the forge; live from the forge only for an unfrozen preview of the open run."""
     frozen = state.get(CI_RUNS)
     if isinstance(frozen, dict):
+        reading = str(frozen.get("source") or "")
         return ([r for r in frozen.get("runs") or [] if isinstance(r, dict)],
-                str(frozen.get("source") or state_rel))
+                f"{state_rel}, {reading}" if reading else state_rel)
     if run_id or state.get("ended_at"):
         return [], state_rel
     return fetch_ci_runs(root)
@@ -4518,7 +4535,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     """
     root = Path(root)
-    state, state_rel = _run_state_for(root, run_id, record)
+    state, read_rel = _run_state_for(root, run_id, record)
+    # Figures cite `_cited_record`'s path: the tracked record, not the live `.local` one read.
+    state_rel = _cited_record(root, state, read_rel)
     if portable:
         state = run_state.portable(state, root)
     generated_at = as_of or sdlc_md.now_iso8601()
@@ -4529,7 +4548,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     goal = state.get("sprint_goal") or state.get("goal")
     if not goal or not str(goal).strip():
         raise ReportError(
-            f"{state.get('run_id')} records no sprint goal in {state_rel}, and a report cannot "
+            f"{state.get('run_id')} records no sprint goal in {read_rel}, and a report cannot "
             f"invent what the run aimed at - nothing was written")
 
     verdict = state.get("sprint_goal_verdict") or {}

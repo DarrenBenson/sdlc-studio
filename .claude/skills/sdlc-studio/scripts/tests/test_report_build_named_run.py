@@ -81,9 +81,11 @@ class BuildNamedRunTests(unittest.TestCase):
                 rep = self._build(*args, "--id", tsr.FIX_RETRO)
                 self.assertEqual(_goal(rep)["run_id"]["value"], tsr.FIX_RUN)
                 self.assertEqual(_goal(rep)["sprint_goal"]["value"], tsr.FIX_GOAL)
+                # US0997: read from the live record (the goal above), cited to the tracked one.
                 self.assertEqual(_goal(rep)["run_id"]["source"],
-                                 run_state.path(self.root).relative_to(self.root).as_posix(),
-                                 "the live run's page is not sourced to the live record")
+                                 run_state.tracked_path(self.root, tsr.FIX_RUN)
+                                 .relative_to(self.root).as_posix(),
+                                 "the live run's page is not cited to its tracked record")
         # A clean clone: no `.local`, so no live record; only the tracked one.
         shutil.rmtree(self.root / "sdlc-studio" / ".local")
         self._assert_older(self._build("--run", OLDER_RUN, "--id", tsr.FIX_RETRO))

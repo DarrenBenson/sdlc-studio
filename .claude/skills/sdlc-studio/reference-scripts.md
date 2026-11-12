@@ -278,9 +278,9 @@ lists every script with a one-line summary; open the linked page for the full en
   itself. Only the page the run record's signature names is anchored, and every other signed
   version in its history, merges included, is named; a signed page no commit holds yet is
   re-derived from the tree throughout. The anchor defends against edits committed to the page;
-  the run record in `sdlc-studio/.local/` is not versioned, so verifying a signature needs the
-  signing clone's run record. The lessons and lane-yield appendices are shown as filed and never
-  checked
+  every figure from the run record cites `sdlc-studio/reports/runs/<RUN-ID>.json`, which the close
+  commits, so it opens in any clone. The lessons and lane-yield appendices are shown as filed and
+  never checked
 - `handoff.py` - The remaining-work join, read-only (`show`): a JOIN over the run's own evidence
   naming every remaining item with its pointer (file / AC / check) and a copilot-tail vs judgement
   tag. It writes nothing: the signed report hands over the remaining work, and `sprint plan

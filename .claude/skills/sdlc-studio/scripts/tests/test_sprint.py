@@ -17197,8 +17197,10 @@ class PrepareRefusesTests(unittest.TestCase):
             for r in rows:
                 self.assertEqual("delivered", r["unit_outcome"]["value"],
                                  "a unit whose terminal gate cleared is not read as delivered")
-                self.assertIn("run-state.json", r["unit_outcome"]["source"],
-                              "delivery is not sourced to the gate PREPARE recorded")
+                # US0997: the record the close commits beside the page, never `.local`.
+                self.assertRegex(r["unit_outcome"]["source"],
+                                 r"^sdlc-studio/reports/runs/RUN-[^/]+\.json$",
+                                 "delivery is not sourced to the gate PREPARE recorded")
 
     def test_the_carve_out_forgives_the_signature_and_nothing_else(self):
         """AC0's carve-out, probed where it matters. MUTANT: return True from

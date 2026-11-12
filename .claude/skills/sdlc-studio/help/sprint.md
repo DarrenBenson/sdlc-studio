@@ -225,7 +225,10 @@ covered by this refusal rather than absorbing the next batch silently.
 
 The slot holds in every clone, not only the one that closed the run. `.local/run-state.json`
 exists only on the machine that wrote it, so `close` also files the run's record, still running,
-at `sdlc-studio/reports/runs/<RUN-ID>.json`; commit it with the close's paperwork.
+at `sdlc-studio/reports/runs/<RUN-ID>.json`; commit it with the close's paperwork. Every figure
+the page reads from the record cites that path, and a DORA figure read from the CI runs the
+close froze cites it before the forge reading, so the page's sources open in a fresh clone. A
+page filed citing `.local/run-state.json` still checks, as `check` never compares sources.
 
 - In a clone that does not hold the run open, `sprint plan --write` refuses while a tracked
   record names a report and is still running, naming the run, its report and the `sign`

@@ -3471,7 +3471,8 @@ class ReportIsDerivedTests(ReportOfRecordBase):
         points = figs["delivered.points_delivered"]
         self.assertEqual(units["value"], 23, "planned_units did not come from the run record")
         self.assertEqual(points["value"], 103, "points_delivered did not come from the unit files")
-        self.assertIn("run-state.json", units["source"])
+        # US0997: cited to the run record the close commits, never the closer's `.local`.
+        self.assertRegex(units["source"], r"^sdlc-studio/reports/runs/RUN-[^/]+\.json$")
         self.assertIn("US0101-a-fixture-unit.md", points["source"],
                       "points_delivered is not sourced to the unit files")
         retro_rel = "sdlc-studio/retros/RETRO9200-a-fixture-sprint.md"
