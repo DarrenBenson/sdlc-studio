@@ -288,6 +288,18 @@ def _call(msg_id: str | None, inp: int, five: int, hour: int, read: int, out: in
     return json.dumps({"type": "assistant", "cwd": "/work/repo", "message": msg})
 
 
+def _synthetic(msg_id: str) -> str:
+    """The record Claude Code writes for a reply no model made ("No response requested.", the
+    spend-limit notice): model `<synthetic>`, a message id, every usage count 0."""
+    msg = {"id": msg_id, "model": "<synthetic>", "role": "assistant",
+           "content": [{"type": "text", "text": "No response requested."}],
+           "usage": {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 0,
+                     "cache_creation": {"ephemeral_5m_input_tokens": 0,
+                                        "ephemeral_1h_input_tokens": 0},
+                     "cache_read_input_tokens": 0}}
+    return json.dumps({"type": "assistant", "cwd": "/work/repo", "message": msg})
+
+
 def _session_at(folder: Path, context: int, newest_id: str | None = "msg_new") -> Path:
     """A session whose newest call's context is `context`: input 2,000, cache write 3,000 (5m)
     and 5,000 (1h), the rest cache read, and an output of 500 the context leaves out. Before it
@@ -466,19 +478,42 @@ class FreshSessionTests(unittest.TestCase):
         """AC3. MUTANTS: an unreadable size read as 0 (silent under block); the newest usage record
         with no message id skipped for the last one that has one (block refuses at 200,000); the
         harness the meter chose ignored (cursor's run reads the Claude transcript and refuses); a
-        not-available line printed under warn."""
+        not-available line printed under warn; a synthetic record read as the newest call (a
+        300,000 session ending in one reads 0 and resumes under block, and one holding nothing
+        else reads 0 rather than not available)."""
         f = _Fresh(self._tmp.name, "unreadable")
         f.mode("off")
         base = f.resume()
         self.assertEqual(0, base.returncode, base.stdout + base.stderr)
 
+        # Claude Code's synthetic record is no call: the size is the newest real call's
+        session = _session_at(f.transcripts, 300_000)
+        session.write_text(session.read_text(encoding="utf-8") + _synthetic("syn-1") + "\n",
+                           encoding="utf-8")
+        f.mode("block")
+        r = f.resume()
+        self.assertEqual((2, ""), (r.returncode, r.stdout), r.stderr)
+        lines = _session_lines(r.stderr)
+        self.assertEqual(1, len(lines), r.stderr)
+        self.assertIn("300,000 tokens", lines[0])
+        f.mode("warn")
+        r = f.resume()
+        self.assertEqual((0, base.stdout), (r.returncode, r.stdout), r.stderr)
+        self._assert_warns(_session_lines(r.stderr), 300_000, "warn, a synthetic newest record")
+
         def cursor() -> None:
             _session_at(f.transcripts, 120_000)
             f.harness = "cursor"
-        cases = (("no transcript", lambda: None, "no session transcript"),
+
+        def synthetic_only() -> None:
+            (f.transcripts / "session-1.jsonl").write_text(_synthetic("syn-1") + "\n",
+                                                           encoding="utf-8")
+            f.harness = "claude"
+        cases = (("no transcript", session.unlink, "no session transcript"),
                  ("no message id", lambda: _session_at(f.transcripts, 120_000, newest_id=None),
                   "message id"),
-                 ("cursor", cursor, "cursor"))
+                 ("cursor", cursor, "cursor"),
+                 ("a synthetic record alone", synthetic_only, "no usage record of a model call"))
         for what, arrange, reason in cases:
             arrange()
             for mode in ("warn", "block"):

@@ -60,6 +60,8 @@ START_BUDGET_KEY = "cost.agent_start_budget"
 #: run six's orchestrator averaged 407k, and a run handed off at each wave boundary
 #: starts each wave from a small context.
 ORCHESTRATOR_CONTEXT_BUDGET = 150_000
+#: The model Claude Code names on a record no model call made, every usage count 0.
+SYNTHETIC_MODEL = "<synthetic>"
 
 
 class AnatomyError(Exception):
@@ -308,9 +310,12 @@ def session_context(repo_root, transcripts_dir=None, env=None) -> dict:
     "source", "reason"}`, `context` the newest call's context (input + cache write + cache read)
     in the newest transcript of the directory the meter reads (`transcripts_dir`, else
     `run_state.TRANSCRIPTS_ENV`, else the harness's folder for this repo), at its largest usage
-    record. `context` is None, never 0, with the `reason` when no size can be read: the meter
-    chose a harness other than Claude Code (`token_meters.select`), no transcript is there, it
-    cannot be read or holds no usage record, or its newest usage record carries no message id."""
+    record. Claude Code's synthetic records (model `SYNTHETIC_MODEL`, every usage count 0, as
+    "No response requested." or a spend-limit notice) are no call and are skipped, so the newest
+    call is the newest real one. `context` is None with the `reason` when no size can be read:
+    the meter chose a harness other than Claude Code (`token_meters.select`), no transcript is
+    there, it cannot be read or holds no usage record but synthetic ones, or its newest real
+    usage record carries no message id."""
     import types  # noqa: PLC0415 - only the harness choice needs it
 
     from lib import token_meters  # noqa: PLC0415 - only the session size reads the choice
@@ -330,16 +335,16 @@ def session_context(repo_root, transcripts_dir=None, env=None) -> dict:
         return {"context": None, "source": None,
                 "reason": f"no session transcript (*.jsonl) in {d}"}
     try:
-        records = _records_of(main, "main")
+        records = [rec for rec in _records_of(main, "main") if rec[4] != SYNTHETIC_MODEL]
     except AnatomyError as exc:
         return {"context": None, "source": str(main), "reason": str(exc)}
     if not records:
         return {"context": None, "source": str(main),
-                "reason": f"transcript {main.name} carries no usage records"}
+                "reason": f"transcript {main.name} carries no usage record of a model call"}
     newest = records[-1][1]
     if newest is None:
         return {"context": None, "source": str(main),
-                "reason": f"the newest usage record in {main.name} carries no message id, so "
+                "reason": f"the newest real usage record in {main.name} carries no message id, so "
                           f"it gives no per-call context"}
     return {"context": _context(_largest([records])[newest]), "source": str(main),
             "reason": None}
