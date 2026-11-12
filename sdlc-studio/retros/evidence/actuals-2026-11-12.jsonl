@@ -13,3 +13,5 @@
 {"id": "EP0305", "type": "epic", "project": "sdlc-studio"}
 {"id": "CR0689", "type": "cr", "project": "sdlc-studio"}
 {"id": "US1016", "type": "story", "project": "sdlc-studio"}
+{"id": "US1001", "type": "story", "project": "sdlc-studio"}
+{"id": "US1000", "type": "story", "project": "sdlc-studio"}

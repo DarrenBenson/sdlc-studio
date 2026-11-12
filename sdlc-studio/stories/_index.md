@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 69 |
-| Ready | 5 |
+| Ready | 3 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 892 |
+| Done | 894 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -37,8 +37,8 @@
 | [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Done | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1002](US1002-filing-into-the-skill-source-refuses-a-blocklisted.md) | Filing into the skill source refuses a blocklisted project name before an id is spent | Draft | EP0277 | 2026-10-09 | 2026-10-09 |
 | [US1003](US1003-enable-hooks-sh-names-every-missing-gate-prerequisite.md) | enable-hooks.sh names every missing gate prerequisite with a route that works on this interpreter | Done | EP0278 | 2026-10-09 | 2026-10-09 |
 | [US1004](US1004-ci-and-the-checker-read-one-list-of.md) | CI and the checker read one list of suite prerequisites | Done | EP0278 | 2026-10-09 | 2026-10-09 |

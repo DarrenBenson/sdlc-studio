@@ -1,6 +1,6 @@
 # US1000: The cost section states the run's cost in money from a pricing snapshot frozen at the close
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a project `pricing.models` entry for `claude-opus-5-5` whose input price is 15 (its other four component prices, `effective` and `source` set) and a run metered on that model, when `sprint close` files the report, then the cost section and its Markdown twin list each model the Dollar cost row priced with its five component prices in US dollars per million tokens, the entry's effective date and its source, all read from the page's own `price_table`, beside that model's dollars.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py::PricingSnapshotTests::test_close_freezes_prices_and_states_money
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given a run whose meter reading leaves delegated agents' spend out (so the Tokens row adds the delegated totals), one delegated total read from an agent's transcript with a per-model split on `claude-opus-5-5` and one supplied `--tokens` total with no split, when `sprint close` files the report, then the Dollar cost row adds the read total's dollars at its model's rates, names the supplied total as unpriced with its token count, and says how many tokens the dollars leave unpriced; no money figure reads $0 or an estimate for it; and over a meter that reads the subagent transcripts no delegated total is priced a second time. An unpriced model and a `mixed` row read as they do at HEAD: named with their share, never $0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py::PricingSnapshotTests::test_unpriced_tokens_are_named_never_zero_or_estimated
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given that page signed and committed, when the `pricing.models` entry's input price for `claude-opus-5-5` is changed to 20 and `sprint_report check` runs in a fresh clone, then it reads VALID and the page still states 15 and the dollars it was filed with.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py::PricingSnapshotTests::test_a_price_change_after_the_close_moves_nothing
+  - **Verified:** yes (2026-11-12)
 - **AC4:** Given a signed page filed before this change (dollars under USD_RULE, no price rows and no delegated dollars, as RPT0028) and a page filed after it, when a price is configured and `sprint_report check` runs on each, then both read VALID with their Markdown twins and only the later page carries the price rows and the delegated dollars.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_pricing_snapshot.py::PricingSnapshotTests::test_a_page_without_a_snapshot_is_unchanged
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

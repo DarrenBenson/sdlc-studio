@@ -1,6 +1,6 @@
 # US1001: The lane-yield appendix is read from the committed run record, as the close froze it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given a clone whose refusal log holds a refusal inside the run and whose run archive holds an earlier run, when `sprint close` files the report, then the lane-yield rows are recorded on the run record, every lane-yield figure cites the tracked run record ahead of `git log`, and no figure anywhere on the page names a path under `.local/`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_yield_frozen.py::FrozenLaneYieldTests::test_close_freezes_the_tally_on_the_run_record
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given that run signed and committed, when `sprint_report.py build --run <RUN-ID> --id <RETRO> --format json` runs in a fresh clone holding no refusal log and no run archive, then the lane-yield section is present with the rows the filed page carries.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_yield_frozen.py::FrozenLaneYieldTests::test_a_fresh_clone_reads_the_frozen_tally
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 
