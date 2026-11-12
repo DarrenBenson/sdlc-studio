@@ -347,6 +347,13 @@ def _edge_whitespace_span(text: str) -> tuple[int, str, str] | None:
     return None
 
 
+def _code_urls(text: str) -> str:
+    """Each bare http(s) URL in a finding as a code span, so the ledger row passes the markdown
+    lane's no-bare-URL rule unedited: the filer's own rule, `file_finding._code_urls`, reused."""
+    import file_finding  # noqa: PLC0415 - imported where used, as the other callers here do
+    return file_finding._code_urls(text or "")
+
+
 def _clean(value: str) -> str:
     """A free-text value as a ledger cell: escaped for its CONTEXT, and refused if unwritable.
 
@@ -476,7 +483,7 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
            f"{_clean(author) or '-'} | "
            f"{sdlc_md.now_date()} | {_clean(brief) or '-'} | {extra_cell}"
-           f"{_clean(issues) or '-'} |\n")
+           f"{_clean(_code_urls(issues)) or '-'} |\n")
     if phase == "delivery":
         _mark_review_base(repo_root, unit)
     with _ledger_lock(path):

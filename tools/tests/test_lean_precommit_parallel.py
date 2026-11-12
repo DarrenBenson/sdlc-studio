@@ -93,7 +93,11 @@ def _declared_lanes(hook: Path) -> list[tuple[str, str | None]]:
 
 
 def _clean_env(**extra: str) -> dict:
-    return gitutil.git_env(PYTHONDONTWRITEBYTECODE="1", **extra)
+    env = gitutil.git_env(PYTHONDONTWRITEBYTECODE="1", **extra)
+    # A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads
+    # the per-lane list a pass prints, so its hooks run verbose unless a test asks otherwise.
+    env.setdefault("SDLC_GATE_VERBOSE", "1")
+    return env
 
 
 class ParallelLaneTests(unittest.TestCase):

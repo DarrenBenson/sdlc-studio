@@ -82,6 +82,37 @@ if [ -t 1 ]; then R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; B=$'\033[1m'; N=$
 
 fail=0
 
+# ONE LINE ON A PASS, as in pre-commit: both streams are held in a buffer, apart, and the EXIT
+# trap decides. Any non-zero exit (the message refusal, a red suite) replays both unchanged, each
+# failing lane's rule, detail and fix with them. A pass that ran a lane prints one summary line:
+# the lanes that passed and how many lines it held back (the trailers written, an attribution
+# note, the selection note, the 90-second budget report), with the switch that prints them. A
+# pass that ran no lane replays whatever it printed. SDLC_GATE_VERBOSE=1, or a buffer that cannot
+# be made, prints the per-lane list as it is written.
+said="message rules green"
+hook_buf=""
+quiet_exit() {
+  local rc="$1" passed held
+  passed="$(grep -cF "  ${G}ok${N}   " "$hook_buf/out" 2>/dev/null)"
+  if [ "$rc" -eq 0 ] && [ "${passed:-0}" -gt 0 ]; then
+    held=$(( $(wc -l < "$hook_buf/out") + $(wc -l < "$hook_buf/err") - passed ))
+    grep -qF "${G}gate green.${N}" "$hook_buf/out" && held=$((held - 1))
+    if [ "$held" -gt 0 ]; then held=", $held line(s) held"; else held=""; fi
+    printf 'commit-msg: %s - %s lane(s) passed%s (SDLC_GATE_VERBOSE=1 lists them)\n' \
+      "$said" "$passed" "$held" >&3
+  else
+    cat "$hook_buf/out" >&3 2>/dev/null
+    cat "$hook_buf/err" >&4 2>/dev/null
+  fi
+  rm -rf "$hook_buf"
+  exit "$rc"
+}
+if [ "${SDLC_GATE_VERBOSE:-}" != "1" ] \
+   && hook_buf="$(mktemp -d "${TMPDIR:-/tmp}/sdlc-commit-msg.XXXXXX" 2>/dev/null)"; then
+  exec 3>&1 4>&2 >"$hook_buf/out" 2>"$hook_buf/err"
+  trap 'quiet_exit $?' EXIT
+fi
+
 # run KEY  "what it enforces"  "how to fix"  -- command...
 # Every refusal in this hook goes through here, the message rule first, so `--list` names them all.
 run() {
@@ -479,4 +510,5 @@ if [ "$fail" -ne 0 ]; then
   exit 1
 fi
 printf '%sgate green.%s\n' "$G" "$N"
+said="gate green"
 exit 0

@@ -50,6 +50,9 @@ def _clean_env() -> dict:
     env = dict(os.environ)
     for var in _GIT_ENV_VARS:
         env.pop(var, None)
+    # A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads
+    # the per-lane list a pass prints, so its hooks run verbose unless a test asks otherwise.
+    env.setdefault("SDLC_GATE_VERBOSE", "1")
     return env
 
 

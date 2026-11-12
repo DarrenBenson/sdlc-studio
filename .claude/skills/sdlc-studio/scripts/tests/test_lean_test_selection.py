@@ -44,8 +44,12 @@ def _write(root: Path, rel: str, body: str) -> Path:
 def _hook_env() -> dict:
     """The confined git env, minus the pytest variables of the run executing THIS test: a nested
     run must not inherit an outer xdist worker's identity, or the probe below proves nothing."""
-    return {k: v for k, v in gitutil.git_env().items()
-            if not k.startswith(("PYTEST_XDIST", "PYTEST_CURRENT_TEST"))}
+    env = {k: v for k, v in gitutil.git_env().items()
+           if not k.startswith(("PYTEST_XDIST", "PYTEST_CURRENT_TEST"))}
+    # A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads
+    # the per-lane list a pass prints, so its hooks run verbose unless a test asks otherwise.
+    env.setdefault("SDLC_GATE_VERBOSE", "1")
+    return env
 
 
 def _hook_fixture(tmp: Path):

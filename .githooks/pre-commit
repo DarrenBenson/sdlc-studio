@@ -48,7 +48,6 @@ lane_dir="$(mktemp -d "${TMPDIR:-/tmp}/sdlc-pre-commit.XXXXXX")" || {
   echo "free space there (or point TMPDIR elsewhere) and commit again."
   exit 1
 }
-trap 'rm -rf "$lane_dir"' EXIT
 lanes=0
 shown=0
 lane_pids=""
@@ -85,7 +84,7 @@ lane() {
   lane_keys[$lanes]="$1"; shift
   lanes=$((lanes + 1))
   set -m
-  ( "$@" > "$slot.out" 2>&1; printf '%s\n' "$?" > "$slot.rc" ) < /dev/null &
+  ( "$@" > "$slot.out" 2>&1; printf '%s\n' "$?" > "$slot.rc" ) < /dev/null 3>&- 4>&- &
   lane_pids="$lane_pids $!"
   set +m
 }
@@ -107,6 +106,7 @@ collect() {
         "$R" "$N" "$B" "${lane_keys[$shown]}" "$N"
     fi
     [ "$rc" = "0" ] || { fail=1; refused+=("${lane_keys[$shown]}"); }
+    [ -f "$lane_dir/${lane_keys[$shown]}.keep" ] && cat "$lane_dir/${lane_keys[$shown]}.keep" >> "$lane_dir/keep"
     shown=$((shown + 1))
   done
 }
@@ -121,7 +121,10 @@ verdict() {
   if out="$("$@" 2>&1)"; then
     printf '  %sok%s   %s\n' "$G" "$N" "$key"
     case "$out" in
-      *"verify-stamps: staged: re-read - "*) printf '%s\n' "$out" | sed 's/^/         /' ;;
+      *"verify-stamps: staged: re-read - "*)
+        printf '%s\n' "$out" | sed 's/^/         /'
+        # Kept for a quiet pass too, which prints no `ok` line: see "ONE LINE ON A PASS" below.
+        printf '%s\n' "$out" | sed 's/^/  /' 2>/dev/null > "$lane_dir/$key.keep" ;;
     esac
     return 0
   fi
@@ -166,6 +169,35 @@ with open("sdlc-studio/.local/refusals.jsonl", "a", encoding="utf-8") as log:
 ' "${refused[@]}" 2>/dev/null || true
 }
 
+# ONE LINE ON A PASS. Agents read this hook through `tail` to find the verdict under forty lines
+# of `ok`, and a filter that keeps the tail hides the lane that refused. So by default both
+# streams are held in the buffer directory, apart, and the EXIT trap decides: any non-zero exit
+# (a refusal, a killed lane, an interrupted hook) replays both unchanged, each failing lane's
+# rule, detail and fix with them; a pass prints the lines in `keep` and then one summary line,
+# the last line printed. `keep` holds the two things a pass says that its author reads nowhere
+# else: the stamps-staged lane's re-read list and the settle step's report of the drift it
+# restaged or left unstaged. SDLC_GATE_VERBOSE=1 prints the per-lane list as it is written.
+quiet_summary=""
+: > "$lane_dir/keep"
+quiet_exit() {
+  local rc="$1"
+  if [ "$rc" -eq 0 ] && [ -n "$quiet_summary" ]; then
+    cat "$lane_dir/keep" >&3
+    printf '%s\n' "$quiet_summary" >&3
+  else
+    cat "$lane_dir/hook.out" >&3 2>/dev/null
+    cat "$lane_dir/hook.err" >&4 2>/dev/null
+  fi
+  rm -rf "$lane_dir"
+  exit "$rc"
+}
+if [ "${SDLC_GATE_VERBOSE:-}" = "1" ]; then
+  trap 'rm -rf "$lane_dir"' EXIT
+else
+  exec 3>&1 4>&2 >"$lane_dir/hook.out" 2>"$lane_dir/hook.err"
+  trap 'quiet_exit $?' EXIT
+fi
+
 echo "${B}sdlc-studio pre-commit gate${N}"
 
 # MECHANICAL DRIFT IS FIXED, NOT REFUSED. A stale index, or an epic whose every child is terminal,
@@ -180,7 +212,7 @@ echo "${B}sdlc-studio pre-commit gate${N}"
 if [ -n "$(git diff --cached --name-only -- sdlc-studio/)" ] && [ -f "$skill/reconcile.py" ]; then
   settle_out="$(python3 "$skill/reconcile.py" settle --root . 2>&1)" \
     || settle_out="settle could not run, so mechanical drift is left for the gate to report: $settle_out"
-  [ -n "$settle_out" ] && printf '%s\n' "$settle_out" | sed "s/^/  ${Y}settle${N} /"
+  [ -n "$settle_out" ] && printf '%s\n' "$settle_out" | sed "s/^/  ${Y}settle${N} /" | tee -a "$lane_dir/keep"
 fi
 
 # The concurrent-write window guard is the gate's `window` lane, run by `gate.py --root .` below:
@@ -537,7 +569,16 @@ fi
 # would read as a finished verdict.
 if [ -e "$handoff" ]; then
   printf '%scheap lanes green.%s Commit-message rules next, then the unit suites.\n' "$G" "$N"
+  said="cheap lanes green; the commit-message rules and the unit suites run next"
 else
   printf '%sgate green.%s\n' "$G" "$N"
+  said="gate green"
 fi
+# The quiet pass's one line: the verdict, the lanes that passed, and how many SKIP and note lines
+# it held back, with the switch that prints them. Read from the held output, never re-derived.
+passed="$(grep -cF "  ${G}ok${N}   " "$lane_dir/hook.out" 2>/dev/null)"
+held="$(grep -cF -e "SKIP${N} " -e "note${N} " "$lane_dir/hook.out" 2>/dev/null)"
+quiet_summary="pre-commit: ${said} - ${passed:-0} lane(s) passed"
+[ "${held:-0}" -gt 0 ] && quiet_summary="${quiet_summary}, ${held} SKIP or note line(s) held"
+quiet_summary="${quiet_summary} (SDLC_GATE_VERBOSE=1 lists them)"
 exit 0

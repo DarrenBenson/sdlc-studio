@@ -2010,7 +2010,10 @@ def write_accuracy(root, res: dict) -> Path:
     between its markers and leaves everything the author wrote around it untouched."""
     path = Path(res["path"])
     text = path.read_text(encoding="utf-8")
-    block = accuracy_block(res)
+    # A model or reason carrying an http(s) URL is code-spanned, so the retro passes the
+    # markdown lane's no-bare-URL rule unedited: the filer's rule, `file_finding._code_urls`.
+    import file_finding  # noqa: PLC0415 - only this writer needs it
+    block = file_finding._code_urls(accuracy_block(res))
 
     if ACCURACY_BEGIN in text and ACCURACY_END in text:
         head, rest = text.split(ACCURACY_BEGIN, 1)

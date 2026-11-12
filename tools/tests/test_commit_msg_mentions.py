@@ -38,7 +38,11 @@ gitutil = _load_gitutil()
 
 
 def _env() -> dict:
-    return gitutil.git_env()
+    env = gitutil.git_env()
+    # A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads
+    # the per-lane list a pass prints, so its hooks run verbose unless a test asks otherwise.
+    env.setdefault("SDLC_GATE_VERBOSE", "1")
+    return env
 
 
 def _hook(message: str) -> subprocess.CompletedProcess:

@@ -10,10 +10,12 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -22,6 +24,20 @@ GUARD = REPO / "tools" / "repo_writes.py"
 
 sys.path.insert(0, str(REPO / "tools"))
 import repo_writes  # noqa: E402 - the module under test, imported the way its callers reach it
+
+
+#: A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads the
+#: per-lane list a pass prints, so every hook it runs inherits SDLC_GATE_VERBOSE=1. The quiet pass
+#: and the replay of a refusal are pinned in tools/tests/test_quiet_hooks.py.
+_VERBOSE = unittest.mock.patch.dict(os.environ, {"SDLC_GATE_VERBOSE": "1"})
+
+
+def setUpModule() -> None:
+    _VERBOSE.start()
+
+
+def tearDownModule() -> None:
+    _VERBOSE.stop()
 
 snapshot = repo_writes.snapshot
 differences = repo_writes.differences

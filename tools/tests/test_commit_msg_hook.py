@@ -16,9 +16,23 @@ import re
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+#: A passing hook prints one summary line unless SDLC_GATE_VERBOSE=1, and this module reads the
+#: per-lane list a pass prints, so every hook it runs inherits SDLC_GATE_VERBOSE=1. The quiet pass
+#: and the replay of a refusal are pinned in tools/tests/test_quiet_hooks.py.
+_VERBOSE = unittest.mock.patch.dict(os.environ, {"SDLC_GATE_VERBOSE": "1"})
+
+
+def setUpModule() -> None:
+    _VERBOSE.start()
+
+
+def tearDownModule() -> None:
+    _VERBOSE.stop()
+
 HOOK = REPO / ".githooks" / "commit-msg"
 
 

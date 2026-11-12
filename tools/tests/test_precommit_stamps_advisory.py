@@ -12,7 +12,9 @@ from __future__ import annotations
 import re
 import sys
 import tempfile
+import os
 import unittest
+import unittest.mock
 from pathlib import Path
 
 # Importable under both runners: pytest does not put this directory on the path.
@@ -95,7 +97,16 @@ class StampsAdvisoryTests(unittest.TestCase):
 
     def test_a_passing_commit_shows_the_re_read_list(self) -> None:
         """AC1. MUTANT: `verdict()` printing a lane's output only on FAIL - the lane reads `ok`
-        and the list is never shown."""
+        and the list is never shown. Asserted on the quiet pass an author sees, where it is
+        one of the two things printed above the summary line, and on the per-lane list."""
+        with unittest.mock.patch.dict(os.environ, {"SDLC_GATE_VERBOSE": "0"}):
+            rc, out = self._commit_probe("value = 1 + 1", "value = 2")
+        self.assertEqual(0, rc, f"an advisory refused the commit:\n{out}")
+        self.assertNotRegex(out, r"(?m)^  ok ", f"a quiet pass printed its lanes:\n{out}")
+        for said in (REREAD, f"US0001 AC1: {WORDS}", f"pytest {PROBE}::T::test_x"):
+            self.assertIn(said, out, f"a quiet pass hid the re-read list:\n{out}")
+            self.assertLess(out.index(said), out.index("pre-commit: "),
+                            f"the re-read list is not above the summary line:\n{out}")
         rc, out = self._commit_probe("value = 1 + 1", "value = 2")
         self.assertEqual(0, rc, f"an advisory refused the commit:\n{out}")
         block = self._lane_block(out)

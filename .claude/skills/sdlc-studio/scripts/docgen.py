@@ -406,6 +406,12 @@ def cmd_references(args) -> int:
 
 def cmd_reading_guides(args) -> int:
     skill = Path(args.root) / ".claude/skills/sdlc-studio"
+    # A root with no skill tree has no references to guide, and `0 of 0 reference(s)` read as
+    # a clean pass over a mistyped --root: refused, naming the path it looked in.
+    if not skill.is_dir():
+        print(f"error: no skill tree at {skill} - pass the project root that holds "
+              f".claude/skills/sdlc-studio as --root", file=sys.stderr)
+        return 2
     drift = 0
     for path in long_references(skill):
         text = path.read_text(encoding="utf-8")

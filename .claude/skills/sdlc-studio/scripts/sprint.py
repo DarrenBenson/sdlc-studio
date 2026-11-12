@@ -9237,38 +9237,56 @@ def cmd_lane(args: argparse.Namespace) -> int:
         print(json.dumps(results, indent=2))
     else:
         for res in results:
-            print(f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})")
-            # one entry per lane run session priced, else the builder's own total
-            for priced in res.get("lane_runs") or [res]:
-                if got := priced.get("agent_total"):
-                    timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
-                    read_from = Path(got.get("transcript") or "").name
-                    how = ("supplied, not measured"
-                           if got.get("provenance") == run_state.SUPPLIED
-                           else f"read from {read_from}")
-                    print(f"  agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
-                    if got.get("priced") is not None:
-                        print(f"  agent priced cost recorded (read from {read_from}): "
-                              f"{got['priced']:,} {run_state.PRICED_LABEL}")
-                if cost := priced.get("lane_run_cost"):
-                    print(f"  lane run cost: US${cost['usd']:.4f} ({cost['model']})"
-                          if cost["usd"] is not None
-                          else f"  lane run cost: {cost['unpriced']}")
-            for crit in res["verification"]["criteria"]:
-                print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) "
-                      f"<- {crit['verifier']}")
-                if crit["state"] not in LANE_NON_BLOCKING_STATES and crit["output"]:
-                    for line in crit["output"].splitlines()[-12:]:
-                        print(f"      | {line}")
-            for got in res["proof"]["discharged"]:
-                print(f"  proof {got['obligation']}: {got['evidence']}")
-            for gap in res["proof"]["undischarged"]:
-                print(f"  proof {gap['obligation']}: NOT DISCHARGED - {gap['why']}")
-            if not res["proof"]["available"] and res["proof"]["why"]:
-                print(f"  proof obligations UNDERIVABLE: {res['proof']['why']}")
-            if res["why"]:
-                print(f"  {res['why']}", file=sys.stderr)
+            _print_lane_return(res)
     return 1 if any(r["outcome"] == "blocked" for r in results) else 0
+
+
+def _print_lane_return(res: dict) -> None:
+    """One unit's `lane return`, in text. A BLOCKED return prints every line: each criterion's
+    state with its output, each proof obligation and the reason, the whole case for the block.
+    A return that is not blocked prints at most two lines: the outcome with each criterion's
+    state, then the recorded totals, costs, proof and reason joined on one line, so a caller
+    needs no `tail` to read it."""
+    said: list[str] = []
+    for priced in res.get("lane_runs") or [res]:  # one per lane run session priced, else the builder's
+        if got := priced.get("agent_total"):
+            timed = f", {got['minutes']:g} minutes" if got.get("minutes") else ""
+            read_from = Path(got.get("transcript") or "").name
+            how = ("supplied, not measured" if got.get("provenance") == run_state.SUPPLIED
+                   else f"read from {read_from}")
+            said.append(f"agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
+            if got.get("priced") is not None:
+                said.append(f"agent priced cost recorded (read from {read_from}): "
+                            f"{got['priced']:,} {run_state.PRICED_LABEL}")
+        if cost := priced.get("lane_run_cost"):
+            said.append(f"lane run cost: US${cost['usd']:.4f} ({cost['model']})"
+                        if cost["usd"] is not None else f"lane run cost: {cost['unpriced']}")
+    criteria = res["verification"]["criteria"]
+    proof = [f"proof {got['obligation']}: {got['evidence']}" for got in res["proof"]["discharged"]]
+    proof += [f"proof {gap['obligation']}: NOT DISCHARGED - {gap['why']}"
+              for gap in res["proof"]["undischarged"]]
+    if not res["proof"]["available"] and res["proof"]["why"]:
+        proof.append(f"proof obligations UNDERIVABLE: {res['proof']['why']}")
+    head = f"{res['unit']}: {res['outcome']} (claimed {res['claimed']})"
+    if res["outcome"] != "blocked":
+        print(head + " - " + (", ".join(f"{crit['ac']}: {crit['state']}" for crit in criteria)
+                              or "no criteria"))
+        rest = said + proof + ([res["why"]] if res["why"] else [])
+        if rest:
+            print("  " + "; ".join(rest))
+        return
+    print(head)
+    for line in said:
+        print(f"  {line}")
+    for crit in criteria:
+        print(f"  {crit['ac']}: {crit['state']} (exit {crit['exit_code']}) <- {crit['verifier']}")
+        if crit["state"] not in LANE_NON_BLOCKING_STATES and crit["output"]:
+            for line in crit["output"].splitlines()[-12:]:
+                print(f"      | {line}")
+    for line in proof:
+        print(f"  {line}")
+    if res["why"]:
+        print(f"  {res['why']}", file=sys.stderr)
 
 
 def tree_digest(root) -> str:

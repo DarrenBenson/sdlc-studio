@@ -69,6 +69,15 @@ def _scripts_template() -> Path:
     return _SCRIPTS_TEMPLATE
 
 
+def _hook_env(verbose: bool = False) -> dict:
+    """The scrubbed env, quiet unless `verbose`, whatever the shell running the suite exports."""
+    env = dict(_clean_env())
+    env.pop("SDLC_GATE_VERBOSE", None)
+    if verbose:
+        env["SDLC_GATE_VERBOSE"] = "1"
+    return env
+
+
 def tearDownModule() -> None:
     if _SCRIPTS_TEMPLATE is not None:
         shutil.rmtree(_SCRIPTS_TEMPLATE.parent, ignore_errors=True)
@@ -181,9 +190,11 @@ class IndexDriftTests(unittest.TestCase):
         _git(root, "config", "core.hooksPath", ".githooks")
         return root
 
-    def _commit(self, root: Path) -> tuple[int, str]:
+    def _commit(self, root: Path, verbose: bool = False) -> tuple[int, str]:
+        """Quiet by default, as an author commits: the settle report is one of the two things
+        a quiet pass still prints. `verbose` asks for the per-lane list."""
         out = subprocess.run(["git", "-C", str(root), "commit", "-m", "chore: finish a story"],
-                             capture_output=True, text=True, env=_clean_env())
+                             capture_output=True, text=True, env=_hook_env(verbose))
         return out.returncode, out.stdout + out.stderr
 
     @staticmethod
@@ -200,7 +211,7 @@ class IndexDriftTests(unittest.TestCase):
             _finish_story(root)
             (root / "tools" / "thing.py").write_text("VALUE = 2\n", encoding="utf-8")
             _git(root, "add", "-A")
-            rc, out = self._commit(root)
+            rc, out = self._commit(root, verbose=True)
             self.assertEqual(0, rc, f"the commit was refused:\n{out}")
             self.assertEqual("chore: finish a story",
                              _git(root, "log", "-1", "--format=%s").stdout.strip())
@@ -239,6 +250,9 @@ class IndexDriftTests(unittest.TestCase):
                           "the author's unstaged edit was lost from the working tree")
             self.assertIn(f"left {stories}", out,
                           f"the hook did not name the drift it left unstaged:\n{out}")
+            self.assertLess(out.index(f"left {stories}"), out.index("pre-commit: "),
+                            f"a quiet pass did not print the settle report above its summary:\n{out}")
+            self.assertNotRegex(out, r"(?m)^ {2}ok\s", f"a quiet pass printed its lanes:\n{out}")
             self.assertIn("unstaged", out)
             # The file with no edits of its own was still restaged.
             self.assertIn("> **Status:** Done", self._head(root, "sdlc-studio/epics/EP0001-alpha.md"))
@@ -280,7 +294,7 @@ class IndexDriftTests(unittest.TestCase):
             out = subprocess.run(
                 ["git", "-C", str(root), "commit", "-m", "chore: finish a story", "--",
                  "sdlc-studio/stories/US0001-x.md", "sdlc-studio/epics/EP0001-alpha.md"],
-                capture_output=True, text=True, env=_clean_env())
+                capture_output=True, text=True, env=_hook_env())
             self.assertEqual(0, out.returncode, out.stdout + out.stderr)
             self.assertIn("temporary index", out.stdout + out.stderr,
                           "the hook did not say why it settled nothing")

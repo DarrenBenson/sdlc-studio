@@ -116,6 +116,7 @@ class RefusalLogTests(_GateFixture):
         raw = (self.root / "sdlc-studio" / ".local" / "refusals.jsonl").read_bytes()
         rc, out = self._commit_failing(None)
         self.assertEqual(0, rc, out)
+        self.assertTrue(_lanes(out), f"no per-lane list to read a failed lane from:\n{out}")
         self.assertEqual([], _failed_lanes(out), out)
         self.assertEqual(raw, (self.root / "sdlc-studio" / ".local" / "refusals.jsonl")
                          .read_bytes(), "a passing commit wrote to the refusal log")

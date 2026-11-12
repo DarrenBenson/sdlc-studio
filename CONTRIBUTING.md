@@ -239,6 +239,13 @@ whether the suites are needed; `commit-msg` checks the message rules and only th
 Git creates the commit message after `pre-commit`, so this is the only order in which a message
 defect is refused before the suites run rather than after them.
 
+A passing commit prints one summary line from each hook, its last, and holds back the per-lane
+list, the SKIP and note lines and the 90-second budget report. Above the summary it still
+prints the stamps-staged lane's re-read list and the settle step's report of the drift it
+restaged or left unstaged, which an author reads nowhere else. A refusal prints the whole
+per-lane list with the failing lane's rule, detail and fix. Set `SDLC_GATE_VERBOSE=1` to see the
+lanes and the budget report on a pass.
+
 One lane is deliberately outside the gate: `npm run lint:corpus` lints every tracked markdown
 file under the strict root rules, attributing findings against the latest tag. It runs from a
 scheduled job and by hand before a release, because a guard whose cost is paid on every commit
