@@ -1376,6 +1376,108 @@ class TokenCaptureIsAttributedToTheRun(InteractiveSprintFixture):
                                         transcripts_dir=self.transcripts)["tokens"], 50_000)
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/, for the meter fixtures
+import test_meter_reads_true as _meter  # noqa: E402 - the harness store and workspace
+import test_report_usd as _usd_case  # noqa: E402 - the typed price table and money format
+import test_report_pricing_snapshot as _snapshot  # noqa: E402 - the delegated-agents run
+
+
+class Run10FollowUpTests(_meter._Case):
+    """Over a meter that leaves delegated agents' spend out, the retro's dollar line prices the
+    totals read from an agent's transcript as the sprint report's Dollar cost row does, so the
+    retro and the report state one dollar figure for one run, and it names the supplied total
+    it cannot price with its token count. Over a meter that reads every subagent transcript
+    nothing is added, so nothing is priced twice. Every expected figure is formed here from
+    the fixture's typed prices and usage records.
+
+    MUTANTS this must fail on: the delegated totals left out of the retro's dollars; folded
+    over a meter that already holds the subagents; the reach clause dropped from the line."""
+
+    def setUp(self) -> None:
+        import datetime as dt  # noqa: PLC0415
+        super().setUp()
+        self.sr = _meter._live("sprint_report")
+        self.prices = _meter._live("lib.prices")
+        path = self.tmp / "prices.json"
+        path.write_text(json.dumps({"models": [
+            {"model": m, **p, "effective": dt.date.today().isoformat(),
+             "source": "typed in the test"} for m, p in _usd_case.PRICES.items()]}),
+            encoding="utf-8")
+        patch = mock.patch.object(self.prices, "TABLE_PATH", path)
+        patch.start()
+        self.addCleanup(patch.stop)
+        #: The rates the dollars are formed at: the typed table with the configured opus entry.
+        self.rates = {**_usd_case.PRICES, _snapshot.OPUS: _snapshot.CONFIGURED}
+
+    configure = _snapshot.PricingSnapshotTests.configure
+    _delegated_run = _snapshot.PricingSnapshotTests._delegated_run
+    _metered_run = _snapshot.PricingSnapshotTests._metered_run
+    _deliver = staticmethod(_snapshot.PricingSnapshotTests._deliver)
+
+    def _retro_line(self, ws) -> str:
+        live = _meter._live("retro")
+        self.rs.update(ws.root, goal="done")
+        cap = live.run_attributed_tokens(ws.root, _meter.RETRO)
+        res = live.accuracy(ws.root, _meter.RETRO, sprint_tokens=cap["tokens"], priced=cap)
+        return next(p for p in live._points_lines(res) if p.startswith("**Priced cost"))
+
+    def test_the_retro_prices_the_delegated_totals_the_report_prices(self) -> None:
+        import shutil  # noqa: PLC0415
+        ws = self._delegated_run()
+        # The agent's transcript was read by `lane return --agent`; it ran in a session of its
+        # own, so the session reading the retro takes holds none of it.
+        shutil.rmtree(ws.tx.subagents)
+        self.assertFalse(self.rs.run_token_total(ws.state())["includes_subagents"],
+                         "premise: the meter leaves agents out")
+        main = _snapshot._at(_snapshot.OPUS, _meter._parts(_usd_case.MAIN_OPUS), self.rates)
+        read = _snapshot._at(_snapshot.OPUS, _meter._sum(_snapshot.AGENT_1, _snapshot.AGENT_2),
+                             self.rates)
+        dollars = _usd_case._money(main + read)
+        page = self.sr.build_report(ws.root, _meter.RETRO)
+        self.assertEqual(dollars, ws.row(page, "Dollar cost")["est_actual"]["value"],
+                         "premise: the report adds the read total")
+        line = self._retro_line(ws)
+        self.assertIn("from the main thread only", line, "premise: the retro's reading leaves "
+                      "agents out")
+        self.assertIn(f"Estimated US dollars: {dollars},", line)
+        self.assertIn("adds the totals of 1 delegated agent(s) read from their own transcripts",
+                      line)
+        self.assertIn(f"the dollars leave {_snapshot.SUPPLIED:,} tokens unpriced", line)
+
+    def test_a_reading_that_holds_the_agent_prices_it_once(self) -> None:
+        # The run's stamps leave the agent out, so the report adds its read total; the retro's
+        # own reading, taken later, holds its transcript, so the retro adds nothing to it.
+        ws = self._delegated_run()
+        main = _snapshot._at(_snapshot.OPUS, _meter._parts(_usd_case.MAIN_OPUS), self.rates)
+        read = _snapshot._at(_snapshot.OPUS, _meter._sum(_snapshot.AGENT_1, _snapshot.AGENT_2),
+                             self.rates)
+        dollars = _usd_case._money(main + read)
+        self.assertEqual(dollars, ws.row(self.sr.build_report(ws.root, _meter.RETRO),
+                                         "Dollar cost")["est_actual"]["value"])
+        line = self._retro_line(ws)
+        self.assertIn("from the main thread and every subagent transcript", line,
+                      "premise: the retro's reading holds the agent")
+        self.assertIn(f"Estimated US dollars: {dollars},", line)
+        self.assertNotIn("delegated agent(s) read from their own transcripts", line)
+
+    def test_over_a_meter_that_reads_the_subagents_nothing_is_added(self) -> None:
+        ws = self._metered_run()
+        rc, out = ws.lane("return", "--units", "US0102", "--tokens", str(_snapshot.SUPPLIED))
+        self.assertEqual(0, rc, out)
+        self.assertIsNotNone(self.rs.stamp_tokens(ws.root, "close"))
+        self.assertTrue(self.rs.run_token_total(ws.state())["includes_subagents"],
+                        "premise: the meter reads every subagent transcript")
+        spent = (_snapshot._at(_snapshot.OPUS, _meter._parts(_usd_case.MAIN_OPUS), self.rates)
+                 + _snapshot._at(_snapshot.HAIKU, _meter._sum(
+                     _usd_case.MAIN_HAIKU, _usd_case.BUILD_1, _usd_case.BUILD_2), self.rates))
+        dollars = _usd_case._money(spent)
+        self.assertEqual(dollars, ws.row(ws.page(), "Dollar cost")["est_actual"]["value"])
+        line = self._retro_line(ws)
+        self.assertIn(f"Estimated US dollars: {dollars},", line)
+        self.assertNotIn("delegated agent(s) read from their own transcripts", line)
+        self.assertNotIn("unpriced", line)
+
+
 class TokenCaptureIsTiedToTheRetroItRecords(InteractiveSprintFixture):
     """BG0243: the capture read whatever run was open and `cmd_accuracy` never told it which
     retro it was recording against, so `accuracy --id <an older retro> --tokens-from-harness`

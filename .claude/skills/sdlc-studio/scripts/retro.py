@@ -694,6 +694,22 @@ def dispositions_in(text: str) -> list[dict]:
     return rows
 
 
+def _undecided_errors(rows: list[dict]) -> list[str]:
+    """One error per undecided row of `## Actions raised`, naming the row and its remedies."""
+    return [f"finding not dispositioned: {r['finding'][:60]!r} - file it (BG/CR id), record it "
+            f"fixed in-sprint ('fixed-in: <sha or unit>'), or decline it with a reason "
+            f"('declined: <why>')" for r in rows if r["state"] == "undecided"]
+
+
+def _disposed(rows: list[dict]) -> dict:
+    """The `## Actions raised` rows and their dispositions, as `validate` reports them and
+    `dispose` reads them."""
+    return {"findings": rows,
+            "filed": [r["detail"] for r in rows if r["state"] == "filed"],
+            "fixed": [r["detail"] for r in rows if r["state"] == "fixed"],
+            "declined": [r["finding"] for r in rows if r["state"] == "declined"]}
+
+
 def validate(root, retro_id: str) -> dict:
     """The content check the gate calls. Errors are blocking; each names its own remedy.
 
@@ -709,11 +725,15 @@ def validate(root, retro_id: str) -> dict:
 
     text = path.read_text(encoding="utf-8")
     if is_three_line(text):
+        # The section is optional here, but a three-line retro that carries it has its rows
+        # judged as the older shape's are: an undecided row fails by name, and `dispose`
+        # reports the rows read here. Without the section there is nothing to disposition.
+        rows = dispositions_in(text)
         errors = (three_line_errors(text) + class_errors(root, lessons_in(text))
-                  + cost_cause_errors(root, retro_id, text))
+                  + _undecided_errors(rows) + cost_cause_errors(root, retro_id, text))
         return {"ok": not errors, "id": retro_id, "path": str(path), "errors": errors,
                 "demonstration": [], "lessons": lessons_in(text), "carried": [],
-                "findings": [], "filed": [], "fixed": [], "declined": []}
+                **_disposed(rows)}
     errors: list[str] = []
 
     present = sections(text)
@@ -738,12 +758,7 @@ def validate(root, retro_id: str) -> dict:
             "'## Actions raised' has no rows - answer the question: are there any CRs or "
             "Bugs to raise for the issues found? To say no, record a row declining it "
             "with a reason. Silence is not an answer")
-    undecided = [r for r in rows if r["state"] == "undecided"]
-    for r in undecided:
-        errors.append(
-            f"finding not dispositioned: {r['finding'][:60]!r} - file it (BG/CR id), record it "
-            f"fixed in-sprint ('fixed-in: <sha or unit>'), or decline it with a reason "
-            f"('declined: <why>')")
+    errors.extend(_undecided_errors(rows))
     # Demanded only of a run the close found over its cost baseline, read from the run's record.
     errors.extend(cost_cause_errors(root, retro_id, text))
 
@@ -757,10 +772,7 @@ def validate(root, retro_id: str) -> dict:
         "demonstration": demonstration_leftovers(text),
         "lessons": lessons_in(text),
         "carried": carried_in(text),
-        "findings": rows,
-        "filed": [r["detail"] for r in rows if r["state"] == "filed"],
-        "fixed": [r["detail"] for r in rows if r["state"] == "fixed"],
-        "declined": [r["finding"] for r in rows if r["state"] == "declined"],
+        **_disposed(rows),
     }
 
 
@@ -1663,10 +1675,18 @@ def _usd_batch(cap: dict, points: int, rung: str, root, ended=None) -> dict:
     """The capture's estimated US dollars, each model's own components priced from the table
     (`run_state.usd`), per delivered point by the priced figure's own rule, with the table's
     effective date and its stale mark (`prices.stale`) judged on the day the run ended
-    (`_run_end`), today while it is open."""
+    (`_run_end`), today while it is open. The capture's `delegated_split`, when it carries one,
+    is folded in by the sprint report's own rule (`sprint_report._run_usd`), so over a reading
+    that leaves agents out the retro and the report state one figure, and `delegated` names
+    what it adds and the supplied totals it leaves unpriced (`sprint_report._delegated_reach`)."""
+    import sprint_report  # noqa: PLC0415 - deferred; the page's own rule, not a copy
     table, error = run_state.price_table(root)
-    got = run_state.usd(cap.get(run_state.BY_MODEL), table, ended)
+    delegated = cap.get("delegated_split")
+    got = sprint_report._run_usd(cap, {"table": table, "today": ended}, delegated)  # noqa: SLF001
+    reach = (sprint_report._delegated_reach(delegated)  # noqa: SLF001
+             if delegated and not error and got["usd"] is not None else "")
     return {"usd": got["usd"], "covered": got["covered"], "unpriced": got["unpriced"],
+            "delegated": reach,
             "per_point": (got["usd"] / points
                           if got["usd"] is not None and points and rung == "done" else None),
             "effective": got["effective"], "stale": got["stale"],
@@ -1689,8 +1709,9 @@ def _usd_sentence(d: dict | None) -> str:
     left = ("".join(f"; {u['model']} is not priced ({100 * u['share']:.1f}% of the priced "
                     f"tokens), and is not counted as $0" for u in d["unpriced"])
             if d["unpriced"] else "")
+    reach = f"; {d['delegated']}" if d.get("delegated") else ""
     return (f" Estimated US dollars: {money(d['usd'])}{per}, covering "
-            f"{100 * d['covered']:.1f}% of the priced tokens{left}; {table}.")
+            f"{100 * d['covered']:.1f}% of the priced tokens{left}{reach}; {table}.")
 
 
 def _priced_lines(p: dict | None) -> list[str]:
@@ -2245,6 +2266,12 @@ def run_attributed_tokens(root, retro_id: str, transcripts_dir=None) -> dict:
             # The counting basis the Source cell names (`harness_source`), and the priced half
             # of the same window, which no supplied total enters.
             run_state.METER: cap.get(run_state.METER), "reads_subagents": reads_agents,
+            # The supplied totals as a dollar figure prices them, only where they are added
+            # over a reading that leaves agents out: a reading of the subagent transcripts
+            # already holds the agents that ran in this session, and pricing them again would
+            # count their dollars twice.
+            "delegated_split": (run_state.delegated_split(state)
+                                if supplied and not reads_agents else None),
             **_priced_window(redone if rebased else base, cap)}
 
 

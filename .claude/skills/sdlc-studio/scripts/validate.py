@@ -885,6 +885,8 @@ def cmd_check(args: argparse.Namespace) -> int:
         violations.extend(excluded_id_files(
             repo_root, [args.type] if args.type else None))
         violations.extend(check_dor_dod(repo_root))
+        if not args.type:  # a whole-tree run also reads AGENTS.md for the integration rule
+            violations.extend(integration_rule_findings(Path(repo_root)))
 
     if getattr(args, "emit_baseline", False):
         # The baseline is CAPTURED from the checker's own output, never hand-written: a
@@ -1032,6 +1034,54 @@ def skill_definition_line() -> str | None:
     return next((ln for ln in text.splitlines() if _SKILL_DEFINITION_RE.match(ln)), None)
 
 
+#: The lead of the template's integration rule. A file that states the lead, in the template's
+#: line or its own reflow of it, carries the rule; the line a file without it is told to add is
+#: always read from the template, never restated here.
+_INTEGRATION_LEAD = "Integrate continuously"
+
+
+def integration_rule_line() -> str | None:
+    """The template's integration-rule line, or None when the template cannot be read or
+    carries no such line."""
+    try:
+        text = _INSTRUCTIONS_TEMPLATE.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    return next((ln for ln in text.splitlines() if _INTEGRATION_LEAD in ln), None)
+
+
+def integration_rule_findings(root: Path, text: str | None = None) -> list[dict]:
+    """One warning when the project's AGENTS.md never states the integration rule, naming the
+    file and the template's exact line to add, or one saying the file could not be read;
+    nothing for a file that states it, or for a project with no AGENTS.md (`no-agents` covers
+    that). A file seeded before the template
+    carried the rule keeps it out, since nothing rewrites an existing AGENTS.md, and an agent
+    that reads it rather than SKILL.md falls back to a branch and a pull request per change.
+    Reported, never rewritten. `text` is the file's content when the caller has read it."""
+    agents = root / "AGENTS.md"
+    if text is None:
+        if not agents.is_file():
+            return []
+        try:
+            text = agents.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            return [{"severity": SEVERITY_WARNING, "rule": "no-integration-rule",
+                     "file": "AGENTS.md",
+                     "message": f"AGENTS.md could not be read ({exc}), so whether it states the "
+                                f"integration rule was not checked"}]
+    if _INTEGRATION_LEAD.lower() in " ".join(text.split()).lower():
+        return []
+    line = integration_rule_line()
+    remedy = (f"add the template's line: \"{line}\"" if line else
+              f"add the \"{_INTEGRATION_LEAD}\" line from templates/agent-instructions.md "
+              "(the template could not be read here)")
+    return [{"severity": SEVERITY_WARNING, "rule": "no-integration-rule", "file": "AGENTS.md",
+             "message": "AGENTS.md never states the integration rule, so an agent that reads it "
+                        "falls back to its own habit of a branch and a pull request per change; "
+                        + remedy + "; reported, never rewritten",
+             "add_line": line, "template": "templates/agent-instructions.md"}]
+
+
 def _vendored(root: Path, prefix: str, directory: str) -> bool:
     """A project-local path (bare or `./`) that exists under `root`: a skill vendored in the
     repository resolves for everyone who clones it."""
@@ -1160,6 +1210,8 @@ def check_instructions(root: Path) -> list[dict]:
             + (f"add the template's definition line: \"{definition}\"" if definition else
                "add the definition line from templates/agent-instructions.md (the template "
                "could not be read here)"))
+
+    out.extend(integration_rule_findings(root, text))
 
     n_lines = text.count("\n") + 1
     if n_lines > 300:

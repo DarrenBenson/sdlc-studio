@@ -469,14 +469,23 @@ POINTERS_ONLY_AGENTS = (
     "After `/compact` or a reset, re-read LATEST.md and run status.\n"
 )
 
-# A sound file: the pointers PLUS the working model the pointers used to stand in for.
-GOOD_AGENTS = POINTERS_ONLY_AGENTS + (
+# The pointers PLUS the working model the pointers used to stand in for, as a project seeded
+# before the template carried the integration rule holds it.
+PRE_TRUNK_AGENTS = POINTERS_ONLY_AGENTS + (
     "Every substantive change flows through the skill: CR -> Epic -> Story -> plan ->\n"
     "implement -> verify. No ad-hoc coding.\n"
     "Never hand-allocate ids or hand-author `_index.md` - the index is derived.\n"
     "A story reaches Done only when its executable ACs pass.\n"
     "Review is independent of the author: the reviewer of record never wrote the change.\n"
 )
+
+# The template's own integration line, read from the template so the fixture tracks it.
+INTEGRATION_LINE = next(
+    ln for ln in (SCRIPT_PATH.parent.parent / "templates" / "agent-instructions.md")
+    .read_text(encoding="utf-8").splitlines() if ln.startswith("**Integrate continuously.**"))
+
+# A sound file: all of the above and the integration rule.
+GOOD_AGENTS = PRE_TRUNK_AGENTS + INTEGRATION_LINE + "\n"
 
 
 def _shipped_template() -> str:
@@ -678,6 +687,87 @@ class InstructionsTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 rc = validate.main(["instructions", "--root", d])
             self.assertEqual(rc, 0)
+
+
+class IntegrationRuleHygieneTests(unittest.TestCase):
+    """An AGENTS.md seeded before the template carried the integration rule is told the exact line
+    to add, read from the template, by the hygiene check and by `validate.py check`; a file that
+    carries it, and a project with no AGENTS.md, are told nothing about it. Reported, never
+    rewritten.
+
+    MUTANTS this must fail on: the rule dropped; the line hard-coded instead of read from the
+    template; a finding on a file that carries the line, or on one that wraps it; a finding with
+    no AGENTS.md; the `check` sweep unwired; AGENTS.md rewritten."""
+
+    RULE = "no-integration-rule"
+
+    def _project(self, d: str, agents: str | None) -> Path:
+        root = Path(d)
+        (root / "sdlc-studio").mkdir()
+        if agents is not None:
+            (root / "AGENTS.md").write_text(agents, encoding="utf-8")
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+        return root
+
+    def _hygiene(self, root: Path) -> list[dict]:
+        return [f for f in validate.check_instructions(root) if f["rule"] == self.RULE]
+
+    def _swept(self, root: Path) -> list[dict]:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            validate.main(["check", "--root", str(root), "--format", "json"])
+        return [v for v in json.loads(buf.getvalue())["violations"] if v["rule"] == self.RULE]
+
+    def test_a_file_without_the_rule_is_told_the_exact_line(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, PRE_TRUNK_AGENTS)
+            before = (root / "AGENTS.md").read_bytes()
+            hygiene, swept = self._hygiene(root), self._swept(root)
+            after = (root / "AGENTS.md").read_bytes()
+        self.assertEqual(1, len(hygiene), hygiene)
+        self.assertEqual(1, len(swept), swept)
+        for f in hygiene + swept:
+            self.assertEqual("warning", f["severity"])
+            self.assertIn("AGENTS.md", f["message"])
+            self.assertIn(INTEGRATION_LINE, f["message"])
+            self.assertEqual(INTEGRATION_LINE, f["add_line"])
+        self.assertEqual("AGENTS.md", swept[0]["file"])
+        self.assertEqual(before, after, "AGENTS.md was rewritten")
+
+    def test_a_file_that_carries_the_rule_is_told_nothing(self) -> None:
+        # A project that reflows its file may wrap the rule's lead itself.
+        wrapped = INTEGRATION_LINE.replace("Integrate continuously", "Integrate\ncontinuously")
+        self.assertNotEqual(INTEGRATION_LINE, wrapped)
+        for agents in (GOOD_AGENTS, PRE_TRUNK_AGENTS + wrapped + "\n"):
+            with tempfile.TemporaryDirectory() as d:
+                root = self._project(d, agents)
+                self.assertEqual([], self._hygiene(root))
+                self.assertEqual([], self._swept(root))
+                self.assertEqual([], validate.check_instructions(root))
+
+    def test_a_project_with_no_agents_md_is_told_nothing_about_it(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d, None)
+            self.assertIn("no-agents", {f["rule"] for f in validate.check_instructions(root)})
+            self.assertEqual([], self._hygiene(root))
+            self.assertEqual([], self._swept(root))
+
+    def test_the_line_is_read_from_the_template(self) -> None:
+        from unittest import mock
+        own = "**Integrate continuously.** Land each change on trunk the day it passes."
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as t:
+            template = Path(t) / "agent-instructions.md"
+            template.write_text(f"# Template\n\n{own}\n", encoding="utf-8")
+            root = self._project(d, PRE_TRUNK_AGENTS)
+            with mock.patch.object(validate, "_INSTRUCTIONS_TEMPLATE", template):
+                hygiene, swept = self._hygiene(root), self._swept(root)
+            with mock.patch.object(validate, "_INSTRUCTIONS_TEMPLATE", Path(t) / "gone.md"):
+                unread = self._hygiene(root)
+        for f in hygiene + swept:
+            self.assertIn(own, f["message"])
+            self.assertNotIn(INTEGRATION_LINE, f["message"])
+        self.assertEqual(1, len(unread), "an unreadable template must not silence the finding")
+        self.assertIn("could not be read", unread[0]["message"])
 
 
 class WorkingModelTests(unittest.TestCase):

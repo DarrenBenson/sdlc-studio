@@ -292,7 +292,8 @@ class InstructionsSeedTests(unittest.TestCase):
                 "Pre-release gate: `reconcile --verify`. After a `/compact`, re-read it.\n"
                 "Every change flows through the skill. No ad-hoc coding.\n"
                 "Never hand-allocate ids or hand-author `_index.md`.\n"
-                "A story reaches Done only when its executable ACs pass.\n", encoding="utf-8")
+                "A story reaches Done only when its executable ACs pass.\n"
+                "Integrate continuously: commit each unit to main.\n", encoding="utf-8")
             (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
             (sd / ".config.yaml").write_text(
                 "instructions:\n  working_model_opt_out: independent-review\n", encoding="utf-8")
@@ -1281,6 +1282,63 @@ class RuntimeStateIgnoreTests(unittest.TestCase):
             pu.apply(d)
             self.assertEqual(gi.read_text(encoding="utf-8"), ".local/\n!.local/keep.json\n")
 
+
+
+class IntegrationRuleReportTests(unittest.TestCase):
+    """A project seeded before the template carried the integration rule keeps an AGENTS.md
+    without it, since the upgrade never rewrites an existing file. The upgrade report names the
+    missing rule with the template's exact line, in both formats and under `--apply`, and leaves
+    AGENTS.md byte for byte as it was.
+
+    MUTANTS this must fail on: the report silent on the rule; the line paraphrased; AGENTS.md
+    rewritten (the line appended) by `--apply`; the rule reported for a seed that carries it."""
+
+    @staticmethod
+    def _line() -> str:
+        template = (SCR.parent / "templates" / "agent-instructions.md").read_text(encoding="utf-8")
+        return next(ln for ln in template.splitlines()
+                    if ln.startswith("**Integrate continuously.**"))
+
+    def _seed(self, d: str, *, drop_rule: bool) -> Path:
+        import init
+        root = Path(d)
+        with contextlib.redirect_stdout(io.StringIO()):
+            init.init(root)
+        agents = root / "AGENTS.md"
+        text = agents.read_text(encoding="utf-8")
+        self.assertIn(self._line(), text.splitlines(), "the seed no longer carries the rule")
+        if drop_rule:
+            agents.write_text(text.replace(self._line() + "\n", ""), encoding="utf-8")
+        return root
+
+    def _run(self, root: Path, *extra: str) -> str:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            rc = pu.main(["--root", str(root), *extra])
+        self.assertEqual(0, rc, buf.getvalue())
+        return buf.getvalue()
+
+    def test_the_report_names_the_missing_rule_and_agents_md_is_untouched(self):
+        line = self._line()
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(d, drop_rule=True)
+            before = (root / "AGENTS.md").read_bytes()
+            for extra in ((), ("--apply",)):
+                report = json.loads(self._run(root, "--format", "json", *extra))
+                agents = [f for f in report["audit"]["manual"] if f["kind"] == "agents"]
+                self.assertEqual(1, len(agents), report["audit"]["manual"])
+                self.assertIn("no-integration-rule", agents[0]["rules"])
+                self.assertIn(line, agents[0]["detail"])
+                self.assertIn(line, self._run(root, *extra))
+            self.assertEqual(before, (root / "AGENTS.md").read_bytes(), "AGENTS.md was rewritten")
+
+    def test_a_seed_that_carries_the_rule_is_not_told_to_add_it(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._seed(d, drop_rule=False)
+            report = json.loads(self._run(root, "--format", "json"))
+        rules = [r for f in report["audit"]["manual"] if f["kind"] == "agents"
+                 for r in f["rules"]]
+        self.assertNotIn("no-integration-rule", rules)
 
 
 class AgentInstructionsSkillPathTests(unittest.TestCase):
