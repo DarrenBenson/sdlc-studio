@@ -39,8 +39,13 @@ entered `sprint sign --principal "Darren Benson"` on that authorisation, for thi
   finding of the run filed as its own bug at the operator's ruling. The triage cap is now 50
   (D0468). One close gap is handed over: the tick-verification item reads US1147, a
   re-review-only carried unit, as unsupported (filed).
-- **Run eleven** per D0461: EP0275, the cost pair CR0694 and BG1330, US0999, and BG1333 first;
-  CR0699 (effort setting), CR0700 (instruction audit) and CR0701 (ownership trial) are filed (D0464).
+- **Run eleven** is a declared maintenance run of about 50 points (D0469), opened in a fresh
+  session: an at-HEAD triage of the 73 Medium bugs first, then the run-ten lane and review gaps
+  (BG1336, BG1337, BG1339-BG1341, BG1343, BG1344), BG1333, the cost figures (BG1330, BG1331,
+  BG1279, BG1371, BG1305), verification reliability (BG1005, BG1009, BG1112, BG1190, BG1228,
+  BG1261, BG1262) and BG1372, one lane per file cluster. EP0275, CR0694 and US0999 move to run
+  twelve. CR0699 (effort setting), CR0700 (instruction audit) and CR0701 (ownership trial) are
+  filed (D0464).
 
 ## Learned the hard way
 
