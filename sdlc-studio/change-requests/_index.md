@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-10
+**Last Updated:** 2026-11-12
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 37 |
+| Proposed | 40 |
 | Approved | 0 |
 | In Progress | 28 |
 | Complete | 542 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 61 |
 | Blocked | 0 |
-| **Total** | **698** |
+| **Total** | **701** |
 
 ## All Changes
 
@@ -110,6 +110,9 @@
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Proposed | High | feature | 2026-11-10 | -- |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | Proposed | Medium | enhancement | 2026-11-10 | -- |
+| [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Proposed | High | Improvement | 2026-11-12 | -- |
+| [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | Proposed | Medium | Improvement | 2026-11-12 | -- |
+| [CR-0701](CR0701-a-consolidation-unit-s-builder-brief-can-carry.md) | A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it | Proposed | Low | Improvement | 2026-11-12 | -- |
 
 ## Archived Releases
 
