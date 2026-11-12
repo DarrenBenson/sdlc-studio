@@ -223,6 +223,71 @@ class RejoinderFromLedgerTests(unittest.TestCase):
                        row.format(u=UNIT, v="APPROVE", who="engineering-seat", n=3, i="none"))
                 refused(cwd, root, "the seat's REJECT is from an earlier delivery")
 
+    def test_a_carried_units_earlier_reject_is_quoted(self) -> None:
+        """A unit carried at the review cap is briefed again in a later run, whose delivery holds
+        no row of it yet: the rejoinder quotes the seat's unanswered REJECT from the run that
+        carried it, the one `standing_rejects` (what `sprint plan` reports) names. Mutants:
+        reading the current delivery alone (the refusal this pins); reading every delivery for
+        a unit nobody carried; the latest REJECT although its seat answered it; another seat's
+        REJECT quoted for this one."""
+        def brief(cwd: Path, root: Path, seat: str = "qa") -> subprocess.CompletedProcess:
+            return _brief(cwd, root, "--rejoinder", seat=seat)
+
+        first = "BLOCKING: [new] the widget returns 1 (src/widget.py:2)"
+        second = "BLOCKING: [new] the widget still returns 1 (src/widget.py:2)"
+        row = "| {u} | {v} | {who} | builder | 2026-11-0{n} | - | full | - | {i} |\n"
+        rows = [row.format(u=UNIT, v="REJECT", who="qa-seat", n=1, i=first),
+                row.format(u=UNIT, v="REJECT", who="qa-seat", n=2, i=second)]
+        rs = critic.run_state
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as elsewhere:
+            root, cwd = Path(d), Path(elsewhere)
+            _project(root, engineering=True)
+            _write(root, "sdlc-studio/bugs/BG0001-carried-findings.md",
+                   "# BG0001: carried findings\n\n> **Status:** Open\n")
+            ledger = critic.verdicts_path(root)
+            _write(root, str(ledger.relative_to(root)), critic._TABLE + "".join(rows))
+
+            def carried_from(reason: str) -> None:
+                rs.archive(root, {"run_id": "RUN-0000EARL", "outcome": "goal-reached",
+                                  "batch": [], "batch_changes": [
+                                      {"action": "drop", "id": UNIT, "reason": reason}]})
+
+            carried_from(f"{critic.CARRIED_REASON}: BG0001")
+            rs.open_run(root, batch=[UNIT], goal="deliver the carried unit")
+            rs.mark_review_base(root, UNIT, len(rows))
+            self.assertEqual([], critic.delivery_rounds(root, UNIT),
+                             "premise: the later run's delivery holds no row of the unit")
+            self.assertEqual("BG0001", critic.carried_by(root, UNIT), "premise: carried")
+            standing = {r["reviewer"] for r in critic.standing_rejects(root, UNIT)}
+            self.assertEqual({"qa-seat"}, standing,
+                             "premise: the close-requirement reader names the REJECT")
+            r = brief(cwd, root)
+            self.assertEqual(0, r.returncode, r.stderr)
+            intro, quoted = _quote(r.stdout)
+            self.assertIn(REBUILT_LABEL, intro)
+            self.assertRegex(quoted, r"(?m)^VERDICT: REJECT$")
+            self.assertIn("still returns 1", critic._block_field(quoted, "BLOCKING"),
+                          "the seat's latest unanswered REJECT")
+            # Another seat holds no REJECT, carried or not: refused, naming the unit.
+            other = brief(cwd, root, seat="engineering")
+            self.assertEqual(2, other.returncode, other.stdout[-300:])
+            self.assertEqual("", other.stdout)
+            self.assertIn(UNIT, other.stderr)
+            # A drop that is no carry leaves the earlier delivery closed to the rejoinder.
+            carried_from("dropped by hand")
+            self.assertIsNone(critic.carried_by(root, UNIT), "premise: no longer carried")
+            plain = brief(cwd, root)
+            self.assertEqual(2, plain.returncode, plain.stdout[-300:])
+            self.assertEqual("", plain.stdout)
+            # The seat's APPROVE discharges the carry: nothing stands to quote.
+            carried_from(f"{critic.CARRIED_REASON}: BG0001")
+            _write(root, str(ledger.relative_to(root)), critic._TABLE + "".join(rows) +
+                   row.format(u=UNIT, v="APPROVE", who="qa-seat", n=3, i="none"))
+            answered = brief(cwd, root)
+            self.assertEqual(2, answered.returncode, answered.stdout[-300:])
+            self.assertEqual("", answered.stdout)
+            self.assertRegex(answered.stderr, r"\bqa\b")
+
 
 if __name__ == "__main__":
     unittest.main()

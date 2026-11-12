@@ -1174,6 +1174,15 @@ def row_from_header(header: list[str], link: str, title: str, status: str, f: di
     return join_row(out)
 
 
+#: Where a metadata field starts: a line start (an optional `>`) or a `·` separator, so a
+#: `**Name:**` mentioned in prose is not one. Shared by `extract_field` and `metadata_fields`.
+_FIELD_ANCHOR = r"(?:^>?\s*|·\s*)"
+#: Where a field's value ends: the next `·`, the next `**Field:**`, or the end of the line.
+_FIELD_VALUE_END = r"(?=·|\s\*\*[^*\n]+:\*\*|$)"
+#: A field's name at an anchor, for `metadata_fields` to read each one by.
+_FIELD_NAME_RE = re.compile(_FIELD_ANCHOR + r"\*\*([A-Za-z][A-Za-z -]*?):\*\*", re.M)
+
+
 def extract_field(text: str, name: str) -> str | None:
     """Value of a `**Name:** value` metadata field, or None if absent.
 
@@ -1186,9 +1195,39 @@ def extract_field(text: str, name: str) -> str | None:
     `**Field:**`, or end of line, so a field never swallows the ones after it.
     """
     m = re.search(
-        rf"(?:^>?\s*|·\s*)\*\*{re.escape(name)}:\*\*\s*(.+?)\s*(?=·|\s\*\*[^*\n]+:\*\*|$)",
+        rf"{_FIELD_ANCHOR}\*\*{re.escape(name)}:\*\*\s*(.+?)\s*{_FIELD_VALUE_END}",
         text, re.M)
     return m.group(1) if m else None
+
+
+def metadata_fields(text: str) -> dict[str, str]:
+    """Every `**Name:** value` field in `text`, keyed by its lower-cased name, each valued as
+    `extract_field` reads it, so every field on an inline `·` run gets its own value rather
+    than the first swallowing the rest. The first occurrence of a name wins. A field whose
+    line holds nothing after its name has no value and is left out, where `extract_field`
+    would read on into the next line."""
+    out: dict[str, str] = {}
+    for m in _FIELD_NAME_RE.finditer(text):
+        name = m.group(1).strip()
+        if name.lower() in out or not text[m.end():].split("\n", 1)[0].strip():
+            continue
+        value = (extract_field(text, name) or "").strip()
+        if value:
+            out[name.lower()] = value
+    return out
+
+
+#: What cuts a field's value short of its line's end (`_FIELD_VALUE_END` less the end itself).
+_FIELD_RUN_ON = r"(?:\s*·|\s\*\*[^*\n]+:\*\*)"
+
+
+def is_swallowed_run(cell: str, value: str) -> bool:
+    """True when `cell` reads `value` followed by the rest of a `·`-joined metadata line, the
+    next `·` or `**Field:**` that `extract_field` ends the value at: what a reader that ran
+    each field to the end of its line wrote, rather than a cell that links or names `value`."""
+    value = (value or "").strip()
+    cell = (cell or "").strip()
+    return bool(value) and re.match(re.escape(value) + _FIELD_RUN_ON, cell) is not None
 
 
 def extract_h1_title(text: str) -> str | None:

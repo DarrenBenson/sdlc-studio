@@ -2092,7 +2092,8 @@ def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
     undone before the split, as `parse_findings` does: after it, a reviewer's own backslash is
     lost. A finding whose
     OWN origin tag is pre-existing, or one marked non-blocking, did not hold the unit; one that
-    merely quotes a pre-existing tag did."""
+    merely quotes a pre-existing tag did. A `RULINGS:` item is the reviewer's rulings, skipped
+    as `parse_findings` skips it."""
     import critic  # noqa: PLC0415 - lazy: critic owns the verdict ledger's reader
     me = sdlc_md.norm_id(unit_id)
     found: dict[str, None] = {}
@@ -2104,6 +2105,7 @@ def blocking_findings(rows: list[dict], unit_id: str) -> list[str]:
             item = item.strip()
             tag = critic._ORIGIN_TAG.match(item)
             if (not item or item == "-" or "non-blocking" in item.lower()
+                    or critic._RULINGS_ITEM.match(item)
                     or (tag and tag.group(1).lower().replace(" ", "-") == "pre-existing")):
                 continue
             found[_cut_finding(item)] = None
@@ -3459,9 +3461,6 @@ _TITLE_RE = re.compile(r"^#\s+[A-Za-z]+-?\d+:\s*(.+?)\s*$", re.MULTILINE)
 _PERSONA_RE = re.compile(r"^>?\s*\*\*Persona:\*\*\s*(.+?)\s*$", re.MULTILINE)  # canonical field
 
 
-#: Any canonical metadata field, as the artefacts write it: `> **Name:** value`.
-_ANY_FIELD_RE = re.compile(r"^>?\s*\*\*([A-Za-z][A-Za-z ]*?):\*\*\s*(.*?)\s*$", re.MULTILINE)
-
 #: Index columns this pass must NOT write. Two reasons, both about ownership rather than taste.
 #: `stories` / `deps` / `linked epics` / `spawned crs` are projections of OTHER artefacts, and
 #: `updated` is the index's own bookkeeping - a same-named field appearing in an artefact must
@@ -3534,22 +3533,19 @@ def _file_field_values(text: str) -> dict:
     an RFC's Status and a CR's Priority could each disagree with their index row while
     `detect` reported zero drift - and `status.py` reads the index, so every backlog figure
     taken while that was true was wrong."""
-    out: dict = {}
     # The LEADING metadata block only: the run of `> **Field:** value` lines under the H1. An
     # unbounded scan reads a quoted `> **State:** archived` out of a body blockquote and writes
-    # it into the index as though the artefact had declared it.
-    head = _metadata_head(text)
-    for m in _ANY_FIELD_RE.finditer(head):
-        name, value = m.group(1).strip().lower(), m.group(2).strip()
-        if value and name not in out:      # first wins: the metadata block, not a later mention
-            out[name] = value
+    # it into the index as though the artefact had declared it. Read by `sdlc_md`'s own field
+    # reader, so a `·`-joined line gives each field its own value, the one `extract_field` reads.
+    out: dict = dict(sdlc_md.metadata_fields(_metadata_head(text)))
     t = _TITLE_RE.search(text)
     out["title"] = t.group(1).strip() if t else None
     p = _POINTS_RE.search(text)            # `Story Points` and `Points` are one column
     if p:
         out["points"] = p.group(1)
     pe = _PERSONA_RE.search(text)
-    out["persona"] = pe.group(1).strip() if pe else out.get("persona")
+    # The header's own Persona first: the line pattern reads a joined line to its end.
+    out["persona"] = out.get("persona") or (pe.group(1).strip() if pe else None)
     return out
 
 
@@ -3622,7 +3618,10 @@ def project_fields(repo_root: Path | str, type_: str = "story", dry_run: bool = 
                 # A cell already LINKING the value it derives from is in agreement:
                 # `[US0345](../stories/US0345-x.md)` and `US0345` say the same thing, and
                 # rewriting the first to the second strips a working link every time it runs.
-                if new and re.search(rf"(?<![A-Za-z0-9]){re.escape(new)}(?![A-Za-z0-9])", cur):
+                # A cell holding the value and then the rest of its `·` line is no link: it is
+                # the run an end-of-line reader wrote, and is drift.
+                if (new and re.search(rf"(?<![A-Za-z0-9]){re.escape(new)}(?![A-Za-z0-9])", cur)
+                        and not sdlc_md.is_swallowed_run(cur, new)):
                     continue
                 if cur != fv[field]:
                     drift.append({"id": m.group(0), "field": field, "index": cur, "file": fv[field]})

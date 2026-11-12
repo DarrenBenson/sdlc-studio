@@ -3906,18 +3906,25 @@ REBUILT_QUOTE = "rebuilt from the ledger's fields as recorded, not in your own w
 def seat_standing_reject(root: Path | str, unit: str, seat: str) -> dict:
     """The REJECT row a `--rejoinder` with no file quotes: the latest unanswered REJECT
     (`_unanswered_rejects`) in `unit`'s current delivery (`delivery_rounds`) from a reviewer
-    `seat_for` maps to `seat`. On a project that declares no seats every reviewer is a
-    candidate. Raises ValueError naming the unit and the seat when there is none, and naming
-    the reviewers when more than one holds one, since choosing between them is the operator's
-    call."""
+    `seat_for` maps to `seat`. A unit carried at the review cap (`carried_by`) is read over
+    every live delivery row instead, the rows `round_refusal` names as owing the carry's
+    APPROVE, since its REJECT is in the delivery that carried it, not the later run's. On a
+    project that declares no seats every reviewer is a candidate. Raises ValueError naming the
+    unit and the seat when there is none, and naming the reviewers when more than one holds
+    one, since choosing between them is the operator's call."""
     uid, role = sdlc_md.norm_id(unit), seat.strip().lower()
     declared = bool(_declared_reviewers(root))
-    rejects = [r for r in _unanswered_rejects(delivery_rounds(root, uid))
+    carried = carried_by(root, uid)
+    rows = (_live_verdict_rows(root, uid, "delivery") if carried
+            else delivery_rounds(root, uid))
+    rejects = [r for r in _unanswered_rejects(rows)
                if not declared or seat_for(root, r.get("reviewer", "")) == role]
     latest = {_id(r.get("reviewer", "")): r for r in rejects}
     if not latest:
-        raise ValueError(f"{uid} has no unanswered REJECT from a {role} reviewer in its current "
-                         f"delivery, so there is no prior verdict to quote for the {role} seat; "
+        where = (f"in any delivery, though it was {CARRIED_REASON} ({carried})" if carried
+                 else "in its current delivery")
+        raise ValueError(f"{uid} has no unanswered REJECT from a {role} reviewer {where}, so "
+                         f"there is no prior verdict to quote for the {role} seat; "
                          f"brief the seat without --rejoinder, or pass the verdict file")
     if len(latest) > 1:
         names = ", ".join(str(r.get("reviewer")) for r in latest.values())
@@ -5041,8 +5048,9 @@ def build_parser() -> argparse.ArgumentParser:
                         "demanded re-executed, and the delivery contract. The prior verdict is "
                         "quoted verbatim, a fingerprint footer is printed on stderr; a "
                         "malformed block is refused. With no value (or `ledger`), the seat's "
-                        "unanswered REJECT in the unit's current delivery is read from the "
-                        "ledger: quoted from the file its Source cell names, or rebuilt from "
+                        "unanswered REJECT in the unit's current delivery (in any delivery, for a "
+                        "unit carried at the review cap) is read from the ledger: quoted "
+                        "from the file its Source cell names, or rebuilt from "
                         "its cells and labelled so; refused when the seat holds none")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)

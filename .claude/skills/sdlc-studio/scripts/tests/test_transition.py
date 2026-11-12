@@ -2939,6 +2939,47 @@ class MisplacedCriterionGateTests(unittest.TestCase):
             self.assertNotIn("outside", str(ctx2.exception))
 
 
+class ReadyGateTests(unittest.TestCase):
+    """A story enters Ready only with criteria the authoring lint accepts: `verify_ac lint`
+    refuses a criterion with more than one Verify line at every non-terminal status, so a story
+    let into Ready over one is red in the suite the next commit runs."""
+
+    def _story(self, root: Path, acs: str) -> Path:
+        sp = root / "sdlc-studio" / "stories" / "US0001-x.md"
+        sp.write_text("# US0001: s\n\n> **Status:** Draft\n"
+                      "> **Epic:** [EP0001: e](../epics/EP0001-e.md)\n\n"
+                      f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
+        return sp
+
+    def test_stacked_verifiers_refuse_ready(self) -> None:
+        """Mutants: no Ready gate (the move lands); the gate read from the first criterion only
+        (AC2's stack passes); a refusal that does not name the criterion; `--force` waiving it;
+        the gate firing on a criterion with one Verify line (the control is refused)."""
+        stacked = ("### AC1: one check\n- **Verify:** shell true\n\n"
+                   "### AC2: two checks\n- **Verify:** shell true\n- **Verify:** shell echo two\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = _repo(Path(d))
+            sp = self._story(root, stacked)
+            for force in (False, True):
+                with self.subTest(force=force):
+                    with self.assertRaises(ValueError) as ctx:
+                        _quiet(tr.transition, root, "US0001", "Ready", force=force)
+                    why = str(ctx.exception)
+                    self.assertIn("AC2", why)
+                    self.assertNotIn("AC1", why, "the single-verifier criterion is not named")
+                    self.assertIn("shell echo two", why, "the refusal names the extra line")
+                    self.assertIn("> **Status:** Draft", sp.read_text(encoding="utf-8"))
+            # Control: the criterion split in two is accepted, through the shipped verb.
+            self._story(root, stacked.replace("- **Verify:** shell echo two\n",
+                                              "\n### AC3: the second check\n"
+                                              "- **Verify:** shell echo two\n"))
+            r = subprocess.run([sys.executable, "-B", str(SCRIPT), "set", "--root", str(root),
+                                "US0001", "Ready"], capture_output=True, text=True,
+                               timeout=120, env=gitutil.git_env(), check=False)
+            self.assertEqual(0, r.returncode, r.stderr + r.stdout)
+            self.assertIn("> **Status:** Ready", sp.read_text(encoding="utf-8"))
+
+
 class CoverageGateTests(unittest.TestCase):
     """US0816: the Fixed and Done gates refuse a unit whose own verifiers never executed a line
     it added, under `review.line_coverage: block`; report and off are the other modes; a ruled

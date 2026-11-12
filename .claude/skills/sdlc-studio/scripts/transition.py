@@ -694,6 +694,17 @@ def _cascade_epic(repo_root: Path, story_id: str, ticked: bool) -> str | None:
 _IMPL_TARGETS = {"In Progress", "Review", "Done"}
 
 
+def _stacked_verifier_gate(text: str) -> str | None:
+    """Block reason when a criterion carries more than one `Verify:` line, naming each such
+    criterion with `verify_ac.lint_stacked_verifiers`' own refusal. `verify_ac lint` refuses
+    that criterion at every non-terminal status, so a story let into Ready over one is red in
+    the suite the next commit runs."""
+    import verify_ac  # noqa: PLC0415 - sibling, deferred as the other gates defer it
+    stacked = [f"{b.ac_id} carries {why}" for b in verify_ac.criteria_blocks(text)
+               if (why := verify_ac.lint_stacked_verifiers(b))]
+    return "; ".join(stacked) or None
+
+
 def _tier_gate(root: Path, text: str, type_: str) -> str | None:
     """Block reason when a story or epic reaches an implementation-facing status without the
     sections the full template carries.
@@ -1055,6 +1066,11 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # promotion", and an ungated epic made that assertion false.
     if type_ in tiers.TIERED_TYPES and target_canon in _IMPL_TARGETS:
         block = _tier_gate(root, text, type_)
+        if block:
+            blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
+    # Ready, like the tier gate, is not waived by --force: the remedy is splitting the block.
+    if type_ == "story" and target_canon == "Ready":
+        block = _stacked_verifier_gate(text)
         if block:
             blocks.append(f"{artifact_id} is not ready for {new_status}: {block}")
     # A request's successful terminal is DERIVED from its children, never asserted (G2): a CR is

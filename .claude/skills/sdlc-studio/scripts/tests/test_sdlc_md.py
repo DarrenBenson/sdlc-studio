@@ -141,6 +141,30 @@ class ExtractFieldFlexTests(unittest.TestCase):
         self.assertEqual(sdlc_md.extract_field("**Status:** Complete\n", "Status"), "Complete")
 
 
+class MetadataFieldsTests(unittest.TestCase):
+    """Every field of a header read as `extract_field` reads it, and the swallowed run a reader
+    that ran each field to its line's end wrote."""
+
+    def test_every_field_on_a_joined_line_and_the_first_occurrence_wins(self) -> None:
+        """Mutants: a later occurrence overwriting the first; an empty field kept; a name in
+        prose read as a field."""
+        text = ("> **Status:** Done · **Epic:** EP0088 · **Points:** 3\n> **Owner:**\n\n"
+                "> **status:** Draft\nProse naming **Persona:** nobody.\n")
+        self.assertEqual({"status": "Done", "epic": "EP0088", "points": "3"},
+                         sdlc_md.metadata_fields(text))
+
+    def test_a_swallowed_run_is_told_from_a_cell_that_links_the_value(self) -> None:
+        """Mutants: any cell containing the value read as swallowed (a link is lost); only a
+        `·` run counted (a `**Field:**` run with no `·` kept); the escaped name not counted."""
+        for cell in ("P2 · **Type:** x", "P2 · \\*\\*Type:\\*\\* x", "P2 **Type:** x"):
+            with self.subTest(cell):
+                self.assertTrue(sdlc_md.is_swallowed_run(cell, "P2"))
+        for cell in ("P2", "[P2](../p/p2.md)", "P2, P3", "P20 · x", ""):
+            with self.subTest(cell):
+                self.assertFalse(sdlc_md.is_swallowed_run(cell, "P2"))
+        self.assertFalse(sdlc_md.is_swallowed_run("P2 · x", ""), "no value, no run")
+
+
 class ExtractAcTests(unittest.TestCase):
     def test_heading_form(self) -> None:
         self.assertEqual(sdlc_md.extract_ac_id("### AC1: Login works"), ("AC1", "Login works"))

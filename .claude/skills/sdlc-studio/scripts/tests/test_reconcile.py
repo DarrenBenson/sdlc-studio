@@ -2556,6 +2556,33 @@ class LinkedEpicsApplyTests(unittest.TestCase):
             self.assertEqual(idx.read_text(encoding="utf-8"), before)
 
 
+class BlockingFindingsTests(unittest.TestCase):
+    """The blocking defects a lane brief's file history lists are read from REJECT rows, and a
+    row's `RULINGS:` item records the reviewer's rulings, never a defect."""
+
+    def test_a_rulings_item_is_not_a_blocking_finding(self) -> None:
+        """Mutants: listing every item of the cell (the rulings read as a defect); skipping
+        only an item that opens `RULINGS:` in capitals; skipping any item that mentions
+        `rulings:`, so a finding about them is lost too. The row is read back from a ledger
+        file, as the brief reads it."""
+        import critic  # noqa: PLC0415 - the ledger writer and reader the brief uses
+        finding = "BLOCKING: [new] the parser drops a row (lib/x.py:4)"
+        about = "BLOCKING: [new] the reader loses a row's rulings: line (lib/x.py:9)"
+        cells = {"capitals": (f"{finding}; RULINGS: BG0001 CLOSED - the gate is fixed", finding),
+                 "lower case": (f"{finding}; rulings: BG0001 CLOSED - the gate is fixed", finding),
+                 "a finding about rulings": (f"RULINGS: BG0001 CLOSED; {about}", about)}
+        for name, (issues, want) in cells.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                ledger = critic.verdicts_path(root)
+                ledger.parent.mkdir(parents=True, exist_ok=True)
+                ledger.write_text(critic._TABLE + "| US0001 | REJECT | qa-seat | builder | "
+                                  f"2026-11-01 | - | full | - | {issues} |\n", encoding="utf-8")
+                rows = critic.read_verdicts(root)
+                self.assertEqual(1, len(rows), "premise: the row reads back")
+                self.assertEqual([want], reconcile.blocking_findings(rows, "US0001"))
+
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import loader  # noqa: E402  - the shared script importer, used by the sweep tests below
 
