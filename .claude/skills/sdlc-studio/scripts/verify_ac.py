@@ -458,45 +458,82 @@ _SKIPPED_MSG = ("verifier exited 0 but every selected test was SKIPPED - a skipp
                 "Verify line at a test that runs in this environment.")
 
 
-def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
-    """SIGKILL `proc`'s whole process group, reap `proc`, then wait up to `grace` seconds until
-    no member of the group is left, so nothing it spawned outlives the verdict.
+# Seconds a signalled verifier group gets to end by itself before it is sent SIGKILL: time for
+# a shell's trap, a test runner's interrupt teardown, or a verifier that is itself a
+# `run_verifier` caller to pass the signal on to the verifiers it started in sessions of its own.
+_SIGNAL_GRACE = 1.0
 
-    The group is `proc`'s pid (`start_new_session`). Its other members are reparented when
-    `proc` dies and reaped by init, which is why the wait polls the group rather than `proc`.
-    Where `os.killpg` does not exist, only `proc` is killed."""
+
+def _group_gone(proc: subprocess.Popen) -> bool:
+    """True once `proc` is reaped and no member of its process group is left. `poll` reaps the
+    leader, whose zombie would otherwise keep the group answering; it answers None while another
+    thread holds the reap, which reads as not gone yet."""
+    if proc.poll() is None:
+        return False
+    try:
+        os.killpg(proc.pid, 0)
+    except (ProcessLookupError, PermissionError, OSError):
+        return True
+    return False
+
+
+def _await_groups(procs: list[subprocess.Popen], seconds: float) -> list[subprocess.Popen]:
+    """Wait up to `seconds` for each of `procs`' groups to be gone; return those still there."""
+    deadline = time.monotonic() + seconds
+    while True:
+        procs = [p for p in procs if not _group_gone(p)]
+        if not procs or time.monotonic() >= deadline:
+            return procs
+        time.sleep(0.01)
+
+
+def _signal_group(pgid: int, sig: int) -> None:
+    """Send `sig` to process group `pgid`; a group already gone is not an error."""
+    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
+        os.killpg(pgid, sig)
+
+
+def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
+    """End `proc`'s whole process group, so nothing it spawned outlives the verdict: SIGTERM,
+    up to `_SIGNAL_GRACE` seconds to end, then SIGKILL to what is left, reap `proc`, and wait
+    up to `grace` seconds until no member of the group is left.
+
+    The SIGTERM lets a verifier that is itself a `run_verifier` caller pass the kill on to the
+    verifiers it started in sessions of their own, outside this group; SIGKILL alone would kill
+    it before it could. The group is `proc`'s pid (`start_new_session`). Its other members are
+    reparented when `proc` dies and reaped by init, which is why the waits poll the group rather
+    than `proc`. Where `os.killpg` does not exist, only `proc` is killed."""
     if not hasattr(os, "killpg"):
         with contextlib.suppress(OSError):
             proc.kill()
         proc.wait()
         return
-    with contextlib.suppress(ProcessLookupError, PermissionError, OSError):
-        os.killpg(proc.pid, signal.SIGKILL)
-    proc.wait()
-    deadline = time.monotonic() + grace
-    while time.monotonic() < deadline:
-        try:
-            os.killpg(proc.pid, 0)
-        except (ProcessLookupError, PermissionError, OSError):
-            return
-        time.sleep(0.01)
+    _signal_group(proc.pid, signal.SIGTERM)
+    if _await_groups([proc], _SIGNAL_GRACE):
+        _signal_group(proc.pid, signal.SIGKILL)
+        proc.wait()
+        _await_groups([proc], grace)
 
 
-# The process group of every verifier running now, each led by a pid `_run_in_group` started in
+# Every verifier running now, by its process group, each led by a pid `_run_in_group` started in
 # its own session. That session puts the verifier outside its caller's process group, so a
 # signal sent to that group (a Ctrl-C at the terminal, `kill -TERM -- -<pgid>` from a cancel)
-# no longer reaches it, and `_reap_on_signal` passes the kill on.
-_LIVE_GROUPS: set[int] = set()
+# no longer reaches it, and `_reap_on_signal` passes it on.
+_LIVE_GROUPS: dict[int, subprocess.Popen] = {}
 _PRIOR_HANDLERS: dict = {}
 
 
 def _reap_on_signal(signum, frame):
-    """SIGKILL every live verifier group, those worker threads wait on included, then let the
-    signal do what it did before: call the handler this one replaced (SIGINT's raises
-    `KeyboardInterrupt`), or, under the default disposition, die by it."""
-    for pgid in _LIVE_GROUPS.copy():
-        with contextlib.suppress(OSError):
-            os.killpg(pgid, signal.SIGKILL)
+    """Send the signal received to every live verifier group, those worker threads wait on
+    included, so each runs its own handling of it, and SIGKILL any group still there
+    `_SIGNAL_GRACE` seconds later. Then let the signal do what it did before: call the handler
+    this one replaced (SIGINT's raises `KeyboardInterrupt`), or, under the default disposition,
+    die by it."""
+    live = list(_LIVE_GROUPS.copy().values())
+    for proc in live:
+        _signal_group(proc.pid, signum)
+    for proc in _await_groups(live, _SIGNAL_GRACE):
+        _signal_group(proc.pid, signal.SIGKILL)
     prior = _PRIOR_HANDLERS.get(signum, signal.SIG_DFL)
     if callable(prior):
         return prior(signum, frame)
@@ -533,18 +570,18 @@ def _run_in_group(cmd: str | list[str], timeout: float, cwd: Path) -> subprocess
     that interrupts the wait, its whole process group is killed and reaped before the
     exception propagates: `subprocess.run` kills only the shell, so the shell's children ran on
     and loaded every verifier after them. While it runs, its group is in `_LIVE_GROUPS`, so a
-    signal to the caller kills it too."""
+    signal to the caller reaches it too."""
     with subprocess.Popen(cmd, shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                           cwd=str(cwd), start_new_session=True) as proc:
-        _LIVE_GROUPS.add(proc.pid)
+        _LIVE_GROUPS[proc.pid] = proc
         try:
             stdout, stderr = proc.communicate(timeout=timeout)
         except BaseException:
             _kill_group(proc)
             raise
         finally:
-            _LIVE_GROUPS.discard(proc.pid)
+            _LIVE_GROUPS.pop(proc.pid, None)
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 

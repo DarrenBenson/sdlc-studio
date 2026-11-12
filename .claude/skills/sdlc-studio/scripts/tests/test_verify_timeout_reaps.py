@@ -111,7 +111,7 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertFalse(_running(child), f"the backgrounded child {child} outlived the verdict")
         self.assertEqual(_live_members(pgid), [], f"process group {pgid} still has live members")
 
-    def test_a_timed_out_shell_verifier_leaves_no_live_process_in_its_group(self) -> None:
+    def test_timed_out_verifier_leaves_no_process_in_its_group_under_shell(self) -> None:
         """Mutant: `_run_in_group` back to `subprocess.run(cmd, shell=True, timeout=...)`, or a
         `proc.kill()` in place of `os.killpg`, or `start_new_session` dropped (the group is then
         this test's own, and live). Each leaves the sleeping subshell running and fails here."""
@@ -119,13 +119,30 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertEqual((res.ok, res.kind, res.exit_code, res.stderr), (False, "shell", 124, "timeout"))
         self.assertReaped()
 
-    def test_a_timed_out_eval_verifier_leaves_no_live_process_in_its_group(self) -> None:
+    def test_timed_out_verifier_leaves_no_process_in_its_group_under_eval(self) -> None:
         """Mutant: `_run_eval` back to its own `subprocess.run(command, shell=True, timeout=...)`.
         The eval verb shells out too, so its children leak the same way and fail here."""
         res = verify_ac.run_verifier(f"eval {_spawning(self.d)} --threshold 0.5",
                                      timeout=_CEILING, cwd=self.d)
         self.assertEqual((res.ok, res.kind, res.exit_code, res.stderr), (False, "eval", 124, "timeout"))
         self.assertReaped()
+
+    def test_a_nested_timed_out_verifier_leaves_no_process_in_the_inner_group(self) -> None:
+        """A verifier that is itself a `run_verifier` caller started its own verifiers in sessions
+        of their own, outside the group the timeout kills, so it has to be asked to end first and
+        pass that on. Mutant: `_kill_group` sending SIGKILL at once; the inner caller then dies
+        before it can, its sleeping subshell runs on, and the inner group's live members fail
+        here."""
+        inner = self.d / "inner"
+        inner.mkdir()
+        res = verify_ac.run_verifier(_nested(inner), timeout=_NESTED_CEILING, cwd=self.d)
+        self.assertEqual((res.ok, res.exit_code, res.stderr), (False, 124, "timeout"))
+        rec = _recorded_in(inner)
+        self.assertIsNotNone(rec, "the inner caller's verifier never recorded its group")
+        child, pgid = rec
+        self.addCleanup(_kill_quietly, pgid)
+        self.assertFalse(_running(child), f"the inner verifier's child {child} outlived the verdict")
+        self.assertEqual(_live_members(pgid), [], f"inner process group {pgid} still has live members")
 
     def test_an_interrupted_wait_still_kills_the_group(self) -> None:
         """A Ctrl-C no longer reaches a verifier in its own session, so the interrupt must kill
@@ -145,9 +162,9 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertReaped()
 
     def test_the_kill_waits_until_the_group_is_gone(self) -> None:
-        """A killed member can outlast `proc.wait()` until init reaps it, so the kill probes the
-        group until it is gone. Mutant: the probe loop removed (no probe), or returning after the
-        first probe answers (one probe); either fails the count of three."""
+        """A signalled member can outlast its leader until init reaps it, so the kill probes the
+        group until it is gone. Mutant: `_await_groups`' probe loop removed (no probe), or
+        returning after the first probe answers (one probe); either fails the count of three."""
         real_killpg, probes = os.killpg, []
 
         def fake_killpg(pgid: int, sig: int) -> None:
@@ -168,16 +185,16 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
     def test_the_group_is_killed_outright_and_the_verdict_follows_at_once(self) -> None:
-        """A verifier that ignores SIGTERM still dies at its ceiling, and the verdict does not
-        wait out the 2 s grace. Mutants: SIGTERM sent in place of SIGKILL (the shell and its
-        sleep ignore it, so the verdict waits for the sleep), or the reap `proc.wait()` removed
-        (the zombie leader keeps the group probe answering until the grace runs out); either
-        fails the bound."""
+        """A verifier that ignores SIGTERM is killed once its grace after the ceiling runs out,
+        and the verdict does not wait out the 2 s reap wait after that. Mutants: SIGTERM sent in
+        place of the SIGKILL (the shell and its sleep ignore it, so the verdict waits 6 s for the
+        sleep), or the wait after the SIGTERM left unbounded (the verdict again waits for the
+        sleep); either fails the bound."""
         started = time.monotonic()
-        res = verify_ac.run_verifier("shell trap '' TERM; sleep 4; echo late", timeout=1, cwd=self.d)
+        res = verify_ac.run_verifier("shell trap '' TERM; sleep 6; echo late", timeout=1, cwd=self.d)
         elapsed = time.monotonic() - started
         self.assertEqual((res.ok, res.exit_code, res.stderr), (False, 124, "timeout"))
-        self.assertLess(elapsed, 2.5)
+        self.assertLess(elapsed, 1 + verify_ac._SIGNAL_GRACE + 1.5)
 
     @pytest.mark.serial_only
     @pytest.mark.boundary_only
@@ -192,17 +209,31 @@ class TimeoutReapsTheGroupTests(unittest.TestCase):
         self.assertEqual((res.ok, res.exit_code, res.stderr), (False, 124, "timeout"))
         self.assertLess(time.monotonic() - started, _SLEEP)
 
+    def test_a_group_whose_leader_has_exited_reads_as_gone_once_reaped(self) -> None:
+        """An exited leader is a zombie until reaped, and a zombie keeps its group answering a
+        probe, so every wait would run its full bound. Mutant: `_group_gone` probing without
+        reaping first (a zombie leader then reads as live); the live sleeper is the control."""
+        done = subprocess.Popen(["sh", "-c", "exit 0"], start_new_session=True)
+        live = subprocess.Popen(["sleep", str(_SLEEP)], start_new_session=True)
+        self.addCleanup(live.wait)
+        self.addCleanup(_kill_quietly, live.pid)
+        deadline = time.monotonic() + 20
+        while (_stat(done.pid) or ["Z"])[0] != "Z" and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertEqual((verify_ac._group_gone(done), done.returncode), (True, 0))
+        self.assertFalse(verify_ac._group_gone(live))
+
     def test_a_verifier_inside_its_ceiling_returns_its_own_output(self) -> None:
         """The control: the in-time path through the same helper. Mutant: `_run_in_group`
         returning empty streams, or a fixed return code; either fails the exact result here.
-        Mutant: `_LIVE_GROUPS.discard` removed; the finished verifier's pid then stays where a
-        signal handler would kill whatever group reuses it, and fails the empty registry."""
+        Mutant: the `_LIVE_GROUPS.pop` removed; the finished verifier's pid then stays where a
+        signal handler would signal whatever group reuses it, and fails the empty registry."""
         res = verify_ac.run_verifier("shell echo out; echo err >&2; exit 3", timeout=_CEILING, cwd=self.d)
         self.assertEqual((res.ok, res.kind, res.exit_code, res.stdout, res.stderr),
                          (False, "shell", 3, "out\n", "err\n"))
         green = verify_ac.run_verifier("shell echo fine", timeout=_CEILING, cwd=self.d)
         self.assertEqual((green.ok, green.exit_code, green.stdout), (True, 0, "fine\n"))
-        self.assertEqual(verify_ac._LIVE_GROUPS, set())
+        self.assertEqual(verify_ac._LIVE_GROUPS, {})
 
 
 # A caller of `run_verifier`: one command runs on the main thread, several run on a thread pool
@@ -227,7 +258,39 @@ else:
         raise
 """
 _CALLER_CEILING = 30  # far beyond the fixture's sleep, so only the signal can end the verifier
-_PROMPT = 3           # seconds the caller and its verifiers get to be gone after the signal
+_PROMPT = 4           # seconds the caller and its verifiers get to be gone after the signal
+_NESTED_CEILING = 4   # room for an inner caller to start and record its verifier's group
+
+# Run before the driver imports `verify_ac`: a caller's own SIGTERM handler, which records the
+# signal in its working directory and exits 3, as a script that cleans up on SIGTERM does.
+_HANDLED = """
+import signal, sys
+def _handled(signum, frame):
+    with open("handled", "w") as out:
+        out.write(str(signum))
+    sys.exit(3)
+signal.signal(signal.SIGTERM, _handled)
+"""
+
+
+def _nested(d: Path, ceiling: int = _CALLER_CEILING) -> str:
+    """A shell verifier that is itself a caller of `run_verifier`: it execs the driver on one
+    `_spawning(d)` verifier, which runs in a session of its own and records into `d`."""
+    argv = [sys.executable, "-c", _DRIVER, str(SCRIPTS), str(ceiling), f"shell {_spawning(d)}"]
+    return "shell exec " + " ".join(map(shlex.quote, argv))
+
+
+def _trapping(d: Path) -> str:
+    """A `_spawning(d)` shell verifier that first traps INT, TERM and HUP to write `d/trapped`,
+    the cleanup a verifier's own signal handling does."""
+    return f"shell trap 'echo cleaned > {shlex.quote(str(d))}/trapped' INT TERM HUP; {_spawning(d)}"
+
+
+def _kill_quietly(pgid: int) -> None:
+    """SIGKILL group `pgid` if it is still there, never this test process's own group."""
+    if pgid != os.getpgrp():
+        with contextlib.suppress(OSError):
+            os.killpg(pgid, signal.SIGKILL)
 
 
 @unittest.skipUnless((_PROC / "self" / "stat").is_file(), "reads process state from /proc")
@@ -252,14 +315,17 @@ class SignalToTheCallerReapsTests(unittest.TestCase):
                 with contextlib.suppress(OSError):
                     os.killpg(rec[1], signal.SIGKILL)
 
-    def _caller(self, n: int) -> subprocess.Popen:
-        """Start a caller running `n` spawning verifiers, and return once each has recorded."""
+    def _caller(self, n: int, verifier=lambda d: f"shell {_spawning(d)}",
+                prelude: str = "") -> subprocess.Popen:
+        """Start a caller running `n` verifiers, each `verifier(d)` for a directory of its own
+        that a spawning shell records into, and return once each has recorded. `prelude` runs
+        in the caller before it imports `verify_ac`."""
         self.dirs = [self.d / str(i) for i in range(n)]
         for d in self.dirs:
             d.mkdir()
         caller = subprocess.Popen(
-            [sys.executable, "-c", _DRIVER, str(SCRIPTS), str(_CALLER_CEILING),
-             *(f"shell {_spawning(d)}" for d in self.dirs)],
+            [sys.executable, "-c", prelude + _DRIVER, str(SCRIPTS), str(_CALLER_CEILING),
+             *map(verifier, self.dirs)],
             cwd=self.d, start_new_session=True,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.addCleanup(self._end, caller)
@@ -277,12 +343,16 @@ class SignalToTheCallerReapsTests(unittest.TestCase):
                 os.killpg(caller.pid, signal.SIGKILL)
             caller.wait()
 
-    def assertCallerAndGroupsGone(self, caller: subprocess.Popen, sig: int) -> None:
+    def assertCallerAndGroupsGone(self, caller: subprocess.Popen, sig: int,
+                                  returncode: int | None = None) -> None:
+        """The caller ended within `_PROMPT` s with `returncode` (by default, death by `sig`),
+        and every verifier group it recorded is empty within `_PROMPT` s after."""
         try:
             caller.wait(timeout=_PROMPT)
         except subprocess.TimeoutExpired:
             self.fail(f"the caller was still running {_PROMPT} s after its group was sent {sig!r}")
-        self.assertEqual(caller.returncode, -sig, "the caller did not die by the signal it was sent")
+        self.assertEqual(caller.returncode, -sig if returncode is None else returncode,
+                         "the caller did not end the way the signal it was sent ends it")
         groups = [rec[1] for rec in map(_recorded_in, self.dirs) if rec]
         deadline = time.monotonic() + _PROMPT
         while any(_live_members(g) for g in groups) and time.monotonic() < deadline:
@@ -291,9 +361,10 @@ class SignalToTheCallerReapsTests(unittest.TestCase):
                          "a verifier group outlived its caller")
 
     def test_sigterm_to_the_callers_group_kills_its_verifier(self) -> None:
-        """Mutants: the handler not installed for SIGTERM, `_LIVE_GROUPS.add` removed, or the
-        handler's `os.killpg` removed (the verifier then outlives its caller); or the handler
-        not re-raising the signal (the caller then exits 0, not by SIGTERM)."""
+        """Mutants: the handler not installed for SIGTERM, the verifier never entered in
+        `_LIVE_GROUPS`, or the handler signalling no group (the verifier then outlives its
+        caller); or the handler not re-raising the signal (the caller then exits 0, not by
+        SIGTERM)."""
         caller = self._caller(1)
         os.killpg(caller.pid, signal.SIGTERM)
         self.assertCallerAndGroupsGone(caller, signal.SIGTERM)
@@ -305,6 +376,47 @@ class SignalToTheCallerReapsTests(unittest.TestCase):
         caller = self._caller(2)
         os.killpg(caller.pid, signal.SIGINT)
         self.assertCallerAndGroupsGone(caller, signal.SIGINT)
+
+    def test_sighup_to_the_callers_group_kills_its_verifier(self) -> None:
+        """A closed terminal sends SIGHUP. Mutant: SIGHUP left out of the signals the reaper is
+        installed for (the caller then dies by it at once, and its verifier runs on)."""
+        caller = self._caller(1)
+        os.killpg(caller.pid, signal.SIGHUP)
+        self.assertCallerAndGroupsGone(caller, signal.SIGHUP)
+
+    def test_the_callers_own_handler_still_runs(self) -> None:
+        """A caller's own SIGTERM handler, set before `verify_ac` is imported, still runs once
+        its verifiers are ended. Mutant: the prior handler skipped, so the caller dies by the
+        default disposition (no `handled` file, and -15 for 3)."""
+        caller = self._caller(1, prelude=_HANDLED)
+        os.killpg(caller.pid, signal.SIGTERM)
+        self.assertCallerAndGroupsGone(caller, signal.SIGTERM, returncode=3)
+        self.assertEqual((self.d / "handled").read_text(), str(int(signal.SIGTERM)))
+
+    def test_the_signal_reaches_a_nested_callers_verifiers(self) -> None:
+        """The caller's one verifier is itself a `run_verifier` caller, whose own verifier runs
+        in a session of its own. Mutant: the handler sending SIGKILL in place of the signal it
+        received (the inner caller dies before it can pass the signal on, and its verifier's
+        group runs on, reparented)."""
+        caller = self._caller(1, verifier=_nested)
+        os.killpg(caller.pid, signal.SIGTERM)
+        self.assertCallerAndGroupsGone(caller, signal.SIGTERM)
+
+    def test_a_verifiers_own_trap_runs_on_the_signal_passed_on(self) -> None:
+        """Each verifier gets the signal its caller received, so its own handling runs: a
+        trap, or a test runner's interrupt teardown. INT goes to a two-thread pool, as a Ctrl-C
+        reaches `gate.py`'s verify pool. Mutant: the handler sending SIGKILL in place of the
+        signal it received (no verifier's trap runs)."""
+        for sig, n in ((signal.SIGTERM, 1), (signal.SIGINT, 2), (signal.SIGHUP, 1)):
+            with self.subTest(signal=sig.name):
+                self.d = Path(tempfile.mkdtemp(dir=self.d))
+                caller = self._caller(n, verifier=_trapping)
+                for rec in filter(None, map(_recorded_in, self.dirs)):
+                    self.addCleanup(_kill_quietly, rec[1])  # `_sweep` sees the last round only
+                os.killpg(caller.pid, sig)
+                self.assertCallerAndGroupsGone(caller, sig)
+                self.assertEqual([(d / "trapped").is_file() for d in self.dirs], [True] * n,
+                                 f"a verifier's trap did not run on {sig.name}")
 
     def test_an_ignored_signal_is_left_ignored(self) -> None:
         """A caller started under `nohup`, or in the background of a script, ignores SIGHUP or
