@@ -1,6 +1,6 @@
 # BG1112: verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace
 
-> **Status:** Open
+> **Status:** Fixed
 > **Created:** 2026-10-21
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,6 +24,7 @@ Start every verifier subprocess in its own session (`start_new_session`=True on 
 
 - [ ] **AC1** When a shell or eval verifier times out, `verify_ac` reports exit 124 and no process from that verifier's tree is still running when it returns
   - **Verify:** shell python3 -m pytest -q .claude/skills/sdlc-studio/scripts/tests -k timed_out_verifier_leaves_no_process
+  - **Verified:** yes (2026-11-12)
 
 ## Impact
 

@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 321 |
+| Open | 311 |
 | In Progress | 0 |
-| Fixed | 885 |
+| Fixed | 895 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 48 |
@@ -40,7 +40,7 @@
 | [BG0962](BG0962-closing-review-reads-a-unit-s-latest-verdict.md) | closing-review reads a unit's latest verdict only from the frozen sprint-review ledger, so a frozen batch REJECT outlives a later per-unit APPROVE and blocks the close as a hard correctness gate | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0963](BG0963-wall-clock-assertions-in-the-parallel-suite-fail.md) | Wall-clock assertions in the parallel suite fail under load, so a busy machine refuses commits and pushes on timing alone | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0964](BG0964-help-refine-md-never-mentions-into-so-a.md) | help/refine.md never mentions `--into`, so a story added to an already-refined epic is made with `artifact.py new` and carries no Delivers link | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0965](BG0965-retro-py-validate-ignores-actions-raised-in-a.md) | retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0966](BG0966-review-prep-persona-usage-calls-a-persona-unused.md) | review_prep persona_usage calls a persona unused unless its file's H1 appears verbatim in prd.md - stories, CRs and consult logs are never read | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0967](BG0967-the-finding-filer-backtick-wraps-identifiers-inside-steps.md) | The finding filer backtick-wraps identifiers inside Steps to Reproduce, corrupting the shell commands a repro depends on | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0968](BG0968-ci-runs-tools-tests-in-the-same-step.md) | CI runs tools/tests in the same step as the skill suite, so a red skill suite hides every tools/tests failure | Open | Medium | 2026-10-07 | 2026-10-07 |
@@ -65,7 +65,7 @@
 | [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Fixed | High | 2026-10-07 | 2026-10-07 |
-| [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0992](BG0992-bg0989-s-approved-repair-leaves-three-branches-unpinned.md) | BG0989's approved repair leaves three branches unpinned, and its docs over-claim which commands move the legacy lessons log | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG0993](BG0993-the-open-sprint-run-lives-in-one-machine.md) | The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it | Fixed | High | 2026-10-08 | 2026-10-08 |
@@ -187,7 +187,7 @@
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
 | [BG1111](BG1111-the-session-token-meter-sums-every-usage-record.md) | The session token meter sums every usage record, but the harness repeats a message's usage on each of its content blocks, so a run's measured tokens are about 2.5 times what it spent | Fixed | Medium | 2026-10-21 | 2026-10-21 |
-| [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1112](BG1112-verify-ac-s-timeout-kills-only-the-shell.md) | verify_ac's timeout kills only the shell it started, so a timed-out shell or eval verifier leaves its real test runner (npx, vitest, pytest) running as an orphan that keeps writing into the workspace | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1113](BG1113-the-neutrality-guard-does-not-block-three-consuming.md) | The neutrality guard does not block three consuming-project names the operator ruled private, so 64 tracked files name them, nine shipped lessons among them | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1114](BG1114-critic-py-brief-spends-19-of-its-20.md) | critic.py brief spends 19 of its 20 seconds walking the artefact corpus, because it reads the files' history without the corpus cache that lane brief opens | Fixed | Medium | 2026-10-22 | 2026-10-22 |
 | [BG1115](BG1115-a-commit-that-adds-a-subcommand-never-selects.md) | A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push | Open | Low | 2026-10-22 | 2026-10-22 |
@@ -265,7 +265,7 @@
 | [BG1187](BG1187-us0944-ac3-s-verifier-verify-ac-py-stamps.md) | US0944 AC3's verifier, `verify_ac.py stamps --bugs`, takes 323 s here at load 1, past the release gate's 300 s default ceiling | Fixed | Low | 2026-11-03 | 2026-11-03 |
 | [BG1188](BG1188-one-lane-cap-test-took-695-s-on.md) | One lane-cap test took 695 s on a worker, re-running its whole class once per hook lane | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1189](BG1189-reference-verify-md-batch-says-only-jest-batches.md) | reference-verify.md#batch says only jest batches, but verify_ac has a pytest batch cache that the release lane uses | Open | Low | 2026-11-03 | 2026-11-03 |
-| [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Open | Medium | 2026-11-03 | 2026-11-03 |
+| [BG1190](BG1190-a-verifier-that-times-out-is-killed-alone.md) | A verifier that times out is killed alone, so its children run on and load every verifier after it | Fixed | Medium | 2026-11-03 | 2026-11-03 |
 | [BG1191](BG1191-the-batch-s-phase-plugin-reads-serial-only.md) | The batch's phase plugin reads serial_only before a conftest's own trylast hook, so a mark that hook applies runs on an xdist worker | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1192](BG1192-us1113-ac3-s-one-at-a-time-pin.md) | US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other | Open | Low | 2026-11-03 | 2026-11-03 |
 | [BG1193](BG1193-sdlc-md-corpus-cache-hands-later-callers-the.md) | sdlc_md.corpus_cache hands later callers the path spelling of the first walk, so a relative root then an absolute one raises ValueError in reconcile | Open | Low | 2026-11-04 | 2026-11-04 |
@@ -303,7 +303,7 @@
 | [BG1225](BG1225-an-http-loopback-cursor-api-base-still-goes.md) | An http loopback Cursor API base still goes through an http_proxy in cleartext with the key on it | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1226](BG1226-generated-doc-drift-is-found-only-by-unit.md) | Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane | Fixed | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1227](BG1227-file-finding-py-writes-a-bare-url-from.md) | file_finding.py writes a bare URL from a finding's prose, so the filing's own commit is refused by the markdown lane | Fixed | Low | 2026-11-05 | 2026-11-05 |
-| [BG1228](BG1228-bg1190-did-not-converge-in-review-round-2.md) | BG1190 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-05 | 2026-11-05 |
+| [BG1228](BG1228-bg1190-did-not-converge-in-review-round-2.md) | BG1190 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1229](BG1229-critic-py-s-self-check-and-verdict-records.md) | critic.py's self-check and verdict records refuse shapes authors and reviewers write naturally, and record has no dry run | Open | Medium | 2026-11-05 | 2026-11-05 |
 | [BG1230](BG1230-lane-return-agent-one-agent-priced-onto-two.md) | lane return --agent: one agent priced onto two units, stale --tokens wording, and undocumented help | Open | Low | 2026-11-05 | 2026-11-05 |
 | [BG1231](BG1231-lane-land-exit-1-documented-too-narrowly-two.md) | lane land: exit 1 documented too narrowly, two test gaps, a false --units help line, and an unscrubbed git environment | Open | Low | 2026-11-05 | 2026-11-05 |
@@ -408,17 +408,17 @@
 | [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Open | Medium | 2026-11-10 | 2026-11-10 |
-| [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Open | High | 2026-11-10 | 2026-11-10 |
+| [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Fixed | High | 2026-11-10 | 2026-11-10 |
 | [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
 | [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1339](BG1339-sprint-py-lane-accept-has-no-path-for.md) | sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand | Open | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1340](BG1340-critic-py-brief-rejoinder-with-no-file-reads.md) | critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder | Open | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1341](BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md) | reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1340](BG1340-critic-py-brief-rejoinder-with-no-file-reads.md) | critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder | Fixed | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1341](BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md) | reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1342](BG1342-sprint-py-plan-write-format-json-prints-its.md) | sprint.py plan --write --format json prints its run-opening lines on stdout before the JSON | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1343](BG1343-moving-a-story-to-ready-does-not-refuse.md) | Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1343](BG1343-moving-a-story-to-ready-does-not-refuse.md) | Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1344](BG1344-a-unit-whose-tests-must-run-under-a.md) | A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1345](BG1345-the-review-brief-does-not-tell-a-reviewer.md) | The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1346](BG1346-the-first-verdict-recorded-after-the-ledger-gained.md) | The first verdict recorded after the ledger gained its Source column pads every row, and the commit-msg hook credits that change to every unit the subject names | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -446,7 +446,7 @@
 | [BG1368](BG1368-after-the-rejecting-reviewer-s-round-2-approve.md) | After the rejecting reviewer's round-2 APPROVE, rebrief_notice names a bare --rejoinder that exits 2 | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1369](BG1369-verify-ac-s-markdown-evidence-lint-matches-the.md) | verify_ac's markdown-evidence lint matches the verdicts path as written, so reviews/../reviews/ and a symlink get through | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1370](BG1370-a-later-rewrite-of-a-verdict-file-is.md) | A later rewrite of a verdict file is attributed to the reviewer when its last write was an Edit | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1374](BG1374-the-report-s-prices-table-prints-a-price.md) | The report's Prices table prints a price source URL bare in the Markdown twin, so a filed report fails markdownlint MD034 and its close paperwork cannot be committed | Fixed | High | 2026-11-12 | 2026-11-12 |

@@ -1,6 +1,6 @@
 # BG0965: retro.py validate ignores '## Actions raised' in a Keep/Stop/Try retro, so it reports '0 findings, all dispositioned' over rows it never read
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_three_line_actions.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG0965.md
@@ -26,8 +26,10 @@ In the three-line branch, still read `## Actions raised` when present and apply 
 
 - [ ] **AC1** A three-line retro whose Actions raised table holds an undecided row fails validate, naming the row
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_three_line_actions.py -k undecided_row_fails
+  - **Verified:** yes (2026-11-12)
 - [ ] **AC2** validate and dispose report the same findings for a three-line retro that carries an Actions raised table
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_three_line_actions.py -k validate_and_dispose_agree
+  - **Verified:** yes (2026-11-12)
 
 ## Triage
 

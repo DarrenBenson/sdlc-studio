@@ -1,6 +1,6 @@
 # BG1340: critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py, changelog.d/BG1340.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -26,6 +26,7 @@ Treat an unanswered REJECT of a carried unit as current, the way sprint plan's c
 
 - [ ] **AC1** Given a carried unit whose seat's REJECT is in an earlier delivery and unanswered, when `critic.py brief --unit <id> --seat <seat> --rejoinder` runs, then it quotes that REJECT. Fails on: the refusal naming no unanswered REJECT while sprint plan reports one.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py::RejoinderFromLedgerTests::test_a_carried_units_earlier_reject_is_quoted
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

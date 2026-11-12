@@ -1,6 +1,6 @@
 # BG1343: Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG1343.md, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
@@ -26,6 +26,7 @@ Apply the stacked-verifier rule in the Ready gate (readiness.py) so it refuses w
 
 - [ ] **AC1** Given a story whose criterion has two Verify lines, when it is moved to Ready, then the move is refused naming the criterion. Fails on: Ready reached with stacked verifiers.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_transition.py::ReadyGateTests::test_stacked_verifiers_refuse_ready
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

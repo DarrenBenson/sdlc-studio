@@ -234,3 +234,16 @@
 | US1134 | agent-afd8f015112a7dd00 | 2026-11-12 | TRUE 19, FALSE 0, UNVERIFIABLE 0 | killed 17, survived 1 | c126d4cdd50c70f4 at 3d6f4210ef42 |
 | BG1300 | a0b533adf0e8595de | 2026-11-12 | TRUE 21, FALSE 0, UNVERIFIABLE 2 | killed 9, survived 1 | d68f6e85daaf08d4 at a9596961f6fe |
 | BG1374 | agent-aa149fa9f68473a24 | 2026-11-12 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 0 | b9f0671540873722 at a41ed8029d98 |
+| BG1190 | agent-aaaeed3bda6813b60 | 2026-11-12 | TRUE 28, FALSE 0, UNVERIFIABLE 3 | killed 16, survived 2 | 77499584b90fdde5 at 0c9a21c8cef6 |
+| BG1228 | agent-aaaeed3bda6813b60 | 2026-11-12 | TRUE 28, FALSE 0, UNVERIFIABLE 3 | killed 16, survived 2 | 77499584b90fdde5 at 0c9a21c8cef6 |
+| BG1112 | agent-aaaeed3bda6813b60 | 2026-11-12 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 1 | e89dac4c0ebda4f0 at 0c9a21c8cef6 |
+| BG1333 | agent-addaf4981ee134d39 | 2026-11-12 | TRUE 19, FALSE 0, UNVERIFIABLE 1 | killed 11, survived 2 | 8f5c3adae0e0d4a5 at 2c9f5ff5c51f |
+| BG1371 | agent-addaf4981ee134d39 | 2026-11-12 | TRUE 16, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 1 | f1c77d8a296e023b at 2c9f5ff5c51f |
+| BG0965 | agent-addaf4981ee134d39 | 2026-11-12 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 7, survived 2 | 4b9f855f1927d450 at 2c9f5ff5c51f |
+| BG1340 | agent-a961d39dae50553a4 | 2026-11-12 | TRUE 9, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | e1fa48901664e635 at c81e3ec6e549 |
+| BG1341 | agent-a961d39dae50553a4 | 2026-11-12 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | 8ebf38c0f6fae460 at c81e3ec6e549 |
+| BG0990 | agent-a961d39dae50553a4 | 2026-11-12 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 0 | d21edfaa472f8031 at c81e3ec6e549 |
+| BG1343 | agent-a961d39dae50553a4 | 2026-11-12 | TRUE 7, FALSE 0, UNVERIFIABLE 2 | killed 5, survived 0 | 263e32792806c0a6 at c81e3ec6e549 |
+| BG1279 | agent-adf490d3cbadd4efb | 2026-11-12 | TRUE 9, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | 52798d8962de0e20 at fc48ced8435e |
+| BG1331 | agent-adf490d3cbadd4efb | 2026-11-12 | TRUE 11, FALSE 0, UNVERIFIABLE 3 | killed 12, survived 0 | 2956cc163a95fb39 at fc48ced8435e |
+| BG1305 | agent-adf490d3cbadd4efb | 2026-11-12 | TRUE 7, FALSE 0, UNVERIFIABLE 2 | killed 6, survived 0 | 16a3d012c8c3d579 at fc48ced8435e |

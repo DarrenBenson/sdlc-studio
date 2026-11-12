@@ -1,6 +1,6 @@
 # BG0990: reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_inline_field_run.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG0990.md
@@ -26,8 +26,10 @@ Make `_file_field_values` split each metadata line on the same `·` / `**Field:*
 
 - [ ] **AC1** A metadata line joining several fields with `·` projects each field to its own value, identical to `sdlc_md.extract_field` for every field on the line
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile_inline_field_run.py -k each_field_projected
+  - **Verified:** yes (2026-11-12)
 - [ ] **AC2** `reconcile apply` over an index whose cells hold a swallowed run rewrites them to the single field value
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile_inline_field_run.py -k apply_repairs_swallowed_cells
+  - **Verified:** yes (2026-11-12)
 
 ## Triage
 

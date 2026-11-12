@@ -1,6 +1,6 @@
 # BG1333: A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/project_upgrade.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py, changelog.d/BG1333.md
@@ -28,8 +28,10 @@ Add a hygiene rule that AGENTS.md states the integration rule matching the proje
 
 - [ ] **AC1** Given a project whose AGENTS.md lacks the integration rule that templates/agent-instructions.md carries ('Integrate continuously. ...'), when `validate.py check` runs, then it reports a hygiene finding naming AGENTS.md and the exact line to add, read from the template; beside it, a project whose AGENTS.md carries the line, and a project with no AGENTS.md, report no such finding. Fails on: no finding for the missing line, or a finding on a project that carries it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::IntegrationRuleHygieneTests
+  - **Verified:** yes (2026-11-12)
 - [ ] **AC2** Given the same project, when `project_upgrade.py` runs, its report names the missing integration rule with the exact line to add, and AGENTS.md is left byte for byte unchanged. Fails on: an upgrade report silent on the rule, or AGENTS.md rewritten.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_project_upgrade.py::IntegrationRuleReportTests
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

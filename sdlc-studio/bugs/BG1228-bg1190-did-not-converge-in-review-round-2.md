@@ -1,6 +1,6 @@
 # BG1228: BG1190 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py, changelog.d/BG1190.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -37,6 +37,7 @@ Fix each finding above, then deliver BG1190 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC7** BG1190 AC1 still passes: A shell verifier that times out leaves no process of its group running once `verify_ac.run_verifier` returns, and still reads red as a timeout.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

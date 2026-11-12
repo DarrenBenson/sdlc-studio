@@ -1,6 +1,6 @@
 # BG1190: A verifier that times out is killed alone, so its children run on and load every verifier after it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py, changelog.d/BG1190.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -28,6 +28,7 @@ Start each verifier in its own session and kill its process group on a timeout, 
 
 - [ ] **AC1** A shell verifier that times out leaves no process of its group running once `verify_ac.run_verifier` returns, and still reads red as a timeout.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py
+  - **Verified:** yes (2026-11-12)
 
 ## Impact
 

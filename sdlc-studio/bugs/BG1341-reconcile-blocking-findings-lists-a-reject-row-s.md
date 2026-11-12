@@ -1,6 +1,6 @@
 # BG1341: reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG1341.md
@@ -26,6 +26,7 @@ Skip the RULINGS item in `blocking_findings` as `parse_findings` does.
 
 - [ ] **AC1** Given a REJECT row carrying a RULINGS item beside one blocking finding, when `blocking_findings` reads it, then only the blocking finding is listed. Fails on: the rulings text listed as a defect.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::BlockingFindingsTests::test_a_rulings_item_is_not_a_blocking_finding
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

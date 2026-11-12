@@ -1,6 +1,6 @@
 # BG1371: The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG1371.md
@@ -26,6 +26,7 @@ Correct the behaviour and pin it.
 
 - [ ] **AC1** Given the case the review named, the behaviour matches the documented rule. Fails on: the case as the review probed it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro.py::Run10FollowUpTests
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 
