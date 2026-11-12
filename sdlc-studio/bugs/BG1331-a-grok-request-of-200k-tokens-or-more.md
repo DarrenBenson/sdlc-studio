@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, changelog.d/BG1331.md
+> **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, changelog.d/BG1331.md, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py
 > **Evidence:** templates/model-prices.json grok-4.7 note; a consuming project's Cursor cost data, 2026-11-10
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file
@@ -37,3 +37,4 @@ Record xAI's long-context rates, dated, beside the short-context ones. Where a r
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Filed |
 | 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Groomed for run eleven (D0469, D0470): criteria rewritten with runnable Verify lines on the at-HEAD triage's evidence |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Mid-run ruling on qa-seat-BG1331-r1's REJECT: AC2's label must reach the report's Dollar cost row, which run_state.usd and sprint_report build, so lib/run_state.py, sprint_report.py and tests/test_report_usd.py join the Affects for the repair |
