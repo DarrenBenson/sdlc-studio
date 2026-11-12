@@ -424,12 +424,12 @@ def record_verdict(repo_root: Path | str, unit: str, verdict: str,
 
 def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delivery", brief="",
             tier=None, tier_explicit=False, ruling=None,
-            source="-") -> tuple[Path, int | None, str | None]:
+            source="-", read_from=None) -> tuple[Path, int | None, str | None]:
     """Write the verdict, then carry the unit if it is a REJECT at the cap: the ledger path,
     the row's round in its delivery (None off the delivery phase) and the carried bug's id
     (None when nothing was carried)."""
     path, _row = _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase,
-                                brief, tier, tier_explicit, ruling, source)
+                                brief, tier, tier_explicit, ruling, source, read_from)
     if phase != "delivery":
         return path, None, None
     rounds = delivery_rounds(repo_root, unit)
@@ -437,11 +437,18 @@ def _record(repo_root, unit, verdict, reviewer, author, issues="", phase="delive
 
 
 def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, brief,
-                   tier, tier_explicit, ruling=None, source="-") -> tuple[Path, str]:
+                   tier, tier_explicit, ruling=None, source="-",
+                   read_from=None) -> tuple[Path, str]:
     """Check and write one verdict row, returning the ledger path AND the row it wrote. A
     delivery verdict's round is checked under the ledger lock, so two writers cannot both take
     the last round. A delivery row's `Source` cell is `source`: `-` (transcribed) unless
-    `critic.py record` read the verdict from a file its brief issued (`source_cell`)."""
+    `critic.py record` read the verdict from a file its brief issued (`source_cell`), whose
+    (path, bytes) `read_from` carries.
+
+    Every writer comes through here, so here is where a delivery verdict's own context is
+    judged (`_self_review`): a row whose context edited the unit's files before it was briefed
+    gains `self-review:<path>` in its `Source` cell and a warning naming the file, and
+    `independence` reads it as no independent review. Nothing is refused for it."""
     if str(verdict or "").upper() not in VERDICTS:
         raise ValueError(f"{verdict!r} is not a verdict - expected one of {', '.join(VERDICTS)}")
     if phase not in PHASES:
@@ -461,6 +468,9 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
     recorded = (f"{tier}{EXPLICIT_SUFFIX if tier_explicit else ''}"
                 if tier and phase == "delivery" else "-")
     extra_cell = f"{_clean(recorded)} | "
+    edited = _self_review(repo_root, unit, source, read_from) if phase == "delivery" else None
+    if edited:
+        source = f"{source or '-'} {verdict_provenance.SELF_REVIEW}:{edited['path']}"
     if phase == "delivery":
         extra_cell += f"{_clean(source) or '-'} | "
     row = (f"| {sdlc_md.norm_id(unit)} | {verdict.upper()} | {_clean(reviewer) or '-'} | "
@@ -488,7 +498,38 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
             print(f"note: {sdlc_md.norm_id(unit)} was below the review cap, so ruling "
                   f"{str(ruling).strip().upper()} was not needed and is not recorded",
                   file=sys.stderr)
+    if edited:
+        print(f"WARNING: {sdlc_md.norm_id(unit)}'s verdict came from "
+              f"{verdict_provenance._words(edited['context'])}, which edited {edited['path']} "
+              f"before it was briefed: the row is recorded as a self-review "
+              f"({verdict_provenance.SELF_REVIEW}:{edited['path']}), so the close's review "
+              f"coverage and the signature's review bar do not count it as independent",
+              file=sys.stderr)
     return path, row
+
+
+def _self_review(repo_root, unit, source, read_from) -> dict | None:
+    """{"path", "context"} when the context behind this delivery verdict edited one of the
+    unit's Affects files before it was briefed (`verdict_provenance.self_review`): the issued
+    file's writer when `source` is bound to one and `read_from` carries it, else the context
+    running this process's command. The unit's delivery starts at its In Progress span in the
+    open run holding it, else at the run's start; outside a run every edit before the brief
+    counts. None for a unit with no Affects, with no transcript read."""
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0])) if found else []
+    if not affects:
+        return None
+    uid = sdlc_md.norm_id(unit)
+    state = run_state.read(repo_root) or {}
+    since = None
+    if run_state.batch_holds(state, uid):
+        span = (state.get(run_state.UNIT_ACTUALS) or {}).get(uid)
+        since = (span.get("started_at") if isinstance(span, dict) else None) or state.get(
+            "started_at")
+    issued = [str(n["verdict_file"]) for n in _issuing_notes(repo_root, unit)]
+    bound = read_from if read_from and _source_tokens({"source": source}) else None
+    return verdict_provenance.self_review(repo_root, affects, issued, verdict=bound,
+                                          argv=sys.argv, since=since)
 
 
 def _append_ruling(path: Path, unit: str, ruling: str, reviewer: str) -> None:
@@ -2423,7 +2464,8 @@ def sprint_covers_independently(repo_root: Path | str, unit: str, review: dict |
     # accepted the PRE_GATE sentinel that `is_independent` refuses; `sprint.review_coverage`
     # compensated by AND-ing the second predicate on and `conformance` did not, which is how the
     # same rule cleared Done in one module and refused it in the other.
-    return independence(review.get("reviewer", ""), review.get("author", ""))[0]
+    return independence(review.get("reviewer", ""), review.get("author", ""),
+                        review.get("source", ""))[0]
 
 
 def _id(value: str) -> str:
@@ -2446,7 +2488,7 @@ def same_identity(a: str, b: str) -> bool:
     return _id(a) == _id(b)
 
 
-def independence(reviewer: str, author: str) -> tuple[bool, str]:
+def independence(reviewer: str, author: str, source: str = "") -> tuple[bool, str]:
     """THE independence test: `(independent, reason)` for a reviewer/author pair.
 
     One authority, because there were four - `is_independent`, `sprint_covers_independently`,
@@ -2458,7 +2500,8 @@ def independence(reviewer: str, author: str) -> tuple[bool, str]:
     A rule living in two implementations is a rule with two answers.
 
     Every clause fails CLOSED and says which one failed, so a caller can report the reason
-    rather than a bare False.
+    rather than a bare False. `source`, a delivery row's `Source` cell, fails it whatever the
+    names when it carries `self-review:<path>`: the context behind the verdict edited the unit.
     """
     rev, auth = _id(reviewer or ""), _id(author or "")
     if not auth:
@@ -2473,6 +2516,9 @@ def independence(reviewer: str, author: str) -> tuple[bool, str]:
                        f"is the separate test for it")
     if rev == auth:
         return False, f"reviewer and author are the same identity ({rev}) - a self-review"
+    if edited := verdict_provenance.self_reviewed(source):
+        return False, (f"the context behind the verdict edited {edited} before it was briefed "
+                       f"- a self-review, whatever reviewer the row names")
     return True, ""
 
 
@@ -2488,7 +2534,8 @@ def is_independent(verdict: dict | None) -> bool:
     """
     if not verdict:
         return False
-    return independence(verdict.get("reviewer", ""), verdict.get("author", ""))[0]
+    return independence(verdict.get("reviewer", ""), verdict.get("author", ""),
+                        verdict.get("source", ""))[0]
 
 
 def is_pre_gate(verdict: dict | None) -> bool:
@@ -3365,6 +3412,8 @@ ISSUED_SOURCE = "from the brief's verdict file (writer unread)"
 #: What `show` says of a bound row whose `Source` carries the writer read from the harness's
 #: transcripts (`verdict_provenance.label` gives the words in brackets).
 ISSUED_BY = "from the brief's verdict file ({})"
+#: What `show` adds, in brackets, for a row whose `Source` carries `self-review:<path>`.
+SELF_REVIEWED = "self-review: its own context edited {} before it was briefed"
 #: What `show` says of a row whose `Source` is `-`: the verdict reached the ledger some other way.
 TRANSCRIBED_SOURCE = "transcribed"
 
@@ -3522,13 +3571,16 @@ def verdict_source(root: Path | str, row: dict) -> tuple[str, str | None]:
     """(label, file) for a delivery row: the issued file's label and repo-relative path, found
     from the `Source` cell as `verdicts/<UNIT>/<basename>` and never by scanning; or
     `TRANSCRIBED_SOURCE` and None for `-`, an absent cell, or one naming no file. The label
-    names the writer the cell's later tokens carry (`ISSUED_BY`), else `ISSUED_SOURCE`."""
+    names the writer the cell's later tokens carry (`ISSUED_BY`), else `ISSUED_SOURCE`, and
+    ends with `SELF_REVIEWED` when the cell carries a self-review token."""
+    edited = verdict_provenance.self_reviewed(str(row.get("source") or ""))
+    mark = f" [{SELF_REVIEWED.format(edited)}]" if edited else ""
     if tokens := _source_tokens(row):
         unit = sdlc_md.display_id(root, str(row.get("unit") or ""))
         words = verdict_provenance.label(str(row.get("source") or "").split()[2:])
-        return (ISSUED_BY.format(words) if words else ISSUED_SOURCE,
+        return ((ISSUED_BY.format(words) if words else ISSUED_SOURCE) + mark,
                 (VERDICTS_DIR_REL / unit / tokens[1]).as_posix())
-    return TRANSCRIBED_SOURCE, None
+    return TRANSCRIBED_SOURCE + mark, None
 
 
 def noted_brief(root: Path | str, unit: str) -> str | None:
@@ -4788,7 +4840,8 @@ def cmd_record(args: argparse.Namespace) -> int:
                                    args.issues, brief=brief,
                                    tier=getattr(args, "tier", None),
                                    tier_explicit=getattr(args, "tier_explicit", False),
-                                   ruling=getattr(args, "ruling", None), source=source)
+                                   ruling=getattr(args, "ruling", None), source=source,
+                                   read_from=read_from if bound else None)
         except CarryFailed as exc:
             carry_failed.append(unit)
             print(f"record: {exc}", file=sys.stderr)

@@ -35,16 +35,27 @@ write.
   holds no write of the path by an agent briefed with it; the row then names no agent;
 - nothing when no harness can be chosen, or Claude Code is chosen only as the default with no
   store present, so the row reads as one whose writer was never read.
+
+`self_review` asks a second question of the same transcripts: did the context that wrote the
+verdict edit the unit's files before it was briefed? The judged context is the issued file's
+writer (the context whose write carried the bytes on disk), or, for a verdict given on the
+command line, the context whose transcript holds the running command. Its authoring evidence is
+a Write, Edit, MultiEdit or NotebookEdit call naming an Affects path, matched
+repository-relative through the subagent's `worktreePath`, made before its first record
+carrying a verdict path a brief issued for the unit, and no earlier than `since`, the start of
+the unit's delivery. An edit made through Bash is not counted. The writer appends the answer to
+the row's `Source` cell as `self-review:<path>`, which `self_reviewed` reads back.
 """
 from __future__ import annotations
 
 import json
 import os
 import re
+import shlex
 from collections.abc import Mapping
 from pathlib import Path
 
-from lib import run_state
+from lib import run_state, sdlc_md
 
 #: The variable Claude Code sets in its shells, a subagent's included, to the session's id.
 SESSION_ENV = "CLAUDE_CODE_SESSION_ID"
@@ -52,6 +63,10 @@ SESSION_ENV = "CLAUDE_CODE_SESSION_ID"
 MAIN = "main"
 UNKNOWN = "unknown"
 SESSION, AGENT, LAST_WRITER, PROVENANCE = "session", "agent", "last-writer", "provenance"
+#: The `Source` token naming the Affects file the verdict's own context edited before its brief.
+SELF_REVIEW = "self-review"
+#: The key of a subagent's `.meta.json` naming the worktree it ran in.
+WORKTREE_KEY = "worktreePath"
 #: The tool_use names whose input names a file they rewrite in place; their result is unread.
 EDIT_TOOLS = ("Edit", "MultiEdit", "NotebookEdit")
 _PLAIN = re.compile(r"[A-Za-z0-9_-]+")
@@ -109,16 +124,9 @@ def _claude(repo_root: Path, path: Path, data: bytes, env: Mapping) -> dict:
     if not _PLAIN.fullmatch(session):
         said = "is not set" if not session else f"is {session!r}, not a plain session id"
         return _unknown([], f"{SESSION_ENV} {said}, so no session's transcripts are read")
-    folder = Path(env.get(run_state.TRANSCRIPTS_ENV)
-                  or run_state._harness_transcript_dir(repo_root))
-    main = folder / f"{session}.jsonl"
-    sub = folder / session / run_state.SUBAGENTS_DIR
-    contexts = [(MAIN, main)] + [
-        (_AGENT_PREFIX + f.stem[len(_AGENT_PREFIX):], f)
-        for f in (sorted(sub.glob(run_state.SUBAGENT_GLOB)) if sub.is_dir() else [])
-        if _PLAIN.fullmatch(f.stem[len(_AGENT_PREFIX):])]
+    folder, contexts = _contexts(repo_root, session, env)
     tokens = [f"{SESSION}:{session}"]
-    if not main.is_file() and len(contexts) == 1:
+    if not contexts[0][1].is_file() and len(contexts) == 1:
         return _unknown(tokens, f"session {session} has no transcript in {folder}")
     target = path.resolve()
     needles = {json.dumps(str(p), ensure_ascii=False)[1:-1].encode("utf-8")
@@ -158,35 +166,56 @@ def _claude(repo_root: Path, path: Path, data: bytes, env: Mapping) -> dict:
                     f"{_words(lw)}"}
 
 
-def _scan(f: Path, ctx: str, order: int, needles: set[bytes], target: Path, text: str,
-          carries: list, writes: list) -> None:
-    """Append to `carries` each record of `f` that holds the path, and to `writes` each write
-    of it, as ((timestamp, order, line), context, content); content is None for an edit. A line
-    without the path is never parsed; one that does not parse costs only itself."""
+def _contexts(repo_root: Path, session: str, env: Mapping) -> tuple[Path, list]:
+    """The transcripts folder and the session's contexts in it, as (name, transcript) pairs:
+    the main thread's first, then each subagent's, by name."""
+    folder = Path(env.get(run_state.TRANSCRIPTS_ENV)
+                  or run_state._harness_transcript_dir(repo_root))
+    sub = folder / session / run_state.SUBAGENTS_DIR
+    return folder, [(MAIN, folder / f"{session}.jsonl")] + [
+        (_AGENT_PREFIX + f.stem[len(_AGENT_PREFIX):], f)
+        for f in (sorted(sub.glob(run_state.SUBAGENT_GLOB)) if sub.is_dir() else [])
+        if _PLAIN.fullmatch(f.stem[len(_AGENT_PREFIX):])]
+
+
+def _records(f: Path, keep):
+    """Each record of transcript `f` whose raw line `keep` accepts, as (line, raw, record). A
+    line `keep` refuses is never parsed; one that does not parse costs only itself."""
     try:
         fh = f.open("rb")
     except OSError:
         return
     with fh:
         for n, raw in enumerate(fh):
-            if not any(nd in raw for nd in needles):
+            if not keep(raw):
                 continue
             try:
                 rec = json.loads(raw)
             except ValueError:
                 continue
-            if not isinstance(rec, dict):
-                continue
-            key = (str(rec.get("timestamp") or ""), order, n)
-            carries.append((key, ctx))
-            if rec.get("type") != "assistant":
-                continue
-            content = (rec.get("message") or {}).get("content")
-            for use in content if isinstance(content, list) else []:
-                if isinstance(use, dict) and use.get("type") == "tool_use":
-                    wrote = _write_of(use, target, text)
-                    if wrote is not False:
-                        writes.append((key, ctx, wrote))
+            if isinstance(rec, dict):
+                yield n, raw, rec
+
+
+def _tool_uses(rec: dict) -> list[dict]:
+    """The tool_use blocks an assistant record carries; [] for any other record."""
+    content = (rec.get("message") or {}).get("content") if rec.get("type") == "assistant" else None
+    return [u for u in content if isinstance(u, dict) and u.get("type") == "tool_use"
+            ] if isinstance(content, list) else []
+
+
+def _scan(f: Path, ctx: str, order: int, needles: set[bytes], target: Path, text: str,
+          carries: list, writes: list) -> None:
+    """Append to `carries` each record of `f` that holds the path, and to `writes` each write
+    of it, as ((timestamp, order, line), context, content); content is None for an edit. A line
+    without the path is never parsed; one that does not parse costs only itself."""
+    for n, _raw, rec in _records(f, lambda raw: any(nd in raw for nd in needles)):
+        key = (str(rec.get("timestamp") or ""), order, n)
+        carries.append((key, ctx))
+        for use in _tool_uses(rec):
+            wrote = _write_of(use, target, text)
+            if wrote is not False:
+                writes.append((key, ctx, wrote))
 
 
 def _write_of(use: dict, target: Path, text: str):
@@ -242,3 +271,130 @@ def label(tokens: list[str]) -> str | None:
     if last := fields.get(LAST_WRITER):
         return f"briefed agent {agent}, last written by {_words(last)}"
     return f"written by agent {agent}"
+
+
+def self_reviewed(source: str) -> str | None:
+    """The file a row's `Source` cell names as edited by the context that wrote the verdict
+    (its `self-review:<path>` token), or None for a cell carrying no such token."""
+    for token in str(source or "").split():
+        name, _, path = token.partition(":")
+        if name == SELF_REVIEW and path:
+            return path
+    return None
+
+
+def self_review(repo_root: Path | str, affects: list[str], issued: list[str], *,
+                verdict: tuple | None = None, argv: list[str] | None = None,
+                since: str | None = None, env: Mapping | None = None) -> dict | None:
+    """{"path", "context"} when the context that wrote this verdict edited one of the unit's
+    `affects` before it first received a verdict path in `issued`, else None.
+
+    The judged context is the writer of `verdict`, a (path, bytes) pair, when one is given, or
+    else the context whose transcript holds the running command `argv`. None when the unit
+    declares no Affects or Claude Code is not the harness (with no transcript read), or when no
+    context is found. An edit before `since`, an ISO stamp, belongs to an earlier delivery."""
+    from lib import token_meters  # noqa: PLC0415 - as `read`
+    env = os.environ if env is None else env
+    affects = [a.strip().strip("/") for a in affects if a and a.strip().strip("/")]
+    session = str(env.get(SESSION_ENV) or "").strip()
+    if not affects or not _PLAIN.fullmatch(session):
+        return None
+    claude = _ClaudeStore()
+    chosen = token_meters.select(repo_root, claude, env).get(token_meters.HARNESS)
+    if chosen != token_meters.CLAUDE or _by_default(repo_root, env, claude):
+        return None
+    contexts = _contexts(Path(repo_root), session, env)[1]
+    judged = _writer(contexts, *verdict) if verdict else _recorder(contexts, argv or [])
+    if judged is None:
+        return None
+    edited = _edited_before_brief(Path(repo_root), dict(contexts)[judged], affects, issued,
+                                  since)
+    return {"path": edited, "context": judged} if edited else None
+
+
+def _writer(contexts: list, path: Path | str, data: bytes) -> str | None:
+    """The context whose write of `path` is the newest and carried `data`, or None."""
+    path = Path(path)
+    target = path.resolve()
+    needles = {json.dumps(str(p), ensure_ascii=False)[1:-1].encode("utf-8")
+               for p in (path.absolute(), target)}
+    carries, writes = [], []
+    for order, (ctx, f) in enumerate(contexts):
+        _scan(f, ctx, order, needles, target, data.decode("utf-8", "replace"), carries, writes)
+    last = max(writes, key=lambda w: w[0]) if writes else None
+    return last[1] if last and _carried(last, data) else None
+
+
+def _recorder(contexts: list, argv: list[str]) -> str | None:
+    """The context whose newest Bash call runs `argv`: its command names the script and holds
+    every argument as a word. None when no transcript holds it."""
+    args = [str(a) for a in argv[1:] if str(a)]
+    if not argv or not args:
+        return None
+    script = Path(str(argv[0])).name
+    needles = [json.dumps(a, ensure_ascii=False)[1:-1].encode("utf-8") for a in (script, *args)]
+    best = None
+    for order, (ctx, f) in enumerate(contexts):
+        for n, _raw, rec in _records(f, lambda raw: all(nd in raw for nd in needles)):
+            key = (str(rec.get("timestamp") or ""), order, n)
+            if any(_runs(u, script, args) for u in _tool_uses(rec)) and (
+                    best is None or key > best[0]):
+                best = (key, ctx)
+    return best[1] if best else None
+
+
+def _runs(use: dict, script: str, args: list[str]) -> bool:
+    command = (use.get("input") or {}).get("command") if use.get("name") == "Bash" else None
+    if not isinstance(command, str):
+        return False
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        words = command.split()
+    return script in {Path(w).name for w in words} and all(a in words for a in args)
+
+
+def _edited_before_brief(repo_root: Path, f: Path, affects: list[str], issued: list[str],
+                         since: str | None) -> str | None:
+    """The repository-relative Affects file transcript `f` edited before its first record
+    carrying an issued verdict path, and at or after `since`; None when it edited none."""
+    try:
+        meta = json.loads(f.with_suffix(".meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        meta = {}
+    tree = meta.get(WORKTREE_KEY) if isinstance(meta, dict) else None
+    roots = [Path(r).resolve() for r in (tree, repo_root) if isinstance(r, (str, Path)) and r]
+    briefs = {json.dumps(str(v), ensure_ascii=False)[1:-1].encode("utf-8")
+              for p in issued for v in (Path(p), Path(p).resolve())}
+    names = {json.dumps(a, ensure_ascii=False)[1:-1].encode("utf-8") for a in affects}
+    floor = sdlc_md.parse_iso8601(since) if since else None
+    wanted = briefs | names
+    for _n, raw, rec in _records(f, lambda raw: any(nd in raw for nd in wanted)):
+        if any(nd in raw for nd in briefs):
+            return None
+        stamp = sdlc_md.parse_iso8601(rec.get("timestamp"))
+        if floor and stamp and stamp < floor:
+            continue
+        for use in _tool_uses(rec):
+            given = use.get("input") if isinstance(use.get("input"), dict) else {}
+            if use.get("name") in ("Write", *EDIT_TOOLS) and (
+                    rel := _affected(given.get("file_path") or given.get("notebook_path"),
+                                     roots, affects)):
+                return rel
+    return None
+
+
+def _affected(value, roots: list[Path], affects: list[str]) -> str | None:
+    """`value`, an absolute path, relative to the first of `roots` holding it, when that names
+    an Affects file or a file under an Affects folder; else None."""
+    if not isinstance(value, str) or not Path(value).is_absolute():
+        return None
+    path = Path(value).resolve()
+    for root in roots:
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            continue
+        if any(rel == a or rel.startswith(a + "/") for a in affects):
+            return rel
+    return None

@@ -1225,6 +1225,28 @@ class OneIndependenceAuthorityTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("no reviewer", why)
 
+    def test_a_self_review_source_is_refused_by_EVERY_predicate(self) -> None:
+        """A row whose `Source` cell carries `self-review:<path>` is no independent review,
+        whatever distinct names it carries, in the authority and both its readers; the same
+        names with the token absent, or in another cell, stay independent. Mutants: the third
+        argument ignored; `is_independent` or `sprint_covers_independently` not passing the
+        row's Source; the token matched anywhere in the row."""
+        mod = _load()
+        cell = "sha256:0123456789abcdef v.txt session:s agent:a1 self-review:src/unit.py"
+        row = {"verdict": "APPROVE", "reviewer": "Tomas Reinholt (qa)", "author": "engineering",
+               "issues": "none", "source": cell}
+        ok, why = mod.independence(row["reviewer"], row["author"], cell)
+        self.assertFalse(ok)
+        self.assertIn("src/unit.py", why)
+        self.assertFalse(mod.is_independent(row))
+        clean = {**row, "source": cell.replace(" self-review:src/unit.py", ""),
+                 "issues": "self-review:src/unit.py"}
+        self.assertTrue(mod.independence(row["reviewer"], row["author"])[0])
+        self.assertTrue(mod.is_independent(clean))
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(mod.sprint_covers_independently(Path(d), "US0001", row))
+            self.assertTrue(mod.sprint_covers_independently(Path(d), "US0001", clean))
+
     def test_an_empty_reviewer_is_refused_by_EVERY_predicate(self) -> None:
         """BG0443's own discriminating case, distinct from the caller sweep: the hole was in
         `is_independent`, and the question is whether its SIBLINGS ever shared it. They must all
