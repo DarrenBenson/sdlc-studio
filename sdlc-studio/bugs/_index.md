@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 278 |
+| Open | 277 |
 | In Progress | 0 |
-| Fixed | 882 |
+| Fixed | 883 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 47 |
@@ -409,7 +409,7 @@
 | [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Open | High | 2026-11-10 | 2026-11-10 |
-| [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Open | High | 2026-11-12 | 2026-11-12 |
+| [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
 
 ## Archived Releases
 

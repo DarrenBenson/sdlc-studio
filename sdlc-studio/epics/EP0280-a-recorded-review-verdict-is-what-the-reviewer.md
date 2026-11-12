@@ -20,7 +20,7 @@ Decomposed from CR0619. Delivers the work CR0619 requested.
 - [x] [US1013: A verdict that differs from its issued file, or was recorded before, is named](../stories/US1013-a-verdict-that-differs-from-its-issued-file.md)
 - [ ] [US1014: A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript](../stories/US1014-a-recorded-verdict-names-the-agent-that-was.md)
 - [ ] [US1015: A verdict written by the context that edited the unit is a self-review, whatever seat it names](../stories/US1015-a-verdict-written-by-the-context-that-edited.md)
-- [ ] [US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger](../stories/US1016-critic-py-brief-rejoinder-with-no-file-quotes.md)
+- [x] [US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger](../stories/US1016-critic-py-brief-rejoinder-with-no-file-quotes.md)
 
 ## Acceptance Criteria (Epic Level)
 

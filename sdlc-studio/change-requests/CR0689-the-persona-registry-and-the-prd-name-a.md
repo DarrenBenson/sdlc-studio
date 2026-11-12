@@ -1,6 +1,6 @@
 # CR-0689: The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0305
 > **Parent:** RFC0063
 > **Created:** 2026-11-09

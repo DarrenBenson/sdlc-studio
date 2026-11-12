@@ -1,6 +1,6 @@
 # US1016: critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0615
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a round-1 REJECT recorded from an issued file, when `critic.py brief --unit US0001 --seat qa --rejoinder` runs with no value, then the brief quotes that file's bytes verbatim beneath the RE-REVIEW mark, found through the row's `Source` cell, and its fingerprint equals the one `--rejoinder <that file>` prints.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py::RejoinderFromLedgerTests::test_the_ledger_rejoinder_quotes_the_issued_file_verbatim
+  - **Verified:** yes (2026-11-12)
 - **AC2:** Given a REJECT recorded by `--verdict` and `--issues` with no file, when the ledger rejoinder is printed, then it rebuilds VERDICT, ISSUES and BLOCKING from the row's cells with every finding as recorded, and labels the quotation as rebuilt from the ledger's fields.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py::RejoinderFromLedgerTests::test_a_transcribed_reject_is_rebuilt_from_its_cells_and_labelled
+  - **Verified:** yes (2026-11-12)
 - **AC3:** Given no unanswered REJECT in the unit's current delivery from a reviewer of the briefed seat (none recorded, or every one answered by that reviewer's APPROVE), when `brief --rejoinder` runs with no file, then it exits 2, names the unit and the seat, and prints nothing on stdout.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py::RejoinderFromLedgerTests::test_no_unanswered_reject_for_the_seat_is_refused
+  - **Verified:** yes (2026-11-12)
 
 ## Notes
 

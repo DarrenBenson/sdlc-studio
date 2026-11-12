@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 69 |
-| Ready | 7 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 890 |
+| Done | 892 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -53,7 +53,7 @@
 | [US1013](US1013-a-verdict-that-differs-from-its-issued-file.md) | A verdict that differs from its issued file, or was recorded before, is named | Done | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1014](US1014-a-recorded-verdict-names-the-agent-that-was.md) | A recorded verdict names the agent that was briefed and wrote it, read from the harness transcript | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1015](US1015-a-verdict-written-by-the-context-that-edited.md) | A verdict written by the context that edited the unit is a self-review, whatever seat it names | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
-| [US1016](US1016-critic-py-brief-rejoinder-with-no-file-quotes.md) | critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger | Ready | EP0280 | 2026-10-09 | 2026-10-09 |
+| [US1016](US1016-critic-py-brief-rejoinder-with-no-file-quotes.md) | critic.py brief --rejoinder with no file quotes the seat's standing REJECT from the ledger | Done | EP0280 | 2026-10-09 | 2026-10-09 |
 | [US1017](US1017-transition-set-refuses-a-unit-at-done-or.md) | transition set refuses a unit at Done or Fixed when none of its criteria fail with its change reverted | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
 | [US1018](US1018-the-close-and-the-sign-judge-each-unit.md) | The close and the sign judge each unit once, a preview never reverts, and the sign prints what the transition reported | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
 | [US1019](US1019-a-lane-s-return-runs-the-revert-check.md) | A lane's return runs the revert check, so the builder learns its tests cannot fail before a reviewer does | Draft | EP0281 | 2026-10-09 | 2026-10-09 |
@@ -184,7 +184,7 @@
 | [US1144](US1144-a-copilot-run-on-token-billing-is-priced.md) | A Copilot run on token billing is priced per token from Copilot's dated AI-credit rates and the dollar value of a credit | Done | EP0304 | 2026-11-09 | 2026-11-09 |
 | [US1145](US1145-a-project-on-copilot-request-billing-says-so.md) | A project on Copilot request billing says so in its config, and only then are its premium requests priced in dollars | Done | EP0304 | 2026-11-09 | 2026-11-09 |
 | [US1146](US1146-abena-osei-becomes-the-shipped-skill-s-primary.md) | Abena Osei becomes the shipped skill's Primary and Maya Okafor moves to Secondary | Done | EP0305 | 2026-11-09 | 2026-11-09 |
-| [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Ready | EP0305 | 2026-11-09 | 2026-11-09 |
+| [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Done | EP0302 | 2026-11-09 | 2026-11-09 |
 
