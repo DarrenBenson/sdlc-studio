@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1005.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1005.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -40,3 +40,4 @@ Treat any skipped test in a pytest Verify run as not-verified (or 'partial' with
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triaged: reproduced on current code; Affects made repository paths; criteria made executable |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-12 | Claude Opus 5.5 (run eleven orchestrator) | Mid-run ruling: AC2 (no route stamps a partly skipped run) contradicts test_verify_lane_batch.py's skip-beside-a-pass assertion, which refused the lane's commit; the file joins the Affects, changed only as far as AC2 requires |
