@@ -511,6 +511,77 @@ class CostAnatomyTests(meter._Case):
         self.assertEqual(0, rc, text)
         return text.split("\n\n", 1)[0]
 
+    def _orchestrator_at(self, name: str, before: int, inside: tuple[int, ...]):
+        """An open run whose main thread made one call of `before` tokens of context before the
+        run's start and one of each `inside` after it, every context cache read alone."""
+        ws = self._timed(name)
+        sdlc_md = meter._live("lib.sdlc_md")
+        start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=30)
+        ws.tx._append(ws.tx.main, [_assistant("msg_pre", _usage(0, 10, 0, 0, before),
+                                              [{"type": "text"}], at=start - timedelta(minutes=5))])
+        with unittest.mock.patch.object(sdlc_md, "now_iso8601",
+                                        return_value=start.strftime("%Y-%m-%dT%H:%M:%SZ")):
+            ws.open()
+        ws.tx._append(ws.tx.main, [
+            _assistant(f"msg_in_{n}", _usage(0, 10, 0, 0, ctx), [{"type": "text"}],
+                       at=start + timedelta(seconds=5 + n)) for n, ctx in enumerate(inside)])
+        return ws
+
+    def test_an_orchestrator_averaging_over_150k_a_call_is_flagged(self) -> None:
+        """US1149 AC4. MUTANTS: the flag compared with >= (an average of exactly 150,000 flagged);
+        the threshold another figure; the flag read from the main thread's whole session rather
+        than the run's window (each fixture's pre-run call moves the average across 150,000);
+        from its largest call or its first; a missing average read as within, or flagged; the line
+        dropped from the text, or printed before the role table; the JSON keys missing."""
+        budget = 150_000
+        anatomy = meter._live("lib.cost_anatomy")
+        # over: 140,000 and 160,002 inside average 150,001; the 10,000 before the run would pull
+        # a whole-session average to 103,334, and the largest call alone is 160,002
+        over = self._json(self._orchestrator_at("over", 10_000, (140_000, 160_002)))
+        orch = next(r for r in over["roles"] if r["role"] == "orchestrator")
+        self.assertEqual(150_001, orch["avg_context"])
+        self.assertEqual((budget, True), (over["orchestrator_context_budget"],
+                                          over["orchestrator_over_context_budget"]))
+        # exactly at: 140,000 and 160,000 inside; the 400,000 before the run would push a
+        # whole-session average to 233,333, and the largest call alone is 160,000
+        ws = self._orchestrator_at("at", 400_000, (140_000, 160_000))
+        at = self._json(ws)
+        self.assertEqual((budget, False), (at["orchestrator_context_budget"],
+                                           at["orchestrator_over_context_budget"]))
+        rc, text = _cli(ws)
+        self.assertEqual(0, rc, text)
+        lines = text.splitlines()
+        total = next(n for n, ln in enumerate(lines) if ln.startswith("total "))
+        flag = [n for n, ln in enumerate(lines) if "150,000" in ln and " a call" in ln]
+        self.assertEqual(1, len(flag), text)
+        self.assertGreater(flag[0], total, "the flag is not after the role table")
+        # a reader taking each line that opens with a role name as a table row must not take it
+        self.assertNotIn(lines[flag[0]].split()[0].lower(),
+                         ("orchestrator", "builder", "reviewer", "repair", "other", "total"))
+        self.assertIn("within 150,000", lines[flag[0]])
+        self.assertNotIn("over", lines[flag[0]])
+        rc, text = _cli(self._orchestrator_at("over-text", 10_000, (140_000, 160_002)))
+        self.assertEqual(0, rc, text)
+        line = next(ln for ln in text.splitlines() if "150,000" in ln and " a call" in ln)
+        for part in ("150,001", "over", "sprint.py handoff", "sprint.py resume",
+                     "wave boundary"):
+            self.assertIn(part, line)
+        roles = ("orchestrator", "builder", "reviewer", "repair", "other", "total")
+        self.assertNotIn(line.split()[0].lower(), roles)
+        # no per-call record: not available, neither within nor over
+        got = anatomy.from_reading({"harness": "cursor", "components": meter._sum(meter.MAIN_1)})
+        self.assertEqual((budget, None), (got["orchestrator_context_budget"],
+                                          got["orchestrator_over_context_budget"]))
+        line = next(ln for ln in anatomy.render(got).splitlines()
+                    if "150,000" in ln and " a call" in ln)
+        self.assertIn("not available", line)
+        self.assertNotIn("within", line)
+        self.assertNotIn(line.split()[0].lower(), roles)
+        ws = self.workspace(agents=False)
+        ws.tx.main.write_text(_assistant(None, meter.MAIN_1, [{"type": "text"}]) + "\n",
+                              encoding="utf-8")
+        self.assertIsNone(self._json(ws)["orchestrator_over_context_budget"])
+
     def test_the_anatomy_is_windowed_to_the_open_run(self) -> None:
         """BG1254 AC1. MUTANTS: `build` counting every record regardless of its timestamp; the
         window applied to the main thread alone, not the subagents (agent-old, agent-x2's first

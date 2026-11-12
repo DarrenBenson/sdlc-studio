@@ -326,6 +326,7 @@ sprint:
   breakdown: enforce   # enforce | judgement
   points_split_above: 8  # the Points: value above which the plan refuses a unit and asks for a split
   affects_check: warn    # warn | block - what an Affects the unit's own content contradicts does
+  fresh_session: warn    # warn | block | off - a session over 80,000 tokens at `sprint resume` or `plan --write`: warn names its re-read cost, block also refuses resume, off reads nothing
 
 # Project lessons - how long a lesson stays valid before it must be re-validated. `lessons add`
 # stamps `Review-by: {added + validity_days}`; at the sprint close the gate fails while an open

@@ -541,6 +541,16 @@ an unchanged tree that is the action the handoff recorded, and on a tree whose n
 moved since (a lane landed, say) it names the brief's own action as stale beside the current one. With no
 brief on disk, a file that is not a brief, no open run or a brief of another run, it exits 2.
 
+`resume` and `plan --write` also check the session they run in: its newest call's context
+(input + cache write + cache read) against 80,000 tokens. `sprint.fresh_session` decides what
+a session over it does. Under `warn`, the default, each entry warns on stderr with the
+context, the threshold, the re-read the next 100 calls would pay (about one wave) and the
+remedy, then goes on. Under `block`, `resume` exits 2 instead, printing nothing on stdout, so
+you start a fresh session and run `resume` there. `plan --write` never refuses on it, under
+`block` too, because `handoff` needs the run it opens. Under `off` the check reads nothing.
+When the size cannot be read (no transcript, no per-call record, a harness other than Claude
+Code), only `block` says so, and neither entry refuses. Any other value reads as `warn`.
+
 ## Prerequisites
 
 - A batch to run (CRs/bugs/stories on disk, or a worklist file).
@@ -673,6 +683,8 @@ tokens and share, and the context per call. It reads the open run's window, the 
 `started_at`; `--session` reads the whole session, as it does with no run open. The header names
 the main thread's start context. A Subagent starts section flags each subagent whose first call
 carries more context than `cost.agent_start_budget` (30000 tokens by default; `off` flags none).
+Below the role table, an orchestrator averaging over 150,000 tokens of context a call is flagged
+with the remedy: hand off at each wave boundary with `sprint.py handoff` and `sprint.py resume`.
 `reference-sprint.md#cost-anatomy` has the detail.
 
 The pair also measures the unit. `lane brief` opens the unit's span (a unit already In Progress

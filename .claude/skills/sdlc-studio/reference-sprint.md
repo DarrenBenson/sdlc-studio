@@ -654,15 +654,15 @@ role with no calls) prints `not available`, never 0; with no Claude Code transcr
 other. `--transcripts DIR` names the transcript directory; `--format json` prints the same figures.
 
 The report's cost appendix takes this table from the same `cost_anatomy.anatomy` call, recorded on the close's meter reading
-(`run_state.stamp_cost_roles`), never the growing live transcript, so it re-derives at sign and a signed page replays its
-own. It is NOT MEASURED when no reading in the window recorded one, or the anatomy could not be had or read a session other
-than the meter's.
+(`run_state.stamp_cost_roles`) rather than the growing live transcript, so it re-derives at sign. It is NOT MEASURED when no
+reading in the window recorded one, or the anatomy could not be had or read a session other than the meter's.
 
-The header names the main thread's start context, the session's first call's, whatever the window. A Subagent starts section
-flags each subagent whose first call's context, whatever the window, exceeds `cost.agent_start_budget` (30000 by default;
-`off` flags none), with its start; one with no per-call start is named not available. The JSON carries `start_budget`,
-`over_start_budget` and `start_not_available`. A project `.claude/settings.json` that disables the plugins and connectors a
-delivery session does not use is recommended, not enforced; a claude.ai connector may not be switchable per project.
+The header names the main thread's start context: its first call's, whatever the window. Below the table an orchestrator
+averaging over 150,000 tokens a call is flagged (`orchestrator_over_context_budget`). A Subagent starts section flags each
+subagent whose first call's context, whatever the window, exceeds `cost.agent_start_budget` (30000 by default; `off` flags none),
+with its start; one with no per-call start is named not available. The JSON carries `start_budget`, `over_start_budget`,
+`start_not_available` and `orchestrator_context_budget`. A project `.claude/settings.json` that disables the plugins and
+connectors a delivery session does not use is recommended, not enforced; a claude.ai connector may not be switchable per project.
 
 ### Dollar cost {#dollar-cost}
 

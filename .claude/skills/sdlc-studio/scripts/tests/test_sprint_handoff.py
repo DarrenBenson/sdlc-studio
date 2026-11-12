@@ -267,6 +267,239 @@ class PlanNextStepTests(unittest.TestCase):
                                    r"sprint\.py resume")
 
 
+#: US1149: the threshold, the projected calls and the cache-read weight, typed here and never read
+#: back from the code under test.
+FRESH_THRESHOLD = 80_000
+PROJECTED_CALLS = 100
+CACHE_READ_WEIGHT = 0.1
+
+
+def _call(msg_id: str | None, inp: int, five: int, hour: int, read: int, out: int = 500) -> str:
+    """One assistant usage record as Claude Code writes it; its context is inp + five + hour +
+    read, and `out` (output) is outside it."""
+    msg = {"model": "claude-opus-5-5", "role": "assistant", "content": [{"type": "text"}],
+           "usage": {"input_tokens": inp, "output_tokens": out,
+                     "cache_creation_input_tokens": five + hour,
+                     "cache_creation": {"ephemeral_5m_input_tokens": five,
+                                        "ephemeral_1h_input_tokens": hour},
+                     "cache_read_input_tokens": read}}
+    if msg_id is not None:
+        msg["id"] = msg_id
+    return json.dumps({"type": "assistant", "cwd": "/work/repo", "message": msg})
+
+
+def _session_at(folder: Path, context: int, newest_id: str | None = "msg_new") -> Path:
+    """A session whose newest call's context is `context`: input 2,000, cache write 3,000 (5m)
+    and 5,000 (1h), the rest cache read, and an output of 500 the context leaves out. Before it
+    sits an older call of 200,000, so a size read from the largest or the first call warns at
+    every size."""
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.glob("*.jsonl"):
+        old.unlink()
+    path = folder / "session-1.jsonl"
+    path.write_text(_call("msg_old", 1_000, 0, 0, 199_000) + "\n"
+                    + _call(newest_id, 2_000, 3_000, 5_000, context - 10_000) + "\n",
+                    encoding="utf-8")
+    return path
+
+
+def _projection(context: int) -> tuple[str, str]:
+    """The re-read the warning projects, formed from the fixture's own weight and call count."""
+    return (f"{round(context * CACHE_READ_WEIGHT):,}",
+            f"{round(context * CACHE_READ_WEIGHT * PROJECTED_CALLS):,}")
+
+
+class _Fresh:
+    """A run open and handed off (`Workspace`), the transcript folder the meter reads, and a
+    fresh plannable workspace for each `plan --write`, all under one temp directory."""
+
+    def __init__(self, tmp: str, name: str):
+        self.tmp = Path(tmp) / name
+        self.ws = Workspace(str(self.tmp))
+        self.transcripts = self.tmp / "transcripts"
+        self.transcripts.mkdir()
+        self.harness = "claude"
+        self.value: str | None = None
+        self.plans = 0
+        handed = self.ws.run("handoff")
+        assert handed.returncode == 0, handed.stdout + handed.stderr
+
+    @staticmethod
+    def _configure(root: Path, value: str | None) -> None:
+        cfg = root / "sdlc-studio" / ".config.yaml"
+        if value is None:
+            cfg.unlink(missing_ok=True)
+        else:
+            cfg.write_text(f"sprint:\n  fresh_session: {value}\n", encoding="utf-8")
+
+    def mode(self, value: str | None) -> None:
+        """`sprint.fresh_session` for the next runs; None leaves it unset."""
+        self.value = value
+        self._configure(self.ws.root, value)
+
+    def env(self) -> dict:
+        env = _env(str(self.ws.home))
+        env["SDLC_STUDIO_TRANSCRIPTS"] = str(self.transcripts)
+        env["SDLC_STUDIO_HARNESS"] = self.harness
+        return env
+
+    def resume(self) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(SCRIPTS / "sprint.py"), "resume", "--root",
+                               str(self.ws.root)], capture_output=True, text=True,
+                              env=self.env(), timeout=120)
+
+    def plan_write(self, *extra: str) -> tuple[subprocess.CompletedProcess, Path]:
+        """`plan --write` over a fresh plannable workspace, under the current mode."""
+        self.plans += 1
+        root = self.tmp / f"plan-{self.plans}"
+        _plannable(root)
+        self._configure(root, self.value)
+        r = subprocess.run([sys.executable, str(SCRIPTS / "sprint.py"), "plan", "--bugs", "Open",
+                            "--no-fetch", "--sprint-goal", "ship the fixture batch", "--write",
+                            *extra, "--root", str(root)], capture_output=True, text=True,
+                           env=self.env(), timeout=120)
+        return r, root
+
+
+def _session_lines(stderr: str) -> list[str]:
+    """The stderr lines about the session's size: each names `sprint.fresh_session`."""
+    return [ln for ln in stderr.splitlines() if "fresh_session" in ln]
+
+
+class FreshSessionTests(unittest.TestCase):
+    """US1149: the sprint entry names the projected re-read of a large session."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def _assert_warns(self, lines: list[str], context: int, what: str) -> None:
+        self.assertEqual(1, len(lines), f"{what}: {lines}")
+        line = lines[0]
+        per_call, per_wave = _projection(context)
+        for part in (f"{context:,} tokens", f"{FRESH_THRESHOLD:,}-token", f" {per_call} ",
+                     f" {per_wave} ", f"next {PROJECTED_CALLS} calls", "sprint.py handoff",
+                     "sprint.py resume", "fresh session"):
+            self.assertIn(part, line, f"{what}: {part!r} missing from {line!r}")
+
+    def test_warn_names_the_projected_re_read_above_80k_and_nothing_at_or_under_it(self):
+        """AC1. MUTANTS: the threshold compared with >= (80,000 warns); the size read from the
+        largest or the first call (the older 200,000 call warns at every size), or with output
+        counted (80,500 at the boundary); the projection at another weight or call count; the
+        warning on stdout, which moves `plan --write`'s next-step line and breaks its JSON."""
+        f = _Fresh(self._tmp.name, "warn")
+        f.mode("off")
+        _session_at(f.transcripts, 120_000)
+        base = f.resume()
+        self.assertEqual(0, base.returncode, base.stdout + base.stderr)
+        f.mode(None)   # unset reads as warn
+        r = f.resume()
+        self.assertEqual((0, base.stdout), (r.returncode, r.stdout), r.stderr)
+        self._assert_warns(_session_lines(r.stderr), 120_000, "resume at 120,000")
+        self.assertIn(" 12,000 ", r.stderr)
+        self.assertIn(" 1,200,000 ", r.stderr)
+        p, root = f.plan_write()
+        self.assertEqual(0, p.returncode, p.stdout + p.stderr)
+        self.assertTrue(run_state.read(root).get("run_id"), "plan --write opened no run")
+        self._assert_warns(_session_lines(p.stderr), 120_000, "plan --write at 120,000")
+        self.assertNotIn("fresh_session", p.stdout)
+        last = [ln for ln in p.stdout.splitlines() if ln.strip()][-1]
+        self.assertEqual(sprint.PLAN_NEXT_STEP, last)
+        p, _root = f.plan_write("--format", "json")
+        self.assertEqual(0, p.returncode, p.stdout + p.stderr)
+        # the JSON closes stdout (the run-opening lines above it are the plan's own), so a
+        # warning printed there after it breaks the parse
+        json.loads(p.stdout[p.stdout.index("\n{\n") + 1:])
+        self.assertNotIn("fresh_session", p.stdout)
+        self._assert_warns(_session_lines(p.stderr), 120_000, "plan --write --format json")
+
+        for context, warns in ((FRESH_THRESHOLD, False), (FRESH_THRESHOLD + 1, True)):
+            _session_at(f.transcripts, context)
+            r = f.resume()
+            self.assertEqual((0, base.stdout), (r.returncode, r.stdout), r.stderr)
+            p, _root = f.plan_write()
+            self.assertEqual(0, p.returncode, p.stdout + p.stderr)
+            for what, err in (("resume", r.stderr), ("plan --write", p.stderr)):
+                if warns:
+                    self._assert_warns(_session_lines(err), context, f"{what} at {context:,}")
+                else:
+                    self.assertEqual([], _session_lines(err), f"{what} at {context:,}")
+
+    def test_block_refuses_resume_above_80k_and_plan_write_still_opens_the_run(self):
+        """AC2. MUTANTS: `block` read as `warn` (resume goes on above the threshold); `block`
+        refusing at 80,000; `plan --write` refused under `block`, leaving no run to hand off;
+        `off` still printing; an unknown value read as `off` or `block`."""
+        f = _Fresh(self._tmp.name, "block")
+        f.mode("off")
+        _session_at(f.transcripts, FRESH_THRESHOLD)
+        base = f.resume()
+        self.assertEqual(0, base.returncode, base.stdout + base.stderr)
+        f.mode("block")
+        r = f.resume()
+        self.assertEqual((0, base.stdout, []), (r.returncode, r.stdout, _session_lines(r.stderr)))
+        _session_at(f.transcripts, 120_000)
+        r = f.resume()
+        self.assertEqual((2, ""), (r.returncode, r.stdout), r.stderr)
+        lines = _session_lines(r.stderr)
+        self.assertEqual(1, len(lines), r.stderr)
+        for part in ("120,000 tokens", f"{FRESH_THRESHOLD:,}-token", "fresh session",
+                     "sprint.py resume", "block"):
+            self.assertIn(part, lines[0])
+        p, root = f.plan_write()
+        self.assertEqual(0, p.returncode, p.stdout + p.stderr)
+        self.assertTrue(run_state.read(root).get("run_id"),
+                        "plan --write under block opened no run")
+        self._assert_warns(_session_lines(p.stderr), 120_000, "plan --write under block")
+
+        f.mode("off")
+        r = f.resume()
+        self.assertEqual((0, base.stdout, []), (r.returncode, r.stdout, _session_lines(r.stderr)))
+        p, _root = f.plan_write()
+        self.assertEqual((0, []), (p.returncode, _session_lines(p.stderr)), p.stderr)
+
+        f.mode("loud")   # any other value reads as warn
+        r = f.resume()
+        self.assertEqual((0, base.stdout), (r.returncode, r.stdout), r.stderr)
+        self._assert_warns(_session_lines(r.stderr), 120_000, "resume under an unknown mode")
+
+    def test_an_unreadable_session_size_is_named_under_block_and_never_refuses(self):
+        """AC3. MUTANTS: an unreadable size read as 0 (silent under block); the newest usage record
+        with no message id skipped for the last one that has one (block refuses at 200,000); the
+        harness the meter chose ignored (cursor's run reads the Claude transcript and refuses); a
+        not-available line printed under warn."""
+        f = _Fresh(self._tmp.name, "unreadable")
+        f.mode("off")
+        base = f.resume()
+        self.assertEqual(0, base.returncode, base.stdout + base.stderr)
+
+        def cursor() -> None:
+            _session_at(f.transcripts, 120_000)
+            f.harness = "cursor"
+        cases = (("no transcript", lambda: None, "no session transcript"),
+                 ("no message id", lambda: _session_at(f.transcripts, 120_000, newest_id=None),
+                  "message id"),
+                 ("cursor", cursor, "cursor"))
+        for what, arrange, reason in cases:
+            arrange()
+            for mode in ("warn", "block"):
+                f.mode(mode)
+                r = f.resume()
+                self.assertEqual((0, base.stdout), (r.returncode, r.stdout),
+                                 f"{what} under {mode}: {r.stderr}")
+                p, root = f.plan_write()
+                self.assertEqual(0, p.returncode, p.stdout + p.stderr)
+                self.assertTrue(run_state.read(root).get("run_id"), p.stdout + p.stderr)
+                for entry, err in (("resume", r.stderr), ("plan --write", p.stderr)):
+                    lines = _session_lines(err)
+                    if mode == "warn":
+                        self.assertEqual([], lines, f"{entry}, {what}, warn")
+                        continue
+                    self.assertEqual(1, len(lines), f"{entry}, {what}: {err}")
+                    self.assertIn("not available", lines[0])
+                    self.assertIn(reason, lines[0], f"{entry}, {what}")
+                    self.assertNotRegex(lines[0], r"\b0 tokens")
+
+
 def _invocations(page: str, verb: str) -> list[str]:
     """Each fenced-block line of `page` that invokes `sprint.py <verb>`."""
     out, fenced = [], False
@@ -298,6 +531,53 @@ class HelpTests(unittest.TestCase):
             surface = (SKILL / "reference-scripts-surface.md").read_text(encoding="utf-8")
             self.assertIn(f"| `sprint.py {verb}` |", surface,
                           "reference-scripts-surface.md was not regenerated")
+
+    def test_the_fresh_session_check_and_the_orchestrator_flag_are_declared_and_documented(self):
+        """US1149 AC5. MUTANTS: the key dropped from config-defaults.yaml or moved out of
+        `sprint:`; its comment naming a mode the code does not honour, or omitting one it does; a
+        documented mode read as `warn`; the help naming no 80,000 check, no mode's effect, or not
+        saying `plan --write` never refuses; the 150,000 orchestrator flag undocumented."""
+        modes = {"warn": "warns", "block": "exits 2", "off": "reads nothing"}
+        defaults = (SKILL / "templates" / "config-defaults.yaml").read_text(encoding="utf-8")
+        block = re.search(r"^sprint:\n((?:[ #].*\n|\n)*)", defaults, re.M)
+        self.assertIsNotNone(block, "config-defaults.yaml has no sprint: block")
+        keys = [ln.strip() for ln in block.group(1).splitlines()
+                if re.match(r"  [a-z_]+:", ln)]
+        at = next(n for n, k in enumerate(keys) if k.startswith("affects_check:"))
+        beside = [k for k in keys[at - 1:at + 2] if k.startswith("fresh_session:")]
+        self.assertEqual(1, len(beside), "fresh_session is not declared beside affects_check")
+        m = re.match(r"fresh_session: (\S+)\s+#(.*)", beside[0])
+        self.assertIsNotNone(m, beside[0])
+        self.assertEqual(("warn", "warn"), (m.group(1), sprint.FRESH_SESSION_DEFAULT))
+        named = set(re.findall(r"\b(warn|block|off|on|refuse|ignore)\b", m.group(2)))
+        self.assertEqual(set(modes), named, m.group(2))
+        self.assertEqual(set(modes), set(sprint.FRESH_SESSION_MODES))
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "sdlc-studio").mkdir()
+            cfg = Path(d) / "sdlc-studio" / ".config.yaml"
+            for value in (*modes, "BLOCK ", "loud"):
+                cfg.write_text(f"sprint:\n  fresh_session: {value}\n", encoding="utf-8")
+                want = value.strip().lower() if value.strip().lower() in modes else "warn"
+                self.assertEqual(want, sprint.fresh_session_mode(d), value)
+
+        page = (SKILL / "help" / "sprint.md").read_text(encoding="utf-8")
+        section = page.split("## Handing off and resuming in a fresh session", 1)[1]
+        section = section.split("\n## ", 1)[0]
+        flat = " ".join(section.split())
+        self.assertIn("80,000", flat)
+        sentences = re.split(r"(?<=\.) ", flat)
+        for mode, effect in modes.items():
+            self.assertTrue([s for s in sentences if f"`{mode}`" in s and effect in s],
+                            f"help/sprint.md does not say what `{mode}` does ({effect!r})")
+        self.assertRegex(flat, r"`plan --write`[^.]*never refuses")
+        anatomy = page.split("`cost --anatomy` reads the transcripts", 1)[1].split("\n\n", 1)[0]
+        self.assertIn("150,000", anatomy)
+        self.assertIn("orchestrator", anatomy)
+        ref = (SKILL / "reference-sprint.md").read_text(encoding="utf-8")
+        ref = ref.split("### Cost anatomy {#cost-anatomy}", 1)[1].split("\n### ", 1)[0]
+        for part in ("150,000", "orchestrator_over_context_budget",
+                     "orchestrator_context_budget"):
+            self.assertIn(part, ref)
 
 
 if __name__ == "__main__":

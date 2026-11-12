@@ -56,6 +56,10 @@ PRODUCER_WIDTH = 100
 _PLAIN = re.compile(r"[A-Za-z0-9_-]+")
 _WRITES = ("cache_write_5m", "cache_write_1h")
 START_BUDGET_KEY = "cost.agent_start_budget"
+#: The orchestrator's average context a call above which the anatomy flags the run:
+#: run six's orchestrator averaged 407k, and a run handed off at each wave boundary
+#: starts each wave from a small context.
+ORCHESTRATOR_CONTEXT_BUDGET = 150_000
 
 
 class AnatomyError(Exception):
@@ -289,6 +293,58 @@ def _finish(rows: dict) -> list[dict]:
     return out
 
 
+def _orchestrator_budget(finished: list[dict]) -> dict:
+    """The orchestrator row's average context a call against `ORCHESTRATOR_CONTEXT_BUDGET`:
+    over it True, at or under it False, and None when the row has no per-call average, which
+    is neither."""
+    avg = next(r["avg_context"] for r in finished if r["role"] == ORCHESTRATOR)
+    return {"orchestrator_context_budget": ORCHESTRATOR_CONTEXT_BUDGET,
+            "orchestrator_over_context_budget":
+                None if avg is None else avg > ORCHESTRATOR_CONTEXT_BUDGET}
+
+
+def session_context(repo_root, transcripts_dir=None, env=None) -> dict:
+    """The current session's size, as the sprint entry checks it: `{"context",
+    "source", "reason"}`, `context` the newest call's context (input + cache write + cache read)
+    in the newest transcript of the directory the meter reads (`transcripts_dir`, else
+    `run_state.TRANSCRIPTS_ENV`, else the harness's folder for this repo), at its largest usage
+    record. `context` is None, never 0, with the `reason` when no size can be read: the meter
+    chose a harness other than Claude Code (`token_meters.select`), no transcript is there, it
+    cannot be read or holds no usage record, or its newest usage record carries no message id."""
+    import types  # noqa: PLC0415 - only the harness choice needs it
+
+    from lib import token_meters  # noqa: PLC0415 - only the session size reads the choice
+    env = os.environ if env is None else env
+    claude = types.SimpleNamespace(
+        store=lambda root, e: run_state._claude_store(root, transcripts_dir, e))
+    chosen = token_meters.select(repo_root, claude, env)
+    harness = chosen.get(token_meters.HARNESS)
+    if harness != token_meters.CLAUDE:
+        return {"context": None, "source": None, "reason": chosen.get("reason") or (
+            f"the token meter reads {harness} ({chosen.get('selected_by')}), whose store "
+            f"gives no per-call context")}
+    d = Path(transcripts_dir or env.get(run_state.TRANSCRIPTS_ENV)
+             or run_state._harness_transcript_dir(repo_root))
+    main = run_state._newest_transcript(d) if d.is_dir() else None
+    if main is None:
+        return {"context": None, "source": None,
+                "reason": f"no session transcript (*.jsonl) in {d}"}
+    try:
+        records = _records_of(main, "main")
+    except AnatomyError as exc:
+        return {"context": None, "source": str(main), "reason": str(exc)}
+    if not records:
+        return {"context": None, "source": str(main),
+                "reason": f"transcript {main.name} carries no usage records"}
+    newest = records[-1][1]
+    if newest is None:
+        return {"context": None, "source": str(main),
+                "reason": f"the newest usage record in {main.name} carries no message id, so "
+                          f"it gives no per-call context"}
+    return {"context": _context(_largest([records])[newest]), "source": str(main),
+            "reason": None}
+
+
 def start_budget(repo_root) -> int | None:
     """`cost.agent_start_budget` as a whole number of tokens, or None when it is off, unset or
     not one, which flags no agent."""
@@ -372,7 +428,7 @@ def build(main: Path, subagents: list[Path], roles: dict[str, str],
             "start_budget": budget, "over_start_budget": over,
             "start_not_available": unjudged if budget is not None else None, "window": window,
             "roles": finished, "total": _total(finished, total),
-            "outputs": outputs[:TOP_OUTPUTS], "note": None}
+            **_orchestrator_budget(finished), "outputs": outputs[:TOP_OUTPUTS], "note": None}
 
 
 def _total(finished: list[dict], comps: dict) -> dict:
@@ -406,7 +462,7 @@ def from_reading(reading: dict) -> dict:
             "window": _whole(f"the {harness} reading is one session total, which no window "
                              f"divides"), "roles": finished,
             "total": _total(finished, comps) | {"priced": finished[-1]["priced"]},
-            "outputs": [],
+            **_orchestrator_budget(finished), "outputs": [],
             "note": f"the {harness} reading is one session total with no per-call records, so no "
                     f"role is attributed: it is counted under other"}
 
@@ -448,6 +504,25 @@ def _window_text(window: dict) -> str:
     return "the whole session" + (f" ({window['reason']})" if window["reason"] else "")
 
 
+def _orchestrator_line(got: dict) -> str:
+    """The line under the role table judging the orchestrator's average context a call. Its
+    first word is never a role name, so a reader that takes each line opening with one as a
+    table row does not take this line for the orchestrator's."""
+    budget = got.get("orchestrator_context_budget") or ORCHESTRATOR_CONTEXT_BUDGET
+    over = got.get("orchestrator_over_context_budget")
+    avg = next((r["avg_context"] for r in got["roles"] if r["role"] == ORCHESTRATOR), None)
+    if over is None or avg is None:
+        return (f"  Context check: the orchestrator's average context against {budget:,} tokens "
+                f"a call is {NOT_AVAILABLE} (no per-call record)")
+    if not over:
+        return (f"  Context check: the orchestrator averaged {_cell(avg)} tokens of context a "
+                f"call, within {budget:,}")
+    return (f"  Context check: the orchestrator averaged {_cell(avg)} tokens of context a call, "
+            f"over the {budget:,} "
+            f"budget: hand off at each wave boundary with `sprint.py handoff` and resume each "
+            f"wave in a fresh session with `sprint.py resume`")
+
+
 def render(got: dict) -> str:
     """The anatomy as `sprint cost --anatomy` prints it."""
     w = len(NOT_AVAILABLE)
@@ -479,6 +554,7 @@ def render(got: dict) -> str:
     t = got["total"]
     lines.append(f"{'total':<12}" + "".join(f"  {c:>{w}}" for c in (
         _cell(t["agents"]), _cell(t["calls"]), _cell(t["priced"]))))
+    lines.append(_orchestrator_line(got))
     lines += ["", f"Subagent starts (each one's first call's context) against "
                   f"`{START_BUDGET_KEY}`:"]
     budget, over = got.get("start_budget"), got.get("over_start_budget")

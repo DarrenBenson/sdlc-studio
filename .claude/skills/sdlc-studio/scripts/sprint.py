@@ -10967,7 +10967,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if getattr(args, "write", False):
         # The run is open, so the plan's last word is where the build starts: a fresh session
         # resumed from the brief, not this planning context carried into wave 1. On stderr
-        # under --format json, so it adds nothing to the JSON on stdout.
+        # under --format json, so it adds nothing to the JSON on stdout. The session check
+        # only warns here, on stderr: `handoff` needs this run open to write a brief.
+        fresh_session_check(Path(args.root), "plan")
         print(PLAN_NEXT_STEP, file=sys.stderr if args.format == "json" else sys.stdout)
     if charter_refused:
         # 3, not 2: the plan itself was not refused - it ran and the run is open - so this must
@@ -12273,6 +12275,63 @@ def cmd_next(args: argparse.Namespace) -> int:
 #: Where `sprint.py handoff` writes the open run's resume brief and `sprint.py resume` reads it.
 RESUME_BRIEF_REL = Path("sdlc-studio") / ".local" / "resume-brief.md"
 
+#: `sprint.fresh_session`, read the way `affects_check_mode` reads its key. `warn` names
+#: a session over the threshold on stderr, `block` also refuses `resume` over it, and `off` reads
+#: nothing. Declared in config-defaults.yaml and stated in help/sprint.md; the three are pinned.
+FRESH_SESSION_DEFAULT = "warn"
+FRESH_SESSION_MODES = ("warn", "block", "off")
+#: The newest call's context above which a session is too large to carry into a wave.
+FRESH_SESSION_THRESHOLD = 80_000
+#: About one wave of orchestrator calls (run six's made 323 over three): a constant the
+#: projection multiplies by, not a forecast of this run's calls.
+FRESH_SESSION_PROJECTED_CALLS = 100
+
+
+def fresh_session_mode(repo_root: Path | str) -> str:
+    raw = config.get(repo_root, "sprint.fresh_session", FRESH_SESSION_DEFAULT)
+    if raw is False:
+        return "off"  # the config reader takes a bare `off` as YAML's false
+    mode = str(raw or FRESH_SESSION_DEFAULT).strip().lower()
+    return mode if mode in FRESH_SESSION_MODES else FRESH_SESSION_DEFAULT
+
+
+def fresh_session_check(root: Path, entry: str) -> bool:
+    """The session-size check at a sprint entry (`resume`, `plan --write`). Every line goes to
+    stderr, so the entry's stdout is what it prints without the check. Under `off` it reads
+    nothing. Over `FRESH_SESSION_THRESHOLD` it warns with the re-read the next
+    `FRESH_SESSION_PROJECTED_CALLS` calls would pay, the context priced as a cache read; under
+    `block`, at `resume` alone, it refuses instead. A size that cannot be read is named only
+    under `block`, and never refuses. Returns True when the entry must exit 2."""
+    mode = fresh_session_mode(root)
+    if mode == "off":
+        return False
+    from lib import cost_anatomy  # noqa: PLC0415 - only the session check and `cost` need it
+    got = cost_anatomy.session_context(root)
+    context = got["context"]
+    if context is None:
+        if mode == "block":
+            print(f"{entry}: `sprint.fresh_session: block`: the session's size is not available "
+                  f"({got['reason']}), so it was not checked against the "
+                  f"{FRESH_SESSION_THRESHOLD:,}-token threshold", file=sys.stderr)
+        return False
+    if context <= FRESH_SESSION_THRESHOLD:
+        return False
+    weight = run_state.TOKEN_WEIGHTS["cache_read"]
+    cost = (f"each further call re-reads it as a cache read, about {round(context * weight):,} "
+            f"input-equivalent tokens a call and "
+            f"{round(context * weight * FRESH_SESSION_PROJECTED_CALLS):,} over the next "
+            f"{FRESH_SESSION_PROJECTED_CALLS} calls (about one wave)")
+    held = (f"this session holds {context:,} tokens of context (its newest call's input + cache "
+            f"write + cache read), over the {FRESH_SESSION_THRESHOLD:,}-token threshold")
+    if mode == "block" and entry == "resume":
+        print(f"resume REFUSED under `sprint.fresh_session: block`: {held}; {cost}. Start a "
+              f"fresh session and run `sprint.py resume` there.", file=sys.stderr)
+        return True
+    print(f"{entry}: WARNING `sprint.fresh_session`: {held}; {cost}. Hand off with `sprint.py "
+          f"handoff`, then run `sprint.py resume` in a fresh session.", file=sys.stderr)
+    return False
+
+
 #: The line `sprint plan --write` ends on: the run is open, and wave 1 starts in a fresh session.
 PLAN_NEXT_STEP = ("next step: `sprint.py handoff`, then start wave 1 in a fresh session with "
                   "`sprint.py resume`")
@@ -12349,6 +12408,8 @@ def cmd_resume(args: argparse.Namespace) -> int:
         step = resume_brief.next_action(root)
     except resume_brief.ResumeError as exc:
         print(f"resume: {exc}", file=sys.stderr)
+        return 2
+    if fresh_session_check(root, "resume"):
         return 2
     print(text, end="" if text.endswith("\n") else "\n")
     print()
