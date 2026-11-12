@@ -18,6 +18,14 @@ a fixture's copy of it with `HOME`, every XDG base directory and each harness's 
 fake operator's home, which holds a store for each harness whose step-3 probe opens one. The
 probe finds each moved under the session's private directory, and the `--noconftest` control
 finds the operator's.
+
+BG1300: the session's test identity is written under its private directory and never over a file
+already there. A reviewer's mutant that left `HOME` unmoved wrote it over the operator's real
+`~/.gitconfig`. The AC1 and AC2 cases give the fake operator's home a real-looking `.gitconfig` and
+check it byte for byte after the session, under the conftest and under fixture copies that leave
+`HOME` unmoved, beside a control copy that does write over it; the AC3 case puts one in the
+session's private home and finds the seed refuses to replace it. No case runs with `HOME` naming
+the home the passwd entry names.
 """
 # test-census-subject: conftest.py
 from __future__ import annotations
@@ -25,6 +33,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import pwd
 import shutil
 import site
 import subprocess
@@ -163,6 +172,7 @@ SESSION_VARS = (*PRIVATE_VARS, *HARNESS_HOMES, "PYTHONUSERBASE")
 #: base naming the fake operator's home `BG1249_OPERATOR`. The audit hook records every path
 #: the process opens or lists, so a step-3 probe that reaches the operator's store is seen.
 HOME_PROBE = f"""\
+import json
 import os
 import pwd
 import subprocess
@@ -251,6 +261,12 @@ class Probe(unittest.TestCase):
             self.assertEqual(0, got.returncode, "the commit was refused: " + got.stderr)
         author = subprocess.run(["git", "log", "-1", "--format=%ae"], env=env, cwd=repo,
                                 capture_output=True, text=True, check=True).stdout.strip()
+        named = subprocess.run(["git", "log", "-1", "--format=%an <%ae>"], env=env, cwd=repo,
+                               capture_output=True, text=True, check=True).stdout.strip()
+        seeded = Path(os.environ["HOME"], ".gitconfig")
+        Path(os.environ["BG1300_REPORT"]).write_text(json.dumps({{
+            "home": os.environ["HOME"], "author": named,
+            "gitconfig": seeded.read_text(encoding="utf-8") if seeded.is_file() else None}}))
         for scope, key, want in (["--global"], "user.email", author), ([], "maintenance.auto", "false"):
             got = subprocess.run(["git", "config", *scope, "--get", key], env=env, cwd=repo,
                                  capture_output=True, text=True)
@@ -271,6 +287,44 @@ def pytest_unconfigure(config):
     names = json.loads(os.environ["BG1249_NAMES"])
     Path(os.environ["BG1249_AFTER"]).write_text(json.dumps({n: os.environ.get(n) for n in names}))
 """
+
+#: The identity conftest.py's `TEST_IDENTITY` seeds the private home with, and the author a
+#: fixture commit with no identity of its own takes from it.
+TEST_IDENTITY = "[user]\n\tname = sdlc-studio tests\n\temail = tests@sdlc-studio.invalid\n"
+TEST_AUTHOR = "sdlc-studio tests <tests@sdlc-studio.invalid>"
+#: A real-looking operator's `.gitconfig`: another identity, beside another section.
+OPERATOR_GITCONFIG = (b"[user]\n\tname = A. Operator\n\temail = operator@example.invalid\n"
+                      b"[alias]\n\tlg = log --oneline\n")
+
+#: Loaded with `-p`; `tryfirst` runs it before the conftest's `pytest_configure`, so the
+#: conftest's `mkdtemp` call for its private directory returns the one `BG1300_PRIVATE` names.
+PRIVATE_PLUGIN = """\
+import os
+import tempfile
+
+import pytest
+
+MKDTEMP = tempfile.mkdtemp
+
+
+def once(*args, **kwargs):
+    tempfile.mkdtemp = MKDTEMP
+    return os.environ["BG1300_PRIVATE"]
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config):
+    tempfile.mkdtemp = once
+"""
+
+#: Edits to a copy of conftest.py, each (the text it replaces, the replacement). The first two
+#: leave `HOME` unmoved; `WRITE_THROUGH_HOME` puts back the line that wrote over the operator's.
+DROP_HOME = ('PRIVATE_HOME = {"HOME": "home", ', "PRIVATE_HOME = {")
+SKIP_HOME = ("        os.environ[name] = str(path)\n",
+             '        if name != "HOME":\n            os.environ[name] = str(path)\n')
+WRITE_THROUGH_HOME = ('    _seed_identity(Path(private, PRIVATE_HOME["HOME"], ".gitconfig"))\n',
+                      '    Path(os.environ["HOME"], ".gitconfig").write_text(TEST_IDENTITY, '
+                      'encoding="utf-8")\n')
 
 
 def user_site_of(home: Path) -> tuple[str, str]:
@@ -293,7 +347,7 @@ class PrivateHomeTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        self.fixture, op = root / "fixture", root / "operator"
+        self.root, self.fixture, op = root, root / "fixture", root / "operator"
         self.fixture.mkdir()
         for name in ("pytest.ini", "conftest.py"):
             shutil.copy2(REPO / name, self.fixture / name)
@@ -312,6 +366,7 @@ class PrivateHomeTests(unittest.TestCase):
             (Path(user_site) / "bg1249-operator-site.pth").write_text(
                 f"import site; site.addsitedir({site.getusersitepackages()!r})\n", encoding="utf-8")
         self.after, self.worker = root / "after.json", root / "worker.txt"
+        self.reported = root / "report.json"
         # Every GIT_ variable goes, so no inherited one sets the child's identity or git config,
         # and every PYTEST_ one, so an outer xdist worker's PYTEST_XDIST_WORKER does not name
         # the child's main process as a worker.
@@ -326,7 +381,7 @@ class PrivateHomeTests(unittest.TestCase):
             "OPENCODE_DB": str(op / ".local" / "share" / "opencode" / "opencode.db"),
             "BG1249_OPERATOR": str(op), "BG1249_USER_BASE": base,
             "BG1249_AFTER": str(self.after), "BG1249_NAMES": json.dumps(SESSION_VARS),
-            "BG1249_WORKER": str(self.worker),
+            "BG1249_WORKER": str(self.worker), "BG1300_REPORT": str(self.reported),
         })
 
     def probe(self, select: str, *args: str, conftest: bool = True) -> str:
@@ -337,6 +392,22 @@ class PrivateHomeTests(unittest.TestCase):
                                 "test_bg1249.py"], self.fixture, self.env)
         (self.assertEqual if conftest else self.assertNotEqual)(0, code, out)
         return out
+
+    def operator_gitconfig(self) -> Path:
+        """Write `OPERATOR_GITCONFIG` into the fake operator's home and return its path. Fails
+        first if that home is the passwd entry's or lies outside this test's directory."""
+        home = Path(self.env["HOME"]).resolve()
+        self.assertNotEqual(Path(pwd.getpwuid(os.getuid()).pw_dir).resolve(), home)
+        self.assertIn(self.root.resolve(), home.parents)
+        gitconfig = home / ".gitconfig"
+        gitconfig.write_bytes(OPERATOR_GITCONFIG)
+        return gitconfig
+
+    def report(self) -> tuple[str, str | None, str]:
+        """The probe's `test_commit` report: the session's `HOME`, the `.gitconfig` there and the
+        author its commit took."""
+        got = json.loads(self.reported.read_text(encoding="utf-8"))
+        return got["home"], got["gitconfig"], got["author"]
 
     def test_the_session_home_is_private(self) -> None:
         """AC1, in the main process and in an xdist worker; the control finds the operator's
@@ -364,10 +435,84 @@ class PrivateHomeTests(unittest.TestCase):
         """AC3: a repository with no identity of its own commits as the private home's
         `.gitconfig` names, under the maintenance pin. MUTANTS: no `.gitconfig` seeded; the
         maintenance pin dropped. The control is refused the commit, or, on a host whose name
-        git can make an email of, commits as an identity no config names."""
+        git can make an email of, commits as an identity no config names. BG1300 AC3's positive
+        control: that `.gitconfig` holds `TEST_IDENTITY` and the commit's author is its."""
         self.assertRegex(self.probe("test_commit", conftest=False),
                          "the commit was refused|user.email is not the session's")
         self.assertIn("1 passed", self.probe("test_commit"))
+        home, gitconfig, author = self.report()
+        self.assertNotEqual(self.env["HOME"], home)
+        self.assertEqual((TEST_IDENTITY, TEST_AUTHOR), (gitconfig, author))
+
+    def test_the_operator_gitconfig_is_byte_identical_after_a_session(self) -> None:
+        """BG1300 AC1: a session started with `HOME` naming a home that holds a real-looking
+        `.gitconfig` leaves that file byte-identical, while the session's own home holds
+        `TEST_IDENTITY` and the probe's commit takes it. MUTANT: the identity written to the
+        path `HOME` names before `HOME` moves."""
+        gitconfig = self.operator_gitconfig()
+        self.assertIn("1 passed", self.probe("test_commit"))
+        self.assertEqual(OPERATOR_GITCONFIG, gitconfig.read_bytes(),
+                         "the session wrote over the operator's .gitconfig")
+        home, seeded, author = self.report()
+        self.assertNotEqual(self.env["HOME"], home)
+        self.assertEqual((TEST_IDENTITY, TEST_AUTHOR), (seeded, author))
+
+    def test_a_session_with_home_left_unmoved_leaves_the_gitconfig_untouched(self) -> None:
+        """BG1300 AC2, the recorded steps: under a copy of conftest.py that leaves `HOME` unmoved,
+        by dropping `"HOME"` from `PRIVATE_HOME` (the session fails to start) or, separately, by
+        skipping the `HOME` assignment in `_move_home` (the session passes), the operator's
+        `.gitconfig` is byte-identical afterwards. The control copy also writes through `HOME`,
+        as the defect did, and is seen to change the file, so the check can see an overwrite.
+        MUTANT: the seed's path read from `HOME`."""
+        source = (REPO / "conftest.py").read_text(encoding="utf-8")
+        cases = (("HOME dropped from PRIVATE_HOME", [DROP_HOME], False),
+                 ("HOME assignment skipped", [SKIP_HOME], True),
+                 ("control: written through HOME", [DROP_HOME, WRITE_THROUGH_HOME], None))
+        for name, edits, passes in cases:
+            with self.subTest(name):
+                gitconfig = self.operator_gitconfig()
+                text = source
+                for old, new in edits:
+                    self.assertEqual(1, text.count(old), f"conftest.py no longer holds {old!r}")
+                    text = text.replace(old, new)
+                (self.fixture / "conftest.py").write_text(text, encoding="utf-8")
+                code, out = pytest_run(["-k", "test_commit", "test_bg1249.py"], self.fixture,
+                                       self.env)
+                if passes is None:
+                    self.assertEqual(TEST_IDENTITY.encode(), gitconfig.read_bytes(),
+                                     "the control did not write over the file\n" + out)
+                    continue
+                self.assertEqual(OPERATOR_GITCONFIG, gitconfig.read_bytes(),
+                                 f"{name}: the session wrote over the operator's .gitconfig\n{out}")
+                self.assertEqual(passes, code == 0, out)
+
+    def test_the_seed_refuses_to_replace_an_existing_gitconfig(self) -> None:
+        """BG1300 AC3: a private home already holding a `.gitconfig` keeps it byte-identical,
+        and the session stops naming its path and runs no test. The positive control hands the
+        session a fresh private directory, whose home is seeded with `TEST_IDENTITY` and which
+        the probe's commit takes. MUTANTS: the seed opened to overwrite; the refusal passed
+        over; the private directory removed after a refusal."""
+        (self.fixture / "bg1300_private.py").write_text(PRIVATE_PLUGIN, encoding="utf-8")
+        run = ["-p", "bg1300_private", "-k", "test_commit", "test_bg1249.py"]
+        fresh = self.root / "fresh"
+        fresh.mkdir()
+        self.env["BG1300_PRIVATE"] = str(fresh)
+        code, out = pytest_run(run, self.fixture, self.env)
+        self.assertEqual(0, code, out)
+        self.assertEqual((str(fresh / "home"), TEST_IDENTITY, TEST_AUTHOR), self.report())
+        self.reported.unlink()
+
+        held = self.root / "held"
+        gitconfig = held / "home" / ".gitconfig"
+        gitconfig.parent.mkdir(parents=True)
+        gitconfig.write_bytes(OPERATOR_GITCONFIG)
+        self.env["BG1300_PRIVATE"] = str(held)
+        code, out = pytest_run(run, self.fixture, self.env)
+        self.assertNotEqual(0, code, out)
+        self.assertIn(str(gitconfig), out)
+        self.assertFalse(self.reported.exists(), "a test ran after the seed was refused\n" + out)
+        self.assertEqual(OPERATOR_GITCONFIG, gitconfig.read_bytes(),
+                         "the seed wrote over the .gitconfig already there")
 
     def test_unconfigure_restores_what_it_changed(self) -> None:
         """AC3: after `pytest_unconfigure` each of `SESSION_VARS` holds what it held before the

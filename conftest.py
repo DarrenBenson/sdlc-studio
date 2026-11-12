@@ -34,9 +34,12 @@ under `HOME` and the XDG directories, so a session that kept the operator's open
 would have written to them. The owning session points `HOME` and each of `XDG_DATA_HOME`,
 `XDG_CONFIG_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` at `PRIVATE_HOME`'s directories under the
 private directory, unsets each of `HARNESS_HOMES`, and seeds the home's `.gitconfig` with a test
-identity, since a fixture commit that sets none reads it from `HOME`. A child Python derives its
-user site from `HOME`, and a base interpreter may find pytest only there (BG0978), so
-`PYTHONUSERBASE` is pinned to the user base read before `HOME` moves. Workers and nested runs
+identity, since a fixture commit that sets none reads it from `HOME`. The seed's path is built
+from the private directory, never from `HOME`, and the seed never replaces a file: a mutant that
+left `HOME` unmoved wrote the identity over the operator's `~/.gitconfig` (BG1300), and a session
+that finds a `.gitconfig` already there stops naming it and keeps its private directory. A child
+Python derives its user site from `HOME`, and a base interpreter may find pytest only there
+(BG0978), so `PYTHONUSERBASE` is pinned to the user base read before `HOME` moves. Workers and nested runs
 inherit all of it, and `pytest_unconfigure` puts each variable back.
 """
 import importlib
@@ -57,6 +60,7 @@ OWNER_VAR = "SDLC_TEST_TMPDIR"
 _owned = None   # (private dir, TMPDIR before, marker before, tempfile.tempdir before)
 _git_config_before = None   # the GIT_CONFIG_* variables this session set, as they were
 _home_before = None   # each variable `_move_home` set or unset, as it was
+_refused = None   # the `.gitconfig` the seed found already there; its directory is not removed
 
 #: Each variable the owning session points under the private directory, and where.
 PRIVATE_HOME = {"HOME": "home", "XDG_DATA_HOME": "home/.local/share",
@@ -125,9 +129,26 @@ def _restore(saved):
             os.environ[name] = value
 
 
+def _seed_identity(gitconfig):
+    """Create `gitconfig` holding `TEST_IDENTITY`, never replacing a file already there. A file
+    there is not the session's: it is left byte-identical, `_refused` keeps the private directory
+    from removal, and the session stops naming the path (BG1300)."""
+    global _refused
+    try:
+        with open(gitconfig, "x", encoding="utf-8") as seed:
+            seed.write(TEST_IDENTITY)
+    except FileExistsError:
+        _refused = gitconfig
+        pytest.exit(f"conftest.py: {gitconfig} already exists, so the session did not write its "
+                    "test identity over it and leaves its private directory in place",
+                    returncode=pytest.ExitCode.USAGE_ERROR)
+
+
 def _move_home(private):
     """Point `PRIVATE_HOME`'s variables under `private`, unset `HARNESS_HOMES`, pin the user base
-    and seed the home's `.gitconfig`. Only the session that owns `private` calls it."""
+    and seed the home's `.gitconfig`. Only the session that owns `private` calls it. The seed's
+    path is built from `private`, never read back from `HOME`: a mutant that left `HOME` unmoved
+    wrote the test identity over the operator's `~/.gitconfig` (BG1300)."""
     global _home_before
     user_base = site.getuserbase()      # read before HOME moves, since it derives from HOME
     _home_before = {name: os.environ.get(name)
@@ -139,7 +160,7 @@ def _move_home(private):
         os.environ[name] = str(path)
     for name in HARNESS_HOMES:
         os.environ.pop(name, None)
-    Path(os.environ["HOME"], ".gitconfig").write_text(TEST_IDENTITY, encoding="utf-8")
+    _seed_identity(Path(private, PRIVATE_HOME["HOME"], ".gitconfig"))
 
 
 def pytest_configure(config):
@@ -157,7 +178,7 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
-    global _owned, _git_config_before, _home_before
+    global _owned, _git_config_before, _home_before, _refused
     _restore(_git_config_before or {})
     _git_config_before = None
     _restore(_home_before or {})
@@ -168,4 +189,6 @@ def pytest_unconfigure(config):
     _owned = None
     tempfile.tempdir = cached
     _restore({"TMPDIR": env, OWNER_VAR: owner})
-    shutil.rmtree(private, ignore_errors=True)
+    if _refused is None:
+        shutil.rmtree(private, ignore_errors=True)
+    _refused = None
