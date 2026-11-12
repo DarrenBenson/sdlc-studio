@@ -498,7 +498,7 @@ staled by another unit's commit to it landing first, and an edit made in a merge
 
 Each unit has one independent reviewer, and a bounded number of rounds. A delivery REJECT is
 answered only by an **APPROVE in a later round from the reviewer who rejected**, who re-checks
-the fixes; `critic.py record` refuses a later round from anyone else. **The round cap is 2**:
+the fixes, briefed by `critic.py brief --rejoinder`, which quotes that reviewer's standing REJECT from the ledger; `critic.py record` refuses a later round from anyone else. **The round cap is 2**:
 the value of `critic.DEFAULT_REVIEW_CEILING`, which a project overrides with
 `review.max_rounds` in `sdlc-studio/.config.yaml` (a value that is not a positive whole number
 falls back to it), and `critic.py record` refuses a round past it. An operator can authorise

@@ -3557,7 +3557,7 @@ def rebrief_notice(root: Path | str, unit: str, fp: str) -> str | None:
     if explicit:
         again += f" --tier {tier}"
     if rejoinder:
-        again += " --rejoinder <prior verdict file>"
+        again += " --rejoinder"
     return (f"warning: {uid} was briefed as {fp}, and its {' and '.join(changed)} changed "
             f"since, so its brief is now {new}; this verdict was recorded against the earlier "
             f"scope. Re-brief the seat: {again}")
@@ -3794,23 +3794,26 @@ change, not finding it.
 
 
 def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,
-                    prior_verdict_text: str, tier: str = "full") -> str:
+                    prior_verdict_text: str, tier: str = "full", rebuilt: bool = False) -> str:
     """The re-review brief after a REJECT's repairs: the prior VERDICT/ISSUES/BLOCKING
     quoted verbatim, the base brief refreshed (via the standard brief), the structural demand
     to re-examine what the prior verdict named, and the return contract. A malformed
     prior-verdict block is refused loudly - a rejoinder against a verdict that cannot be parsed
     would re-review against a paraphrase. Validation is well-formedness only: an APPROVE prior
-    verdict is accepted too (a legitimate post-approval re-review)."""
+    verdict is accepted too (a legitimate post-approval re-review). `rebuilt` says the block
+    was rebuilt from a ledger row's cells (`rebuild_verdict_block`), and the quote is introduced
+    as that, never as the reviewer's own words."""
     parse_verdict_block(prior_verdict_text, strict=False)  # form only; ValueError on malformed
     base = brief(repo_root, unit, seat, tier)
     # The earlier file's UNIT/BRIEF header is dropped from the quote: it is not the verdict, and
     # a reviewer copying it would head the new file with the earlier brief's name.
     prior = _VERDICT_HEADER_RE.sub("", prior_verdict_text, count=1).strip()
+    how = REBUILT_QUOTE if rebuilt else "verbatim"
     return f"""{base}
 
 --- RE-REVIEW (rejoinder) ---
 
-This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, verbatim:
+This is a RE-REVIEW after repairs to your prior verdict. Your prior verdict, {how}:
 
 {prior}
 
@@ -3824,6 +3827,92 @@ Rule each finding of your prior verdict on the RULINGS line, not by re-emitting 
 Then return the SAME contract as before:
 
 {_RETURN_CONTRACT}"""
+
+
+#: The `--rejoinder` value that reads the prior verdict from the ledger: the bare flag's
+#: constant, and a spelling an operator may type. A file of that name is passed as `./ledger`.
+LEDGER_REJOINDER = "ledger"
+#: How a rejoinder introduces a prior verdict rebuilt from a ledger row's cells.
+REBUILT_QUOTE = "rebuilt from the ledger's fields as recorded, not in your own words"
+
+
+def seat_standing_reject(root: Path | str, unit: str, seat: str) -> dict:
+    """The REJECT row a `--rejoinder` with no file quotes: the latest unanswered REJECT
+    (`_unanswered_rejects`) in `unit`'s current delivery (`delivery_rounds`) from a reviewer
+    `seat_for` maps to `seat`. On a project that declares no seats every reviewer is a
+    candidate. Raises ValueError naming the unit and the seat when there is none, and naming
+    the reviewers when more than one holds one, since choosing between them is the operator's
+    call."""
+    uid, role = sdlc_md.norm_id(unit), seat.strip().lower()
+    declared = bool(_declared_reviewers(root))
+    rejects = [r for r in _unanswered_rejects(delivery_rounds(root, uid))
+               if not declared or seat_for(root, r.get("reviewer", "")) == role]
+    latest = {_id(r.get("reviewer", "")): r for r in rejects}
+    if not latest:
+        raise ValueError(f"{uid} has no unanswered REJECT from a {role} reviewer in its current "
+                         f"delivery, so there is no prior verdict to quote for the {role} seat; "
+                         f"brief the seat without --rejoinder, or pass the verdict file")
+    if len(latest) > 1:
+        names = ", ".join(str(r.get("reviewer")) for r in latest.values())
+        raise ValueError(f"{uid} holds unanswered REJECTs from {names} for the {role} seat; "
+                         f"pass the verdict file to quote with --rejoinder <file>")
+    return rejects[-1]
+
+
+def rebuild_verdict_block(row: dict) -> str:
+    """A delivery row's VERDICT, ISSUES, BLOCKING and RULINGS as a verdict block, read from its
+    cells: every finding in recorded order with its origin tag, the ones its `BLOCKING:` prefix
+    marks listed under BLOCKING, and a `RULINGS:` item on its own line. Parsed again, it gives
+    the row's findings back."""
+    cell = str(row.get("issues") or "").strip()
+    findings: list[str] = []
+    blocking: list[str] = []
+    for item in ([] if cell.lower() in _NO_FINDINGS
+                 else split_items(_unescape_outside_spans(cell))):
+        if _RULINGS_ITEM.match(item):
+            continue
+        mark = re.match(r"^\s*BLOCKING\s*:\s*", item, re.IGNORECASE)
+        text = _escape_item(item[mark.end():] if mark else item)
+        findings.append(text)
+        if mark:
+            blocking.append(text)
+    lines = [f"VERDICT: {str(row.get('verdict') or '').strip().upper()}",
+             "ISSUES: " + (";\n        ".join(findings) or "none"),
+             "BLOCKING: " + (";\n          ".join(blocking) or "none")]
+    if rulings := row_rulings(cell):
+        lines.append(f"RULINGS: {rulings}")
+    return "\n".join(lines) + "\n"
+
+
+def ledger_prior_verdict(root: Path | str, unit: str, seat: str) -> tuple[str, bool, str | None]:
+    """(prior verdict text, rebuilt, notice) for `brief --rejoinder` with no file: the seat's
+    standing REJECT (`seat_standing_reject`), quoted from the bytes of the file its `Source`
+    cell names when that file still holds them, else rebuilt from the row's cells; the notice
+    says why a bound row was rebuilt."""
+    row = seat_standing_reject(root, unit, seat)
+    _label, rel = verdict_source(root, row)
+    if rel is None:
+        return rebuild_verdict_block(row), True, None
+    vroot = verdict_root(root)
+    state = verdict_file_state(root, row, vroot)
+    if state == "unchanged":
+        return (vroot / rel).read_bytes().decode("utf-8"), False, None
+    return (rebuild_verdict_block(row), True,
+            f"rejoinder: {vroot / rel}, the file {sdlc_md.norm_id(unit)}'s REJECT was recorded "
+            f"from, is {VERDICT_FILE_NOTES[state]}, so the prior verdict is rebuilt from the row")
+
+
+def rejoinder_notice(root: Path | str, unit: str, seat: str) -> str | None:
+    """The line a plain brief prints when `seat` holds an unanswered REJECT on `unit`: round 2
+    is briefed with `--rejoinder`, which quotes it. None when no single one stands."""
+    try:
+        row = seat_standing_reject(root, unit, seat)
+    except (OSError, ValueError):
+        return None
+    uid = sdlc_md.norm_id(unit)
+    return (f"rejoinder: {row.get('reviewer')}'s REJECT of {uid} ({row.get('date')}) is "
+            f"unanswered; brief its re-review with `critic.py brief --unit {uid} --seat {seat} "
+            f"--rejoinder`, which quotes it")
 
 
 _VERDICT_LINE = re.compile(r"^\s*VERDICT:\s*(\S+)\s*$", re.M | re.I)
@@ -4429,12 +4518,16 @@ def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: s
 def cmd_brief(args: argparse.Namespace) -> int:
     try:
         if getattr(args, "rejoinder", None):
-            src = args.rejoinder
-            prior = (sys.stdin.read() if src == "-"
-                     else Path(src).read_text(encoding="utf-8"))
+            src, rebuilt, quoted = args.rejoinder, False, None
+            if src == LEDGER_REJOINDER:
+                # chosen from the ledger before anything prints: no REJECT is a refusal
+                prior, rebuilt, quoted = ledger_prior_verdict(args.root, args.unit, args.seat)
+            else:
+                prior = (sys.stdin.read() if src == "-"
+                         else Path(src).read_text(encoding="utf-8"))
             explicit = args.tier is not None
             tier = args.tier or tier_for(args.root, args.unit)
-            text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier)
+            text = rejoinder_brief(args.root, args.unit, args.seat, prior, tier, rebuilt)
             # The re-review brief carries the same blocks as the first one, so it is refused on
             # the same terms and before anything reaches stdout.
             assert_brief_practices(text, tier)
@@ -4449,8 +4542,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
                        explicit=explicit, verdict_file=str(path))
             # A repair is the author's work too, so a re-review is preceded by the same check.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
-            if notice:
-                print(notice, file=sys.stderr)
+            for line in (notice, quoted):
+                if line:
+                    print(line, file=sys.stderr)
             print(_record_footer(args.root, args.unit, tier, explicit, fp, path),
                   file=sys.stderr)
         else:
@@ -4479,8 +4573,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # The author's self-check, on stderr so the brief a reviewer reads from a file
             # carries none of it and its fingerprint is unmoved.
             print(author_self_check(args.root, args.unit), file=sys.stderr)
-            if notice:
-                print(notice, file=sys.stderr)
+            for line in (notice, rejoinder_notice(args.root, args.unit, args.seat)):
+                if line:
+                    print(line, file=sys.stderr)
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
@@ -4861,12 +4956,16 @@ def build_parser() -> argparse.ArgumentParser:
                         "band decides: a low-band unit gets a bounded brief, a medium-or-worse "
                         "one gets the full adversarial pass. An explicit choice is recorded as "
                         "one, so the derivation can be judged against the reviews it produced")
-    b.add_argument("--rejoinder", metavar="FILE|-", default=None,
+    b.add_argument("--rejoinder", metavar="FILE|-|ledger", nargs="?", const=LEDGER_REJOINDER,
+                   default=None,
                    help="emit the RE-REVIEW brief from the prior verdict file (or stdin "
                         "with -): the diff scope re-rendered, the named probes and mutants "
                         "demanded re-executed, and the delivery contract. The prior verdict is "
                         "quoted verbatim, a fingerprint footer is printed on stderr; a "
-                        "malformed block is refused")
+                        "malformed block is refused. With no value (or `ledger`), the seat's "
+                        "unanswered REJECT in the unit's current delivery is read from the "
+                        "ledger: quoted from the file its Source cell names, or rebuilt from "
+                        "its cells and labelled so; refused when the seat holds none")
     b.add_argument("--root", default=".")
     b.set_defaults(func=cmd_brief)
     cc = sub.add_parser("caller-check",
