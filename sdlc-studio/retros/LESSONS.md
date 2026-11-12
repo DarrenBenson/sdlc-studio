@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-09
+**Last Updated:** 2026-11-12
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0471: Send a repair to a fresh builder from the REJECT's verdict file; resume a builder only to hand it a ruling while its staged work sits in…
+
+- **Added:** 2026-11-12
+- **Review-by:** 2027-02-10
+
+Send a repair to a fresh builder from the REJECT's verdict file; resume a builder only to hand it a ruling while its staged work sits in its worktree.
+
+Recorded from retro RETRO0143.
+
+## L-0470: Fast-forward every lane's worktree to main as the brief's first step and again before `lane land` commits, so a lane is judged on main's…
+
+- **Added:** 2026-11-12
+- **Review-by:** 2027-02-10
+
+Fast-forward every lane's worktree to main as the brief's first step and again before `lane land` commits, so a lane is judged on main's code (BG1338, BG1337).
+
+Recorded from retro RETRO0143.
+
+## L-0469: At grooming and again at each lane brief, grep the whole tests tree (scripts/tests and tools/tests) for every function, printed string and…
+
+- **Added:** 2026-11-12
+- **Review-by:** 2027-02-10
+
+At grooming and again at each lane brief, grep the whole tests tree (scripts/tests and tools/tests) for every function, printed string and ledger cell the unit changes, including tests landed earlier in the run, and put each hit in Affects.
+
+Recorded from retro RETRO0143.
 
 ## L-0468: Run run ten's orchestrator in a fresh session started from `sprint.py handoff`, now that US1141 ships it
 

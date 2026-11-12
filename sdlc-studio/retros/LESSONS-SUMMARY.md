@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0471: Send a repair to a fresh builder from the REJECT's verdict file; resume a builder only to hand it a ruling while its staged work sits in…**
+- **L-0470: Fast-forward every lane's worktree to main as the brief's first step and again before `lane land` commits, so a lane is judged on main's…**
+- **L-0469: At grooming and again at each lane brief, grep the whole tests tree (scripts/tests and tools/tests) for every function, printed string and…**
 - **L-0468: Run run ten's orchestrator in a fresh session started from `sprint.py handoff`, now that US1141 ships it**
 - **L-0467: Fast-forward each lane's worktree to main before `lane land`, and normalise mutant test paths with the fragment surfaces before the commit…**
 - **L-0466: Before grooming a change to a shared surface (hook output, a top-level verb), grep every test that asserts that surface and put each in…**
