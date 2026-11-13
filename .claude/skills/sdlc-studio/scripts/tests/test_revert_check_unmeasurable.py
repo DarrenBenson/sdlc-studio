@@ -69,11 +69,29 @@ class UnmeasurableRevertTests(unittest.TestCase):
         self.assertRegex(out, r"AC1\s+unmeasured", out)
         self.assertNotIn("PASSES", out)
         self.assertEqual(code, 3, out)
+        self.assertIn("1 verifier(s) that reached no verdict", out)
         # Beside a criterion that stays green, the timeout is no proof of reach: refused.
         code, out = self._check("--unit", "US0002", "--base", "HEAD~1", "--timeout", "1")
         self.assertRegex(out, r"AC1\s+unmeasured", out)
         self.assertEqual(code, 1, out)
         self.assertIn("stayed GREEN", out)
+
+    def test_a_script_the_revert_removes_is_red(self):
+        # The unit adds a script and its criterion runs it. The revert deletes the script, so
+        # the shell exits 127: the clearest proof the criterion reaches the change.
+        new = self.root / "scripts" / "new.sh"
+        new.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        new.chmod(0o755)
+        gitutil.git(["add", "scripts/new.sh"], self.root)
+        gitutil.git(["commit", "-qm", "add a script"], self.root)
+        self._unit("US0001", "scripts/new.sh", "shell bash scripts/new.sh")
+        self._unit("US0002", "scripts/new.sh", "shell ./scripts/new.sh", MISSES)
+        for uid in ("US0001", "US0002"):
+            code, out = self._check("--unit", uid, "--base", "HEAD~1")
+            self.assertRegex(out, r"AC1\s+red", out)
+            self.assertIn("PASSES", out)
+            self.assertEqual(code, 0, out)
+        self.assertTrue(new.is_file(), "the script is restored after the check")
 
     def test_an_empty_revert_is_not_judged(self):
         self._unit("US0001", "scripts/prod.py", MISSES)
@@ -107,8 +125,11 @@ class UnmeasurableRevertTests(unittest.TestCase):
         self.assertEqual("red", state("shell", 3))
         # A clean exit that is no pass: pytest skipped part of what it selected.
         self.assertEqual("unmeasured", state("pytest", 0))
-        for code in (124, 126, 127):
-            self.assertEqual("unmeasured", state("shell", code), code)
+        # A timeout reached no verdict. A shell's own 126 or 127 did: 127 is what a script the
+        # revert deleted gives (see test_a_script_the_revert_removes_is_red).
+        self.assertEqual("unmeasured", state("shell", 124))
+        for code in (126, 127):
+            self.assertEqual("red", state("shell", code), code)
         self.assertEqual("unmeasured", state("pytest", 5, vacuous=True))
         self.assertEqual("unmeasured", state("invalid", 2))
         self.assertEqual("unmeasured", state("blocked", 2))

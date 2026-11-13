@@ -59,8 +59,8 @@ writes the report.
 3. For each AC with a `Verify:` line, builds a subprocess command
    from the DSL prefix and runs it with `cwd=--repo-root`
 4. Classifies the result: passed (verifier exit 0), failed (non-zero),
-   manual (no `Verify:` line). A `pytest` verifier that skips any test it
-   selects fails, and its FAIL line names each skipped test and the reason
+   manual (no `Verify:` line). A `pytest` verifier that skips any test it selects fails (not yet
+   one whose Verify line adds `-q`), and its FAIL line names each skipped test and the reason
 5. Updates story files in place unless `--dry-run`:
    - passing AC whose `Verified:` was missing gets a new line
    - passing AC whose `Verified:` was `no` or `stale` gets upgraded
@@ -165,8 +165,8 @@ criteria around it, and `revert-check` exempts a criterion only through a reason
 `verify_ac.py revert-check --unit <id>` reverts the unit's production files to the base ref
 (the open run's, or `--base <ref>`), re-runs the unit's own verifiers, and restores the files. A
 criterion that goes red proves its tests reach the change; one that stays green proves they do
-not. A verifier that times out, cannot start, runs no test or skips part of what it selects is
-`unmeasured` and decides nothing.
+not. A verifier that times out, runs no test or skips part of what it selects is `unmeasured`
+and decides nothing; a shell that exits 126 or 127 as the revert removed its script is red.
 
 | Verdict | Exit | When |
 | --- | --- | --- |

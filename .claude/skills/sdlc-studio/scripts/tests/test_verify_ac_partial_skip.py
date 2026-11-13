@@ -45,6 +45,37 @@ class TestGreen:
         assert True
 '''
 
+CLASS_SKIP = '''import pytest
+
+
+def test_cls_runs():
+    assert True
+
+
+@pytest.mark.skip(reason="class off")
+class TestOff:
+    def test_off_one(self):
+        assert True
+
+    def test_off_two(self):
+        assert True
+
+
+@pytest.mark.skip("other")
+class TestAlso:
+    def test_also(self):
+        assert True
+'''
+
+MODULE_SKIP = '''import pytest
+
+pytestmark = pytest.mark.skip(reason="module off")
+
+
+def test_mod_one():
+    assert True
+'''
+
 HEAD = "# {uid}: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n\n## Acceptance Criteria\n\n"
 
 
@@ -112,6 +143,28 @@ class PartialSkipTests(unittest.TestCase):
             self.assertNotEqual(rc, 0, text)
             self.assertFalse(self._stamped(root, "BG9001"), "the batch route stamped a partial skip")
             self._assert_names_each_skip(text)
+            self.assertTrue(self._stamped(root, "BG9002"), text)
+
+    def test_a_class_or_module_skip_mark_is_named(self):
+        # pytest folds a skip mark on a class or a module with no line number.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, {"BG9001": "pytest tests/test_cls.py tests/test_mod.py",
+                                 "BG9002": "pytest tests/test_cls.py::test_cls_runs"})
+            (root / "tests" / "test_cls.py").write_text(CLASS_SKIP, encoding="utf-8")
+            (root / "tests" / "test_mod.py").write_text(MODULE_SKIP, encoding="utf-8")
+            rc, text = self._run(root, "BG9001")
+            self.assertNotEqual(rc, 0, text)
+            self.assertFalse(self._stamped(root, "BG9001"), "a partly skipped run was stamped")
+            self.assertIn("SKIPPED 4 selected", text)
+            # Each fold is tied to its class by the reason its mark gives.
+            self.assertIn("tests/test_cls.py::TestOff x2 (class off)", text)
+            self.assertIn("tests/test_cls.py::TestAlso (other)", text)
+            self.assertIn("tests/test_mod.py (module off)", text)
+            self.assertNotIn("add -rs", text, "the command already asks for the skip report")
+            self.assertNotIn("test_cls_runs", text, "a test that ran is not called skipped")
+            rc, text = self._run(root, "BG9002")
+            self.assertEqual(rc, 0, text)
             self.assertTrue(self._stamped(root, "BG9002"), text)
 
 

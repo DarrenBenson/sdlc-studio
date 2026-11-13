@@ -427,7 +427,8 @@ def _pytest_all_skipped(blob: str) -> bool:
 # whose command asks pytest for its skip report (`-rfEs`); a `shell` line keeps its own verdict.
 # The summary line's count decides; the report's lines only name what it counted.
 _PYTEST_SUMMARY = re.compile(r"^(?:=+ )?(\d+ \w+(?:, \d+ \w+)*) in \d", re.M)
-_PYTEST_SKIP_FOLDED = re.compile(r"^SKIPPED \[(\d+)\] (.+?):(\d+): (.*)$", re.M)
+# A skip mark on a class or a module is folded with no line: `SKIPPED [2] tests/test_e.py: off`.
+_PYTEST_SKIP_FOLDED = re.compile(r"^SKIPPED \[(\d+)\] (.+?)(?::(\d+))?: (.*)$", re.M)
 _PYTEST_SKIP_NODE = re.compile(r"^SKIPPED (\S+::\S+) - (?:Skipped: )?(.*)$", re.M)
 _TEST_DEFS = (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
 
@@ -451,6 +452,27 @@ def _enclosing_test(cwd: Path, path: str, line: int) -> str:
     return "::".join([path, *names]) if names else f"{path}:{line}"
 
 
+def _skip_marked_class(cwd: Path, path: str, reason: str) -> str:
+    """`path::Class` for each top-level class whose `skip` mark gives `reason`; `path` when none
+    does, as for a module's `pytestmark`. A line-less fold carries only the file and the reason,
+    so the reason is what ties it to a class."""
+    try:
+        body = ast.parse((cwd / path).read_text(encoding="utf-8")).body
+    except (OSError, SyntaxError, ValueError):
+        return path
+
+    def gives(dec: ast.expr) -> bool:
+        if not (isinstance(dec, ast.Call)
+                and getattr(dec.func, "attr", getattr(dec.func, "id", "")) == "skip"):
+            return False
+        given = [*dec.args[:1], *(k.value for k in dec.keywords if k.arg == "reason")]
+        return any(isinstance(a, ast.Constant) and a.value == reason for a in given)
+
+    hits = [f"{path}::{n.name}" for n in body
+            if isinstance(n, ast.ClassDef) and any(gives(d) for d in n.decorator_list)]
+    return ", ".join(hits) or path
+
+
 def _pytest_partial_skips(stdout: str, stderr: str, cwd: Path) -> str:
     """The partial-skip verdict for a clean pytest run naming each skipped test as `name
     (reason)`; empty when it skipped none. A skip the report does not list (a `-r` on the
@@ -462,7 +484,8 @@ def _pytest_partial_skips(stdout: str, stderr: str, cwd: Path) -> str:
         return ""
     named = [f"{node} ({reason})" for node, reason in _PYTEST_SKIP_NODE.findall(blob)]
     for n, path, line, reason in _PYTEST_SKIP_FOLDED.findall(blob):
-        name = _enclosing_test(cwd, path, int(line))
+        name = (_enclosing_test(cwd, path, int(line)) if line
+                else _skip_marked_class(cwd, path, reason))
         named.append(f"{name} ({reason})" if n == "1" else f"{name} x{n} ({reason})")
     names = "; ".join(named) or "the run's report named none of them (add -rs)"
     return _PARTLY_SKIPPED_MSG.format(n=count, names=names)
@@ -4869,8 +4892,10 @@ def _release_signals(previous: dict) -> None:
             continue
 
 
-#: Exits that say a runner never reached a verdict: it timed out, or could not be executed.
-_NO_VERDICT_EXITS = (124, 126, 127)
+#: Exits that say a runner never reached a verdict: it timed out. A shell's own 126 or 127 (the
+#: command it names cannot be run or found) is a verdict: a revert that deletes a unit's script
+#: makes the shell that runs it exit 127.
+_NO_VERDICT_EXITS = (124,)
 
 
 def _revert_state(res: VerifierResult) -> str:
@@ -4880,9 +4905,8 @@ def _revert_state(res: VerifierResult) -> str:
     to a verdict and reported a failure: a non-zero exit from a parsed, permitted expression whose
     run was not empty. Every other result that is not a pass did not measure the change and is
     `unmeasured`: an expression that would not parse (`invalid`), one the trust boundary refused
-    (`blocked`), a run of nothing (`vacuous`), a timeout or a runner that could not start (an exit
-    in `_NO_VERDICT_EXITS`), and a clean exit that is still no pass, as when pytest skipped part
-    of what it selected. Counted red, each passed a unit on a criterion that never measured it.
+    (`blocked`), a run of nothing (`vacuous`), a timeout (an exit in `_NO_VERDICT_EXITS`), and a
+    clean exit that is still no pass, as when pytest skipped part of what it selected. Counted red, each passed a unit on a criterion that never measured it.
     """
     if res.ok:
         return "green"
@@ -5093,8 +5117,8 @@ def revert_check(root, unit: str, base_ref: str | None = None, *,
         result["errors"].append(
             f"{uid}: nothing measurable - {len(result['exempt'])} exempt, "
             f"{len(result['unresolved'])} unresolvable selector(s), "
-            f"{len(result['unmeasured'])} verifier(s) that did not run. No criterion was "
-            f"executed, so this is REPORTED rather than passed")
+            f"{len(result['unmeasured'])} verifier(s) that reached no verdict. No criterion was "
+            f"measured, so this is REPORTED rather than passed")
         return result
     result["ok"] = True
     result["status"] = "pass"
