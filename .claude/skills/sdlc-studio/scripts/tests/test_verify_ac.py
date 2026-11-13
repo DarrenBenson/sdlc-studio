@@ -2056,6 +2056,31 @@ except BaseException:
     raise
 """
 
+# A caller whose own SIGTERM handler returns, so it carries on. The handler holds the relay
+# open until the queued verifiers settle, or a second has passed, so a worker reaches them
+# while the relay runs.
+_CARRY_ON_DRIVER = """
+import json, signal, sys, time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+futures = []
+
+def carry_on(signum, frame):
+    deadline = time.monotonic() + 1
+    while time.monotonic() < deadline and not all(f.done() for f in futures[1:]):
+        time.sleep(0.02)
+
+signal.signal(signal.SIGTERM, carry_on)
+sys.path.insert(0, sys.argv[1])
+import verify_ac
+pool = ThreadPoolExecutor(max_workers=1)
+futures += [pool.submit(verify_ac.run_verifier, cmd, 30, Path.cwd())
+            for cmd in ("shell touch started; sleep 10", "shell echo one", "shell echo two")]
+pool.shutdown(wait=True)
+print(json.dumps([type(f.exception()).__name__ if f.exception() else f.result().ok
+                  for f in futures[1:]]))
+"""
+
 
 @unittest.skipUnless(hasattr(os, "killpg"), "the signal relay needs process groups")
 class SignalStopsQueuedVerifiersTests(unittest.TestCase):
@@ -2112,13 +2137,15 @@ class SignalStopsQueuedVerifiersTests(unittest.TestCase):
     def test_a_signal_landing_while_a_worker_spawns_still_stops_its_verifier(self) -> None:
         """The signal arrives after the worker's first check and before its group is listed, so
         the relay never sees it. MUTANT: no check once the group is listed (the verifier then
-        runs its full five seconds and writes its mark)."""
+        runs its full five seconds to exit 0 and writes its mark)."""
         self.addCleanup(verify_ac._STOPPING.clear)
         real = subprocess.Popen
+        spawned: list[subprocess.Popen] = []
 
         class _SignalledWhileSpawning(real):  # type: ignore[misc, valid-type]
             def __init__(self, *a, **kw):
                 super().__init__(*a, **kw)
+                spawned.append(self)
                 verify_ac._STOPPING.set()
 
         with tempfile.TemporaryDirectory() as d:
@@ -2132,12 +2159,13 @@ class SignalStopsQueuedVerifiersTests(unittest.TestCase):
                 except BaseException as exc:  # noqa: BLE001 - the refusal is what is read
                     raised.append(exc)
             with unittest.mock.patch.object(verify_ac.subprocess, "Popen", _SignalledWhileSpawning):
-                began = time.monotonic()
                 t = threading.Thread(target=worker)
                 t.start()
                 t.join(30)
             self.assertEqual([KeyboardInterrupt], [type(e) for e in raised])
-            self.assertLess(time.monotonic() - began, 4, "the verifier ran on under the stop")
+            self.assertEqual(1, len(spawned), "premise: the worker spawned no verifier")
+            self.assertLess(spawned[0].returncode, 0,
+                            "the verifier ran to its end under the stop, not ended by a signal")
             self.assertFalse(mark.exists())
             self.assertEqual({}, verify_ac._LIVE_GROUPS)
 
@@ -2157,6 +2185,115 @@ class SignalStopsQueuedVerifiersTests(unittest.TestCase):
                     verify_ac._reap_on_signal(sig, None)
             self.assertEqual(held, verify_ac._STOPPING.is_set(), prior)
             verify_ac._STOPPING.clear()
+
+    def test_a_caller_whose_handler_returns_runs_the_verifiers_still_queued(self) -> None:
+        """MUTANT: a worker refusing at once under the stop, so the two verifiers it reaches
+        while the caller's own handler runs raise KeyboardInterrupt into their futures."""
+        with tempfile.TemporaryDirectory() as d:
+            caller = subprocess.Popen(
+                [sys.executable, "-B", "-c", _CARRY_ON_DRIVER, str(SCRIPT_PATH.parent)],
+                cwd=d, start_new_session=True, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                deadline = time.monotonic() + 30
+                while not (Path(d) / "started").is_file() and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                self.assertTrue((Path(d) / "started").is_file(), "premise: nothing started")
+                os.kill(caller.pid, signal.SIGTERM)
+                out, err = caller.communicate(timeout=30)
+            finally:
+                if caller.poll() is None:
+                    os.killpg(caller.pid, signal.SIGKILL)
+                    caller.wait()
+            self.assertEqual(0, caller.returncode, err)
+            self.assertEqual([True, True], json.loads(out), "a queued verifier did not run")
+
+    def _worker_inside_relay(self, d: str, priors: dict, sig: int) -> tuple[list, list, Path]:
+        """Run the relay for `sig` with `priors` as the handlers it replaced, each handed a
+        `watch` that starts a worker's verifier and reads, half a second on, whether the worker
+        is still waiting with nothing run. A `sig` with no prior takes the default disposition,
+        whose kill runs `watch` instead. Returns what the worker raised, what `watch` read, and
+        the verifier's mark."""
+        mark = Path(d) / "ran"
+        raised: list[BaseException] = []
+        seen: list[bool] = []
+
+        def worker() -> None:
+            try:
+                verify_ac.run_verifier(f"shell echo x >> {shlex.quote(str(mark))}",
+                                       timeout=30, cwd=Path(d))
+            except BaseException as exc:  # noqa: BLE001 - the refusal is what is read
+                raised.append(exc)
+        t = threading.Thread(target=worker, daemon=True)
+
+        def watch() -> None:
+            t.start()
+            t.join(0.5)
+            seen.append(t.is_alive() and not mark.exists())
+        handlers = {s: (lambda f: lambda signum, frame: f(watch))(f) for s, f in priors.items()}
+        with unittest.mock.patch.dict(verify_ac._PRIOR_HANDLERS, handlers), \
+                unittest.mock.patch.dict(verify_ac._LIVE_GROUPS, {}, clear=True), \
+                unittest.mock.patch.object(verify_ac.os, "kill", lambda pid, signum: watch()), \
+                unittest.mock.patch.object(verify_ac.signal, "signal", lambda *a: None):
+            with contextlib.suppress(KeyboardInterrupt):
+                verify_ac._reap_on_signal(sig, None)
+        t.join(30)
+        return raised, seen, mark
+
+    def test_a_worker_meeting_the_stop_waits_for_the_callers_handler(self) -> None:
+        """A worker that reaches a verifier while the relay runs starts it if the handler the
+        relay replaced returns, and refuses it if that handler raises. MUTANT: refusing at once
+        (a caller that carries on gets interrupts for a queue), or starting at once (a raised
+        interrupt has a verifier run on)."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+
+        def returns(watch) -> None:
+            watch()
+
+        def raises(watch) -> None:
+            watch()
+            raise KeyboardInterrupt
+        for prior, refused in ((returns, False), (raises, True)):
+            with self.subTest(prior=prior.__name__), tempfile.TemporaryDirectory() as d:
+                raised, seen, mark = self._worker_inside_relay(
+                    d, {signal.SIGUSR1: prior}, signal.SIGUSR1)
+                self.assertEqual([True], seen, "the worker did not wait for the handler")
+                self.assertEqual([KeyboardInterrupt] if refused else [],
+                                 [type(e) for e in raised])
+                self.assertEqual(not refused, mark.exists())
+                self.assertEqual(refused, verify_ac._STOPPING.is_set())
+                verify_ac._STOPPING.clear()
+
+    def test_under_the_default_disposition_a_worker_refuses_at_once(self) -> None:
+        """No handler decides there: the signal ends the process, so a worker refuses each
+        verifier it reaches at once, and kills one caught mid-spawn while it still can. MUTANT:
+        the worker waiting for the relay to settle there too, so the process dies with that
+        verifier running on."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+        with tempfile.TemporaryDirectory() as d:
+            raised, seen, mark = self._worker_inside_relay(d, {}, signal.SIGUSR1)
+            self.assertEqual([False], seen, "the worker waited for a process about to die")
+            self.assertEqual([KeyboardInterrupt], [type(e) for e in raised])
+            self.assertFalse(mark.exists())
+
+    def test_a_relay_inside_one_still_running_leaves_the_stop_to_it(self) -> None:
+        """A second signal handled inside the first, whose own handler returns, does not lift
+        the stop while the first relay runs. MUTANT: no count of the relays running, so the
+        inner relay lifts it, the worker starts its verifier, and the outer interrupt finds
+        it already run."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+        outer, inner = signal.SIGUSR1, signal.SIGUSR2
+
+        def outer_prior(watch) -> None:
+            verify_ac._reap_on_signal(inner, None)
+            watch()
+            raise KeyboardInterrupt
+        with tempfile.TemporaryDirectory() as d:
+            raised, seen, mark = self._worker_inside_relay(
+                d, {outer: outer_prior, inner: lambda watch: None}, outer)
+            self.assertEqual([True], seen, "the inner relay let the worker through")
+            self.assertEqual([KeyboardInterrupt], [type(e) for e in raised])
+            self.assertFalse(mark.exists())
 
 
 class VacuousVerifierTests(unittest.TestCase):

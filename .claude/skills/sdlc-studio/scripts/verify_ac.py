@@ -626,19 +626,29 @@ _LIVE_GROUPS: dict[int, subprocess.Popen] = {}
 _PRIOR_HANDLERS: dict = {}
 # Set by `_reap_on_signal` before it signals a group. While the handler waits out the grace, a
 # worker thread whose verifier the signal ended would take the next queued verifier and start
-# it, before the interrupt reaches the code that cancels the queue; `_refuse_if_stopping` keeps
-# it from starting. Cleared when the handler replaced returns (its caller carries on) or the
-# main thread starts a verifier (it caught the interrupt and carried on).
+# it, before the interrupt reaches the code that cancels the queue; `_refuse_if_stopping` holds
+# it back. `_RELAY_SETTLED` is clear while a relay that will call the handler it replaced runs,
+# since only that handler decides whether the caller carries on, and a worker waits on it before
+# refusing; under the default disposition the process dies, so a worker refuses at once.
+# `_RELAYS_RUNNING` counts the relays in flight, a second signal being handled inside the first.
+# The stop is cleared when the last relay's replaced handler returns (its caller carries on) or
+# the main thread starts a verifier (it caught the interrupt and carried on).
 _STOPPING = threading.Event()
+_RELAY_SETTLED = threading.Event()
+_RELAY_SETTLED.set()
+_RELAYS_RUNNING = 0
 
 
 def _refuse_if_stopping() -> None:
-    """Raise `KeyboardInterrupt` on a thread other than the main one once the caller has been
-    signalled; on the main thread, clear the stop instead."""
+    """On a thread other than the main one, once the caller has been signalled, wait for the
+    relays running to settle, then raise `KeyboardInterrupt` unless the caller carried on. On
+    the main thread, clear the stop instead."""
     if threading.current_thread() is threading.main_thread():
         _STOPPING.clear()
     elif _STOPPING.is_set():
-        raise KeyboardInterrupt("the caller was signalled to stop, so no verifier starts")
+        _RELAY_SETTLED.wait()
+        if _STOPPING.is_set():
+            raise KeyboardInterrupt("the caller was signalled to stop, so no verifier starts")
 
 
 def _reap_on_signal(signum, frame):
@@ -646,22 +656,36 @@ def _reap_on_signal(signum, frame):
     included, so each runs its own handling of it, and SIGKILL any group still there
     `_SIGNAL_GRACE` seconds later. Then let the signal do what it did before: call the handler
     this one replaced (SIGINT's raises `KeyboardInterrupt`), or, under the default disposition,
-    die by it. From the moment it arrives no worker thread starts a verifier, and one caught
-    mid-spawn is killed before it runs on."""
-    _STOPPING.set()
-    live = list(_LIVE_GROUPS.copy().values())
-    for proc in live:
-        _signal_group(proc.pid, signum)
-    for proc in _await_groups(live, _SIGNAL_GRACE):
-        _signal_group(proc.pid, signal.SIGKILL)
+    die by it. From the moment it arrives no worker thread starts a verifier until the handler
+    replaced has run: if it returns, the workers carry on; if it raises, a worker refuses each
+    verifier it reaches and kills one it had already started; under the default disposition, a
+    worker refuses at once."""
+    global _RELAYS_RUNNING
     prior = _PRIOR_HANDLERS.get(signum, signal.SIG_DFL)
+    carried_on = False
+    _RELAYS_RUNNING += 1
     if callable(prior):
-        prior(signum, frame)
-        _STOPPING.clear()
+        _RELAY_SETTLED.clear()
+    _STOPPING.set()
+    try:
+        live = list(_LIVE_GROUPS.copy().values())
+        for proc in live:
+            _signal_group(proc.pid, signum)
+        for proc in _await_groups(live, _SIGNAL_GRACE):
+            _signal_group(proc.pid, signal.SIGKILL)
+        if callable(prior):
+            prior(signum, frame)
+            carried_on = True
+            return None
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
         return None
-    signal.signal(signum, signal.SIG_DFL)
-    os.kill(os.getpid(), signum)
-    return None
+    finally:
+        _RELAYS_RUNNING -= 1
+        if not _RELAYS_RUNNING:
+            if carried_on:
+                _STOPPING.clear()
+            _RELAY_SETTLED.set()
 
 
 def _install_reaper() -> None:
