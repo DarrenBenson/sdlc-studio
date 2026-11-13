@@ -347,18 +347,15 @@ def changed_problems(text: str, entries: list[tuple[str, str]],
             + breaking_problems(text, entries))
 
 
-def bug_status(bug: str, bugs: Path = BUGS) -> str:
-    """The `Status` the bug corpus records for `bug`, or '' where it holds no page for it."""
-    page = next(iter(sorted(bugs.glob(f"{bug}-*.md"))), None)
-    found = page and re.search(r"^> \*\*Status:\*\* (\w+)", page.read_text(encoding="utf-8"), re.M)
-    return found.group(1) if found else ""
+#: BG1190's Status in the corpus the v6.3.0 tag holds. The notes describe that corpus and stay as
+#: shipped; the live corpus has moved on since (BG1190 is Fixed), so it no longer decides.
+BG1190_AT_RELEASE = "Open"
 
 
-def open_problems(text: str, status: str | None = None) -> list[str]:
-    """BG1190's fix landed while its review found a regression, so the bug stays Open: the notes
-    say it stays open under Known issues while the corpus does, and list it behind no theme."""
-    if status is None:
-        status = bug_status("BG1190")
+def open_problems(text: str, status: str = BG1190_AT_RELEASE) -> list[str]:
+    """BG1190's fix landed while its review found a regression, so the bug was Open at the cut:
+    the notes say it stays open under Known issues while the corpus they describe does, and list
+    it behind no theme."""
     known = " ".join((section(text, r"^Known issues$") or "").split())
     says = re.search(r"BG1190 stays open", known)
     problems = []
@@ -679,7 +676,13 @@ class ReleaseNotesTests(unittest.TestCase):
         verifier = ("- **A verifier that outruns", "- **A light APPROVE")
         self.assertFlags(changed_problems(self.swap(*verifier, ROUND1_VERIFIER), entries, figs),
                          "does not say 'no longer reaches a running verifier'")
-        self.assertEqual("Open", bug_status("BG1190"), "premise: the corpus records BG1190 Open")
+        if _run("git", "-C", str(REPO), "rev-parse", "-q", "--verify",
+                "refs/tags/v6.3.0").returncode == 0:   # a copy with no history has no tag to read
+            page = next(iter(sorted(BUGS.glob("BG1190-*.md"))))
+            found = re.search(r"^> \*\*Status:\*\* (\w+)",
+                              shipped(page.relative_to(REPO).as_posix()), re.M)
+            self.assertEqual(BG1190_AT_RELEASE, found and found.group(1),
+                             "premise: the corpus at the v6.3.0 tag records BG1190 Open")
         unsaid = self.swap("BG1190 stays open:", "**v6.3.0 discloses", "")
         self.assertFlags(open_problems(unsaid, "Open"), "does not say it stays open")
         self.assertFlags(open_problems(self.text, "Fixed"), "the corpus records it Fixed")

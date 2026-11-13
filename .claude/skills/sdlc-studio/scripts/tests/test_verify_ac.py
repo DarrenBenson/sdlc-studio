@@ -13,6 +13,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import signal
 import stat
@@ -2035,6 +2036,127 @@ class StoryIdTests(unittest.TestCase):
         rc, err = self._run("does/not/exist.md")
         self.assertEqual(rc, 2)
         self.assertIn("no story file at", err)
+
+
+# A caller running verifiers on a one-worker pool, which cancels the queue when it is
+# interrupted and re-raises, as `gate.py`'s verify lane does.
+_QUEUE_DRIVER = """
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import verify_ac
+pool = ThreadPoolExecutor(max_workers=1)
+try:
+    for i in range(3):
+        pool.submit(verify_ac.run_verifier, f"shell echo {i} >> started; sleep 2", 30, Path.cwd())
+    pool.shutdown(wait=True)
+except BaseException:
+    pool.shutdown(wait=False, cancel_futures=True)
+    raise
+"""
+
+
+@unittest.skipUnless(hasattr(os, "killpg"), "the signal relay needs process groups")
+class SignalStopsQueuedVerifiersTests(unittest.TestCase):
+    """A signal to the caller ends its running verifiers and starts no other, so the
+    interrupt reaches the code that cancels the queue before a worker can take the next."""
+
+    def test_a_worker_starts_no_verifier_once_its_caller_is_signalled(self) -> None:
+        """MUTANT: the relay waiting out its grace before the interrupt with nothing holding a
+        worker back, so the worker whose verifier the signal ended takes the next and starts
+        it (`started` then reads 0 and 1)."""
+        with tempfile.TemporaryDirectory() as d:
+            started = Path(d) / "started"
+            caller = subprocess.Popen(
+                [sys.executable, "-B", "-c", _QUEUE_DRIVER, str(SCRIPT_PATH.parent)],
+                cwd=d, start_new_session=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                deadline = time.monotonic() + 30
+                while not started.is_file() and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                self.assertTrue(started.is_file(), "premise: the first verifier never started")
+                os.killpg(caller.pid, signal.SIGINT)
+                self.assertNotEqual(0, caller.wait(timeout=30))
+            finally:
+                if caller.poll() is None:
+                    os.killpg(caller.pid, signal.SIGKILL)
+                    caller.wait()
+            self.assertEqual(["0"], started.read_text(encoding="utf-8").split(),
+                             "a verifier started after its caller was signalled")
+
+    def test_the_stop_holds_back_workers_and_not_a_main_thread_that_carried_on(self) -> None:
+        """MUTANT: the stop refusing the main thread too, so a caller that caught the interrupt
+        and carried on can run no verifier again; or a worker let through under it."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+        with tempfile.TemporaryDirectory() as d:
+            mark = Path(d) / "ran"
+            verifier = f"shell echo x >> {shlex.quote(str(mark))}"
+            verify_ac._STOPPING.set()
+            raised: list[BaseException] = []
+
+            def worker() -> None:
+                try:
+                    verify_ac.run_verifier(verifier, timeout=30, cwd=Path(d))
+                except BaseException as exc:  # noqa: BLE001 - the refusal is what is read
+                    raised.append(exc)
+            t = threading.Thread(target=worker)
+            t.start()
+            t.join(30)
+            self.assertEqual([KeyboardInterrupt], [type(e) for e in raised])
+            self.assertFalse(mark.exists(), "a worker started a verifier under the stop")
+            self.assertTrue(verify_ac.run_verifier(verifier, timeout=30, cwd=Path(d)).ok)
+            self.assertFalse(verify_ac._STOPPING.is_set(), "the main thread left the stop set")
+
+    def test_a_signal_landing_while_a_worker_spawns_still_stops_its_verifier(self) -> None:
+        """The signal arrives after the worker's first check and before its group is listed, so
+        the relay never sees it. MUTANT: no check once the group is listed (the verifier then
+        runs its full five seconds and writes its mark)."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+        real = subprocess.Popen
+
+        class _SignalledWhileSpawning(real):  # type: ignore[misc, valid-type]
+            def __init__(self, *a, **kw):
+                super().__init__(*a, **kw)
+                verify_ac._STOPPING.set()
+
+        with tempfile.TemporaryDirectory() as d:
+            mark = Path(d) / "ran"
+            raised: list[BaseException] = []
+
+            def worker() -> None:
+                try:
+                    verify_ac.run_verifier(f"shell sleep 5; echo x > {shlex.quote(str(mark))}",
+                                           timeout=30, cwd=Path(d))
+                except BaseException as exc:  # noqa: BLE001 - the refusal is what is read
+                    raised.append(exc)
+            with unittest.mock.patch.object(verify_ac.subprocess, "Popen", _SignalledWhileSpawning):
+                began = time.monotonic()
+                t = threading.Thread(target=worker)
+                t.start()
+                t.join(30)
+            self.assertEqual([KeyboardInterrupt], [type(e) for e in raised])
+            self.assertLess(time.monotonic() - began, 4, "the verifier ran on under the stop")
+            self.assertFalse(mark.exists())
+            self.assertEqual({}, verify_ac._LIVE_GROUPS)
+
+    def test_a_prior_handler_that_returns_lifts_the_stop(self) -> None:
+        """MUTANT: the stop left set after the replaced handler returned, so a caller whose own
+        handler carries on starts no verifier on a worker again. A handler that raises keeps it."""
+        self.addCleanup(verify_ac._STOPPING.clear)
+        sig = signal.SIGUSR1
+
+        def boom(signum, frame):
+            raise KeyboardInterrupt
+
+        for prior, held in ((lambda signum, frame: None, False), (boom, True)):
+            with unittest.mock.patch.dict(verify_ac._PRIOR_HANDLERS, {sig: prior}), \
+                    unittest.mock.patch.dict(verify_ac._LIVE_GROUPS, {}, clear=True):
+                with contextlib.suppress(KeyboardInterrupt):
+                    verify_ac._reap_on_signal(sig, None)
+            self.assertEqual(held, verify_ac._STOPPING.is_set(), prior)
+            verify_ac._STOPPING.clear()
 
 
 class VacuousVerifierTests(unittest.TestCase):

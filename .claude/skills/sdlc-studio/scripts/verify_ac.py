@@ -438,7 +438,7 @@ def _enclosing_test(cwd: Path, path: str, line: int) -> str:
     `path:line` when the file will not parse or no test holds the line (a module-level skip).
     pytest's skip report folds by location, so this is how a report line names its test."""
     try:
-        body = ast.parse((cwd / path).read_text(encoding="utf-8")).body
+        body = ast.parse(sdlc_md.read_text_safe(cwd / path)).body
     except (OSError, SyntaxError, ValueError):
         return f"{path}:{line}"
     names: list[str] = []
@@ -457,7 +457,7 @@ def _skip_marked_class(cwd: Path, path: str, reason: str) -> str:
     does, as for a module's `pytestmark`. A line-less fold carries only the file and the reason,
     so the reason is what ties it to a class."""
     try:
-        body = ast.parse((cwd / path).read_text(encoding="utf-8")).body
+        body = ast.parse(sdlc_md.read_text_safe(cwd / path)).body
     except (OSError, SyntaxError, ValueError):
         return path
 
@@ -624,6 +624,21 @@ def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
 # no longer reaches it, and `_reap_on_signal` passes it on.
 _LIVE_GROUPS: dict[int, subprocess.Popen] = {}
 _PRIOR_HANDLERS: dict = {}
+# Set by `_reap_on_signal` before it signals a group. While the handler waits out the grace, a
+# worker thread whose verifier the signal ended would take the next queued verifier and start
+# it, before the interrupt reaches the code that cancels the queue; `_refuse_if_stopping` keeps
+# it from starting. Cleared when the handler replaced returns (its caller carries on) or the
+# main thread starts a verifier (it caught the interrupt and carried on).
+_STOPPING = threading.Event()
+
+
+def _refuse_if_stopping() -> None:
+    """Raise `KeyboardInterrupt` on a thread other than the main one once the caller has been
+    signalled; on the main thread, clear the stop instead."""
+    if threading.current_thread() is threading.main_thread():
+        _STOPPING.clear()
+    elif _STOPPING.is_set():
+        raise KeyboardInterrupt("the caller was signalled to stop, so no verifier starts")
 
 
 def _reap_on_signal(signum, frame):
@@ -631,7 +646,9 @@ def _reap_on_signal(signum, frame):
     included, so each runs its own handling of it, and SIGKILL any group still there
     `_SIGNAL_GRACE` seconds later. Then let the signal do what it did before: call the handler
     this one replaced (SIGINT's raises `KeyboardInterrupt`), or, under the default disposition,
-    die by it."""
+    die by it. From the moment it arrives no worker thread starts a verifier, and one caught
+    mid-spawn is killed before it runs on."""
+    _STOPPING.set()
     live = list(_LIVE_GROUPS.copy().values())
     for proc in live:
         _signal_group(proc.pid, signum)
@@ -639,7 +656,9 @@ def _reap_on_signal(signum, frame):
         _signal_group(proc.pid, signal.SIGKILL)
     prior = _PRIOR_HANDLERS.get(signum, signal.SIG_DFL)
     if callable(prior):
-        return prior(signum, frame)
+        prior(signum, frame)
+        _STOPPING.clear()
+        return None
     signal.signal(signum, signal.SIG_DFL)
     os.kill(os.getpid(), signum)
     return None
@@ -673,12 +692,15 @@ def _run_in_group(cmd: str | list[str], timeout: float, cwd: Path) -> subprocess
     that interrupts the wait, its whole process group is killed and reaped before the
     exception propagates: `subprocess.run` kills only the shell, so the shell's children ran on
     and loaded every verifier after them. While it runs, its group is in `_LIVE_GROUPS`, so a
-    signal to the caller reaches it too."""
+    signal to the caller reaches it too, and a worker thread starts none once a signal has
+    arrived: checked again once the group is listed, since the signal may land in between."""
+    _refuse_if_stopping()
     with subprocess.Popen(cmd, shell=isinstance(cmd, str),  # nosec B602 - gated by allow_shell + provenance
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                           cwd=str(cwd), start_new_session=True) as proc:
         _LIVE_GROUPS[proc.pid] = proc
         try:
+            _refuse_if_stopping()
             stdout, stderr = proc.communicate(timeout=timeout)
         except BaseException:
             _kill_group(proc)

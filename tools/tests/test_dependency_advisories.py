@@ -48,9 +48,11 @@ class LockfileTests(unittest.TestCase):
 
     def test_package_json_was_not_widened_to_clear_the_advisory(self) -> None:
         """The cheap wrong fix is to loosen a range until the resolver picks something clean.
-        The declared range is unchanged; only the lockfile moved."""
+        The declared range is unchanged; only the lockfile moved. A deliberate upgrade to a
+        patched minor moves this pin to the new caret range, as the 0.50 upgrade did, and never
+        to a wider one."""
         pkg = json.loads((REPO / "package.json").read_text(encoding="utf-8"))
-        self.assertEqual("^0.49.0", (pkg.get("devDependencies") or {}).get("markdownlint-cli"))
+        self.assertEqual("^0.50.0", (pkg.get("devDependencies") or {}).get("markdownlint-cli"))
 
 
 class TheLinterStillLintsTests(unittest.TestCase):
