@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 333 |
+| Open | 338 |
 | In Progress | 0 |
 | Fixed | 909 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 48 |
 | Superseded | 42 |
-| **Total** | **1419** |
+| **Total** | **1424** |
 
 ## All Bugs
 
@@ -495,6 +495,11 @@
 | [BG1417](BG1417-ci-s-lint-yml-sets-up-node-20.md) | CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1418](BG1418-a-nested-run-verifier-caller-s-own-verifier.md) | A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1419](BG1419-two-more-group-kill-helpers-duplicate-verify-ac.md) | Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase | Superseded | Low | 2026-11-13 | 2026-11-13 |
+| [BG1420](BG1420-run-eleven-s-lanes-turn-the-full-suite.md) | Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected | Open | High | 2026-11-13 | 2026-11-13 |
+| [BG1421](BG1421-verify-ac-s-revert-check-reads-a-missing.md) | verify_ac's revert check reads a missing runner binary as red rather than as no verdict | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1422](BG1422-no-test-pins-verify-ac-s-class-and.md) | No test pins verify_ac's class and module skip-mark check on the decorator's name | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
 
 ## Archived Releases
 
