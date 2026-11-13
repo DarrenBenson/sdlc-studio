@@ -636,6 +636,15 @@ leaves the lane unmetered with the reason, never zero, and its staged work in th
 tool in full. Exit 2 is a refusal before the CLI ran, which marks no lane in flight; 1 a CLI that
 exited non-zero or timed out.
 
+A unit whose tests set a temporary HOME declares `> **Isolation:** home` in its header, since a
+worktree-isolated agent's command check refuses such a command. Its brief names the main
+checkout as its lane instead of a worktree: run it as the wave's last lane, not through
+`lane run`, with every other lane's commit held, and its builder stages the Affects there and
+stops. `lane land` lands only a worktree, so the orchestrator commits with
+`git commit -F sdlc-studio/.local/lane/commit-msg.txt`, records the self-check with
+`critic.py self-check record`, and saves what `critic.py brief --unit <id> --seat qa` prints to
+`sdlc-studio/.local/briefs/<id>-qa.txt`, the brief `lane accept` reads.
+
 `lane return` runs every executable criterion and reports each with the runner's own output and
 exit code, not a summary. It forces the outcome to `blocked` whenever a criterion did not pass,
 **whatever the lane claimed** - a lane cannot inflate its own result. An unresolvable selector is

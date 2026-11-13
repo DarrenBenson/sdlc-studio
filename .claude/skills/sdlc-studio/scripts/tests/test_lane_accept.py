@@ -12,7 +12,8 @@ cap: carrying a unit needs an open run whose batch holds it.
 
 BG1290's cases land rounds of the green story for real, through `sprint.py lane land` from a
 `lane-us0101` worktree checked out afresh for each round, so the brief `lane accept` reads is
-the one a landing wrote, or none.
+the one a landing wrote, or none. BG1339's cases brief the seat again with `critic.py brief
+--rejoinder` and accept the file that brief issued, after the repair landed or before it.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/lanes.py
 from __future__ import annotations
@@ -115,8 +116,9 @@ class LaneAcceptTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._tmp.cleanup()
 
-    def _accept(self, uid: str, verdict: str, *extra: str, stub=None) -> tuple[int, str, str]:
-        path = _write(self.root, f"verdicts/{uid}.txt", verdict)
+    def _accept(self, uid: str, verdict: str, *extra: str, stub=None,
+                at: Path | None = None) -> tuple[int, str, str]:
+        path = _write(self.root, str(at or f"verdicts/{uid}.txt"), verdict)
         real = lanes._script
 
         def spy(root, script, *args, **kw):
@@ -352,6 +354,85 @@ class LaneAcceptTests(unittest.TestCase):
         row = self._rows(GREEN)[-1]
         self.assertEqual([row[1], row[5]], ["APPROVE", fresh])
         self.assertEqual(_status(self.root, GREEN), "Done")
+
+    # -- BG1339: a round-2 verdict answers a rejoinder brief ---------------------------------
+
+    def _rejoinder(self, prior: Path, *tier: str) -> tuple[Path, str, str]:
+        """Brief the QA seat with `critic.py brief --rejoinder <prior>` through its entry point;
+        the verdict file it issued, and the fingerprint and tier its footer printed."""
+        done = subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "critic.py"), "brief", "--unit", GREEN,
+             "--seat", "qa", "--rejoinder", str(prior), *tier, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=300, cwd=str(self.root),
+            env=gitutil.git_env(), check=False)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("--- RE-REVIEW (rejoinder) ---", done.stdout)
+        path = Path(re.search(r"^(/\S+\.txt)\nUNIT: ", done.stdout, re.M).group(1))
+        fp = re.search(r"^brief fingerprint: (\S+)$", done.stderr, re.M).group(1)
+        tier = re.search(r"^review tier: (\S+)", done.stderr, re.M).group(1)
+        return path, fp, tier
+
+    def _round_one_rejected(self) -> tuple[str, Path]:
+        """Land round one and record its REJECT: the brief it was recorded against, and the
+        verdict file the rejoinder quotes."""
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        first = self._landed_fp(landed)
+        rc, out, err = self._accept(GREEN, REJECT)
+        self.assertEqual(rc, 1, out + err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["REJECT", first])
+        return first, self.root / f"verdicts/{GREEN}.txt"
+
+    def test_a_round_two_verdict_records_against_its_rejoinder_brief(self) -> None:
+        first, prior = self._round_one_rejected()
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        # at a tier the saved brief's note does not carry, so the tier is the rejoinder's own
+        path, fp, tier = self._rejoinder(prior, "--tier", "full")
+        self.assertEqual(tier, "full")
+        self.assertNotIn(fp, (first, saved), "the rejoinder brief shares a fingerprint")
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 2, against brief {fp} at the {tier} "
+                      f"tier", out)
+        row = self._rows(GREEN)[-1]
+        self.assertEqual([row[1], row[5], row[6]], ["APPROVE", fp, tier])
+        # bound to the file the rejoinder brief issued, not transcribed
+        self.assertEqual(row[7].split()[1:2], [path.name], row)
+        self.assertTrue(row[7].startswith("sha256:"), row)
+        self.assertEqual(self._scripts(), ["critic.py record", "verify_ac.py run",
+                                           "transition.py set", "sprint.py lane"])
+        self.assertEqual(_status(self.root, GREEN), "Done")
+
+    def test_a_rejoinder_briefed_before_the_latest_landing_is_refused(self) -> None:
+        _, prior = self._round_one_rejected()
+        # briefed before the repair landed, so its reviewer read the round the REJECT judged
+        path, _, _ = self._rejoinder(prior)
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        rows = self._rows(GREEN)
+        self.calls.clear()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path)
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls, [], "lane accept ran a script on a stale rejoinder")
+        self.assertEqual(self._rows(GREEN), rows, "a verdict was recorded")
+        self.assertEqual(_status(self.root, GREEN), "Review")
+        self.assertIn(f"{path} was issued by a rejoinder brief written before the landing that "
+                      f"saved sdlc-studio/.local/briefs/{GREEN}-qa.txt (fingerprint {saved})",
+                      err)
+        self.assertIn(f"brief the seat again with `critic.py brief --unit {GREEN} --seat qa "
+                      f"--rejoinder`", err)
+        # positive control: the seat briefed again after that landing is recorded
+        path, fp, _ = self._rejoinder(prior)
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path)
+        self.assertEqual(rc, 0, out + err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["APPROVE", fp])
 
     def test_accept_refuses_when_the_affects_changed_since_the_self_check(self) -> None:
         """BG1290's round-1 review, P1 and P1b: a commit reaches main with no `lane land` of the

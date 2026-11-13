@@ -38,7 +38,8 @@ whose self-check or brief was not written, 0 a landed lane with every unit brief
 not.
 
 `sprint lane accept` finishes the unit once its reviewer has answered that brief: it records the
-verdict file with `critic.py record` against the brief's fingerprint and tier, and on an APPROVE
+verdict file with `critic.py record` against the brief's fingerprint and tier (a file a later
+`critic.py brief --rejoinder` issued against that rejoinder brief's), and on an APPROVE
 runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its lane with
 `sprint.py lane return`, each through its own entry point. Under `review.author_self_check:
 block` it refuses a unit with no current self-check (`critic.self_check_gap`, the check
@@ -395,12 +396,16 @@ def _script(root: Path, script: str, *args: str,
                         f"so nothing after it ran") from None
 
 
-def _brief_of(root: Path, unit: str) -> tuple[str, str]:
+def _brief_of(root: Path, unit: str, verdict: Path | None = None) -> tuple[str, str]:
     """The fingerprint and tier of the QA brief `lane land` wrote for `unit`. The fingerprint is
     hashed from the saved text as `critic.py record --brief-file` hashes a first-round brief; the
     tier is the one `critic.py brief` noted beside that fingerprint when it printed the brief.
-    Under `review.author_self_check: block` a unit with no current self-check
-    (`critic.self_check_gap`) is refused; under `report` that is a warning; `off` asks nothing."""
+    When `verdict` is the file a `critic.py brief --rejoinder` issued for `unit`, its note gives
+    the fingerprint and tier instead: that brief, not the saved one, is what the reviewer read.
+    A rejoinder noted before the latest plain note of the saved brief's fingerprint may answer
+    an earlier round, so it is refused. Under `review.author_self_check: block` a unit with no
+    current self-check (`critic.self_check_gap`) is refused; under `report` that is a warning;
+    `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
@@ -438,19 +443,42 @@ def _brief_of(root: Path, unit: str) -> tuple[str, str]:
         notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")
     except OSError:
         notes = ""
-    for line in notes.splitlines():
+    # the brief text repeats from round to round, so the LATEST plain note of the saved
+    # fingerprint is taken as the landing that saved it (a later re-brief of that scope too),
+    # and a rejoinder noted before it is refused
+    landed_at, issued = None, None
+    for n, line in enumerate(notes.splitlines()):
         try:
             row = json.loads(line)
         except ValueError:
             continue
-        if isinstance(row, dict) and row.get("unit") == uid and row.get("fp") == fp:
+        if not isinstance(row, dict) or row.get("unit") != uid:
+            continue
+        if row.get("fp") == fp:
             tier = row.get("tier") or tier
+            if not row.get("rejoinder"):
+                landed_at = n
+        if (verdict is not None and row.get("rejoinder") and row.get("verdict_file")
+                and Path(str(row["verdict_file"])).resolve() == verdict):
+            issued = (n, row)
     if not fp or not tier:
         raise LandError(f"{rel} hashes to fingerprint {fp or 'NONE'}, and no note in "
                         f"{critic.BRIEF_NOTES_REL} records the review tier of a brief with that "
                         f"fingerprint, so the verdict would be recorded at no known depth. "
                         f"Re-run `critic.py brief --unit {unit} --seat qa` and save it there", 2)
-    return fp, tier
+    if issued is None:
+        return fp, tier
+    n, row = issued
+    again = (f"brief the seat again with `critic.py brief --unit {unit} --seat "
+             f"{row.get('seat') or 'qa'} --rejoinder` and record the file that brief names")
+    if landed_at is None or n < landed_at:
+        raise LandError(f"{verdict} was issued by a rejoinder brief written before the landing "
+                        f"that saved {rel} (fingerprint {fp}), so it may answer an earlier round "
+                        f"and nothing was recorded: {again}", 2)
+    if not row.get("fp") or not row.get("tier"):
+        raise LandError(f"the note in {critic.BRIEF_NOTES_REL} that issued {verdict} records "
+                        f"no fingerprint or no tier, so nothing was recorded: {again}", 2)
+    return row["fp"], row["tier"]
 
 
 def _blocking(verdict_text: str) -> list[str]:
@@ -478,7 +506,7 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
         said = verdict.read_text(encoding="utf-8")
     except OSError as exc:
         raise LandError(f"the verdict file cannot be read: {exc}", 2) from None
-    fp, tier = _brief_of(root, unit)
+    fp, tier = _brief_of(root, unit, verdict)
     if not author:
         # the author lane land recorded the unit's self-check under, the latest one
         uid = sdlc_md.norm_id(unit)

@@ -2656,6 +2656,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                        "self_check": _hand_in_self_check(
                            critic.author_self_check(root, contract["id"]), contract["id"]),
                        "points": sdlc_md.read_points(contract["text"]),
+                       "home_isolated": lane_home_isolated(contract["text"]),
                        "seat_card": str(seat) if seat else None})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
@@ -2756,6 +2757,12 @@ def lane_brief_text(brief: dict) -> str:
     else:
         lines.append("Affects: NONE DECLARED - declare the files this unit changes before "
                      "building it.")
+    if brief.get("home_isolated"):
+        lines.append(f"Lane: the main checkout, not a worktree - {brief['id']} declares "
+                     f"`{LANE_ISOLATION_FIELD}: {LANE_HOME}`: its tests set a temporary HOME, "
+                     f"which a worktree-isolated agent's command check refuses. Build it in the "
+                     f"main checkout and run it as the wave's last lane, with every other lane's "
+                     f"commit held until its own is made.")
     card = brief.get("seat_card")
     lines.append(f"Seat: adopt the work render of the engineering seat card {card} - it frames "
                  f"how you build and never overrides the criteria above." if card else
@@ -2787,13 +2794,18 @@ def lane_brief_text(brief: dict) -> str:
     lines.extend(lessons.render_phase(brief.get("lessons") or {"phase": "build"}))
     if brief.get("self_check"):
         lines += ["", brief["self_check"]]
-    lines += ["", *_lane_builder_commands(brief["id"], affects, brief.get("points"))]
+    lines += ["", *_lane_builder_commands(brief["id"], affects, brief.get("points"),
+                                          main_checkout=bool(brief.get("home_isolated")))]
     return "\n".join(lines)
 
 
 #: Where a lane hands its work in, relative to the project root: the commit message and the
 #: unit's self-check passes, beside its staged change, for `sprint lane land` to commit.
 LANE_HAND_IN = "sdlc-studio/.local/lane"
+#: The header field a unit declares its lane's isolation in, and the value saying its tests set
+#: a temporary HOME, which a worktree-isolated agent's command check refuses.
+LANE_ISOLATION_FIELD = "Isolation"
+LANE_HOME = "home"
 #: The note a builder writes at its budget, so a fresh builder continues from it.
 LANE_HAND_OFF = "HANDOFF.md"
 #: A lane's tool-call budget is LANE_CALLS_FIXED + points x LANE_CALLS_PER_POINT: the fixed share
@@ -2856,11 +2868,21 @@ def _lane_budget_line(uid: str, points: int | None) -> str:
             f"{LANE_CALLS_PER_POINT} per point); {rule}.")
 
 
-def _lane_builder_commands(uid: str, affects: list[str], points: int | None = None) -> list[str]:
+def lane_home_isolated(text: str) -> bool:
+    """True when the unit's header declares `> **Isolation:** home`: its tests set a temporary
+    HOME, so its lane is the main checkout rather than a worktree. Any other value, or none,
+    leaves it a worktree lane."""
+    raw = sdlc_md.extract_field(text, LANE_ISOLATION_FIELD) or ""
+    return re.search(rf"\b{LANE_HOME}\b", raw, re.I) is not None
+
+
+def _lane_builder_commands(uid: str, affects: list[str], points: int | None = None,
+                           main_checkout: bool = False) -> list[str]:
     """The builder's closing commands for `uid`: run its criteria, write the hand-in files,
     stage exactly its Affects and stop, within the call budget its points give. The builder
     neither commits nor records its self-check; `sprint lane land` commits from the hand-in
-    path. The commit message's shape is the project's own, so only the unit id is asked of the
+    path, or, for a `main_checkout` lane, which `lane land` cannot land, the orchestrator does.
+    The commit message's shape is the project's own, so only the unit id is asked of the
     subject."""
     claims, mutants = _lane_hand_in_files(uid)
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
@@ -2875,10 +2897,19 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     if not affects:
         lines.append(f"  Stage: {uid} declares no Affects, so there is no path to stage - "
                      f"declare them first.")
+    elif main_checkout:
+        lines += [f"  Stage exactly the Affects above in the main checkout, and stop - `sprint "
+                  f"lane land` lands only a worktree, so the orchestrator commits them, with "
+                  f"{uid} in the commit subject:",
+                  f"    git add -- {' '.join(shlex.quote(p) for p in affects)}"]
     else:
         lines += [f"  Stage exactly the Affects above, and stop - `sprint lane land` commits "
                   f"them, with {uid} in the commit subject:",
                   f"    git add -- {' '.join(shlex.quote(p) for p in affects)}"]
+    if main_checkout:
+        return [*lines, f"  Do not commit and do not record the self-check: the orchestrator "
+                        f"commits from {LANE_HAND_IN}/ and records it.",
+                _lane_budget_line(uid, points)]
     return [*lines, f"  Do not commit and do not record the self-check: `sprint lane land` "
                     f"commits from {LANE_HAND_IN}/.",
             _lane_budget_line(uid, points)]
