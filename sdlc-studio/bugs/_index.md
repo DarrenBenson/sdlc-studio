@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 338 |
+| Open | 339 |
 | In Progress | 0 |
 | Fixed | 909 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 48 |
 | Superseded | 42 |
-| **Total** | **1424** |
+| **Total** | **1425** |
 
 ## All Bugs
 
@@ -500,6 +500,7 @@
 | [BG1422](BG1422-no-test-pins-verify-ac-s-class-and.md) | No test pins verify_ac's class and module skip-mark check on the decorator's name | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-13 | 2026-11-13 |
 
 ## Archived Releases
 

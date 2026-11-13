@@ -262,3 +262,5 @@
 | BG1372 | agent-a93ebdfdb0401bab2 | 2026-11-13 | TRUE 11, FALSE 0, UNVERIFIABLE 1 | none - no test declared | 82a1af1eb43c4b3f at 0851f78fba98 |
 | BG1009 | agent-a99ce8678309e0a6f | 2026-11-13 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 3 | e9c04f06bb726794 at 62ef7fad4358 |
 | BG1005 | agent-a99ce8678309e0a6f | 2026-11-13 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 8, survived 2 | 39f93d41e2d7f6cc at 62ef7fad4358 |
+| BG1420 | agent-adce72e294283f566 | 2026-11-13 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 9, survived 2 | f8f9109cea096609 at 92c84b1008b8 |
+| BG1420 | agent-ae14dd817e5f2d813 | 2026-11-13 | TRUE 16, FALSE 0, UNVERIFIABLE 0 | killed 10, survived 0 | e843b5f99bf5bd30 at 1caffe6db79e |

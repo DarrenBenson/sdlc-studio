@@ -2,7 +2,7 @@
 
 > **Date:** 2026-11-13
 > **Run:** RUN-01M78TKD
-> **Batch:** BG1190, BG1228, BG1112, BG1005, BG1009, BG0991, BG1336, BG1337, BG1339, BG1344, BG1330, BG1279, BG1331, BG1305, BG1371, BG0965, BG1340, BG1341, BG0990, BG1343, BG1333, BG1261, BG1262, BG1372, BG1420
+> **Batch:** BG1190, BG1228, BG1112, BG1005, BG1009, BG0991, BG1336, BG1337, BG1339, BG1344, BG1330, BG1279, BG1331, BG1305, BG1371, BG0965, BG1340, BG1341, BG0990, BG1343, BG1333, BG1261, BG1262, BG1372
 
 ## Keep
 
@@ -25,7 +25,7 @@
 
 ## Machinery share (D0442)
 
-Delivered 25 units, 52 points: the 49 planned (D0471) and BG1420 (3, added in-run). By theme, cost 10 points (BG1279, BG1305, BG1330, BG1331), product 3 (BG1333), machinery 39 (75%), over the one-third cap and declared as a maintenance run (D0469, D0471). By path every unit but BG1372 touches the loop scripts.
+Delivered 24 units, 49 points, all planned (D0471). BG1420 (3, added in-run when the push gate found five red tests) fixed those five but was carried at the review cap as BG1425 after its repair's round-2 review found a new unbounded wait. By theme, cost 10 points (BG1279, BG1305, BG1330, BG1331), product 3 (BG1333), machinery 36 (73%), over the one-third cap and declared as a maintenance run (D0469, D0471). By path every unit but BG1372 touches the loop scripts.
 
 ## Known issues carried
 
@@ -71,3 +71,4 @@ Delivered 25 units, 52 points: the 49 planned (D0471) and BG1420 (3, added in-ru
 | BG1422 | not-stop-ship | orchestrator | 2026-11-13 |
 | BG1423 | not-stop-ship | orchestrator | 2026-11-13 |
 | BG1424 | not-stop-ship | orchestrator | 2026-11-13 |
+| BG1425 | not-stop-ship | orchestrator | 2026-11-13 |
