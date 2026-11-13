@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -38,6 +39,8 @@ TEMPLATE = SCRIPTS.parent / "reference-agent-prompt-template.md"
 HELP = SCRIPTS.parent / "help" / "sprint.md"
 REPO = SCRIPTS.parents[3]
 UNIT = "US0101"
+#: The operator's PATH as this module found it, which no case runs under.
+OPERATOR_PATH = os.environ.get("PATH", "")
 
 #: Each harness: its binary, the fixture it prints, the headless flags its command must carry and
 #: the model flag. Typed here from the CLIs' own help and the 2026-11-06 captures, never read
@@ -60,12 +63,22 @@ HAIKU_PARTS = {"input": 2, "output": 35, "cache_write_5m": 0, "cache_write_1h": 
 HAIKU_USD = (2 * 0.10 + 35 * 0.50 + 17126 * 0.20 + 11382 * 0.01) / 1e6
 
 FAKE = r'''#!{python}
-import json, os, subprocess, sys
-LATE = ("import subprocess, sys, time; time.sleep(4); open(sys.argv[1], 'w').write('LATE = 1'); "
+import json, os, subprocess, sys, time
+LATE = ("import subprocess, sys, time; time.sleep(float(sys.argv[2])); "
+        "open(sys.argv[1], 'w').write('LATE = 1'); "
         "subprocess.run(['git', 'add', '--', sys.argv[1]], check=True)")
+# a child that answers SIGTERM by writing TERM to its marker 0.3 s later, then exits
+TRAP = ("import signal, sys, time\n"
+        "def term(*_):\n"
+        "    time.sleep(0.3)\n"
+        "    open(sys.argv[1], 'w').write('TERM')\n"
+        "    sys.exit(0)\n"
+        "signal.signal(signal.SIGTERM, term)\n"
+        "open(sys.argv[1] + '.ready', 'w').close()\n"
+        "time.sleep(60)\n")
 name = os.path.basename(sys.argv[0])
 with open(os.path.join(os.environ["FAKE_LOG"], name + ".json"), "w") as fh:
-    json.dump({{"argv": sys.argv[1:], "cwd": os.getcwd()}}, fh)
+    json.dump({{"argv": sys.argv[1:], "cwd": os.getcwd(), "pid": os.getpid()}}, fh)
 stage = os.environ.get("FAKE_STAGE")
 if stage:
     with open(stage, "w") as fh:
@@ -74,12 +87,32 @@ if stage:
 late = os.environ.get("FAKE_LATE")
 if late:
     # a child that writes and stages `late` 4 s after it starts, while this CLI waits on it
-    child = subprocess.Popen([sys.executable, "-c", LATE, late])
+    child = subprocess.Popen([sys.executable, "-c", LATE, late,
+                              os.environ.get("FAKE_LATE_SLEEP", "4")])
     with open(os.path.join(os.environ["FAKE_LOG"], "late.pid"), "w") as fh:
         fh.write(str(child.pid))
     if os.environ.get("FAKE_SIGNAL"):
         os.kill(os.getppid(), int(os.environ["FAKE_SIGNAL"]))
     child.wait()
+orphan = os.environ.get("FAKE_ORPHAN")
+if orphan:
+    # the same late child, left running with its output closed while this CLI exits
+    child = subprocess.Popen([sys.executable, "-c", LATE, orphan, "4"],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    with open(os.path.join(os.environ["FAKE_LOG"], "late.pid"), "w") as fh:
+        fh.write(str(child.pid))
+trap = os.environ.get("FAKE_TRAP")
+if trap:
+    child = subprocess.Popen([sys.executable, "-c", TRAP, trap])
+    while not os.path.exists(trap + ".ready"):
+        time.sleep(0.01)
+    child.wait()
+grow = os.environ.get("FAKE_LOOP")
+while grow:
+    # stage a growing file until stopped, so a kill can land while git holds index.lock
+    with open(grow, "a") as fh:
+        fh.write("x" * 4096)
+    subprocess.run(["git", "add", "--", grow], check=False)
 out = os.environ.get("FAKE_OUT_" + name.replace("-", "_").upper())
 if out and os.environ.get("FAKE_MODE") != "silent":
     sys.stdout.write(open(out).read())
@@ -116,6 +149,31 @@ def _running(pid: int) -> bool:
     return True
 
 
+def _confined_path(fake_bin: Path) -> str:
+    """The PATH every case runs under: the fake bin, then only the directories git and this
+    Python live in and the system default (`os.defpath`), never the operator's PATH. Fails,
+    naming it, when a binary `lane run` can start resolves anywhere but the fake bin, so a
+    missing fake stops the case in setUp before a real harness CLI can run."""
+    dirs = [str(fake_bin)]
+    for d in (os.path.dirname(shutil.which("git") or ""), os.path.dirname(sys.executable),
+              *os.defpath.split(os.pathsep)):
+        if d and d not in dirs:
+            dirs.append(d)
+    path = os.pathsep.join(dirs)
+    for binary in lanes.BINARIES.values():
+        found = shutil.which(binary, path=path)
+        if found != str(fake_bin / binary):
+            raise AssertionError(f"no fake {binary} in {fake_bin}: {found or 'nothing'} would "
+                                 f"run in its place")
+    return path
+
+
+def _sigkill(pid: int) -> None:
+    """Kill `pid` if it still runs, so a case that fails leaves no process behind."""
+    with contextlib.suppress(OSError):
+        os.kill(pid, signal.SIGKILL)
+
+
 def _outlives(pid: int, seconds: float = 1.0) -> bool:
     """Whether `pid` is still running `seconds` from now, polled: a killed process is reaped by
     whoever inherits it, a moment after the kill. Well inside the late child's 4 s, so a child
@@ -128,7 +186,9 @@ def _outlives(pid: int, seconds: float = 1.0) -> bool:
     return False
 
 
-class LaneRunTests(unittest.TestCase):
+class _LaneCase(unittest.TestCase):
+    """The throwaway repository, the fake CLIs and the confined environment every case uses."""
+
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -145,8 +205,7 @@ class LaneRunTests(unittest.TestCase):
         gitutil.git(["init", "-q", "-b", "main"], self.root)
         gitutil.git(["add", "-A"], self.root)
         gitutil.git(["commit", "-q", "-m", "chore: the fixture"], self.root)
-        env = {"PATH": f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}",
-               "FAKE_LOG": str(self.log),
+        env = {"FAKE_LOG": str(self.log),
                # no real harness state is ever read or written
                "HOME": str(base / "home"), "XDG_DATA_HOME": str(base / "xdg"),
                # an orchestrator transcript the lane must never be priced from
@@ -156,10 +215,12 @@ class LaneRunTests(unittest.TestCase):
             path.write_text(FAKE.format(python=sys.executable), encoding="utf-8")
             path.chmod(0o755)
             env["FAKE_OUT_" + binary.replace("-", "_").upper()] = str(FIXTURES / fixture)
+        env["PATH"] = _confined_path(self.bin)
         patch = unittest.mock.patch.dict(os.environ, env)
         patch.start()
         self.addCleanup(patch.stop)
-        for k in ("FAKE_MODE", "FAKE_EXIT", "FAKE_STAGE", "FAKE_LATE", "FAKE_SIGNAL"):
+        for k in ("FAKE_MODE", "FAKE_EXIT", "FAKE_STAGE", "FAKE_LATE", "FAKE_SIGNAL",
+                  "FAKE_LATE_SLEEP", "FAKE_ORPHAN", "FAKE_TRAP", "FAKE_LOOP"):
             os.environ.pop(k, None)
         _write(base / "transcripts", "orchestrator.jsonl", json.dumps(
             {"type": "assistant", "cwd": str(self.root), "message": {
@@ -197,6 +258,9 @@ class LaneRunTests(unittest.TestCase):
     def _delegated(self) -> list[dict]:
         return [r for r in _rs().read(self.root).get(_rs().DELEGATED) or []
                 if r.get("unit") == UNIT]
+
+
+class LaneRunTests(_LaneCase):
 
     # -- AC1 --------------------------------------------------------------------------------
     def test_each_harness_runs_its_headless_command_in_the_worktree(self) -> None:
@@ -603,6 +667,171 @@ class LaneRunTests(unittest.TestCase):
         fragment = REPO / "changelog.d" / "US1126.md"
         for doc in (HELP, fragment if fragment.exists() else REPO / "CHANGELOG.md"):
             self.assertIn(f"`{created}`", " ".join(doc.read_text(encoding="utf-8").split()), doc)
+
+
+class LaneTimeoutTermsFirstTests(_LaneCase):
+    """BG1262 AC1: a timed-out lane's group is sent SIGTERM, given its grace, then SIGKILL."""
+
+    def test_a_child_that_traps_sigterm_writes_its_marker_before_the_kill(self) -> None:
+        """MUTANTS: SIGKILL with no SIGTERM first (the trap never runs, no marker); the grace
+        skipped, `deadline = time.monotonic() - 1` (the SIGKILL lands inside the trap's 0.3 s,
+        no marker)."""
+        wt = self._worktree()
+        marker = self.log / "term"
+        with unittest.mock.patch.dict(os.environ, {"FAKE_TRAP": str(marker)}):
+            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "1")
+        self.assertEqual(1, rc, out)
+        self.assertEqual(lanes.TIMED_OUT, self._record()["unmetered"])
+        self.assertTrue((self.log / "term.ready").exists(), "the trapping child never started")
+        self.assertEqual("TERM", marker.read_text() if marker.exists() else None,
+                         "the child was killed before its SIGTERM trap could write")
+
+    def test_a_timed_out_git_add_loop_leaves_no_index_lock(self) -> None:
+        """MUTANT: SIGKILL first (a `git add` killed mid-write leaves `index.lock`, and the
+        commit `lane land` needs refuses). Positive control: the loop staged its file."""
+        wt = self._worktree()
+        with unittest.mock.patch.dict(os.environ, {"FAKE_LOOP": str(wt / "src" / "grow.txt")}):
+            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "1")
+        self.assertEqual(1, rc, out)
+        self.assertIn("src/grow.txt", self._record()["staged"])
+        gitdir = Path(_git(wt, "rev-parse", "--absolute-git-dir"))
+        self.assertFalse((gitdir / "index.lock").exists(), "a killed git add left index.lock")
+        done = gitutil.git(["commit", "-q", "-m", "chore: the lane's work"], wt, check=False)
+        self.assertEqual(0, done.returncode, done.stderr)
+
+
+class LaneLeftoverChildTests(_LaneCase):
+    """BG1262 AC2: a child the CLI leaves running is killed before the staged set is read."""
+
+    def test_a_finished_cli_s_background_child_stages_nothing_after_the_record(self) -> None:
+        """MUTANT: no kill of the group once the CLI exits (the child outlives the record and
+        stages `src/late.py` 4 s later)."""
+        wt = self._worktree()
+        env = {"FAKE_STAGE": str(wt / "src" / "lane.py"),
+               "FAKE_ORPHAN": str(wt / "src" / "late.py")}
+        with unittest.mock.patch.dict(os.environ, env):
+            rc, out = self._run("codex", "--worktree", str(wt))
+        self.assertEqual(0, rc, out)
+        pid = int((self.log / "late.pid").read_text(encoding="utf-8"))
+        self.addCleanup(_sigkill, pid)
+        self.assertFalse(_outlives(pid), "the CLI's background child outlived the record")
+        self.assertEqual(["src/lane.py"], self._record()["staged"])
+        self.assertEqual(["src/lane.py"], _git(wt, "diff", "--cached", "--name-only").split())
+        self.assertFalse((wt / "src" / "late.py").exists(), "a write landed after the record")
+
+
+class LaneExecFailureTests(_LaneCase):
+    """BG1262 AC3: a CLI that cannot be executed is refused, and no case reaches a real CLI."""
+
+    def test_a_cli_that_cannot_exec_is_refused_and_leaves_no_lane_in_flight(self) -> None:
+        """MUTANTS: the exec failure left uncaught (a traceback, the unit in flight); the
+        marker taken before the CLI starts; the marker never taken (the positive control)."""
+        self._open_run()
+        in_flight = lambda: [r["unit"] for r in _rs().lanes_in_flight(self.root)]  # noqa: E731
+        cli = self.bin / "codex"
+        cli.write_text("#!/nonexistent/interpreter\n", encoding="utf-8")
+        wt = self._worktree()
+        rc, out = self._run("codex", "--worktree", str(wt))
+        self.assertEqual(2, rc, out)
+        self.assertIn(str(cli), out)
+        self.assertNotIn("Traceback", out)
+        self.assertNotIn(UNIT, in_flight())
+        cli.write_text(FAKE.format(python=sys.executable), encoding="utf-8")
+        rc, out = self._run("codex", "--worktree", str(wt))
+        self.assertEqual(0, rc, out)
+        self.assertIn(UNIT, in_flight())
+
+    def test_every_case_runs_under_the_fake_bin_and_system_directories_only(self) -> None:
+        """MUTANTS: the operator's PATH appended (its directory reaches the case); a missing
+        fake let through setUp (the operator's binary would run)."""
+        entries = os.environ["PATH"].split(os.pathsep)
+        self.assertEqual(str(self.bin), entries[0])
+        system = {os.path.dirname(shutil.which("git", path=OPERATOR_PATH) or ""),
+                  os.path.dirname(sys.executable), *os.defpath.split(os.pathsep)}
+        self.assertLessEqual(set(entries[1:]), system)
+        operator = self.log / "operator-bin"
+        operator.mkdir()
+        (operator / "codex").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        (operator / "codex").chmod(0o755)
+        with unittest.mock.patch.dict(os.environ, {"PATH": f"{operator}{os.pathsep}"
+                                                           f"{OPERATOR_PATH}"}):
+            self.assertNotIn(str(operator), _confined_path(self.bin).split(os.pathsep))
+            (self.bin / "codex").unlink()
+            with self.assertRaisesRegex(AssertionError, "no fake codex"):
+                _confined_path(self.bin)
+
+
+class LaneDiesWithItsCallerTests(_LaneCase):
+    """BG1261 AC1: a hard kill of `sprint.py` takes its running lane with it."""
+
+    def _spawn(self, wt: Path, **fake: str) -> subprocess.Popen:
+        """`sprint.py lane run` in a session of its own, its CLI's child staging `src/late.py`
+        3 s after it starts, or the CLI run as `fake` sets it."""
+        env = gitutil.git_env(**(fake or {"FAKE_LATE": str(wt / "src" / "late.py"),
+                                          "FAKE_LATE_SLEEP": "3"}))
+        return subprocess.Popen(
+            [sys.executable, str(SCRIPTS / "sprint.py"), "lane", "run", "--harness", "codex",
+             "--units", UNIT, "--worktree", str(wt), "--timeout", "60", "--root", str(self.root)],
+            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            start_new_session=True)
+
+    def _late_pid(self, caller: subprocess.Popen) -> int:
+        late = self.log / "late.pid"
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            with contextlib.suppress(OSError, ValueError):
+                return int(late.read_text(encoding="utf-8"))
+            self.assertIsNone(caller.poll(), "sprint.py ended before its lane started")
+            time.sleep(0.02)
+        self.fail("the lane's CLI never started its child")
+
+    def test_a_hard_killed_caller_takes_its_lane_with_it(self) -> None:
+        """MUTANT: no watchdog (the CLI and its child run on after `sprint.py` dies, and the
+        child stages `src/late.py`)."""
+        wt = self._worktree()
+        caller = self._spawn(wt)
+        child = self._late_pid(caller)
+        cli = self._called("codex")["pid"]
+        for pid in (cli, child):
+            self.addCleanup(_sigkill, pid)
+        os.killpg(caller.pid, signal.SIGKILL)
+        caller.communicate(timeout=30)
+        self.assertEqual(-signal.SIGKILL, caller.returncode)
+        self.assertFalse(_outlives(cli, lanes.KILL_GRACE), "the CLI outlived sprint.py")
+        self.assertFalse(_outlives(child, lanes.KILL_GRACE), "the CLI's child outlived sprint.py")
+        self.assertFalse((wt / "src" / "late.py").exists(), "the lane wrote after sprint.py died")
+        self.assertEqual("", _git(wt, "diff", "--cached", "--name-only"))
+
+    def test_the_watchdog_sends_sigterm_and_waits_its_grace(self) -> None:
+        """MUTANT: the watchdog's grace skipped, or SIGKILL with no SIGTERM first (the child's
+        SIGTERM trap never writes its marker)."""
+        wt = self._worktree()
+        marker = self.log / "term"
+        caller = self._spawn(wt, FAKE_TRAP=str(marker))
+        deadline = time.monotonic() + 30
+        while not (self.log / "term.ready").exists():
+            self.assertLess(time.monotonic(), deadline, "the trapping child never started")
+            self.assertIsNone(caller.poll(), "sprint.py ended before its lane started")
+            time.sleep(0.02)
+        cli = self._called("codex")["pid"]
+        self.addCleanup(_sigkill, cli)
+        os.killpg(caller.pid, signal.SIGKILL)
+        caller.communicate(timeout=30)
+        deadline = time.monotonic() + lanes.KILL_GRACE + 1
+        while not marker.exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual("TERM", marker.read_text() if marker.exists() else None,
+                         "the watchdog killed the child before its SIGTERM trap could write")
+        self.assertFalse(_outlives(cli, lanes.KILL_GRACE), "the CLI outlived sprint.py")
+
+    def test_a_caller_that_lives_lets_the_same_cli_stage(self) -> None:
+        """The control: with `sprint.py` alive the same CLI finishes and stages its file."""
+        wt = self._worktree()
+        caller = self._spawn(wt)
+        out, err = caller.communicate(timeout=60)
+        self.assertEqual(0, caller.returncode, out + err)
+        self.assertEqual(["src/late.py"], self._record()["staged"])
+        self.assertEqual("src/late.py", _git(wt, "diff", "--cached", "--name-only"))
 
 
 if __name__ == "__main__":

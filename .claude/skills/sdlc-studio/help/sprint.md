@@ -620,10 +620,12 @@ python3 <skill>/scripts/sprint.py lane run --harness codex --units US0123 --mode
 `sdlc-studio/.local/worktrees/lane-<unit>` with the id lowercased, `lane-us0101` for US0101, on
 the branch of that name, which a lane removed without `lane land` leaves to the next run, else
 created from HEAD) under `--timeout` seconds (default 3600), passing `--model` through. The CLI
-runs in a session of its own, and at its timeout its whole process group is killed before the
-staged files are read. It writes one lane record per session to
-`sdlc-studio/.local/lane-runs/<unit>/<session>.json`, keeping every earlier session's: the
-session id, model and usage normalised by `lib/harness_usage.py`, the files staged and, for
+runs in a session of its own; once it exits, or at its timeout, its process group is sent
+SIGTERM, and whatever of it is still running 2 seconds on is sent SIGKILL, before the staged
+files are read. A watchdog in a session of its own does the same if `sprint.py` dies first, a
+SIGKILL to it or to its process group included, so no lane runs on with no timeout over it. It
+writes one lane record per session to `sdlc-studio/.local/lane-runs/<unit>/<session>.json`,
+keeping every earlier session's: the session id, model and usage normalised by `lib/harness_usage.py`, the files staged and, for
 Claude Code, the first call's context. A later `lane return` with no `--tokens` or `--agent`
 prices the unit from each session's record, in priced input-equivalent tokens and US dollars, so
 a repair run with a second `lane run` adds its cost to its builder's and returning the unit again

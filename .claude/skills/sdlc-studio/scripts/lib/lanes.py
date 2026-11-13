@@ -659,27 +659,109 @@ def _lane_worktree(root_top: Path, unit: str) -> Path:
     return path.resolve()
 
 
-def _kill_group(proc: subprocess.Popen, grace: float = 2.0) -> None:
-    """SIGKILL `proc`'s whole process group, reap `proc`, then wait up to `grace` seconds until
-    no member of the group is left, as `verify_ac.py` does for a verifier. The group is the
-    lane's own, led by `proc` (`start_new_session`); at a timeout `proc` is still unreaped, so
-    the group id is still the lane's when it is signalled. Where `os.killpg` does not exist,
-    only `proc` is killed."""
+#: Seconds a lane's process group is given to exit after SIGTERM before what is left of it is
+#: sent SIGKILL.
+KILL_GRACE = 2.0
+
+
+def _kill_group(proc: subprocess.Popen, grace: float = KILL_GRACE) -> None:
+    """End `proc`'s whole process group and reap `proc`: SIGTERM first, so a `git add` in it
+    removes the `index.lock` it holds, then up to `grace` seconds for the group to empty, then
+    SIGKILL to whatever is left. The group is the lane's own, led by `proc`
+    (`start_new_session`). At a timeout `proc` is still unreaped when the SIGTERM is sent, so the
+    group id is still the lane's; after `proc` has exited and been reaped the group lives on
+    only in what it left running, and POSIX does not reuse a group's id while the group has a
+    member. Where `os.killpg` does not exist, only `proc` is killed."""
     if not hasattr(os, "killpg"):
         with contextlib.suppress(OSError):
             proc.kill()
         proc.wait()
         return
-    with contextlib.suppress(OSError):
-        os.killpg(proc.pid, signal.SIGKILL)
-    proc.wait()
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except OSError:
+        proc.wait()
+        return
     deadline = time.monotonic() + grace
     while time.monotonic() < deadline:
+        proc.poll()  # a leader left unreaped would hold its group open for the whole grace
         try:
             os.killpg(proc.pid, 0)
         except OSError:
+            proc.wait()
             return
         time.sleep(0.01)
+    with contextlib.suppress(OSError):
+        os.killpg(proc.pid, signal.SIGKILL)
+    proc.wait()
+
+
+#: The watchdog's program. It reads the lane's group id, then one byte more from a pipe whose
+#: only writer is the process running the lane: a byte stands it down, and end-of-file, which
+#: comes once that writer has died however it died, ends the group as `_kill_group` does.
+_WATCHDOG = """\
+import os, signal, sys, time
+grace, got = float(sys.argv[1]), b""
+while b"\\n" not in got:
+    more = os.read(0, 64)
+    if not more:
+        sys.exit(0)
+    got += more
+pgid, rest = got.split(b"\\n", 1)
+if not pgid or rest or os.read(0, 1):
+    sys.exit(0)
+pgid = int(pgid)
+try:
+    os.killpg(pgid, signal.SIGTERM)
+except OSError:
+    sys.exit(0)
+deadline = time.monotonic() + grace
+while time.monotonic() < deadline:
+    try:
+        os.killpg(pgid, 0)
+    except OSError:
+        sys.exit(0)
+    time.sleep(0.01)
+try:
+    os.killpg(pgid, signal.SIGKILL)
+except OSError:
+    pass
+"""
+
+
+@contextlib.contextmanager
+def _watchdog():
+    """A watchdog process, in a session of its own, that ends the lane's process group if this
+    process dies while the lane runs: the CLI's own session puts it out of reach of a kill sent
+    to this process's group, and no handler runs for SIGKILL. Yields `arm(pgid)`, which names
+    the group to the watchdog; leaving the block stands the watchdog down and reaps it. Where
+    `os.killpg` does not exist, no watchdog is started. A watchdog that cannot be started is a
+    `LandError` (exit 2), raised before the CLI starts."""
+    if not hasattr(os, "killpg"):
+        yield lambda pgid: None
+        return
+    read, write = os.pipe()
+    try:
+        dog = subprocess.Popen([sys.executable, "-I", "-c", _WATCHDOG, str(KILL_GRACE)],
+                               stdin=read, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError as exc:
+        os.close(write)
+        raise LandError(f"the lane's watchdog could not be started "
+                        f"({exc.strerror or exc}), so no lane ran", 2) from exc
+    finally:
+        os.close(read)
+    try:
+        yield lambda pgid: os.write(write, f"{pgid}\n".encode())
+    finally:
+        with contextlib.suppress(OSError):
+            os.write(write, b"\n")
+        os.close(write)
+        try:
+            dog.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            dog.kill()
+            dog.wait()
 
 
 @contextlib.contextmanager
@@ -719,21 +801,38 @@ def _reaping(proc: subprocess.Popen):
             signal.signal(sig, was)
 
 
-def _run_in_group(cmd: list[str], timeout: int, cwd: Path,
-                  env: dict) -> subprocess.CompletedProcess:
+def _run_in_group(cmd: list[str], timeout: int, cwd: Path, env: dict,
+                  on_start=None) -> subprocess.CompletedProcess:
     """Run the lane's CLI in a session of its own and return what `subprocess.run(...,
-    capture_output=True, text=True)` would. On a timeout, or any exit that interrupts the wait,
-    its whole process group is killed and reaped before the exception propagates:
-    `subprocess.run` kills only the CLI, so a child it started ran on and staged work in the
-    worktree after the lane's record said what was staged."""
-    with subprocess.Popen(cmd, cwd=str(cwd), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE, text=True, env=env,
-                          start_new_session=True) as proc, _reaping(proc):
+    capture_output=True, text=True)` would; `on_start`, where given, is called once the CLI has
+    started. Whatever the CLI left running in its process group when it exited is killed
+    (`_kill_group`) before this returns, and on a timeout, or any exit that interrupts the wait,
+    the whole group is killed and reaped before the exception propagates: `subprocess.run`
+    kills only the CLI, so a child it started ran on and staged work in the worktree after the
+    lane's record said what was staged. A watchdog (`_watchdog`) ends the group the same way if
+    this process dies while the CLI runs. A CLI that cannot be executed is a `LandError` (exit
+    2) naming its path, raised before `on_start` is called."""
+    with _watchdog() as arm:
         try:
-            stdout, stderr = proc.communicate(timeout=timeout)
-        except BaseException:
+            proc = subprocess.Popen(cmd, cwd=str(cwd), stdin=subprocess.DEVNULL,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                    env=env, start_new_session=True)
+        except OSError as exc:
+            why = exc.strerror or str(exc)
+            if isinstance(exc, FileNotFoundError) and Path(cmd[0]).exists():
+                why += "; the file exists, so the interpreter it names is missing"
+            raise LandError(f"the CLI {cmd[0]} could not be executed ({why}), so no lane ran",
+                            2) from exc
+        with proc, _reaping(proc):
+            try:
+                arm(proc.pid)
+                if on_start is not None:
+                    on_start()
+                stdout, stderr = proc.communicate(timeout=timeout)
+            except BaseException:
+                _kill_group(proc)
+                raise
             _kill_group(proc)
-            raise
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 
@@ -750,11 +849,14 @@ def run(root: Path | str, unit: str, harness: str, brief: str, model: str | None
     and usage normalised by `harness_usage.parse`, the first-call context, the files staged) and
     the CLI's stdout beside it, keeping every earlier session's record of the unit. A CLI that
     exits non-zero, runs past `timeout` or prints no usage is recorded unmetered with the reason,
-    its worktree and staged work left as they are. The CLI runs in a session of its own, and at
-    its timeout its whole process group is killed before the staged files are read, so nothing
-    it started stages work after the record. `on_start`, where given, is called once every
-    refusal has passed, just before the CLI starts. Exit 2 is a refusal before the CLI ran, 1 a
-    CLI that exited non-zero or timed out, 0 otherwise."""
+    its worktree and staged work left as they are. The CLI runs in a session of its own, and
+    once it exits, or at its timeout, what is left of its process group is sent SIGTERM and,
+    after a grace, SIGKILL before the staged files are read, so nothing it started stages work
+    after the record; a watchdog in a session of its own does the same if this process dies
+    while the CLI runs, SIGKILL included. `on_start`, where given, is called once every refusal has passed and the
+    CLI has started, so a CLI that cannot be executed is a refusal that calls no `on_start`.
+    Exit 2 is a refusal before the CLI ran, 1 a CLI that exited non-zero or timed out, 0
+    otherwise."""
     try:
         return _run(Path(root), unit, harness, brief, model, worktree, timeout, run_id,
                     on_start)
@@ -779,11 +881,9 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
     _resolve(root_top, wt)
     cmd = headless_command(harness, brief, model, wt)
     cmd[0] = binary
-    if on_start is not None:
-        on_start()
     started = sdlc_md.now_iso8601()
     try:
-        proc = _run_in_group(cmd, timeout=timeout, cwd=wt, env=_child_env())
+        proc = _run_in_group(cmd, timeout=timeout, cwd=wt, env=_child_env(), on_start=on_start)
         stdout, stderr, code = proc.stdout, proc.stderr, proc.returncode
         usage = harness_usage.parse(harness, stdout, exit_code=code, model=model)
     except subprocess.TimeoutExpired as exc:
