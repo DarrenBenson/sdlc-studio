@@ -1,6 +1,6 @@
 # BG1279: A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1279.md
@@ -26,6 +26,7 @@ On a close after a reopen, re-read the meter over the run's full window (open to
 
 - [ ] **AC1** Given a run closed, then reopened with `sprint reopen`, with meter readings dated after the first close, when it is closed again, then the report's Priced cost covers the run's whole window from its open to the second close, and the report says the meter was re-read after a reopen. Fails on: the second report carrying the first close's figure unchanged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReopenedRunCostTests
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

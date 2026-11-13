@@ -1,0 +1,6 @@
+UNIT: BG1372
+BRIEF: 7bc97ded9797-6e4d9e09
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Lockfile checked against alerts 24-29 (all packages, any depth): markdown-it 15.0.3, smol-toml 1.9.1, minimatch 11.0.8, katex 0.18.10, js-yaml 5.5.0, all outside vulnerable ranges; markdownlint-cli 0.50.0 and tools/lint-md.sh exit 0 over all tracked markdown. Node 20 vs engines >=22 gap predates the unit.

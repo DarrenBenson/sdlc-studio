@@ -1,6 +1,6 @@
 # BG0991: verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_section_boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG0991.md
@@ -26,8 +26,10 @@ Flush the open criterion when a `##` heading begins a different section (keep fe
 
 - [ ] **AC1** A **Verify:** line under a later ## section is not attached to any criterion and is not executed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_section_boundary.py -k verify_in_later_section_not_attached
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** `verify_ac` lint names a **Verify:** line that sits outside the Acceptance Criteria section
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_section_boundary.py -k lint_names_verify_outside_criteria
+  - **Verified:** yes (2026-11-13)
 
 ## Triage
 

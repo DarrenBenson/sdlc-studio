@@ -1,6 +1,6 @@
 # BG1330: 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1330.md, .claude/skills/sdlc-studio/scripts/tests/test_close_cost_regression.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py
@@ -28,8 +28,10 @@ RPT0028's per-unit table reads 'NOT MEASURED - no agent returned for it was pric
 
 - [ ] **AC1** Given a lane worktree named `agent-<id>` whose builder transcript is readable in a fixture harness store (CLAUDE_CONFIG_DIR set to a temporary directory), when `sprint lane land` lands it, then each landed unit has a return recorded and priced from that transcript, as `lane return --agent <id>` records one; beside it, a worktree whose transcript cannot be read still lands and names the unit as unpriced. Fails on: a landed unit with a readable transcript left with no priced return.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** Given a closed run whose report reads a unit as NOT MEASURED for want of a priced return, the close counts that unit among the gaps it reports and names it. Fails on: the close reporting 0 gaps while a unit's cost is not measured.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::UnpricedUnitIsAGapTests
+  - **Verified:** yes (2026-11-13)
 
 ## Evidence
 

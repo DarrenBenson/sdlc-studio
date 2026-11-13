@@ -1,6 +1,6 @@
 # BG1372: GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low)
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** package.json, package-lock.json, changelog.d/BG1372.md

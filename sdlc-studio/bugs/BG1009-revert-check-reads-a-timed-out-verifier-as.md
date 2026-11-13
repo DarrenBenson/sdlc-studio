@@ -1,6 +1,6 @@
 # BG1009: revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_revert_check_unmeasurable.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1009.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -26,12 +26,16 @@ Count a timed-out verifier `unmeasured`, never `red`; and before running anythin
 
 - [ ] **AC1** A revert-check whose verifier times out reports that criterion as not measured, and never passes a unit on it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_unmeasurable.py::UnmeasurableRevertTests::test_a_timed_out_verifier_is_not_red
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** A revert-check whose revert changes no byte reports the unit as not judged and never refuses it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_unmeasurable.py::UnmeasurableRevertTests::test_an_empty_revert_is_not_judged
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC3** help/verify.md states revert-check's verdicts and exit codes (pass 0, refused 1, not judged 3, error 1), including that a directory in Affects reads as no production file and the unit is not judged, and each example command it shows returns the code it states
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_unmeasurable.py::UnmeasurableRevertTests::test_the_help_verdicts_match_the_exit_codes
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC4** A paired control: the same unit, judged from an earlier base whose file differs, is still refused or passed as it was before the fix, so a change that reports every unit as not judged cannot pass AC2
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_revert_check_unmeasurable.py::UnmeasurableRevertTests::test_a_differing_base_is_still_judged
+  - **Verified:** yes (2026-11-13)
 
 ## Triage notes (from the G7 breakdown, D0355)
 

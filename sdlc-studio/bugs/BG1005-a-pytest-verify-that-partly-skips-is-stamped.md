@@ -1,6 +1,6 @@
 # BG1005: A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/help/verify.md, changelog.d/BG1005.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py
@@ -25,8 +25,10 @@ Treat any skipped test in a pytest Verify run as not-verified (or 'partial' with
 
 - [ ] **AC1** A pytest Verify whose run passes some tests and skips others is not stamped `Verified: yes`, and `verify_ac run` names each skipped test and why
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py::PartialSkipTests::test_a_partly_skipped_run_is_not_verified
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** The same holds on the batch path that reads a JUnit report, so neither route stamps a partly skipped run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py::PartialSkipTests::test_the_junit_path_reads_a_partial_skip_as_unverified
+  - **Verified:** yes (2026-11-13)
 
 ## Triage
 

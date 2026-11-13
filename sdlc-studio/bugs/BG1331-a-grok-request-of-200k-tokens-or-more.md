@@ -1,6 +1,6 @@
 # BG1331: A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/model-prices.json, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py, changelog.d/BG1331.md, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py
@@ -28,8 +28,10 @@ Record xAI's long-context rates, dated, beside the short-context ones. Where a r
 
 - [ ] **AC1** templates/model-prices.json records xAI's Long context rates beside the Short context ones for grok-4.7, grok-4.6, grok-4.5 and their xai/ ids, dated and sourced: input 4.00, cached input 1.00 (0.60 for grok-4.5) and output 12.00 US dollars per million tokens, for a request whose prompt is 200k tokens or more, billed at that rate for all its tokens (docs.x.ai/developers/pricing, Text API, read 2026-11-12). Fails on: a long-context rate missing, or differing from those figures.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::GrokLongContextRatesTests
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** Where a reading carries each request's prompt size, a Grok request of 200k prompt tokens or more is priced at the long-context rate for all its tokens and one under 200k at the short rate; where a reading carries only a session total, its Grok dollar figure is labelled a lower bound rather than presented as exact. Fails on: a request of 200k or more priced at the short rate, or a session-total Grok figure shown without the lower-bound label.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::GrokLongContextPricingTests
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1339: sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1339.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -26,6 +26,7 @@ Read the brief the verdict file's BRIEF header names, or save the rejoinder brie
 
 - [ ] **AC1** Given a unit with a recorded round-1 REJECT and a round-2 verdict file its rejoinder brief named, when `sprint lane accept --unit <id> --verdict <file> --reviewer <same seat>` runs, then it records the verdict against the rejoinder brief's fingerprint and, on APPROVE, runs the criteria and moves the unit. Fails on: the verdict bound to the round-1 saved brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_round_two_verdict_records_against_its_rejoinder_brief
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

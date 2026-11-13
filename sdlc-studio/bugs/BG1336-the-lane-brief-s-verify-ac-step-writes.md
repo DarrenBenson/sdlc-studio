@@ -1,6 +1,6 @@
 # BG1336: The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1336.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md
@@ -26,6 +26,7 @@ Have the brief run `verify_ac` in a mode that does not write the artefact, or ha
 
 - [ ] **AC1** Given a lane worktree whose only unstaged change is `verify_ac`'s edit to the unit's own artefact, when `sprint lane land` runs, then it lands the staged Affects (discarding or carrying that edit as the main tree's verify will rewrite it) instead of refusing the rebase. Fails on: the land refused with 'cannot rebase: You have unstaged changes'.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_verify_acs_artefact_edit_does_not_block_the_land
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

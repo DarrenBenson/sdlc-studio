@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 311 |
+| Open | 333 |
 | In Progress | 0 |
-| Fixed | 895 |
+| Fixed | 909 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 48 |
-| Superseded | 40 |
-| **Total** | **1381** |
+| Superseded | 42 |
+| **Total** | **1419** |
 
 ## All Bugs
 
@@ -66,7 +66,7 @@
 | [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Fixed | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0992](BG0992-bg0989-s-approved-repair-leaves-three-branches-unpinned.md) | BG0989's approved repair leaves three branches unpinned, and its docs over-claim which commands move the legacy lessons log | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG0993](BG0993-the-open-sprint-run-lives-in-one-machine.md) | The open sprint run lives in one machine's gitignored .local/run-state.json: another checkout can open a second run beside it, and cannot sign it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG0994](BG0994-bg0989-left-test-lessons-py-s-fixtures-on.md) | BG0989 left test_lessons.py's fixtures on the legacy lessons path, so seven tests print the migration line and CI's noise gate is red on main | Fixed | High | 2026-10-08 | 2026-10-08 |
@@ -80,11 +80,11 @@
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Open | Low | 2026-10-09 | 2026-10-09 |
-| [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1006](BG1006-sprint-batch-add-prints-a-refusal-for-an.md) | sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Superseded | Low | 2026-10-09 | 2026-10-09 |
 | [BG1008](BG1008-a-waiver-recorded-before-the-run-can-answer.md) | A waiver recorded before the run can answer a checklist row while the page's Waivers in force section says no gate stood down | Open | Low | 2026-10-09 | 2026-10-09 |
-| [BG1009](BG1009-revert-check-reads-a-timed-out-verifier-as.md) | revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1009](BG1009-revert-check-reads-a-timed-out-verifier-as.md) | revert-check reads a timed-out verifier as red and an empty revert as green, so it passes a unit it never measured and refuses one it never reverted | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1010](BG1010-sprint-report-py-build-run-resolves-the-named.md) | sprint_report.py build --run resolves the named run and then builds the page from the default run | Fixed | Low | 2026-10-09 | 2026-10-09 |
 | [BG1011](BG1011-ll0056-ships-with-its-label-doubled-and-the.md) | LL0056 ships with its label doubled and the template's placeholder sections left in, and nothing refuses a lesson with an unfilled placeholder | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1012](BG1012-the-sprint-checklist-reads-a-run-only-from.md) | The sprint checklist reads a run only from .local, so in any other clone a signed run's rows read 'no run record could be read' | Open | Medium | 2026-10-09 | 2026-10-09 |
@@ -336,8 +336,8 @@
 | [BG1258](BG1258-us1130-did-not-converge-in-review-round-2.md) | US1130 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1259](BG1259-the-forge-s-lint-job-has-been-red.md) | The forge's Lint job has been red on main since 8a00d2cc because bandit reads the OpenCode meter's placeholder join as SQL injection | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1260](BG1260-init-run-and-init-guided-exit-1-and.md) | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly | Open | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Open | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Fixed | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
@@ -354,7 +354,7 @@
 | [BG1276](BG1276-the-footprint-counter-splits-affects-on-every-comma.md) | The footprint counter splits Affects on every comma, so a path inside a bracketed note is dropped from the unit's file count | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1277](BG1277-the-close-s-closing-review-row-does-not.md) | The close's closing-review row does not credit a unit carried at the review cap whose carrying bug was fixed and approved in the same run | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1278](BG1278-bg1274-s-parity-test-fixture-names-the-retired.md) | BG1274's parity-test fixture names the retired module audit.py, so the push gate's rename guard is red | Fixed | High | 2026-11-06 | 2026-11-06 |
-| [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Open | Medium | 2026-11-07 | 2026-11-07 |
+| [BG1279](BG1279-a-close-after-sprint-reopen-keeps-the-first.md) | A close after `sprint reopen` keeps the first close's token reading, so the reopened work is missing from the report's cost | Fixed | Medium | 2026-11-07 | 2026-11-07 |
 | [BG1280](BG1280-a-codex-reading-names-a-multi-model-session.md) | A Codex reading names a multi-model session `A, B` with no per-model split, so a run that brings in a new model books the workspace's whole pre-run history as run spend in its dollar cost | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1281](BG1281-remote-gate-sh-push-release-records-an-abbreviated.md) | `remote-gate.sh push --release` records an abbreviated sha green, so `release_cut.py tag-check` then refuses the tag it was run for | Won't Fix | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1282](BG1282-copilot-home-and-opencode-db-user-configuration-variables.md) | `COPILOT_HOME` and `OPENCODE_DB`, user configuration variables, count as harness signals, so a Claude Code user who exports either gets no token reading | Open | Low | 2026-11-08 | 2026-11-08 |
@@ -380,7 +380,7 @@
 | [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1303](BG1303-sprint-lane-brief-names-a-schema-3-unit.md) | `sprint lane brief` names a schema-3 unit's hand-in files by its normalised id (US01M6XQJF-claims.json) while `lane land --units US-01M6XQJF` reads them by the id as typed, so the self-check is never recorded at landing | Fixed | Low | 2026-11-09 | 2026-11-09 |
 | [BG1304](BG1304-artifact-py-new-wraps-a-file-name-inside.md) | `artifact.py new` wraps a file name inside a path in backticks, so tools/tests/x.py in a CR's Impact or criteria is written as tools/tests/`x.py` | Open | Low | 2026-11-09 | 2026-11-09 |
-| [BG1305](BG1305-the-cursor-meter-drops-the-model-the-cursor.md) | The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings | Open | Medium | 2026-11-09 | 2026-11-09 |
+| [BG1305](BG1305-the-cursor-meter-drops-the-model-the-cursor.md) | The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1306](BG1306-critic-py-brief-never-tells-a-reviewer-probing.md) | `critic.py brief` never tells a reviewer probing confinement or environment-isolation code to run its mutants with HOME set to a temporary directory, so a mutant can write outside the scratch tree | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1307](BG1307-the-shipped-persona-registry-reader-parses-only-the.md) | The shipped persona registry reader parses only the Primary, Secondary and Negative headings of `personas/index.md`, so a Served persona such as RFC0063's change approver is invisible to `status` and `hint` | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1308](BG1308-the-product-seat-card-s-worked-example-names.md) | The product seat card's worked example names Maya Okafor as the shipped skill's Primary, which RFC0063 makes false once Abena Osei's card lands | Open | Low | 2026-11-09 | 2026-11-09 |
@@ -405,21 +405,21 @@
 | [BG1327](BG1327-a-verdict-file-s-escape-which-the-review.md) | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1329](BG1329-run-nine-s-close-push-is-refused-by.md) | Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use | Fixed | High | 2026-11-09 | 2026-11-09 |
-| [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Open | Medium | 2026-11-10 | 2026-11-10 |
-| [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Open | Medium | 2026-11-10 | 2026-11-10 |
+| [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Fixed | Medium | 2026-11-10 | 2026-11-10 |
+| [BG1331](BG1331-a-grok-request-of-200k-tokens-or-more.md) | A Grok request of 200k tokens or more is priced at xAI's short-context rate, so the meter understates the requests that cost a consuming project most | Fixed | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1332](BG1332-no-command-writes-a-retro-s-known-issues.md) | No command writes a retro's 'Known issues carried' rows, so the orchestrator types them by hand and run nine's two late rows landed outside the table | Open | Medium | 2026-11-10 | 2026-11-10 |
 | [BG1333](BG1333-a-project-set-up-before-6-3-0.md) | A project set up before 6.3.0 never learns to integrate on trunk: project upgrade leaves its AGENTS.md without the rule, and no hygiene check notices | Fixed | High | 2026-11-10 | 2026-11-10 |
 | [BG1334](BG1334-verify-ac-s-markdown-evidence-lint-lets-a.md) | verify_ac's markdown-evidence lint lets a grep over sdlc-studio/reviews/ through once US1011's verdict files sit there, so main fails test_every_escape_found_by_review_is_refused | Fixed | High | 2026-11-12 | 2026-11-12 |
 | [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Open | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Fixed | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1339](BG1339-sprint-py-lane-accept-has-no-path-for.md) | sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1339](BG1339-sprint-py-lane-accept-has-no-path-for.md) | sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1340](BG1340-critic-py-brief-rejoinder-with-no-file-reads.md) | critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1341](BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md) | reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1342](BG1342-sprint-py-plan-write-format-json-prints-its.md) | sprint.py plan --write --format json prints its run-opening lines on stdout before the JSON | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1343](BG1343-moving-a-story-to-ready-does-not-refuse.md) | Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests | Fixed | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1344](BG1344-a-unit-whose-tests-must-run-under-a.md) | A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1344](BG1344-a-unit-whose-tests-must-run-under-a.md) | A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1345](BG1345-the-review-brief-does-not-tell-a-reviewer.md) | The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1346](BG1346-the-first-verdict-recorded-after-the-ledger-gained.md) | The first verdict recorded after the ledger gained its Source column pads every row, and the commit-msg hook credits that change to every unit the subject names | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1347](BG1347-a-second-rulings-line-in-a-verdict-block.md) | A second RULINGS: line in a verdict block is silently dropped | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -447,7 +447,7 @@
 | [BG1369](BG1369-verify-ac-s-markdown-evidence-lint-matches-the.md) | verify_ac's markdown-evidence lint matches the verdicts path as written, so reviews/../reviews/ and a symlink get through | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1370](BG1370-a-later-rewrite-of-a-verdict-file-is.md) | A later rewrite of a verdict file is attributed to the reviewer when its last write was an Edit | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1371](BG1371-the-retro-s-dollar-line-prices-only-the.md) | The retro's dollar line prices only the meter's split, so the retro and the report state different dollars for one run | Fixed | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Open | Medium | 2026-11-12 | 2026-11-12 |
+| [BG1372](BG1372-github-reports-5-dependabot-alerts-on-the-default.md) | GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low) | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1373](BG1373-a-nul-byte-in-a-transcript-s-file.md) | A NUL byte in a transcript's file path makes critic.py record refuse the unit | Open | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1374](BG1374-the-report-s-prices-table-prints-a-price.md) | The report's Prices table prints a price source URL bare in the Markdown twin, so a filed report fails markdownlint MD034 and its close paperwork cannot be committed | Fixed | High | 2026-11-12 | 2026-11-12 |
 | [BG1375](BG1375-us1015-s-run-state-floor-and-its-write.md) | US1015's run-state floor and its Write, MultiEdit, NotebookEdit, Read and Bash evidence cases have no tests | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -457,6 +457,44 @@
 | [BG1379](BG1379-the-report-s-markdown-twin-still-prints-a.md) | The report's Markdown twin still prints a `www.` or upper-case-scheme price source bare | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1380](BG1380-bg1374-s-exclusion-of-a-trailing-comma-or.md) | BG1374's exclusion of a trailing comma or full stop from a linked address has no test | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1381](BG1381-a-price-source-url-whose-path-ends-in.md) | A price source URL whose path ends in a closing bracket loses that bracket from its link target | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1382](BG1382-a-nested-run-verifier-caller-s-own-verifier.md) | A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1383](BG1383-two-more-group-kill-helpers-duplicate-verify-ac.md) | Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1384](BG1384-the-changelog-s-6-3-0-text-and.md) | The changelog's 6.3.0 text and the BG1112 fragment still over-state what the group kill does | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1385](BG1385-this-repo-s-own-agents-md-lacks-the.md) | This repo's own AGENTS.md lacks the template's 'Integrate continuously' line, so validate.py check warns here | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1386](BG1386-timing-tests-fail-under-parallel-load-test-status.md) | Timing tests fail under parallel load: test_status GatherPerformanceTests read 4.9 s against a 3 s limit and a verify_ac criterion failed once at load 8.6 | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1387](BG1387-test-cli-grammar-realtreemarkertests-copies-the-whole-tree.md) | test_cli_grammar RealTreeMarkerTests copies the whole tree into /tmp and fails with EDQUOT on a small tmpfs | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1388](BG1388-an-sdlc-md-root-discovery-test-fails-when.md) | An sdlc_md root-discovery test fails when TMPDIR is inside a repository, because it assumes its temporary directory lies outside any project | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1389](BG1389-sdlc-md-extract-field-reads-an-empty-field.md) | sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1390](BG1390-test-lean-tracked-run-record-test-this-repos.md) | test_lean_tracked_run_record test_this_repos_signed_reports_check_in_a_clean_clone fails in a harness worktree | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1391](BG1391-the-report-s-dollar-cost-row-does-not.md) | The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1392](BG1392-prices-and-token-meters-have-untested-edges-rates.md) | prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1393](BG1393-a-project-that-replaces-grok-4-7-under.md) | A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1394](BG1394-a-re-close-after-a-reopen-whose-meter.md) | A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1395](BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md) | BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1398](BG1398-the-tool-call-budget-in-a-multi-unit.md) | The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1400](BG1400-lane-accept-takes-reviewer-as-free-text-so.md) | lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1401](BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md) | BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1402](BG1402-the-bg1333-integration-rule-counts-as-present-if.md) | The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1403](BG1403-retro-s-new-supplied-guard-and-its-declined.md) | retro's new `supplied` guard and its `declined` list have no tests | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1404](BG1404-critic-py-record-splits-a-verdict-s-issues.md) | critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1405](BG1405-nothing-pins-critic-s-live-rows-filter-the.md) | Nothing pins critic's 'live rows' filter, the carried-refusal wording or the stacked-criterion naming, and the BG1339 rejoinder path guards are untested | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1406](BG1406-lane-run-accepts-a-home-isolated-unit-and.md) | lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1407](BG1407-a-builder-s-mutation-probe-in-a-scratch.md) | A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1408](BG1408-sprint-lane-land-s-hook-refusal-text-and.md) | sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1410](BG1410-bg1330-s-re-pointed-clean-run-test-lost.md) | BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1411](BG1411-the-unpriced-gap-remedy-lane-return-units-id.md) | The unpriced-gap remedy 'lane return --units <id> --agent A' cannot work after the close | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1412](BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md) | templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1413](BG1413-a-ctrl-c-during-lane-run-s-2.md) | A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1414](BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md) | The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1415](BG1415-no-test-pins-the-line-number-verify-ac.md) | No test pins the line number verify_ac's lint prints | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1416](BG1416-help-verify-md-s-exit-3-row-in.md) | help/verify.md's exit-3 row in the revert-check table leaves out git failing to read the base blob | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1417](BG1417-ci-s-lint-yml-sets-up-node-20.md) | CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1418](BG1418-a-nested-run-verifier-caller-s-own-verifier.md) | A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier | Superseded | Low | 2026-11-13 | 2026-11-13 |
+| [BG1419](BG1419-two-more-group-kill-helpers-duplicate-verify-ac.md) | Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase | Superseded | Low | 2026-11-13 | 2026-11-13 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG1305: The Cursor meter drops the model the Cursor usage hook records on each ledger line, so a run metered from the ledger is never priced by model, and Composer pricing reaches only `sprint lane run` readings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, changelog.d/BG1305.md
@@ -28,6 +28,7 @@ Carry each ledger line's model through the Cursor meter into the per-model split
 
 - [ ] **AC1** Given a Cursor usage ledger whose lines name a priced model, when the Cursor meter reads it, the reading carries a per-model split in the shape the other meters produce and `lib/prices.py` prices it; beside it, a ledger line naming no model still reads as not priced. Fails on: a model-bearing ledger read as not priced, or a line with no model priced.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py::LedgerCarriesTheModelTests
+  - **Verified:** yes (2026-11-12)
 
 ## Revision History
 

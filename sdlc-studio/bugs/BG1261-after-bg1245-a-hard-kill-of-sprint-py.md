@@ -1,6 +1,6 @@
 # BG1261: After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1261.md
@@ -26,6 +26,7 @@ Give the lane a parent-liveness watchdog that kills the lane's group when `sprin
 
 - [ ] **AC1** Given `sprint.py lane run` running a unit whose fake CLI sleeps and then stages a file, when `sprint.py` itself is killed with SIGKILL, then the lane's CLI and every process it started are gone within the watchdog's grace and the file is never staged; beside it, a control run in which `sprint.py` lives lets the same CLI finish and stage its file. Fails on: the CLI or a child still running, or the file staged, after `sprint.py` died.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneDiesWithItsCallerTests
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

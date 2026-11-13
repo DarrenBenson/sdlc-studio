@@ -1,6 +1,6 @@
 # BG1262: `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1262.md
@@ -26,10 +26,13 @@ In `_kill_group` send `SIGTERM` to the group, wait the grace for it to empty, th
 
 - [ ] **AC1** Given a lane that times out while its CLI's child traps SIGTERM and writes a marker, when the timeout fires, then the group is sent SIGTERM first and the marker is written before any SIGKILL; and a timed-out lane whose CLI loops `git add` leaves no `index.lock` in its worktree. Fails on: SIGKILL with no SIGTERM first, or the grace mutant `deadline = time.monotonic() - 1` passing the test.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneTimeoutTermsFirstTests
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC2** Given a CLI that exits 0 while a background child it started is still running, when the lane records, then that child is killed before the staged set is read and no file it would stage is in the index afterwards. Fails on: a file staged after the record.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneLeftoverChildTests
+  - **Verified:** yes (2026-11-13)
 - [ ] **AC3** Given a CLI that cannot be executed (a shebang naming a missing interpreter), `lane run` refuses naming the CLI path and the unit is no longer in flight; and the test module's PATH holds only the fake bin and the system directories git and Python need, so a missing fake fails in setUp rather than reaching a real harness CLI. Fails on: a traceback with the unit left in flight, or the operator's PATH reaching a test.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneExecFailureTests
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1337: sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1337.md
@@ -26,6 +26,7 @@ Fast-forward or rebase the worktree onto main before the commit, holding the sta
 
 - [ ] **AC1** Given a lane worktree behind main, where main fixed a test that fails at the worktree's base, when `sprint lane land` runs, then the commit hook judges the lane on main's code and the land succeeds. Fails on: the land refused for a failure present only at the old base.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_lane_behind_main_is_judged_on_mains_code
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 

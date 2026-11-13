@@ -1,6 +1,6 @@
 # BG1344: A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_handover.py, changelog.d/BG1344.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -26,6 +26,7 @@ Let a unit declare HOME isolation and have lane brief and the planner route it t
 
 - [ ] **AC1** Given a unit that declares it needs a temporary HOME, when its lane brief is printed, then the brief names the non-worktree path (a main-checkout lane run last, with other commits held) instead of the worktree lane. Fails on: a worktree lane briefed for it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_handover.py::BriefHandoverTests::test_a_home_isolated_unit_is_briefed_for_the_main_checkout
+  - **Verified:** yes (2026-11-13)
 
 ## Revision History
 
