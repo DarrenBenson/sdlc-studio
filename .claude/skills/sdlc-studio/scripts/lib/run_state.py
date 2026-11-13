@@ -1696,8 +1696,7 @@ def price_table(repo_root: Path | str | None, filed: dict | None = None):
     try:
         if isinstance(filed, dict) and isinstance(filed.get("models"), dict):
             return prices.PriceTable(
-                models={m: prices._entry(dict(e), f"the page's price table, {m}", m)
-                        for m, e in filed["models"].items()},
+                models={m: _filed_price(m, e) for m, e in filed["models"].items()},
                 stale_after_days=int(filed["stale_after_days"]),
                 origin="the price table the page was filed with"), None
         return prices.load(repo_root), None
@@ -1705,24 +1704,48 @@ def price_table(repo_root: Path | str | None, filed: dict | None = None):
         return None, str(exc)
 
 
+#: A long-context price's threshold as a page's table carries it (`Price.from_prompt_tokens`).
+_FROM_PROMPT = "from_prompt_tokens"
+
+
+def _filed_price(model: str, entry: dict):
+    """One entry of a page's price table read back, with the long-context threshold the page
+    carries for it, so the replay labels a figure as the live table did."""
+    import dataclasses  # noqa: PLC0415 - only a filed long-context price needs it
+    raw = dict(entry)
+    least = raw.pop(_FROM_PROMPT, None)
+    got = prices._entry(raw, f"the page's price table, {model}", model)  # noqa: SLF001
+    if least is None:
+        return got
+    if isinstance(least, bool) or not isinstance(least, int) or least < 1:
+        raise prices.PriceTableError(f"the page's price table, {model} has {_FROM_PROMPT} "
+                                     f"{least!r}, not a whole number of 1 or more")
+    return dataclasses.replace(got, from_prompt_tokens=least)
+
+
 def table_record(table) -> dict:
-    """The price table as a page carries it, every entry whole, so `price_table` reads back
-    the prices the page was formed from."""
+    """The price table as a page carries it, every entry whole, a long-context price with its
+    threshold, so `price_table` reads back the prices the page was formed from."""
     return {"stale_after_days": table.stale_after_days,
             "models": {m: {**{c: getattr(p, c) for c in prices.COMPONENTS},
-                           "effective": p.effective.isoformat(), "source": p.source}
+                           "effective": p.effective.isoformat(), "source": p.source,
+                           **({_FROM_PROMPT: p.from_prompt_tokens}
+                              if p.from_prompt_tokens else {})}
                        for m, p in sorted(table.models.items())}}
 
 
 def usd(by_model: dict | None, table, today=None) -> dict:
     """The estimated US dollar cost of a per-model split (`BY_MODEL`), each model priced from
     its own components by `prices.cost`: `{usd, covered, models, unpriced, effective, stale,
-    reason}`. A model the table does not price, `SESSION_MODEL_MIXED` among them, is listed in
-    `unpriced` with its share of the priced tokens and is never summed in as $0; `covered` is the
-    share of the split's priced tokens the dollar figure prices. `usd` is None, with `reason`,
-    when nothing is priced. `stale` is `prices.stale` on `today` (default: today)."""
+    reason, lower_bound}`. A model the table does not price, `SESSION_MODEL_MIXED` among them, is
+    listed in `unpriced` with its share of the priced tokens and is never summed in as $0;
+    `covered` is the share of the split's priced tokens the dollar figure prices. `usd` is None,
+    with `reason`, when nothing is priced. `stale` is `prices.stale` on `today` (default: today).
+    `lower_bound` says why the figure may fall short when a model billed at a higher rate past a
+    prompt size is priced from a total; a split that names that model's long-context id beside
+    it was booked request by request (`token_meters.book`), so it is exact and carries none."""
     out = {"usd": None, "covered": None, "models": [], "unpriced": [], "reason": None,
-           "effective": None, "stale": None}
+           "effective": None, "stale": None, "lower_bound": None}
     if table is not None:
         newest = table.newest_effective
         out.update(effective=newest.isoformat() if newest else None,
@@ -1732,7 +1755,7 @@ def usd(by_model: dict | None, table, today=None) -> dict:
         return out
     weighed = {m: price(c) for m, c in by_model.items()}
     whole = sum(weighed.values())
-    total = 0.0
+    total, lower = 0.0, []
     for m in sorted(by_model):
         if not weighed[m]:
             continue
@@ -1747,6 +1770,9 @@ def usd(by_model: dict | None, table, today=None) -> dict:
         else:
             total += got.usd
             out["models"].append({"model": m, "usd": got.usd, "priced": weighed[m]})
+            if got.lower_bound and m + prices.LONG_CONTEXT_ID not in by_model:
+                lower.append(got.lower_bound)
+    out["lower_bound"] = "; ".join(lower) or None
     covered = sum(r["priced"] for r in out["models"])
     out["covered"] = covered / whole if whole else None
     if out["models"]:

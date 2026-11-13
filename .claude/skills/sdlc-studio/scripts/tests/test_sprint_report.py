@@ -4032,6 +4032,31 @@ class ReopenedRunCostTests(unittest.TestCase):
                          self.priced(third)["est_actual"]["value"])
         self.assertIn("re-read", self.priced(third)["est_basis"]["value"])
 
+    def test_the_close_cost_check_totals_the_window_the_page_it_files_states(self) -> None:
+        """The close's cost check (`sprint._close_priced_total`, read before the report is
+        filed) totals the run as the page that close files states it. MUTANTS: the check keeps
+        the first close's window after a reopen (4,000 against the page's 13,000); the check
+        re-reads on every re-close (the third close counts the 20,000 of paperwork after the
+        second, which its page leaves out)."""
+        sprint = self.lean._live("sprint")
+
+        def checked(when: str) -> int:
+            with self.at(when):
+                return sprint._close_priced_total(self.root, self.lean._read(self.root))["priced"]
+
+        self.close_at(self.FIRST)
+        self.reopen_at(self.REOPEN)
+        self.spend(9000)
+        total = checked(self.SECOND)
+        second = self.close_at(self.SECOND)
+        self.assertEqual(self.priced(second)["est_actual"]["value"], total,
+                         "the cost check judges the figure the re-read page states")
+        self.spend(20000)                                # paperwork after the second close
+        total = checked(self.THIRD)
+        third = self.close_at(self.THIRD)
+        self.assertEqual(self.priced(third)["est_actual"]["value"], total)
+        self.assertEqual(self.priced(second)["est_actual"]["value"], total)
+
 
 class TheSealDoesNotMoveTheWindowTests(ReportOfRecordBase):
     """BG0718: the act of SEALING must not invalidate the page it seals.

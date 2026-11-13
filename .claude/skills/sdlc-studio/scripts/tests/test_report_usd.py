@@ -903,5 +903,66 @@ class ReportUsdTests(meter._Case):
         self.assertEqual([], check["edited"], "INVALIDATED, not an edited page")
 
 
+class GrokSessionTotalOnThePageTests(meter._Case):
+    """BG1331 AC2 on the page: a Grok model read from a session total is priced at its short
+    rate, so the report's Dollar cost row says the figure is a lower bound, and the page's price
+    table carries the long-context threshold that label names, so a re-derivation from the
+    filed table states it again. Prices typed here: grok-4.7 short 2.00 input, 0.50 cached
+    input, 6.00 output, long 4.00, 1.00, 12.00 from a 200,000-token prompt."""
+
+    GROK = "grok-4.7"
+    SHORT = {"input": 2.0, "output": 6.0, "cache_read": 0.5, "cache_write_5m": 2.0,
+             "cache_write_1h": 2.0}
+    LONG = {"input": 4.0, "output": 12.0, "cache_read": 1.0, "cache_write_5m": 4.0,
+            "cache_write_1h": 4.0}
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.sr = meter._live("sprint_report")
+        self.prices = meter._live("lib.prices")
+        today = dt.date.today().isoformat()
+        typed = {"effective": today, "source": "typed in the test"}
+        path = self.tmp / "grok-prices.json"
+        path.write_text(json.dumps({"models": [
+            {"model": OPUS, **PRICES[OPUS], **typed},
+            {"model": self.GROK, **self.SHORT, **typed, "long_context": {
+                **self.LONG, "from_prompt_tokens": 200_000, **typed}}]}), encoding="utf-8")
+        patch = unittest.mock.patch.object(self.prices, "TABLE_PATH", path)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_the_dollar_cost_row_says_a_lower_bound_and_round_trips(self) -> None:
+        """MUTANTS: the label left off the Dollar cost row, or off the dollar cell of a unit
+        built on Grok; the label on the Claude model, which has one rate; the page's price table
+        dropping the long-context threshold, or its replay ignoring it, so the re-derived label
+        reads differently and `revalidate` refuses the filed page."""
+        sr = self.sr
+        ws = self.workspace()
+        ws.open()
+        ws.tx._append(ws.tx.main, [_line("m_opus", MAIN_OPUS, OPUS),
+                                   _line("m_grok", MAIN_HAIKU, self.GROK)])
+        ws.tx._append(ws.tx.subagents / "agent-g1.jsonl", [_line("g_1", BUILD_1, self.GROK)])
+        rc, out = ws.lane("return", "--units", "US0101", "--agent", "g1")
+        self.assertEqual(0, rc, out)
+        self.assertIsNotNone(self.rs.stamp_tokens(ws.root, "close"))
+        page = sr.build_report(ws.root, meter.RETRO)
+        basis = ws.row(page, "Dollar cost")["est_basis"]["value"]
+        self.assertIn(f"a lower bound for {self.GROK}: its provider bills a request whose "
+                      f"prompt is 200,000 tokens or more", basis)
+        self.assertNotIn(f"a lower bound for {OPUS}", basis)
+        unit = next(u for s in page["sections"] if s["key"] == "estimates"
+                    for u in s["unit_rows"] if u["unit_id"]["value"] == "US0101")["eu_usd"]
+        self.assertIn(f"a lower bound for {self.GROK}", unit.get("label") or "")
+        grok = meter._sum(MAIN_HAIKU, BUILD_1)
+        whole = (_dollars(OPUS, meter._parts(MAIN_OPUS))
+                 + sum(grok[c] * self.SHORT[c] for c in meter.COMPONENTS) / 1e6)
+        self.assertEqual(_money(whole), ws.row(page, "Dollar cost")["est_actual"]["value"])
+        rid = sr.file_report(ws.root, page)
+        self.assertEqual(sr.TABLE_REPLAYED, page[sr.TABLE_RULE], "premise: the table replays")
+        check = sr.revalidate(ws.root, rid)
+        self.assertTrue(check["valid"], check["changes"])
+        self.assertEqual(page["fingerprint"], check["fingerprint"])
+
+
 if __name__ == "__main__":
     unittest.main()

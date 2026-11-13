@@ -7960,12 +7960,13 @@ def _unit_priced_spans(state: dict) -> dict:
 
 
 def _close_priced_total(root, state: dict) -> dict:
-    """The run's total as the page this close files will state it: over the window the first
-    filed page ended at on a re-close, as `_file_the_report` reads it; on a first close, over
-    every stamp and a reading taken now, as that report stamp will be, held and not written."""
+    """The run's total as the page this close files will state it, as `_file_the_report` reads
+    it: over the window the first filed page ended at on a re-close with no reopen since; on a
+    first close, or a close after a reopen dated past that window, over every stamp and a
+    reading taken now, as that report stamp will be, held and not written."""
     import sprint_report  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     end = state.get(REPORT_WINDOW_END)
-    if end:
+    if end and not sprint_report.reopened_since(state, end):
         return run_state.run_token_total(sprint_report._metered(state, sprint_report._at(end)))
     probe = dict(state)
     # The meter's own reading and re-derivations, so the probe holds the stamp list

@@ -271,13 +271,17 @@ def book(requests, table) -> dict:
     """`requests` as a per-model split in `run_state.BY_MODEL`'s shape, each request's components
     added under the id its prompt size is billed at (`prices.request_id`): a request at or past
     its model's long-context threshold under that model's long-context id, so the split prices
-    every token of it at that rate wherever the split is priced."""
+    every token of it at that rate wherever the split is priced. That id is named, at zero,
+    even when no request reached it, which tells `run_state.usd` the split was booked by prompt
+    size, so its figure is exact rather than a lower bound."""
     from lib import prices  # noqa: PLC0415 - only the dollar figure needs the table
     split: dict = {}
     for req in requests or []:
         comps = req.get("components") or {}
         model = req.get("model") or ""
         key = prices.request_id(model, prompt_tokens(comps), table) if model else model
+        if (long := prices.long_context(model, table)) is not None:
+            split.setdefault(long.model, dict.fromkeys(prices.COMPONENTS, 0))
         held = split.setdefault(key, {})
         for name, n in comps.items():
             held[name] = held.get(name, 0) + n

@@ -500,6 +500,36 @@ class GrokLongContextPricingTests(unittest.TestCase):
         self.assertIsNotNone(claude["usd"], "premise: the control model is priced")
         self.assertIsNone(claude["lower_bound"], "a model with one rate is exact from a total")
 
+    def test_the_report_s_dollar_rows_state_the_lower_bound(self) -> None:
+        """The label reaches the page: `run_state.usd`, which the report's Dollar cost row is
+        priced through, carries it, and the Dollar cost and Dollars per point rows state it. A
+        split `book` formed request by request names the long-context id beside the model even
+        when no request was long, so its figure is exact and carries none. MUTANTS: `usd`
+        dropping the label; either row not stating it; the label kept on a booked split; `book`
+        not naming the long-context id when every request was short."""
+        import sprint_report  # noqa: PLC0415 - the report's row, read where the page reads it
+        total = {k: self.AT[k] + self.UNDER[k] for k in self.AT}
+
+        def rows(split: dict) -> dict:
+            got = sprint_report._usd_rows(  # noqa: SLF001 - the rows the page states
+                {run_state.BY_MODEL: split}, [{"points": 2}], "state",
+                {"table": self.table, "error": None, "today": None})
+            return {r["est_measure"]["value"]: r["est_basis"]["value"] for r in got}
+
+        label = run_state.usd({"grok-4.7": total}, self.table)["lower_bound"]
+        self.assertIn("a lower bound for grok-4.7", label)
+        self.assertIn("200,000", label)
+        session = rows({"grok-4.7": total})
+        self.assertIn(label, session["Dollar cost"])
+        self.assertIn("a lower bound", session["Dollars per point"])
+        booked = token_meters.book([{"model": "grok-4.7", "components": self.UNDER}] * 2,
+                                   self.table)
+        self.assertEqual({"grok-4.7", "grok-4.7" + self.prices.LONG_CONTEXT_ID}, set(booked))
+        self.assertIsNone(run_state.usd(booked, self.table)["lower_bound"])
+        exact = rows(booked)
+        self.assertNotIn("lower bound", exact["Dollar cost"] + exact["Dollars per point"])
+        self.assertIsNone(run_state.usd({"claude-opus-4-7": total}, self.table)["lower_bound"])
+
 
 class HarnessLaneTests(_Fixture):
 

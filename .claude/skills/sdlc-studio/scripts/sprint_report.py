@@ -3828,11 +3828,14 @@ def _pct(share) -> str:
 
 
 def _usd_reach(got: dict) -> str:
-    """What a dollar figure covers and what it leaves out, as one clause."""
+    """What a dollar figure covers and what it leaves out, as one clause, and why it is a lower
+    bound when a model it prices from a total bills long prompts higher (`run_state.usd`)."""
     out = f"covers {_pct(got['covered'])} of the priced tokens"
     if got["unpriced"]:
         out += ("; not priced, and never counted as $0: " + "; ".join(
             f"{u['model']} ({_pct(u['share'])} of the priced tokens)" for u in got["unpriced"]))
+    if got.get("lower_bound"):
+        out += f"; {got['lower_bound']}"
     return out
 
 
@@ -3915,7 +3918,9 @@ def _usd_rows(run_tokens: dict, delivered: list[dict], state_rel: str, usd: dict
         per = fig("est_actual", _usd_text(got["usd"] / points), state_rel)
     out.append(row("Dollars per point", per,
                    f"the Dollar cost row over the {points:g} point(s) of the {len(delivered)} "
-                   f"delivered unit(s){note}"))
+                   f"delivered unit(s){note}"
+                   + ("; a lower bound, as the Dollar cost row says"
+                      if why is None and got.get("lower_bound") else "")))
     premium = run_tokens.get(run_state.PREMIUM_REQUESTS)
     if _num(premium):
         out.append(row("Premium requests", fig("est_actual", premium, state_rel),
@@ -4021,7 +4026,8 @@ def _unit_usd(u: dict, usd: dict) -> dict:
     if got["usd"] is None:
         return unmeasured("eu_usd", u["rel"], got["reason"])
     return fig("eu_usd", _usd_text(got["usd"]), u["rel"],
-               label="estimated" + ("" if not got["unpriced"] else f", {_usd_reach(got)}"))
+               label="estimated" + ("" if not (got["unpriced"] or got.get("lower_bound")) else
+                                    f", {_usd_reach(got)}"))
 
 
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
