@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0474: Cap a wave at four builders on this host, and put every agent's temporary files under ~/.cache/sdlc-tmp from the start: /tmp is a 6.8G…
+
+- **Added:** 2026-11-13
+- **Review-by:** 2027-02-11
+
+Cap a wave at four builders on this host, and put every agent's temporary files under ~/.cache/sdlc-tmp from the start: /tmp is a 6.8G tmpfs that reached its quota mid-run.
+
+Recorded from retro RETRO0144.
+
+## L-0473: Check a lane's self-check surfaces before `lane land` commits, while the builder can still be resumed (BG1399), and price a multi-unit lane…
+
+- **Added:** 2026-11-13
+- **Review-by:** 2027-02-11
+
+Check a lane's self-check surfaces before `lane land` commits, while the builder can still be resumed (BG1399), and price a multi-unit lane by splitting its builder's total by points (BG1397).
+
+Recorded from retro RETRO0144.
+
+## L-0472: Push, or run `tools/run-suite.sh all`, after each wave lands, so a regression the selected runs miss is found while its lane's context is…
+
+- **Added:** 2026-11-13
+- **Review-by:** 2027-02-11
+
+Push, or run `tools/run-suite.sh all`, after each wave lands, so a regression the selected runs miss is found while its lane's context is fresh.
+
+Recorded from retro RETRO0144.
 
 ## L-0471: Send a repair to a fresh builder from the REJECT's verdict file; resume a builder only to hand it a ruling while its staged work sits in…
 

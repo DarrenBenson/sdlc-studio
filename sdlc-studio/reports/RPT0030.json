@@ -1,0 +1,4424 @@
+{
+  "schema": 2,
+  "report_id": "RPT0030",
+  "run_id": "RUN-01M78TKD",
+  "retro_id": "RETRO0144",
+  "generated_at": "2026-11-13T03:48:46Z",
+  "window_end": "2026-11-13T03:48:46Z",
+  "signature": null,
+  "sections": [
+    {
+      "key": "goal",
+      "title": "Goal",
+      "figures": {
+        "sprint_goal": {
+          "key": "sprint_goal",
+          "value": "Lanes land and die cleanly, verifiers never read green wrongly, and every unit's cost is priced.",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "goal_verdict": {
+          "key": "goal_verdict",
+          "value": "Judged partial",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "goal_verdict_note": {
+          "key": "goal_verdict_note",
+          "value": "All 24 planned units, 49 points, delivered on independent APPROVEs (four after one repair round each). Lanes land and die cleanly (BG1336, BG1337, BG1339, BG1344, BG1261, BG1262) and verifiers no longer read green wrongly or leak (BG1005, BG1009, BG0991, BG1112, BG1190, BG1228). Cost is priced over the whole window and for long Grok prompts (BG1279, BG1305, BG1330, BG1331), but every lane this run was multi-unit and lane return cannot split one builder's total, so per-unit cost stays unpriced (BG1397). BG1420, added when the push gate found five red tests, fixed them but was carried as BG1425 after its repair's round-2 review.",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "run_id": {
+          "key": "run_id",
+          "value": "RUN-01M78TKD",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "started_at": {
+          "key": "started_at",
+          "value": "2026-11-12T21:23:26Z",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "ended_at": {
+          "key": "ended_at",
+          "value": "2026-11-13T03:48:46Z",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "duration_hours": {
+          "key": "duration_hours",
+          "value": "6.4h",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "verified_sha": {
+          "key": "verified_sha",
+          "value": "ec57e17d73f497699c8ce4c198e74e26a27ef294",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "estimates",
+      "title": "Estimates",
+      "figures": {},
+      "rows": [
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Points",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 49,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 49,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "1.0x",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "24 of 24 delivered unit(s)",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Minutes",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 286.2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 2464.2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "8.61x",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "measured active minutes (spans or agent minutes) against their forecast, over the 24 of 24 unit(s) planned or added and not dropped that carry both",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Wall-clock span",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 385.3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the run's minutes, start to end, so waiting counts; the forecast is active work, so the two are not compared",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Priced cost",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 41431558,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "priced input-equivalent tokens, the run's headline cost, each component times its weight: input + output + cache write 6,286,357 (input 3,946 x1, output 1,749,423 x5, cache write 5m 4,252,006 x1.25, cache write 1h 280,982 x2, cache read 268,035,252 x0.1); the sum is the Tokens row; read from the main thread and every subagent transcript, once per message",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Tokens",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": 9126348,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 6286357,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "0.69x",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the whole run: forecast over 24 of 24 unit(s) planned or added and not dropped; actual is the run meter, which reads the main thread and every subagent transcript, so the subagents are already in the reading and the 2 delegated total(s) supplied are not added",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Priced per point",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": 845542,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the Priced cost row over the 49 point(s) of the 24 delivered unit(s), in priced input-equivalent tokens per point",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Dollar cost",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": "$111.66",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "estimated US dollars: each model's own components in the Priced cost row times that model's list prices; price table effective 2026-11-12; covers 100.0% of the priced tokens",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "est_measure": {
+            "key": "est_measure",
+            "value": "Dollars per point",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_forecast": {
+            "key": "est_forecast",
+            "value": "not forecast",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_actual": {
+            "key": "est_actual",
+            "value": "$2.28",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_ratio": {
+            "key": "est_ratio",
+            "value": "no ratio",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "est_basis": {
+            "key": "est_basis",
+            "value": "the Dollar cost row over the 49 point(s) of the 24 delivered unit(s); price table effective 2026-11-12",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        }
+      ],
+      "not_measured": null,
+      "unit_rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1190",
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 20.1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1407336,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1190 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1228",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 20.1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1414113,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1228 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1112",
+            "source": "sdlc-studio/bugs/BG1112-verify-ac-s-timeout-kills-only-the-shell.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 54.2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1883907,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1112 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1112-verify-ac-s-timeout-kills-only-the-shell.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1005",
+            "source": "sdlc-studio/bugs/BG1005-a-pytest-verify-that-partly-skips-is-stamped.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 200.2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 4922737,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1005 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1005-a-pytest-verify-that-partly-skips-is-stamped.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1009",
+            "source": "sdlc-studio/bugs/BG1009-revert-check-reads-a-timed-out-verifier-as.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 199.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 4913269,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1009 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1009-revert-check-reads-a-timed-out-verifier-as.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0991",
+            "source": "sdlc-studio/bugs/BG0991-verify-ac-attaches-a-verify-line-from-a.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 157.9,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 4146387,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG0991 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0991-verify-ac-attaches-a-verify-line-from-a.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1336",
+            "source": "sdlc-studio/bugs/BG1336-the-lane-brief-s-verify-ac-step-writes.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 142.4,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 3830116,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1336 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1336-the-lane-brief-s-verify-ac-step-writes.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1337",
+            "source": "sdlc-studio/bugs/BG1337-sprint-py-lane-land-commits-a-lane-at.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 142.4,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 3830116,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1337 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1337-sprint-py-lane-land-commits-a-lane-at.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1339",
+            "source": "sdlc-studio/bugs/BG1339-sprint-py-lane-accept-has-no-path-for.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 61.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1187895,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1339 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1339-sprint-py-lane-accept-has-no-path-for.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1344",
+            "source": "sdlc-studio/bugs/BG1344-a-unit-whose-tests-must-run-under-a.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 61.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1194181,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1344 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1344-a-unit-whose-tests-must-run-under-a.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1330",
+            "source": "sdlc-studio/bugs/BG1330-15-of-rpt0028-s-19-units-have-no.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 142.4,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 3830116,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1330 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1330-15-of-rpt0028-s-19-units-have-no.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1279",
+            "source": "sdlc-studio/bugs/BG1279-a-close-after-sprint-reopen-keeps-the-first.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 183.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 4553754,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1279 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1279-a-close-after-sprint-reopen-keeps-the-first.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1331",
+            "source": "sdlc-studio/bugs/BG1331-a-grok-request-of-200k-tokens-or-more.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 184.4,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 4625355,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1331 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1331-a-grok-request-of-200k-tokens-or-more.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1305",
+            "source": "sdlc-studio/bugs/BG1305-the-cursor-meter-drops-the-model-the-cursor.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 106.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 3200533,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1305 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1305-the-cursor-meter-drops-the-model-the-cursor.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1371",
+            "source": "sdlc-studio/bugs/BG1371-the-retro-s-dollar-line-prices-only-the.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 61.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2278773,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1371 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1371-the-retro-s-dollar-line-prices-only-the.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0965",
+            "source": "sdlc-studio/bugs/BG0965-retro-py-validate-ignores-actions-raised-in-a.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 61.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2278773,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG0965 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0965-retro-py-validate-ignores-actions-raised-in-a.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1340",
+            "source": "sdlc-studio/bugs/BG1340-critic-py-brief-rejoinder-with-no-file-reads.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 86.0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2788021,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1340 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1340-critic-py-brief-rejoinder-with-no-file-reads.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1341",
+            "source": "sdlc-studio/bugs/BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 86.0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2788021,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1341 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0990",
+            "source": "sdlc-studio/bugs/BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 86.0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2788021,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG0990 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1343",
+            "source": "sdlc-studio/bugs/BG1343-moving-a-story-to-ready-does-not-refuse.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 5.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 86.0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 186252,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2788021,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1343 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1343-moving-a-story-to-ready-does-not-refuse.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1333",
+            "source": "sdlc-studio/bugs/BG1333-a-project-set-up-before-6-3-0.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 61.6,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 2278773,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1333 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1333-a-project-set-up-before-6-3-0.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1261",
+            "source": "sdlc-studio/bugs/BG1261-after-bg1245-a-hard-kill-of-sprint-py.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 97.8,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1930866,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1261 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1261-after-bg1245-a-hard-kill-of-sprint-py.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1262",
+            "source": "sdlc-studio/bugs/BG1262-sprint-lane-run-kills-a-timed-out-lane.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 17.5,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 97.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 558756,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1930866,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1262 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1262-sprint-lane-run-kills-a-timed-out-lane.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1372",
+            "source": "sdlc-studio/bugs/BG1372-github-reports-5-dependabot-alerts-on-the-default.md"
+          },
+          "eu_forecast_minutes": {
+            "key": "eu_forecast_minutes",
+            "value": 11.7,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_minutes": {
+            "key": "eu_minutes",
+            "value": 62.1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_forecast_tokens": {
+            "key": "eu_forecast_tokens",
+            "value": 372504,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_tokens": {
+            "key": "eu_tokens",
+            "value": 1003458,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "eu_priced": {
+            "key": "eu_priced",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json",
+            "reason": "no agent returned for it was priced from its own transcript - price one with `sprint.py lane return --units BG1372 --agent A`"
+          },
+          "eu_usd": {
+            "key": "eu_usd",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/bugs/BG1372-github-reports-5-dependabot-alerts-on-the-default.md",
+            "reason": "no agent returned for it was priced from its own transcript"
+          }
+        }
+      ]
+    },
+    {
+      "key": "delivered",
+      "title": "Delivered to plan",
+      "figures": {
+        "planned_units": {
+          "key": "planned_units",
+          "value": 24,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "planned_points": {
+          "key": "planned_points",
+          "value": 49,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "plan_delivered_units": {
+          "key": "plan_delivered_units",
+          "value": 24,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "plan_delivered_points": {
+          "key": "plan_delivered_points",
+          "value": 49,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "added_delivered_units": {
+          "key": "added_delivered_units",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "added_points": {
+          "key": "added_points",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "dropped_units": {
+          "key": "dropped_units",
+          "value": 1,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "dropped_points": {
+          "key": "dropped_points",
+          "value": 3,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "carried_units": {
+          "key": "carried_units",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "carried_points": {
+          "key": "carried_points",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "added_units": {
+          "key": "added_units",
+          "value": 1,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "points_delivered": {
+          "key": "points_delivered",
+          "value": 49,
+          "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md, sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md, sdlc-studio/bugs/BG1112-verify-ac-s-timeout-kills-only-the-shell.md, sdlc-studio/bugs/BG1005-a-pytest-verify-that-partly-skips-is-stamped.md, sdlc-studio/bugs/BG1009-revert-check-reads-a-timed-out-verifier-as.md, sdlc-studio/bugs/BG0991-verify-ac-attaches-a-verify-line-from-a.md, sdlc-studio/bugs/BG1336-the-lane-brief-s-verify-ac-step-writes.md, sdlc-studio/bugs/BG1337-sprint-py-lane-land-commits-a-lane-at.md, sdlc-studio/bugs/BG1339-sprint-py-lane-accept-has-no-path-for.md, sdlc-studio/bugs/BG1344-a-unit-whose-tests-must-run-under-a.md, sdlc-studio/bugs/BG1330-15-of-rpt0028-s-19-units-have-no.md, sdlc-studio/bugs/BG1279-a-close-after-sprint-reopen-keeps-the-first.md, sdlc-studio/bugs/BG1331-a-grok-request-of-200k-tokens-or-more.md, sdlc-studio/bugs/BG1305-the-cursor-meter-drops-the-model-the-cursor.md, sdlc-studio/bugs/BG1371-the-retro-s-dollar-line-prices-only-the.md, sdlc-studio/bugs/BG0965-retro-py-validate-ignores-actions-raised-in-a.md, sdlc-studio/bugs/BG1340-critic-py-brief-rejoinder-with-no-file-reads.md, sdlc-studio/bugs/BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md, sdlc-studio/bugs/BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md, sdlc-studio/bugs/BG1343-moving-a-story-to-ready-does-not-refuse.md, sdlc-studio/bugs/BG1333-a-project-set-up-before-6-3-0.md, sdlc-studio/bugs/BG1261-after-bg1245-a-hard-kill-of-sprint-py.md, sdlc-studio/bugs/BG1262-sprint-lane-run-kills-a-timed-out-lane.md, sdlc-studio/bugs/BG1372-github-reports-5-dependabot-alerts-on-the-default.md"
+        }
+      },
+      "rows": [
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1190",
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1190-a-verifier-that-times-out-is-killed-alone.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1228",
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1228-bg1190-did-not-converge-in-review-round-2.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1112",
+            "source": "sdlc-studio/bugs/BG1112-verify-ac-s-timeout-kills-only-the-shell.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1112-verify-ac-s-timeout-kills-only-the-shell.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1005",
+            "source": "sdlc-studio/bugs/BG1005-a-pytest-verify-that-partly-skips-is-stamped.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1005-a-pytest-verify-that-partly-skips-is-stamped.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1009",
+            "source": "sdlc-studio/bugs/BG1009-revert-check-reads-a-timed-out-verifier-as.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1009-revert-check-reads-a-timed-out-verifier-as.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0991",
+            "source": "sdlc-studio/bugs/BG0991-verify-ac-attaches-a-verify-line-from-a.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0991-verify-ac-attaches-a-verify-line-from-a.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1336",
+            "source": "sdlc-studio/bugs/BG1336-the-lane-brief-s-verify-ac-step-writes.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1336-the-lane-brief-s-verify-ac-step-writes.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1337",
+            "source": "sdlc-studio/bugs/BG1337-sprint-py-lane-land-commits-a-lane-at.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1337-sprint-py-lane-land-commits-a-lane-at.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1339",
+            "source": "sdlc-studio/bugs/BG1339-sprint-py-lane-accept-has-no-path-for.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1339-sprint-py-lane-accept-has-no-path-for.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1344",
+            "source": "sdlc-studio/bugs/BG1344-a-unit-whose-tests-must-run-under-a.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1344-a-unit-whose-tests-must-run-under-a.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1330",
+            "source": "sdlc-studio/bugs/BG1330-15-of-rpt0028-s-19-units-have-no.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1330-15-of-rpt0028-s-19-units-have-no.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1279",
+            "source": "sdlc-studio/bugs/BG1279-a-close-after-sprint-reopen-keeps-the-first.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1279-a-close-after-sprint-reopen-keeps-the-first.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1331",
+            "source": "sdlc-studio/bugs/BG1331-a-grok-request-of-200k-tokens-or-more.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1331-a-grok-request-of-200k-tokens-or-more.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1305",
+            "source": "sdlc-studio/bugs/BG1305-the-cursor-meter-drops-the-model-the-cursor.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1305-the-cursor-meter-drops-the-model-the-cursor.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1371",
+            "source": "sdlc-studio/bugs/BG1371-the-retro-s-dollar-line-prices-only-the.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1371-the-retro-s-dollar-line-prices-only-the.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0965",
+            "source": "sdlc-studio/bugs/BG0965-retro-py-validate-ignores-actions-raised-in-a.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0965-retro-py-validate-ignores-actions-raised-in-a.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1340",
+            "source": "sdlc-studio/bugs/BG1340-critic-py-brief-rejoinder-with-no-file-reads.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1340-critic-py-brief-rejoinder-with-no-file-reads.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1341",
+            "source": "sdlc-studio/bugs/BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG0990",
+            "source": "sdlc-studio/bugs/BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1343",
+            "source": "sdlc-studio/bugs/BG1343-moving-a-story-to-ready-does-not-refuse.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 1,
+            "source": "sdlc-studio/bugs/BG1343-moving-a-story-to-ready-does-not-refuse.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1333",
+            "source": "sdlc-studio/bugs/BG1333-a-project-set-up-before-6-3-0.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1333-a-project-set-up-before-6-3-0.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1261",
+            "source": "sdlc-studio/bugs/BG1261-after-bg1245-a-hard-kill-of-sprint-py.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1261-after-bg1245-a-hard-kill-of-sprint-py.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1262",
+            "source": "sdlc-studio/bugs/BG1262-sprint-lane-run-kills-a-timed-out-lane.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1262-sprint-lane-run-kills-a-timed-out-lane.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1372",
+            "source": "sdlc-studio/bugs/BG1372-github-reports-5-dependabot-alerts-on-the-default.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 2,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 2,
+            "source": "sdlc-studio/bugs/BG1372-github-reports-5-dependabot-alerts-on-the-default.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "delivered",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 1,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        },
+        {
+          "unit_id": {
+            "key": "unit_id",
+            "value": "BG1420",
+            "source": "sdlc-studio/bugs/BG1420-run-eleven-s-lanes-turn-the-full-suite.md"
+          },
+          "unit_planned_points": {
+            "key": "unit_planned_points",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_points": {
+            "key": "unit_points",
+            "value": 3,
+            "source": "sdlc-studio/bugs/BG1420-run-eleven-s-lanes-turn-the-full-suite.md"
+          },
+          "unit_outcome": {
+            "key": "unit_outcome",
+            "value": "dropped - carried at the review cap: BG1425",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "unit_rounds": {
+            "key": "unit_rounds",
+            "value": 2,
+            "source": "sdlc-studio/reviews/critic-verdicts.md"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "known_issues",
+      "title": "Known issues handed over",
+      "figures": {
+        "findings_scan": {
+          "key": "findings_scan",
+          "value": "42 open finding(s) raised in the run, 25 close gap(s), 0 carried unit(s)",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1420",
+            "source": "sdlc-studio/bugs/BG1420-run-eleven-s-lanes-turn-the-full-suite.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "High",
+            "source": "sdlc-studio/bugs/BG1420-run-eleven-s-lanes-turn-the-full-suite.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected",
+            "source": "sdlc-studio/bugs/BG1420-run-eleven-s-lanes-turn-the-full-suite.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1391",
+            "source": "sdlc-studio/bugs/BG1391-the-report-s-dollar-cost-row-does-not.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1391-the-report-s-dollar-cost-row-does-not.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1391-the-report-s-dollar-cost-row-does-not.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1393",
+            "source": "sdlc-studio/bugs/BG1393-a-project-that-replaces-grok-4-7-under.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1393-a-project-that-replaces-grok-4-7-under.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1393-a-project-that-replaces-grok-4-7-under.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1394",
+            "source": "sdlc-studio/bugs/BG1394-a-re-close-after-a-reopen-whose-meter.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1394-a-re-close-after-a-reopen-whose-meter.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1394-a-re-close-after-a-reopen-whose-meter.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1395",
+            "source": "sdlc-studio/bugs/BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1396",
+            "source": "sdlc-studio/bugs/BG1396-a-verify-line-with-its-own-q-makes.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1396-a-verify-line-with-its-own-q-makes.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1396-a-verify-line-with-its-own-q-makes.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1397",
+            "source": "sdlc-studio/bugs/BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1399",
+            "source": "sdlc-studio/bugs/BG1399-lane-land-commits-and-lands-the-code-then.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1399-lane-land-commits-and-lands-the-code-then.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1399-lane-land-commits-and-lands-the-code-then.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1400",
+            "source": "sdlc-studio/bugs/BG1400-lane-accept-takes-reviewer-as-free-text-so.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1400-lane-accept-takes-reviewer-as-free-text-so.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1400-lane-accept-takes-reviewer-as-free-text-so.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1406",
+            "source": "sdlc-studio/bugs/BG1406-lane-run-accepts-a-home-isolated-unit-and.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1406-lane-run-accepts-a-home-isolated-unit-and.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1406-lane-run-accepts-a-home-isolated-unit-and.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1407",
+            "source": "sdlc-studio/bugs/BG1407-a-builder-s-mutation-probe-in-a-scratch.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1407-a-builder-s-mutation-probe-in-a-scratch.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1407-a-builder-s-mutation-probe-in-a-scratch.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1409",
+            "source": "sdlc-studio/bugs/BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1413",
+            "source": "sdlc-studio/bugs/BG1413-a-ctrl-c-during-lane-run-s-2.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1413-a-ctrl-c-during-lane-run-s-2.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1413-a-ctrl-c-during-lane-run-s-2.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1417",
+            "source": "sdlc-studio/bugs/BG1417-ci-s-lint-yml-sets-up-node-20.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1417-ci-s-lint-yml-sets-up-node-20.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1417-ci-s-lint-yml-sets-up-node-20.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1425",
+            "source": "sdlc-studio/bugs/BG1425-bg1420-did-not-converge-in-review-round-2.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1425-bg1420-did-not-converge-in-review-round-2.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1420 did not converge in review: round 2 REJECT findings - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1425-bg1420-did-not-converge-in-review-round-2.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1382",
+            "source": "sdlc-studio/bugs/BG1382-a-nested-run-verifier-caller-s-own-verifier.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1382-a-nested-run-verifier-caller-s-own-verifier.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1382-a-nested-run-verifier-caller-s-own-verifier.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1383",
+            "source": "sdlc-studio/bugs/BG1383-two-more-group-kill-helpers-duplicate-verify-ac.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1383-two-more-group-kill-helpers-duplicate-verify-ac.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1383-two-more-group-kill-helpers-duplicate-verify-ac.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1384",
+            "source": "sdlc-studio/bugs/BG1384-the-changelog-s-6-3-0-text-and.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1384-the-changelog-s-6-3-0-text-and.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The changelog's 6.3.0 text and the BG1112 fragment still over-state what the group kill does - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1384-the-changelog-s-6-3-0-text-and.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1385",
+            "source": "sdlc-studio/bugs/BG1385-this-repo-s-own-agents-md-lacks-the.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1385-this-repo-s-own-agents-md-lacks-the.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "This repo's own AGENTS.md lacks the template's 'Integrate continuously' line, so validate.py check warns here - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1385-this-repo-s-own-agents-md-lacks-the.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1386",
+            "source": "sdlc-studio/bugs/BG1386-timing-tests-fail-under-parallel-load-test-status.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1386-timing-tests-fail-under-parallel-load-test-status.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Timing tests fail under parallel load: test_status GatherPerformanceTests read 4.9 s against a 3 s limit and a verify_ac criterion failed once at load 8.6 - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1386-timing-tests-fail-under-parallel-load-test-status.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1387",
+            "source": "sdlc-studio/bugs/BG1387-test-cli-grammar-realtreemarkertests-copies-the-whole-tree.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1387-test-cli-grammar-realtreemarkertests-copies-the-whole-tree.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "test_cli_grammar RealTreeMarkerTests copies the whole tree into /tmp and fails with EDQUOT on a small tmpfs - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1387-test-cli-grammar-realtreemarkertests-copies-the-whole-tree.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1388",
+            "source": "sdlc-studio/bugs/BG1388-an-sdlc-md-root-discovery-test-fails-when.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1388-an-sdlc-md-root-discovery-test-fails-when.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "An sdlc_md root-discovery test fails when TMPDIR is inside a repository, because it assumes its temporary directory lies outside any project - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1388-an-sdlc-md-root-discovery-test-fails-when.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1389",
+            "source": "sdlc-studio/bugs/BG1389-sdlc-md-extract-field-reads-an-empty-field.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1389-sdlc-md-extract-field-reads-an-empty-field.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1389-sdlc-md-extract-field-reads-an-empty-field.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1390",
+            "source": "sdlc-studio/bugs/BG1390-test-lean-tracked-run-record-test-this-repos.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1390-test-lean-tracked-run-record-test-this-repos.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "test_lean_tracked_run_record test_this_repos_signed_reports_check_in_a_clean_clone fails in a harness worktree - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1390-test-lean-tracked-run-record-test-this-repos.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1392",
+            "source": "sdlc-studio/bugs/BG1392-prices-and-token-meters-have-untested-edges-rates.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1392-prices-and-token-meters-have-untested-edges-rates.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1392-prices-and-token-meters-have-untested-edges-rates.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1398",
+            "source": "sdlc-studio/bugs/BG1398-the-tool-call-budget-in-a-multi-unit.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1398-the-tool-call-budget-in-a-multi-unit.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1398-the-tool-call-budget-in-a-multi-unit.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1401",
+            "source": "sdlc-studio/bugs/BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1402",
+            "source": "sdlc-studio/bugs/BG1402-the-bg1333-integration-rule-counts-as-present-if.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1402-the-bg1333-integration-rule-counts-as-present-if.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1402-the-bg1333-integration-rule-counts-as-present-if.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1403",
+            "source": "sdlc-studio/bugs/BG1403-retro-s-new-supplied-guard-and-its-declined.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1403-retro-s-new-supplied-guard-and-its-declined.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "retro's new `supplied` guard and its `declined` list have no tests - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1403-retro-s-new-supplied-guard-and-its-declined.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1404",
+            "source": "sdlc-studio/bugs/BG1404-critic-py-record-splits-a-verdict-s-issues.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1404-critic-py-record-splits-a-verdict-s-issues.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1404-critic-py-record-splits-a-verdict-s-issues.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1405",
+            "source": "sdlc-studio/bugs/BG1405-nothing-pins-critic-s-live-rows-filter-the.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1405-nothing-pins-critic-s-live-rows-filter-the.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "Nothing pins critic's 'live rows' filter, the carried-refusal wording or the stacked-criterion naming, and the BG1339 rejoinder path guards are untested - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1405-nothing-pins-critic-s-live-rows-filter-the.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1408",
+            "source": "sdlc-studio/bugs/BG1408-sprint-lane-land-s-hook-refusal-text-and.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1408-sprint-lane-land-s-hook-refusal-text-and.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1408-sprint-lane-land-s-hook-refusal-text-and.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1410",
+            "source": "sdlc-studio/bugs/BG1410-bg1330-s-re-pointed-clean-run-test-lost.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1410-bg1330-s-re-pointed-clean-run-test-lost.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1410-bg1330-s-re-pointed-clean-run-test-lost.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1411",
+            "source": "sdlc-studio/bugs/BG1411-the-unpriced-gap-remedy-lane-return-units-id.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1411-the-unpriced-gap-remedy-lane-return-units-id.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The unpriced-gap remedy 'lane return --units <id> --agent A' cannot work after the close - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1411-the-unpriced-gap-remedy-lane-return-units-id.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1412",
+            "source": "sdlc-studio/bugs/BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1414",
+            "source": "sdlc-studio/bugs/BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1415",
+            "source": "sdlc-studio/bugs/BG1415-no-test-pins-the-line-number-verify-ac.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1415-no-test-pins-the-line-number-verify-ac.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "No test pins the line number verify_ac's lint prints - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1415-no-test-pins-the-line-number-verify-ac.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1416",
+            "source": "sdlc-studio/bugs/BG1416-help-verify-md-s-exit-3-row-in.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1416-help-verify-md-s-exit-3-row-in.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "help/verify.md's exit-3 row in the revert-check table leaves out git failing to read the base blob - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1416-help-verify-md-s-exit-3-row-in.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1421",
+            "source": "sdlc-studio/bugs/BG1421-verify-ac-s-revert-check-reads-a-missing.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1421-verify-ac-s-revert-check-reads-a-missing.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "verify_ac's revert check reads a missing runner binary as red rather than as no verdict - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1421-verify-ac-s-revert-check-reads-a-missing.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1422",
+            "source": "sdlc-studio/bugs/BG1422-no-test-pins-verify-ac-s-class-and.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1422-no-test-pins-verify-ac-s-class-and.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "No test pins verify_ac's class and module skip-mark check on the decorator's name - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1422-no-test-pins-verify-ac-s-class-and.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1423",
+            "source": "sdlc-studio/bugs/BG1423-file-finding-writes-a-title-with-bare-underscores.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1423-file-finding-writes-a-title-with-bare-underscores.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1423-file-finding-writes-a-title-with-bare-underscores.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1424",
+            "source": "sdlc-studio/bugs/BG1424-a-bare-sprint-close-runs-its-whole-pre.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Low",
+            "source": "sdlc-studio/bugs/BG1424-a-bare-sprint-close-runs-its-whole-pre.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1424-a-bare-sprint-close-runs-its-whole-pre.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "checklist",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "known-issues: Known issues carried, each with its stop-ship ruling - 1 unruled, 0 malformed row(s)",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1190: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1190 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1228: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1228 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1112: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1112 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1005: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1005 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1009: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1009 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG0991: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0991 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1336: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1336 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1337: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1337 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1339: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1339 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1344: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1344 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1330: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1330 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1279: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1279 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1331: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1331 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1305: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1305 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1371: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1371 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG0965: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0965 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1340: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1340 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1341: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1341 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG0990: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG0990 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1343: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1343 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1333: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1333 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1261: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1261 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1262: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1262 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "unpriced",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "close gap",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "BG1372: its cost is NOT MEASURED - no agent returned for it was priced from its own transcript; price one with `sprint.py lane return --units BG1372 --agent A`",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "signoff",
+      "title": "Sign-off",
+      "figures": {
+        "principal": {
+          "key": "principal",
+          "value": "not yet signed",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "signed_at": {
+          "key": "signed_at",
+          "value": "not yet signed",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "signed_fingerprint": {
+          "key": "signed_fingerprint",
+          "value": "not yet signed",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "cost",
+      "title": "Tokens by model",
+      "figures": {
+        "tokens_delegated": {
+          "key": "tokens_delegated",
+          "value": 325321,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "tokens_total": {
+          "key": "tokens_total",
+          "value": 6286357,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "token_coverage": {
+          "key": "token_coverage",
+          "value": "1 session(s)",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "token_shape": {
+          "key": "token_shape",
+          "value": "read from stamps, with the opening reading taken from the legacy session_token_baseline this run predates the open stamp",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [
+        {
+          "model_name": {
+            "key": "model_name",
+            "value": "mixed",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "model_tokens": {
+            "key": "model_tokens",
+            "value": 6286357,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "cost_prices",
+      "title": "Prices",
+      "figures": {},
+      "rows": [
+        {
+          "price_model": {
+            "key": "price_model",
+            "value": "claude-opus-5-5",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_input": {
+            "key": "price_input",
+            "value": "$4.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_output": {
+            "key": "price_output",
+            "value": "$20.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_write_5m": {
+            "key": "price_cache_write_5m",
+            "value": "$5.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_write_1h": {
+            "key": "price_cache_write_1h",
+            "value": "$8.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_read": {
+            "key": "price_cache_read",
+            "value": "$0.20",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_effective": {
+            "key": "price_effective",
+            "value": "2026-11-06",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_source": {
+            "key": "price_source",
+            "value": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_usd": {
+            "key": "price_usd",
+            "value": "$111.20",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          }
+        },
+        {
+          "price_model": {
+            "key": "price_model",
+            "value": "claude-sonnet-5-5",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_input": {
+            "key": "price_input",
+            "value": "$2.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_output": {
+            "key": "price_output",
+            "value": "$10.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_write_5m": {
+            "key": "price_cache_write_5m",
+            "value": "$2.50",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_write_1h": {
+            "key": "price_cache_write_1h",
+            "value": "$4.00",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_cache_read": {
+            "key": "price_cache_read",
+            "value": "$0.10",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_effective": {
+            "key": "price_effective",
+            "value": "2026-11-06",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_source": {
+            "key": "price_source",
+            "value": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)",
+            "source": "sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          },
+          "price_usd": {
+            "key": "price_usd",
+            "value": "$0.4591",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/templates/model-prices.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "cost_roles",
+      "title": "Cost by role",
+      "figures": {
+        "roles_session": {
+          "key": "roles_session",
+          "value": "acd73b30-154a-4170-83eb-043073708d4b, 516 subagent transcript(s)",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "roles_total": {
+          "key": "roles_total",
+          "value": "agents 25, calls 1,905, priced 41,431,558",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [
+        {
+          "role_name": {
+            "key": "role_name",
+            "value": "orchestrator",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_agents": {
+            "key": "role_agents",
+            "value": "1",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_calls": {
+            "key": "role_calls",
+            "value": "269",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_priced": {
+            "key": "role_priced",
+            "value": "10,574,313",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_share": {
+            "key": "role_share",
+            "value": "25.5%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_read": {
+            "key": "role_cache_read",
+            "value": "87.7%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_write": {
+            "key": "role_cache_write",
+            "value": "5.3%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_output": {
+            "key": "role_output",
+            "value": "6.9%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_first_context": {
+            "key": "role_first_context",
+            "value": "197,959",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_avg_context": {
+            "key": "role_avg_context",
+            "value": "345,932",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "role_name": {
+            "key": "role_name",
+            "value": "builder",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_agents": {
+            "key": "role_agents",
+            "value": "1",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_calls": {
+            "key": "role_calls",
+            "value": "60",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_priced": {
+            "key": "role_priced",
+            "value": "805,770",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_share": {
+            "key": "role_share",
+            "value": "1.9%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_read": {
+            "key": "role_cache_read",
+            "value": "48.9%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_write": {
+            "key": "role_cache_write",
+            "value": "17.6%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_output": {
+            "key": "role_output",
+            "value": "33.6%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_first_context": {
+            "key": "role_first_context",
+            "value": "14,060",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_avg_context": {
+            "key": "role_avg_context",
+            "value": "67,504",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "role_name": {
+            "key": "role_name",
+            "value": "reviewer",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_agents": {
+            "key": "role_agents",
+            "value": "0",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_calls": {
+            "key": "role_calls",
+            "value": "0",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_priced": {
+            "key": "role_priced",
+            "value": "0",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_share": {
+            "key": "role_share",
+            "value": "0.0%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_read": {
+            "key": "role_cache_read",
+            "value": "not available",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_write": {
+            "key": "role_cache_write",
+            "value": "not available",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_output": {
+            "key": "role_output",
+            "value": "not available",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_first_context": {
+            "key": "role_first_context",
+            "value": "not available",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_avg_context": {
+            "key": "role_avg_context",
+            "value": "not available",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "role_name": {
+            "key": "role_name",
+            "value": "repair",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_agents": {
+            "key": "role_agents",
+            "value": "1",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_calls": {
+            "key": "role_calls",
+            "value": "39",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_priced": {
+            "key": "role_priced",
+            "value": "691,119",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_share": {
+            "key": "role_share",
+            "value": "1.7%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_read": {
+            "key": "role_cache_read",
+            "value": "39.9%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_write": {
+            "key": "role_cache_write",
+            "value": "18.0%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_output": {
+            "key": "role_output",
+            "value": "42.0%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_first_context": {
+            "key": "role_first_context",
+            "value": "13,753",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_avg_context": {
+            "key": "role_avg_context",
+            "value": "73,340",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        },
+        {
+          "role_name": {
+            "key": "role_name",
+            "value": "other",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_agents": {
+            "key": "role_agents",
+            "value": "22",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_calls": {
+            "key": "role_calls",
+            "value": "1,537",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_priced": {
+            "key": "role_priced",
+            "value": "29,360,356",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_share": {
+            "key": "role_share",
+            "value": "70.9%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_read": {
+            "key": "role_cache_read",
+            "value": "57.4%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_cache_write": {
+            "key": "role_cache_write",
+            "value": "17.2%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_output": {
+            "key": "role_output",
+            "value": "25.4%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_first_context": {
+            "key": "role_first_context",
+            "value": "14,391",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          },
+          "role_avg_context": {
+            "key": "role_avg_context",
+            "value": "112,301",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "dora",
+      "title": "DORA",
+      "figures": {},
+      "rows": [
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Deployment frequency",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": 21,
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; with no forge run data a deployment is counted as a commit on main inside the run window",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "on demand",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - 21 commit(s) on main inside the run window",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Lead time for changes",
+            "source": "git log"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "5h 51m",
+            "source": "git log"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches",
+            "source": "git log"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under a day",
+            "source": "git log"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "git history - first to last of 21 commit(s)",
+            "source": "git log"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Change failure rate",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "0-15%",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          }
+        },
+        {
+          "dora_key": {
+            "key": "dora_key",
+            "value": "Time to restore",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_value": {
+            "key": "dora_value",
+            "value": "NOT MEASURED",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list",
+            "reason": "no forge run data"
+          },
+          "dora_mapping": {
+            "key": "dora_mapping",
+            "value": "per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_band": {
+            "key": "dora_band",
+            "value": "under an hour",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          },
+          "dora_source": {
+            "key": "dora_source",
+            "value": "no push-triggered CI run is readable for this run window",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, gh run list"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "calibration",
+      "title": "Calibration",
+      "figures": {
+        "cal_tokens_per_point": {
+          "key": "cal_tokens_per_point",
+          "value": 186252,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "cal_tokens_source": {
+          "key": "cal_tokens_source",
+          "value": "velocity-record",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "cal_minutes_per_point": {
+          "key": "cal_minutes_per_point",
+          "value": 5.84,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "cal_minutes_source": {
+          "key": "cal_minutes_source",
+          "value": "measured on claude-opus-5-5: median of RETRO0131, RETRO0132, RETRO0133",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "rulings",
+      "title": "Rulings",
+      "figures": {
+        "persona_rulings": {
+          "key": "persona_rulings",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "cited_rulings": {
+          "key": "cited_rulings",
+          "value": 0,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        },
+        "operator_rulings": {
+          "key": "operator_rulings",
+          "value": 1,
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "waivers",
+      "title": "Waivers in force",
+      "figures": {
+        "waivers_note": {
+          "key": "waivers_note",
+          "value": "no gate stood down for this seal - the log was read and carries no accepted waiver dated inside this report's window",
+          "source": "sdlc-studio/decisions.md"
+        },
+        "waivers_count": {
+          "key": "waivers_count",
+          "value": 0,
+          "source": "sdlc-studio/decisions.md"
+        }
+      },
+      "rows": [],
+      "not_measured": null
+    },
+    {
+      "key": "lane_yield",
+      "title": "Lane yield",
+      "figures": {
+        "lane_yield_note": {
+          "key": "lane_yield_note",
+          "value": "4 refusal(s) in this run. A refusal is a candidate catch when the next commit changed code or a test from what was refused, paperwork when it changed only artefacts, baselines, indexes or docs, and pending until a commit follows it. The tally is this clone's refusal log as the close read it.",
+          "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+        }
+      },
+      "rows": [
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "gate",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 1,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 8 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          }
+        },
+        {
+          "yield_lane": {
+            "key": "yield_lane",
+            "value": "markdown",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_refusals": {
+            "key": "yield_refusals",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_catches": {
+            "key": "yield_catches",
+            "value": 0,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_paperwork": {
+            "key": "yield_paperwork",
+            "value": 3,
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          },
+          "yield_verdict": {
+            "key": "yield_verdict",
+            "value": "delete candidate: 8 refusal(s) over 3 runs and no candidate catch",
+            "source": "sdlc-studio/reports/runs/RUN-01M78TKD.json, git log"
+          }
+        }
+      ],
+      "not_measured": null
+    },
+    {
+      "key": "lessons",
+      "title": "Lessons",
+      "figures": {
+        "lessons_note": {
+          "key": "lessons_note",
+          "value": "6 lesson class(es) in force at this close.",
+          "source": "sdlc-studio/lessons.jsonl"
+        }
+      },
+      "rows": [
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-015",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a retirement outruns the deletion",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0684)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 3,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-017",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a page-format rule mark nothing round-trips",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0664)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 3,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-018",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a doc claim checked by reading",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "graduating (CR0643)",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 30,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-019",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "a push-gate guard the per-commit run skips",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-020",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "git and harness state a test leaks",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        },
+        {
+          "lesson_id": {
+            "key": "lesson_id",
+            "value": "LC-021",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_class": {
+            "key": "lesson_class",
+            "value": "lane paperwork the landing refuses",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_state": {
+            "key": "lesson_state",
+            "value": "active",
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_run": {
+            "key": "lesson_hits_run",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          },
+          "lesson_hits_total": {
+            "key": "lesson_hits_total",
+            "value": 0,
+            "source": "sdlc-studio/lessons.jsonl"
+          }
+        }
+      ],
+      "not_measured": null
+    }
+  ],
+  "record_paths": "portable",
+  "token_ratio": "every-delivered-unit-delegated",
+  "restore_pairing": "next-success-after-failure",
+  "discharged_carry": "delivered",
+  "findings_scan": "delivered-batch-units-excluded",
+  "minutes_ratio": "measured-unit-minutes",
+  "delegated_tokens": "counted-over-a-zero-meter",
+  "agent_minutes": "any-agent-supplied",
+  "dora_failures": "failure-or-timed-out-only",
+  "token_headline": "priced-input-equivalent",
+  "priced_units": "unit-priced-and-per-point",
+  "usd_cost": "per-model-dollars-and-roles",
+  "price_table": {
+    "stale_after_days": 90,
+    "models": {
+      "claude-fable-5": {
+        "input": 10.0,
+        "output": 50.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 12.5,
+        "cache_write_1h": 20.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-fable-5-1": {
+        "input": 10.0,
+        "output": 50.0,
+        "cache_read": 0.25,
+        "cache_write_5m": 12.5,
+        "cache_write_1h": 20.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-haiku-4-5": {
+        "input": 1.0,
+        "output": 5.0,
+        "cache_read": 0.1,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-haiku-4.5": {
+        "input": 1.0,
+        "output": 5.0,
+        "cache_read": 0.1,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 1.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "claude-haiku-5-5": {
+        "input": 0.1,
+        "output": 0.5,
+        "cache_read": 0.01,
+        "cache_write_5m": 0.125,
+        "cache_write_1h": 0.2,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-haiku-5.5": {
+        "input": 0.1,
+        "output": 0.5,
+        "cache_read": 0.01,
+        "cache_write_5m": 0.125,
+        "cache_write_1h": 0.125,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "claude-mythos-5-1": {
+        "input": 10.0,
+        "output": 50.0,
+        "cache_read": 0.25,
+        "cache_write_5m": 12.5,
+        "cache_write_1h": 20.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-4-6": {
+        "input": 5.0,
+        "output": 25.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 6.25,
+        "cache_write_1h": 10.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-4-7": {
+        "input": 5.0,
+        "output": 25.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 6.25,
+        "cache_write_1h": 10.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-4-8": {
+        "input": 5.0,
+        "output": 25.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 6.25,
+        "cache_write_1h": 10.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-5": {
+        "input": 5.0,
+        "output": 25.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 6.25,
+        "cache_write_1h": 10.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-5-5": {
+        "input": 4.0,
+        "output": 20.0,
+        "cache_read": 0.2,
+        "cache_write_5m": 5.0,
+        "cache_write_1h": 8.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-opus-5.5": {
+        "input": 4.0,
+        "output": 20.0,
+        "cache_read": 0.2,
+        "cache_write_5m": 5.0,
+        "cache_write_1h": 5.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "claude-sonnet-4-6": {
+        "input": 3.0,
+        "output": 15.0,
+        "cache_read": 0.3,
+        "cache_write_5m": 3.75,
+        "cache_write_1h": 6.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-sonnet-4.6": {
+        "input": 3.0,
+        "output": 15.0,
+        "cache_read": 0.3,
+        "cache_write_5m": 3.75,
+        "cache_write_1h": 3.75,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "claude-sonnet-5": {
+        "input": 2.0,
+        "output": 10.0,
+        "cache_read": 0.2,
+        "cache_write_5m": 2.5,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-sonnet-5-5": {
+        "input": 2.0,
+        "output": 10.0,
+        "cache_read": 0.1,
+        "cache_write_5m": 2.5,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-06",
+        "source": "https://platform.claude.com/docs/en/about-claude/pricing (Model pricing table, read 2026-11-06)"
+      },
+      "claude-sonnet-5.5": {
+        "input": 2.0,
+        "output": 10.0,
+        "cache_read": 0.1,
+        "cache_write_5m": 2.5,
+        "cache_write_1h": 2.5,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "composer-2.5": {
+        "input": 0.5,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "cache_write_5m": 0.5,
+        "cache_write_1h": 0.5,
+        "effective": "2026-11-09",
+        "source": "https://cursor.com/docs/models-and-pricing (Cursor models table, Composer 2.5, standard speed, where https://cursor.com/docs/models redirects, read 2026-11-09)"
+      },
+      "gemini-3.8-flash": {
+        "input": 0.75,
+        "output": 3.75,
+        "cache_read": 0.075,
+        "cache_write_5m": 0.75,
+        "cache_write_1h": 0.75,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "gpt-5.3-codex": {
+        "input": 1.75,
+        "output": 14.0,
+        "cache_read": 0.175,
+        "cache_write_5m": 1.75,
+        "cache_write_1h": 1.75,
+        "effective": "2026-11-06",
+        "source": "https://developers.openai.com/api/docs/pricing (Specialized models, Codex, Standard, read 2026-11-06)"
+      },
+      "gpt-5.6-luna": {
+        "input": 0.2,
+        "output": 1.2,
+        "cache_read": 0.02,
+        "cache_write_5m": 0.25,
+        "cache_write_1h": 0.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing (How model pricing works: 1 AI credit = $0.01 USD; Pricing tables, per 1 million tokens; read 2026-11-09)"
+      },
+      "gpt-6-astra": {
+        "input": 10.0,
+        "output": 50.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 12.5,
+        "cache_write_1h": 25.0,
+        "effective": "2026-11-06",
+        "source": "https://developers.openai.com/api/docs/pricing (Flagship models, Standard, Short context length, read 2026-11-06)"
+      },
+      "gpt-6-luna": {
+        "input": 0.1,
+        "output": 0.5,
+        "cache_read": 0.01,
+        "cache_write_5m": 0.125,
+        "cache_write_1h": 0.25,
+        "effective": "2026-11-06",
+        "source": "https://developers.openai.com/api/docs/pricing (Flagship models, Standard, Short context length, read 2026-11-06)"
+      },
+      "gpt-6.1-sol": {
+        "input": 2.0,
+        "output": 10.0,
+        "cache_read": 0.1,
+        "cache_write_5m": 2.5,
+        "cache_write_1h": 5.0,
+        "effective": "2026-11-06",
+        "source": "https://developers.openai.com/api/docs/pricing (Flagship models, Standard, Short context length, read 2026-11-06)"
+      },
+      "gpt-6.1-terra": {
+        "input": 1.0,
+        "output": 5.0,
+        "cache_read": 0.05,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 2.5,
+        "effective": "2026-11-06",
+        "source": "https://developers.openai.com/api/docs/pricing (Flagship models, Standard, Short context length, read 2026-11-06)"
+      },
+      "grok-4.5": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.3,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.5, Short context, read 2026-11-09)"
+      },
+      "grok-4.5@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 0.6,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.5, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "grok-4.6": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.6, Short context, read 2026-11-09)"
+      },
+      "grok-4.6@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.6, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "grok-4.7": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.7, Short context, read 2026-11-09)"
+      },
+      "grok-4.7@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.7, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "opencode/deepseek-v4.1-flash-free": {
+        "input": 0.0,
+        "output": 0.0,
+        "cache_read": 0.0,
+        "cache_write_5m": 0.0,
+        "cache_write_1h": 0.0,
+        "effective": "2026-11-06",
+        "source": "https://opencode.ai/docs/console/models/ (Pricing table, where https://opencode.ai/docs/zen/ redirects, read 2026-11-06)"
+      },
+      "xai/grok-4.20-0309-non-reasoning": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 1.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.20-0309-non-reasoning, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.20-0309-reasoning": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 1.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.20-0309-reasoning, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.20-multi-agent-0309": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 1.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.20-multi-agent-0309, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.3": {
+        "input": 1.25,
+        "output": 2.5,
+        "cache_read": 0.2,
+        "cache_write_5m": 1.25,
+        "cache_write_1h": 1.25,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.3, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.5": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.3,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.5, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.5@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 0.6,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.5, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "xai/grok-4.6": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.6, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.6@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.6, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "xai/grok-4.7": {
+        "input": 2.0,
+        "output": 6.0,
+        "cache_read": 0.5,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 2.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.7, Short context, read 2026-11-09)"
+      },
+      "xai/grok-4.7@long-context": {
+        "input": 4.0,
+        "output": 12.0,
+        "cache_read": 1.0,
+        "cache_write_5m": 4.0,
+        "cache_write_1h": 4.0,
+        "effective": "2026-11-12",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-4.7, Long context, read 2026-11-12)",
+        "from_prompt_tokens": 200000
+      },
+      "xai/grok-build-0.1": {
+        "input": 1.0,
+        "output": 2.0,
+        "cache_read": 0.2,
+        "cache_write_5m": 1.0,
+        "cache_write_1h": 1.0,
+        "effective": "2026-11-09",
+        "source": "https://docs.x.ai/developers/pricing (Text API, grok-build-0.1, Short context, read 2026-11-09)"
+      }
+    },
+    "premium_request": {
+      "usd": 0.04,
+      "effective": "2026-11-06",
+      "source": "https://docs.github.com/en/copilot/reference/copilot-billing/request-based-billing-legacy/copilot-requests (Copilot requests (legacy): additional premium requests at $0.04/request, read 2026-11-06)"
+    },
+    "copilot_billing": "tokens",
+    "billed_by_request": []
+  },
+  "price_table_rule": "replayed-and-digested",
+  "premium_usd": "per-request-dollars",
+  "usd_prices": "per-model-prices-and-delegated-dollars",
+  "fingerprint": "82ced251b004932d"
+}

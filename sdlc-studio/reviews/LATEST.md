@@ -1,57 +1,54 @@
 <!-- close-status:begin -->
-> **RUN-01M77177 closed goal-reached.** 18 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
+> **RUN-01M78TKD closed running.** 24 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-Signed on 2026-11-12 over RPT0029 (fingerprint 92ed4ae3b01b2bf2). During the run the operator
-answered "Authorise you to sign" when asked how the run should be signed, so the orchestrator
-entered `sprint sign --principal "Darren Benson"` on that authorisation, for this run only (D0467).
+Closed on 2026-11-13 over RPT0030 (fingerprint 82ced251b004932d) and awaiting the operator's
+signature: run ten's authorisation to sign (D0467) covered that run only.
 
-> **RUN-01M77177, run ten.** Goal: "A signed report's verdicts are provably the reviewers' own,
-> and the report is reviewable from the committed tree." Planned at 16 units and 55 points (D0465,
-> D0466); delivered 18 units, 57 points, each on an independent APPROVE, with BG1334 and BG1374
-> added in-run. Machinery share by theme 3 points (5%), by path all 57. Cost 45.1M priced tokens,
-> 791k per point, $126.37 ($2.22 per point) against run nine's 904k and $2.48; the re-close reused
-> the first meter reading, so BG1374's fix is not counted. Wall-clock 9.6 h.
+> **RUN-01M78TKD, run eleven.** Goal: "Lanes land and die cleanly, verifiers never read green
+> wrongly, and every unit's cost is priced." A declared maintenance run (D0469, D0470, D0471):
+> 24 bugs, 49 points, all delivered on independent APPROVEs, four of them after one repair round.
+> Goal judged partial: every lane was multi-unit, and a multi-unit lane's builder cannot yet be
+> priced per unit (BG1397); BG1420 was carried. Machinery share by theme 36 points (73%), declared.
+> Cost 41.4M priced tokens, 845k per point, $111.66 ($2.28 per point) against run ten's 791k and
+> $2.22.
 
 ## What landed
 
-- **Verdict binding (EP0280, with BG1030).** A review brief names the verdict file its reviewer
-  writes (US1011); a recorded verdict is bound to that file's bytes (US1012), drift or a replay is
-  named (US1013), the agent that wrote it is read from the harness transcript (US1014), and a
-  verdict from the context that edited the unit records as a self-review (US1015). `--rejoinder`
-  with no file quotes the seat's standing REJECT from the ledger (US1016). Prose after
-  `BLOCKING: none` and a `RULINGS:` line now record as rulings (BG1030).
-- **The report of record (EP0276, with BG1010).** The close cites the committed run record
-  (US0997), names the plan by digest (US0998), states each priced model's frozen prices and prices
-  delegated totals (US1000), and freezes the lane-yield tally (US1001); `build --run` renders the
-  named run (BG1010). US0999 is deferred to run eleven (D0465).
-- **Run nine's carries.** US1134 (one line on a passing commit), US1149 (the fresh-session check),
-  US1147 (Done on its rejecting seat's APPROVE) and BG1300 (the test identity is seeded under the
-  private directory; built in the main checkout because Claude Code's worktree check refuses a
-  temporary HOME and cannot be turned off).
-- **In-run fixes.** BG1334 (US1011's verdict files broke the markdown-evidence lint and turned main
-  red) and BG1374 (the report twin printed a bare price-source URL, so the run was reopened once).
+- **Lanes** land without hand repair and die with their caller: verify_ac's artefact edit no
+  longer blocks a land (BG1336), a lane is replayed onto main before its commit (BG1337), a
+  rejoinder verdict is accepted (BG1339), a home-isolated unit is briefed for the main checkout
+  (BG1344), a timed-out lane gets SIGTERM first and a lane dies with `sprint.py` (BG1262, BG1261).
+- **Verification** no longer reads green wrongly or leaks: a partial skip is not stamped
+  (BG1005), the revert check reads an unmeasurable criterion honestly (BG1009), a later
+  section's Verify line is not attached (BG0991), and a caller's signal reaches its verifiers
+  (BG1190, BG1228, BG1112).
+- **Cost**: a re-close after a reopen re-reads the meter (BG1279), a landed lane is priced from
+  its builder's transcript and an unpriced unit is a close gap (BG1330), Grok's long-context
+  rates are recorded and a session-total figure is labelled a lower bound (BG1331), and the
+  Cursor meter keeps each line's model (BG1305).
+- **Integrity and upgrade**: BG1340, BG1341, BG0990, BG1343, BG1333 (AGENTS.md's trunk rule),
+  BG1371, BG0965, and the five Dependabot alerts cleared by upgrading markdownlint-cli (BG1372).
 
 ## What is owed
 
-- **Known issues carried, all not-stop-ship** (RETRO0143): BG1335-BG1373 and BG1375-BG1381, every
-  finding of the run filed as its own bug at the operator's ruling. The triage cap is now 50
-  (D0468). One close gap is handed over: the tick-verification item reads US1147, a
-  re-review-only carried unit, as unsupported (filed).
-- **Run eleven** is a declared maintenance run of about 50 points (D0469), opened in a fresh
-  session: an at-HEAD triage of the 73 Medium bugs first, then the run-ten lane and review gaps
-  (BG1336, BG1337, BG1339-BG1341, BG1343, BG1344), BG1333, the cost figures (BG1330, BG1331,
-  BG1279, BG1371, BG1305), verification reliability (BG1005, BG1009, BG1112, BG1190, BG1228,
-  BG1261, BG1262) and BG1372, one lane per file cluster. EP0275, CR0694 and US0999 move to run
-  twelve. CR0699 (effort setting), CR0700 (instruction audit) and CR0701 (ownership trial) are
-  filed (D0464).
+- **The signature**: `sprint.py sign --report RPT0030 --principal "<the operator>"`.
+- **BG1420 (High) carried as BG1425**: it fixed the five tests the push gate found red, but its
+  repair's round-2 review found a new unbounded wait (a caller whose SIGTERM handler waits for its
+  pool hangs). It is unruled on RPT0030; ruling it is the signer's call.
+- **Known issues carried, all not-stop-ship** (RETRO0144): BG1382-BG1417 and BG1421-BG1425, every
+  finding filed as its own bug, closely related test gaps merged; BG1418 and BG1419 were filed twice
+  and are superseded.
+- **Main is not yet pushed**: the push gate refused b7ead759 (the five tests, fixed by BG1420),
+  92c84b10 (a census timing test, fixed) and 1caffe6d (RETRO0144's missing velocity row, which the
+  close has now written). Push the close paperwork and read the gate.
+- **Run twelve**: EP0275, CR0694 and US0999 (moved by D0469), with BG1425 and the Medium findings.
 
 ## Learned the hard way
 
-- Grep the whole tests tree for every function, string and ledger cell a unit changes, including
-  tests landed earlier in the same run: five units reached a test outside their Affects.
-- Fast-forward each lane's worktree to main first and again before `lane land` commits: harness
-  worktrees start at origin's commit, and a lane committed at its old base is judged on old code.
-- Send a repair to a fresh builder; resuming a 190k-token builder for a one-test change cost about
-  2.4M priced tokens twice.
+- Run the full suite after each wave, not at the run's first push: five red tests reached main
+  that no lane's selected run had selected (BG1420).
+- On this eight-core host, four builders at once is the ceiling; six drove the load to 18 and
+  commit hooks to 857 s. Put every temporary file under ~/.cache/sdlc-tmp: /tmp is a small tmpfs.
+- Record a carried unit's re-review under the reviewer id that rejected it (BG1400).
