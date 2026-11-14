@@ -39,8 +39,9 @@ plus the compatibility policy for changing any of them.
 
 **Uncontracted:** `.local/` runtime evidence JSON (sprint plan, verify reports, telemetry)
 is explicitly **uncontracted** in every schema version to date. Its shape may change without a
-version bump. A future separately versioned annex is the intended path for evidence consumers; until
-it ships, treat everything under `sdlc-studio/.local/` as private runtime state. Also out of
+version bump. Evidence consumers read [reference-evidence-schema.md](reference-evidence-schema.md),
+the separately versioned annex; anything under `sdlc-studio/.local/` it does not catalogue stays
+private runtime state. Also out of
 scope: any consumer-specific concern, any push or notification mechanism, any API surface
 beyond files on disk, and the skill's internal script interfaces (those remain free to change).
 

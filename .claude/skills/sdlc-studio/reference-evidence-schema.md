@@ -1,0 +1,327 @@
+# Evidence Schema
+
+<!-- Load when: parsing a filed sprint report, or any other run evidence, from outside the skill -->
+
+The published shape of the evidence a run leaves behind, versioned apart from the skill so a parser can tell what an upgrade moved.
+
+> **Annex version 1.0.** The artefact format is contracted in
+> [reference-schema.md](reference-schema.md); this annex contracts the evidence records that
+> page leaves out. Each record type has its own heading below.
+
+## Versioning
+
+The annex carries its own version, starting at 1.0, and moves only when an evidence shape moves:
+a skill release that changes no record leaves it alone. A change a parser can ignore, such as a
+new key, section, row key or envelope mark, raises the minor version. A change that removes or
+renames a key, changes a rule mark's value or a figure's shape, or adds a report schema raises
+the major version.
+
+## Reading the tables
+
+Every contract on this page is a Markdown table under a fixed heading, and each row names its
+key in a code span in the row's first key column. A parser reads the heading, then the table
+beneath it, and treats the prose around the tables as explanation only. The suite reads the
+tables the same way and holds them to the records the skill writes.
+
+## Report of record
+
+The JSON page `sprint close` files as `sdlc-studio/reports/RPTnnnn.json` is the record. The
+Markdown twin committed beside it and the HTML that `sprint_report.py render` produces are
+renderings of it, and are not contracted: their wording and layout may change in any release.
+
+### Report schemas
+
+The envelope's `schema` key says which shape a page has. Pages under every schema stay in the
+tree, so a parser meets both.
+
+| Schema | Written by | Re-derivable | Check answers |
+| --- | --- | --- | --- |
+| `1` | no writer: the first shape, held only by pages already filed | no | `sprint_report.py check` exits 2, saying the page cannot be re-derived and the page stands as filed |
+| `2` | `sprint close` | yes | `sprint_report.py check` reads `VALID` when the page re-derives to the fingerprint it records, and otherwise names each figure that moved |
+
+### Report envelope keys
+
+The top-level keys of a schema-2 page. **Presence** is `always`; `rule mark`, a key every page
+filed since its rule took effect carries, so a page without it was filed before the rule and is
+re-derived without it; or `conditional`, with the condition in the meaning. A **Value** in a
+code span is the only value the key takes.
+
+| Key | Presence | Value | Meaning |
+| --- | --- | --- | --- |
+| `schema` | always | `2` | The report schema the page was filed under. |
+| `report_id` | always | the page's id | The id the report index files the page under. |
+| `run_id` | always | the run's id | The run the page reports. |
+| `retro_id` | always | the retro's id | The retro the close was run against. |
+| `generated_at` | always | an ISO 8601 time | When the page was derived. Outside the fingerprint. |
+| `window_end` | always | an ISO 8601 time | The end of the window the figures measure to, replayed on every re-derivation. |
+| `signature` | always | null, or the signature block | Null until `sprint sign` signs the page. Outside the fingerprint. |
+| `sections` | always | a list | The sections, in the order of the section catalogue. |
+| `findings_window_end` | conditional | an ISO 8601 time | Present when a re-close bounded the open findings, waivers and DORA later than `window_end`. |
+| `record_paths` | rule mark | `portable` | The page was derived from the run record as the tracked copy holds it. |
+| `token_ratio` | rule mark | `every-delivered-unit-delegated` | The tokens ratio is withheld over a partial delegated actual. |
+| `restore_pairing` | rule mark | `next-success-after-failure` | Time to restore pairs each failure with the next success. |
+| `discharged_carry` | rule mark | `delivered` | A carried unit discharged in the run counts as delivered. |
+| `findings_scan` | rule mark | `delivered-batch-units-excluded` | The open findings leave out the run's own delivered units. |
+| `minutes_ratio` | rule mark | `measured-unit-minutes` | Measured minutes are compared with the forecast. |
+| `delegated_tokens` | rule mark | `counted-over-a-zero-meter` | Delegated totals count even where the session meter read 0. |
+| `agent_minutes` | rule mark | `any-agent-supplied` | A unit's agent minutes are read when any agent supplied them. |
+| `dora_failures` | rule mark | `failure-or-timed-out-only` | A cancelled or skipped CI run is not a failed deployment. |
+| `token_headline` | rule mark | `priced-input-equivalent` | The token rows lead with the priced cost. |
+| `priced_units` | rule mark | `unit-priced-and-per-point` | The priced cost per delivered point and per unit are stated. |
+| `usd_cost` | rule mark | `per-model-dollars-and-roles` | Dollars, premium requests and the spend by role are stated. |
+| `price_table` | conditional | an object | Present when the price table could be read: the prices the dollar figures were formed from. |
+| `price_table_rule` | conditional | `replayed-and-digested` | Present beside `price_table`: the table is replayed on re-derivation and is inside the fingerprint. |
+| `premium_usd` | rule mark | `per-request-dollars` | Premium requests are priced per request. |
+| `usd_prices` | rule mark | `per-model-prices-and-delegated-dollars` | Each priced model's prices are listed and the delegated totals priced. |
+| `fingerprint` | always | a hex digest | The digest of the page's figure set, which a signature is over. |
+
+### Report section shape
+
+Every entry of `sections` is an object with these keys.
+
+| Key | Meaning |
+| --- | --- |
+| `key` | The section's key in the section catalogue. |
+| `title` | The heading the renderings print. |
+| `figures` | An object of figures by figure key; empty when the section has none. |
+| `rows` | A list of rows, each an object of figures by row key; empty when there are none. |
+| `unit_rows` | The per-unit rows, on the estimates section. |
+| `not_measured` | Null, or a figure reading `NOT MEASURED` whose reason says why the section could not be measured. |
+
+### Report figure shape
+
+Every figure, in `figures`, in a row or as `not_measured`, is an object with these fields.
+
+| Field | Meaning |
+| --- | --- |
+| `key` | The figure's key: the key it is stored under, or the section's key for `not_measured`. |
+| `value` | A number or a string. A measurement nobody could take reads `NOT MEASURED`, never 0 or empty. |
+| `source` | Where the figure can be re-derived from, under the source grammar below. |
+| `reason` | Why the figure reads `NOT MEASURED`, where it does. |
+
+### Report sections
+
+The sections a schema-2 page carries, in page order. **Emitted** is `always` or `conditional`;
+a conditional section names when it is absent, and is absent rather than `NOT MEASURED` then.
+
+| Section | Title | Placement | Emitted | Absent when |
+| --- | --- | --- | --- | --- |
+| `goal` | Goal | front page | always | - |
+| `estimates` | Estimates | front page | always | - |
+| `delivered` | Delivered to plan | front page | always | - |
+| `known_issues` | Known issues handed over | front page | always | - |
+| `signoff` | Sign-off | front page | always | - |
+| `cost` | Tokens by model | appendix | always | - |
+| `cost_prices` | Prices | appendix | always | - |
+| `cost_roles` | Cost by role | appendix | always | - |
+| `dora` | DORA | appendix | always | - |
+| `calibration` | Calibration | appendix | always | - |
+| `rulings` | Rulings | appendix | always | - |
+| `waivers` | Waivers in force | appendix | always | - |
+| `lane_yield` | Lane yield | appendix | conditional | the closing clone holds no refusal log at `sdlc-studio/.local/refusals.jsonl`, which only commit hooks that log their refusals write |
+| `lessons` | Lessons | appendix | always | - |
+| `unmeasured` | Not measured | appendix | conditional | the close recorded no checklist row it could not measure |
+
+A page filed before the `usd_prices` mark carries no `cost_prices`, and one filed before the
+`usd_cost` mark carries no `cost_roles`.
+
+### Report figure keys
+
+The keys of each section's `figures` object.
+
+| Section | Figure | Meaning |
+| --- | --- | --- |
+| `goal` | `sprint_goal` | The run's sprint goal. |
+| `goal` | `goal_verdict` | The verdict the run's goal was judged, or `NOT MEASURED` when none was recorded. |
+| `goal` | `goal_verdict_note` | The note recorded with the verdict. |
+| `goal` | `run_id` | The run's id. |
+| `goal` | `started_at` | When the run opened. |
+| `goal` | `ended_at` | The end of the window the page measured to. Outside the fingerprint. |
+| `goal` | `duration_hours` | The window's length in hours, with its unit. Outside the fingerprint. |
+| `goal` | `verified_sha` | The commit the close's gate ran against. |
+| `delivered` | `planned_units` | Units in the plan. |
+| `delivered` | `planned_points` | Their points at planned size. |
+| `delivered` | `plan_delivered_units` | Planned units delivered. |
+| `delivered` | `plan_delivered_points` | Their points at planned size. |
+| `delivered` | `added_delivered_units` | Units added mid-run and delivered. |
+| `delivered` | `added_points` | Their points at planned size. |
+| `delivered` | `dropped_units` | Units dropped from the batch. |
+| `delivered` | `dropped_points` | Their points at planned size. |
+| `delivered` | `carried_units` | Units carried open. |
+| `delivered` | `carried_points` | Their points at planned size. |
+| `delivered` | `added_units` | Units added mid-run, delivered or not. |
+| `delivered` | `points_delivered` | Points delivered, at each unit's current size. |
+| `known_issues` | `findings_scan` | What the scan of open findings, close gaps and carried units found. |
+| `signoff` | `principal` | Who signed, or `not yet signed`. |
+| `signoff` | `signed_at` | When, or `not yet signed`. |
+| `signoff` | `signed_fingerprint` | The fingerprint signed, filled from `signature` when the page renders. |
+| `cost` | `tokens_delegated` | The delegated agents' supplied token total. |
+| `cost` | `tokens_total` | The run's token total. |
+| `cost` | `token_coverage` | The sessions the total covers, and any it could not. |
+| `cost` | `token_shape` | What the meter was read from. |
+| `cost_roles` | `roles_session` | The session the spend by role was read from, and its subagent transcripts. |
+| `cost_roles` | `roles_total` | The agents, calls and priced tokens over every role. |
+| `calibration` | `cal_tokens_per_point` | The tokens-per-point rate the plan forecast with. |
+| `calibration` | `cal_tokens_source` | Where that rate came from. |
+| `calibration` | `cal_minutes_per_point` | The minutes-per-point rate the plan forecast with. |
+| `calibration` | `cal_minutes_source` | Where that rate came from. |
+| `rulings` | `persona_rulings` | Questions a persona seat ruled. |
+| `rulings` | `cited_rulings` | Questions answered by citing an earlier ruling. |
+| `rulings` | `operator_rulings` | Questions that reached the operator. |
+| `waivers` | `waivers_note` | How many gates were not holding when the page was derived. |
+| `waivers` | `waivers_count` | The number of waivers and forced overrides listed. |
+| `lane_yield` | `lane_yield_note` | The run's refusal count and how each refusal is classed. |
+| `lessons` | `lessons_note` | The lesson classes in force at the close. |
+
+### Report row keys
+
+The keys of each row, by the list the row sits in (**In**).
+
+| Section | In | Row key | Meaning |
+| --- | --- | --- | --- |
+| `estimates` | `rows` | `est_measure` | The measure the row compares, such as points, minutes or priced cost. |
+| `estimates` | `rows` | `est_forecast` | The plan's forecast, or `not forecast`. |
+| `estimates` | `rows` | `est_actual` | What the run measured. |
+| `estimates` | `rows` | `est_ratio` | Actual over forecast, or `no ratio`. |
+| `estimates` | `rows` | `est_basis` | What the row was formed over. |
+| `estimates` | `unit_rows` | `unit_id` | The unit. |
+| `estimates` | `unit_rows` | `eu_forecast_minutes` | Its forecast minutes. |
+| `estimates` | `unit_rows` | `eu_minutes` | Its measured minutes. |
+| `estimates` | `unit_rows` | `eu_forecast_tokens` | Its forecast tokens. |
+| `estimates` | `unit_rows` | `eu_tokens` | Its measured tokens. |
+| `estimates` | `unit_rows` | `eu_priced` | Its agents' priced tokens. |
+| `estimates` | `unit_rows` | `eu_usd` | Its agents' cost in dollars. |
+| `delivered` | `rows` | `unit_id` | The unit. |
+| `delivered` | `rows` | `unit_planned_points` | Its points at planned size. |
+| `delivered` | `rows` | `unit_points` | Its points now. |
+| `delivered` | `rows` | `unit_outcome` | What became of it, with the reason where one was recorded. |
+| `delivered` | `rows` | `unit_rounds` | Its review rounds. |
+| `known_issues` | `rows` | `issue_id` | The finding, unit or close gap. |
+| `known_issues` | `rows` | `issue_priority` | Its priority, or the kind of item it is. |
+| `known_issues` | `rows` | `issue_detail` | What it is. |
+| `cost` | `rows` | `model_name` | A model the meter read. |
+| `cost` | `rows` | `model_tokens` | Its tokens. |
+| `cost_prices` | `rows` | `price_model` | A priced model. |
+| `cost_prices` | `rows` | `price_input` | Its input price. |
+| `cost_prices` | `rows` | `price_output` | Its output price. |
+| `cost_prices` | `rows` | `price_cache_write_5m` | Its five-minute cache write price. |
+| `cost_prices` | `rows` | `price_cache_write_1h` | Its one-hour cache write price. |
+| `cost_prices` | `rows` | `price_cache_read` | Its cache read price. |
+| `cost_prices` | `rows` | `price_effective` | The date its prices took effect. |
+| `cost_prices` | `rows` | `price_source` | The source the price table cites for its prices. |
+| `cost_prices` | `rows` | `price_usd` | The run's cost on it in dollars. |
+| `cost_roles` | `rows` | `role_name` | A role in the session. |
+| `cost_roles` | `rows` | `role_agents` | Its agents. |
+| `cost_roles` | `rows` | `role_calls` | Its calls. |
+| `cost_roles` | `rows` | `role_priced` | Its priced tokens. |
+| `cost_roles` | `rows` | `role_share` | Its share of the priced total. |
+| `cost_roles` | `rows` | `role_cache_read` | Its cache read share. |
+| `cost_roles` | `rows` | `role_cache_write` | Its cache write share. |
+| `cost_roles` | `rows` | `role_output` | Its output share. |
+| `cost_roles` | `rows` | `role_first_context` | Its first context size. |
+| `cost_roles` | `rows` | `role_avg_context` | Its average context size. |
+| `dora` | `rows` | `dora_key` | The DORA metric. |
+| `dora` | `rows` | `dora_value` | Its value. |
+| `dora` | `rows` | `dora_mapping` | How the metric maps onto the project. |
+| `dora` | `rows` | `dora_band` | Its performance band. |
+| `dora` | `rows` | `dora_source` | What it was read from. |
+| `waivers` | `rows` | `waiver_id` | The waiver's decision, or the overridden unit. |
+| `waivers` | `rows` | `waiver_subject` | What it stood down. |
+| `waivers` | `rows` | `waiver_reason` | Why. |
+| `waivers` | `rows` | `waiver_date` | When. |
+| `lane_yield` | `rows` | `yield_lane` | A commit lane. |
+| `lane_yield` | `rows` | `yield_refusals` | Its refusals in the run. |
+| `lane_yield` | `rows` | `yield_catches` | Refusals followed by a code or test change. |
+| `lane_yield` | `rows` | `yield_paperwork` | Refusals followed by paperwork alone. |
+| `lane_yield` | `rows` | `yield_verdict` | Its verdict over the last three runs. |
+| `lessons` | `rows` | `lesson_id` | A lesson class. |
+| `lessons` | `rows` | `lesson_class` | Its name. |
+| `lessons` | `rows` | `lesson_state` | Its state. |
+| `lessons` | `rows` | `lesson_hits_run` | Its hits in the run. |
+| `lessons` | `rows` | `lesson_hits_total` | Its hits in all. |
+| `unmeasured` | `rows` | `unmeasured_item` | The checklist row the close could not measure. |
+| `unmeasured` | `rows` | `unmeasured_state` | `not measured`. |
+| `unmeasured` | `rows` | `unmeasured_reason` | Why. |
+
+### Report source grammar
+
+A figure's `source` is one source, or several joined by a comma followed by a space. Each part
+is one of four kinds:
+
+1. A declared non-path source: the part begins with one of the sources in the first table
+   below, a command whose output was read or a place the workspace does not hold.
+2. A file that exists in the workspace.
+3. A workspace path: the part begins with one of the prefixes in the second table below. It
+   may name a file nothing has written yet, such as a ledger a run with no entries never
+   created, because that absence is what the figure reports.
+4. A path ending in `.jsonl` outside the workspace, such as a session transcript the harness
+   owns.
+
+A page never carries a figure whose source is empty or is none of these: the build refuses
+it.
+
+#### Report non-path sources
+
+| Source | What it names |
+| --- | --- |
+| `gh run list` | The forge's CI runs, read with the GitHub CLI. |
+| `git log` | The repository's history. |
+| `git history` | The repository's history. |
+| `the session transcript` | The harness session the meter read. |
+| `forge run` | A CI run the forge reported. |
+| `forge runs` | The CI runs the forge reported. |
+| `the harness meter` | The token meter the harness keeps. |
+| `no forge` | No forge was reachable, so the figure was read without one. |
+| `the skill's bundled seed` | The lesson classes the skill ships, read when the project has no class store. |
+
+#### Report workspace prefixes
+
+| Prefix | What it holds |
+| --- | --- |
+| `sdlc-studio/` | The workspace's artefacts, ledgers and run records. |
+| `.claude/` | The installed skill. |
+| `tools/` | The project's own tools. |
+| `docs/` | The project's documentation. |
+| `changelog.d/` | Changelog fragments. |
+
+### Report schema 1
+
+The first report shape. No writer produces it now, so only pages already filed carry it, and
+they cannot be re-derived: each stands as filed. Its pages come in two shapes, the later adding
+`waivers`, and the earliest lacks `window_end` in the envelope. The tables below are the whole
+of schema 1; its figure keys are not catalogued.
+
+#### Report schema 1 sections
+
+| Section | Title | Emitted |
+| --- | --- | --- |
+| `identity` | Identity | always |
+| `header` | Filing | always |
+| `goal` | Sprint goal | always |
+| `guardrail` | Ship guardrail | always |
+| `delivered` | Delivered | always |
+| `cost` | Cost | always |
+| `accuracy` | Estimate accuracy | always |
+| `dora` | DORA | always |
+| `units` | Evidence by unit | always |
+| `not_proven` | Not proven | always |
+| `waivers` | Waivers in force | optional |
+| `judges` | Who judged this | always |
+| `consult` | Stakeholder consult | always |
+| `carried` | Carried open | always |
+| `signoff` | Sign-off | always |
+| `provenance` | Provenance | always |
+
+#### Report schema 1 envelope keys
+
+| Key | Presence |
+| --- | --- |
+| `schema` | always |
+| `report_id` | always |
+| `run_id` | always |
+| `retro_id` | always |
+| `generated_at` | always |
+| `window_end` | optional |
+| `signature` | always |
+| `sections` | always |
+| `fingerprint` | always |
