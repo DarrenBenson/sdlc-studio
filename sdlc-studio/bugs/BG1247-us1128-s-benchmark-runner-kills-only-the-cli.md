@@ -1,6 +1,6 @@
 # BG1247: US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/bench/runner.py, tools/tests/test_bench_headless.py
@@ -32,3 +32,4 @@ Start the CLI with `start_new_session=True` and kill its process group on timeou
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): it hardens tools/bench/runner.py, this repository's own benchmark harness, which serves no persona |

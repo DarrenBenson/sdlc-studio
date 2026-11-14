@@ -1,7 +1,8 @@
 # RFC-0063: Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read
 
-> **Status:** Draft
-> **Decomposed-into:** CR0689, CR0690, CR0691, CR0692, CR0693, CR0694
+> **Status:** Accepted
+> **Forced-override:** 2026-11-14: --force waived 1 gate(s) on Accepted - RFC0063 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0691 (Proposed), CR0692 (Proposed), CR0693 (Proposed), CR0694 (Proposed). Finish or close them first
+> **Decomposed-into:** CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702
 > **Priority:** High
 > **Size:** XL
 > **Author:** Darren Benson (operator); drafted with Claude Opus 5.5
@@ -199,3 +200,4 @@ Sequencing for 6.4 (to the end of 2026): WS1 first; then WS4's three epics, WS5'
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D8 - Decided by the operator (D0440): report and declare; the plan and report show points by area, and a plan over a third machinery records a maintenance declaration; nothing refuses |
 | 2026-11-09 | rfc resolve (operator decision) | resolve: D10 - Decided by the operator (D0441): the evidence annex carries a schema version the dashboard pins; the dashboard upgrades its workspace first |
 | 2026-11-10 | Darren Benson (operator); drafted with Claude Opus 5.5 | Corrected Context & Problem: the analyst's case reported a 31% lower change failure rate after moving to agent-driven delivery, credited to reliability, observability and review agents informed by production incident history together, not a 31% cut in defect escapes from feeding root-cause reports back. Linked RFC0064, which WS4's evidence pack (CR0692) and WS6's escape loop (CR0693) now depend on (D0456) |
+| 2026-11-14 | transition set --force | forced RFC0063 -> Accepted, waiving 1 gate(s): RFC0063 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0691 (Proposed), CR0692 (Proposed), CR0693 (Proposed), CR0694 (Proposed). Finish or close them first |

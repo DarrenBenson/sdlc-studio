@@ -1,6 +1,7 @@
 # RFC-0064: Production learning and risk-proportionate review
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Forced-override:** 2026-11-14: --force waived 1 gate(s) on Accepted - RFC0064 cannot be Accepted: its status is DERIVED from its children, and 2 is/are not yet resolved: CR0695 (Proposed), CR0696 (Proposed). Finish or close them first
 > **Decomposed-into:** CR0695, CR0696
 > **Priority:** High
 > **Size:** L
@@ -179,3 +180,4 @@ RFC as the review half of the combination the published case credits.
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D4 - Decided by the operator (D0459): a declared component map proposes the class at refine, the plan flags a disagreeing tag, the operator confirms at plan approval |
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D5 - Decided by the operator (D0460): both; the pack lists high-risk changes first and high-risk units get a second review seat whose yield each retro reports; no approval on every change |
 | 2026-11-10 | rfc resolve (operator decision) | resolve: D2 - Decided by the operator (D0462): a root cause becomes a failure class or lesson; at plan time each unit's files are matched against them and only the matches go into its build and review briefs, under a token cap the engineering seat measures |
+| 2026-11-14 | transition set --force | forced RFC0064 -> Accepted, waiving 1 gate(s): RFC0064 cannot be Accepted: its status is DERIVED from its children, and 2 is/are not yet resolved: CR0695 (Proposed), CR0696 (Proposed). Finish or close them first |

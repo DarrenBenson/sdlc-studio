@@ -1,6 +1,6 @@
 # CR-0664: Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips)
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -38,3 +38,4 @@ Every lane and review the class reaches: each repeat of LC-017 has cost a review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | sdlc-studio | Raised |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): an automatically raised 'prevent or retire' request with no design behind it; its sibling requests CR0600 and CR0642 were rejected or superseded |

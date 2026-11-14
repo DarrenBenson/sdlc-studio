@@ -1,6 +1,6 @@
 # BG1004: BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_record_versioned_writes.py, changelog.d/BG1004.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py
@@ -35,3 +35,4 @@ Give the tracked record a version that every write (close, sign, stop) checks an
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): the race needs two concurrent reopens of one run in two checkouts, and 5 points exceeds what that rare case costs |

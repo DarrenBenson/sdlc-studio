@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-14
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 330 |
+| Open | 327 |
 | In Progress | 0 |
 | Fixed | 909 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 48 |
-| Superseded | 51 |
-| **Total** | **1425** |
+| Won't Fix | 52 |
+| Superseded | 52 |
+| **Total** | **1427** |
 
 ## All Bugs
 
@@ -79,7 +79,7 @@
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Fixed | Medium | 2026-10-08 | 2026-10-08 |
-| [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Won't Fix | Low | 2026-10-09 | 2026-10-09 |
 | [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1006](BG1006-sprint-batch-add-prints-a-refusal-for-an.md) | sprint batch add prints a refusal for an unresolvable Affects path but adds the unit anyway | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1007](BG1007-a-signed-report-s-figure-sources-are-outside.md) | A signed report's figure sources are outside its fingerprint, so every source can be rewritten and the page still checks VALID | Superseded | Low | 2026-10-09 | 2026-10-09 |
@@ -322,7 +322,7 @@
 | [BG1244](BG1244-us1125-s-harness-usage-parser-raises-attributeerror-on.md) | US1125's harness usage parser raises `AttributeError` on a usage container that is not an object, and three of its rules are unpinned | Fixed | Low | 2026-11-06 | 2026-11-06 |
 | [BG1245](BG1245-us1126-s-sprint-lane-run-leaves-a-timed.md) | US1126's `sprint lane run` leaves a timed-out lane's children staging in the worktree, an in-flight marker after its own refusal, and a branch that refuses the next run | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1246](BG1246-us1127-s-codex-meter-ignores-codex-home-leaves.md) | US1127's Codex meter ignores `CODEX_HOME`, leaves its workspace boundary unpinned, and its AC3 test names a timeout mutant it cannot kill | Fixed | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1247](BG1247-us1128-s-benchmark-runner-kills-only-the-cli.md) | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1247](BG1247-us1128-s-benchmark-runner-kills-only-the-cli.md) | US1128's benchmark runner kills only the CLI on a timeout, never cross-checks Claude Code's own dollar total, and leaves its wall time, timeout and skill switches unpinned | Won't Fix | Low | 2026-11-06 | 2026-11-06 |
 | [BG1248](BG1248-the-benchmark-runner-cannot-authenticate-a-real-claude.md) | The benchmark runner cannot authenticate a real Claude Code or Codex run once it empties their config directories, and it accepts a `--dest` inside a git work tree whose skills and repository the session then reaches | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1249](BG1249-the-suite-s-root-conftest-py-isolates-neither.md) | The suite's root `conftest.py` isolates neither `HOME` nor `XDG_DATA_HOME`, so suite tests and reviewer mutant runs open the operator's live harness stores | Fixed | High | 2026-11-06 | 2026-11-06 |
 | [BG1250](BG1250-fourteen-tools-tests-modules-strip-every-git-variable.md) | Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race | Open | Low | 2026-11-06 | 2026-11-06 |
@@ -366,7 +366,7 @@
 | [BG1288](BG1288-a-codex-reading-counts-a-lane-worktree-s.md) | A Codex reading counts a lane worktree's own `codex exec` thread but says it holds no subagent spend, so the report adds the lane's delegated total a second time | Fixed | High | 2026-11-08 | 2026-11-08 |
 | [BG1289](BG1289-sprint-lane-land-never-clears-the-previous-landing.md) | `sprint lane land` never clears the previous landing's hand-in, so a repair round that hands in no self-check files records round one's as its own and the `author_self_check: block` gate passes an unchecked diff | Fixed | Medium | 2026-11-08 | 2026-11-08 |
 | [BG1290](BG1290-sprint-lane-accept-records-a-verdict-against-the.md) | `sprint lane accept` records a verdict against the previous round's QA brief when a repair's landing wrote none, so an unchecked repair moves to Done | Fixed | Medium | 2026-11-08 | 2026-11-08 |
-| [BG1291](BG1291-the-benchmark-runner-refuses-a-claude-code-run.md) | The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever git errors | Open | Low | 2026-11-08 | 2026-11-08 |
+| [BG1291](BG1291-the-benchmark-runner-refuses-a-claude-code-run.md) | The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever git errors | Won't Fix | Low | 2026-11-08 | 2026-11-08 |
 | [BG1292](BG1292-sprint-lane-brief-run-in-a-builder-worktree.md) | `sprint lane brief` run in a builder worktree that is behind the root's branch prints the worktree's stale copy of the unit without a warning | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1293](BG1293-a-codex-lane-that-times-out-or-prints.md) | A Codex lane that times out or prints no usage leaves no delegated record, and since BG1288 its worktree thread is left out of the reading, so its spend reaches a Codex-metered run zero times | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1294](BG1294-sprint-lane-accept-s-stale-self-check-refusal.md) | `sprint lane accept`'s stale-self-check refusal tells the operator to land the unit again, which `lane land` refuses after an out-of-band repair, and its refusal prints a doubled full stop | Open | Low | 2026-11-08 | 2026-11-08 |
@@ -435,7 +435,7 @@
 | [BG1357](BG1357-the-report-s-prices-not-measured-reasons-and.md) | The report's Prices NOT MEASURED reasons and _run_usd's no-split guard are unpinned | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1358](BG1358-us0997-s-changelog-and-reference-scripts-md-say.md) | US0997's changelog and reference-scripts.md say the close commits the run record, but it files it | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1359](BG1359-help-sprint-md-says-the-run-record-never.md) | help/sprint.md says the run record never names the plan by its .local path, but a run opened before 509850a1 still does | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1360](BG1360-reference-scripts-review-md-says-row-identity-digests.md) | reference-scripts-review.md says row_identity digests the first eight cells, but in a nine-cell row it digests every cell except Source | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1360](BG1360-reference-scripts-review-md-says-row-identity-digests.md) | reference-scripts-review.md says row_identity digests the first eight cells, but in a nine-cell row it digests every cell except Source | Won't Fix | Low | 2026-11-12 | 2026-11-12 |
 | [BG1361](BG1361-us1001-s-note-says-this-clone-s-refusal.md) | US1001's note says 'this clone's refusal log', which misleads in a fresh clone | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1362](BG1362-bg1334-s-changelog-and-docstring-claim-more-than.md) | BG1334's changelog and docstring claim more than the path-as-written match | Superseded | Low | 2026-11-12 | 2026-11-12 |
 | [BG1363](BG1363-the-us1000-report-s-price-rows-cite-the.md) | The US1000 report's price rows cite the config while their values come from the page's own price table | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -501,6 +501,8 @@
 | [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1426](BG1426-transition-py-refuses-an-rfc-at-accepted-until.md) | transition.py refuses an RFC at Accepted until every change request it spawned is resolved, though the RFC status flow says Accepted means its decisions are made | Superseded | Low | 2026-11-14 | 2026-11-14 |
+| [BG1427](BG1427-file-finding-py-parent-writes-the-parent-s.md) | file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift | Open | Low | 2026-11-14 | 2026-11-14 |
 
 ## Archived Releases
 

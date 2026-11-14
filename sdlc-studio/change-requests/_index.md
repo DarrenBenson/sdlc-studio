@@ -1,20 +1,20 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-14
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 38 |
+| Proposed | 36 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 549 |
-| Rejected | 30 |
+| Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **701** |
+| **Total** | **702** |
 
 ## All Changes
 
@@ -54,7 +54,7 @@
 | [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Superseded | Low | Improvement | 2026-10-13 | -- |
 | [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Rejected | P3 | Improvement | 2026-10-13 | -- |
 | [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Superseded | Medium | Improvement | 2026-10-16 | -- |
-| [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Proposed | Medium | Improvement | 2026-10-16 | -- |
+| [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Rejected | Medium | Improvement | 2026-10-16 | -- |
 | [CR-0644](CR0644-bring-the-trd-s-and-tsd-s-gate.md) | Bring the TRD's and TSD's gate architecture current: the three hooks, the boundary gates, the test stack, CI and its scheduled jobs, and the manual pre-tag steps | Complete | High | Improvement | 2026-10-19 | EP0290 |
 | [CR-0645](CR0645-refresh-the-trd-to-6-2-delivery-units.md) | Refresh the TRD to 6.2: delivery units that execute Verify lines, committed evidence and run records, the type registry, network paths and the stale ADRs | Complete | High | Improvement | 2026-10-19 | EP0293 |
 | [CR-0646](CR0646-refresh-the-rest-of-the-tsd-the-measured.md) | Refresh the rest of the TSD: the measured coverage, per-unit line coverage, the test-tree conventions, NFR rows and the header | Complete | Medium | Improvement | 2026-10-19 | EP0293 |
@@ -75,7 +75,7 @@
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Complete | High | Improvement | 2026-11-04 | EP0298 |
 | [CR-0662](CR0662-measure-a-cursor-cli-run-s-tokens-from.md) | Measure a Cursor CLI run's tokens from the afterAgentResponse hook or a captured print-mode result, since the CLI's store keeps no usage | Complete | High | Feature | 2026-11-04 | EP0274 |
 | [CR-0663](CR0663-run-the-commit-time-suites-on-the-gate.md) | Run the commit-time suites on the gate host, as the push already does | Proposed | High | Feature | 2026-11-05 | -- |
-| [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Proposed | Medium | Improvement | 2026-11-05 | -- |
+| [CR-0664](CR0664-prevent-or-retire-lesson-lc-017-a-page.md) | Prevent or retire lesson LC-017 (a page-format rule mark nothing round-trips) | Rejected | Medium | Improvement | 2026-11-05 | -- |
 | [CR-0665](CR0665-every-token-reading-is-priced-in-us-dollars.md) | Every token reading is priced in US dollars from a dated per-model price table, beside the input-equivalent figure | Complete | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0666](CR0666-sprint-cost-anatomy-breaks-a-run-s-spend.md) | sprint cost --anatomy breaks a run's spend down by role and names what drove it | Complete | High | Feature | 2026-11-06 | EP0299 |
 | [CR-0667](CR0667-a-lane-runs-headless-in-any-supported-cli.md) | A lane runs headless in any supported CLI harness and is priced from the usage that CLI prints | Complete | High | Feature | 2026-11-06 | EP0299 |
@@ -95,7 +95,7 @@
 | [CR-0681](CR0681-have-the-commit-path-write-the-refs-and.md) | Have the commit path write the Refs and Mentions trailers it now refuses for, make every tool that writes markdown emit lint-clean output, and print one line on success from the hooks and the commands agents filter by hand. | Complete | Low | Improvement | 2026-11-06 | EP0300 |
 | [CR-0682](CR0682-make-the-author-self-check-prove-each-acceptance.md) | Make the author self-check prove each acceptance criterion at the observable it names through the shipped entry point, list the docs outside Affects that name what the diff changed, require a captured producer sample for a unit that parses another tool's output, and tag each blocking finding with its defect class. | Proposed | Medium | Improvement | 2026-11-06 | -- |
 | [CR-0683](CR0683-fix-three-run-seven-frictions-in-which-a.md) | Fix three run-seven frictions in which a shipped step leaves state the next step refuses: `lane land` checks the self-check hand-in only after it commits, `verify_ac run` in a builder worktree stamps the story file outside the unit's Affects, and `file_finding --parent` leaves the parent RFC's spawned-work cell unsynced. | Proposed | Medium | Bug | 2026-11-06 | -- |
-| [CR-0684](CR0684-prevent-or-retire-lesson-lc-015-a-retirement.md) | Prevent or retire lesson LC-015 (a retirement outruns the deletion) | Proposed | Medium | Improvement | 2026-11-06 | -- |
+| [CR-0684](CR0684-prevent-or-retire-lesson-lc-015-a-retirement.md) | Prevent or retire lesson LC-015 (a retirement outruns the deletion) | Rejected | Medium | Improvement | 2026-11-06 | -- |
 | [CR-0685](CR0685-price-a-github-copilot-run-per-token-in.md) | Price a GitHub Copilot run per token in AI credits, the billing Copilot moved to on 2026-06-01, and keep the premium-request price only for plans still billed by request | Complete | Medium | Improvement | 2026-11-06 | EP0304 |
 | [CR-0686](CR0686-carry-the-hand-back-contract-in-a-project.md) | Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats | Proposed | Low | Improvement | 2026-11-06 | -- |
 | [CR-0687](CR0687-remote-gate-sh-doctor-never-checks-the-release.md) | `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut | Proposed | Medium | Enhancement | 2026-11-07 | -- |
@@ -113,6 +113,7 @@
 | [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Proposed | High | Improvement | 2026-11-12 | -- |
 | [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | Proposed | Medium | Improvement | 2026-11-12 | -- |
 | [CR-0701](CR0701-a-consolidation-unit-s-builder-brief-can-carry.md) | A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it | Proposed | Low | Improvement | 2026-11-12 | -- |
+| [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | Proposed | High | Improvement | 2026-11-14 | -- |
 
 ## Archived Releases
 

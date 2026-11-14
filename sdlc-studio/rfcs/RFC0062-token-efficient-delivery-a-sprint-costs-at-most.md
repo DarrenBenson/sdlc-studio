@@ -1,6 +1,7 @@
 # RFC-0062: Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness
 
-> **Status:** Draft
+> **Status:** Accepted
+> **Forced-override:** 2026-11-14: --force waived 1 gate(s) on Accepted - RFC0062 cannot be Accepted: its status is DERIVED from its children, and 10 is/are not yet resolved: CR0671 (Proposed), CR0672 (Proposed), CR0673 (Proposed), CR0675 (Proposed), CR0676 (Proposed), CR0678 (Proposed), CR0679 (Proposed), CR0680 (Proposed), CR0682 (Proposed), CR0683 (Proposed). Finish or close them first
 > **Decomposed-into:** CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683
 > **Size:** XL
 > **Evidence:** Run six (RUN-01M6NH7W) transcripts, recounted 2026-11-06 at 37.5M priced against RPT0025's 36.8M; a capture of one headless session in each of Claude Code, Cursor CLI, Codex CLI, Copilot CLI and OpenCode on 2026-11-06.
@@ -78,3 +79,4 @@ Not covered: models and effort, which waits for the Phase 2 benchmark's routed a
 | 2026-11-06 | Claude Opus 5.5 | Filed |
 | 2026-11-06 | Claude Opus 5.5 | Open decisions resolved by the operator's rulings (D0411); phased plan added |
 | 2026-11-06 | Claude Opus 5.5 | Phase 3 result recorded: CR0670-CR0683 filed from six lens reviews, about 20.0M per run de-duplicated |
+| 2026-11-14 | transition set --force | forced RFC0062 -> Accepted, waiving 1 gate(s): RFC0062 cannot be Accepted: its status is DERIVED from its children, and 10 is/are not yet resolved: CR0671 (Proposed), CR0672 (Proposed), CR0673 (Proposed), CR0675 (Proposed), CR0676 (Proposed), CR0678 (Proposed), CR0679 (Proposed), CR0680 (Proposed), CR0682 (Proposed), CR0683 (Proposed). Finish or close them first |

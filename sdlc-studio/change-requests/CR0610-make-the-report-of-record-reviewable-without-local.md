@@ -32,6 +32,7 @@ A project manager reading the committed record sees provenance links that go now
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-05 | Claude Opus 5.5 | Raised |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Money scope answered by the operator on 2026-11-14 (D0474): option (a), so US0999 captures each delegated agent's model and prices its spend, in 6.4 |
 
 ## Amigo Consult
 

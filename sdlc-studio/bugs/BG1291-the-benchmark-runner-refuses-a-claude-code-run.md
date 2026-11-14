@@ -1,6 +1,6 @@
 # BG1291: The benchmark runner refuses a Claude Code run that authenticates from `ANTHROPIC_AUTH_TOKEN`, Bedrock or Vertex, and accepts a `--dest` whenever git errors
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/bench/runner.py, tools/tests/test_bench_headless.py
@@ -33,3 +33,4 @@ Add the three variables to the Claude entry and reword the comment and fragment 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): it hardens tools/bench/runner.py, this repository's own benchmark harness, which serves no persona |

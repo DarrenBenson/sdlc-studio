@@ -1,6 +1,6 @@
 # CR-0643: Prevent or retire lesson LC-018 (a doc claim checked by reading)
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -48,3 +48,4 @@ Kept (D0387). To plan it:
 | --- | --- | --- |
 | 2026-10-16 | sdlc-studio | Raised |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): an automatically raised 'prevent or retire' request with no design behind it; its sibling requests CR0600 and CR0642 were rejected or superseded |

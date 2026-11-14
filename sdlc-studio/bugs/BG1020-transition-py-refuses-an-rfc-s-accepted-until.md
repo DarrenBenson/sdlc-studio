@@ -1,9 +1,10 @@
 # BG1020: transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step
 
 > **Status:** Open
+> **Supersedes:** BG1426
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/scripts/tests/test_rfc_accept_with_open_children.py, changelog.d/BG1020.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/scripts/tests/test_rfc_accept_with_open_children.py, .claude/skills/sdlc-studio/scripts/tests/test_rfc_accepted_when_decided.py, changelog.d/BG1020.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** transition.py:1060 `_request_terminal_gate`; reference-rfc.md 'accept' steps 3-4 and 'Accepted is not terminal'; RFC0055-RFC0060 Accepted with open children; RFC0061 refused and forced (D0362).
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
@@ -26,6 +27,10 @@ Decide which is right and make the other match: either an RFC's Accepted is the 
 
 - [ ] **AC1** Following reference-rfc.md's accept steps through the shipped tools ends with the RFC in the state the reference names, with no --force
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc_accept_with_open_children.py::RfcAcceptTests::test_the_documented_accept_needs_no_force
+- [ ] **AC2** (carried from BG1426) Given an RFC whose Open Decisions are all Resolved and whose spawned CRs are still Proposed, when it is set to Accepted, then the transition succeeds without --force. Fails on: a refusal naming the open children.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc_accepted_when_decided.py::RfcAcceptedWhenDecidedTests::test_decided_rfc_with_open_children_is_accepted
+- [ ] **AC3** (carried from BG1426) Given an RFC with an unresolved Open Decision, when it is set to Accepted, then the transition is refused and names the open decision. Fails on: an Accepted RFC with an open decision.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_rfc_accepted_when_decided.py::RfcAcceptedWhenDecidedTests::test_open_decision_refuses_accepted
 
 ## Triage (2026-10-21)
 
@@ -37,3 +42,4 @@ Decide which is right and make the other match: either an RFC's Accepted is the 
 | --- | --- | --- |
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1426, closed at the backlog triage as a duplicate; its criteria are carried here as AC2-AC3, and its test file joins Affects. The refusal struck again on 2026-11-14: RFC0062, RFC0063 and RFC0064 went to Accepted on the operator's ruling only with --force (D0474) |

@@ -1,6 +1,6 @@
 # CR-0684: Prevent or retire lesson LC-015 (a retirement outruns the deletion)
 
-> **Status:** Proposed
+> **Status:** Rejected
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -38,3 +38,4 @@ Every lane and review the class reaches: each repeat of LC-015 has cost a review
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | sdlc-studio | Raised |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not beneficial, operator ruling (D0474): an automatically raised 'prevent or retire' request with no design behind it; its sibling requests CR0600 and CR0642 were rejected or superseded |

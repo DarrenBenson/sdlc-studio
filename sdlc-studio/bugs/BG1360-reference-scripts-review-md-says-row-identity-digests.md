@@ -1,6 +1,6 @@
 # BG1360: reference-scripts-review.md says row_identity digests the first eight cells, but in a nine-cell row it digests every cell except Source
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-scripts-review.md, changelog.d/BG1360.md
@@ -32,3 +32,4 @@ Reword to what the code does.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | Closed at the backlog triage as not a real issue, operator ruling (D0474): the page's 'first eight cells' and the eight `_DELIVERY_COLS` that critic.py digests are the same cells, and Source is the ninth |
