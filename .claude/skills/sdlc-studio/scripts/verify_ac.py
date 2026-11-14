@@ -632,21 +632,27 @@ _PRIOR_HANDLERS: dict = {}
 # refusing; under the default disposition the process dies, so a worker refuses at once.
 # `_RELAYS_RUNNING` counts the relays in flight, a second signal being handled inside the first.
 # The stop is cleared when the last relay's replaced handler returns (its caller carries on) or
-# the main thread starts a verifier (it caught the interrupt and carried on).
+# the main thread starts a verifier (it caught the interrupt and carried on). A worker waits for
+# the relays to settle until `_SETTLE_BY`, `_SETTLE_SLACK` seconds past the grace from the latest
+# signal, then refuses: a handler that waits on the workers (one that drains its own pool) waits
+# on a worker that waits on it, and a raise landing between a relay's count and its `try:` leaves
+# the event clear, so an unbounded wait would hang the process for good.
 _STOPPING = threading.Event()
 _RELAY_SETTLED = threading.Event()
 _RELAY_SETTLED.set()
 _RELAYS_RUNNING = 0
+_SETTLE_SLACK = 3.0
+_SETTLE_BY = 0.0
 
 
 def _refuse_if_stopping() -> None:
     """On a thread other than the main one, once the caller has been signalled, wait for the
-    relays running to settle, then raise `KeyboardInterrupt` unless the caller carried on. On
-    the main thread, clear the stop instead."""
+    relays running to settle, until `_SETTLE_BY` at the latest, then raise `KeyboardInterrupt`
+    unless the caller carried on. On the main thread, clear the stop instead."""
     if threading.current_thread() is threading.main_thread():
         _STOPPING.clear()
     elif _STOPPING.is_set():
-        _RELAY_SETTLED.wait()
+        _RELAY_SETTLED.wait(max(0.0, _SETTLE_BY - time.monotonic()))
         if _STOPPING.is_set():
             raise KeyboardInterrupt("the caller was signalled to stop, so no verifier starts")
 
@@ -659,10 +665,12 @@ def _reap_on_signal(signum, frame):
     die by it. From the moment it arrives no worker thread starts a verifier until the handler
     replaced has run: if it returns, the workers carry on; if it raises, a worker refuses each
     verifier it reaches and kills one it had already started; under the default disposition, a
-    worker refuses at once."""
-    global _RELAYS_RUNNING
+    worker refuses at once. A worker waits for that handler `_SIGNAL_GRACE + _SETTLE_SLACK`
+    seconds from the signal at most, and refuses once they pass."""
+    global _RELAYS_RUNNING, _SETTLE_BY
     prior = _PRIOR_HANDLERS.get(signum, signal.SIG_DFL)
     carried_on = False
+    _SETTLE_BY = time.monotonic() + _SIGNAL_GRACE + _SETTLE_SLACK
     _RELAYS_RUNNING += 1
     if callable(prior):
         _RELAY_SETTLED.clear()
