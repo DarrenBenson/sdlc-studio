@@ -43,7 +43,20 @@ close, the operator answered "Authorise you to sign", so the orchestrator entere
 - **Pushed**: e7d1a5c9 passed the push gate's full suite and GitHub's Lint run. The gate had
   refused three earlier pushes, at b7ead759, 92c84b10 and 1caffe6d: five red tests (BG1420), a
   census timing test, and RETRO0144 committed before the close wrote its velocity row.
-- **Run twelve**: EP0275, CR0694 and US0999 (moved by D0469), with BG1425 and the Medium findings.
+- **Run twelve**: set by D0474 after the backlog triage below.
+
+## Since the run: backlog triage and the 6.4 plan (2026-11-14)
+
+- **Triage (D0473)**: all 483 open items got a verdict at HEAD; eleven closed as already done
+  or duplicated, criteria carried to each survivor; a deep re-check of 20 sampled keeps found
+  none already fixed.
+- **Rulings (D0474)**: seven items closed as not beneficial or not real; RFC0062, RFC0063 and
+  RFC0064 Accepted (forced past BG1020's refusal); US0999 built in 6.4; CR0702 filed for the
+  front door.
+- **6.4, four runs, about 160 points**: twelve, evidence and honest cost (BG1425 and BG1420's
+  re-review clear the tag's bar; EP0275, US0999, CR0696, CR0692's first part, CR0694, the cost
+  bugs, BG1268, BG1019); thirteen, EP0287's 40-point slice and CR0693; fourteen, CR0702, six
+  consumer-visible bugs and three cost levers; fifteen, the release. Groom each run at its start.
 
 ## Learned the hard way
 
