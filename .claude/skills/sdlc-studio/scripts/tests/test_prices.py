@@ -562,6 +562,28 @@ class GrokLongContextRatesTests(unittest.TestCase):
                 self.assertIn(word, str(caught.exception))
 
 
+class PricedIdTests(unittest.TestCase):
+    """BG1393: the id a table prices a model's tokens under (`priced_id`), over the shipped
+    table, whose grok-4.7 carries a long-context price, and a project entry replacing it whole
+    with none."""
+
+    LONG_ID = "grok-4.7" + prices.LONG_CONTEXT_ID
+
+    def test_a_replaced_entry_drops_its_long_rate_and_prices_the_id_at_its_base(self) -> None:
+        """MUTANTS: `_list` keeping the shipped long-context price beside a replaced entry;
+        `priced_id` mapping an id the table lists, or a base the table does not list."""
+        shipped = prices.load(path=prices.TABLE_PATH, pricing={})
+        self.assertEqual(self.LONG_ID, prices.priced_id(self.LONG_ID, shipped))
+        replaced = prices.load(path=prices.TABLE_PATH, pricing={"models": {
+            "grok-4.7": {k: v for k, v in _entry("grok-4.7").items() if k != "model"}}})
+        self.assertNotIn(self.LONG_ID, replaced.models, "the replaced entry is whole")
+        self.assertEqual("grok-4.7", prices.priced_id(self.LONG_ID, replaced))
+        for model in ("grok-4.7", "model-nobody-prices",
+                      "model-nobody-prices" + prices.LONG_CONTEXT_ID):
+            with self.subTest(model=model):
+                self.assertEqual(model, prices.priced_id(model, replaced))
+
+
 class CopilotTokenPriceTests(unittest.TestCase):
     """US1144: a Copilot run on token billing is priced from AI credits, in US dollars."""
 

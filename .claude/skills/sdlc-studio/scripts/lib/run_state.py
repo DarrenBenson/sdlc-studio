@@ -181,6 +181,10 @@ PRICED_LABEL = "priced input-equivalent tokens"
 #: A reading's components split by the model each message names, `{model: components}`, which
 #: is what a dollar figure is priced from (`usd`); "" keys a message naming no model.
 BY_MODEL = "by_model"
+#: Beside a summed `BY_MODEL` split, the models any part of it read from a session total
+#: (`from_total`), so `usd` labels them a lower bound even where a part booked request by
+#: request names the long-context id beside them.
+FROM_TOTAL = "from_total"
 #: The premium requests a harness bills as their own unit (Copilot), carried beside the tokens
 #: and never converted into them.
 PREMIUM_REQUESTS = "premium_requests"
@@ -934,6 +938,16 @@ def _zero() -> dict:
     return dict.fromkeys(TOKEN_COMPONENTS, 0)
 
 
+def from_total(by_model: dict | None) -> set[str]:
+    """The models one split read from a session total: each holding priced tokens with no
+    long-context id named beside it, which a split `token_meters.book` formed request by
+    request names for every model with a long-context price. Read per part, before parts are
+    summed: the sum of a booked split and a total names the id and would read as exact."""
+    split = by_model or {}
+    return {m for m, c in split.items() if not m.endswith(prices.LONG_CONTEXT_ID)
+            and price(c or {}) and m + prices.LONG_CONTEXT_ID not in split}
+
+
 def _counted(components: dict) -> int:
     """input + output + cache write: the sum every reading before D0390 headlined."""
     return sum(int(components.get(c) or 0) for c in TOKEN_COMPONENTS if c != "cache_read")
@@ -1633,12 +1647,13 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
     from `tokens` times a constant."""
     comps = _zero()
     by_model: dict[str, dict] = {}
+    totalled: set[str] = set()
     premium = None
     for rows in spans:
         if not all(isinstance(r.get("components"), dict) for r in rows):
             n = sum(1 for s in spans for r in s if not isinstance(r.get("components"), dict))
             return {"priced": None, "components": None, "includes_subagents": False,
-                    BY_MODEL: None, PREMIUM_REQUESTS: None,
+                    BY_MODEL: None, PREMIUM_REQUESTS: None, FROM_TOTAL: None,
                     "priced_reason": (f"{n} meter reading(s) were written before the meter "
                                       f"priced each component, so the run's priced cost cannot "
                                       f"be formed from them; its input + output + cache-write "
@@ -1648,19 +1663,19 @@ def _priced_delta(spans: list[list[dict]]) -> dict:
             vals = [int(r["components"].get(c) or 0) for r in rows]
             span[c] = max(0, max(vals) - min(vals))
             comps[c] += span[c]
-        _split_delta(rows, span, by_model)
+        totalled |= _split_delta(rows, span, by_model)
         # Over the readings that carry a count: one taken before the field existed, such as
         # a legacy baseline folded beside the open stamp, carries none and is left out.
         asked = [r[PREMIUM_REQUESTS] for r in rows if _count(r.get(PREMIUM_REQUESTS))]
         if len(asked) >= 2:
             premium = (premium or 0) + max(asked) - min(asked)
     return {"priced": price(comps), "components": comps, "priced_reason": None,
-            BY_MODEL: by_model, PREMIUM_REQUESTS: premium,
+            BY_MODEL: by_model, PREMIUM_REQUESTS: premium, FROM_TOTAL: sorted(totalled),
             "includes_subagents": bool(spans) and all(
                 bool(max(rows, key=lambda r: r["tokens"]).get("subagents")) for rows in spans)}
 
 
-def _split_delta(rows: list[dict], span: dict, by_model: dict) -> None:
+def _split_delta(rows: list[dict], span: dict, by_model: dict) -> set[str]:
     """Add one session's per-model delta to `by_model`: each model's component, last reading
     less first, from the readings' `BY_MODEL` splits, a model a reading's split does not name
     read as 0 there. A session whose readings do not all carry a split, or whose per-model
@@ -1668,7 +1683,8 @@ def _split_delta(rows: list[dict], span: dict, by_model: dict) -> None:
     model its readings name, else under `SESSION_MODEL_MIXED`, which no price covers. The second
     catches a split `_split_fields` synthesised from a name that changed within the span:
     read per name, it would book the opening reading's whole history as spend under the name
-    that left and the closing reading's whole total under the name that came."""
+    that left and the closing reading's whole total under the name that came. Returns the
+    models this session read from a total (`from_total`): a span booked whole is one."""
     if all(isinstance(r.get(BY_MODEL), dict) for r in rows):
         delta = {}
         for m in sorted({m for r in rows for m in r[BY_MODEL]}):
@@ -1680,12 +1696,13 @@ def _split_delta(rows: list[dict], span: dict, by_model: dict) -> None:
                 got = by_model.setdefault(m, _zero())
                 for c in TOKEN_COMPONENTS:
                     got[c] += d[c]
-            return
+            return from_total(delta)
     named = {r.get("model") for r in rows if r.get("model")}
     key = named.pop() if len(named) == 1 else SESSION_MODEL_MIXED
     got = by_model.setdefault(key, _zero())
     for c in TOKEN_COMPONENTS:
         got[c] += span[c]
+    return from_total({key: span})
 
 
 def price_table(repo_root: Path | str | None, filed: dict | None = None):
@@ -1734,7 +1751,22 @@ def table_record(table) -> dict:
                        for m, p in sorted(table.models.items())}}
 
 
-def usd(by_model: dict | None, table, today=None) -> dict:
+def _priced_split(by_model: dict, table) -> dict:
+    """`by_model` with each model's components under the id `table` prices them at
+    (`prices.priced_id`), summed where two ids meet: a long-context id a project's replaced
+    entry dropped is priced at its base's one rate. The split as given when nothing moves."""
+    moved = {m: prices.priced_id(m, table) for m in by_model}
+    if all(m == k for m, k in moved.items()):
+        return by_model
+    out: dict[str, dict] = {}
+    for m, comps in by_model.items():
+        held = out.setdefault(moved[m], _zero())
+        for c in TOKEN_COMPONENTS:
+            held[c] += int((comps or {}).get(c) or 0)
+    return out
+
+
+def usd(by_model: dict | None, table, today=None, totalled=None) -> dict:
     """The estimated US dollar cost of a per-model split (`BY_MODEL`), each model priced from
     its own components by `prices.cost`: `{usd, covered, models, unpriced, effective, stale,
     reason, lower_bound}`. A model the table does not price, `SESSION_MODEL_MIXED` among them, is
@@ -1743,7 +1775,9 @@ def usd(by_model: dict | None, table, today=None) -> dict:
     with `reason`, when nothing is priced. `stale` is `prices.stale` on `today` (default: today).
     `lower_bound` says why the figure may fall short when a model billed at a higher rate past a
     prompt size is priced from a total; a split that names that model's long-context id beside
-    it was booked request by request (`token_meters.book`), so it is exact and carries none."""
+    it was booked request by request (`token_meters.book`), so it is exact and carries none,
+    unless the model is in `totalled`: the models a part summed into the split read from a
+    session total (`FROM_TOTAL`)."""
     out = {"usd": None, "covered": None, "models": [], "unpriced": [], "reason": None,
            "effective": None, "stale": None, "lower_bound": None}
     if table is not None:
@@ -1753,6 +1787,8 @@ def usd(by_model: dict | None, table, today=None) -> dict:
     if not by_model:
         out["reason"] = "the reading carries no per-model split of its components"
         return out
+    if table is not None:
+        by_model = _priced_split(by_model, table)
     weighed = {m: price(c) for m, c in by_model.items()}
     whole = sum(weighed.values())
     total, lower = 0.0, []
@@ -1770,7 +1806,8 @@ def usd(by_model: dict | None, table, today=None) -> dict:
         else:
             total += got.usd
             out["models"].append({"model": m, "usd": got.usd, "priced": weighed[m]})
-            if got.lower_bound and m + prices.LONG_CONTEXT_ID not in by_model:
+            if got.lower_bound and (m in (totalled or ())
+                                    or m + prices.LONG_CONTEXT_ID not in by_model):
                 lower.append(got.lower_bound)
     out["lower_bound"] = "; ".join(lower) or None
     covered = sum(r["priced"] for r in out["models"])
@@ -2537,8 +2574,8 @@ def delegated_total(state: dict) -> int:
 
 
 def delegated_split(state: dict) -> dict:
-    """The run's delegated records as a dollar figure prices them: `{BY_MODEL, "read",
-    "unpriced"}`. A record read from an agent's transcript carries its per-model split, summed
+    """The run's delegated records as a dollar figure prices them: `{BY_MODEL, FROM_TOTAL,
+    "read", "unpriced"}`, `FROM_TOTAL` the models any one record read from a total. A record read from an agent's transcript carries its per-model split, summed
     into `BY_MODEL`; one with its components and no split books them under no model named,
     which no price covers; `read` counts the records booked either way. A supplied total with
     neither is listed in `unpriced` as `{"tokens", "agent", "unit"}`, never priced at a guessed
@@ -2546,6 +2583,7 @@ def delegated_split(state: dict) -> dict:
     where the Tokens row adds these totals: over a meter that read the subagent transcripts
     they are in it already."""
     split: dict[str, dict] = {}
+    totalled: set[str] = set()
     read, unpriced = 0, []
     for r in delegated_records(state):
         got = r.get(BY_MODEL) if isinstance(r.get(BY_MODEL), dict) and r.get(BY_MODEL) else (
@@ -2555,11 +2593,12 @@ def delegated_split(state: dict) -> dict:
                              "unit": str(r.get("unit") or "")})
             continue
         read += 1
+        totalled |= from_total(got)
         for m, comps in got.items():
             held = split.setdefault(m, _zero())
             for c in TOKEN_COMPONENTS:
                 held[c] += int((comps or {}).get(c) or 0)
-    return {BY_MODEL: split, "read": read, "unpriced": unpriced}
+    return {BY_MODEL: split, FROM_TOTAL: sorted(totalled), "read": read, "unpriced": unpriced}
 
 
 def unit_agent_totals(state: dict) -> dict[str, dict]:

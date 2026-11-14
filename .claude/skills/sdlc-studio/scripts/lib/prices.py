@@ -409,6 +409,18 @@ def long_context(model: str | None, table: PriceTable) -> Price | None:
     return table.models.get(name + LONG_CONTEXT_ID)
 
 
+def priced_id(model: str, table: PriceTable) -> str:
+    """The id `table` prices `model`'s tokens under: `model` itself when listed, or not a
+    long-context id; else, for a long-context id whose base model the table lists, that base.
+    A base listed without its long-context id bills every prompt at its one rate (a
+    `pricing.models` entry that replaced it whole, `_list`), so tokens a ledger booked under
+    the id by another table are priced there, never left out."""
+    if model in table.models or not model.endswith(LONG_CONTEXT_ID):
+        return model
+    base = model[:-len(LONG_CONTEXT_ID)]
+    return base if base in table.models else model
+
+
 def request_id(model: str | None, prompt_tokens: int, table: PriceTable) -> str | None:
     """The id one request of `model` is priced under: its long-context id when its prompt of
     `prompt_tokens` reaches that price's `from_prompt_tokens`, else `model`."""

@@ -3851,16 +3851,23 @@ def _run_usd(run_tokens: dict, usd: dict, delegated: dict | None = None) -> dict
     agent's transcript folded in when `delegated` (`run_state.delegated_split`) is given, which
     `_estimates_section` does under `PRICES_RULE` only where the Tokens row adds them over a
     meter that leaves them out. A meter with no split of its own is priced as it was, so the
-    dollars never stand for the agents alone."""
-    split = run_tokens.get(run_state.BY_MODEL)
+    dollars never stand for the agents alone. The models either part read from a session total
+    (`run_state.FROM_TOTAL`, else read off that part's own split) keep their lower-bound label
+    in the sum, where a booked part names the long-context id beside them."""
+    def totalled(part: dict) -> set[str]:
+        kept = part.get(run_state.FROM_TOTAL)
+        return set(kept) if isinstance(kept, list) else run_state.from_total(
+            part.get(run_state.BY_MODEL))
+
+    split, held_total = run_tokens.get(run_state.BY_MODEL), totalled(run_tokens)
     if delegated and isinstance(split, dict) and split:
         merged = {m: dict(c) for m, c in split.items()}
         for m, comps in delegated[run_state.BY_MODEL].items():
             held = merged.setdefault(m, dict.fromkeys(run_state.TOKEN_COMPONENTS, 0))
             for c in run_state.TOKEN_COMPONENTS:
                 held[c] = int(held.get(c) or 0) + int(comps.get(c) or 0)
-        split = merged
-    return run_state.usd(split, usd["table"], usd["today"])
+        split, held_total = merged, held_total | totalled(delegated)
+    return run_state.usd(split, usd["table"], usd["today"], held_total)
 
 
 def _delegated_reach(delegated: dict) -> str:
