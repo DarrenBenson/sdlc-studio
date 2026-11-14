@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_re_close_unreadable_meter.py, changelog.d/BG1394.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_re_close_unreadable_meter.py, changelog.d/BG1394.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py
 > **Evidence:** RUN-01M78TKD, 2026-11-13: repair costfix, BG1279
 > **Created:** 2026-11-13
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Keep the earlier window and write the gap on the page.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (run twelve) | Affects widened: the criterion's page text is written by sprint_report.py, so the fix lives there too, and the tests that pin the current multi-unit refusal move with it (the builder's BLOCKED hand-back) |

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_multi_unit_lane_split.py, changelog.d/BG1397.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_multi_unit_lane_split.py, changelog.d/BG1397.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_delegated_tokens.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Evidence:** RUN-01M78TKD, 2026-11-13: orchestrator
 > **Created:** 2026-11-13
 > **Created-by:** sdlc-studio file
@@ -32,3 +32,4 @@ Split by points and mark the figure as apportioned.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (run twelve) | Affects widened: the criterion's page text is written by sprint_report.py, so the fix lives there too, and the tests that pin the current multi-unit refusal move with it (the builder's BLOCKED hand-back) |
