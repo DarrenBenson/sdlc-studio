@@ -1,6 +1,7 @@
 # BG1129: test_lean_gate_host_docs.py's table test says a hook honouring a value other than 1 fails it, but an edit outside the lines `_hook_code` cuts passes it
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1141
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_gate_host_docs.py, changelog.d/BG1129.md
@@ -36,3 +37,4 @@ A test docstring claims a protection the test does not give.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-26 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1141 at the backlog triage, as a duplicate: the same over-claiming docstring in test_lean_gate_host_docs.py; its mutant H6 criterion is carried to BG1141 |

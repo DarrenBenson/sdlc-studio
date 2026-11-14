@@ -1,6 +1,7 @@
 # BG0974: The filing tools do not markdown-safe the title or the Evidence line, so a bare snake_case identifier fails MD037 at commit or in CI
 
 > **Status:** Open
+> **Supersedes:** BG1423
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py, changelog.d/BG0974.md
@@ -28,6 +29,8 @@ Apply the same markdown-safing to the title and the Evidence value as to the pro
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k title_identifier_is_code_spanned
 - [ ] **AC2** An Evidence value holding such an identifier is written with it inside a code span, and its text otherwise reads byte-identical
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_filing_markdown_safe_title.py -k evidence_identifier_is_code_spanned
+- [ ] **AC3** (carried from BG1423) Given a finding title holding two identifiers that begin with underscores, when it is filed, then the bug file and the index row pass markdownlint. Fails on: an MD037 error on either.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding_title_markdown.py::TitleMarkdownTests
 
 ## Further evidence
 
@@ -43,3 +46,4 @@ Apply the same markdown-safing to the title and the Evidence value as to the pro
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1423, closed at the backlog triage as a duplicate; its criteria are carried here as AC3 |

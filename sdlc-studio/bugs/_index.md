@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 339 |
+| Open | 330 |
 | In Progress | 0 |
 | Fixed | 909 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 48 |
-| Superseded | 42 |
+| Superseded | 51 |
 | **Total** | **1425** |
 
 ## All Bugs
@@ -181,7 +181,7 @@
 | [BG1103](BG1103-the-close-binds-the-untracked-files-it-leaves.md) | The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Open | Low | 2026-10-20 | 2026-10-20 |
 | [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
-| [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Open | Low | 2026-10-21 | 2026-10-21 |
+| [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Superseded | Low | 2026-10-21 | 2026-10-21 |
 | [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Fixed | Medium | 2026-10-21 | 2026-10-21 |
@@ -204,7 +204,7 @@
 | [BG1126](BG1126-a-seat-requested-amendment-of-an-open-run.md) | A seat-requested amendment of an open run's goal leaves the run state on the old goal, so the close's goal read reports 'a different goal' | Open | Low | 2026-10-22 | 2026-10-22 |
 | [BG1127](BG1127-a-run-whose-plan-time-baseline-is-folded.md) | A run whose plan-time baseline is folded in as a second reading beside its open stamp reads a measured token cost of 0, so RUN-01M5EM9N's close would report no spend | Fixed | High | 2026-10-22 | 2026-10-22 |
 | [BG1128](BG1128-the-close-s-goal-panel-and-the-next.md) | The close's goal panel and the next amendment's carry read only the latest goal-review round, while the plan reads every round on the latest wording, so after an owing seat records alone they disagree on which verdicts stand | Open | Low | 2026-10-22 | 2026-10-22 |
-| [BG1129](BG1129-test-lean-gate-host-docs-py-s-table.md) | test_lean_gate_host_docs.py's table test says a hook honouring a value other than 1 fails it, but an edit outside the lines `_hook_code` cuts passes it | Open | Low | 2026-10-26 | 2026-10-26 |
+| [BG1129](BG1129-test-lean-gate-host-docs-py-s-table.md) | test_lean_gate_host_docs.py's table test says a hook honouring a value other than 1 fails it, but an edit outside the lines `_hook_code` cuts passes it | Superseded | Low | 2026-10-26 | 2026-10-26 |
 | [BG1130](BG1130-the-builder-brief-s-commit-step-quotes-each.md) | The builder brief's commit step quotes each Affects path with shlex.quote, but no test has a path with a space, so dropping the quoting stages the wrong paths with every test green | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1131](BG1131-the-close-checklist-s-cost-row-never-reads.md) | The close checklist's cost row never reads a run holding only its legacy baseline, and its main-thread-only re-derivation note has no test | Open | Low | 2026-10-26 | 2026-10-26 |
 | [BG1132](BG1132-bg0962-s-ac7-test-proves-only-the-reject.md) | BG0962's AC7 test proves only the REJECT half of 'the frozen verdict decides' when the per-unit ledger cannot be read | Open | Low | 2026-10-26 | 2026-10-26 |
@@ -240,17 +240,17 @@
 | [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Superseded | Low | 2026-11-01 | 2026-11-01 |
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Fixed | High | 2026-11-01 | 2026-11-01 |
 | [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1169](BG1169-mutation-py-s-drop-ignored-ignores-git-check.md) | mutation.py's _drop_ignored ignores git check-ignore's exit code, so one path git refuses leaves the rest partly filtered | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1170](BG1170-the-tsd-and-trd-refresh-tests-leave-low.md) | The TSD and TRD refresh tests leave low residual gaps their round-2 and BG1166 reviews named | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1171](BG1171-reconcile-settle-closes-an-epic-in-the-pre.md) | reconcile settle closes an epic in the pre-commit hook but leaves the requests that close made derivable, so the same commit's gate refuses on that drift | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1172](BG1172-four-open-dependabot-alerts-on-main-sit-in.md) | Four open Dependabot alerts on main sit in development dependencies: markdown-it (High and Low), smol-toml (Medium) and katex (Low) | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1172](BG1172-four-open-dependabot-alerts-on-main-sit-in.md) | Four open Dependabot alerts on main sit in development dependencies: markdown-it (High and Low), smol-toml (Medium) and katex (Low) | Superseded | Low | 2026-11-02 | 2026-11-02 |
 | [BG1173](BG1173-a-close-that-reuses-a-pinned-token-actual.md) | A close that reuses a pinned token actual writes 'Priced cost: not stated' into the retro with a lower-case reason, though its report states the run's priced cost | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1174](BG1174-the-v6-2-notes-test-exempts-the-whole.md) | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause | Open | Low | 2026-11-02 | 2026-11-02 |
-| [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Superseded | Low | 2026-11-02 | 2026-11-02 |
 | [BG1176](BG1176-eight-done-criteria-went-stale-in-the-6.md) | Eight Done criteria went stale in the 6.2 work: five Verify greps lost their sentences to run four's spec refreshes, and three criteria still name v6.1.0 or a folded fragment after the cut | Fixed | Low | 2026-11-02 | 2026-11-02 |
 | [BG1177](BG1177-readme-s-6-2-0-line-and-the.md) | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1178](BG1178-known-issues-py-check-compares-the-page-with.md) | known_issues.py check compares the page with the corpus but never reads the release notes' count sentence, so a hand edit of that line goes unchecked until the tag | Open | Low | 2026-11-02 | 2026-11-02 |
@@ -338,7 +338,7 @@
 | [BG1260](BG1260-init-run-and-init-guided-exit-1-and.md) | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
-| [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Open | Low | 2026-11-06 | 2026-11-06 |
+| [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Superseded | Low | 2026-11-06 | 2026-11-06 |
 | [BG1264](BG1264-us1133-s-trailer-check-skips-a-single-id.md) | US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Open | Low | 2026-11-06 | 2026-11-06 |
@@ -420,7 +420,7 @@
 | [BG1342](BG1342-sprint-py-plan-write-format-json-prints-its.md) | sprint.py plan --write --format json prints its run-opening lines on stdout before the JSON | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1343](BG1343-moving-a-story-to-ready-does-not-refuse.md) | Moving a story to Ready does not refuse a criterion with several stacked Verify lines, which then turns main red at StackedVerifierTests | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1344](BG1344-a-unit-whose-tests-must-run-under-a.md) | A unit whose tests must run under a temporary HOME cannot be built in a worktree lane, and the lane brief offers no other path | Fixed | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1345](BG1345-the-review-brief-does-not-tell-a-reviewer.md) | The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1345](BG1345-the-review-brief-does-not-tell-a-reviewer.md) | The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes | Superseded | Low | 2026-11-12 | 2026-11-12 |
 | [BG1346](BG1346-the-first-verdict-recorded-after-the-ledger-gained.md) | The first verdict recorded after the ledger gained its Source column pads every row, and the commit-msg hook credits that change to every unit the subject names | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1347](BG1347-a-second-rulings-line-in-a-verdict-block.md) | A second RULINGS: line in a verdict block is silently dropped | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1348](BG1348-critic-py-s-none-blocking-guard-has-no.md) | critic.py's 'none blocking' guard has no test | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -437,7 +437,7 @@
 | [BG1359](BG1359-help-sprint-md-says-the-run-record-never.md) | help/sprint.md says the run record never names the plan by its .local path, but a run opened before 509850a1 still does | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1360](BG1360-reference-scripts-review-md-says-row-identity-digests.md) | reference-scripts-review.md says row_identity digests the first eight cells, but in a nine-cell row it digests every cell except Source | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1361](BG1361-us1001-s-note-says-this-clone-s-refusal.md) | US1001's note says 'this clone's refusal log', which misleads in a fresh clone | Open | Low | 2026-11-12 | 2026-11-12 |
-| [BG1362](BG1362-bg1334-s-changelog-and-docstring-claim-more-than.md) | BG1334's changelog and docstring claim more than the path-as-written match | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1362](BG1362-bg1334-s-changelog-and-docstring-claim-more-than.md) | BG1334's changelog and docstring claim more than the path-as-written match | Superseded | Low | 2026-11-12 | 2026-11-12 |
 | [BG1363](BG1363-the-us1000-report-s-price-rows-cite-the.md) | The US1000 report's price rows cite the config while their values come from the page's own price table | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1364](BG1364-fresh-session-no-or-false-reads-as-off.md) | fresh_session: no or false reads as off, though the help and US1149's AC2 say any other value reads as warn | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1365](BG1365-sprint-report-py-build-of-a-signed-run.md) | sprint_report.py build of a signed run ignores the time window saved on its signed page | Open | Low | 2026-11-12 | 2026-11-12 |
@@ -498,7 +498,7 @@
 | [BG1420](BG1420-run-eleven-s-lanes-turn-the-full-suite.md) | Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected | Open | High | 2026-11-13 | 2026-11-13 |
 | [BG1421](BG1421-verify-ac-s-revert-check-reads-a-missing.md) | verify_ac's revert check reads a missing runner binary as red rather than as no verdict | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1422](BG1422-no-test-pins-verify-ac-s-class-and.md) | No test pins verify_ac's class and module skip-mark check on the decorator's name | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Open | Low | 2026-11-13 | 2026-11-13 |
+| [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-13 | 2026-11-13 |
 

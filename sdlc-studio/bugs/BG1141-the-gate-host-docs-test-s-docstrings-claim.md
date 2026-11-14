@@ -1,6 +1,7 @@
 # BG1141: The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config`
 
 > **Status:** Open
+> **Supersedes:** BG1129
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_gate_host_docs.py, changelog.d/BG1141.md
@@ -30,6 +31,8 @@ Add near-miss cases (`true`, `01`) to the `SDLC_GATE_LOCAL` rows, and let the ke
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py
 - [ ] **AC2** A key read as `git -C <dir> config --get sdlc.<key>` is derived as a setting, and a key read through a shell variable is still out of reach, as the docstring says.
   - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py
+- [ ] **AC3** (carried from BG1129) Given H6 applied to .githooks/pre-push, then the table test fails, or its docstring no longer claims that case
+  - **Verify:** pytest tools/tests/test_lean_gate_host_docs.py::GateHostDocsTests::test_an_on_host_override_outside_the_cut_is_caught
 
 ## Impact
 
@@ -40,3 +43,4 @@ Low: no script reads a key in the -C form today, and the hook compares the liter
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-31 | claude | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1129, closed at the backlog triage as a duplicate; its criteria are carried here as AC3 |

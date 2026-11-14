@@ -1,6 +1,7 @@
 # US1138: The PRD, TRD and TSD describe what 6.3 ships
 
 > **Status:** Done
+> **Supersedes:** BG1165
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -44,3 +45,4 @@
 | 2026-11-08 | Claude Opus 5.5 | Created via `new` (deterministic) |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for EP0301 under D0427: user story, criteria with Verify lines and notes, modelled on EP0295 |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Affects amended in flight: the two scanners that refuse the new TRD rows; Points 3 to 5 (see Notes) |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1165, closed at the backlog triage as already done here |

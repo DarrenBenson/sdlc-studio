@@ -1,6 +1,7 @@
 # BG1264: US1133's trailer check skips a single-id subject though its docs say it does not, refuses this repository's paperwork-commit convention, and leaves two ownership rules unpinned
 
 > **Status:** Fixed
+> **Supersedes:** BG1263
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/enable-hooks.sh, tools/tests/test_commit_msg_mentions.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py, changelog.d/BG1264.md
@@ -40,3 +41,4 @@ Either run the contradiction check for a single-id subject too, or say in the fr
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
 | 2026-11-09 | Claude Opus 5.5 (run nine) | Affects names the unit's changelog fragment, which grooming left out |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1263, closed at the backlog triage as already done here |

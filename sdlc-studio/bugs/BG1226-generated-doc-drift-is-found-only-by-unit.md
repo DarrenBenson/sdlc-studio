@@ -1,6 +1,7 @@
 # BG1226: Generated-doc drift is found only by unit suites after the full selected run, never by a cheap pre-commit lane
 
 > **Status:** Fixed
+> **Supersedes:** CR0640
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .githooks/pre-commit, tools/tests/test_pre_commit_docgen.py, changelog.d/BG1226.md
@@ -38,3 +39,4 @@ A commit to a hub script pays 15 to 25 minutes of suites to learn what a few sec
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes CR0640, closed at the backlog triage as already done here |

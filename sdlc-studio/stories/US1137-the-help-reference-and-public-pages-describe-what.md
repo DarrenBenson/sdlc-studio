@@ -1,6 +1,7 @@
 # US1137: The help, reference and public pages describe what 6.3 ships
 
 > **Status:** Done
+> **Supersedes:** BG1175
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
@@ -47,3 +48,4 @@
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Created via `new` (deterministic) |
 | 2026-11-08 | Claude Opus 5.5 (grooming) | Groomed for EP0301 under D0427: user story, criteria with Verify lines and notes, modelled on EP0295 |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1175, closed at the backlog triage as already done here |

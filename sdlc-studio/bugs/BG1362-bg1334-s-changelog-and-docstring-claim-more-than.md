@@ -1,6 +1,7 @@
 # BG1362: BG1334's changelog and docstring claim more than the path-as-written match
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1369
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, changelog.d/BG1362.md
@@ -32,3 +33,4 @@ Reword to what the code does.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1369 at the backlog triage, as a duplicate: its over-claim is true once BG1369 resolves the verdicts path; its wording criterion is carried to BG1369 |

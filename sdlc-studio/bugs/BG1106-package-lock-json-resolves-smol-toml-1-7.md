@@ -1,6 +1,7 @@
 # BG1106: package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1372
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** package.json, package-lock.json, changelog.d/BG1106.md
@@ -36,3 +37,4 @@ Low. Both packages run only in the repository's own lint chain, over this reposi
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-21 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1372 at the backlog triage, as already fixed: 0851f78f (BG1372) took smol-toml 1.9.1 and katex 0.18.10, and GitHub reports no open Dependabot alert |

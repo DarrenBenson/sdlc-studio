@@ -1,6 +1,7 @@
 # BG1345: The review brief does not tell a reviewer to keep tools that write under the home directory, such as npx and npm, out of its probes
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1306
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1345.md
@@ -32,3 +33,4 @@ Add the line to the brief's probing rule.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1306 at the backlog triage, as a duplicate: both are the review brief's probing rule keeping the real home directory untouched; its criterion (npx and npm) is carried to BG1306 |

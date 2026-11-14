@@ -1,6 +1,7 @@
 # BG1263: The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1264
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
@@ -32,3 +33,4 @@ Cut the message at the scissors line before any trailer is read, in one helper t
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1264 at the backlog triage, as already fixed: dba831b5 (BG1264) cuts the message at git's scissors line before `derive_trailers` reads it (engagement_floor.py:991) |

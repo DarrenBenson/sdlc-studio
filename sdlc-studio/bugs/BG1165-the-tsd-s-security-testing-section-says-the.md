@@ -1,6 +1,7 @@
 # BG1165: The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** US1138
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/tsd.md, tools/tests/test_lean_tsd_refresh.py
@@ -37,3 +38,4 @@ A security sentence in the TSD understates the network surface.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by US1138 at the backlog triage, as already fixed: d6351a44 (US1138) rewrote tsd.md:386-387 to name the TRD's Network paths table, not the `gh` wrapper alone |

@@ -1,6 +1,7 @@
 # CR-0658: The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** CR0652
 > **Priority:** Low
 > **Type:** Feature
 > **Date:** 2026-11-02
@@ -25,3 +26,4 @@ Option 1: name the surface after what the claim is in, so the record says what w
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Raised |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by CR0652 at the backlog triage, as a duplicate: both ask the author self-check for a claim surface for a documentation unit's prose file; its example, a release-notes unit's 49 claims filed under CHANGELOG, is carried to CR0652 |

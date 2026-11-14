@@ -1,6 +1,7 @@
 # BG1175: docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** US1137
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** docs/existing-users.md, changelog.d/BG1175.md
@@ -37,3 +38,4 @@ A 6.1 user reading the upgrade page rather than the notes misses the 6.2 steps.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by US1137 at the backlog triage, as already fixed: 5f757e0f (US1137) added the 'From 6.1 to 6.2' and 'From 6.2 to 6.3' sections to docs/existing-users.md |

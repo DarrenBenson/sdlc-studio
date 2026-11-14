@@ -1,6 +1,7 @@
 # BG1172: Four open Dependabot alerts on main sit in development dependencies: markdown-it (High and Low), smol-toml (Medium) and katex (Low)
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1372
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** package.json, package-lock.json, changelog.d/BG1172.md
@@ -38,3 +39,4 @@ The markdown lint toolchain runs vulnerable parsers on this repository's own tra
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
 | 2026-11-08 | Claude Opus 5.5 | Added Dependabot alert #29 (minimatch, Medium) to the summary and the fix; AC1 already covers it |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1372 at the backlog triage, as already fixed: 0851f78f (BG1372) took the patched markdown-it, smol-toml and katex, and GitHub reports no open Dependabot alert |

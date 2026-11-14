@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 40 |
+| Proposed | 38 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 549 |
 | Rejected | 30 |
 | Deferred | 0 |
-| Superseded | 61 |
+| Superseded | 63 |
 | Blocked | 0 |
 | **Total** | **701** |
 
@@ -51,7 +51,7 @@
 | [CR-0637](CR0637-the-test-suite-s-private-temp-root-follows.md) | The test suite's private temp root follows TMPDIR, so on a tmpfs /tmp every fixture repository copy is held in RAM and a killed run's tree is never freed | Proposed | Medium | Improvement | 2026-10-12 | -- |
 | [CR-0638](CR0638-the-release-verify-lane-has-no-vitest-batch.md) | The release verify lane has no vitest batch path, so in a vitest project every criterion is a cold `npx vitest run` spawn and the lane runs at three times its declared 600 s budget | Proposed | Medium | Improvement | 2026-10-12 | -- |
 | [CR-0639](CR0639-a-worktree-isolated-reviewer-that-rejects-cannot-be.md) | A worktree-isolated reviewer that REJECTs cannot be resumed for its round 2 once its worktree is removed, and nothing says to keep it until the review converges | Proposed | Low | Improvement | 2026-10-13 | -- |
-| [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Proposed | Low | Improvement | 2026-10-13 | -- |
+| [CR-0640](CR0640-a-reference-page-edited-without-regenerating-its-reading.md) | A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push | Superseded | Low | Improvement | 2026-10-13 | -- |
 | [CR-0641](CR0641-a-review-round-ruling-is-admitted-from-any.md) | A review-round ruling is admitted from any accepted decision about the unit, not one that authorises a round | Rejected | P3 | Improvement | 2026-10-13 | -- |
 | [CR-0642](CR0642-prevent-or-retire-lesson-lc-016-a-signed.md) | Prevent or retire lesson LC-016 (a signed page reads a live source) | Superseded | Medium | Improvement | 2026-10-16 | -- |
 | [CR-0643](CR0643-prevent-or-retire-lesson-lc-018-a-doc.md) | Prevent or retire lesson LC-018 (a doc claim checked by reading) | Proposed | Medium | Improvement | 2026-10-16 | -- |
@@ -69,7 +69,7 @@
 | [CR-0655](CR0655-re-validate-every-open-project-lesson-against-the.md) | Re-validate every open project lesson against the current tree, closing those no longer true | Complete | Medium | Process | 2026-10-27 | EP0294 |
 | [CR-0656](CR0656-a-command-to-amend-a-planned-unit-s.md) | A command to amend a planned unit's Affects or a criterion in flight, recording why, so a builder's scope finding is not a hand edit | Proposed | Medium | Enhancement | 2026-10-31 | -- |
 | [CR-0657](CR0657-lesson-revalidated-reasons-cite-file-line-evidence-that.md) | Lesson Revalidated reasons cite file:line evidence that drifts as code lands; check and re-anchor it | Proposed | Medium | Enhancement | 2026-11-01 | -- |
-| [CR-0658](CR0658-the-author-self-check-s-claim-surfaces-have.md) | The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes | Proposed | Low | Feature | 2026-11-02 | -- |
+| [CR-0658](CR0658-the-author-self-check-s-claim-surfaces-have.md) | The author self-check's claim surfaces have no slot for a documentation prose file a unit ships, such as release notes | Superseded | Low | Feature | 2026-11-02 | -- |
 | [CR-0659](CR0659-the-message-refs-lane-forces-a-refs-trailer.md) | The message-refs lane forces a Refs trailer for any id a subject names, though a trailer attributes the commit's files to that unit | Complete | Low | Feature | 2026-11-02 | EP0297 |
 | [CR-0660](CR0660-gate-py-release-takes-about-100-minutes-on.md) | gate.py --release takes about 100 minutes on a workstation, nearly all of it the verify lane executing every Done story's criteria serially | Complete | Medium | Feature | 2026-11-02 | EP0296 |
 | [CR-0661](CR0661-a-sprint-costs-3-75m-priced-tokens-per.md) | A sprint costs 3.75M priced tokens per point in run five against run four's 1.61M and a norm near 1M, and its per-unit ceremony is the largest share | Complete | High | Improvement | 2026-11-04 | EP0298 |

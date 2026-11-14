@@ -1,6 +1,7 @@
 # BG1372: GitHub reports 5 Dependabot alerts on the default branch (1 high, 2 moderate, 2 low)
 
 > **Status:** Fixed
+> **Supersedes:** BG1106, BG1172
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** package.json, package-lock.json, changelog.d/BG1372.md
@@ -32,3 +33,5 @@ Triage each alert; upgrade the dev dependency it names where it applies.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1106, closed at the backlog triage as already done here |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1172, closed at the backlog triage as already done here |

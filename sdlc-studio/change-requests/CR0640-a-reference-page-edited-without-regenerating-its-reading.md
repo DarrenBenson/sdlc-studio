@@ -1,6 +1,7 @@
 # CR-0640: A reference page edited without regenerating its reading guide passes every commit lane and is found only by the full suite at push
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** BG1226
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S
@@ -38,3 +39,4 @@ Kept (D0387). To plan it:
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Raised |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG1226 at the backlog triage, as already delivered: 28778f27 (BG1226) runs `docgen references reading-guides --check` in the pre-commit budgets lane when a reference page or help file is staged |

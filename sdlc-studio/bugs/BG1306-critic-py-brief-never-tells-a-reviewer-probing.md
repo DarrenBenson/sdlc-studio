@@ -1,6 +1,7 @@
 # BG1306: `critic.py brief` never tells a reviewer probing confinement or environment-isolation code to run its mutants with HOME set to a temporary directory, so a mutant can write outside the scratch tree
 
 > **Status:** Open
+> **Supersedes:** BG1345
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -27,9 +28,12 @@ When a unit's diff touches HOME, `PRIVATE_HOME` or conftest isolation, have the 
 
 - [ ] **AC1** The behaviour described is corrected: Split from BG1300's proposed fix, which reaches beyond BG1300's Affects.
 - [ ] **AC2** The proposed fix lands, pinned by a test: When a unit's diff touches HOME, `PRIVATE_HOME` or conftest isolation, have the brief tell the reviewer to run every mutant and probe with HOME set to a fresh...
+- [ ] **AC3** (carried from BG1345) Given any review brief, when it is printed, then its probing rule names tools that write under the home directory (npx, npm) as off limits or to be run with a temporary HOME. Fails on: a brief silent on them.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefSafetyTests::test_the_brief_keeps_home_writing_tools_out_of_probes
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1345, closed at the backlog triage as a duplicate; its criteria are carried here as AC3 |

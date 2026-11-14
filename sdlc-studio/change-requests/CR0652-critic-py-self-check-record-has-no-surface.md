@@ -1,6 +1,7 @@
 # CR-0652: critic.py self-check record has no surface for a documentation unit's own prose, so the claims a doc unit makes in the file it changes cannot be recorded under that file
 
 > **Status:** Proposed
+> **Supersedes:** CR0658
 > **Priority:** Low
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -31,3 +32,4 @@ Accept each non-test file the unit's Affects declares as a named optional surfac
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Raised |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes CR0658, closed at the backlog triage as a duplicate; its example is carried: a release-notes unit's 49 claims had to be filed under CHANGELOG |

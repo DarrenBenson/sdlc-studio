@@ -1,6 +1,7 @@
 # BG1423: file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG0974
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_title_markdown.py, changelog.d/BG1423.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
@@ -32,3 +33,4 @@ Code-span underscore-led identifiers in the title, or refuse the title naming th
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Superseded by BG0974 at the backlog triage, as a duplicate: both ask the filer to put a title's identifiers in code spans in the H1 and the index row; its criterion is carried to BG0974 |
