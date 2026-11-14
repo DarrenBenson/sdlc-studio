@@ -1,10 +1,11 @@
 <!-- close-status:begin -->
-> **RUN-01M78TKD closed running.** 24 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M78TKD closed partial.** 24 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-Closed on 2026-11-13 over RPT0030 (fingerprint 82ced251b004932d) and awaiting the operator's
-signature: run ten's authorisation to sign (D0467) covered that run only.
+Signed on 2026-11-14 over RPT0030 (fingerprint 82ced251b004932d), sealed partial. Asked at the
+close, the operator answered "Authorise you to sign", so the orchestrator entered `sprint sign
+--principal "Darren Benson"` on that authorisation, for this run only (D0472).
 
 > **RUN-01M78TKD, run eleven.** Goal: "Lanes land and die cleanly, verifiers never read green
 > wrongly, and every unit's cost is priced." A declared maintenance run (D0469, D0470, D0471):
@@ -33,16 +34,15 @@ signature: run ten's authorisation to sign (D0467) covered that run only.
 
 ## What is owed
 
-- **The signature**: `sprint.py sign --report RPT0030 --principal "<the operator>"`.
 - **BG1420 (High) carried as BG1425**: it fixed the five tests the push gate found red, but its
   repair's round-2 review found a new unbounded wait (a caller whose SIGTERM handler waits for its
-  pool hangs). It is unruled on RPT0030; ruling it is the signer's call.
+  pool hangs). The operator ruled it not stop-ship at the signature (D0472); run twelve.
 - **Known issues carried, all not-stop-ship** (RETRO0144): BG1382-BG1417 and BG1421-BG1425, every
   finding filed as its own bug, closely related test gaps merged; BG1418 and BG1419 were filed twice
   and are superseded.
-- **Main is not yet pushed**: the push gate refused b7ead759 (the five tests, fixed by BG1420),
-  92c84b10 (a census timing test, fixed) and 1caffe6d (RETRO0144's missing velocity row, which the
-  close has now written). Push the close paperwork and read the gate.
+- **Pushed**: e7d1a5c9 passed the push gate's full suite and GitHub's Lint run. The gate had
+  refused three earlier pushes, at b7ead759, 92c84b10 and 1caffe6d: five red tests (BG1420), a
+  census timing test, and RETRO0144 committed before the close wrote its velocity row.
 - **Run twelve**: EP0275, CR0694 and US0999 (moved by D0469), with BG1425 and the Medium findings.
 
 ## Learned the hard way

@@ -107,13 +107,7 @@ Delivered 24 units, 49 points, all planned (D0471). BG1420 (3, added in-run when
 
 **0 of 24 unit(s) measured; 24 of 24 forecast at plan time.**
 
-**Priced cost: 41,431,558 priced input-equivalent tokens**, 845,542 per point over 49 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $111.66, $2.28 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 3,946 x1
-- output: 1,749,423 x5
-- cache write 5m: 4,252,006 x1.25
-- cache write 1h: 280,982 x2
-- cache read: 268,035,252 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 128,293** (6,286,357 tokens over 49 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
