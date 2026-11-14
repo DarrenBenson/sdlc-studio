@@ -1,14 +1,14 @@
 # Story Index
 
-**Last Updated:** 2026-11-09
+**Last Updated:** 2026-11-14
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 69 |
-| Ready | 0 |
+| Draft | 63 |
+| Ready | 13 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1149** |
+| **Total** | **1156** |
 
 ## All Stories
 
@@ -29,14 +29,14 @@
 | [US0989](US0989-a-cursor-cloud-run-records-its-token-actual.md) | A Cursor cloud run records its token actual from the usage API when a key is present | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0990](US0990-a-cursor-cli-run-records-its-token-actual.md) | A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Done | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Draft | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Draft | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1002](US1002-filing-into-the-skill-source-refuses-a-blocklisted.md) | Filing into the skill source refuses a blocklisted project name before an id is spent | Draft | EP0277 | 2026-10-09 | 2026-10-09 |
@@ -187,6 +187,13 @@
 | [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Done | EP0302 | 2026-11-09 | 2026-11-09 |
+| [US1150](US1150-the-plan-records-a-priced-dollar-and-wall.md) | The plan records a priced, dollar and wall-clock forecast beside tokens and minutes | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
+| [US1151](US1151-the-report-s-estimates-table-shows-forecast-actual.md) | The report's Estimates table shows forecast, actual and ratio for every cost row | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
+| [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
+| [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
+| [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
+| [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Ready | EP0308 | 2026-11-14 | 2026-11-14 |
+| [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Ready | EP0308 | 2026-11-14 | 2026-11-14 |
 
 ## Archived Releases
 

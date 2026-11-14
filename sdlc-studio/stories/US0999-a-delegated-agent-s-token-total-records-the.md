@@ -1,6 +1,7 @@
 # US0999: A delegated agent's token total records the model that spent it
 
-> **Status:** Draft
+> **Status:** Ready
+> **Release:** 6.4 (D0474)
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -8,7 +9,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_delegated_tokens_model.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_delegated_tokens.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_totals_said.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/US0999.md
 > **Epic:** EP0276
 > **Points:** 2
-> **Persona:** Maya Okafor
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -55,3 +56,4 @@ Kept (D0387). To plan it:
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 | 2026-11-12 | Claude Opus 5.5 (engineering seat) | Re-groomed at HEAD for run ten: line references corrected; notes record that transcript-read and lane-run totals already carry their model, that `lane --model` exists and is dropped by `return`, and that a supplied total stays unpriced with its model; Affects gains test_run_state.py, test_retro.py, test_lean_lane_delegated_tokens.py, test_lean_lane_totals_said.py and test_lane_accept.py; Depends on US0997 removed (no shared surface); release set to 6.4 (D0461); criteria unchanged |
 | 2026-11-14 | Claude Opus 5.5, on the operator's ruling (D0474) | CR0610's money-scope question answered (a) by the operator on 2026-11-14 (D0474): this story is no longer conditional and is planned for 6.4 |
+| 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0474) | Groomed for run twelve: Persona Abena Osei, the Primary since RFC0063 (End goal 3); Release 6.4 per D0474. Its Depends-on units are all Done |

@@ -1,6 +1,7 @@
 # CR-0692: A change evidence pack per release, built from the run's record and grouped by risk and compliance class
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0308
 > **Parent:** RFC0063
 > **Depends on:** CR0696; EP0275; EP0276; EP0280
 > **Related:** RFC0064
@@ -34,3 +35,4 @@ Serves O10, Abena Osei's End goal 1 and Graham Doyle's End goals 1 and 2. Builds
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Raised |
+| 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0476) | Part 1 (AC1 and AC2) refined into EP0308 (US1155, US1156) for run twelve. Part 2 (AC3 grouping by class with the second seat's verdict, AC4 reading through the annex) is still to refine, after CR0696 and EP0275 land |

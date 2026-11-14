@@ -1,6 +1,7 @@
 # CR-0694: The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0306
 > **Parent:** RFC0063
 > **Priority:** High
 > **Type:** enhancement

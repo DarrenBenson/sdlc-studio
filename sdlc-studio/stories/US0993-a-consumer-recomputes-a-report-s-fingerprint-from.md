@@ -1,6 +1,7 @@
 # US0993: A consumer recomputes a report's fingerprint from the annex alone
 
-> **Status:** Draft
+> **Status:** Ready
+> **Release:** 6.4 (D0474)
 > **Supersedes:** BG1007
 > **Delivers:** CR0609
 > **Created:** 2026-10-09
@@ -10,7 +11,7 @@
 > **Epic:** EP0275
 > **Points:** 2
 > **Depends on:** US0992
-> **Persona:** Maya Okafor
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -48,3 +49,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G1 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): supersedes BG1007 |
+| 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0474) | Groomed for run twelve: Persona Abena Osei, the Primary since RFC0063 (End goal 1); Release 6.4 per D0474. Its Depends-on units are all Done |

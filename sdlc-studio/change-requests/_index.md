@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 36 |
+| Proposed | 33 |
 | Approved | 0 |
-| In Progress | 21 |
+| In Progress | 24 |
 | Complete | 549 |
 | Rejected | 33 |
 | Deferred | 0 |
@@ -103,11 +103,11 @@
 | [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | Complete | High | Enhancement | 2026-11-09 | EP0305 |
 | [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Complete | High | Enhancement | 2026-11-09 | EP0303 |
 | [CR-0691](CR0691-the-engineering-seat-s-brief-carries-reliability-and.md) | The engineering seat's brief carries reliability and observability checks drawn from the TRD | Proposed | Medium | enhancement | 2026-11-10 | -- |
-| [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | Proposed | High | feature | 2026-11-10 | -- |
+| [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | In Progress | High | feature | 2026-11-10 | EP0308 |
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Proposed | High | feature | 2026-11-10 | -- |
-| [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | Proposed | High | enhancement | 2026-11-10 | -- |
+| [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306 |
 | [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Proposed | High | feature | 2026-11-10 | -- |
-| [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Proposed | High | feature | 2026-11-10 | -- |
+| [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | In Progress | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | Proposed | Medium | enhancement | 2026-11-10 | -- |
 | [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Proposed | High | Improvement | 2026-11-12 | -- |
