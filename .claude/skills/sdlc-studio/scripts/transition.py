@@ -136,6 +136,25 @@ def _red_acs(entry: dict) -> str | None:
     return ", ".join(f.get("ac", "?") for f in entry.get("failures", [])) or "stale AC(s)"
 
 
+def _escaped_root_cause_gate(text: str, target: str) -> str | None:
+    """The refusal for an escaped bug claiming its fix with no Root Cause written, else None.
+
+    A bug marked `Escaped: yes` reached production, and the cause is the part a later run can
+    learn from. Unwritten means the section is absent or holds only the creator's scaffold, a
+    template's `{{slot}}`, an HTML comment or an italic prompt line."""
+    if (sdlc_md.extract_field(text, "Escaped") or "").strip().lower() != "yes":
+        return None
+    import file_finding  # noqa: PLC0415 - deferred sibling; only an escaped bug asks
+    m = re.search(r"^## Root Cause[^\n]*\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    body = (m.group(1) if m else "").replace(file_finding.ROOT_CAUSE_SCAFFOLD, "")
+    body = re.sub(r"<!--.*?-->|\{\{[^}]*\}\}|^>\s*\*[^\n]*\*\s*$", "", body,
+                  flags=re.S | re.M)
+    if body.strip():
+        return None
+    return (f"this bug escaped to production and its Root Cause section is unwritten - say "
+            f"why the defect got through the unit that shipped it before it is {target}")
+
+
 def _bug_verify_gate(root: Path, path: Path, target: str) -> str | None:
     """A bug claiming its fix while its own recorded `Verify:` run is red. A block reason, or None.
 
@@ -1011,6 +1030,9 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
     # nothing else: no depth tier is stamped.
     if type_ == "bug" and not force and target_canon in _BUG_FIX_CLAIMS:
         block = _bug_verify_gate(root, path, target_canon)
+        if block:
+            blocks.append(f"{block}. Override with --force")
+        block = _escaped_root_cause_gate(text, target_canon)
         if block:
             blocks.append(f"{block}. Override with --force")
     # THE LINE-COVERAGE GATE (US0816): it asks "did the unit's own verifiers execute the lines the

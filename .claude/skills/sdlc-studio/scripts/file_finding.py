@@ -1748,6 +1748,87 @@ def _evidence_line(f: dict) -> str:
     return f"> **Evidence:** {val}\n" if val else ""
 
 
+#: The Root Cause section an escaped bug is born with. A statement rather than a `{{slot}}`, so
+#: the bug validates while the cause is unwritten; `transition.py` holds it short of Fixed until
+#: the section says something else. Both creators write it through `root_cause_section`.
+ROOT_CAUSE_SCAFFOLD = ("_Not yet written: why this defect got through the review of the unit "
+                       "that shipped it, and what would have caught it._")
+
+
+class EscapeRefused(ValueError):
+    """An escape the project cannot trace: no release, a release or unit that does not resolve,
+    or escape fields on a bug that was not marked escaped. Both CLIs exit 2 on it."""
+
+
+def _git_tag_exists(root: Path, name: str) -> bool:
+    """True when `name` is a tag in the project's git repository. Read-only; False without git."""
+    import subprocess  # noqa: PLC0415 - only an escaped bug asks
+    try:
+        proc = subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{name}"],
+                              cwd=str(root), capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0
+
+
+def release_resolves(root: Path | str, name: str) -> bool:
+    """True when `name` is a release this project has: a git tag, or a CHANGELOG.md heading
+    naming the version with or without its leading `v`."""
+    if _git_tag_exists(Path(root), name):
+        return True
+    log = sdlc_md.read_text_safe(Path(root) / "CHANGELOG.md") or ""
+    bare = re.escape(name[1:] if name[:1] in "vV" else name)
+    return bool(re.search(rf"^##+\s*\[?v?{bare}\]?(\s|$)", log, re.M | re.I))
+
+
+def check_escape(root: Path | str, type_: str, f: dict) -> dict:
+    """The escape fields resolved, or raise `EscapeRefused` naming what is missing or does not
+    resolve. Run by both creators before an id is allocated, so a refused escape writes nothing.
+
+    A bug supplying none of the three fields is returned untouched: an ordinary bug is created
+    exactly as it was. An escape must name its release (`--shipped-in`), which must be a tag or
+    release here; the unit that let it through (`--escaped-via`) is optional at filing, since
+    `escape.py trace` proposes it, but when named it must be a story or bug on disk."""
+    shipped = str(f.get("shipped_in") or "").strip()
+    via = str(f.get("escaped_via") or "").strip()
+    if not (f.get("escaped") or shipped or via):
+        return f
+    if type_ != "bug":
+        raise EscapeRefused(f"--escaped records a bug that reached production; a {type_} "
+                            f"does not escape")
+    if not f.get("escaped"):
+        raise EscapeRefused("--shipped-in and --escaped-via describe an escape: pass --escaped "
+                            "with them, or drop them")
+    if not shipped:
+        raise EscapeRefused("--escaped needs --shipped-in, the release the defect shipped in: "
+                            "an escape with no release is a trace that points nowhere")
+    if not release_resolves(root, shipped):
+        raise EscapeRefused(f"--shipped-in {shipped} names no tag or release in this project "
+                            f"(no git tag and no CHANGELOG.md heading of that version)")
+    if via:
+        found = sdlc_md.find_by_id(Path(root), via)
+        if not found or found[1] not in ("story", "bug"):
+            raise EscapeRefused(f"--escaped-via {via} names no unit on disk: name the story or "
+                                f"bug that shipped the defect, or leave it to `escape.py trace`")
+        via = sdlc_md.extract_record_id(found[0].stem) or via
+    return {**f, "escaped": True, "shipped_in": shipped, "escaped_via": via}
+
+
+def escape_lines(f: dict) -> str:
+    """The `Escaped`, `Shipped-in` and `Escaped-via` metadata lines of an escaped bug, written
+    only when `check_escape` has marked it escaped; `Escaped-via` only when a unit is named."""
+    if f.get("escaped") is not True:
+        return ""
+    via = str(f.get("escaped_via") or "").strip()
+    return (f"> **Escaped:** yes\n> **Shipped-in:** {f['shipped_in']}\n"
+            + (f"> **Escaped-via:** {via}\n" if via else ""))
+
+
+def root_cause_section(f: dict) -> str:
+    """The scaffolded Root Cause section of an escaped bug, or nothing for any other."""
+    return f"## Root Cause\n\n{ROOT_CAUSE_SCAFFOLD}\n\n" if f.get("escaped") is True else ""
+
+
 def _mutation_link_lines(f: dict) -> str:
     """The `Mutation-run` / `Mutation-target` metadata lines: which mutation run raised this
     finding, and which file the mutant sat in.
@@ -2052,11 +2133,11 @@ def _render_sections(type_: str, disp_id: str, title: str, today: str, f: dict,
         points = f"> **Points:** {f['points']}\n" if f.get("points") is not None else ""
         return (f"# {disp_id}: {title}\n\n"
                 f"> **Status:** {status or 'Open'}\n"f"> **Severity:** {normalise_severity(f['severity'])}\n"
-                f"{points}{_affects_line(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
+                f"{points}{_affects_line(f)}{escape_lines(f)}{_evidence_line(f)}{_mutation_link_lines(f)}{_audit_attribution_lines(f)}{_detector_for_lens_line(f)}"
                 f"> **Created:** {today}\n{_stamp(f)}\n"
                 f"## Summary\n\n{f['summary']}\n\n"
                 f"## Steps to Reproduce\n\n{f['steps']}\n\n"
-                f"## Proposed Fix\n\n{f['fix']}\n\n"
+                f"## Proposed Fix\n\n{f['fix']}\n\n{root_cause_section(f)}"
                 # Derived from the evidence above, so the lane that picks this up has a contract
                 # and the engagement floor has something to read. Thin evidence is STATED here,
                 # never scaffolded - see `criteria_block`.
@@ -2191,6 +2272,8 @@ def file_finding(repo_root: Path | str, type_: str, title: str, fields: dict,
     # ... and refuse a declared `Affects` that resolves to nothing, before an id is allocated,
     # from the ONE seam every writer shares - naming the closest basename match where there is one.
     check_affects_resolvable(root, fields.get("affects"), type_)
+    # ... and an escape whose release or unit does not resolve, by the rule `artifact new` runs.
+    fields = check_escape(root, type_, fields)
     # ... and refuse a `Verify:` selector that names no test that exists, from the same seam and
     # for the same reason: writing a reference before establishing its referent is an ordering
     # mistake a machine can catch and a human reliably will not.
@@ -2360,7 +2443,10 @@ def cmd_file(args: argparse.Namespace) -> int:
              "lens": getattr(args, "lens", None),
              "profile": getattr(args, "profile", None),
              "audit_run": getattr(args, "audit_run", None),
-             "detector_for_lens": getattr(args, "detector_for_lens", None)}
+             "detector_for_lens": getattr(args, "detector_for_lens", None),
+             "escaped": getattr(args, "escaped", None) or None,
+             "shipped_in": getattr(args, "shipped_in", None),
+             "escaped_via": getattr(args, "escaped_via", None)}
     flags = {k: v for k, v in flags.items() if v is not None}
     if args.ac:
         flags["acs"] = args.ac
@@ -2406,6 +2492,9 @@ def cmd_file(args: argparse.Namespace) -> int:
         return 1
     try:
         result = file_finding(args.root, type_, title, fields, dry_run=args.dry_run)
+    except EscapeRefused as exc:
+        print(f"file refused: {exc}", file=sys.stderr)
+        return 2
     except (ValueError, FileExistsError) as exc:
         # a refusal is a message, not a traceback - the reason and the fix, on stderr
         # (exit 1: the same code the top-level guard has always given refusals)
@@ -2515,6 +2604,15 @@ def build_parser() -> argparse.ArgumentParser:
                         "file:line. Recorded as the `Evidence` metadata line and deliberately "
                         "kept OUT of `Affects`: the evidence site is not where the fix lands, and "
                         "a footprint naming it groups the unit by a surface no code will change")
+    f.add_argument("--escaped", action="store_true", default=None,
+                   help="bug: the defect escaped to production. Needs --shipped-in; writes "
+                        "`Escaped: yes` and scaffolds a Root Cause section Fixed waits on")
+    f.add_argument("--shipped-in", dest="shipped_in", metavar="RELEASE",
+                   help="bug: the release the escaped defect shipped in - a git tag or a "
+                        "CHANGELOG.md version; one that resolves to neither is refused")
+    f.add_argument("--escaped-via", dest="escaped_via", metavar="UNIT",
+                   help="bug: the story or bug that let the escape through; must be on disk. "
+                        "Optional: `escape.py trace` proposes it from the release")
     f.add_argument("--ac", action="append", help="cr acceptance criterion (repeatable)")
     f.add_argument("--verify", action="append",
                    help="the executable check for the --ac in the SAME POSITION (repeatable, "

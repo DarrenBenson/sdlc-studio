@@ -51,10 +51,10 @@ script joins the family classified rather than silently.
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 65 |
+| anchored | 66 |
 | unanchored | 1 |
 | non-root | 5 |
-| **total** | **71** |
+| **total** | **72** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -99,6 +99,7 @@ re-export.
 | `doc_coverage.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `doc_freshness.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `engagement_floor.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `escape.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `evidence_pack.py` | non-root | library module with no CLI of its own: `release_cut.py evidence-pack` resolves the project root and passes it in |
 | `file_finding.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `flow.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |

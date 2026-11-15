@@ -40,6 +40,15 @@ files are involved when you file; nobody knows it better at plan time. A project
 recorded `sprint.breakdown: judgement` gets a warning here instead of a refusal, exactly as
 its plan reports instead of blocking.
 
+A defect found in production is filed with `--escaped --shipped-in <release>` and, when you
+know it, `--escaped-via <unit>`, on either creator. The release must be a git tag or a
+`CHANGELOG.md` version and the unit a story or bug on disk, or the creator exits 2 and writes
+nothing. The bug carries `Escaped: yes`, `Shipped-in` and `Escaped-via` in its header and a
+Root Cause section, and `transition.py` will not set it Fixed until that section says why the
+defect got through. `escape.py trace --bug BGxxxx` proposes the units its release shipped that
+share a file with the fix, each with its recorded verdict and seat, and writes nothing;
+`--confirm <unit>` records one as `Escaped-via`, with its verdict as `Escaped-verdict`.
+
 Ids and index rows are **tool-allocated** - hand-authoring either is an error
 (collision safety under concurrency and rebase). The interactive `/sdlc-studio bug`
 below is a wrapper that delegates to this same allocation.

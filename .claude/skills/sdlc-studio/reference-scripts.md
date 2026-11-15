@@ -215,6 +215,8 @@ lists every script with a one-line summary; open the linked page for the full en
 - `audit_cost.py` - Audit run cost estimate and its measurement loop. `run` estimates a fan-out before it starts, calibrated from the medians of what has been recorded; `record` appends a finished run's scope, estimate and actuals to the committed ledger under `sdlc-studio/retros/evidence/`. **That row is also the audit-run REGISTER:** `record --run-id` is what makes a run citable by `file_finding --audit-run`, so a close-out that omits it leaves every finding's attribution refused.
 - `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...
 - `persona_resolve.py` - Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner am...
+- `escape.py` - `trace --bug BGxxxx` proposes the units an escaped bug's release shipped that share
+  a file with its fix, each with its recorded verdict and seat; `--confirm UNIT` records one
 
 ### Upgrade, deploy & version - [reference-scripts-upgrade.md](reference-scripts-upgrade.md)
 

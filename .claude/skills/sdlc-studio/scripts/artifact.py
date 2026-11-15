@@ -555,6 +555,8 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
     # writer the finding filer uses, so the two creation paths cannot disagree about what the
     # field looks like. Accepted for every type; DEMANDED of a bug (`check_groomed`).
     head += file_finding._affects_line(f)
+    # An escaped bug's release and unit, by the filer's own writer (empty for any other).
+    head += file_finding.escape_lines(f)
     # The Author cell names the same authorship of record stamped above - never a literal, and
     # a name rather than the typed triple (which is `Raised-by`'s job). One shared row writer
     # with the filer, so both escape a `|` in a name instead of shifting the columns.
@@ -619,7 +621,9 @@ def _render(type_: str, disp: str, title: str, today: str, f: dict) -> str:
         return (head + f"> **Severity:** {normalise_severity(f.get('severity') or 'Medium')}\n" + _sizing_line("bug", f) +
                 "\n## Summary\n\n" + _text(f, "summary", "{{symptom}}") +
                 "\n\n## Steps to Reproduce\n\n" + _text(f, "steps", "{{steps}}") +
-                "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" + ac_body + rev)
+                "\n\n## Proposed Fix\n\n" + _text(f, "fix", "{{fix}}") + "\n" +
+                ("\n" + file_finding.root_cause_section(f).rstrip("\n") + "\n"
+                 if f.get("escaped") is True else "") + ac_body + rev)
     if type_ == "issue":
         # An Issue is a DISCOVERY item - a raw report/symptom, not yet reproduced or scoped. It
         # carries a T-shirt Size (the discovery estimate) and a Severity (the urgency a triager
@@ -1144,6 +1148,8 @@ def new(repo_root: Path | str, type_: str, title: str, fields: dict | None = Non
     # than a bug filed through the finding filer can. Refuses only when NO declared path resolves
     # (a not-yet-created file alongside an existing one is legitimate); names the closest basename.
     file_finding.check_affects_resolvable(root, f.get("affects"), type_)
+    # ... and an escape whose release or unit does not resolve, by the filer's own rule.
+    f = file_finding.check_escape(root, type_, f)
     # ... and a `Verify:` selector naming no test that exists, from that SAME seam. US0667's
     # criterion says BOTH writers refuse; only the filer did, so a story minted through `new`
     # could carry a verifier pointing at nothing while the identical bug filed through
@@ -1597,7 +1603,10 @@ def cmd_new(args: argparse.Namespace) -> int:
                            "options": args.option,
                            "recommendation": args.recommendation,
                            "provenance": getattr(args, "provenance", None),
-                           "parent": getattr(args, "parent", None)}.items() if v}
+                           "parent": getattr(args, "parent", None),
+                           "escaped": getattr(args, "escaped", False),
+                           "shipped_in": getattr(args, "shipped_in", None),
+                           "escaped_via": getattr(args, "escaped_via", None)}.items() if v}
     if args.title:
         f["title"] = args.title
     # The values that DID cross a shell, and only those - reported from the ONE helper the filer
@@ -1630,7 +1639,8 @@ def cmd_new(args: argparse.Namespace) -> int:
         else:
             r = new(args.root, args.type, title, f, dry_run=args.dry_run,
                     strict=getattr(args, "strict", False))
-    except (DuplicateRefused, PersonaRefused, ContentDropped) as exc:
+    except (DuplicateRefused, PersonaRefused, ContentDropped,
+            file_finding.EscapeRefused) as exc:
         # A refusal is a message, not a traceback - and it names what to do next. Nothing was
         # allocated or written, so there is no half-minted artefact to clean up.
         print(f"refused: {exc}", file=sys.stderr)
@@ -1824,6 +1834,15 @@ def build_parser() -> argparse.ArgumentParser:
                         "metadata line the planner reads. Required for a bug: "
                         "`sprint plan` refuses a unit that names no files - it cannot size one, "
                         "nor see two units colliding on the same file")
+    n.add_argument("--escaped", action="store_true",
+                   help="bug: the defect escaped to production. Needs --shipped-in; writes "
+                        "`Escaped: yes` and scaffolds a Root Cause section Fixed waits on")
+    n.add_argument("--shipped-in", dest="shipped_in", metavar="RELEASE",
+                   help="bug: the release the escaped defect shipped in - a git tag or a "
+                        "CHANGELOG.md version; one that resolves to neither is refused")
+    n.add_argument("--escaped-via", dest="escaped_via", metavar="UNIT",
+                   help="bug: the story or bug that let the escape through; must be on disk. "
+                        "Optional: `escape.py trace` proposes it from the release")
     n.add_argument("--ac", action="append", help="acceptance criterion (repeatable)")
     n.add_argument("--verify", action="append",
                    help="story/bug: the executable check for the AC in the same position "
