@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-15
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0477: Rebase a waiting lane's worktree onto main before its builder hands back when another lane has landed on the same files, so `lane land`…
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+Rebase a waiting lane's worktree onto main before its builder hands back when another lane has landed on the same files, so `lane land` does not spend its hook run before a rebase conflict.
+
+Recorded from retro RETRO0145.
+
+## L-0476: Run `tools/run-suite.sh all` after each wave, not only before the close, so a red main is found within one wave of the lane that caused it
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+Run `tools/run-suite.sh all` after each wave, not only before the close, so a red main is found within one wave of the lane that caused it.
+
+Recorded from retro RETRO0145.
+
+## L-0475: A plan-time check that a unit adding a script or a verb declares the registry files that implies, so the refusal comes before the build…
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+A plan-time check that a unit adding a script or a verb declares the registry files that implies, so the refusal comes before the build, not after a 20-minute hook run.
+
+Recorded from retro RETRO0145.
 
 ## L-0474: Cap a wave at four builders on this host, and put every agent's temporary files under ~/.cache/sdlc-tmp from the start: /tmp is a 6.8G…
 

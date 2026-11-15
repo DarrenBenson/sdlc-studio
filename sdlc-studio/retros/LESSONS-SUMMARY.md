@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0477: Rebase a waiting lane's worktree onto main before its builder hands back when another lane has landed on the same files, so `lane land`…**
+- **L-0476: Run `tools/run-suite.sh all` after each wave, not only before the close, so a red main is found within one wave of the lane that caused it**
+- **L-0475: A plan-time check that a unit adding a script or a verb declares the registry files that implies, so the refusal comes before the build…**
 - **L-0474: Cap a wave at four builders on this host, and put every agent's temporary files under ~/.cache/sdlc-tmp from the start: /tmp is a 6.8G…**
 - **L-0473: Check a lane's self-check surfaces before `lane land` commits, while the builder can still be resumed (BG1399), and price a multi-unit lane…**
 - **L-0472: Push, or run `tools/run-suite.sh all`, after each wave lands, so a regression the selected runs miss is found while its lane's context is…**
