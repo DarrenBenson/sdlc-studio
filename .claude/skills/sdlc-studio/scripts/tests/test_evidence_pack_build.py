@@ -289,5 +289,29 @@ class IndependenceAuthorityTests(unittest.TestCase):
                              ["- Independent review: qa-seat APPROVE (2026-11-05)."])
 
 
+class SeatSpellingTests(unittest.TestCase):
+    """One reviewing seat recorded under two spellings that `critic.same_identity` reads as one
+    identity is one reviewer, shown by its latest verdict; two seats stay two."""
+
+    def test_two_spellings_of_one_seat_are_one_reviewer(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import critic  # noqa: PLC0415 - the authority the two spellings are judged by
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            with (root / "sdlc-studio/reviews/critic-verdicts.md").open("a", encoding="utf-8") as fh:
+                fh.write(verdict_row("US0002", "REJECT", "QA\\_Seat", "builder-b", "2026-11-05"))
+                fh.write(verdict_row("US0002", "APPROVE", "qa_seat", "builder-b", "2026-11-06"))
+                fh.write(verdict_row("US0002", "APPROVE", "eng-seat", "builder-b", "2026-11-07"))
+            gitutil.git(["commit", "-qam", "two spellings of one seat"], root)
+            self.assertTrue(critic.same_identity("QA\\_Seat", "qa_seat"))
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            two = section((root / PACK_REL).read_text(encoding="utf-8"), "US0002")
+            self.assertEqual([ln for ln in two if ln.startswith("- Independent review:")],
+                             ["- Independent review: qa_seat APPROVE (2026-11-06); "
+                              "eng-seat APPROVE (2026-11-07)."])
+
+
 if __name__ == "__main__":
     unittest.main()

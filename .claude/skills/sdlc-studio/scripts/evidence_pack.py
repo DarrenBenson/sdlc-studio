@@ -15,8 +15,10 @@ ledger cannot change the pack. A verify run is recorded only in local state, so 
 the committed ticks instead and says so.
 
 A report that is unknown at the revision, carries no signature, or is signed by a blank principal,
-one that reads as an agent, or one the committed review ledgers record as an author refuses the
-whole build and no pack is written: the text is composed in full before the one write.
+one that reads as an agent, or one the committed review ledgers record as a live author of one of
+the report's own units refuses the whole build and no pack is written: the text is composed in
+full before the one write. A typed `human` author is not refused on that record, and an author
+of any other unit is still accepted as a person.
 """
 from __future__ import annotations
 
@@ -124,7 +126,7 @@ def unit_authors(ledger_root: Path, units: list[str]) -> list[str]:
         if typed.get("type") == "human":
             continue
         for name in (cell, typed.get("name") or ""):
-            if critic._id(name) and name not in out:
+            if not critic.same_identity(name, "") and name not in out:
                 out.append(name)
     return out
 
@@ -232,13 +234,15 @@ def _criteria(text: str | None) -> tuple[list[tuple[str, str, str]], list[str]]:
 def _independent_reviews(ledger_root: Path, unit: str) -> list[dict]:
     """The latest live verdict of each reviewing seat that `critic.independence`, the one
     authority, calls independent: never a self-review, the pre-gate sentinel or a row with no
-    recorded author or reviewer."""
+    recorded author or reviewer. Two spellings `critic.same_identity` reads as one seat are one
+    reviewer, kept under the spelling seen first and shown by its latest row."""
     latest: dict[str, dict] = {}
     for row in critic.unit_review_rounds(ledger_root, unit):
         reviewer = str(row.get("reviewer") or "")
         if critic.independence(reviewer, str(row.get("author") or ""),
                                str(row.get("source") or ""))[0]:
-            latest[critic._id(reviewer)] = row
+            seat = next((k for k in latest if critic.same_identity(k, reviewer)), reviewer)
+            latest[seat] = row
     return list(latest.values())
 
 

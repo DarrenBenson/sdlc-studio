@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 from test_evidence_pack_build import (  # noqa: E402
-    PACK_REL, project, run_pack, section, signature, snapshot, verdict_row, write)
+    LEDGER_HEAD, PACK_REL, project, run_pack, section, signature, snapshot, verdict_row, write)
 
 RPT1_KNOWN = (
     ("BG0010", "High", "US0001's colour fades after a restart"),
@@ -244,6 +244,22 @@ class OwnUnitAuthorTests(unittest.TestCase):
                 self.assertNotEqual(proc.returncode, 0, proc.stdout)
                 self.assertIn(f"{rid}: its signature principal", proc.stderr)
                 self.assertIn("own units", proc.stderr)
+
+
+class UnitAuthorsTests(unittest.TestCase):
+    """`unit_authors` lists only Author cells that name an identity: a `-` or blank cell, which
+    `critic.same_identity` reads as no id, is no author."""
+
+    def test_a_dash_or_blank_author_cell_is_not_an_author(self) -> None:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        import evidence_pack  # noqa: PLC0415 - the subject, called directly
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            write(root, LEDGER_REL, LEDGER_HEAD
+                  + verdict_row("US0002", "APPROVE", "eng-seat", "-", "2026-11-05")
+                  + verdict_row("US0002", "APPROVE", "qa-seat", "Lee Operator", "2026-11-06"))
+            write(root, SELF_CHECKS_REL, self_check_ledger(("US0002", " ")))
+            self.assertEqual(evidence_pack.unit_authors(root, ["US0002"]), ["Lee Operator"])
 
 
 if __name__ == "__main__":
