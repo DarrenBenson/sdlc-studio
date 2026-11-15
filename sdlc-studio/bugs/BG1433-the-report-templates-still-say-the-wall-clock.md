@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/scripts/tests/test_report_template_forecast_text.py, changelog.d/BGXXXX.md
+> **Affects:** .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/templates/reports/sprint-report.html, .claude/skills/sdlc-studio/scripts/tests/test_report_template_forecast_text.py, changelog.d/BG1433.md
 > **Evidence:** Run twelve (RUN-01M7E52T) US1151 builder hand-back
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

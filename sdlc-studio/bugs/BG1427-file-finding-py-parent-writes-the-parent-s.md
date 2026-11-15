@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding_parent_index_cell.py, changelog.d/BG1427.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** Backlog triage 2026-11-14: CR0702 filed under RFC0063; the D0474 commit refused on reconcile drift
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio file

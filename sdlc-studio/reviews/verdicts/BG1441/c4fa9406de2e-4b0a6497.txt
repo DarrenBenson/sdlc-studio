@@ -1,0 +1,6 @@
+UNIT: BG1441
+BRIEF: c4fa9406de2e-4b0a6497
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 holds by execution. test_evidence_pack_docstring.py::DocstringTests passes, and `verify_ac.py run --id BG1441 --dry-run` reports pass=1 fail=0. Restoring the old "record as an author refuses the whole build" wording in an isolated copy fails both DocstringTests. Each claim in the new sentence was run through the shipped unit_authors and principal_refusal against a fixture ledger (LC-018). A typed `human` author is left out of the author list and accepted as signer. An author of another unit (US0009) is accepted. A self-check author `Dani\_Okafor` on the report's own unit is refused as `dani_okafor`. An agent-typed author is listed. The change touches only the docstring, the new test and the fragment, so nothing else moved.

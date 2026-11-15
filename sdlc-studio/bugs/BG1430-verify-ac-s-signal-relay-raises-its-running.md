@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_bounded_wait.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_count.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_bounded_wait.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_count.py, changelog.d/BG1430.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1425, qa-seat-BG1425-r1, verdict sdlc-studio/reviews/verdicts/BG1425/786df8f0a468-26807730.txt ([new] test gap, [pre-existing] count leak)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

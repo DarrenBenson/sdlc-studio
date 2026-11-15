@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_forecast_pins.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_forecast_pins.py, changelog.d/BG1443.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Evidence:** Run twelve (RUN-01M7E52T) reviews of US1150 and US1151: sdlc-studio/reviews/verdicts/US1150/2352e5af6137-2d625231.txt and sdlc-studio/reviews/verdicts/US1151/70aa46f88835-ab488d63.txt
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

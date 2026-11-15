@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_cursor_project_threshold.py, changelog.d/BG1429.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1393, qa-seat-BG1393-r1, verdict sdlc-studio/reviews/verdicts/BG1393/3712811b1cfd-9548042b.txt ([pre-existing])
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

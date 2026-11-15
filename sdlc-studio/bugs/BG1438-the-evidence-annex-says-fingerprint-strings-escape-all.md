@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_wording.py, tools/check_budgets.py, changelog.d/BGXXXX.md, tools/tests/test_check_budgets.py
+> **Affects:** .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_wording.py, tools/check_budgets.py, changelog.d/BG1438.md, tools/tests/test_check_budgets.py
 > **Evidence:** Run twelve (RUN-01M7E52T) reviews of US0993 and US0996: sdlc-studio/reviews/verdicts/US0993/804aba71b3f4-3a4029d3.txt and sdlc-studio/reviews/verdicts/US0996/86dc8ba3d0a0-0ca76220.txt (non-blocking)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

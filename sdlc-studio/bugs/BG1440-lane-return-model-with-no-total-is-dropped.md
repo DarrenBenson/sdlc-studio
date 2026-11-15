@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_return_model_edges.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_return_model_edges.py, changelog.d/BG1440.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of US0999, qa-seat-US0999-r1, verdict sdlc-studio/reviews/verdicts/US0999/2ebec7ba6f15-a12df297.txt
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, .claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, .claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py, changelog.d/BG1436.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1268, qa-seat-BG1268-r1, verdict sdlc-studio/reviews/verdicts/BG1268/e18c8c20902a-568dad03.txt
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

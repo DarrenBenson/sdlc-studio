@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/link_refs.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_reference_links.py, changelog.d/BG1019.md, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/link_refs.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_reference_links.py, changelog.d/BG1019.md, changelog.d/BG1435.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1019, qa-seat-BG1019-r1, verdict sdlc-studio/reviews/verdicts/BG1019/79e80f16d392-c2502f6d.txt ([new] scope of the claim; the scan is unchanged from base)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

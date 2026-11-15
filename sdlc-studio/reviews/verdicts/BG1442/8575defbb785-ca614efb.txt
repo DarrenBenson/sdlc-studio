@@ -1,0 +1,6 @@
+UNIT: BG1442
+BRIEF: 8575defbb785-ca614efb
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 holds by execution. The Verify set passes (OneIndependenceAuthorityTests plus test_evidence_pack_build.py and test_evidence_pack_accountable.py, with test_evidence_pack_docstring.py: 23 passed), `verify_ac.py run --id BG1442 --dry-run` reports pass=1 fail=0, and `grep critic\._ evidence_pack.py` finds nothing. Behaviour is unchanged by construction: critic.same_identity(a, b) is `_id(a) == _id(b)` (critic.py:2487), so `not same_identity(name, "")` is exactly `bool(_id(name))` (evidence_pack.py:129). In _independent_reviews (evidence_pack.py:244) the keys stay pairwise non-equivalent, so the first-seen spelling stands in for the old `_id` key, and dict update order keeps each seat at its first position with its latest row. The returned values and their order match the old code. Mutants in an isolated git-archive copy were all killed: restoring `critic._id` fails the guard, `if name` fails UnitAuthorsTests (a `-` cell becomes an author), and keying by the raw reviewer fails SeatSpellingTests. The two new pins are the regression cover the repair needed.

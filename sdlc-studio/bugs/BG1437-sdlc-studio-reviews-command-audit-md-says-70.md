@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_command_audit_fresh.py, changelog.d/BGXXXX.md
+> **Affects:** sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_command_audit_fresh.py, changelog.d/BG1437.md
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1268, qa-seat-BG1268-r1 ([pre-existing])
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/risk_class.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/help/refine.md, .claude/skills/sdlc-studio/scripts/tests/test_risk_class_pins.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/risk_class.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/help/refine.md, .claude/skills/sdlc-studio/scripts/tests/test_risk_class_pins.py, changelog.d/BG1434.md, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of US1152, qa-seat-US1152-r1, verdict sdlc-studio/reviews/verdicts/US1152/18180f92c195-04bb7e46.txt
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

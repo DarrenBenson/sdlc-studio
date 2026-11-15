@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v63.py, changelog.d/BGXXXX.md
+> **Affects:** tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v63.py, changelog.d/BG1431.md
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1425 and BG1420's rejoinder ([pre-existing]); the orchestrator accepted both with --timeout 600
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_split_pins.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_split_pins.py, changelog.d/BG1432.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Run twelve (RUN-01M7E52T) reviews: qa-seat-BG1397-r1 sdlc-studio/reviews/verdicts/BG1397/6046186d7479-e8e32331.txt and qa-seat-BG1394-r1 sdlc-studio/reviews/verdicts/BG1394/c917b53aa77c-a8dbb4d3.txt ([new], non-blocking)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

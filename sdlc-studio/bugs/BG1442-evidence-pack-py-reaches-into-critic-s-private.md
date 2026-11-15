@@ -1,9 +1,9 @@
 # BG1442: evidence_pack.py reaches into critic's private `_id` normaliser, so test_critic's one-independence-authority guard is red on main
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py, changelog.d/BGXXXX.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py, changelog.d/BG1442.md
 > **Evidence:** Run twelve (RUN-01M7E52T) US1153/US1154 lane land refused on test_critic.py:1340 (regression from BG1439 and US1155)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -26,6 +26,7 @@ Use critic's public identity function (the one `round_refusal` uses, `critic.sam
 
 - [ ] **AC1** Given main after the fix, when `test_critic`'s one-independence-authority guard runs, then it names no line of `evidence_pack.py`, and every evidence-pack test still passes. Fails on: any `critic._` private call left in `evidence_pack.py.`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::OneIndependenceAuthorityTests::test_NO_module_hand_rolls_the_independence_comparison .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

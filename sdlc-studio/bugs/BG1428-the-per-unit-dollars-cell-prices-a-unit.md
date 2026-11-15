@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_usd_lower_bound.py, changelog.d/BG1391.md, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_unit_usd_lower_bound.py, changelog.d/BG1391.md, changelog.d/BG1428.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1391, qa-seat-BG1391-r1, verdict sdlc-studio/reviews/verdicts/BG1391/6ef551150470-214c841f.txt ([new] changelog scope and [pre-existing] per-unit gap)
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

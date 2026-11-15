@@ -4,7 +4,7 @@
 > **Superseded by:** BG1020
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_rfc_accepted_when_decided.py, changelog.d/BGXXXX.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_rfc_accepted_when_decided.py, changelog.d/BG1426.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
 > **Evidence:** Backlog triage 2026-11-14 (D0473, D0474): RFC0062, RFC0063 and RFC0064 forced to Accepted on the operator's ruling
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio file
