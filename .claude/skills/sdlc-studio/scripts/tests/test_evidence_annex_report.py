@@ -208,8 +208,14 @@ def _run(root: Path, full: bool) -> None:
                   "split": {"cache_read": 0.5, "cache_write": 0.3, "output": 0.2},
                   "first_context": 20_000, "avg_context": 60_000}],
                  "total": {"agents": 1, "calls": 12, "priced": 900_000}}}],
+        # The second agent is tagged to the unit with its minutes and priced split, so the unit
+        # row's figures carry the `label` that names where their reading came from.
         "delegated_tokens": [{"tokens": 123_456, "agent": "reviewer", "note": "",
-                              "provenance": "supplied", "model": MODEL}],
+                              "provenance": "supplied", "model": MODEL},
+                             {"tokens": 200_000, "agent": "builder", "note": "",
+                              "provenance": "supplied", "model": MODEL, "unit": "US0101",
+                              "minutes": 25.0, "priced": 500_000,
+                              "by_model": {MODEL: _components(1)}}],
     }
     if full:
         state["close_not_measured"] = [
@@ -305,9 +311,10 @@ class ReportAnnexTests(unittest.TestCase):
         for key, sec in present.items():
             self.assertEqual(sections[key]["Title"], sec["title"], f"section {key} title")
             self.assertEqual(set(), set(sec) - section_shape, f"section {key} keys")
-        seen = set()
+        seen, fields = set(), set()
         for section, where, key, f in _figure_sets(page):
             self.assertEqual(set(), set(f) - figure_shape, f"{section}.{key} figure fields")
+            fields |= set(f)
             self.assertTrue(source_parts_resolve(f["source"]),
                             f"{section}.{key} source {f['source']!r} is outside the grammar")
             if key is not None:
@@ -316,6 +323,9 @@ class ReportAnnexTests(unittest.TestCase):
                 seen.add((section, where, key))
         # The full page carries every key the catalogue lists, so no row documents a dead key.
         self.assertEqual(set(), catalogued - seen, "catalogued keys no page carries")
+        # Every documented figure field is on the page too, so the unit row's `label` stays
+        # reached: a fixture with no agent tagged to its unit would test the shape by halves.
+        self.assertEqual(set(), figure_shape - fields, "documented figure fields no page carries")
         self.assertEqual(set(sr.NON_PATH_SOURCES),
                          set(keyed("Report non-path sources", "Source")))
         self.assertEqual(set(sr.WORKSPACE_PREFIXES),

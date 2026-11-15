@@ -98,6 +98,7 @@ Every figure, in `figures`, in a row or as `not_measured`, is an object with the
 | `value` | A number or a string. A measurement nobody could take reads `NOT MEASURED`, never 0 or empty. |
 | `source` | Where the figure can be re-derived from, under the source grammar below. |
 | `reason` | Why the figure reads `NOT MEASURED`, where it does. |
+| `label` | A qualifier printed after a `unit_rows` figure read from the agents tagged to the unit, beginning `agent minutes`, `agent tokens`, `priced` or `estimated`. Absent on every other figure. |
 
 ### Report sections
 
@@ -122,8 +123,9 @@ a conditional section names when it is absent, and is absent rather than `NOT ME
 | `lessons` | Lessons | appendix | always | - |
 | `unmeasured` | Not measured | appendix | conditional | the close recorded no checklist row it could not measure |
 
-A page filed before the `usd_prices` mark carries no `cost_prices`, and one filed before the
-`usd_cost` mark carries no `cost_roles`.
+A page filed before the `usd_prices` mark carries no `cost_prices`, one filed before the
+`usd_cost` mark carries no `cost_roles`, and one filed before the builder wrote a `lessons`
+section carries none.
 
 ### Report figure keys
 
