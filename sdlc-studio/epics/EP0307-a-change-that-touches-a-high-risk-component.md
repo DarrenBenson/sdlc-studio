@@ -1,6 +1,6 @@
 # EP0307: A change that touches a high-risk component is classed from a declared map, flagged at plan and reviewed by a second independent seat whose yield is reported
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0696
 > **Created:** 2026-11-14
@@ -16,7 +16,7 @@ Decomposed from CR0696. Delivers the work CR0696 requested.
 
 - [x] [US1152: A declared component map gives each story a risk and compliance class at refine](../stories/US1152-a-declared-component-map-gives-each-story-a.md)
 - [x] [US1153: sprint plan shows each unit's class and flags a unit that touches a higher class than its tag](../stories/US1153-sprint-plan-shows-each-unit-s-class-and.md)
-- [ ] [US1154: A high-class unit gets a second independent review seat, and the retro reports what that seat found](../stories/US1154-a-high-class-unit-gets-a-second-independent.md)
+- [x] [US1154: A high-class unit gets a second independent review seat, and the retro reports what that seat found](../stories/US1154-a-high-class-unit-gets-a-second-independent.md)
 
 ## Acceptance Criteria (Epic Level)
 

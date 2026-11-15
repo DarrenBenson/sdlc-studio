@@ -1,6 +1,6 @@
 # CR-0696: Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0307
 > **Parent:** RFC0064
 > **Related:** CR0692, D0439

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 54 |
-| Ready | 13 |
+| Ready | 12 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 909 |
+| Done | 910 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -191,7 +191,7 @@
 | [US1151](US1151-the-report-s-estimates-table-shows-forecast-actual.md) | The report's Estimates table shows forecast, actual and ratio for every cost row | Done | EP0306 | 2026-11-14 | 2026-11-14 |
 | [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Done | EP0307 | 2026-11-14 | 2026-11-14 |
-| [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
+| [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Ready | EP0309 | 2026-11-15 | 2026-11-15 |

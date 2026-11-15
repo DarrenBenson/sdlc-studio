@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 334 |
+| Open | 335 |
 | In Progress | 0 |
 | Fixed | 920 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1445** |
+| **Total** | **1446** |
 
 ## All Bugs
 
@@ -521,6 +521,7 @@
 | [BG1443](BG1443-four-cost-forecast-behaviours-are-correct-but-unpinned.md) | Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1444](BG1444-sprint-plan-reports-a-malformed-risk-map-as.md) | sprint plan reports a malformed risk map as 'no component map is declared', says nothing when a unit's risk tag is outside the vocabulary, and no test pins which component the flag names when prefixes overlap | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1445](BG1445-lessons-py-class-add-declares-a-phase-flag.md) | lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1446](BG1446-three-second-seat-behaviours-are-correct-but-unpinned.md) | Three second-seat behaviours are correct but unpinned: a story's risk tag read over its Affects, the brief's no-map default, and the first seat's latest verdict rather than its first | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

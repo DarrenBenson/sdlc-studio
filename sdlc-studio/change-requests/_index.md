@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 34 |
 | Approved | 0 |
-| In Progress | 22 |
-| Complete | 552 |
+| In Progress | 21 |
+| Complete | 553 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 63 |
@@ -107,7 +107,7 @@
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | In Progress | High | feature | 2026-11-10 | EP0309 |
 | [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306, CR0703 |
 | [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Proposed | High | feature | 2026-11-10 | -- |
-| [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | In Progress | High | feature | 2026-11-10 | EP0307 |
+| [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Complete | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | Proposed | Medium | enhancement | 2026-11-10 | -- |
 | [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Proposed | High | Improvement | 2026-11-12 | -- |

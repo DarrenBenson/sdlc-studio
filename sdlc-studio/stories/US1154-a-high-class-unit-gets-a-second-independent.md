@@ -1,6 +1,6 @@
 # US1154: A high-class unit gets a second independent review seat, and the retro reports what that seat found
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0696
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a high-class unit, when `critic.py brief --unit <id> --seat <second seat>` runs, then the brief is the shipped seat brief (charter, Affects scope, criteria) and names the unit's class and that it is the second independent seat.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatBriefTests::test_brief_names_class_and_second_seat_role
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a high-class unit with two seats' delivery verdicts in the ledger, when `retro.py` composes the run's retro, then it reports, per second seat, the units where it rejected or raised issues after the first seat approved.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::RetroSecondSeatYieldTests::test_retro_reports_second_seat_catches
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a high-class unit with no second-seat verdict, or a run whose second seats caught nothing, when the retro is composed, then it says so in one line each and nothing refuses.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::RetroSecondSeatNothingTests::test_missing_and_empty_yield_are_stated_not_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

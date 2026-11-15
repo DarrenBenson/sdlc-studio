@@ -291,3 +291,4 @@
 | BG1441 | agent-aafa72bb967c418b8 | 2026-11-15 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | 25db1c0be7651275 at f155c529e6b4 |
 | US1153 | agent-ab3e7f9d07c70280f | 2026-11-15 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 9, survived 0 | 18ad4de370b03352 at 24fb01008edd |
 | US1154 | agent-ab3e7f9d07c70280f | 2026-11-15 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 0 | 34cc2efe3f18445b at 24fb01008edd |
+| US1154 | agent-afc49710ee7fa674a | 2026-11-15 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 5, survived 1 | c08a3a562953ed1f at e657560b35ce |
