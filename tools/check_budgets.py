@@ -60,6 +60,11 @@ ALLOWLIST = {
     # splitting a reference to fit a generator, which would be the tail wagging the dog.
     "reference-consult.md": 634,
     "reference-prd.md": 660,
+    # The evidence annex documents every committed record a consumer parses: the report of
+    # record, its fingerprint, the run record, the lesson store, the evidence logs and the
+    # ledgers. Each is a contract table a conformance test reads by heading, so splitting
+    # the page would split the contract; held at its measured size, guide included.
+    "reference-evidence-schema.md": 745,
     "reference-epic.md": 1102,
     "reference-story.md": 1091,
     "reference-code.md": 974,
