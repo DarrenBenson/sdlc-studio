@@ -215,6 +215,63 @@ class PersonaMemoryStoreTests(_Fixture):
         self.assertIn("not in the flat Cooper layout", personas_out())
 
 
+class PersonaMemoryAddGuardTests(_Fixture):
+    """`add` writes only what its own reader reads back, and cites only a run that exists."""
+
+    def test_a_body_the_reader_would_refuse_is_refused_and_later_adds_still_work(self):
+        rc, _, err = self.run_cli("add", "--persona", "qa", "--title", "first",
+                                  "--body", "b", "--evidence", "US0001")
+        self.assertEqual(rc, 0, err)
+        before = self.memory("qa").read_text(encoding="utf-8")
+        bodies = (("a level-two heading line", "Do this.\n## Steps\n1. one",
+                   "'## Steps' is a level-two heading"),
+                  ("a heading once stripped", "  ## Steps\nthen more",
+                   "'## Steps' is a level-two heading"),
+                  ("an entry heading with no State", "x\n## M-0042: smuggled\ny", "M-0042"),
+                  ("a second State the reader takes", "x\n- **State:** a\n- **State:** b",
+                   "State"))
+        for name, body, reason in bodies:
+            with self.subTest(name):
+                rc, out, err = self.run_cli("add", "--persona", "product", "--title", "t",
+                                            "--body", body, "--evidence", "US0001")
+                self.assertEqual(rc, 2, out + err)
+                self.assertIn(reason, err)
+                self.assertFalse(self.memory("product").exists())
+                self.assertEqual(self.memory("qa").read_text(encoding="utf-8"), before)
+        # The store stays readable: the next add, for any persona, still writes and reads back.
+        rc, _, err = self.run_cli("add", "--persona", "qa", "--title", "second",
+                                  "--body", "b", "--evidence", "US0001")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual([e["id"] for e in pm.read_store(self.memory("qa"))],
+                         ["M-0001", "M-0002"])
+        # Positive control: a level-three heading is prose the reader keeps.
+        rc, _, err = self.run_cli("add", "--persona", "product", "--title", "t",
+                                  "--body", "Do this.\n### Steps\n1. one", "--evidence", "US0001")
+        self.assertEqual(rc, 0, err)
+        [e] = pm.read_store(self.memory("product"))
+        self.assertIn("### Steps", e["body"])
+
+    def test_run_evidence_matches_a_whole_run_id_case_sensitively(self):
+        reports = self.root / "sdlc-studio" / "reports"
+        reports.mkdir(parents=True)
+        (reports / "RPT0001-run.md").write_text(
+            "# RPT0001\n\n| Run | RUN-01ABCDEF |\n\nSigned over run-01lower, not RUN-02Xyz "
+            "or XRUN-03A.\n", encoding="utf-8")
+        for token in ("RUN-0", "RUN-01A", "RUN-01ABCDEFG", "RUN-01LOWER", "RUN-02X", "RUN-03A"):
+            with self.subTest(token):
+                rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t",
+                                            "--body", "b", "--evidence", token)
+                self.assertEqual(rc, 2, out + err)
+                self.assertIn(token, err)
+                self.assertFalse(self.memory("qa").exists())
+        # Positive control: the whole id a report names resolves.
+        rc, _, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                  "--evidence", "RUN-01ABCDEF")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(pm.read_store(self.memory("qa"))[0]["fields"]["evidence"],
+                         "RUN-01ABCDEF")
+
+
 class PersonaMemoryFieldsFileTests(_Fixture):
     """`add --fields-file` takes the prose from a JSON document no shell has touched."""
 

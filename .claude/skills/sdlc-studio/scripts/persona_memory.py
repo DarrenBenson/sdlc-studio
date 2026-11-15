@@ -56,6 +56,7 @@ DEFAULT_INJECT_MAX = 5
 GIST_MAX = 200
 _DECISION_RE = re.compile(r"^D\d{4}$")
 _RUN_RE = re.compile(r"^RUN-[0-9A-Z]+$")
+_RUN_TOKEN_RE = re.compile(r"(?<![0-9A-Za-z])RUN-[0-9A-Z]+(?![0-9A-Za-z])")
 _VERDICT_REF_RE = re.compile(r"^(\S+)\s+r(\d+)$")
 _SEPARATOR_RE = re.compile(r"\s*[,;]\s*")
 
@@ -185,9 +186,12 @@ def _decision_ids(root: Path) -> set[str]:
 
 
 def _report_names(root: Path, run_id: str) -> bool:
+    """True when a report names `run_id` as a whole run id, in its own case: a report naming
+    `RUN-01ABCDEF` names neither `RUN-0` nor `run-01abcdef`."""
     rdir = root / "sdlc-studio" / "reports"
-    return rdir.is_dir() and any(run_id.lower() in p.read_text(encoding="utf-8", errors="replace")
-                                 .lower() for p in rdir.glob("*.md"))
+    return rdir.is_dir() and any(
+        run_id in _RUN_TOKEN_RE.findall(p.read_text(encoding="utf-8", errors="replace"))
+        for p in rdir.glob("*.md"))
 
 
 def _verdict_held(root: Path, unit: str, round_: int) -> bool:
@@ -229,7 +233,8 @@ def _new_header(key: str) -> str:
 def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) -> dict:
     """Write one proposed learning for `key` and return it. Refuses, writing nothing: no
     evidence, any cited id that resolves to nothing, an unknown or ambiguous key, a blank
-    title or body, and a memory directory git would never hold."""
+    title or body, a body holding a level-two heading line or any learning `parse` would not
+    read back, and a memory directory git would never hold."""
     root = Path(root)
     cited = evidence_tokens(evidence)
     if not cited:
@@ -241,6 +246,10 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) 
         raise MemoryRefusal(f"--evidence {', '.join(missing)} resolves to nothing on disk")
     if not (title or "").strip() or not (body or "").strip():
         raise MemoryRefusal("a learning needs a --title and a --body")
+    heading = next((ln for ln in body.strip().splitlines() if ln.startswith("## ")), None)
+    if heading:
+        raise MemoryRefusal(f"the --body line {heading.strip()!r} is a level-two heading, which "
+                            "the memory file reads as an entry: use ### or plain text")
     path = memory_path(root, key)
     rel = path.relative_to(root).as_posix()
     held = lessons.ignored_reason(root, rel)
@@ -263,8 +272,13 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) 
         entries = stores.get(path, [])
     else:
         header, entries = _new_header(key), []
+    text = _render_file(header, [*entries, new])
+    try:  # write only what the reader reads back, so no later add or brief meets a bad file
+        parse(text, rel)
+    except StoreError as exc:
+        raise MemoryRefusal(f"the learning would not read back, so it is not written: {exc}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(path, _render_file(header, [*entries, new]))
+    sdlc_md.atomic_write(path, text)
     return new
 
 
