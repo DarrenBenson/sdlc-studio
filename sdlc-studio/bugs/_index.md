@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 361 |
+| Open | 365 |
 | In Progress | 0 |
 | Fixed | 927 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1479** |
+| **Total** | **1483** |
 
 ## All Bugs
 
@@ -555,6 +555,10 @@
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1480](BG1480-docs-engineering-leaders-md-states-three-things-more.md) | docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1481](BG1481-test-support-page-lets-four-planted-support-md.md) | test_support_page lets four planted SUPPORT.md defects through: a gh skills install line, an install command in prose, and Stack Overflow or IRC named in prose | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1482](BG1482-a-build-injected-lesson-class-can-no-longer.md) | A build-injected lesson class can no longer retire, so once more than INJECT_MAX build classes are live the digest cap drops the oldest builder traps | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1483](BG1483-a-run-s-repeat-of-a-lesson-class.md) | A run's repeat of a lesson class is counted only from a cited REJECT or retro Try item, so a repeat caught by the land or the push gate goes unrecorded | Open | Medium | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

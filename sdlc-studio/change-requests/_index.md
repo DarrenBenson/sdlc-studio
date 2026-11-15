@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 34 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 24 |
 | Complete | 554 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **708** |
+| **Total** | **709** |
 
 ## All Changes
 
@@ -120,6 +120,7 @@
 | [CR-0706](CR0706-an-incident-is-triaged-into-the-escaped-bugs.md) | An incident is triaged into the escaped bugs it caused, the report states escapes per 100 points, and an escape's class reaches only the briefs whose files it matches | Proposed | Medium | feature | 2026-11-15 | -- |
 | [CR-0707](CR0707-sprint-lane-offers-a-rebase-step-that-carries.md) | sprint lane offers a rebase step that carries a waiting lane's staged work onto a moved main | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 | [CR-0708](CR0708-file-finding-writes-criteria-a-plan-can-take.md) | file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line | Proposed | Medium | Enhancement | 2026-11-15 | -- |
+| [CR-0709](CR0709-add-lessons-py-reinstate-put-a-retired-class.md) | Add lessons.py reinstate: put a retired class back in force with a recorded run and reason | Proposed | Low | Feature | 2026-11-15 | -- |
 
 ## Archived Releases
 
