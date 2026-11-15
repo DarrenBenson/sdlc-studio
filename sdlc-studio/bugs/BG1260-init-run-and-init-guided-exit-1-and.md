@@ -1,6 +1,6 @@
 # BG1260: `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_stage_confirm.py, .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py, changelog.d/BG1260.md
@@ -26,10 +26,13 @@ Catch `OSError` per definition file while drafting `.claude/agents/`, report the
 
 - [ ] **AC1** Given a fixture whose `.claude` is an empty regular file, when `init.py run` runs on it, then it exits 0, writes AGENTS.md, CLAUDE.md and every later scaffold file (the decisions log among them), and reports each agent definition under `.claude/agents/` as skipped with its OSError reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_init_run_finishes_and_names_each_skipped_definition
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given the same fixture, when `init.py guided` drafts its agents stage, then the stage writes the instruction files, exits 0 and names each skipped definition with its reason; with `.claude` absent (the control) both definitions are written.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_init_guided_agents_stage_finishes
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given an agent definition at `.claude/agents/sdlc-builder.md` that cannot be read and an AGENTS.md without the doctrine, when the agents stage runs, then it prints no 'so the doctrine check can read it' directive for the definition and still offers the doctrine.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_an_unreadable_definition_neither_misdirects_nor_hides_the_doctrine_offer
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

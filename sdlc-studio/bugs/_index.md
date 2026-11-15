@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 363 |
+| Open | 362 |
 | In Progress | 0 |
-| Fixed | 930 |
+| Fixed | 931 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
@@ -335,7 +335,7 @@
 | [BG1257](BG1257-bg1246-s-locked-store-test-bounds-a-duration.md) | BG1246's locked-store test bounds a duration its own process measured without the wall-clock census marks | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1258](BG1258-us1130-did-not-converge-in-review-round-2.md) | US1130 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1259](BG1259-the-forge-s-lint-job-has-been-red.md) | The forge's Lint job has been red on main since 8a00d2cc because bandit reads the OpenCode meter's placeholder join as SQL injection | Fixed | High | 2026-11-06 | 2026-11-06 |
-| [BG1260](BG1260-init-run-and-init-guided-exit-1-and.md) | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1260](BG1260-init-run-and-init-guided-exit-1-and.md) | `init run` and `init guided` exit 1 and leave a half-built project when `.claude` is a regular file, which the base initialised cleanly | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1261](BG1261-after-bg1245-a-hard-kill-of-sprint-py.md) | After BG1245 a hard kill of `sprint.py`'s process group no longer reaches a running lane, whose CLI runs on in the worktree with no timeout over it | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1262](BG1262-sprint-lane-run-kills-a-timed-out-lane.md) | `sprint lane run` kills a timed-out lane with no `SIGTERM` first, leaving `index.lock` behind, and leaves four further lane rules unhandled or unpinned | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1263](BG1263-the-commit-msg-hook-reads-refs-lines-below.md) | The commit-msg hook reads `Refs:` lines below git's scissors line, so a `git commit -v` whose diff shows such a line is refused as a contradicted trailer | Superseded | Low | 2026-11-06 | 2026-11-06 |

@@ -1,6 +1,6 @@
 # US1165: A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0699
 > **Created:** 2026-11-15
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a project that sets no `routing.effort`, when `sprint.py plan` runs and a lane brief is printed, then each unit's plan row carries `effort: {builder: inherit, reviewer: inherit}` and the brief says to dispatch at the session's own effort, which is today's behaviour.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_setting.py::EffortSettingTests::test_the_default_inherits_the_session_effort
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given `routing.effort: {builder: low, reviewer: medium}`, when `sprint.py plan` runs and `sprint.py lane brief --units <id>` is printed, then the plan row carries both values and the brief names the effort to dispatch the builder at and the effort for its reviewer.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_setting.py::EffortSettingTests::test_a_set_effort_reaches_the_plan_and_the_lane_brief
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a reviewer effort below its builder's (builder high, reviewer low), when `sprint.py plan` runs, then it refuses naming both values, unless `routing.effort.reviewer_below_builder` names a decision id present in sdlc-studio/decisions.md, in which case it plans and prints that id.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_setting.py::EffortSettingTests::test_a_reviewer_below_its_builder_is_refused_without_a_decision
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given an effort value outside inherit, low, medium, high, xhigh and max, when `sprint.py plan` runs, then it refuses naming the key and the allowed values.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_effort_setting.py::EffortSettingTests::test_an_unknown_effort_value_is_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

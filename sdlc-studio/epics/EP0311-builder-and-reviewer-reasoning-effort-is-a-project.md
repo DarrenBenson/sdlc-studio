@@ -14,7 +14,7 @@ Decomposed from CR0699. Delivers the work CR0699 requested.
 
 ## Story Breakdown
 
-- [ ] [US1165: A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision](../stories/US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md)
+- [x] [US1165: A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision](../stories/US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md)
 - [ ] [US1166: Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record](../stories/US1166-each-run-s-report-of-record-states-the.md)
 
 ## Acceptance Criteria (Epic Level)
