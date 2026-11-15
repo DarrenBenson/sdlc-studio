@@ -1,6 +1,6 @@
 # BG1460: US1058 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/memory-template.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/references.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1460.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, sdlc-studio/reviews/root-census.md, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_surface.py, sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
@@ -33,12 +33,16 @@ Fix each finding above, then deliver US1058 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC5** US1058 AC1 still passes: Given a project with a qa seat card and Maya Okafor's card, when `persona_memory.py add --persona qa --title ... --body ... --evidence US0001` and then the same with `--persona maya-okafor-founder-engineer` run, then `sdlc-studio/personas/memory/qa.md` holds `## M-0001` and the other file holds `## M-0002`, each with Persona, Evidence, Added, a Review-by 90 days on and State proposed, and every field the later stories write (Approved-by, Addresses, Listed-in, Struck, Retired) is accepted by a `set-field` helper that reuses `lessons.upsert_field`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_add_writes_a_stamped_proposed_learning_with_a_unique_id
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC6** US1058 AC2 still passes: Given an add with no `--evidence`, one citing only ids that resolve to nothing on disk, one whose `--persona` names neither a seat role nor a card, one whose key is both, and one run under a `.gitignore` rule matching `sdlc-studio/personas/memory/`, when `persona_memory.py add` runs, then each exits 2 naming its reason (the ignore rule included) and no file is written.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_an_unevidenced_unknown_ambiguous_or_ignored_add_is_refused
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC7** US1058 AC3 still passes: Given entries for qa and product in several states, when `persona_memory.py list --persona qa --query race` runs as text and as `--format json`, then only qa's entries whose title or body mention race are listed, each with its state and horizon.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_list_and_recall_read_one_personas_memory
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC8** US1058 AC4 still passes: Given seat cards, no design persona cards and a memory file `personas/memory/qa.md`, when `validate.py personas` runs, then it prints no persona-layout warning naming the memory file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_memory_files_are_never_read_as_misplaced_persona_cards
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 
