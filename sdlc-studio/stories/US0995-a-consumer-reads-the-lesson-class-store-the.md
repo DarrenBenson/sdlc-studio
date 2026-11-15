@@ -1,6 +1,6 @@
 # US0995: A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Delivers:** CR0609
 > **Created:** 2026-10-09
@@ -22,8 +22,10 @@
 
 - **AC1:** Given an actuals line written by `telemetry.py record`, a forecast line written by `telemetry.py forecast`, an audit-cost line written by `audit_cost.py record` and a lesson row written by `retro.py extract`, when the conformance test reads each against the annex, then every field each holds is documented and every field the annex marks required is present.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_ledgers.py::LedgerAnnexTests::test_written_lines_conform_to_the_annex
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given the critic, velocity, decisions and deploy ledgers as `critic.py record`, `retro.py accuracy --write`, `decisions.py add` and `deploy.py record` create them in a fixture, when their header rows are compared with the annex's table layouts, then each column list is equal, in order, the critic table's with nine columns.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_ledgers.py::LedgerAnnexTests::test_ledger_headers_match_the_annex
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

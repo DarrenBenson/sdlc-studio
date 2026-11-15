@@ -1,6 +1,6 @@
 # CR-0609: Publish a versioned evidence annex for the committed sprint records
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0275
 > **Priority:** High

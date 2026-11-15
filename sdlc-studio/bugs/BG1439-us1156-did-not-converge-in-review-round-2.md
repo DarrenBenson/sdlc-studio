@@ -1,6 +1,6 @@
 # BG1439: US1156 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py, changelog.d/US1156.md, .claude/skills/sdlc-studio/reference-scripts.md, changelog.d/BG1439.md
@@ -33,10 +33,13 @@ Fix each finding above, then deliver US1156 again in a later run.
   - **Verify:** manual - the independent review of the redelivery re-checks this finding
 - [ ] **AC5** US1156 AC1 still passes: Given a signed report whose known-issues rows name open findings, when the pack is built, then each change lists the known issues that name it, and the pack carries the report's remaining known issues in one list.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::KnownWrongTests::test_known_issues_listed_per_change_and_for_the_release
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC6** US1156 AC2 still passes: Given a signed report, when the pack is built, then each change names the accountable person recorded on that report's signature, with the signing date.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_each_change_names_the_signing_principal
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC7** US1156 AC3 still passes: Given a report whose signature principal is blank or reads as an agent (for example 'the agent' or 'agent-<id>'), when the pack is built, then the command exits non-zero and no pack names the agent as accountable.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_agent_or_blank_principal_is_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

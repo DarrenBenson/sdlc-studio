@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 34 |
 | Approved | 0 |
-| In Progress | 23 |
-| Complete | 550 |
+| In Progress | 21 |
+| Complete | 552 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 63 |
@@ -20,7 +20,7 @@
 
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
-| [CR-0609](CR0609-publish-a-versioned-evidence-annex-for-the-committed.md) | Publish a versioned evidence annex for the committed sprint records | In Progress | High | Feature | 2026-10-05 | EP0275 |
+| [CR-0609](CR0609-publish-a-versioned-evidence-annex-for-the-committed.md) | Publish a versioned evidence annex for the committed sprint records | Complete | High | Feature | 2026-10-05 | EP0275 |
 | [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | Complete | Medium | Feature | 2026-10-05 | EP0276 |
 | [CR-0611](CR0611-read-cursor-copilot-and-opencode-token-meters-when.md) | Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use | Complete | High | Feature | 2026-10-06 | EP0274 |
 | [CR-0612](CR0612-check-a-finding-filed-into-the-skill-source.md) | Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit | In Progress | Medium | Improvement | 2026-10-07 | EP0277 |
@@ -103,7 +103,7 @@
 | [CR-0689](CR0689-the-persona-registry-and-the-prd-name-a.md) | The persona registry and the PRD name a head of engineering in an audited organisation as the shipped skill's Primary, the change approver as Served and Maya Okafor as Secondary | Complete | High | Enhancement | 2026-11-09 | EP0305 |
 | [CR-0690](CR0690-price-the-xai-grok-and-cursor-composer-models.md) | Price the xAI Grok and Cursor Composer models in model-prices.json from dated provider sources, so a run on the delivery model the operator recommends reads a dollar cost rather than not priced | Complete | High | Enhancement | 2026-11-09 | EP0303 |
 | [CR-0691](CR0691-the-engineering-seat-s-brief-carries-reliability-and.md) | The engineering seat's brief carries reliability and observability checks drawn from the TRD | Proposed | Medium | enhancement | 2026-11-10 | -- |
-| [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | In Progress | High | feature | 2026-11-10 | EP0308 |
+| [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | Complete | High | feature | 2026-11-10 | EP0308 |
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Proposed | High | feature | 2026-11-10 | -- |
 | [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306, CR0703 |
 | [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Proposed | High | feature | 2026-11-10 | -- |

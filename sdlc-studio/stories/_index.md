@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 63 |
-| Ready | 6 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 904 |
+| Done | 906 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -32,7 +32,7 @@
 | [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
@@ -193,7 +193,7 @@
 | [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Done | EP0308 | 2026-11-14 | 2026-11-14 |
-| [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Ready | EP0308 | 2026-11-14 | 2026-11-14 |
+| [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 
 ## Archived Releases
 

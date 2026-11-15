@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 262 |
+| Done | 264 |
 | Superseded | 33 |
 | **Total** | **308** |
 
@@ -25,7 +25,7 @@
 | ID | Title | Status | Stories | Deps | Created | Updated |
 | --- | --- | --- | --- | --- | --- | --- |
 | [EP0274](EP0274-token-actuals-for-sprints-driven-by-cursor-copilot.md) | Token actuals for sprints driven by Cursor, Copilot CLI or OpenCode | Done | 7 | -- | 2026-10-06 | 2026-10-06 |
-| [EP0275](EP0275-a-versioned-evidence-annex-that-consumers-of-the.md) | A versioned evidence annex that consumers of the committed sprint records can parse against | Draft | 5 | -- | 2026-10-09 | 2026-10-09 |
+| [EP0275](EP0275-a-versioned-evidence-annex-that-consumers-of-the.md) | A versioned evidence annex that consumers of the committed sprint records can parse against | Done | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0276](EP0276-the-report-of-record-is-reviewable-from-the.md) | The report of record is reviewable from the committed tree and states its cost in money | Done | 5 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0277](EP0277-a-finding-filed-into-the-skill-source-is.md) | A finding filed into the skill source is held to the neutrality rule when it is filed, not first at commit | Draft | 1 | -- | 2026-10-09 | 2026-10-09 |
 | [EP0278](EP0278-a-clone-that-cannot-run-the-gates-says.md) | A clone that cannot run the gates says so at setup and at the push, in seconds | Done | 4 | -- | 2026-10-09 | 2026-10-09 |
@@ -58,7 +58,7 @@
 | [EP0305](EP0305-the-persona-registry-and-the-prd-name-abena.md) | The persona registry and the PRD name Abena Osei as the shipped skill's Primary and Graham Doyle as Served | Done | 3 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0306](EP0306-every-cost-row-a-run-reports-has-a.md) | Every cost row a run reports has a forecast and a ratio to learn from, and a row that cannot be forecast says why | Draft | 2 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0307](EP0307-a-change-that-touches-a-high-risk-component.md) | A change that touches a high-risk component is classed from a declared map, flagged at plan and reviewed by a second independent seat whose yield is reported | Draft | 3 | -- | 2026-11-14 | 2026-11-14 |
-| [EP0308](EP0308-a-change-board-can-approve-a-release-from.md) | A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change | Draft | 2 | -- | 2026-11-14 | 2026-11-14 |
+| [EP0308](EP0308-a-change-board-can-approve-a-release-from.md) | A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
 
 ## Archived Releases
 

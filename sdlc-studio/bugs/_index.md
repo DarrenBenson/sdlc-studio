@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 332 |
 | In Progress | 0 |
-| Fixed | 917 |
+| Fixed | 918 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1440** |
+| **Total** | **1441** |
 
 ## All Bugs
 
@@ -514,8 +514,9 @@
 | [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1438](BG1438-the-evidence-annex-says-fingerprint-strings-escape-all.md) | The evidence annex says fingerprint strings escape all control characters while the reference implementation escapes only U+0000 to U+001F, and it omits the no-closed-sprint limit of the version stamp | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1440](BG1440-lane-return-model-with-no-total-is-dropped.md) | lane return --model with no total is dropped without a word, the model trim is untested, and help/sprint.md omits that a several-unit total is not split when a unit has no Points | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1441](BG1441-evidence-pack-py-s-module-docstring-still-describes.md) | evidence_pack.py's module docstring still describes the wider author refusal BG1439 removed | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

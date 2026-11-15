@@ -1,6 +1,6 @@
 # US1156: Each change in the pack states what is known wrong and names the accountable person, never the agent
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0692
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a signed report whose known-issues rows name open findings, when the pack is built, then each change lists the known issues that name it, and the pack carries the report's remaining known issues in one list.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::KnownWrongTests::test_known_issues_listed_per_change_and_for_the_release
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a signed report, when the pack is built, then each change names the accountable person recorded on that report's signature, with the signing date.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_each_change_names_the_signing_principal
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a report whose signature principal is blank or reads as an agent (for example 'the agent' or 'agent-<id>'), when the pack is built, then the command exits non-zero and no pack names the agent as accountable.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_agent_or_blank_principal_is_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

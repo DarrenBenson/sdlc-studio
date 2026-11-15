@@ -1,6 +1,6 @@
 # EP0308: A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0692
 > **Created:** 2026-11-14
@@ -15,7 +15,7 @@ Decomposed from CR0692. Delivers the work CR0692 requested.
 ## Story Breakdown
 
 - [x] [US1155: One command writes a release's evidence pack from committed records](../stories/US1155-one-command-writes-a-release-s-evidence-pack.md)
-- [ ] [US1156: Each change in the pack states what is known wrong and names the accountable person, never the agent](../stories/US1156-each-change-in-the-pack-states-what-is.md)
+- [x] [US1156: Each change in the pack states what is known wrong and names the accountable person, never the agent](../stories/US1156-each-change-in-the-pack-states-what-is.md)
 
 ## Acceptance Criteria (Epic Level)
 

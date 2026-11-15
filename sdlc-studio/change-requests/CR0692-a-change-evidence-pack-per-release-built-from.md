@@ -1,6 +1,6 @@
 # CR-0692: A change evidence pack per release, built from the run's record and grouped by risk and compliance class
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0308
 > **Parent:** RFC0063
 > **Depends on:** CR0696; EP0275; EP0276; EP0280
