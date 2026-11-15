@@ -202,6 +202,9 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
   <p class="unmeasured"><b>NOT MEASURED</b> - {{cost_reason}}</p>
   <p class="lede">Delegated: {{tokens_delegated}}.</p>
 <!-- end -->
+<!-- when: effort_rule -->
+  <p class="lede"><strong>Effort.</strong> The reasoning effort each unit's agents were dispatched at, as the plan this run was opened from stamped it: builder {{effort_builder}}; reviewer {{effort_reviewer}}.</p>
+<!-- end -->
 <!-- when: cost_prices_present -->
 <!-- when: cost_prices_measured -->
   <p class="lede"><strong>Prices.</strong> Each model the Dollar cost row priced, at the prices this page was filed with (its own price table), in US dollars per million tokens, beside that model's dollars.</p>

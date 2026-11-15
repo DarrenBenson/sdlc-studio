@@ -5112,7 +5112,10 @@ class HarnessBasisReportTests(ReportOfRecordBase):
                 self.setUp()
                 self._claude_run(whole)
                 rep = sr.build_report(self.root, FIX_RETRO)
-                cost = [(k, f.get("value")) for s, k, f in sr.leaf_figures(rep) if s == "cost"]
+                # The dispatch effort is a later rule's figure (`EFFORT_RULE`), not the basis.
+                effort = {key for _role, key in sr.EFFORT_FIGURES}
+                cost = [(k, f.get("value")) for s, k, f in sr.leaf_figures(rep)
+                        if s == "cost" and k not in effort]
                 est = {s["key"]: s for s in rep["sections"]}["estimates"]["rows"]
                 rows = [(r["est_measure"]["value"], r["est_actual"]["value"],
                          r["est_ratio"]["value"], r["est_basis"]["value"]) for r in est

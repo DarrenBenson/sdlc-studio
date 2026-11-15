@@ -64,7 +64,6 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac1_then}}
 - **Verify:** {{ac1_verify}}
 - **Caller:** {{ac1_caller}}
-- **Verified:** no
 
 ### AC2: {{ac2_name}}
 
@@ -73,7 +72,6 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac2_then}}
 - **Verify:** {{ac2_verify}}
 - **Caller:** {{ac2_caller}}
-- **Verified:** no
 
 ### AC3: {{ac3_name}}
 
@@ -82,7 +80,6 @@ Related: help/story.md, reference-story.md
 - **Then** {{ac3_then}}
 - **Verify:** {{ac3_verify}}
 - **Caller:** {{ac3_caller}}
-- **Verified:** no
 
 > **Caller** names what CONSUMES the thing this criterion is about - the hook, lane, command or
 > call site that will reach it - as a path or a command, so the name can be resolved: `the commit

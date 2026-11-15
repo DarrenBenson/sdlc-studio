@@ -2845,7 +2845,7 @@ def _page_readings(page: dict | None) -> dict:
     """
     if page is None:
         return {"points": None, "findings": None, "waivers": None, "roles": None,
-                "price_table": None}
+                "price_table": None, "effort": None}
     rows = {s.get("key"): s.get("rows") or [] for s in page.get("sections") or []}
 
     def val(row: dict, key: str):
@@ -2866,7 +2866,11 @@ def _page_readings(page: dict | None) -> dict:
             # move when the table is revised: both are the page's, replayed.
             "roles": next((s for s in page.get("sections") or []
                            if s.get("key") == "cost_roles"), None),
-            "price_table": page.get(PRICE_TABLE)}
+            "price_table": page.get(PRICE_TABLE),
+            # The plan the effort was read from is overwritten by the next run's plan.
+            "effort": {key: f for s in page.get("sections") or [] if s.get("key") == "cost"
+                       for key, f in (s.get("figures") or {}).items()
+                       if key in dict(EFFORT_FIGURES).values()} or None}
 
 
 def leaf_figures(report: dict):
@@ -4509,14 +4513,62 @@ def _model_of(stamps: list[dict]) -> str:
             run_state.SESSION_MODEL_MIXED if models else retro.MODEL_UNRECORDED)
 
 
-def _cost_section(state: dict, state_rel: str, total: dict) -> dict:
-    """Tokens by model, from the meter stamps, and the delegated spend beside them."""
+#: The plan `sprint plan --write` writes and the run record names by its digest.
+EFFORT_PLAN_REL = "sdlc-studio/.local/sprint-plan.json"
+#: Each role a plan row's `effort` names, with the cost figure its effort is stated under.
+EFFORT_FIGURES = (("builder", "effort_builder"), ("reviewer", "effort_reviewer"))
+
+
+def _effort_counts(rows: list[dict], role: str) -> str:
+    """`role`'s effort over the plan's rows: each value with the count of units that carried
+    it, lowest effort first and a row with no stamp for the role last."""
+    import sprint  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    unstamped = "not stamped"
+    counts = Counter(str(r["effort"].get(role) or unstamped)
+                     if isinstance(r.get("effort"), dict) else unstamped for r in rows)
+    rank = {v: i for i, v in enumerate(sprint.EFFORT_VALUES)}
+    order = sorted(counts, key=lambda v: (v == unstamped, rank.get(v, len(rank)), v))
+    return ", ".join(f"{v} ({counts[v]} unit{'' if counts[v] == 1 else 's'})" for v in order)
+
+
+def _dispatch_effort(root: Path, state: dict, state_rel: str, replay: dict | None) -> dict:
+    """The effort each unit's builder and reviewer were dispatched at, one cost figure per role,
+    from the plan the run record names by its digest (`run_state.PLAN_DIGEST`), never from
+    `routing.effort` at report time: the setting can change after the plan. Cited to the run
+    record alone, since the plan sits under `.local/`, which no other clone holds. NOT MEASURED
+    when the record names no plan, the plan on disk is not the one it names, or no row carries a
+    stamp. A filed page's figures are replayed (`_page_readings`, and `revalidate` for an
+    unsigned page): the next run's plan overwrites the file this one read."""
+    if replay:
+        return replay
+    source, named = state_rel, state.get(run_state.PLAN_DIGEST)
+    path, rows, reason = Path(root) / EFFORT_PLAN_REL, [], None
+    if not named:
+        reason = "the run record names no plan, so no effort stamp can be read for this run"
+    elif not path.is_file():
+        reason = f"the run record names the plan {named}, and no plan is on disk to read"
+    elif run_state.content_digest(path) != named:
+        reason = f"the plan on disk is not the plan the run record names ({named})"
+    else:
+        rows = [r for r in (sdlc_md.read_json(path, {}) or {}).get("batch") or []
+                if isinstance(r, dict)]
+        if not any(isinstance(r.get("effort"), dict) for r in rows):
+            reason = ("the plan this run was opened from stamped no effort on its units: it was "
+                      "planned before the effort setting existed")
+    if reason:
+        return {key: unmeasured(key, source, reason) for _role, key in EFFORT_FIGURES}
+    return {key: fig(key, _effort_counts(rows, role), source) for role, key in EFFORT_FIGURES}
+
+
+def _cost_section(state: dict, state_rel: str, total: dict, effort: dict | None = None) -> dict:
+    """Tokens by model, from the meter stamps, and the delegated spend beside them; under
+    `EFFORT_RULE`, `effort` (`_dispatch_effort`) is stated whether or not the meter read."""
     delegated = run_state.delegated_total(state)
     figures = {"tokens_delegated": (
         fig("tokens_delegated", delegated, state_rel) if delegated else
         unmeasured("tokens_delegated", state_rel,
                    "no delegated agent supplied a total, which is not the same fact as no "
-                   "work having been delegated"))}
+                   "work having been delegated")), **(effort or {})}
     if total.get("tokens") is None:
         return _section("cost", "Tokens by model", figures, not_measured=unmeasured(
             "cost", state_rel, total.get("reason") or "the session meter could not be read"))
@@ -4756,6 +4808,12 @@ COST_FORECAST_STATED = "forecast-actual-ratio"
 FORECAST_NOTE = ("forecasts are descriptive: each is the plan's points times a rate measured "
                  "from earlier runs, and no ratio refuses or warns")
 
+#: The envelope mark of a page whose cost section states the effort each unit's builder and
+#: reviewer were dispatched at (`_dispatch_effort`), read from the plan the run record names. A
+#: page filed before it re-derives without those figures.
+EFFORT_RULE = "dispatch_effort"
+EFFORT_STATED = "per-role-from-plan"
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4786,7 +4844,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  filed_prices: dict | None = None, premium_usd_rule: bool = True,
                  prices_rule: bool = True, stamp_rule: bool = True,
                  evidence_schema: str | None = None,
-                 cost_forecast_rule: bool = True) -> dict:
+                 cost_forecast_rule: bool = True, effort_rule: bool = True,
+                 filed_effort: dict | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4818,7 +4877,9 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     (`PRICES_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
     `stamp_rule` stamps the evidence annex version, `evidence_schema` where a re-derivation
-    replays the page's own and `EVIDENCE_SCHEMA_VERSION` otherwise.
+    replays the page's own and `EVIDENCE_SCHEMA_VERSION` otherwise. `effort_rule` states the
+    effort each role was dispatched at in the cost section (`EFFORT_RULE`), replaying a signed
+    page's figures, else `filed_effort`, an unsigned page's own handed in by `revalidate`.
     """
     root = Path(root)
     state, read_rel = _run_state_for(root, run_id, record)
@@ -4933,7 +4994,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                               state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
-        _cost_section(metered, state_rel, tokens),
+        _cost_section(metered, state_rel, tokens,
+                      _dispatch_effort(root, state, state_rel, readings["effort"]
+                                       if filed is not None else filed_effort)
+                      if effort_rule else None),
         _prices_section(table_rec, usd, state_rel) if usd_rule and prices_rule else None,
         _cost_roles_section(metered, state_rel, readings["roles"]) if usd_rule else None,
         _dora_section(root, start, f_end, *_ci_runs(root, state, state_rel, run_id),
@@ -4977,7 +5041,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  if table_rule and usd and usd["table"] is not None else {}),
               **({PREMIUM_USD_RULE: PREMIUM_PRICED} if premium_usd_rule and usd_rule else {}),
               **({PRICES_RULE: PRICES_STATED} if prices_rule and usd_rule else {}),
-              **({COST_FORECAST_RULE: COST_FORECAST_STATED} if cost_forecast_rule else {})}
+              **({COST_FORECAST_RULE: COST_FORECAST_STATED} if cost_forecast_rule else {}),
+              **({EFFORT_RULE: EFFORT_STATED} if effort_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5616,6 +5681,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
     flags["priced_unit_rule"] = report.get(PRICED_UNIT_RULE) == PRICED_PER_POINT
     # The Dollars column follows the same rule: a page filed before it keeps its columns.
     flags["usd_rule"] = report.get(USD_RULE) == USD_PER_MODEL
+    # The effort line follows the page's own mark: a page filed before it carries no effort.
+    flags["effort_rule"] = report.get(EFFORT_RULE) == EFFORT_STATED
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):
@@ -6116,6 +6183,10 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          evidence_schema=basis.get(run_state.EVIDENCE_SCHEMA),
                          cost_forecast_rule=basis.get(COST_FORECAST_RULE)
                          == COST_FORECAST_STATED,
+                         effort_rule=basis.get(EFFORT_RULE) == EFFORT_STATED,
+                         # Unsigned, the page's own effort: a clone without its plan reads it.
+                         filed_effort=_page_readings(stored)["effort"] if anchor is None
+                         else None,
                          # Unsigned, the page's own table is the one its digest covers.
                          filed_prices=stored.get(PRICE_TABLE)
                          if replays and anchor is None else None)

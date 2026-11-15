@@ -86,8 +86,9 @@ Rules:
   the last run.
 - Indentation must match the other `- **Field:**` bullets in the AC.
 - Order within the AC: Given / When / Then / Verify / Verified.
-- New ACs added by `story create` or `cr action` ship with
-  `Verified: no` until reconcile runs.
+- A new criterion carries no `Verified:` line; `verify_ac.py run` stamps it
+  `yes` once its Verify line passes. `Verified: no` is a recorded miss the
+  runner does not overwrite.
 
 ## Verifier DSL {#verify-dsl}
 
@@ -371,6 +372,6 @@ service under test is unstable, move the AC verification to
 - `reference-reconcile.md#verify-scope` - How reconcile wires the runner in
 - `reference-outputs.md#story-completion-cascade` - The gated completion flow
 - `reference-story.md#story-workflow` - Story generation emits best-effort Verify lines
-- `templates/core/story.md` - Template AC format with Verify/Verified placeholders
+- `templates/core/story.md` - Template AC format with its Verify placeholder
 - `help/verify.md` - User-facing help
 - `templates/config-defaults.yaml` - The require_ac_verification flag

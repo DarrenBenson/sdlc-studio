@@ -146,6 +146,11 @@ NOT MEASURED - {{cost_reason}}
 
 Delegated: {{tokens_delegated}}.
 <!-- end -->
+<!-- when: effort_rule -->
+
+**Effort.** The reasoning effort each unit's agents were dispatched at, as the plan this run was
+opened from stamped it: builder {{effort_builder}}; reviewer {{effort_reviewer}}.
+<!-- end -->
 <!-- when: cost_prices_present -->
 <!-- when: cost_prices_measured -->
 
