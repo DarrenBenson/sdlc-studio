@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 328 |
 | In Progress | 0 |
-| Fixed | 915 |
+| Fixed | 916 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1434** |
+| **Total** | **1435** |
 
 ## All Bugs
 
@@ -94,7 +94,7 @@
 | [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
-| [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1021](BG1021-a-cr-declared-size-l-is-not-flagged.md) | A CR declared Size L is not flagged for decomposition | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Low | 2026-10-09 | 2026-10-09 |
@@ -510,6 +510,7 @@
 | [BG1432](BG1432-three-lane-pricing-and-re-close-behaviours-are.md) | Three lane-pricing and re-close behaviours are pinned by no test: each split share's per-model split, the minutes split, and the lane-yield re-freeze over a kept window | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1433](BG1433-the-report-templates-still-say-the-wall-clock.md) | The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

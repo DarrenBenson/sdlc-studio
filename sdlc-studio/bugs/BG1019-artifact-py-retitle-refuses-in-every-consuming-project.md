@@ -1,6 +1,6 @@
 # BG1019: artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py, changelog.d/BG1019.md, .claude/skills/sdlc-studio/scripts/lib/link_refs.py, tools/tests/test_check_links.py
@@ -25,6 +25,7 @@ Ship the inbound-reference scan as runtime payload (move the needed `check_links
 
 - [ ] **AC1** retitle succeeds in a consuming project with the installed skill layout and no tools/`check_links.py`, still rewriting inbound references
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py::RetitleInstalledLayoutTests::test_retitle_rewrites_inbound_links_without_tools_check_links
+  - **Verified:** yes (2026-11-15)
 
 ## Impact
 
