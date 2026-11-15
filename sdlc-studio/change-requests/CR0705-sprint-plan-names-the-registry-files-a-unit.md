@@ -22,7 +22,7 @@ Serves Abena Osei's End goal 3 (cost per point): each refused land cost 5 to 20 
 
 - [ ] `sprint plan` reports, for each unit whose criteria add a script or a verb, every registry file that implies and is missing from its Affects
 - [ ] `sprint plan` reports a unit whose reference page would cross a reading-guide or line-ceiling threshold without the generated guide or the ceiling file in its Affects
-- [ ] `sprint plan` reports a unit whose criteria add a script taking free prose, or a new flag, without `test_artifact.py` (the prose-writer sweep's `--fields-file` and `SAFE_INPUT_WRITERS` registry) or the unjudged-flags baseline and command audit in its Affects
+- [ ] `sprint plan` reports a unit whose criteria add a script taking free prose, or a new flag, without `test_artifact.py` (the prose-writer sweep's `--fields-file` and `SAFE_INPUT_WRITERS` registry) or `sdlc-studio/reviews/command-audit.md` (where a new flag is judged, since the unjudged-flags baseline only shrinks) in its Affects
 
 ## Revision History
 

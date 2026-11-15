@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 37 |
+| Proposed | 38 |
 | Approved | 0 |
 | In Progress | 20 |
 | Complete | 554 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **707** |
+| **Total** | **708** |
 
 ## All Changes
 
@@ -119,6 +119,7 @@
 | [CR-0705](CR0705-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build | Proposed | High | enhancement | 2026-11-15 | -- |
 | [CR-0706](CR0706-an-incident-is-triaged-into-the-escaped-bugs.md) | An incident is triaged into the escaped bugs it caused, the report states escapes per 100 points, and an escape's class reaches only the briefs whose files it matches | Proposed | Medium | feature | 2026-11-15 | -- |
 | [CR-0707](CR0707-sprint-lane-offers-a-rebase-step-that-carries.md) | sprint lane offers a rebase step that carries a waiting lane's staged work onto a moved main | Proposed | Medium | Enhancement | 2026-11-15 | -- |
+| [CR-0708](CR0708-file-finding-writes-criteria-a-plan-can-take.md) | file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 
 ## Archived Releases
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 352 |
+| Open | 353 |
 | In Progress | 0 |
 | Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1465** |
+| **Total** | **1466** |
 
 ## All Bugs
 
@@ -541,6 +541,7 @@
 | [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1466](BG1466-a-signed-report-s-signoff-principal-and-signed.md) | A signed report's signoff principal and signed_at figures still read not yet signed, though the evidence schema says they hold who signed and when | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
