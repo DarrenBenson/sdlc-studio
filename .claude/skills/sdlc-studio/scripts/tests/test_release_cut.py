@@ -4,10 +4,12 @@ empties [Unreleased], and a tag is refused unless the gate was recorded green on
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parent.parent / "release_cut.py"
 
@@ -91,6 +93,38 @@ class ChangelogCutTests(unittest.TestCase):
             allowed, reason = mod.tag_check(Path(d), "aaaaaaa")
             self.assertFalse(allowed)
             self.assertIn("no release gate", reason)
+
+
+class EvidencePackVerbTests(unittest.TestCase):
+    """The `evidence-pack` verb parses its own arguments and hands them to `evidence_pack.py`,
+    which holds the logic; `test_evidence_pack_build.py` drives the pack end to end."""
+
+    def test_the_verb_delegates_to_the_pack_builder(self) -> None:
+        rc = _load()
+        sys.path.insert(0, str(SCRIPT.parent))
+        import evidence_pack  # noqa: PLC0415
+        seen = []
+        real = evidence_pack.write_pack
+        evidence_pack.write_pack = lambda *a: seen.append(a) or Path(a[0])
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                code = rc.main(["--root", d, "evidence-pack", "--version", "6.4.0",
+                                "--reports", " rpt0001, RPT0002,RPT0001"])
+        finally:
+            evidence_pack.write_pack = real
+        self.assertEqual(code, 0)
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(seen[0][1:], ("6.4.0", ["RPT0001", "RPT0002"], "HEAD"))
+
+    def test_a_refusal_exits_non_zero_with_the_reason(self) -> None:
+        rc = _load()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            code = rc.main(["--root", d, "evidence-pack", "--version", "../6.4.0",
+                            "--reports", "RPT0001"])
+        self.assertEqual(code, 2)
+        self.assertIn("evidence-pack refused", err.getvalue())
+        self.assertIn("../6.4.0", err.getvalue())
 
 
 class ForgeCiTests(unittest.TestCase):

@@ -417,6 +417,12 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "changelog.py": "writes the changelog it owns",
     "release_cut.py": "writes the CHANGELOG section it cuts (via changelog.compose) and the "
                       "release-gate green marker it owns under .local",
+    "evidence_pack.py": ("writes only the evidence pack it builds, sdlc-studio/reports/"
+                         "evidence-pack-<version>.md, plus a scratch copy of the committed "
+                         "verdict ledger in a temporary directory it removes. Not a WriterCase "
+                         "because a pack needs a git repository of committed signed reports, "
+                         "which this fixture is not; test_evidence_pack_build snapshots its own "
+                         "fixture around a build and holds the pack to be the one file changed"),
     "provenance.py": "writes the provenance record it owns",
     "close_owed.py": "writes the close-owed report it owns",
     "loop_guard.py": "writes the loop-guard state it owns",

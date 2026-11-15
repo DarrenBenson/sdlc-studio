@@ -85,6 +85,15 @@ The release cut and tag guard. `changelog-cut --version X.Y.Z` composes the pend
 <sha>` refuses unless that stamp names the same commit, so a tag can never assert a green that
 was measured on a different tree.
 
+### `evidence_pack.py`
+
+A release's evidence pack, built from committed records alone and run as `release_cut.py
+evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy`. For each unit the named signed reports
+delivered, the pack states what changed, which criteria passed, who reviewed it independently,
+what is known to be wrong and the accountable person, the report's signing principal. It reads
+the committed copies, so an uncommitted edit never changes the pack, and it refuses an unsigned
+report or an agent named as accountable.
+
 ### `flow.py`
 
 Deterministic flow metrics - the zero-token SCHEDULE instrument (the cost instrument,

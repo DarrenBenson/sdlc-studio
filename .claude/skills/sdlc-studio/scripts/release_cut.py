@@ -2,7 +2,7 @@
 """Release cut: turn the accumulated changelog fragments into a versioned section, and guard the
 tag so it can never assert a green that was measured on a different tree.
 
-Two verbs:
+Its verbs:
 
 - `changelog-cut --version X.Y.Z` composes the pending `changelog.d/` fragments into `[Unreleased]`
   (the release-time `compose --apply`), then moves that body under a new `## [X.Y.Z] - <date>`
@@ -12,6 +12,10 @@ Two verbs:
 - `record-green --commit <sha>` stamps the commit the pre-tag gate passed on; `tag-check --commit
   <sha>` refuses unless that stamp names the same commit. A tag asserting a green measured on a
   different tree is the false claim this exists to prevent (US0348 AC3).
+
+- `evidence-pack --version X.Y.Z --reports RPT0001,RPT0002` writes the release's evidence pack
+  under `sdlc-studio/reports/` from the named signed reports, read as committed. The logic lives
+  in `evidence_pack.py`; this verb only delegates to it.
 """
 from __future__ import annotations
 
@@ -329,6 +333,18 @@ def _cmd_tag_check(args: argparse.Namespace) -> int:
     return 0 if allowed else 2
 
 
+def _cmd_evidence_pack(args: argparse.Namespace) -> int:
+    import evidence_pack  # noqa: PLC0415 - lazy: only this verb reads the ledger and stories
+    try:
+        evidence_pack.write_pack(args.root, args.version,
+                                 evidence_pack.parse_reports(args.reports), args.rev)
+    except evidence_pack.PackError as exc:
+        print(f"evidence-pack refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"wrote the evidence pack {evidence_pack.pack_rel(args.version)}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="SDLC Studio release cut and tag guard.")
     sdlc_md.add_global_root(parser)
@@ -342,7 +358,14 @@ def build_parser() -> argparse.ArgumentParser:
     t = sub.add_parser("tag-check", help="refuse a tag unless the gate was green on that commit")
     t.add_argument("--commit", required=True)
     t.set_defaults(func=_cmd_tag_check)
-    for p in (c, r, t):
+    e = sub.add_parser("evidence-pack",
+                       help="write a release's evidence pack from committed signed reports")
+    e.add_argument("--version", required=True, help="the release version, e.g. 6.4.0")
+    e.add_argument("--reports", required=True,
+                   help="the signed reports the release ships, comma-separated: RPT0001,RPT0002")
+    e.add_argument("--rev", default="HEAD", help="the commit whose records are read (default HEAD)")
+    e.set_defaults(func=_cmd_evidence_pack)
+    for p in (c, r, t, e):
         # SUPPRESS (not ".") so a global `--root X <verb>` set before the subcommand is not
         # clobbered by the subparser's own default - the family root-placement contract.
         p.add_argument("--root", default=argparse.SUPPRESS, help="Repo root (default: .)")

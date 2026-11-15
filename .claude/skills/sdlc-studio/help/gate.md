@@ -246,6 +246,10 @@ the gate was green on the tagged commit and CI passed on the forge (`release_cut
 The detector could not read a unit delivered through a carry bug or closed by a ruling, so as a
 gate it refused work that had been closed. Passing the flag exits 2 and names its retirement.
 
+`release_cut.py evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy` writes the release's
+evidence pack under `sdlc-studio/reports/` from the named signed reports as committed. An unsigned
+or unknown report refuses it, and nothing is written.
+
 **The baseline (run once, at adoption).** A project that adopts this after many sprints carries a
 tail of historically-closed units that predate story-level retro batches. Stamp a one-time baseline -
 the exact set of ids terminal at adoption - so only *later* closes can owe a retro:

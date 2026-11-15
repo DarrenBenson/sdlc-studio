@@ -234,6 +234,13 @@ lists every script with a one-line summary; open the linked page for the full en
 - `changelog.py` - Per-unit CHANGELOG fragments (`changelog.d/`), composed deterministically
   into `[Unreleased]` and consumed; the release gate fails on a stray fragment. Kills the
   shared-file contention the same-commit paperwork rule otherwise forces
+- `evidence_pack.py` - A release's evidence pack from committed records alone, run as
+  `release_cut.py evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy`. Each unit the named
+  signed reports delivered gets its title and points, its ticked criteria with their Verify lines,
+  the latest verdict of each seat whose reviewer is not its author, the known issues that name
+  it, and its report's signer as the accountable person. Writes
+  `sdlc-studio/reports/evidence-pack-<version>.md`; an unsigned or uncommitted report, or a blank
+  or agent signer, refuses it
 - `flow.py` - Deterministic flow metrics, the zero-token SCHEDULE instrument (cost is
   points x measured rate, a different axis). `compute` reports per-unit cycle time
   (Created -> delivered, git history with a revision-row fallback), weekly throughput
