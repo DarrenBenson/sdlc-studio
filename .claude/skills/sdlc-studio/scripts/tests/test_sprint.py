@@ -2261,6 +2261,28 @@ class ContradictedAffectsTests(unittest.TestCase):
             self.assertEqual(self._bd(root)["affects_advisories"], [])
 
 
+class RegistryAdviceSeamTests(unittest.TestCase):
+    """The registry advice rides beside `affects_advisories`, never inside it: that list is what
+    `sprint.affects_check: block` refuses on, and a registry a change implies is advice only."""
+
+    def test_registry_advice_never_enters_the_affects_findings(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _src(root, "sdlc-studio/reviews/command-audit.md")
+            _src(root, ".claude/skills/sdlc-studio/scripts/tool.py")
+            (root / ".claude/skills/sdlc-studio/scripts/tool.py").write_text(
+                "import argparse\n\ndef build_parser():\n    return argparse.ArgumentParser()\n",
+                encoding="utf-8")
+            p = _verified_story(root, 1, ".claude/skills/sdlc-studio/scripts/tool.py", [])
+            p.write_text(p.read_text(encoding="utf-8")
+                         + "\n- **AC1:** `tool.py --brand-new` runs\n", encoding="utf-8")
+            bd = _load().build_plan(root, "story", "Ready", skip_personas=True)["breakdown"]
+            self.assertEqual(bd["affects_advisories"], [])
+            self.assertEqual(bd["registry_advisories"], [{"id": "US0001", "items": [
+                {"what": "new flag tool.py --brand-new",
+                 "add": ["sdlc-studio/reviews/command-audit.md"]}]}])
+
+
 class DerivedClusterFileTests(unittest.TestCase):
     """US0291/CR0347: the collision analysis saw only what somebody DECLARED, and test files
     are almost never declared - so the one file parallel work most often shares was the one

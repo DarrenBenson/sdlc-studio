@@ -914,6 +914,230 @@ def affects_mismatch(repo_root: Path | str, text: str) -> dict:
     return {"unresolvable": unresolvable, "undeclared": undeclared}
 
 
+#: The registry files a change to the skill's own scripts or pages implies, repo-relative. Each is
+#: named only where the tree holds it, so a consuming project, which holds none, is never told to
+#: edit the skill repository's registries.
+_SKILL_REL = ".claude/skills/sdlc-studio"
+_REG_ROOT_CENSUS = "sdlc-studio/reviews/root-census.md"
+_REG_COMMAND_AUDIT = "sdlc-studio/reviews/command-audit.md"
+_REG_SURFACE_PAGE = f"{_SKILL_REL}/reference-scripts-surface.md"
+_REG_SURFACE_LIB = f"{_SKILL_REL}/scripts/lib/surface.py"
+_REG_NON_CEREMONY = f"{_SKILL_REL}/scripts/sprint_report.py"
+_REG_PROSE_SWEEP = f"{_SKILL_REL}/scripts/tests/test_artifact.py"
+_REG_GUIDE_TOOL = f"{_SKILL_REL}/scripts/docgen.py"
+_REG_BUDGETS = "tools/check_budgets.py"
+_CODE_SPAN = re.compile(r"`([^`\n]+)`")
+_SCRIPT_TOKEN = re.compile(r"(?:(?:.*/)?scripts/)?([a-z0-9][a-z0-9_]*\.py)")
+_VERB_TOKEN = re.compile(r"[a-z][a-z0-9-]*")
+
+
+def _module_literals(path: Path, names: tuple[str, ...], cache: dict) -> dict:
+    """The literal top-level assignments `names` in a Python file, read without importing it.
+
+    The budget ALLOWLIST and the prose-flag spellings are repo-only, so they are read only where
+    the file exists, and never executed: a plan must not run a guard to learn its numbers. Parsed
+    once per batch, not once per unit."""
+    key = ("literals", str(path), names)
+    if key not in cache:
+        cache[key] = _parse_literals(path, names)
+    return cache[key]
+
+
+def _parse_literals(path: Path, names: tuple[str, ...]) -> dict:
+    import ast  # noqa: PLC0415 - only a plan over the skill's own pages needs it
+    if not path.is_file():
+        return {}
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError, ValueError) as exc:
+        sdlc_md.debug("sprint._module_literals", exc)
+        return {}
+    out: dict = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in names:
+                    try:
+                        out[target.id] = ast.literal_eval(node.value)
+                    except ValueError:
+                        continue
+    return out
+
+
+def _criteria_invocations(text: str) -> list[tuple[str, list[str], list[str]]]:
+    """`[(script, words, flags)]` for each skill-script command a criterion's code span names.
+
+    FROM CODE SPANS IN THE CRITERIA ONLY: a span is a command somebody typed, prose is not
+    (D0053). `words` are the leading verb-shaped tokens after the script, `flags` every long
+    option in the span with any `=value` dropped; a token after the first flag is a value."""
+    out = []
+    for span in _CODE_SPAN.findall(sdlc_md.criteria_section(text)):
+        toks = span.split()
+        for i, tok in enumerate(toks):
+            m = _SCRIPT_TOKEN.fullmatch(tok)
+            if not m:
+                continue
+            words: list[str] = []
+            for w in toks[i + 1:]:
+                if not _VERB_TOKEN.fullmatch(w):
+                    break
+                words.append(w)
+            flags = [t.split("=", 1)[0] for t in toks[i + 1:] if t.startswith("--")]
+            out.append((m.group(1), words, flags))
+            break
+    return out
+
+
+def _script_surface(path: Path, cache: dict) -> tuple[set, set] | None:
+    """`(verbs, flags)` of one script's parser, or None when it has none to read.
+
+    Loaded one script at a time through the surface module's loader, which keeps the script's own
+    module name: `surface.enumerate_scripts` would import every script for the one a criterion
+    names."""
+    key = str(path)
+    if key not in cache:
+        cache[key] = None
+        if not path.is_file():
+            return None
+        try:
+            from lib import surface  # noqa: PLC0415 - only a criterion naming a script needs it
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                build = getattr(surface._load(path), "build_parser", None)  # noqa: SLF001
+                if callable(build):
+                    parser = build()
+                    cache[key] = (set(surface.verbs_of(parser)), surface.flags_of(parser))
+        except BaseException as exc:  # noqa: BLE001 - an unloadable script is not this plan's defect
+            sdlc_md.debug("sprint._script_surface", exc)
+    return cache[key]
+
+
+def _new_verb(words: list[str], verbs: set) -> str | None:
+    """The first verb path the parser lacks, or None. A word after a verb with no sub-verbs is a
+    positional argument, not a verb, and a parser with no verbs at all judges none."""
+    path = ""
+    for w in words:
+        cand = f"{path} {w}".strip()
+        if cand in verbs:
+            path = cand
+            continue
+        if verbs and (not path or any(v.startswith(path + " ") for v in verbs)):
+            return cand
+        return None
+    return None
+
+
+def registry_advisories(repo_root: Path | str, text: str, cache: dict | None = None) -> list[dict]:
+    """`[{what, add}]`: each registry a unit's change implies that its `Affects` omits.
+
+    A new skill script owes the root census, a reference-scripts `### name.py` heading, the
+    surface page and the command audit, and `lib/surface.py` when its criteria never run it as a
+    command (no parser). A verb a script's parser lacks owes the surface page and
+    `NON_CEREMONY_VERBS`; a new flag owes the command audit, and the prose-writer sweep too when
+    it is `--fields-file` or the script takes free prose. A declared reference page near the
+    reading-guide threshold owes its regenerated guide, and one past the un-allowlisted budget
+    or near its ALLOWLIST ceiling owes `tools/check_budgets.py`.
+
+    ADVISORY BY CONSTRUCTION, like `affects_mismatch`: it returns findings and decides nothing,
+    and a registry absent from the tree is never named."""
+    root = Path(repo_root)
+    cache = {} if cache is None else cache
+    declared = {_affect_key(root, p) for p in _affects_files(text)}
+
+    def owed(*rels: str) -> list[str]:
+        return [r for r in rels if (root / r).is_file() and r not in declared]
+
+    out: list[dict] = []
+    calls = _criteria_invocations(text)
+    skill = root / _SKILL_REL
+    pages = [p for p in sorted(skill.glob("reference-scripts*.md"))
+             if p.name != Path(_REG_SURFACE_PAGE).name]
+    for key in sorted(declared):
+        m = re.fullmatch(re.escape(_SKILL_REL) + r"/scripts/([a-z0-9][a-z0-9_]*\.py)", key)
+        if not m or (root / key).exists():
+            continue
+        name = m.group(1)
+        add = owed(_REG_ROOT_CENSUS)
+        if pages and not any(f"{_SKILL_REL}/{p.name}" in declared for p in pages):
+            add.append(f"{_SKILL_REL}/reference-scripts*.md (its ### {name} heading)")
+        add += owed(_REG_SURFACE_PAGE, _REG_COMMAND_AUDIT)
+        if not any(c[0] == name for c in calls):
+            add += owed(_REG_SURFACE_LIB)
+        if add:
+            out.append({"what": f"new script {name}", "add": add})
+    prose = set(_module_literals(root / _REG_PROSE_SWEEP, ("_PROSE_FLAGS",), cache)
+                .get("_PROSE_FLAGS", ()))
+    seen: set = set()
+    for name, words, flags in calls:
+        surf = _script_surface(skill / "scripts" / name, cache)
+        if surf is None:
+            continue
+        verbs, known = surf
+        verb = _new_verb(words, verbs)
+        if verb and (name, verb) not in seen:
+            seen.add((name, verb))
+            add = owed(_REG_SURFACE_PAGE, _REG_NON_CEREMONY)
+            if add:
+                out.append({"what": f"new verb {name} {verb}",
+                            "add": [a + (" (NON_CEREMONY_VERBS)" if a == _REG_NON_CEREMONY else "")
+                                    for a in add]})
+        for flag in flags:
+            if flag in known or (name, flag) in seen:
+                continue
+            seen.add((name, flag))
+            add = owed(_REG_COMMAND_AUDIT)
+            if flag == "--fields-file" or (known | {flag}) & prose:
+                add += owed(_REG_PROSE_SWEEP)
+            if add:
+                out.append({"what": f"new flag {name} {flag}", "add": add})
+    out += _page_threshold_advisories(root, declared, cache)
+    return out
+
+
+def _page_threshold_advisories(root: Path, declared: set, cache: dict) -> list[dict]:
+    """Declared reference pages near the reading-guide threshold or their budget ceiling.
+
+    The guide is named only where the tree holds its generator, and the budget only where it holds
+    `tools/check_budgets.py`, whose ALLOWLIST is read rather than restated here."""
+    import docgen  # noqa: PLC0415 - the one guide threshold, read from its owner
+    budgets = (_module_literals(root / _REG_BUDGETS, ("ALLOWLIST", "REFERENCE_BUDGET",
+                                                      "CEILING_TOLERANCE"), cache)
+               if (root / _REG_BUDGETS).is_file() else None)
+    if budgets is not None and not isinstance(budgets.get("ALLOWLIST"), dict):
+        budgets = None                    # unreadable: no ceiling is better than a wrong one
+    guide = (root / _REG_GUIDE_TOOL).is_file()
+    out: list[dict] = []
+    for key in sorted(declared):
+        if not re.fullmatch(re.escape(_SKILL_REL) + r"/reference-[^/]+\.md", key):
+            continue
+        path = root / key
+        try:
+            body = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        n, name = len(body.splitlines()), path.name
+        threshold = docgen.GUIDE_THRESHOLD
+        add: list[str] = []
+        # Below the threshold only: a page past it already carries its guide, which the
+        # commit's docgen lane keeps current. A page that already holds one owes nothing.
+        if guide and threshold - 20 <= n < threshold and docgen.GUIDE_BEGIN not in body:
+            add.append(f"its regenerated reading guide (`docgen.py reading-guides`): within 20 "
+                       f"lines below the {threshold}-line reading-guide threshold")
+        if budgets is not None and _REG_BUDGETS not in declared:
+            ceiling = budgets["ALLOWLIST"].get(name)
+            budget = budgets.get("REFERENCE_BUDGET", 600)
+            if ceiling is None and n > budget:
+                add.append(f"{_REG_BUDGETS} (an ALLOWLIST entry: the page is past the "
+                           f"{budget}-line budget with none)")
+            elif ceiling is not None:
+                limit = int(ceiling * budgets.get("CEILING_TOLERANCE", 1.05))
+                if n >= limit - 10:
+                    add.append(f"{_REG_BUDGETS} (its ALLOWLIST ceiling: {ceiling} +5% allows "
+                               f"{limit} lines)")
+        if add:
+            out.append({"what": f"{name}: {n} lines", "add": add})
+    return out
+
+
 def _dep_ids(value: str) -> set:
     """The leading artifact-ID tokens of a `Depends on` field, normalised.
 
@@ -2164,6 +2388,8 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
     files_by_unit: dict[str, list[str]] = {}
     sources_by_unit: dict[str, dict] = {}
     affects_advisories: list[dict] = []
+    registry_advice: list[dict] = []
+    parsers: dict = {}             # one load per script across the batch
     decompose: list[dict] = []
     for it in batch:
         try:
@@ -2197,6 +2423,11 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         mism = affects_mismatch(root, text)
         if mism["unresolvable"] or mism["undeclared"]:
             affects_advisories.append({"id": it["id"], **mism})
+        # Kept apart from `affects_advisories`, which `sprint.affects_check: block` refuses on:
+        # a registry a change implies is advice, never a refusal.
+        reg = registry_advisories(root, text, parsers)
+        if reg:
+            registry_advice.append({"id": it["id"], "items": reg})
         # The size demanded depends on WHAT the unit is. A story/bug is groomed by `Points`; a
         # CR/RFC by a T-shirt `Size`. LEGACY TOLERANCE: a CR filed before this rule carries
         # `Points` and no `Size` (the earlier gate forced it) - it still counts as sized, so the
@@ -2283,6 +2514,7 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             "ceiling": ceiling, "downgraded": downgraded,
             "clusters": _shared_file_clusters(files_by_unit, sources_by_unit),
             "affects_advisories": affects_advisories,
+            "registry_advisories": registry_advice,
             "decompose": decompose,
             "triage": _batch_triage(root, [it["id"] for it in batch]),
             "probable_duplicates": probable_duplicates(root, batch),
@@ -4266,6 +4498,20 @@ def _render_affects_advisories(data: dict, repo_root=None) -> None:
                   f"{', '.join(it['undeclared'])}")
 
 
+def _render_registry_advisories(data: dict) -> None:
+    """Registry files a unit's new script, verb, flag or page size implies, that its `Affects`
+    omits. ADVISORY under every `sprint.affects_check` mode: a lane that misses one is refused at
+    the land, after its whole hook run, so the plan is the cheap place to name it."""
+    items = (data.get("breakdown") or {}).get("registry_advisories") or []
+    if not items:
+        return
+    print("  Registry files the units' changes imply that their Affects omit "
+          "(advisory - nothing is refused):")
+    for unit in items:
+        for it in unit["items"]:
+            print(f"    {unit['id']}: {it['what']} -> {', '.join(it['add'])}")
+
+
 def _render_decompose(data: dict) -> None:
     """CRs doing enough work to warrant stories. Only a story carries executable `Verify:`
     lines, so an un-decomposed CR of this size reaches Done on prose alone."""
@@ -4882,6 +5128,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_lane_partition(data)
     _render_clusters(data)
     _render_affects_advisories(data, args.root)
+    _render_registry_advisories(data)
     _render_triage(data)
     _render_decompose(data)
     _render_downgrades(data)
