@@ -915,8 +915,8 @@ def affects_mismatch(repo_root: Path | str, text: str) -> dict:
 
 
 #: The registry files a change to the skill's own scripts or pages implies, repo-relative. Each is
-#: named only where the tree holds it, so a consuming project, which holds none, is never told to
-#: edit the skill repository's registries.
+#: named only where the tree holds it, and a script a criterion names is judged only when it is the
+#: skill's own copy, so a project's own script of the same name never draws the skill's registries.
 _SKILL_REL = ".claude/skills/sdlc-studio"
 _REG_ROOT_CENSUS = "sdlc-studio/reviews/root-census.md"
 _REG_COMMAND_AUDIT = "sdlc-studio/reviews/command-audit.md"
@@ -965,7 +965,8 @@ def _parse_literals(path: Path, names: tuple[str, ...]) -> dict:
 
 
 def _criteria_invocations(text: str) -> list[tuple[str, list[str], list[str]]]:
-    """`[(script, words, flags)]` for each skill-script command a criterion's code span names.
+    """`[(script, words, flags)]` for each script command a criterion's code span names, the
+    script as the span spells it, path and all: `_skill_script` decides whose it is.
 
     FROM CODE SPANS IN THE CRITERIA ONLY: a span is a command somebody typed, prose is not
     (D0053). `words` are the leading verb-shaped tokens after the script, `flags` every long
@@ -983,9 +984,25 @@ def _criteria_invocations(text: str) -> list[tuple[str, list[str], list[str]]]:
                     break
                 words.append(w)
             flags = [t.split("=", 1)[0] for t in toks[i + 1:] if t.startswith("--")]
-            out.append((m.group(1), words, flags))
+            out.append((tok, words, flags))
             break
     return out
+
+
+def _skill_script(root: Path, tok: str, declared: set) -> str | None:
+    """The script's name when `tok` is the skill's own copy, else None.
+
+    The skill's copy is its full path under the root, or a bare name or shorter path that is a
+    tail of a skill script the unit's `Affects` declares. Anything else is another directory's
+    script, such as a project's own `scripts/deploy.py`, and the skill's parser says nothing
+    about it."""
+    name = tok.rsplit("/", 1)[-1]
+    rel = f"{_SKILL_REL}/scripts/{name}"
+    if os.path.normpath(root / tok) == os.path.normpath(root / rel):
+        return name
+    if rel in declared and f"/{rel}".endswith("/" + os.path.normpath(tok)):
+        return name
+    return None
 
 
 def _script_surface(path: Path, cache: dict) -> tuple[set, set] | None:
@@ -993,12 +1010,14 @@ def _script_surface(path: Path, cache: dict) -> tuple[set, set] | None:
 
     Loaded one script at a time through the surface module's loader, which keeps the script's own
     module name: `surface.enumerate_scripts` would import every script for the one a criterion
-    names."""
+    names. The loader registers the script under its stem, displacing any running module of that
+    name, so whatever held the name before is put back afterwards."""
     key = str(path)
     if key not in cache:
         cache[key] = None
         if not path.is_file():
             return None
+        held = sys.modules.get(path.stem)
         try:
             from lib import surface  # noqa: PLC0415 - only a criterion naming a script needs it
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
@@ -1008,6 +1027,11 @@ def _script_surface(path: Path, cache: dict) -> tuple[set, set] | None:
                     cache[key] = (set(surface.verbs_of(parser)), surface.flags_of(parser))
         except BaseException as exc:  # noqa: BLE001 - an unloadable script is not this plan's defect
             sdlc_md.debug("sprint._script_surface", exc)
+        finally:
+            if held is None:
+                sys.modules.pop(path.stem, None)
+            else:
+                sys.modules[path.stem] = held
     return cache[key]
 
 
@@ -1030,8 +1054,8 @@ def registry_advisories(repo_root: Path | str, text: str, cache: dict | None = N
     """`[{what, add}]`: each registry a unit's change implies that its `Affects` omits.
 
     A new skill script owes the root census, a reference-scripts `### name.py` heading, the
-    surface page and the command audit, and `lib/surface.py` when its criteria never run it as a
-    command (no parser). A verb a script's parser lacks owes the surface page and
+    surface page and the command audit, and `lib/surface.py` when no criterion's code span names
+    it (the proxy for having no parser). A verb a script's parser lacks owes the surface page and
     `NON_CEREMONY_VERBS`; a new flag owes the command audit, and the prose-writer sweep too when
     it is `--fields-file` or the script takes free prose. A declared reference page near the
     reading-guide threshold owes its regenerated guide, and one past the un-allowlisted budget
@@ -1047,7 +1071,8 @@ def registry_advisories(repo_root: Path | str, text: str, cache: dict | None = N
         return [r for r in rels if (root / r).is_file() and r not in declared]
 
     out: list[dict] = []
-    calls = _criteria_invocations(text)
+    calls = [(name, words, flags) for tok, words, flags in _criteria_invocations(text)
+             if (name := _skill_script(root, tok, declared))]
     skill = root / _SKILL_REL
     pages = [p for p in sorted(skill.glob("reference-scripts*.md"))
              if p.name != Path(_REG_SURFACE_PAGE).name]
