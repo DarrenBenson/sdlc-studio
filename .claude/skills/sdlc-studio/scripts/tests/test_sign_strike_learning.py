@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -101,8 +102,25 @@ def _close_lists(root: Path) -> None:
     assert ok, detail
 
 
+def _close(root: Path) -> None:
+    """`sprint close` through `sprint.main`, every chain step but `persona-memory` stubbed
+    green: the close lists the learnings and files the run's tracked record, still running."""
+    mod = _live("sprint")
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(unittest.mock.patch.object(mod, "_report_holds", lambda *a, **k: []))
+        for name in mod._CLOSE_CHAIN:
+            if name != "persona-memory":
+                stack.enter_context(unittest.mock.patch.object(
+                    mod, "_close_" + name.replace("-", "_"),
+                    lambda *a, _n=name, **k: (True, f"{_n} ok", "")))
+        rc, out, err = _cli(root, "close", "--retro", "RETRO0001")
+    assert rc == 0, out + err
+
+
 def _sign(root: Path, *extra: str) -> tuple[int, str, str]:
-    return _cli(root, "sign", "--report", "RPT0001", "--principal", "Darren", *extra)
+    """`sprint sign` over the page the run's last close filed (a re-close files a new one)."""
+    report = _live("sprint").run_state.read(root).get("report") or "RPT0001"
+    return _cli(root, "sign", "--report", report, "--principal", "Darren", *extra)
 
 
 def _script(root: Path, script: str, *argv: str) -> str:
@@ -178,9 +196,14 @@ class StrikeLearningTests(unittest.TestCase):
 
     def test_a_learning_of_an_unsigned_run_is_held(self) -> None:
         """AC2. MUTANTS: approved learnings carried before the signature; the held learning
-        dropped silently, so the brief cannot be told from one with none."""
+        dropped silently, so the brief cannot be told from one with none; any filed record read
+        as signed, so the record the close files carries what nobody has signed."""
         root = self.root
-        _close_lists(root)
+        _close(root)
+        record = _record(root)
+        self.assertEqual("running", record.get("outcome"), "the close filed no running record")
+        self.assertIsNone(record.get("signature"))
+        self.assertEqual([self.qa, self.product], record.get("persona_learnings_listed"))
         brief = _brief(root, "qa")
         self.assertNotIn(self.qa, brief)
         self.assertIn("1 approved learning awaits its run's signature", brief)
@@ -188,9 +211,10 @@ class StrikeLearningTests(unittest.TestCase):
     def test_a_reopened_run_holds_its_learnings_until_resigned(self) -> None:
         """AC3. MUTANTS: signed stamped into memory at the seal, so a reopened run's learnings
         stay live while the signature they relied on is broken; the re-sign's strike dropped
-        because the first signature listed the learning."""
+        because the first signature listed the learning; the outcome left unread, so the record
+        the re-close files, running but still bearing the first signature, reads as signed."""
         root = self.root
-        _close_lists(root)
+        _close(root)
         rc, out, err = _sign(root)
         self.assertEqual(0, rc, out + err)
         self.assertIn(self.product, _brief(root, "product"), "a signed learning is not carried")
@@ -199,7 +223,14 @@ class StrikeLearningTests(unittest.TestCase):
         held = _brief(root, "product")
         self.assertNotIn(self.product, held)
         self.assertIn("1 approved learning awaits its run's signature", held)
-        _close_lists(root)
+        _close(root)
+        record = _record(root)
+        self.assertEqual("running", record.get("outcome"), "the re-close filed no running record")
+        self.assertEqual("Darren", (record.get("signature") or {}).get("principal"),
+                         "the re-close dropped the first signature, so this pins nothing")
+        held = _brief(root, "product")
+        self.assertNotIn(self.product, held, "a re-closed run's learning is carried unsigned")
+        self.assertIn("1 approved learning awaits its run's signature", held)
         rc, out, err = _sign(root, "--strike", self.product, "--strike-reason", "it overreaches")
         self.assertEqual(0, rc, out + err)
         self.assertNotIn(self.product, _brief(root, "product"))
@@ -207,6 +238,24 @@ class StrikeLearningTests(unittest.TestCase):
         self.assertEqual([self.product],
                          [s["id"] for s in _record(root).get("persona_learnings_struck") or []])
         self.assertIn(self.qa, _brief(root, "qa"), "the re-sign lost the unstruck learning")
+
+    def test_a_resign_keeps_the_earlier_signatures_strikes(self) -> None:
+        """A re-sign adds its own strike to the run's struck list and keeps the first
+        signature's. MUTANT: the struck list rewritten with the re-sign's strikes alone."""
+        root = self.root
+        _close(root)
+        rc, out, err = _sign(root, "--strike", self.qa, "--strike-reason", "first")
+        self.assertEqual(0, rc, out + err)
+        rc, out, err = _cli(root, "reopen", "--reason", "a late review belongs to this run")
+        self.assertEqual(0, rc, out + err)
+        _close(root)
+        rc, out, err = _sign(root, "--strike", self.product, "--strike-reason", "second")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual([(self.qa, "first"), (self.product, "second")],
+                         [(s["id"], s["reason"])
+                          for s in _record(root).get("persona_learnings_struck") or []])
+        self.assertNotIn(self.qa, _brief(root, "qa"))
+        self.assertNotIn(self.product, _brief(root, "product"))
 
     def test_a_bad_strike_refuses_the_seal_and_writes_nothing(self) -> None:
         """AC4. MUTANTS: the strike checked after the seal is written; a partial strike applied

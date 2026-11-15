@@ -2510,27 +2510,28 @@ LEARNINGS_HEADING_RE = re.compile(r"(?im)^##\s+persona\s+learnings\s*$")
 
 def adverse_keys(seat: dict) -> list:
     """The keys of a seat record's adverse items, in record order: each defect found only after
-    its approval (`round:<unit>r<k>`) and each later bug charged to it (`bug:<id>`)."""
+    its approval (`round:<unit>r<k>`), then each later bug `seat_record` charges to it, missed
+    or approved over its own finding (`bug:<id>`)."""
     keys = [f["key"] for f in seat.get("found_after_approval") or [] if f.get("key")]
-    for value in seat.values():
-        if isinstance(value, list):
-            keys += [str(i["key"]) for i in value
-                     if isinstance(i, dict) and str(i.get("key") or "").startswith("bug:")]
+    keys += [f"bug:{m['bug']}" for k in ("missed", "approved_over_own_finding")
+             for m in seat.get(k) or [] if m.get("bug")]
     return list(dict.fromkeys(keys))
 
 
 def learnings_review(root, retro_id: str, run_id: str) -> dict:
     """What the close lists: every approved learning not yet live, whatever wrote it
-    (`persona_memory.pending_listing`), each seat whose record over the batch holds adverse
-    items and no learning in that listing, and how many verdict rows name no seat. Raises
-    ValueError for a retro that is not found or a memory file that cannot be read."""
+    (`persona_memory.pending_listing`), each seat whose record holds adverse items and no
+    learning in that listing, and how many verdict rows name no seat. The record is the one
+    `retro.py seats` reports, `seat_record`: the batch's verdicts with the later bugs charged
+    over the retro's window. Raises ValueError for a retro that is not found or a memory file
+    that cannot be read."""
     import persona_memory  # noqa: PLC0415 - sibling; only the close's listing reads memory
     path = find_retro(root, retro_id)
     if path is None:
         raise ValueError(f"retro {retro_id}: not found")
     listed = persona_memory.pending_listing(root)
     units = batch_ids(sdlc_md.read_text_safe(path))
-    ev = seat_evidence(root, units) if units else {"rows": 0, "unattributed": [], "seats": {}}
+    ev = seat_record(root, path, units) if units else {"rows": 0, "unattributed": [], "seats": {}}
     learned = {r["persona"] for r in listed}
     unlearned = [{"seat": role, "items": keys} for role, s in ev["seats"].items()
                  if (keys := adverse_keys(s)) and role not in learned]

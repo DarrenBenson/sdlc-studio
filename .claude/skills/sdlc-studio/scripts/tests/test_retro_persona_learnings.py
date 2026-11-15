@@ -90,7 +90,7 @@ def _learning(root: Path, key: str, title: str, *, state: str = "approved",
     return entry["id"]
 
 
-def _close(root: Path, seat_evidence=None) -> tuple[int, str, str]:
+def _close(root: Path) -> tuple[int, str, str]:
     """`sprint close` with every chain step but `persona-memory` stubbed green."""
     mod = _live("sprint")
     stack = contextlib.ExitStack()
@@ -100,9 +100,6 @@ def _close(root: Path, seat_evidence=None) -> tuple[int, str, str]:
             stack.enter_context(unittest.mock.patch.object(
                 mod, "_close_" + name.replace("-", "_"),
                 lambda *a, _n=name, **k: (True, f"{_n} ok", "")))
-    if seat_evidence is not None:
-        stack.enter_context(unittest.mock.patch.object(_live("retro"), "seat_evidence",
-                                                       seat_evidence))
     out, err = io.StringIO(), io.StringIO()
     with stack, contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = mod.main(["close", "--retro", "RETRO0001", "--root", str(root)])
@@ -192,25 +189,31 @@ class RetroLearningsTests(unittest.TestCase):
 
     def test_the_close_names_unlearned_adverse_evidence_and_unattributed_rows(self) -> None:
         """AC2. MUTANTS: every quiet seat named on every close; unattributed rows left out, so an
-        empty block reads as a clean run; the finding made blocking. A later bug is charged to an
-        approval by the seats record's narrow rule; this fixture supplies product's in the
-        record's `bug:<id>` key shape, beside the record the ledger itself yields."""
+        empty block reads as a clean run; the finding made blocking; the close reading the
+        ledger alone, so a later bug `retro.py seats` charges to a seat names no seat. The bug is
+        a real artefact on disk, charged by the seats record's own narrow rule: created in the
+        retro's window, citing US0101 and sharing its Affects file, after product approved it."""
         root = self.root
         _project(root, [
-            ("US0101", "APPROVE", QA, BUILDER, "none blocking"),
             ("US0101", "APPROVE", PRODUCT, BUILDER, "none blocking"),
+            ("US0102", "REJECT", QA, BUILDER, "none blocking"),
             ("US0102", "APPROVE", QA, BUILDER, "none blocking"),
             ("US0102", "APPROVE", "a reviewer", BUILDER, "none blocking"),
             ("US0102", "APPROVE", "someone else", BUILDER, "none blocking")])
-        real = _live("retro").seat_evidence
+        _write(root, "sdlc-studio/bugs/BG0002-widget-drops-input.md",
+               "# BG0002: widget drops input\n\n> **Status:** Open\n"
+               "> **Affects:** src/widget.py\n> **Created:** 2026-11-15\n\n## Summary\n\n"
+               "US0101 shipped a widget that drops its input.\n")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(0, _live("retro").main(
+                ["--root", str(root), "seats", "--id", "RETRO0001", "--format", "json"]))
+        seats = json.loads(out.getvalue())["seats"]
+        self.assertEqual(["BG0002"], [m["bug"] for m in seats["product"]["missed"]],
+                         "the seats record does not charge the fixture's bug to product")
+        self.assertEqual([], seats["qa"]["missed"])
 
-        def with_a_later_bug(r, units):
-            ev = real(r, units)
-            ev["seats"]["product"]["later_bugs"] = [
-                {"key": "bug:BG0002", "bug": "BG0002", "unit": "US0101"}]
-            return ev
-
-        rc, out, err = _close(root, seat_evidence=with_a_later_bug)
+        rc, out, err = _close(root)
 
         self.assertEqual(0, rc, out + err)
         self.assertRegex(out, r"close \[\d+/\d+\] persona-memory: ok")
