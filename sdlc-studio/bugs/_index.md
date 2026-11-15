@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 359 |
 | In Progress | 0 |
-| Fixed | 937 |
+| Fixed | 938 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1487** |
+| **Total** | **1488** |
 
 ## All Bugs
 
@@ -22,7 +22,7 @@
 | [BG0944](BG0944-three-behaviours-bg0940-and-bg0943-shipped-have-no.md) | Three behaviours BG0940 and BG0943 shipped have no test that fails when they break | Fixed | Low | 2026-10-05 | 2026-10-05 |
 | [BG0945](BG0945-bg0940-s-changelog-entry-says-a-page-with.md) | BG0940's changelog entry says a page with a late ruling is signed, though sign refuses until the run is re-closed | Fixed | Low | 2026-10-05 | 2026-10-05 |
 | [BG0946](BG0946-reports-index-md-last-updated-is-not-restamped.md) | reports/_index.md Last Updated is not restamped when a report is filed | Open | Low | 2026-10-05 | 2026-10-05 |
-| [BG0947](BG0947-reference-outputs-md-terminal-status-table-contradicts-sdlc.md) | reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS | Open | Medium | 2026-10-05 | 2026-10-05 |
+| [BG0947](BG0947-reference-outputs-md-terminal-status-table-contradicts-sdlc.md) | reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS | Fixed | Medium | 2026-10-05 | 2026-10-05 |
 | [BG0948](BG0948-a-migrating-project-cannot-baseline-pre-existing-placeholder.md) | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined | Open | Medium | 2026-10-05 | 2026-10-05 |
 | [BG0949](BG0949-an-inline-ruled-or-decided-ruling-is-never.md) | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0950](BG0950-a-verdict-that-follows-critic-py-brief-s.md) | A verdict that follows `critic.py brief`'s return contract to the letter is refused by `critic.py record --from-verdict` | Fixed | Medium | 2026-10-06 | 2026-10-06 |
@@ -563,6 +563,7 @@
 | [BG1485](BG1485-a-shell-verify-line-run-with-s-still.md) | A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1487](BG1487-the-readme-s-opening-says-a-person-you.md) | The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1488](BG1488-reference-outputs-md-still-calls-deferred-a-story.md) | reference-outputs.md still calls Deferred a story terminal status at lines 134, 745 and 755, against its own Story row and sdlc_md.TERMINAL_STATUS | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

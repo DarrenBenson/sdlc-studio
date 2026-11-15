@@ -1,6 +1,6 @@
 # BG0947: reference-outputs.md terminal-status table contradicts sdlc_md.TERMINAL_STATUS
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py, changelog.d/BG0947.md
@@ -25,8 +25,10 @@ Generate the table from `sdlc_md.STATUS_VOCAB` and `TERMINAL_STATUS`, or add a t
 
 - [ ] **AC1** Given `sdlc_md.STATUS_VOCAB` and `sdlc_md.TERMINAL_STATUS`, when the Status Vocabulary table in reference-outputs.md is parsed, then it has exactly one row per type in STATUS_VOCAB (issue and charter included) and each row's allowed and terminal sets equal the code's.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_table_matches_the_code
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given a copy of the corrected table with one terminal status removed from one row, when the same comparison runs on it, then it fails naming that type and that status.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_a_divergence_names_the_type_and_status
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
