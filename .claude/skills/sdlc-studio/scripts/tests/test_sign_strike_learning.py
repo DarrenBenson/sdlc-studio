@@ -288,6 +288,41 @@ class StrikeLearningTests(unittest.TestCase):
                 text = (root / "sdlc-studio" / "stories" / "US0101-x.md").read_text()
                 self.assertIn("> **Status:** Review", text, "a unit was sealed")
 
+    def test_a_strike_written_over_two_lines_refuses_the_seal_and_writes_nothing(self) -> None:
+        """A strike's reason or principal holding a line break would write a Struck field the
+        reader takes as two, so the sign refuses it, naming why, before anything is sealed; a
+        one-line reason still signs. MUTANT: the line break left to the strike's own write,
+        after the units are sealed, so the sign fails half-sealed and unsigned."""
+        root = self.root
+        _close_lists(root)
+        before = _memory_bytes(root)
+        forged = "- **State:** proposed"
+        for case, argv, named in (
+                ("newline", ("--strike-reason", f"stale\n{forged}"), "reason"),
+                ("carriage return", ("--strike-reason", f"stale\r{forged}"), "reason"),
+                ("line separator", ("--strike-reason", f"stale {forged}"), "reason"),
+                ("principal", ("--strike-reason", "stale", "--principal", f"Darren\n{forged}"),
+                 "principal")):
+            with self.subTest(case=case):
+                rc, out, err = _sign(root, "--strike", self.qa, *argv)
+                self.assertEqual(2, rc, out + err)
+                self.assertIn(self.qa, err)
+                self.assertIn(f"the {named} holds a line break", err)
+                state = _live("sprint").run_state.read(root)
+                self.assertEqual("running", state["outcome"], "the run was sealed")
+                self.assertIsNone(state.get("signature"))
+                self.assertIsNone(state.get("persona_learnings_struck"))
+                self.assertEqual(before, _memory_bytes(root), "a memory file changed")
+                text = (root / "sdlc-studio" / "stories" / "US0101-x.md").read_text()
+                self.assertIn("> **Status:** Review", text, "a unit was sealed")
+        # The control: one line, its trailing line break stripped as the strike writes it.
+        reason = 'stale; it says "always" in **bold**: x'
+        rc, out, err = _sign(root, "--strike", self.qa, "--strike-reason", reason + "\n")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("goal-reached", _live("sprint").run_state.read(root)["outcome"])
+        self.assertTrue(_fields(root, self.qa).get("struck", "").endswith(f": {reason}"))
+        self.assertEqual("approved", _fields(root, self.qa).get("state"))
+
 
 if __name__ == "__main__":
     unittest.main()

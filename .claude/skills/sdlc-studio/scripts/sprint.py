@@ -10784,7 +10784,9 @@ def cmd_sign(args: argparse.Namespace) -> int:
 def _sign_strikes(root, state: dict, args) -> tuple[list, list]:
     """The learnings `--strike` names, and every reason they cannot be struck at this
     signature, read before anything is written: no `--strike-reason`, an id no memory file
-    holds, and one this run's close did not list. Every reason is named at once."""
+    holds, one this run's close did not list, and a reason or principal holding a line break,
+    which the strike's own write refuses only after the units are sealed. Every reason is
+    named at once."""
     ids = list(dict.fromkeys(getattr(args, "strike", None) or []))
     if not ids:
         return [], []
@@ -10794,7 +10796,9 @@ def _sign_strikes(root, state: dict, args) -> tuple[list, list]:
         out.append("needs --strike-reason: a strike is recorded with who made it, when and why")
     try:
         out += persona_memory.strike_refusals(root, state.get("run_id") or "",
-                                              state.get(run_state.PERSONA_LISTED) or [], ids)
+                                              state.get(run_state.PERSONA_LISTED) or [], ids,
+                                              getattr(args, "strike_reason", None) or "",
+                                              getattr(args, "principal", None) or "")
     except ValueError as exc:
         out.append(f"cannot be checked, as a memory file cannot be read: {exc}")
     return ids, out

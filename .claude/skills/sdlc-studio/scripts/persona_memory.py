@@ -647,12 +647,18 @@ def mark_listed(root: Path | str, ids, run_id: str) -> list[str]:
     return written
 
 
-def strike_refusals(root: Path | str, run_id: str, listed, ids) -> list[str]:
-    """Why `ids` cannot be struck at `run_id`'s signature, one line per id: an id no memory file
-    holds, or one this run's close did not list. Writes nothing; [] when every id may be
+def strike_refusals(root: Path | str, run_id: str, listed, ids, reason: str = "",
+                    principal: str = "") -> list[str]:
+    """Why `ids` cannot be struck at `run_id`'s signature: an id no memory file holds, or one
+    this run's close did not list, one line per id; and a `reason` (as `strike` is given it,
+    stripped) or `principal` holding a line break, which `strike` would refuse only at its
+    write, after the signature has sealed the run. Writes nothing; [] when every id may be
     struck. Raises StoreError on a memory file that cannot be read."""
     held = {e["id"]: e for entries in all_stores(root).values() for e in entries}
-    out = []
+    out = [f"{', '.join(ids)}: the {name} holds a line break, and a learning's field is one "
+           f"line, so a second line would read back as another field"
+           for name, value in (("reason", (reason or "").strip()), ("principal", principal or ""))
+           if "".join(value.splitlines()) != value]
     for i in ids:
         if i not in held:
             out.append(f"{i}: no memory file holds it")
