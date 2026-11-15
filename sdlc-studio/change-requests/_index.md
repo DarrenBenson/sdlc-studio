@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-15
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 33 |
+| Proposed | 34 |
 | Approved | 0 |
 | In Progress | 24 |
 | Complete | 549 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **702** |
+| **Total** | **703** |
 
 ## All Changes
 
@@ -105,7 +105,7 @@
 | [CR-0691](CR0691-the-engineering-seat-s-brief-carries-reliability-and.md) | The engineering seat's brief carries reliability and observability checks drawn from the TRD | Proposed | Medium | enhancement | 2026-11-10 | -- |
 | [CR-0692](CR0692-a-change-evidence-pack-per-release-built-from.md) | A change evidence pack per release, built from the run's record and grouped by risk and compliance class | In Progress | High | feature | 2026-11-10 | EP0308 |
 | [CR-0693](CR0693-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review | Proposed | High | feature | 2026-11-10 | -- |
-| [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306 |
+| [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306, CR0703 |
 | [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | Proposed | High | feature | 2026-11-10 | -- |
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | In Progress | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
@@ -114,6 +114,7 @@
 | [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | Proposed | Medium | Improvement | 2026-11-12 | -- |
 | [CR-0701](CR0701-a-consolidation-unit-s-builder-brief-can-carry.md) | A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it | Proposed | Low | Improvement | 2026-11-12 | -- |
 | [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | Proposed | High | Improvement | 2026-11-14 | -- |
+| [CR-0703](CR0703-fit-the-plan-s-dollar-forecast-from-measured.md) | Fit the plan's dollar forecast from measured dollars per point, not priced tokens times the input price | Proposed | Medium | enhancement | 2026-11-15 | -- |
 
 ## Archived Releases
 

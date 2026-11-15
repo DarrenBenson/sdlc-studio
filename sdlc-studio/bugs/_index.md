@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 327 |
+| Open | 329 |
 | In Progress | 0 |
-| Fixed | 911 |
+| Fixed | 913 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1429** |
+| **Total** | **1433** |
 
 ## All Bugs
 
@@ -495,16 +495,20 @@
 | [BG1417](BG1417-ci-s-lint-yml-sets-up-node-20.md) | CI's lint.yml sets up Node 20 while markdownlint-cli and markdownlint declare node >=22, so the gap is invisible until a dependency uses a Node 22 API | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1418](BG1418-a-nested-run-verifier-caller-s-own-verifier.md) | A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1419](BG1419-two-more-group-kill-helpers-duplicate-verify-ac.md) | Two more group-kill helpers duplicate verify_ac's, one closure in mutation.py and one in verify_ac._run_phase | Superseded | Low | 2026-11-13 | 2026-11-13 |
-| [BG1420](BG1420-run-eleven-s-lanes-turn-the-full-suite.md) | Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected | Open | High | 2026-11-13 | 2026-11-13 |
+| [BG1420](BG1420-run-eleven-s-lanes-turn-the-full-suite.md) | Run eleven's lanes turn the full suite red in five tests the per-commit runs never selected | Fixed | High | 2026-11-13 | 2026-11-13 |
 | [BG1421](BG1421-verify-ac-s-revert-check-reads-a-missing.md) | verify_ac's revert check reads a missing runner binary as red rather than as no verdict | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1422](BG1422-no-test-pins-verify-ac-s-class-and.md) | No test pins verify_ac's class and module skip-mark check on the decorator's name | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1423](BG1423-file-finding-writes-a-title-with-bare-underscores.md) | file_finding writes a title with bare underscores into the bug heading and index, which markdownlint then refuses as emphasis | Superseded | Low | 2026-11-13 | 2026-11-13 |
 | [BG1424](BG1424-a-bare-sprint-close-runs-its-whole-pre.md) | A bare sprint close runs its whole pre-flight report before scaffolding the retro, so the scaffold takes many minutes | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1426](BG1426-transition-py-refuses-an-rfc-at-accepted-until.md) | transition.py refuses an RFC at Accepted until every change request it spawned is resolved, though the RFC status flow says Accepted means its decisions are made | Superseded | Low | 2026-11-14 | 2026-11-14 |
 | [BG1427](BG1427-file-finding-py-parent-writes-the-parent-s.md) | file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift | Open | Low | 2026-11-14 | 2026-11-14 |
 | [BG1428](BG1428-the-per-unit-dollars-cell-prices-a-unit.md) | The per-unit dollars cell prices a unit's Grok agent read from a session total with no lower-bound label, and BG1391's changelog says the label holds wherever models are summed | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1429](BG1429-a-project-grok-price-entry-with-a-lower.md) | A project Grok price entry with a lower long-context threshold is still booked at the shipped 200,000 threshold, so a long prompt is priced at the short rate and reads exact | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1430](BG1430-verify-ac-s-signal-relay-raises-its-running.md) | verify_ac's signal relay raises its running count outside the try, so a raise in that window leaves every later returning handler refused, and no test pins the per-signal refresh of the settle bound | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1431](BG1431-two-release-notes-tests-take-120-s-to.md) | Two release-notes tests take 120 s to over 300 s under load, past verify_ac's default per-verifier timeout, so BG1420's and BG1425's recorded runs fail on time unless given --timeout | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1432](BG1432-three-lane-pricing-and-re-close-behaviours-are.md) | Three lane-pricing and re-close behaviours are pinned by no test: each split share's per-model split, the minutes split, and the lane-yield re-freeze over a kept window | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1433](BG1433-the-report-templates-still-say-the-wall-clock.md) | The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

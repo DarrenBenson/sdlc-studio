@@ -5,7 +5,7 @@
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, changelog.d/US1155.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-scripts-surface.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, changelog.d/US1155.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/reference-scripts-domain.md
 > **Epic:** EP0308
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -48,3 +48,4 @@
 | 2026-11-14 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0476) | Groomed: criteria with Verify lines, must-fail notes, Affects with the tests each change exercises and this unit's fragment |
 | 2026-11-15 | Claude Opus 5.5 (run twelve) | Affects gains the generated command surface, which the new `release_cut.py evidence-pack` verb changes (the builder found five tests that require zero drift) |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Affects gains reference-scripts-domain.md: doc coverage needs a level-three catalogue heading for the new script, beside release_cut.py's |

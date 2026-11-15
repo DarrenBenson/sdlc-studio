@@ -1,6 +1,6 @@
 # BG1425: BG1420 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py, tools/tests/test_dependency_advisories.py, tools/tests/test_lean_release_notes_v63.py, tools/tests/test_lean_release_notes.py, changelog.d/BG1420.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_bounded_wait.py, changelog.d/BG1425.md
@@ -25,8 +25,10 @@ Fix each finding above, then deliver BG1420 again in a later run.
 
 - [ ] **AC1** Given a caller whose SIGTERM handler drains its own pool with `pool.shutdown(wait=True)`, when a one-worker verifier pool running `shell sleep 3`, `shell echo one` and `shell echo two` receives SIGTERM, then the process exits within a bound (the stop grace plus a few seconds), the queued verifiers are refused, and a second SIGTERM is not needed. Run the caller as a child process with its own timeout so a hang fails the test rather than the suite. Fails on: an unbounded `_RELAY_SETTLED.wait()` (verify_ac.py:649), a bound longer than the driver's timeout, or a handler that raises between the relay count's increment and its `try:` leaving the event clear (the round-2 remark; the same bound closes it).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_relay_bounded_wait.py::DrainingHandlerTests
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** BG1420 AC1 still passes: Given main after the fix, when the five named tests run, then each passes: BareArtefactReadSweepTests::`test_no_bare_artefact_body_reads_in_scanners`, PoolEdgeTests::`test_an_interrupt_cancels_the_stories_still_queued` (only the three running stories ever start), LockfileTests::`test_package_json_was_not_widened_to_clear_the_advisory`, ReleaseNotesTests::`test_every_changed_behaviour_names_what_to_do` and FrozenNotesTests::`test_filing_a_finding_reddens_no_test.` Fails on: any of the five red, or a test deleted or skipped to make it pass.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_repo_hygiene.py::BareArtefactReadSweepTests::test_no_bare_artefact_body_reads_in_scanners .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py::PoolEdgeTests::test_an_interrupt_cancels_the_stories_still_queued tools/tests/test_dependency_advisories.py::LockfileTests::test_package_json_was_not_widened_to_clear_the_advisory tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_every_changed_behaviour_names_what_to_do tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_filing_a_finding_reddens_no_test
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 
