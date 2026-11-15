@@ -1,6 +1,6 @@
 # BG1393: A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_replaced_grok_long_context.py, changelog.d/BG1393.md, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -26,6 +26,7 @@ Keep the long-context rate paired with its base.
 
 - [ ] **AC1** Given a project pricing.models entry replacing grok-4.7, when a Cursor ledger holds long-context responses, then `run_state.usd` prices the whole reading or says plainly it cannot. Fails on: a part priced and the long-context id listed as unpriced.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_replaced_grok_long_context.py::ReplacedGrokLongContextTests
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

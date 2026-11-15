@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, changelog.d/BG1268.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, changelog.d/BG1268.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/reviews/command-audit.md
 > **Evidence:** the orchestrator's friction log (R8-F9, R8-F10), and run eight (RUN-01M6RZQZ) US1132 review round 1 ([pre-existing])
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -37,3 +37,4 @@ Add a `lessons.py` subcommand that validates and appends a class row to the stor
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0474) | Re-scoped at grooming: `retro.py extract` already records a `[new: class]` Try item as a store row (retro.py `_extract_classes`), and the full suite passes with 15 active build-phase rows, so the cap-drop half no longer reproduces. What stays real is no direct command to add a class row outside a retro, which CR0693's escape loop needs. Criteria rewritten with Verify lines; Affects gains the new test and the fragment |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Affects gains the generated command surface and the command audit, which a new `lessons.py` verb changes |

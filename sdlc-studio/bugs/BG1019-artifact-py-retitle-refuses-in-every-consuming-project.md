@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py, changelog.d/BG1019.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_refs.py, .claude/skills/sdlc-studio/scripts/tests/test_retitle_installed_layout.py, changelog.d/BG1019.md, .claude/skills/sdlc-studio/scripts/lib/link_refs.py, tools/tests/test_check_links.py
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -42,3 +42,4 @@ Retitle is unusable outside the skill's own repo; artefact titles drift from the
 | 2026-10-09 | sdlc-studio | Filed |
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triaged: reproduced with the installed copy; project name generalised |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Affects gains a shipped module for the inbound-link finder and rewriter (`scripts/lib/link_refs.py`), which `tools/check_links.py` and the retitle can both import, and the tools test that pins those functions |

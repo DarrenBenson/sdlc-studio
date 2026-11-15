@@ -1,6 +1,6 @@
 # Bug Index
 
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-15
 
 ## Summary
 
@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 327 |
 | In Progress | 0 |
-| Fixed | 909 |
+| Fixed | 911 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1427** |
+| **Total** | **1429** |
 
 ## All Bugs
 
@@ -466,9 +466,9 @@
 | [BG1388](BG1388-an-sdlc-md-root-discovery-test-fails-when.md) | An sdlc_md root-discovery test fails when TMPDIR is inside a repository, because it assumes its temporary directory lies outside any project | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1389](BG1389-sdlc-md-extract-field-reads-an-empty-field.md) | sdlc_md.extract_field reads an empty field on into the next line and returns '>', and two is_swallowed_run branches are unpinned | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1390](BG1390-test-lean-tracked-run-record-test-this-repos.md) | test_lean_tracked_run_record test_this_repos_signed_reports_check_in_a_clean_clone fails in a harness worktree | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1391](BG1391-the-report-s-dollar-cost-row-does-not.md) | The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1391](BG1391-the-report-s-dollar-cost-row-does-not.md) | The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1392](BG1392-prices-and-token-meters-have-untested-edges-rates.md) | prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1393](BG1393-a-project-that-replaces-grok-4-7-under.md) | A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1393](BG1393-a-project-that-replaces-grok-4-7-under.md) | A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1394](BG1394-a-re-close-after-a-reopen-whose-meter.md) | A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1395](BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md) | BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Open | Medium | 2026-11-13 | 2026-11-13 |
@@ -503,6 +503,8 @@
 | [BG1425](BG1425-bg1420-did-not-converge-in-review-round-2.md) | BG1420 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1426](BG1426-transition-py-refuses-an-rfc-at-accepted-until.md) | transition.py refuses an RFC at Accepted until every change request it spawned is resolved, though the RFC status flow says Accepted means its decisions are made | Superseded | Low | 2026-11-14 | 2026-11-14 |
 | [BG1427](BG1427-file-finding-py-parent-writes-the-parent-s.md) | file_finding.py --parent writes the parent's Decomposed-into but not its index row's spawned-work cell, so the next commit is refused for reconcile drift | Open | Low | 2026-11-14 | 2026-11-14 |
+| [BG1428](BG1428-the-per-unit-dollars-cell-prices-a-unit.md) | The per-unit dollars cell prices a unit's Grok agent read from a session total with no lower-bound label, and BG1391's changelog says the label holds wherever models are summed | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1429](BG1429-a-project-grok-price-entry-with-a-lower.md) | A project Grok price entry with a lower long-context threshold is still booked at the shipped 200,000 threshold, so a long prompt is priced at the short rate and reads exact | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
