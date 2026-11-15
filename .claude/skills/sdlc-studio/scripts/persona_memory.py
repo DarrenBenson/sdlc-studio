@@ -34,7 +34,7 @@ The retro side is `learn-brief` and `propose`. A seat is briefed with its own re
 `retro.py seats` (read through retro's functions, never re-derived), each adverse item with
 its key, and its card framed with its live learnings; what it writes is recorded verbatim as
 proposed, its evidence the ids that record lists rather than ids its text names, one open
-proposal per seat and run. `approve-brief` and `approve` let another seat, told apart by its
+proposal per seat and retro, which is one run's. `approve-brief` and `approve` let another seat, told apart by its
 recorded role and never by name, approve it against those adverse items and the subject
 card's Non-Negotiables and Authority, or reject it so no brief carries it.
 """
@@ -359,7 +359,10 @@ def set_field(root: Path | str, entry_id: str, name: str, value: str) -> dict:
 
 def set_fields(root: Path | str, entry_id: str, pairs: list[tuple[str, str]]) -> dict:
     """`set_field` for several fields in one rewrite: every pair is checked before any is set,
-    so a refused pair leaves the file as it was."""
+    so a refused pair leaves the file as it was. The rewritten file is read back before it is
+    written, as `add`'s is, and refused unless every entry reads back as held with the pairs
+    set: a value holding a line break writes a line the reader takes as another field, so a
+    rejection's reason could otherwise read the entry back as approved."""
     canon = []
     for name, value in pairs:
         canonical = next((f for f in FIELDS if f.lower() == (name or "").strip().lower()), None)
@@ -379,9 +382,33 @@ def set_fields(root: Path | str, entry_id: str, pairs: list[tuple[str, str]]) ->
                     lessons.upsert_field(e, canonical, value)
                 header = lessons.project_header_of(path.read_text(encoding="utf-8"),
                                                    entry_re=ENTRY_RE)
-                sdlc_md.atomic_write(path, _render_file(header, entries))
+                text = _render_file(header, entries)
+                drift = _set_read_back_drift(text, path.name, entries)
+                if drift:
+                    raise MemoryRefusal(f"{entry_id} would not read back as set, so nothing is "
+                                        f"written: {drift}; a field value is one line")
+                sdlc_md.atomic_write(path, text)
                 return e
     raise MemoryRefusal(f"no memory file holds {entry_id}")
+
+
+def _set_read_back_drift(text: str, source: str, held: list[dict]) -> str:
+    """What the reader reads differently in `text` from the entries `set_fields` holds, or ""
+    when nothing: the same ids in order, and every field of each entry, no more."""
+    try:
+        read = parse(text, source)
+    except StoreError as exc:
+        return str(exc)
+    ids, want = [e["id"] for e in read], [e["id"] for e in held]
+    if ids != want:
+        return f"the file reads back as {', '.join(ids)}, not {', '.join(want)}"
+    for back, entry in zip(read, held):
+        stamped = {k: str(v).strip() for k, v in entry["fields"].items()}
+        for k in sorted(set(stamped) | set(back["fields"])):
+            if back["fields"].get(k) != stamped.get(k):
+                return (f"its {k} reads back as {back['fields'].get(k, '(absent)')!r}, "
+                        f"not {stamped.get(k, '(absent)')!r}")
+    return ""
 
 
 # ----------------------------------------------------------------------------- listing
@@ -785,25 +812,47 @@ def _first_line_title(text: str, limit: int = 80) -> str:
     return line if len(line) <= limit else line[:limit - 1].rstrip() + lessons.ELLIPSIS
 
 
+#: A retro's own `> **Run:** RUN-...` line, which `sprint close` fills with the run it closes.
+_RETRO_RUN_LINE_RE = re.compile(r"(?m)^>?\s*\*\*Run:\*\*\s*(\S*)")
+
+
+def proposal_run(root: Path | str, retro_id: str, supplied: str | None = None) -> str:
+    """The run a learning from `retro_id` looks back on: the run the retro's own Run line
+    names, else `supplied`, else the open run, else the retro id. Refuses a `supplied` that is
+    not a run id, and one naming another run than the retro's line does."""
+    import retro  # noqa: PLC0415 - sibling; the one reader of the run a retro's close names
+    supplied = None if supplied is None else supplied.strip()
+    if supplied is not None and not _RUN_RE.match(supplied):
+        raise MemoryRefusal(f"--run {supplied!r} is not a run id (RUN-<id>)")
+    path = retro.find_retro(root, retro_id)
+    line = _RETRO_RUN_LINE_RE.search(sdlc_md.read_text_safe(path) if path else "")
+    named = line.group(1) if line and _RUN_RE.match(line.group(1)) else ""
+    if named and supplied and supplied != named:
+        raise MemoryRefusal(f"--run {supplied} is not the run {retro_id} names {named} on its "
+                            f"Run line, which a learning from it looks back on")
+    try:
+        return named or retro.extract_run(root, supplied, retro_id)
+    except run_state.RunStateError as exc:
+        raise MemoryRefusal(str(exc))
+
+
 def propose(root: Path | str, key: str, retro_id: str, text: str, title: str | None = None,
             run: str | None = None) -> dict:
     """Record a seat's learning, `text` as written less its outer blank space, as proposed
-    for the retro's run, with the ids its record lists as evidence and the title `title` or
-    the text's first line. Refuses, writing nothing: a seat with no record in the retro, and a
-    second proposal while that seat's first for the run is still proposed."""
-    import retro  # noqa: PLC0415 - sibling; the one reader of the run a retro's close names
-    from lib import run_state  # noqa: PLC0415
+    for the retro's run (`proposal_run`), with the ids its record lists as evidence and the
+    title `title` or the text's first line. Refuses, writing nothing: a seat with no record in
+    the retro, and a second proposal while that seat's first from the same retro is still
+    proposed. The check is keyed on the Retro field, since a retro is one run's and the Run a
+    proposal is stamped with can differ while that run is open and after it closes."""
     root = Path(root)
     key, rid, record = _record_of(root, key, retro_id)
-    try:
-        run = retro.extract_run(root, run, rid)
-    except run_state.RunStateError as exc:
-        raise MemoryRefusal(str(exc))
+    run = proposal_run(root, rid, run)
     open_ = [e["id"] for e in read_store(memory_path(root, key))
-             if state_of(e) == "proposed" and e["fields"].get("run", "").strip() == run]
+             if state_of(e) == "proposed" and e["fields"].get("retro", "").strip() == rid]
     if open_:
-        raise MemoryRefusal(f"{open_[0]} is still proposed for {key} in {run}: a seat holds one "
-                            f"open proposal per run, so approve or reject it first")
+        raise MemoryRefusal(f"{open_[0]} is still proposed for {key} from {rid}: a seat holds "
+                            f"one open proposal per retro, its run's, so approve or reject it "
+                            f"first")
     return add(root, key, title or _first_line_title(text), text, record_ids(record),
                extra={"Run": run, "Retro": rid})
 
@@ -970,7 +1019,7 @@ def _prose(fields_file: str | None, flags: dict, required: tuple[str, ...] = ())
     one. Raises ValueError when a required field is in neither."""
     import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as lessons uses it
     fields = file_finding.resolve_prose_fields(fields_file, flags, allowed=tuple(flags))
-    missing = [k for k in required if not str(fields.get(k) or "").strip()]
+    missing = [k for k in required if not file_finding.prose_value(fields, k)]
     if missing:
         raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
                          f"\"{missing[0]}\" key in the --fields-file document")
@@ -1105,7 +1154,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="read the title from a JSON object ({\"title\": ...}) so text carrying "
                          "shell metacharacters is stored verbatim; `-` reads it from stdin")
     pr.add_argument("--run", default=None,
-                    help="the run it looks back on (default: the open run, else the retro)")
+                    help="the run it looks back on, a RUN- id (default: the run the retro's "
+                         "Run line names, else the open run, else the retro)")
     pr.add_argument("--root", default=".", help="project root")
     pr.set_defaults(func=cmd_propose)
     ab = sub.add_parser("approve-brief", help="Brief another seat to approve or reject a "

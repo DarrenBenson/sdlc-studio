@@ -197,6 +197,11 @@ skill_source_repo: null
 # `/sdlc-studio review`. See reference-review.md.
 personas:
   staleness_days: 90
+  # Persona memory (reference-persona-learning.md): the days from a learning's Added to the
+  # Review-by `persona_memory.py add` stamps, and the most live learnings one brief carries.
+  memory:
+    validity_days: 90
+    inject_max: 5
 
 # Contract-table anchors. The structured tables in PRD and TRD that
 # constitute the feature contract — they ARE the contract, the changelog

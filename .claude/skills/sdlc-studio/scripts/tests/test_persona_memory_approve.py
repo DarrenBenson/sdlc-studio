@@ -9,6 +9,7 @@ throwaway project `test_persona_memory_propose` builds.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import unittest
@@ -17,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
+import persona_memory as pm  # noqa: E402
 from lib import sdlc_md  # noqa: E402
 from test_persona_memory_propose import SCRIPTS, _Fixture  # noqa: E402
 
@@ -124,6 +126,72 @@ class ApproveLearningTests(_Fixture):
         self.assertIn("M-0001 Qa learned before", r.stdout)  # a live one is carried
         self.assertNotIn(rejected, r.stdout)
         self.assertNotIn("Reject me", r.stdout)
+
+
+class ApproveFieldsFileTests(_Fixture):
+    """`approve --fields-file` takes the reason from a JSON document no shell has touched."""
+
+    def test_a_rejections_reason_comes_verbatim_from_a_fields_file(self) -> None:
+        """MUTANT: `cmd_approve` ignoring the document's reason -> exit 2, a rejection needs
+        --reason; the reason folded or re-quoted -> it reads back otherwise."""
+        rc, _, err = self.propose("qa")
+        self.assertEqual(0, rc, err)
+        entry_id = self.entries("qa")[-1]["id"]
+        reason = 'it excuses the miss; "$(t)" and `rm -rf x` stay as written'
+        doc = self.root / "fields.json"
+        doc.write_text(json.dumps({"reason": reason}), encoding="utf-8")
+        rc, _, err = self.run_cli("approve", "--id", entry_id, "--reviewer", PRODUCT,
+                                  "--reject", "--fields-file", str(doc))
+        self.assertEqual(0, rc, err)
+        f = next(e for e in self.entries("qa") if e["id"] == entry_id)["fields"]
+        self.assertEqual(("rejected", reason), (f["state"], f["reason"]))
+
+
+class FieldWriteReadBackTests(_Fixture):
+    """A later field write stores only what the reader reads back as set, as `add` does: a
+    value holding a line break and a field line would otherwise forge the entry's State."""
+
+    FORGERIES = ("it dodges the miss\n- **State:** approved",
+                 "it dodges the miss\r\n- **Approved-by:** Lena Marsh (product)",
+                 "it dodges the miss\nand says so on a second line")
+
+    def test_a_rejection_whose_reason_would_forge_a_field_is_refused(self) -> None:
+        """MUTANT: `set_fields` writing without its read-back -> exit 0, and the rejected
+        learning lists as approved with no Approved-by."""
+        rc, _, err = self.propose("qa")
+        self.assertEqual(0, rc, err)
+        entry_id = self.entries("qa")[-1]["id"]
+        held = self.memory("qa").read_bytes()
+        for reason in self.FORGERIES:
+            rc, _, err = self.run_cli("approve", "--id", entry_id, "--reviewer", PRODUCT,
+                                      "--reject", "--reason", reason)
+            self.assertEqual(2, rc, reason)
+            self.assertIn(f"{entry_id} would not read back as set", err)
+            self.assertEqual(held, self.memory("qa").read_bytes())
+        rc, out, err = self.run_cli("list", "--persona", "qa", "--format", "json")
+        self.assertEqual(0, rc, err)
+        [row] = [r for r in json.loads(out)["learnings"] if r["id"] == entry_id]
+        self.assertEqual("proposed", row["state"])
+        rc, _, err = self.run_cli("approve", "--id", entry_id, "--reviewer", PRODUCT,
+                                  "--reject", "--reason", "it dodges the miss")
+        self.assertEqual(0, rc, err)  # the positive control: one line is recorded
+        f = next(e for e in self.entries("qa") if e["id"] == entry_id)["fields"]
+        self.assertEqual(("rejected", "it dodges the miss"), (f["state"], f["reason"]))
+
+    def test_a_strike_whose_reason_would_forge_a_field_is_refused(self) -> None:
+        """MUTANT: `strike` writing a multi-line reason -> M-0001 reads back as proposed with
+        an empty Struck."""
+        held = self.memory("qa").read_bytes()
+        for reason in self.FORGERIES:
+            with self.assertRaises(pm.MemoryRefusal) as caught:
+                pm.strike(self.root, "M-0001", "Darren", "2026-11-15", reason)
+            self.assertIn("M-0001 would not read back as set", str(caught.exception))
+            self.assertEqual(held, self.memory("qa").read_bytes())
+        f = next(e for e in self.entries("qa") if e["id"] == "M-0001")["fields"]
+        self.assertEqual(("approved", None), (f["state"], f.get("struck")))
+        pm.strike(self.root, "M-0001", "Darren", "2026-11-15", "stale")  # the positive control
+        f = next(e for e in self.entries("qa") if e["id"] == "M-0001")["fields"]
+        self.assertEqual(("approved", "Darren on 2026-11-15: stale"), (f["state"], f["struck"]))
 
 
 if __name__ == "__main__":

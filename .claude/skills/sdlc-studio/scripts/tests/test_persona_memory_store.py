@@ -433,7 +433,11 @@ class PersonaMemoryFieldsFileTests(_Fixture):
                          ["Shell text survives", "Flag title"])
 
     def test_a_missing_field_or_a_bad_document_is_refused_and_nothing_written(self):
+        # A blank body is missing, read by presence and stripped through
+        # `file_finding.prose_value`. MUTANT: a bare truth test -> the blank body passes the
+        # required check and only `add`'s later blank refusal, without the key, catches it.
         cases = (("no body", {"title": "t"}, "body"),
+                 ("blank body", {"title": "t", "body": "  \n"}, "no body - pass --body"),
                  ("unknown key", {"title": "t", "body": "b", "colour": "x"}, "colour"))
         for name, payload, reason in cases:
             with self.subTest(name):

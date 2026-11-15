@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -55,6 +56,23 @@ def _bug(root: Path, bid: str, unit: str, created: str) -> None:
            f"> **Created:** {created}\n\n## Summary\n\n{unit} drops the last row.\n")
 
 
+def _ledger(root: Path, rows, author: dict | None = None) -> None:
+    """The review ledger over `rows`, each row's Author cell `author[unit]`, else `-`."""
+    _write(root, "sdlc-studio/reviews/critic-verdicts.md",
+           "# Critic Verdicts\n\n"
+           "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
+           "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+           + "".join(f"| {u} | {v} | {r} | {(author or {}).get(u, '-')} | {d} | - | full | - "
+                     f"| {i} |\n" for u, v, r, d, i in rows))
+
+
+def _retro(root: Path, rid: str, date: str, run: str | None = None) -> None:
+    """A retro over US0001 and US0002, naming `run` on its own Run line when given."""
+    run_line = f"> **Run:** {run}\n" if run else ""
+    _write(root, f"sdlc-studio/retros/{rid}-run.md",
+           f"# {rid}: run\n\n> **Date:** {date}\n{run_line}> **Batch:** US0001, US0002\n")
+
+
 def _entry(id_: str, persona: str, title: str, state: str = "approved") -> str:
     """A memory entry; an approved one names the close that listed it, so it stays live where
     a brief carries only a listed learning."""
@@ -80,14 +98,8 @@ class _Fixture(unittest.TestCase):
                    "> **Affects:** scripts/a.py\n\n## Acceptance Criteria\n\n### AC1: works\n"
                    "- **Verify:** shell true\n")
         _bug(self.root, "BG0002", "US0001", "2026-10-05")
-        _write(self.root, "sdlc-studio/retros/RETRO0002-run.md",
-               "# RETRO0002: run\n\n> **Date:** 2026-10-10\n> **Batch:** US0001, US0002\n")
-        _write(self.root, "sdlc-studio/reviews/critic-verdicts.md",
-               "# Critic Verdicts\n\n"
-               "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
-               "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
-               + "".join(f"| {u} | {v} | {r} | - | {d} | - | full | - | {i} |\n"
-                         for u, v, r, d, i in ROWS))
+        _retro(self.root, "RETRO0002", "2026-10-10")
+        _ledger(self.root, ROWS)
         _write(self.root, "sdlc-studio/personas/memory/qa.md",
                "# Persona Memory: qa\n" + _entry("M-0001", "qa", "Qa learned before"))
         _write(self.root, "sdlc-studio/personas/memory/product.md",
@@ -198,6 +210,73 @@ class ProposeLearningTests(_Fixture):
         self.assertEqual(0, rc, err)
         self.assertEqual("BG0003", self.entries("engineering")[-1]["fields"]["evidence"])
 
+        # The guard is keyed on the retro the proposal comes from, never on a Run label: once a
+        # run opens, the stamped label changes, and a second open proposal for RETRO0002 is
+        # still refused. MUTANT: the check keyed on Run -> this one is accepted.
+        held = self.memory("qa").read_bytes()
+        run_state.write(self.root, {"run_id": "RUN-01OPEN", "outcome": run_state.RUNNING})
+        rc, _, err = self.propose("qa", "Third time.\n")
+        self.assertEqual(2, rc, err)
+        self.assertIn("is still proposed", err)
+        self.assertEqual(held, self.memory("qa").read_bytes())
+        # Per run: a later retro names its own run, and qa may propose for it while the
+        # RETRO0002 proposal is still open. MUTANT: the run filter dropped, so any open
+        # proposal blocks -> exit 2 here.
+        _retro(self.root, "RETRO0003", "2026-10-20", "RUN-01LATER")
+        path = self.learning_file("For the later run.\n", "sdlc-studio/.local/later-qa.md")
+        rc, _, err = self.run_cli("propose", "--persona", "qa", "--retro", "RETRO0003",
+                                  "--from-file", path)
+        self.assertEqual(0, rc, err)
+        fields = self.entries("qa")[-1]["fields"]
+        self.assertEqual(("proposed", "RUN-01LATER", "RETRO0003"),
+                         (fields["state"], fields["run"], fields["retro"]))
+        self.assertEqual(2, sum(pm.state_of(e) == "proposed" for e in self.entries("qa")))
+
+    def test_the_run_is_the_one_the_retro_names(self) -> None:
+        """AC2's Run, read from the retro's own Run line whatever run is open. Mutants: Run
+        taken from the open run, so the retro's run holds only while it is still open; a
+        `--run` stamped unchecked, or overriding the run the retro names."""
+        _retro(self.root, "RETRO0002", "2026-10-10", "RUN-01REAL")
+        run_state.write(self.root, {"run_id": "RUN-01OTHER", "outcome": run_state.RUNNING})
+        held = self.memory("qa").read_bytes()
+        path = self.learning_file("Run the round trip myself.\n")
+        argv = ("propose", "--persona", "qa", "--retro", "RETRO0002", "--from-file", path)
+        for run, said in (("not a run", "'not a run' is not a run id"),
+                          ("RUN-01OTHER", "RETRO0002 names RUN-01REAL")):
+            rc, _, err = self.run_cli(*argv, "--run", run)
+            self.assertEqual(2, rc, err)
+            self.assertIn(said, err)
+            self.assertEqual(held, self.memory("qa").read_bytes())
+        rc, out, err = self.run_cli(*argv)
+        self.assertEqual(0, rc, err)
+        self.assertIn("for RUN-01REAL", out)
+        self.assertEqual("RUN-01REAL", self.entries("qa")[-1]["fields"]["run"])
+        # A retro made outside a run reads `-` on its Run line, which names no run, so the
+        # open run is stamped. MUTANT: any Run line taken as the run -> Run reads `-`.
+        _retro(self.root, "RETRO0003", "2026-10-20", "-")
+        path = self.learning_file("For the later retro.\n", "sdlc-studio/.local/later-qa.md")
+        rc, _, err = self.run_cli("propose", "--persona", "qa", "--retro", "RETRO0003",
+                                  "--from-file", path)
+        self.assertEqual(0, rc, err)
+        self.assertEqual("RUN-01OTHER", self.entries("qa")[-1]["fields"]["run"])
+
+    def test_a_seat_learns_from_the_rounds_that_blocked_a_unit_it_built(self) -> None:
+        """Each round a blocking finding stopped on a unit the seat built is an adverse item,
+        in its brief by key and in its proposal's evidence. MUTANT: the built-unit branch of
+        `adverse_items` disabled -> neither carries round:US0002r1."""
+        rows = ROWS[:4] + (("US0002", "REJECT", PRODUCT, "2026-10-02",
+                            "[new] the export drops a column (scripts/b.py:3)"),) + ROWS[4:]
+        _ledger(self.root, rows, author={"US0002": "Dani Okafor (engineering)"})
+        rc, out, err = self.run_cli("learn-brief", "--persona", "engineering",
+                                    "--retro", "RETRO0002")
+        self.assertEqual(0, rc, err)
+        self.assertIn("  [round:US0002r1] round 1 of US0002, which you built, blocked: the "
+                      "export drops a column (scripts/b.py:3)", out)
+        rc, _, err = self.propose("engineering")
+        self.assertEqual(0, rc, err)
+        self.assertEqual("US0002, US0002 r1",
+                         self.entries("engineering")[-1]["fields"]["evidence"])
+
     def test_a_learning_that_would_rewrite_its_own_entry_is_refused(self) -> None:
         """A `## ` line would read back as a new entry, and a field line as the entry's own
         field, so a seat could approve itself or name its own evidence; each is refused before
@@ -212,6 +291,29 @@ class ProposeLearningTests(_Fixture):
             self.assertEqual(held, self.memory("qa").read_bytes())
         rc, _, err = self.propose("qa", "Intro.\n\n- a plain list item stays\n")
         self.assertEqual(0, rc, err)
+
+
+class ProposeFieldsFileTests(_Fixture):
+    """`propose --fields-file` takes the title from a JSON document no shell has touched."""
+
+    def test_the_title_comes_verbatim_from_a_fields_file_and_a_flag_still_wins(self) -> None:
+        """MUTANT: `cmd_propose` ignoring the document's title -> the file's first line is
+        stored instead; the flag not overriding the document -> the document's title wins."""
+        title = 'Check the parser; then run $(t) and "quote" it'
+        doc = self.root / "fields.json"
+        doc.write_text(json.dumps({"title": title}), encoding="utf-8")
+        path = self.learning_file("Run the round trip myself.\n")
+        argv = ("propose", "--persona", "qa", "--retro", "RETRO0002", "--from-file", path,
+                "--fields-file", str(doc))
+        rc, _, err = self.run_cli(*argv)
+        self.assertEqual(0, rc, err)
+        first = self.entries("qa")[-1]
+        self.assertEqual(title, first["title"])
+        self.assertEqual("Run the round trip myself.", pm.prose_of(first))
+        pm.set_field(self.root, first["id"], "State", "rejected")
+        rc, _, err = self.run_cli(*argv, "--title", "Flag title")
+        self.assertEqual(0, rc, err)
+        self.assertEqual("Flag title", self.entries("qa")[-1]["title"])
 
 
 if __name__ == "__main__":

@@ -96,9 +96,10 @@ Authority, names the file to write under `sdlc-studio/.local/persona-learning/` 
 `propose` stores the file's text as the body as written, less its outer blank space, and
 its first line as the title unless `--title` is given. Evidence is the ids the record lists (its verdicts as `<unit> r<round>`,
 the units it built, its adverse items' ids), never ids the text names. Run is the run the
-retro's close names: `--run`, else the open run, else the retro. It exits 2, writing nothing,
+retro's own Run line names, else `--run`, else the open run, else the retro; a `--run` that
+is not a run id, or names another run than that line, exits 2. It exits 2, writing nothing,
 for a seat with no record in the retro (no verdict, no unit built, no adverse item) and while
-that seat's earlier proposal for the same run is still proposed.
+that seat's earlier proposal from the same retro is still proposed, whatever Run it carries.
 
 ### Approval {#approval}
 
