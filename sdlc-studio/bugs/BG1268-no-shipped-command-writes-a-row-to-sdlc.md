@@ -1,6 +1,6 @@
 # BG1268: No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py, changelog.d/BG1268.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/sprint_report.py
@@ -26,10 +26,13 @@ Add a `lessons.py` subcommand that validates and appends a class row to the stor
 
 - [ ] **AC1** Given a project store `sdlc-studio/lessons.jsonl`, when `lessons.py class-add --class <name> --rule <text> --behaviour <text> --phase build [--phase review] --source <text>` runs, then one validated active row is appended with the next `LC-` code, the run id when a run is open, and the source; `lessons.py classes` lists it; and the lane brief's build digest can select it. Fails on: the row written to the `lessons/` registry instead of the store, a missing code, or a malformed row the digest skips.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py::ClassAddTests::test_a_class_row_reaches_the_store_and_the_digest
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given a store that already holds a class of that name, or a `--phase` the digest does not know, when `class-add` runs, then it refuses with the reason, exits non-zero and leaves the store byte-identical; a positive control with a new class and a known phase succeeds. Fails on: a duplicate class appended, an unknown phase stored, or a partial write.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py::ClassAddTests::test_a_duplicate_class_or_unknown_phase_is_refused
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given `help/lessons.md` and `reference-scripts.md`, when a reader looks for how to record a class outside a retro, then both name `class-add` beside `retro.py extract` (which records a `[new: class]` Try item at the close) and say the lane brief reads the store, not the `lessons/` registry. Fails on: either page silent on the store, or `class-add` documented with flags the parser does not take.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons_class_add.py::ClassAddDocsTests
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

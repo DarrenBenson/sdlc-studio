@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 328 |
+| Open | 329 |
 | In Progress | 0 |
-| Fixed | 916 |
+| Fixed | 917 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1435** |
+| **Total** | **1437** |
 
 ## All Bugs
 
@@ -343,7 +343,7 @@
 | [BG1265](BG1265-reviewers-throwaway-copies-of-the-repository-are-never.md) | Reviewers' throwaway copies of the repository are never removed and carry no history, so they fill the temp quota and fail history-dependent tests each reviewer must then triage | Open | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1266](BG1266-the-dollar-report-and-price-table-leave-the.md) | The dollar report and price table leave the run's end date, a signed table edit, the premium-request override and four price slots unpinned, and word an unsigned table edit as a tree change | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1267](BG1267-sprint-py-lane-return-prints-a-two-model.md) | `sprint.py lane return` prints a two-model session's `lane run cost` at the largest model's rate, and BG1244's fragment misstates what the parser did before | Open | Low | 2026-11-06 | 2026-11-06 |
-| [BG1268](BG1268-no-shipped-command-writes-a-row-to-sdlc.md) | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs | Open | Medium | 2026-11-06 | 2026-11-06 |
+| [BG1268](BG1268-no-shipped-command-writes-a-row-to-sdlc.md) | No shipped command writes a row to `sdlc-studio/lessons.jsonl`, the store the lane brief reads, and its build digest is full at five, so the next build lesson drops one US1132's AC3 needs | Fixed | Medium | 2026-11-06 | 2026-11-06 |
 | [BG1269](BG1269-sprint-plan-puts-every-unit-in-one-shared.md) | `sprint plan` puts every unit in one shared-file cluster when they share a reference doc, so a collision in one code file is hidden and nothing keeps those units sequential | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1270](BG1270-the-always-loaded-instruction-cuts-leave-their-restored.md) | The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char cap | Open | Low | 2026-11-06 | 2026-11-06 |
 | [BG1271](BG1271-sprint-cost-anatomy-counts-a-call-from-the.md) | `sprint cost --anatomy` counts a call from the second the run opened that the opening reading already holds, reads a zero, negative or quoted start budget as none, and leaves three boundaries and an AC2 pin loose | Open | Low | 2026-11-06 | 2026-11-06 |
@@ -511,6 +511,8 @@
 | [BG1433](BG1433-the-report-templates-still-say-the-wall-clock.md) | The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
