@@ -14,8 +14,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gitutil  # noqa: E402
 from test_evidence_pack_build import (  # noqa: E402
-    PACK_REL, project, run_pack, section, signature, snapshot)
+    PACK_REL, project, run_pack, section, signature, snapshot, verdict_row, write)
 
 RPT1_KNOWN = (
     ("BG0010", "High", "US0001's colour fades after a restart"),
@@ -26,6 +27,28 @@ RPT1_KNOWN = (
 RPT2_KNOWN = (
     ("BG0012", "Medium", "Size is off by one for US0002 on an empty gadget"),
 )
+
+SELF_CHECKS_REL = "sdlc-studio/reviews/author-self-checks.md"
+
+
+def record_identities(root: Path) -> None:
+    """Commit the ids the project's own ledgers record: builder agents as authors (one only in
+    the verdict ledger, one only in the self-check ledger, one as a typed `agent` triple) and
+    the operator as a reviewer and as a typed `human` author."""
+    with (root / "sdlc-studio/reviews/critic-verdicts.md").open("a", encoding="utf-8") as fh:
+        fh.write(verdict_row("US0099", "APPROVE", "eng-seat", "Claude Opus 5.5 (builder)",
+                             "2026-11-05"))
+        fh.write(verdict_row("US0098", "APPROVE", "eng-seat", "sdlc-studio; agent; v1",
+                             "2026-11-05"))
+        fh.write(verdict_row("US0097", "APPROVE", "Darren Benson (operator, reviewer of record)",
+                             "Darren Benson; human; n/a", "2026-11-05"))
+        fh.write(verdict_row("US0096", "APPROVE", "Darren Benson", "builder-a", "2026-11-05"))
+    write(root, SELF_CHECKS_REL, "# Author Self-Checks\n\n"
+          "| Unit | Author | Date | Claims | Mutants | Digest |\n"
+          "| --- | --- | --- | --- | --- | --- |\n"
+          "| US0099 | Claude Sonnet 5.5 (builder) | 2026-11-05 | 1 | 1 | abc123 |\n")
+    gitutil.git(["add", "-A"], root)
+    gitutil.git(["commit", "-qm", "recorded identities"], root)
 
 
 def known_lines(entry: list[str]) -> list[str]:
@@ -107,22 +130,30 @@ class AccountableTests(unittest.TestCase):
                 self.assertNotIn("seat", ln, "a reviewer is never the accountable person")
 
     def test_agent_or_blank_principal_is_refused(self) -> None:
+        # The listed spellings, any principal holding the word agent, and an id the project's
+        # own ledgers record as an author: an agent wrote that unit, so it is no person.
         for principal in ("", "   ", "-", "the agent", "The Agent", "agent", "an agent",
-                          "agent-a6eab1e6", "Agent-7F3C", "subagent-12", "agent:builder"):
+                          "agent-a6eab1e6", "Agent-7F3C", "subagent-12", "agent:builder",
+                          "sub-agent", "an AI agent", "Agent (builder)", "Claude Opus 5.5 (builder)",
+                          "claude opus 5.5 (builder)", "Claude Sonnet 5.5 (builder)",
+                          "sdlc-studio", "builder-a"):
             with self.subTest(principal=principal), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 project(root, rpt2_sig=signature("RPT0002", principal, "2026-11-12T16:30:00Z"))
+                record_identities(root)
                 before = snapshot(root)
                 proc = run_pack(root, "RPT0001", "RPT0002")
                 self.assertNotEqual(proc.returncode, 0, proc.stdout)
                 self.assertIn("RPT0002", proc.stderr)
                 self.assertIn("accountable", proc.stderr)
                 self.assertEqual(snapshot(root), before, "a refusal leaves no pack on disk")
-        # Positive control: a person whose name begins like the word is a person.
-        for person in ("Agnes", "Agentha Ruiz"):
+        # Positive control: a person whose name begins like the word is a person, and so is the
+        # operator the ledgers record as a reviewer and as a typed human author.
+        for person in ("Agnes", "Agentha Ruiz", "Darren Benson"):
             with self.subTest(principal=person), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 project(root, rpt2_sig=signature("RPT0002", person, "2026-11-12T16:30:00Z"))
+                record_identities(root)
                 proc = run_pack(root, "RPT0001", "RPT0002")
                 self.assertEqual(proc.returncode, 0, proc.stderr)
                 pack = (root / PACK_REL).read_text(encoding="utf-8")

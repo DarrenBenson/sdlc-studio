@@ -59,8 +59,10 @@ def unit_file(unit: str, title: str) -> str:
             f"  - **Verify:** pytest tests/test_{unit.lower()}.py\n")
 
 
-def verdict_row(unit: str, verdict: str, reviewer: str, author: str, date: str) -> str:
-    return f"| {unit} | {verdict} | {reviewer} | {author} | {date} | abcdef123456 | full | - | none |\n"
+def verdict_row(unit: str, verdict: str, reviewer: str, author: str, date: str,
+                source: str = "-") -> str:
+    return (f"| {unit} | {verdict} | {reviewer} | {author} | {date} | abcdef123456 | full "
+            f"| {source} | none |\n")
 
 
 def fig(key: str, value, source: str = "sdlc-studio/reports/runs/RUN-X.json") -> dict:
@@ -257,6 +259,34 @@ class UnitEntryTests(unittest.TestCase):
                           "Verify: `pytest tests/test_gadget.py::SizeTests::test_size`", two)
             self.assertIn("- Criteria not ticked: AC2.", two)
             self.assertIn("- Independent review: none recorded.", two)
+
+
+class IndependenceAuthorityTests(unittest.TestCase):
+    """The pack's independent reviewers are the ones the project's one authority,
+    `critic.independence`, calls independent: never a self-review or the pre-gate sentinel."""
+
+    def test_self_review_and_pre_gate_rows_are_not_independent(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import critic  # noqa: PLC0415 - the authority the fixture rows are judged by
+        rows = (("ctx-seat", "builder-b", f"self-review:{S2}"),
+                ("old-seat", "pre-gate", "-"),
+                ("qa-seat", "builder-b", "-"))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            with (root / "sdlc-studio/reviews/critic-verdicts.md").open("a", encoding="utf-8") as fh:
+                for reviewer, author, source in rows:
+                    fh.write(verdict_row("US0002", "APPROVE", reviewer, author, "2026-11-05",
+                                         source))
+            gitutil.git(["commit", "-qam", "more verdicts"], root)
+            self.assertEqual([critic.independence(r, a, s)[0] for r, a, s in rows],
+                             [False, False, True], "the fixture holds two rows the authority "
+                             "refuses and one it accepts")
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            two = section((root / PACK_REL).read_text(encoding="utf-8"), "US0002")
+            self.assertEqual([ln for ln in two if ln.startswith("- Independent review:")],
+                             ["- Independent review: qa-seat APPROVE (2026-11-05)."])
 
 
 if __name__ == "__main__":

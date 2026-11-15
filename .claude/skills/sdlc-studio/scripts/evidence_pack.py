@@ -4,8 +4,8 @@
 `release_cut.py evidence-pack --version X.Y.Z --reports RPT0001,RPT0002` delegates here. The
 pack lists each unit the named signed reports delivered, and for each one states what changed
 (its title and points), which criteria passed (its ticked criteria and their Verify lines), who
-reviewed it independently (the latest verdict of each reviewing seat whose reviewer is not the
-unit's author), what is known wrong with it (the reports' known issues that name it) and who is
+reviewed it independently (the latest verdict of each reviewing seat that `critic.independence`,
+the project's one independence rule, accepts), what is known wrong with it (the reports' known issues that name it) and who is
 accountable for it (the principal on its report's signature, with the signing date). Known
 issues that name no listed change are carried in one release-level list, so none is lost.
 
@@ -14,9 +14,9 @@ tree and never from `sdlc-studio/.local`: an uncommitted edit to a unit, a repor
 ledger cannot change the pack. A verify run is recorded only in local state, so the pack reads
 the committed ticks instead and says so.
 
-A report that is unknown at the revision, carries no signature, or is signed by a blank or agent
-principal refuses the whole build and no pack is written: the text is composed in full before the
-one write.
+A report that is unknown at the revision, carries no signature, or is signed by a blank principal,
+one that reads as an agent, or one the committed review ledgers record as an author refuses the
+whole build and no pack is written: the text is composed in full before the one write.
 """
 from __future__ import annotations
 
@@ -34,15 +34,17 @@ from lib import sdlc_md  # noqa: E402
 
 REPORTS_REL = "sdlc-studio/reports"
 LEDGER_REL = "sdlc-studio/reviews/critic-verdicts.md"
+SELF_CHECKS_REL = f"sdlc-studio/reviews/{critic.SELF_CHECK_FILE}"
 #: A release version: semantic, with an optional pre-release or build suffix. It names the
 #: pack's file, so nothing that could leave the reports folder is accepted.
 _VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$")
 _REPORT_RE = re.compile(r"^RPT\d{4,}$")
+#: A principal that reads as an agent rather than a person: the word agent (or subagent) anywhere
+#: in it, as in `the agent`, `sub-agent`, `an AI agent`, `Agent (builder)`, `agent-<id>` and the
+#: typed authorship `name; agent; v1`. A letter on either side is not the word, so a person whose
+#: name merely contains the letters (Agnes, Agentha, Reagent) is not matched.
+_AGENT_RE = re.compile(r"(?<![a-z])(?:sub)?agents?(?![a-z])", re.IGNORECASE)
 #: A criterion heading ticked with a checkbox: `- [x] **AC1:** ...`.
-#: A principal that reads as an agent rather than a person: `agent`, `the agent`, `an agent`,
-#: `subagent-12`, `agent-<id>`, `agent:<role>`. Anchored at both ends, so a person whose name
-#: merely begins with the letters (Agnes, Agentha) is not matched.
-_AGENT_RE = re.compile(r"^(?:(?:the|an|a)\s+)?(?:sub)?agent(?:[-_:#.]\S*)?$", re.IGNORECASE)
 _TICKED_BOX_RE = re.compile(r"^\s*[-*]\s+\[[xX]\]")
 
 
@@ -107,21 +109,43 @@ def _signed(report: dict) -> bool:
     return isinstance(sig, dict) and bool(str(sig.get("signed_at") or "").strip())
 
 
-def principal_refusal(signature: dict) -> str | None:
+def recorded_authors(ledger_root: Path) -> list[str]:
+    """Every author id the review ledgers under `ledger_root` record: the verdict ledger's and
+    the self-check ledger's Author cells, superseded rows included, less any typed `human`."""
+    cells = [str(r.get("author") or "") for r in critic.read_verdicts(ledger_root)]
+    cells += [str(r.get("author") or "") for r in critic.read_self_checks(ledger_root)]
+    out: list[str] = []
+    for cell in cells:
+        typed = sdlc_md.parse_authorship_value(cell.strip()) or {}
+        if typed.get("type") == "human":
+            continue
+        for name in (cell, typed.get("name") or ""):
+            if critic._id(name) and name not in out:
+                out.append(name)
+    return out
+
+
+def principal_refusal(signature: dict, authors: list[str] | tuple[str, ...] = ()) -> str | None:
     """Why a signature's principal cannot be named accountable, or None when it names a person.
 
-    Blank (no letter or digit) and agent-shaped principals are refused: a pack must never name an
-    agent as the person accountable for a change."""
+    Refused: a blank principal (no letter or digit); one holding the word agent; and one that
+    `authors` (the ids the committed review ledgers record as an author, `recorded_authors`)
+    names. A recorded author other than a typed `human` one is taken as the agent session that
+    wrote the unit, so a model name no word rule can see is caught by the record."""
     principal = str((signature or {}).get("principal") or "").strip()
     if not any(ch.isalnum() for ch in principal):
         return "its signature names no principal, so no person is accountable"
-    if _AGENT_RE.match(principal):
+    if _AGENT_RE.search(principal):
         return (f"its signature principal {principal!r} reads as an agent, and an agent is "
                 "never the accountable person")
+    if any(critic.same_identity(principal, author) for author in authors):
+        return (f"its signature principal {principal!r} is recorded as an author in the "
+                "committed review ledgers, so it is an authoring agent and never the "
+                "accountable person")
     return None
 
 
-def _read_reports(root: Path, sha: str, ids: list[str]) -> list[dict]:
+def _read_reports(root: Path, sha: str, ids: list[str], authors: list[str]) -> list[dict]:
     """Each named report as committed; every refusal is collected before one is raised."""
     out, refusals = [], []
     for rid in ids:
@@ -141,7 +165,7 @@ def _read_reports(root: Path, sha: str, ids: list[str]) -> list[dict]:
             refusals.append(f"{rid}: the committed file does not hold report {rid}")
         elif not _signed(data):
             refusals.append(f"{rid}: the report is not signed, so it is not evidence")
-        elif reason := principal_refusal(data["signature"]):
+        elif reason := principal_refusal(data["signature"], authors):
             refusals.append(f"{rid}: {reason}")
         else:
             out.append(data)
@@ -198,16 +222,15 @@ def _criteria(text: str | None) -> tuple[list[tuple[str, str, str]], list[str]]:
 
 
 def _independent_reviews(ledger_root: Path, unit: str) -> list[dict]:
-    """The latest live verdict of each reviewing seat whose reviewer is not the unit's author.
-
-    A row with no recorded author proves no independence, so it is not counted."""
+    """The latest live verdict of each reviewing seat that `critic.independence`, the one
+    authority, calls independent: never a self-review, the pre-gate sentinel or a row with no
+    recorded author or reviewer."""
     latest: dict[str, dict] = {}
     for row in critic.unit_review_rounds(ledger_root, unit):
-        reviewer = str(row.get("reviewer") or "").strip()
-        author = str(row.get("author") or "").strip()
-        if not reviewer or not critic._id(author) or critic.same_identity(reviewer, author):
-            continue
-        latest[critic._id(reviewer)] = row
+        reviewer = str(row.get("reviewer") or "")
+        if critic.independence(reviewer, str(row.get("author") or ""),
+                               str(row.get("source") or ""))[0]:
+            latest[critic._id(reviewer)] = row
     return list(latest.values())
 
 
@@ -274,19 +297,19 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
     if not reports:
         raise PackError("name at least one signed report with --reports")
     sha = _resolve(root, rev)
-    data = _read_reports(root, sha, reports)
-    ledger = _show(root, sha, LEDGER_REL) or ""
-    changes = [(str(rep["report_id"]).upper(), rep["signature"], row,
-                sdlc_md.norm_id(str(_val(row, "unit_id")).strip()))
-               for rep in data for row in _delivered(rep)]
-    issues = _known_issues(data)
-    tied = {i for i in issues if any(_names(unit, i) for _, _, _, unit in changes)}
     body: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
-        # The ledger's one reader takes a project root, so it is handed the COMMITTED ledger in
+        # The ledgers' one reader takes a project root, so it is handed the COMMITTED ledgers in
         # a scratch root of its own, so a superseded row is dropped by the reader the review
         # rounds are counted with (`critic.unit_review_rounds`).
-        sdlc_md.atomic_write(Path(tmp) / LEDGER_REL, ledger)
+        for rel in (LEDGER_REL, SELF_CHECKS_REL):
+            sdlc_md.atomic_write(Path(tmp) / rel, _show(root, sha, rel) or "")
+        data = _read_reports(root, sha, reports, recorded_authors(Path(tmp)))
+        changes = [(str(rep["report_id"]).upper(), rep["signature"], row,
+                    sdlc_md.norm_id(str(_val(row, "unit_id")).strip()))
+                   for rep in data for row in _delivered(rep)]
+        issues = _known_issues(data)
+        tied = {i for i in issues if any(_names(unit, i) for _, _, _, unit in changes)}
         for rid, sig, row, unit in changes:
             body += _entry(unit, rid, row, _unit_text(root, sha, unit, row),
                            _independent_reviews(Path(tmp), unit),
@@ -300,7 +323,8 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
         "committed file holds them. A verify run is recorded only in local state, which is not "
         "a committed record, so this pack does not read one.", "",
         "An independent review is the latest verdict of each reviewing seat whose reviewer is "
-        "not the unit's recorded author.", "",
+        "not the unit's recorded author, never a self-review or a unit closed before the "
+        "review gate.", "",
         "## Changes", ""]
     if not body:
         body = ["The named reports record no delivered unit.", ""]
@@ -311,7 +335,8 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
             "## Accountability", "",
             "Each change names the principal recorded on its report's signature, with the signing "
             "date. No record names an accountable person per unit, so every change of a report "
-            "names that report's signer; a blank or agent principal refuses the pack.", ""]
+            "names that report's signer; a blank principal, one that reads as an agent or one the "
+            "review ledgers record as an author refuses the pack.", ""]
     return "\n".join(head + body + tail).rstrip("\n") + "\n"
 
 
