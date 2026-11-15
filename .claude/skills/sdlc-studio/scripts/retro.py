@@ -1374,7 +1374,9 @@ def second_seat_yield(root, unit_ids: list) -> dict:
             entry = seats.setdefault(seat, {"reviewed": [], "caught": []})
             if uid not in entry["reviewed"]:
                 entry["reviewed"].append(uid)
-            raised = verdict == "REJECT" or str(row.get("issues") or "").strip(" -")
+            # The ledger's own reader decides what is a finding: `none`, `-` and a lone
+            # `RULINGS:` item are what a clean approval records, and raise nothing.
+            raised = verdict == "REJECT" or bool(critic.parse_findings(row.get("issues") or ""))
             if first_latest == "APPROVE" and raised and uid not in entry["caught"]:
                 entry["caught"].append(uid)
         if not any(uid in s["reviewed"] for s in seats.values()):

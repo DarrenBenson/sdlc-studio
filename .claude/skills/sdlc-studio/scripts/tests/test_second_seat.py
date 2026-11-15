@@ -57,11 +57,27 @@ def _bug(root: Path, num: int, affects: str) -> str:
 
 
 def _ledger(root: Path, *rows: tuple[str, str, str, str]) -> None:
-    """Delivery verdict rows (unit, verdict, reviewer, issues), oldest first."""
+    """Delivery verdict rows (unit, verdict, reviewer, issues), oldest first. A row with no
+    issues carries `none`, the cell `critic.py record --from-verdict` writes for `ISSUES: none`;
+    the rows the recorder's round rules would refuse are written as cells, as a forced or older
+    ledger holds them."""
     body = "".join(f"| {u} | {v} | {who} | builder | 2026-11-15 | {'a' * 12} | full | - "
-                   f"| {issues or '-'} |\n" for u, v, who, issues in rows)
+                   f"| {issues or 'none'} |\n" for u, v, who, issues in rows)
     (root / "sdlc-studio" / "reviews" / "critic-verdicts.md").write_text(
         critic.HEADER + body, encoding="utf-8")
+
+
+def _record(root: Path, unit: str, seat: str, block: str) -> None:
+    """Record one delivery verdict through the shipped `critic.py record --from-verdict`, so the
+    ledger holds exactly the cells the recorder writes for the reviewer's returned block."""
+    path = root / f"{unit}-{seat}.txt"
+    path.write_text(f"UNIT: {unit}\nBRIEF: {path.stem}\n{block}", encoding="utf-8")
+    err = io.StringIO()
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+        rc = critic.main(["record", "--unit", unit, "--reviewer", seat, "--author", "builder",
+                          "--from-verdict", str(path), "--root", str(root)])
+    if rc != 0:
+        raise AssertionError(err.getvalue())
 
 
 def _retro(root: Path, units: list[str]) -> None:
@@ -160,9 +176,18 @@ class RetroSecondSeatNothingTests(unittest.TestCase):
     def test_missing_and_empty_yield_are_stated_not_refused(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = _root(d)
-            units = [_story(root, 1, "high"), _story(root, 2, "high")]
-            _ledger(root, ("US0001", "APPROVE", "qa", ""),
-                    ("US0002", "APPROVE", "qa", ""), ("US0002", "APPROVE", "engineering", ""))
+            units = [_story(root, 1, "high"), _story(root, 2, "high"), _story(root, 3, "high")]
+            clean = "VERDICT: APPROVE\nISSUES: none\nBLOCKING: none\n"
+            # A clean run as the shipped recorder writes it: `ISSUES: none` is the cell `none`,
+            # and a clean approval's rulings are the one `RULINGS:` item, neither a finding.
+            _record(root, "US0001", "qa", clean)
+            _record(root, "US0002", "qa", clean)
+            _record(root, "US0002", "engineering", clean)
+            _record(root, "US0003", "qa", clean)
+            _record(root, "US0003", "engineering", clean + "RULINGS: AC1 holds by execution\n")
+            cells = [r["issues"] for r in critic.read_verdicts(root)]
+            self.assertEqual(4, cells.count("none"), cells)
+            self.assertTrue(cells[-1].startswith("RULINGS:"), cells)
             _retro(root, units)
             _res, lines = _composed(root)
             missing = [ln for ln in lines if "no second-seat verdict" in ln]
@@ -172,6 +197,8 @@ class RetroSecondSeatNothingTests(unittest.TestCase):
             nothing = [ln for ln in lines if "caught nothing" in ln]
             self.assertEqual(1, len(nothing), lines)
             self.assertIn("engineering", nothing[0])
+            self.assertIn("over 2 unit(s)", nothing[0])
+            self.assertEqual([], [ln for ln in lines if "caught 1" in ln or "caught 2" in ln])
             self.assertNotRegex(" ".join(missing + nothing), r"\b0\b")
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
