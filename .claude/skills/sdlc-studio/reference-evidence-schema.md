@@ -671,7 +671,7 @@ and the latest row for a unit is the one in force.
 | `Author` | Who wrote it. |
 | `Date` | When the verdict was recorded. |
 | `Brief` | The brief the reviewer was given; a hand-written prompt records none. |
-| `Tier` | The review depth, `full` or `light`. |
+| `Tier` | The review depth, `full` or `light`, then a space and `(explicit)` when the operator chose it with `--tier-explicit`; `-` when the verdict recorded none. |
 | `Source` | `sha256:`, 16 hex digits and the file name of the brief the review read, then any later tokens; `-` when the verdict was transcribed. |
 | `Issues` | The issues the reviewer raised. |
 

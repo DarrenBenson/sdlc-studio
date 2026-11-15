@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -87,6 +88,30 @@ def header_problems(heading: str, header: list[str]) -> list[str]:
     """How a ledger's header row differs from the annex's column list: equal, in order."""
     want = columns(heading)
     return [] if header == want else [f"{heading}: the annex lays out {want}, the ledger {header}"]
+
+
+def _column(path: Path, first: str, column: str) -> list[str]:
+    """Each data row's cell under `column` in the ledger table headed by `first`."""
+    header, out = _header(path, first), []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if (line.lstrip().startswith("|") and len(cells) == len(header) and cells != header
+                and not set(cells[0]) <= set("-: ")):
+            out.append(cells[header.index(column)])
+    return out
+
+
+def tier_problems(written: set[str]) -> list[str]:
+    """How the annex's critic `Tier` cell and the Tier cells `critic.py record` wrote disagree:
+    a written value the cell's code spans do not spell, alone or as a value then a suffix, or a
+    span (a flag name aside) that is no part of any written value."""
+    meaning = next(r["Meaning"] for r in annex.annex_table("Critic ledger columns")
+                   if annex._key(r["Column"]) == "Tier")
+    spans = [s for s in re.findall(r"`([^`]+)`", meaning) if not s.startswith("--")]
+    parts = {p for v in written for p in v.split(" ")}
+    return ([f"Tier {v!r} is written but the annex does not spell it" for v in sorted(written)
+             if v not in spans and not any(v == f"{b} {s}" for b in spans for s in spans)]
+            + [f"Tier {s!r} is documented but never written" for s in spans if s not in parts])
 
 
 class LedgerAnnexTests(unittest.TestCase):
@@ -179,6 +204,11 @@ class LedgerAnnexTests(unittest.TestCase):
         _cli(critic_root, "critic", "record", "--root", ".", "--unit", "US0001",
              "--verdict", "APPROVE", "--reviewer", "qa seat", "--author", "builder",
              "--issues", "none")
+        for unit, tier in (("US0002", ["--tier", "light"]),
+                           ("US0003", ["--tier", "full", "--tier-explicit"])):
+            _cli(critic_root, "critic", "record", "--root", ".", "--unit", unit,
+                 "--verdict", "APPROVE", "--reviewer", "qa seat", "--author", "builder",
+                 "--issues", "none", *tier)
         velocity_root = self.tmp / "velocity"
         velocity_root.mkdir()
         lean_report.lean_run(velocity_root)
@@ -205,6 +235,15 @@ class LedgerAnnexTests(unittest.TestCase):
         # Order counts: the same columns moved are refused.
         critic = ledgers["Critic ledger columns"]
         self.assertTrue(header_problems("Critic ledger columns", [*critic[1:], critic[0]]))
+        # The Tier cell's values are the writer's: `-` with no tier, the tier, or the tier then
+        # `(explicit)`, each spelt by the annex's cell and nothing else documented.
+        written = set(_column(critic_root / "sdlc-studio" / "reviews" / "critic-verdicts.md",
+                              "Unit", "Tier"))
+        self.assertEqual({"-", "light", "full (explicit)"}, written)
+        self.assertEqual([], tier_problems(written))
+        # Both directions refuse: a value written but undocumented, a value documented but unwritten.
+        self.assertTrue(tier_problems(written | {"full [explicit]"}))
+        self.assertTrue(tier_problems(written - {"light"}))
 
 
 if __name__ == "__main__":
