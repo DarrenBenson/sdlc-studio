@@ -1,6 +1,6 @@
 # CR-0693: An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next plan, build and review
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0309
 > **Parent:** RFC0063
 > **Depends on:** EP0280; BG1268

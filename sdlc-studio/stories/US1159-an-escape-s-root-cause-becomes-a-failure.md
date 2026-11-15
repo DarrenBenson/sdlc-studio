@@ -1,6 +1,6 @@
 # US1159: An escape's root cause becomes a failure class that carries the files it applies to
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0693
 > **Created:** 2026-11-15
@@ -22,8 +22,10 @@
 
 - **AC1:** Given a confirmed escaped bug BG0001 with a filled Root Cause and Affects `scripts/a.py`, when `escape.py to-class --bug BG0001 --class "a boundary never pinned" --rule ... --behaviour ...` runs, then `lessons.py class-add` (BG1268) is called and `sdlc-studio/lessons.jsonl` gains one row inject `build` and `review`, whose `evidence` cites BG0001 and the unit, and whose `files` holds the bug's Affects paths.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_class.py::EscapeClassTests::test_a_root_cause_becomes_a_class_row_carrying_its_files
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a bug that is not escaped, one whose Root Cause is the scaffold, and a class name already in the store, when `escape.py to-class` runs, then each exits 2 naming its reason and the store is unchanged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_class.py::EscapeClassTests::test_an_unescaped_empty_or_duplicate_class_is_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

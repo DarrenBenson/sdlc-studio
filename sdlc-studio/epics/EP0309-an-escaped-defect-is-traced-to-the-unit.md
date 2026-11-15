@@ -1,6 +1,6 @@
 # EP0309: An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 8
 > **Parent:** CR0693
 > **Created:** 2026-11-15
@@ -16,7 +16,7 @@ Decomposed from CR0693. Delivers the work CR0693 requested.
 
 - [x] [US1157: A bug records that it escaped to production, the release it shipped in and the unit that let it through](../stories/US1157-a-bug-records-that-it-escaped-to-production.md)
 - [x] [US1158: escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches](../stories/US1158-escape-py-trace-proposes-the-unit-and-verdict.md)
-- [ ] [US1159: An escape's root cause becomes a failure class that carries the files it applies to](../stories/US1159-an-escape-s-root-cause-becomes-a-failure.md)
+- [x] [US1159: An escape's root cause becomes a failure class that carries the files it applies to](../stories/US1159-an-escape-s-root-cause-becomes-a-failure.md)
 
 ## Acceptance Criteria (Epic Level)
 

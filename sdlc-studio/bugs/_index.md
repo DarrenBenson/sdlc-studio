@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 344 |
+| Open | 345 |
 | In Progress | 0 |
 | Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1457** |
+| **Total** | **1458** |
 
 ## All Bugs
 
@@ -533,6 +533,7 @@
 | [BG1455](BG1455-escape-py-trace-counts-a-mentions-trailer-id.md) | escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1456](BG1456-the-escaped-bug-fixed-gate-s-scaffold-stripping.md) | The escaped-bug Fixed gate's scaffold stripping is untested and matches the scaffold by exact string, and test_file_finding's selector reader test fails outside a git checkout | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1457](BG1457-the-seat-record-reads-any-bracketed-word-as.md) | The seat record reads any bracketed word as a seat, lane brief --seat accepts any value, and retro seats counts rounds across deliveries | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1458](BG1458-escape-py-to-class-records-a-class-with.md) | escape.py to-class records a class with no files for a hand-edited bug with no Affects, collapses whitespace inside Affects paths, and the catalogue pages lag the new verb and flags | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

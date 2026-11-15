@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 54 |
-| Ready | 8 |
+| Ready | 7 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 914 |
+| Done | 915 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -196,7 +196,7 @@
 | [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Done | EP0309 | 2026-11-15 | 2026-11-15 |
-| [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

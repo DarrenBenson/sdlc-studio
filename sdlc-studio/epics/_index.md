@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 10 |
+| Draft | 9 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 266 |
+| Done | 267 |
 | Superseded | 33 |
 | **Total** | **309** |
 
@@ -59,7 +59,7 @@
 | [EP0306](EP0306-every-cost-row-a-run-reports-has-a.md) | Every cost row a run reports has a forecast and a ratio to learn from, and a row that cannot be forecast says why | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0307](EP0307-a-change-that-touches-a-high-risk-component.md) | A change that touches a high-risk component is classed from a declared map, flagged at plan and reviewed by a second independent seat whose yield is reported | Done | 3 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0308](EP0308-a-change-board-can-approve-a-release-from.md) | A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
-| [EP0309](EP0309-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review | Draft | 3 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0309](EP0309-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review | Done | 3 | -- | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
