@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 362 |
+| Open | 364 |
 | In Progress | 0 |
 | Fixed | 931 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1484** |
+| **Total** | **1486** |
 
 ## All Bugs
 
@@ -560,6 +560,8 @@
 | [BG1482](BG1482-a-build-injected-lesson-class-can-no-longer.md) | A build-injected lesson class can no longer retire, so once more than INJECT_MAX build classes are live the digest cap drops the oldest builder traps | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1483](BG1483-a-run-s-repeat-of-a-lesson-class.md) | A run's repeat of a lesson class is counted only from a cited REJECT or retro Try item, so a repeat caught by the land or the push gate goes unrecorded | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1484](BG1484-verify-ac-py-run-prints-three-lines-on.md) | verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1485](BG1485-a-shell-verify-line-run-with-s-still.md) | A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

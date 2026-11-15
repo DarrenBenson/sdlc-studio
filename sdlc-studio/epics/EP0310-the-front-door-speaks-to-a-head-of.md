@@ -14,7 +14,7 @@ Decomposed from CR0702. Delivers the work CR0702 requested.
 
 ## Story Breakdown
 
-- [ ] [US1160: `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them](../stories/US1160-sprint-report-py-evidence-renders-the-signed-reports.md)
+- [x] [US1160: `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them](../stories/US1160-sprint-report-py-evidence-renders-the-signed-reports.md)
 - [x] [US1161: docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it](../stories/US1161-docs-evidence-md-is-generated-from-this-repository.md)
 - [x] [US1162: docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it](../stories/US1162-docs-engineering-leaders-md-explains-change-approval-separation.md)
 - [x] [US1163: SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has](../stories/US1163-support-md-says-what-support-exists-where-to.md)

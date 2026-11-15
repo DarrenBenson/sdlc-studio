@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 60 |
+| Draft | 59 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 925 |
+| Done | 926 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -197,7 +197,7 @@
 | [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Done | EP0309 | 2026-11-15 | 2026-11-15 |
-| [US1160](US1160-sprint-report-py-evidence-renders-the-signed-reports.md) | `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1160](US1160-sprint-report-py-evidence-renders-the-signed-reports.md) | `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them | Done | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1161](US1161-docs-evidence-md-is-generated-from-this-repository.md) | docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it | Done | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1162](US1162-docs-engineering-leaders-md-explains-change-approval-separation.md) | docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it | Done | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1163](US1163-support-md-says-what-support-exists-where-to.md) | SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has | Done | EP0310 | 2026-11-15 | 2026-11-15 |

@@ -1,6 +1,6 @@
 # US1160: `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0702
 > **Created:** 2026-11-15
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture of signed reports of record (one achieved, one partial with a verdict note, one holding a Dollars per point row and one without, two signed reports for the same run, and one unsigned report), when `sprint_report.py evidence --out <page>` runs, then the table between the page's generated markers has one row per run from that run's latest signed report, showing the goal verdict, a partial verdict's note, dollars per point where the report holds it and 'not recorded' where it does not, and the hours from `generated_at` to `signature.signed_at`; the unsigned report is left out.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_one_row_per_signed_run_from_its_latest_report
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a page with hand-written text outside its markers, when the verb regenerates it, then that text is left byte for byte, and every figure inside the markers traces to a named field of a committed report.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_hand_text_is_kept_and_every_figure_is_a_report_field
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a page whose table differs from the reports it names (a hand-edited cell), when `sprint_report.py evidence --out <page> --check` runs, then it exits 1 naming the run that differs; given a report signed after the newest report the page names, it exits 0 and prints that the run is not yet on the page.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_check_names_a_drifted_run_and_only_notes_a_newer_report
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given the new verb and its flags, when the command registries are read, then `docgen.py surface --check` is clean, `sprint_report.NON_CEREMONY_VERBS` lists `evidence`, command-audit.md judges `--out` and `--check`, and the `### sprint_report.py` section of reference-scripts-domain.md names the verb.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_the_verb_is_in_every_registry_a_new_verb_implies
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
