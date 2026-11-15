@@ -3587,15 +3587,16 @@ def cmd_accuracy(args) -> int:
     # recorded as `supplied` and published as part of a lower bound.
     delegated = getattr(args, "delegated_tokens", None)
     unit, minutes = getattr(args, "delegated_unit", ""), getattr(args, "delegated_minutes", None)
-    if delegated is None and (unit or minutes is not None):
-        print("--delegated-unit and --delegated-minutes describe a --delegated-tokens record; "
-              "nothing was recorded", file=sys.stderr)
+    model = getattr(args, "delegated_model", None)
+    if delegated is None and (unit or minutes is not None or model is not None):
+        print("--delegated-unit, --delegated-minutes and --delegated-model describe a "
+              "--delegated-tokens record; nothing was recorded", file=sys.stderr)
         return 2
     if delegated is not None:
         try:
             rec = run_state.record_delegated_tokens(
                 args.root, delegated, agent=getattr(args, "delegated_agent", "") or "",
-                unit=unit or "", minutes=minutes)
+                unit=unit or "", minutes=minutes, model=model)
         except ValueError as exc:
             print(f"delegated total refused: {exc}", file=sys.stderr)
             return 1
@@ -3606,6 +3607,7 @@ def cmd_accuracy(args) -> int:
             print(f"delegated total recorded (supplied, not measured): {rec['tokens']:,}"
                   + (f" for {rec['agent']}" if rec["agent"] else "")
                   + (f" against {rec['unit']}" if rec.get("unit") else "")
+                  + (f", model {rec['model']}" if rec.get("model") else "")
                   + (f", {rec['minutes']:g} minutes" if rec.get("minutes") else ""))
             batch = {sdlc_md.norm_id(u) for u in run_state.read(args.root).get("batch") or []}
             if rec.get("unit") and rec["unit"] not in batch:
@@ -4224,6 +4226,10 @@ def build_parser() -> argparse.ArgumentParser:
                            default=None, metavar="M",
                            help="the agent's own reported duration in minutes, for "
                                 "--delegated-tokens")
+            p.add_argument("--delegated-model", dest="delegated_model", default=None,
+                           metavar="MODEL",
+                           help="the model the agent reported spending --delegated-tokens on, "
+                                "recorded as given and never filled in from the session")
             p.add_argument("--elapsed-hours", dest="elapsed_hours", type=float, default=None,
                            metavar="H",
                            help="the sprint's real elapsed hours (start to close), for the PRIMARY "

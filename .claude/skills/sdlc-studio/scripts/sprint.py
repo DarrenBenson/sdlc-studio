@@ -8658,6 +8658,9 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     (`_lane_shares`): each unit's record holds its share of the tokens, the priced cost, the
     components and the minutes, marked as split, and the page says so.
 
+    `--model` names the model the builder reported spending the total on; every unit's record
+    carries it as given, a split one included, and a return with none records no model.
+
     `--agent` names the builder's own transcript (`run_state.agent_transcript_tokens`): its
     priced cost and components land on the record, and its token sum is the total when no
     `--tokens` is given. An agent with no readable transcript is warned about, naming the id and
@@ -8709,7 +8712,7 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
                 note=f"sprint lane return ({res['outcome']})", unit=res["unit"], minutes=mins,
                 reading=read, provenance=(run_state.SUPPLIED if tokens is not None
                                           else run_state.READ_FROM_TRANSCRIPT),
-                apportioned=mark)),
+                apportioned=mark, model=getattr(args, "model", None))),
             unreadable,
             f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), "
             f"so its tokens and minutes will not reach the page")
@@ -9234,7 +9237,7 @@ def cmd_lane(args: argparse.Namespace) -> int:
         from lib import lanes  # noqa: PLC0415 - only the accept needs it
         # handed to the `lane return` an APPROVE ends with, exactly as given here
         passthrough = [arg for flag, value in (("--agent", args.agent), ("--tokens", args.tokens),
-                                               ("--minutes", args.minutes))
+                                               ("--minutes", args.minutes), ("--model", args.model))
                        if value is not None for arg in (flag, str(value))]
         for flag, values in (("--proof", args.proof), ("--gap", args.gap)):
             passthrough += [arg for value in values or [] for arg in (flag, value)]
@@ -9394,7 +9397,9 @@ def _print_lane_return(res: dict) -> None:
             part = got.get(run_state.APPORTIONED)
             shared = (f", split by points ({part['points']} of the lane's {part['of']} "
                       f"points, of {part['tokens']:,} tokens)" if isinstance(part, dict) else "")
-            said.append(f"agent total recorded ({how}): {got['tokens']:,} tokens{timed}{shared}")
+            named = f", model {got['model']}" if got.get("model") else ""
+            said.append(f"agent total recorded ({how}): {got['tokens']:,} tokens{named}{timed}"
+                        f"{shared}")
             if got.get("priced") is not None:
                 said.append(f"agent priced cost recorded (read from {read_from}): "
                             f"{got['priced']:,} {run_state.PRICED_LABEL}")
@@ -13041,7 +13046,9 @@ def build_parser() -> argparse.ArgumentParser:
                                                         "opencode"),
                     help="(run) the CLI the lane's brief runs in, one fresh headless session")
     ln.add_argument("--model", default=None,
-                    help="(run) the model the session runs on, passed through to the CLI")
+                    help="(run) the model the session runs on, passed through to the CLI; "
+                         "(return, accept) the model the builder reported spending --tokens or "
+                         "--agent on, recorded on its delegated record as given; optional")
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
     ln.add_argument("--claimed", default="fixed",

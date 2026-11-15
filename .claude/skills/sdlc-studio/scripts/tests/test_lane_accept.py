@@ -155,16 +155,19 @@ class LaneAcceptTests(unittest.TestCase):
         self.assertEqual(back[:3], ("lane", "return", "--units"))
         self.assertIn(("--agent", "agent-x"), list(zip(back, back[1:])))
         self.assertIn(("--proof", "unit=pinned"), list(zip(back, back[1:])))
+        self.assertNotIn("--model", back)
         self.assertIn("AC1: passed", out)
         # a bug moves to Fixed, not Done; its author is named when no self-check names one
         self.calls.clear()
         rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder", "--tokens", "1200",
-                                    "--minutes", "3", "--gap", "unit=none owed")
+                                    "--minutes", "3", "--gap", "unit=none owed",
+                                    "--model", "claude-sonnet-4-6")
         self.assertEqual(rc, 0, out + err)
         self.assertEqual(_status(self.root, BUG), "Fixed")
         self.assertEqual(self._rows(BUG)[-1][3], "bug-builder")
         back = self.calls[-1][1]
-        for pair in (("--tokens", "1200"), ("--minutes", "3.0"), ("--gap", "unit=none owed")):
+        for pair in (("--tokens", "1200"), ("--minutes", "3.0"), ("--gap", "unit=none owed"),
+                     ("--model", "claude-sonnet-4-6")):
             self.assertIn(pair, list(zip(back, back[1:])))
         self.assertNotIn("--agent", back)
 

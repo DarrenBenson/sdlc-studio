@@ -2703,7 +2703,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
                             note: str = "", unit: str = "", minutes=None,
                             reading: dict | None = None,
                             provenance: str = SUPPLIED,
-                            apportioned: dict | None = None) -> dict | None:
+                            apportioned: dict | None = None,
+                            model: str | None = None) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
@@ -2731,6 +2732,11 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
 
     `apportioned`, when given, marks the total, and the reading's figures with it, as `unit`'s
     share of one total split between several units by their Points (`APPORTIONED`).
+
+    `model` is the model the agent reported spending the total on, stored on the record trimmed
+    and never priced: a supplied total is one number, and a price needs its components. With no
+    model, or a blank one, the record carries no `model` key; nothing is filled in for it, since
+    the main thread's model would price a smaller model's subagent at the larger one's rate.
     """
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
@@ -2760,6 +2766,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         entry["minutes"] = float(minutes)
     if apportioned:
         entry[APPORTIONED] = dict(apportioned)
+    if isinstance(model, str) and model.strip():
+        entry["model"] = model.strip()
     if reading:
         # A lane run session's reading (`lanes.run_reading`) with no split names its session's
         # one model: its components are booked under that model, so the unit's dollars price

@@ -718,7 +718,10 @@ the close or to the sign.
 unit, as the delegated record `retro.py accuracy --delegated-unit` writes, so they count once in
 the run's delegated spend and the unit's row reads them as agent tokens and agent minutes. Agent
 minutes take precedence over the lane span, which is the fallback. Both are optional. `--minutes`
-with no `--tokens`, or a total given for several units at once, is not recorded and says so. The
+with no `--tokens` is not recorded and says so. A total given for several units at once is split
+between them by their Points, and each unit's record says so. `--model X` records the model the
+builder reported beside its total, as `retro.py accuracy --delegated-model X` does, and a total
+given with no model records none, never the session's. The
 Estimates tokens ratio is withheld unless every live unit delivered or carrying a span (a lane
 brief or a move to In Progress during the run opens one) supplied its delegated spend: the
 main-thread meter cannot see a delegated agent, so a ratio over a partial actual understates the
