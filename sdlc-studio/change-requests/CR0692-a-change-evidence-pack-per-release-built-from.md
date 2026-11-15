@@ -36,3 +36,4 @@ Serves O10, Abena Osei's End goal 1 and Graham Doyle's End goals 1 and 2. Builds
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Raised |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0476) | Part 1 (AC1 and AC2) refined into EP0308 (US1155, US1156) for run twelve. Part 2 (AC3 grouping by class with the second seat's verdict, AC4 reading through the annex) is still to refine, after CR0696 and EP0275 land |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Derived Complete by reconcile when EP0308 (part 1) resolved. AC3 and AC4 (part 2) were never refined and are carried by CR0704 |
