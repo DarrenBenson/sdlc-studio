@@ -313,6 +313,7 @@ class VerifierResult:
     duration_ms: int
     score: float | None = None  # graded `eval` verifier score, if any
     vacuous: bool = False  # exited clean having run no tests at all
+    partly_skipped: bool = False  # a clean pytest run that skipped some of what it selected
 
 
 # A filtered runner that matches nothing can exit 0: `unittest` only began returning 5 for
@@ -473,13 +474,22 @@ def _skip_marked_class(cwd: Path, path: str, reason: str) -> str:
     return ", ".join(hits) or path
 
 
+def _pytest_final_summary(stdout: str, stderr: str) -> str:
+    """pytest's own closing summary segment: the last on stdout, where pytest writes it, else the
+    last on stderr. A summary-shaped line a test printed under `-s` comes before it, so it is
+    never the one read."""
+    for stream in (stdout, stderr):
+        if found := _PYTEST_SUMMARY.findall(stream):
+            return found[-1]
+    return ""
+
+
 def _pytest_partial_skips(stdout: str, stderr: str, cwd: Path) -> str:
     """The partial-skip verdict for a clean pytest run naming each skipped test as `name
     (reason)`; empty when it skipped none. A skip the report does not list (a `-r` on the
     Verify line replacing ours) still counts."""
     blob = f"{stdout}\n{stderr}"
-    count = max((_summary_count(seg, "skipped") for seg in _PYTEST_SUMMARY.findall(blob)),
-                default=0)
+    count = _summary_count(_pytest_final_summary(stdout, stderr), "skipped")
     if not count:
         return ""
     named = [f"{node} ({reason})" for node, reason in _PYTEST_SKIP_NODE.findall(blob)]
@@ -833,6 +843,7 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
             stderr=(f"{stderr}\n{msg}".strip() if vacuous else stderr),
             duration_ms=duration,
             vacuous=vacuous,
+            partly_skipped=bool(skips),
         )
     except subprocess.TimeoutExpired:
         duration = int((time.time() - start) * 1000)
@@ -2008,7 +2019,13 @@ def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[s
     tail = parts[1] if len(parts) > 1 else ""
 
     if head == "pytest" and tail:
-        return "pytest", ["pytest", "-q", "-rfEs"] + shlex.split(tail)
+        # The verdict reads pytest's summary line, which it prints only at verbosity -1 or above,
+        # so a `-q` on the line would stack on ours and hide every skip. A trailing
+        # `--verbosity=-1` sets the level whatever the line asks for; the leading `-q` stays so
+        # the run-identity key still folds a `-q` the line repeats. A `--` ends pytest's options.
+        args = shlex.split(tail)
+        cut = args.index("--") if "--" in args else len(args)
+        return "pytest", ["pytest", "-q", "-rfEs", *args[:cut], "--verbosity=-1", *args[cut:]]
     if head == "jest" and tail:
         return "jest", ["jest", "-t", tail.strip('"\'')]
     if head == "vitest" and tail:
@@ -2159,6 +2176,7 @@ class StoryReport:
     stale: int = 0
     manual: int = 0        # AC authored `Verify: manual ...` - a declared human-checked judgement
     vacuous: int = 0       # AC whose verifier exited 0 having run no tests - counted as failed
+    partly_skipped: int = 0  # AC whose pytest target ran only in part - counted as failed too
     unspecified: int = 0   # AC with NO Verify: line at all - an omission, not a declaration
     passed: list[str] = field(default_factory=list)
     failures: list[dict] = field(default_factory=list)
@@ -2796,10 +2814,13 @@ def verify_story(
                     "duration_ms": result.duration_ms,
                     "score": result.score,
                     "vacuous": result.vacuous,
+                    "partly_skipped": result.partly_skipped,
                 }
             )
             if result.vacuous:
                 report.vacuous += 1
+            if result.partly_skipped:
+                report.partly_skipped += 1
             if block.verified_state == "yes":
                 report.stale += 1
                 report.flips.append({"ac": block.ac_id, "old_state": "yes", "new_state": "no"})
@@ -2908,6 +2929,7 @@ def write_report(path: Path, stories: list[StoryReport], dry_run: bool = False,
             "ac_count": s.ac_count,
             "verified": s.verified,
             "failed": s.failed,
+            "partly_skipped": s.partly_skipped,
             "stale": s.stale,
             "manual": s.manual,
             "unspecified": s.unspecified,
@@ -3642,8 +3664,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(
             f"[{tag}] {p.name}: "
             f"ac={report.ac_count} pass={report.verified} "
-            f"fail={report.failed} manual={report.manual} "
-            f"unspecified={report.unspecified} "
+            f"fail={report.failed} partly_skipped={report.partly_skipped} "
+            f"manual={report.manual} unspecified={report.unspecified} "
             f"changes={report.changed}"
         )
         for fail in report.failures:
@@ -3662,6 +3684,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
     write_report(report_path, reports, dry_run=args.dry_run, merge=not getattr(args, "fresh", False))
     append_history(repo_root / "sdlc-studio" / ".local" / "verify-history.jsonl", reports, args.dry_run)
+    print(_total_line(
+        sum(r.verified for r in reports), overall_fail, sum(r.manual for r in reports),
+        sum(r.unspecified for r in reports),
+        [f"{sdlc_md.extract_record_id(Path(r.path).stem) or Path(r.path).stem} {f['ac']}"
+         for r in reports for f in r.failures if f.get("partly_skipped")]))
     print(f"wrote {report_path}")
 
     # A UNIT THIS COMMAND COULD NOT READ IS NOT A UNIT THAT PASSED. Three states are refused,
@@ -4680,23 +4707,36 @@ def cmd_report(args: argparse.Namespace) -> int:
         print("no stories in report")
         return 0
     total_pass = total_fail = total_manual = total_unspecified = 0
+    partly: list[str] = []
     for sid, s in stories.items():
         total_pass += s.get("verified", 0)
         total_fail += s.get("failed", 0)
         total_manual += s.get("manual", 0)
         total_unspecified += s.get("unspecified", 0)
+        partly += [f"{sdlc_md.extract_record_id(sid) or sid} {f['ac']}"
+                   for f in s.get("failures", []) if f.get("partly_skipped")]
         print(
             f"{sid}: ac={s.get('ac_count', 0)} "
             f"pass={s.get('verified', 0)} "
             f"fail={s.get('failed', 0)} "
+            f"partly_skipped={s.get('partly_skipped', 0)} "
             f"manual={s.get('manual', 0)} "
             f"unspecified={s.get('unspecified', 0)}"
         )
         for fail in s.get("failures", []):
             print(f"  FAIL {fail['ac']}: {fail['verifier']}")
-    print(f"total: pass={total_pass} fail={total_fail} "
-          f"manual={total_manual} unspecified={total_unspecified}")
+    print(_total_line(total_pass, total_fail, total_manual, total_unspecified, partly))
     return 1 if total_fail > 0 else 0
+
+
+def _total_line(passed: int, failed: int, manual: int, unspecified: int,
+                partly: list[str]) -> str:
+    """The closing `total:` line of `run` and `report`. A partly skipped criterion is counted in
+    `fail=` and again on its own, and named, so a gate can say how many of its reds ran only in
+    part rather than broke."""
+    named = f" (partly skipped: {', '.join(partly)})" if partly else ""
+    return (f"total: pass={passed} fail={failed} partly_skipped={len(partly)} "
+            f"manual={manual} unspecified={unspecified}{named}")
 
 
 # -----------------------------------------------------------------------------

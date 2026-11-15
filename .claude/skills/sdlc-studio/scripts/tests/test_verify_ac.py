@@ -190,7 +190,13 @@ class DSLTests(unittest.TestCase):
         self.assertEqual(kind, "pytest")
         self.assertEqual(cmd, ["pytest", "-q", "-rfEs",
                                 ".claude/skills/sdlc-studio/scripts/tests/test_config.py",
-                                "-k", "override_warn"])
+                                "-k", "override_warn", "--verbosity=-1"])
+
+    def test_build_command_pytest_sets_its_verbosity_before_a_double_dash(self) -> None:
+        # The level is set after the line's own flags, and before a `--` that would make it a path.
+        _, cmd = verify_ac._build_command("pytest -qq tests/test_x.py -- tests/test_y.py")
+        self.assertEqual(cmd, ["pytest", "-q", "-rfEs", "-qq", "tests/test_x.py",
+                               "--verbosity=-1", "--", "tests/test_y.py"])
 
     def test_build_command_file(self) -> None:
         kind, cmd = verify_ac._build_command("file src/auth/email.ts")
