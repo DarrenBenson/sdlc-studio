@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 34 |
+| Proposed | 35 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 553 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **704** |
+| **Total** | **705** |
 
 ## All Changes
 
@@ -116,6 +116,7 @@
 | [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | Proposed | High | Improvement | 2026-11-14 | -- |
 | [CR-0703](CR0703-fit-the-plan-s-dollar-forecast-from-measured.md) | Fit the plan's dollar forecast from measured dollars per point, not priced tokens times the input price | Proposed | Medium | enhancement | 2026-11-15 | -- |
 | [CR-0704](CR0704-the-change-evidence-pack-groups-changes-by-risk.md) | The change evidence pack groups changes by risk and compliance class, lists high-risk changes first with their second seat's verdict, and reads through the evidence annex | Proposed | High | feature | 2026-11-15 | -- |
+| [CR-0705](CR0705-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build | Proposed | High | enhancement | 2026-11-15 | -- |
 
 ## Archived Releases
 

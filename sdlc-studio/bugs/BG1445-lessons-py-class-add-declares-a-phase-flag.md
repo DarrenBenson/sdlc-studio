@@ -1,6 +1,6 @@
 # BG1445: lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** docs/existing-users.md, tools/tests/test_lean_upgrade_page_docs.py, changelog.d/BG1445.md
@@ -26,6 +26,7 @@ Rewrite the row's first cell so the retired flag sits beside its verb inside one
 
 - [ ] **AC1** Given HEAD, when the upgrade-page test reads the retired surface, then the critic.py --phase label maps to its replacement row, and lessons.py class-add keeps its --phase flag. Fails on: the subtest red, or the flag renamed to dodge the test.
   - **Verify:** pytest tools/tests/test_lean_upgrade_page_docs.py::UpgradePageTests::test_the_upgrade_page_maps_every_retired_surface
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

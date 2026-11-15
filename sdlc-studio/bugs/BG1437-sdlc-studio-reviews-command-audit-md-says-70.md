@@ -1,6 +1,6 @@
 # BG1437: sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** sdlc-studio/reviews/command-audit.md, tools/tests/test_lean_release_verify.py, changelog.d/BG1437.md
@@ -26,6 +26,7 @@ Regenerate the audit, and add a check (in the suite or the budgets lane, like do
 
 - [ ] **AC1** Given HEAD, when `command_audit.py --check-tools` output is compared with the committed `sdlc-studio/reviews/command-audit.md`, then they are identical, so US0251's AC2 and the release-verify tests pass at the push boundary. Fails on: the committed audit still counting 70 scripts.
   - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --check-tools | diff - sdlc-studio/reviews/command-audit.md
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

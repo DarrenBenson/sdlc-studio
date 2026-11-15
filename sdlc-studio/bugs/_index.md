@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 335 |
+| Open | 341 |
 | In Progress | 0 |
-| Fixed | 920 |
+| Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1446** |
+| **Total** | **1454** |
 
 ## All Bugs
 
@@ -512,7 +512,7 @@
 | [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1438](BG1438-the-evidence-annex-says-fingerprint-strings-escape-all.md) | The evidence annex says fingerprint strings escape all control characters while the reference implementation escapes only U+0000 to U+001F, and it omits the no-closed-sprint limit of the version stamp | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1440](BG1440-lane-return-model-with-no-total-is-dropped.md) | lane return --model with no total is dropped without a word, the model trim is untested, and help/sprint.md omits that a several-unit total is not split when a unit has no Points | Open | Low | 2026-11-15 | 2026-11-15 |
@@ -520,8 +520,16 @@
 | [BG1442](BG1442-evidence-pack-py-reaches-into-critic-s-private.md) | evidence_pack.py reaches into critic's private `_id` normaliser, so test_critic's one-independence-authority guard is red on main | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1443](BG1443-four-cost-forecast-behaviours-are-correct-but-unpinned.md) | Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1444](BG1444-sprint-plan-reports-a-malformed-risk-map-as.md) | sprint plan reports a malformed risk map as 'no component map is declared', says nothing when a unit's risk tag is outside the vocabulary, and no test pins which component the flag names when prefixes overlap | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1445](BG1445-lessons-py-class-add-declares-a-phase-flag.md) | lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1445](BG1445-lessons-py-class-add-declares-a-phase-flag.md) | lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1446](BG1446-three-second-seat-behaviours-are-correct-but-unpinned.md) | Three second-seat behaviours are correct but unpinned: a story's risk tag read over its Affects, the brief's no-map default, and the first seat's latest verdict rather than its first | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1447](BG1447-tools-check-budgets-py-reports-every-file-within.md) | tools/check_budgets.py reports every file within budget while the pre-commit budgets lane fails the same tree on docgen drift | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1448](BG1448-lane-land-spends-its-full-hook-run-before.md) | lane land spends its full hook run before a rebase conflict, and a replayed generated page merges into drift | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1449](BG1449-lane-accept-refuses-to-record-a-reject-when.md) | lane accept refuses to record a REJECT when the unit's self-check is stale, though a REJECT moves nothing | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1450](BG1450-a-reviewer-s-verdict-file-is-refused-by.md) | A reviewer's verdict file is refused by critic.py record over one code span with a leading space, and the review brief does not warn | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1451](BG1451-the-commit-msg-hook-refuses-git-commit-amend.md) | The commit-msg hook refuses git commit --amend on a lane commit because it attributes only the newly staged files | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1452](BG1452-reconcile-derives-a-request-complete-when-every-child.md) | reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1453](BG1453-file-finding-keeps-a-placeholder-id-such-as.md) | file_finding keeps a placeholder id such as changelog.d/BGXXXX.md in Affects verbatim instead of substituting the minted id or refusing it | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1454](BG1454-sprint-lane-return-agent-agent-id-leaves-the.md) | sprint lane return --agent agent-<id> leaves the unit unpriced, while lane land prints the builder as agent-<id> | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

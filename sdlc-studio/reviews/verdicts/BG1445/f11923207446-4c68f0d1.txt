@@ -1,0 +1,6 @@
+UNIT: BG1445
+BRIEF: f11923207446-4c68f0d1
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 exercised. `verify_ac.py run --id BG1445 --dry-run` reads ac=1 pass=1, and tools/tests/test_lean_upgrade_page_docs.py in a clean detached worktree of HEAD 2fac2fdf gives 2 passed, 59 subtests passed. Probe of the retired_surface pattern for `critic.py brief|record|correct|show|supersede --phase`: it matches the new row (docs/existing-users.md:159), it does not match the base-ref row, so the changelog's claim that the old wording mapped nothing holds, and it does not match a `lessons.py class-add --phase review` mention. lessons.py class-add still declares `--phase` (lessons.py:2531, added at 8cebc5ae BG1268). The lane commit touches neither lessons.py nor retired_surface, so the flag was not renamed to dodge the test. The row still tells an upgrader what to do (LC-018 check). Running `critic.py brief|record|correct|show|supersede --phase plan` at HEAD with a temp HOME exits 2 on every verb with "plan review is retired - every verdict is a delivery verdict, so `--phase` is gone. Drop the flag\; nothing was written." That matches the row's replacement, "Drop the flag: every verdict is a delivery verdict". The diff is one table row plus its fragment, and the `critic.py record --kind` half of the row is unchanged.

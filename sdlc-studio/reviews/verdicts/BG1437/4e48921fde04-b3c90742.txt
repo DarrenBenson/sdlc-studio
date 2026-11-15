@@ -1,0 +1,6 @@
+UNIT: BG1437
+BRIEF: 4e48921fde04-b3c90742
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 exercised through the shipped entry point. At HEAD `command_audit.py --check-tools | diff - sdlc-studio/reviews/command-audit.md` exits 0 with no output, and `verify_ac.py run --id BG1437 --dry-run` reads ac=1 pass=1. Positive control: the base-ref audit (35d7eaa6) diffed against HEAD's differs only on line 5, 70 scripts against 71, so the Verify line does refuse the stale count. The unit changed one line plus its fragment and nothing else. The scripts directory holds 70 .py files at the base ref and 71 at HEAD, and the one added is evidence_pack.py (654f6532, US1155/US1156), so the fragment's claim holds. tools/tests/test_lean_release_verify.py run in a clean detached worktree of HEAD 2fac2fdf: 3 tests OK in 284 s, so US0251 AC2 passes at the push boundary. Remark, not this unit's: in the shared working tree the same module reads one subtest red, US0289::AC2 (`retro.py velocity --gaps --since RETRO0029` exits 1), because the uncommitted, untracked RETRO0145 has no VELOCITY.md row. At clean HEAD that command exits 0. If RETRO0145 is committed without `retro.py accuracy --id RETRO0145 --write`, the push-boundary release-verify test goes red on US0289 AC2.
