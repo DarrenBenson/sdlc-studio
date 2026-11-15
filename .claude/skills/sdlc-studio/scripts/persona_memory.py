@@ -158,9 +158,21 @@ def read_store(path: Path) -> list[dict]:
 
 def all_stores(root: Path | str) -> dict[Path, list[dict]]:
     """Every memory file's entries, by path. An unreadable file is raised, not skipped: a
-    new id allocated without it could collide with one it holds."""
+    new id allocated without it could collide with one it holds. So is an id two files hold
+    (two clones can mint the same one), as StoreError naming both: a write naming it could
+    not tell which entry is meant, so none picks the first file it reads."""
     mdir = Path(root) / MEMORY_REL
-    return {p: read_store(p) for p in sorted(mdir.glob("*.md"))} if mdir.is_dir() else {}
+    if not mdir.is_dir():
+        return {}
+    stores = {p: read_store(p) for p in sorted(mdir.glob("*.md"))}
+    held: dict[str, Path] = {}
+    for path, entries in stores.items():
+        for e in entries:
+            first = held.setdefault(e["id"], path)
+            if first != path:
+                raise StoreError(f"{e['id']} is in both {first.name} and {path.name} under "
+                                 f"{MEMORY_REL}, so naming it is ambiguous; renumber one")
+    return stores
 
 
 def next_id(stores: dict[Path, list[dict]]) -> str:
@@ -254,13 +266,35 @@ def _field_line(body: str) -> str:
                 "")
 
 
+def _read_back_drift(read: list[dict], wrote: list[dict], body: str) -> str:
+    """What the reader reads differently from what `add` stamped, or "" when nothing: the same
+    entries in order, and the new one with its id, its title, every field it set and no
+    other, and `body` as its prose. The stamp is compared, not the body's shape, so a line
+    the reader takes as an entry or a field is refused however it is spelt."""
+    ids, want = [e["id"] for e in read], [e["id"] for e in wrote]
+    if ids != want:
+        return f"the file reads back as {', '.join(ids)}, not {', '.join(want)}"
+    back, new = read[-1], wrote[-1]
+    if back["title"] != new["title"]:
+        return f"its title reads back as {back['title']!r}, not {new['title']!r}"
+    stamped = {k: str(v).strip() for k, v in new["fields"].items()}
+    for k in sorted(set(stamped) | set(back["fields"])):
+        if back["fields"].get(k) != stamped.get(k):
+            return (f"its {k} reads back as {back['fields'].get(k, '(absent)')!r}, "
+                    f"not {stamped.get(k, '(absent)')!r}")
+    if prose_of(back) != "\n".join(body.strip().splitlines()):
+        return "its prose reads back as something other than the body given"
+    return ""
+
+
 def add(root: Path | str, key: str, title: str, body: str, evidence: list[str],
         extra: dict | None = None) -> dict:
     """Write one proposed learning for `key` and return it, stamping `extra` (field: value)
     after its State. Refuses, writing nothing: no evidence, any cited id that resolves to
     nothing, an unknown or ambiguous key, a blank title or body, a body holding a level-two
-    heading line or a field line or any learning `parse` would not read back, and a memory
-    directory git would never hold."""
+    heading line or a field line, any learning `parse` would not read back as exactly the
+    entry stamped (`_read_back_drift`), an id two memory files hold, and a memory directory
+    git would never hold."""
     root = Path(root)
     cited = evidence_tokens(evidence)
     if not cited:
@@ -288,7 +322,8 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str],
     try:
         stores = all_stores(root)
     except StoreError as exc:
-        raise MemoryRefusal(f"a memory file cannot be read, so a new id could collide: {exc}")
+        raise MemoryRefusal(f"the memory files cannot be read as one store, so a new id "
+                            f"could collide: {exc}")
     today = sdlc_md.now_date()
     new = {"id": next_id(stores),
            "title": lessons.heading_title(title), "fields": {}, "body": body.strip()}
@@ -304,9 +339,12 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str],
         header, entries = _new_header(key), []
     text = _render_file(header, [*entries, new])
     try:  # write only what the reader reads back, so no later add or brief meets a bad file
-        parse(text, rel)
+        drift = _read_back_drift(parse(text, rel), [*entries, new], body)
     except StoreError as exc:
         raise MemoryRefusal(f"the learning would not read back, so it is not written: {exc}")
+    if drift:
+        raise MemoryRefusal(f"the learning would not read back as written, so it is not "
+                            f"written: {drift}")
     path.parent.mkdir(parents=True, exist_ok=True)
     sdlc_md.atomic_write(path, text)
     return new

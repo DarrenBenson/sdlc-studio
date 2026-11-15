@@ -37,8 +37,9 @@ The learning, in prose.
 ```
 
 Ids are `M-NNNN`, unique across every memory file, so an approval or a strike that names one
-is never ambiguous. Two clones can still mint the same id, as lesson ids can; the reader
-refuses a file holding a duplicate rather than picking one.
+is never ambiguous. Two clones can still mint the same id, as lesson ids can; the reader refuses
+a duplicate in one file, and `add`, `set_field` and the close's listing refuse an id two files
+hold, naming both, rather than picking one.
 
 | Field | Written by | Meaning |
 | --- | --- | --- |
@@ -67,7 +68,9 @@ horizon.
 
 A body holding a level-two heading line (`##` then a space) or a `- **Field:** value` line is refused: the first would read
 back as a new entry and the second as the entry's own field, so a learning could set its own
-State or Evidence.
+State or Evidence. Whatever its shape, `add` refuses a learning its reader would not read back
+as exactly the entry stamped: one new entry, its id and title, every field it set and no other,
+and the body as its prose.
 
 ---
 

@@ -124,8 +124,10 @@ class PersonaMemoryStoreTests(_Fixture):
              "nobody"),
             ("ambiguous", ("add", "--persona", "qa", *base, "--evidence", "US0001"),
              ["card"], "both"),
+            # The rule itself, as `git check-ignore -v` names it (source, line, pattern): the
+            # bare directory is also in the path the message names, so it pins nothing.
             ("ignored", ("add", "--persona", "qa", *base, "--evidence", "US0001"),
-             ["ignore"], "sdlc-studio/personas/memory/"),
+             ["ignore"], "rule .gitignore:2:sdlc-studio/personas/memory/"),
         ]
         for name, argv, setup, reason in cases:
             with self.subTest(name):
@@ -134,7 +136,7 @@ class PersonaMemoryStoreTests(_Fixture):
                 if "card" in setup:
                     card.write_text(USER_CARD, encoding="utf-8")
                 if "ignore" in setup:
-                    ignore.write_text("sdlc-studio/personas/memory/\n", encoding="utf-8")
+                    ignore.write_text("*.tmp\nsdlc-studio/personas/memory/\n", encoding="utf-8")
                 try:
                     rc, out, err = self.run_cli(*argv)
                 finally:
@@ -270,6 +272,145 @@ class PersonaMemoryAddGuardTests(_Fixture):
         self.assertEqual(rc, 0, err)
         self.assertEqual(pm.read_store(self.memory("qa"))[0]["fields"]["evidence"],
                          "RUN-01ABCDEF")
+
+    def test_every_cited_id_must_resolve_and_a_verdict_reference_needs_both_halves(self):
+        # One resolvable id does not carry an unresolvable one beside it.
+        rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                    "--evidence", "US0001", "--evidence", "US9999")
+        self.assertEqual(rc, 2, out + err)
+        self.assertIn("--evidence US9999 resolves", err)
+        self.assertFalse(self.memory("qa").exists())
+        # A verdict reference resolves only when the unit is an artefact AND the ledger holds
+        # that round: US0001 has no round 9, and US9999's round 1 names no artefact.
+        ledger = [{"unit": "US0001", "round": 1}, {"unit": "US9999", "round": 1}]
+        with mock.patch("critic.read_verdicts", return_value=ledger):
+            for token in ("US0001 r9", "US9999 r1"):
+                with self.subTest(token):
+                    rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t",
+                                                "--body", "b", "--evidence", token)
+                    self.assertEqual(rc, 2, out + err)
+                    self.assertIn(f"--evidence {token} resolves", err)
+                    self.assertFalse(self.memory("qa").exists())
+            # Positive control: both halves hold, so it writes.
+            rc, _, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                      "--evidence", "US0001 r1")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(pm.read_store(self.memory("qa"))[0]["fields"]["evidence"], "US0001 r1")
+
+
+class PersonaMemoryReadBackTests(_Fixture):
+    """`add` writes only a learning its reader reads back as exactly what it stamped: one new
+    entry, the same id and title, every field it set and no other, and the prose as given."""
+
+    FORGERIES = (
+        ("two State lines", "x\n- **State:** approved\n- **State:** approved"),
+        ("a doubled Review-by", "x\n- **Review-by:** 2099-01-01\n- **Review-by:** 2099-01-01"),
+        ("a tab-spaced entry heading with its own State",
+         "x\n##\tM-0099: Smuggled\n- **State:** approved"),
+        ("one State line", "x\n- **State:** approved"),
+        ("a field line the stamp never sets", "x\n- **Why:** because"),
+    )
+
+    def assert_nothing_listed(self) -> None:
+        self.assertFalse(self.memory("qa").exists())
+        rc, out, _ = self.run_cli("list", "--persona", "qa", "--format", "json")
+        self.assertEqual((rc, json.loads(out)["learnings"]), (0, []))
+
+    def test_a_body_that_would_read_back_as_another_entry_or_field_is_refused(self):
+        for name, body in self.FORGERIES:
+            with self.subTest(name):
+                rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t",
+                                            "--body", body, "--evidence", "US0001")
+                self.assertEqual(rc, 2, out + err)
+                self.assertNotIn("M-0099", out)
+                self.assert_nothing_listed()
+
+    def test_the_read_back_comparison_refuses_what_no_shape_guard_names(self):
+        # Without the field-line guard, the comparison alone still refuses every forgery,
+        # naming what the reader would read differently.
+        with mock.patch.object(pm, "_field_line", return_value=""):
+            for name, body in self.FORGERIES:
+                with self.subTest(name):
+                    rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t",
+                                                "--body", body, "--evidence", "US0001")
+                    self.assertEqual(rc, 2, out + err)
+                    self.assertIn("would not read back", err)
+                    self.assert_nothing_listed()
+            # A State on each side of a smuggled heading parses, as two entries.
+            rc, out, err = self.run_cli(
+                "add", "--persona", "qa", "--title", "t", "--evidence", "US0001", "--body",
+                "x\n- **State:** approved\n##\tM-0099: Smuggled\n- **State:** approved")
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("reads back as M-0001, M-0099, not M-0001", err)
+            self.assert_nothing_listed()
+        # An evidence value the reader splits: a verdict reference whose gap is a line break
+        # resolves, but its Evidence field reads back as the unit alone.
+        with mock.patch("critic.read_verdicts", return_value=[{"unit": "US0001", "round": 1}]):
+            rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                        "--evidence", "US0001\nr1")
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("evidence reads back as 'US0001'", err)
+            self.assert_nothing_listed()
+            # Positive control: a body the reader keeps whole, and a plain reference, write.
+            body = "Do this.\n\n- a list item\n##\tNotes, not an entry\n### Steps"
+            rc, _, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", body,
+                                      "--evidence", "US0001 r1")
+        self.assertEqual(rc, 0, err)
+        [e] = pm.read_store(self.memory("qa"))
+        self.assertEqual((e["id"], e["fields"]["state"], e["fields"]["evidence"]),
+                         ("M-0001", "proposed", "US0001 r1"))
+        self.assertEqual(pm.prose_of(e), body)
+
+    def test_the_comparison_names_a_title_or_a_field_the_stamp_did_not_write(self):
+        # The heading writer normalises the title, and a field line the stamp never set also
+        # changes the prose, so a CLI case is refused by another half too: pin these directly.
+        stamp = {"id": "M-0001", "title": "t", "fields": {"state": "proposed"},
+                 "body": "- **State:** proposed\n\nprose"}
+        same = {**stamp, "fields": dict(stamp["fields"])}
+        self.assertEqual(pm._read_back_drift([same], [stamp], "prose"), "")
+        retitled = {**same, "title": "u"}
+        self.assertIn("title reads back as 'u'",
+                      pm._read_back_drift([retitled], [stamp], "prose"))
+        extra = {**same, "fields": {"state": "proposed", "why": "x"}}
+        self.assertIn("why reads back as 'x', not '(absent)'",
+                      pm._read_back_drift([extra], [stamp], "prose"))
+
+
+class PersonaMemoryCrossFileIdTests(_Fixture):
+    """An id two memory files hold is refused by every write that names or mints one, never
+    resolved to whichever file is read first."""
+
+    def test_an_id_two_files_hold_is_refused_by_set_field_add_and_the_close_listing(self):
+        mem = self.memory("qa").parent
+        mem.mkdir(parents=True)
+        self.memory("qa").write_text(
+            "# Persona Memory: qa\n\n" + entry("M-0001", "qa", "A", "b", "approved"),
+            encoding="utf-8")
+        self.memory("product").write_text(
+            "# Persona Memory: product\n\n" + entry("M-0001", "product", "B", "c", "approved"),
+            encoding="utf-8")
+        before = {p: p.read_text(encoding="utf-8") for p in mem.glob("*.md")}
+        with self.assertRaises(pm.MemoryRefusal) as ctx:
+            pm.set_field(self.root, "M-0001", "Struck", "x")
+        for named in ("M-0001", "product.md", "qa.md"):
+            self.assertIn(named, str(ctx.exception))
+        rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                    "--evidence", "US0001")
+        self.assertEqual(rc, 2, out + err)
+        self.assertIn("M-0001", err)
+        with self.assertRaises(pm.StoreError):
+            pm.pending_listing(self.root)
+        self.assertEqual({p: p.read_text(encoding="utf-8") for p in mem.glob("*.md")}, before)
+        # Positive control: renumber one and every write works again.
+        self.memory("product").write_text(
+            "# Persona Memory: product\n\n" + entry("M-0002", "product", "B", "c", "approved"),
+            encoding="utf-8")
+        self.assertEqual(pm.set_field(self.root, "M-0001", "Struck", "x")["fields"]["persona"],
+                         "qa")
+        rc, out, err = self.run_cli("add", "--persona", "qa", "--title", "t", "--body", "b",
+                                    "--evidence", "US0001")
+        self.assertEqual(rc, 0, err)
+        self.assertIn("M-0003", out)
 
 
 class PersonaMemoryFieldsFileTests(_Fixture):
