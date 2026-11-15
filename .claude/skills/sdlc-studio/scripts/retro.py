@@ -2615,6 +2615,68 @@ def minutes_per_point(root, model: str | None = None) -> dict:
     return {"value": round(value, 2), "source": source}
 
 
+def priced_per_point(root) -> dict:
+    """`{value, source, retros}`: priced tokens per point, the median of the COST_WINDOW most
+    recent priced runs (`priced_runs`) once COST_MIN_RUNS or more are recorded, so the plan
+    forecasts with the figure the close judges the run against. Below that, `value` None and
+    `source` says how many priced runs there are; the configured baseline is a limit, not a
+    measurement, so it never stands in here."""
+    runs = priced_runs(root)
+    if len(runs) < COST_MIN_RUNS:
+        return {"value": None, "retros": [r["id"] for r in runs],
+                "source": f"not measured: {len(runs)} priced run(s) on record, "
+                          f"{COST_MIN_RUNS} needed"}
+    pick = runs[-COST_WINDOW:]
+    ids = [r["id"] for r in pick]
+    return {"value": round(statistics.median(r["per_point"] for r in pick)), "retros": ids,
+            "source": f"measured: median priced per point of {', '.join(ids)}"}
+
+
+#: Where the signed sprint reports are filed, one `RPT<nnnn>.json` envelope per run.
+REPORTS_DIR = "sdlc-studio/reports"
+
+
+def _signed_span(page: dict) -> tuple[float, float] | None:
+    """A signed page's `(points delivered, elapsed hours)`: the Estimates Points actual and the
+    goal section's `duration_hours`. None for an unsigned page or one missing either figure."""
+    if not page.get("signature"):
+        return None
+    sections = {s.get("key"): s for s in page.get("sections") or [] if isinstance(s, dict)}
+    hours = (((sections.get("goal") or {}).get("figures") or {}).get("duration_hours") or {})
+    m = re.match(r"\s*(\d+(?:\.\d+)?)", str(hours.get("value") or ""))
+    points = next((r.get("est_actual", {}).get("value")
+                   for r in (sections.get("estimates") or {}).get("rows") or []
+                   if (r.get("est_measure") or {}).get("value") == "Points"), None)
+    if not m or float(m.group(1)) <= 0 or isinstance(points, bool) \
+            or not isinstance(points, (int, float)) or points <= 0:
+        return None
+    return float(points), float(m.group(1))
+
+
+def points_per_elapsed_hour(root) -> dict:
+    """`{value, source, reports}`: points delivered per elapsed hour, the median over the
+    RATE_WINDOW most recent signed reports carrying an elapsed span and points, once
+    RATE_MIN_ROWS or more do. Elapsed is the run's wall-clock span, ceremony and waits
+    included, never its active minutes. `value` None, with the count, below that."""
+    spans = []
+    for path in sorted((Path(root) / REPORTS_DIR).glob("RPT*.json")):
+        try:
+            got = _signed_span(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError, AttributeError) as exc:
+            sdlc_md.debug("retro.points_per_elapsed_hour", exc)
+            continue
+        if got:
+            spans.append((path.stem, got[0] / got[1]))
+    if len(spans) < RATE_MIN_ROWS:
+        return {"value": None, "reports": [s[0] for s in spans],
+                "source": f"not measured: {len(spans)} signed report(s) record an elapsed "
+                          f"span and points, {RATE_MIN_ROWS} needed"}
+    pick = spans[-RATE_WINDOW:]
+    ids = [s[0] for s in pick]
+    return {"value": round(statistics.median(v for _, v in pick), 3), "reports": ids,
+            "source": f"measured: median points per elapsed hour of {', '.join(ids)}"}
+
+
 # ---------------------------------------------------------------------------
 # The cost-regression baseline: a run's priced cost per point against recent runs'.
 # ---------------------------------------------------------------------------

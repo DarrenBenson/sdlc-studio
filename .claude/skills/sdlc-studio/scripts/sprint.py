@@ -314,7 +314,37 @@ def plan_rates(repo_root: Path | str) -> dict:
     elif isinstance(got, dict) and got.get("source"):
         minutes["source"] = got["source"]
     return {"tokens_per_point": {"value": tpp.get("rate"), "source": tpp.get("source")},
-            "minutes_per_point": minutes}
+            "minutes_per_point": minutes, **_cost_rates(repo_root)}
+
+
+def _cost_rates(repo_root: Path | str) -> dict:
+    """The priced, dollar and wall-clock rates, each `{"value", "source", ...}`, value None and
+    the reason in `source` when not measured. Priced per point is `retro.priced_per_point`; the
+    dollar rate is the planned model's (`retro.work_model`) input price per million from the
+    price table, since a priced token is an input-equivalent one; points per elapsed hour is
+    `retro.points_per_elapsed_hour`. No rate failing to form ever breaks the plan."""
+    blank = {"value": None, "source": "not measured"}
+    out = {"priced_per_point": dict(blank), "usd_per_million": dict(blank),
+           "points_per_elapsed_hour": dict(blank)}
+    try:
+        import retro  # noqa: PLC0415 - deferred, as everywhere else in this module
+        out["priced_per_point"] = retro.priced_per_point(repo_root)
+        out["points_per_elapsed_hour"] = retro.points_per_elapsed_hour(repo_root)
+        model = retro.work_model(repo_root)
+        table, error = run_state.price_table(repo_root)
+        price, why = (None, f"the price table cannot be read: {error}") if table is None else \
+            (None, "no model is recorded for the work") if not model else \
+            run_state.prices.input_price(model, table)
+        newest = table.newest_effective.isoformat() if table and table.newest_effective else None
+        out["usd_per_million"] = (
+            {"value": None, "model": model, "effective": newest, "source": why} if price is None
+            else {"value": price.input, "model": model, "effective": newest,
+                  "price_effective": price.effective.isoformat(),
+                  "source": f"{model}'s input price per million, price table effective "
+                            f"{newest} (entry dated {price.effective.isoformat()})"})
+    except Exception as exc:  # noqa: BLE001 - no rate must never break planning
+        sdlc_md.debug("sprint._cost_rates", exc)
+    return out
 
 
 def record_plan_snapshot(repo_root: Path | str, batch: list[dict]) -> dict:
@@ -3480,6 +3510,8 @@ def build_plan(repo_root: Path | str, kind: str | None = None, status: str | Non
         "token_forecast": forecast,
         # The batch's cost budget beside it: its points x the regression limit x the baseline.
         "cost_budget": plan_cost_budget(root, forecast),
+        # The minutes, wall-clock, priced and dollar forecasts the snapshot will record.
+        "cost_forecast": plan_cost_forecast(root, batch),
         # Does the batch FIT? Sized against the sprint capacity at PLAN time - and carrying the
         # run appetite resolved from that same capacity, so the two cannot disagree.
         "capacity": capacity_report(root, batch, forecast, appetite),
@@ -4470,6 +4502,47 @@ def _render_cost_budget(data: dict) -> None:
     print(f"    baseline: {b['basis']}; the close records a run over it as a known issue")
 
 
+#: The forecast rows the plan states beside its tokens: `(measure, total key, rate key)`.
+COST_FORECAST_ROWS = (("Minutes", "minutes", "minutes_per_point"),
+                      ("Wall-clock span", "span_minutes", "points_per_elapsed_hour"),
+                      ("Priced cost", "priced", "priced_per_point"),
+                      ("Dollar cost", "usd", "usd_per_million"))
+
+
+def plan_cost_forecast(root, batch: list[dict]) -> list[dict]:
+    """The batch's forecast per `COST_FORECAST_ROWS` row, `{measure, value, basis}`: the total of
+    the rows the snapshot records (`run_state.forecast_row`, summed as `plan_totals` sums) at
+    the rates `plan_rates` measures, or value None with the reason in `basis`. Descriptive:
+    nothing refuses or warns on a forecast, or on a missing one."""
+    rates = plan_rates(root)
+    rows = {u["id"]: run_state.forecast_row(
+        _declared_size(sdlc_md.read_text_safe(u["path"]) or ""), rates) for u in batch}
+    totals = run_state.plan_totals({"units": rows})
+    out = []
+    for measure, key, rate_key in COST_FORECAST_ROWS:
+        rate = rates.get(rate_key) or {}
+        why = rate.get("source") or "not measured"
+        if key == "usd" and totals["priced"] is None:
+            why = ("no priced forecast to price "
+                   f"({(rates.get('priced_per_point') or {}).get('source') or 'not measured'})")
+        elif rate.get("value") is not None and totals[key] is None:
+            why = "a unit in the batch carries no Points"
+        out.append({"measure": measure, "value": totals[key], "basis": why})
+    return out
+
+
+def _render_cost_forecast(data: dict) -> None:
+    """One line per forecast row: its figure and basis, or `not forecast: <reason>`."""
+    shown = {"Minutes": "~{:,} active minutes", "Wall-clock span": "~{:,} minutes elapsed",
+             "Priced cost": "~{:,} " + run_state.PRICED_LABEL, "Dollar cost": "~${:,.2f}"}
+    for row in data.get("cost_forecast") or []:
+        if row["value"] is None:
+            print(f"  {row['measure']}: not forecast: {row['basis']}")
+        else:
+            print(f"  {row['measure']}: {shown[row['measure']].format(row['value'])} "
+                  f"({row['basis']})")
+
+
 def _render_token_forecast(data: dict) -> None:
     """LEAD WITH WHAT SPRINTS HAVE ACTUALLY COST. The forecast follows, as a range, and it STATES
     ITS RATE AND WHERE THAT RATE CAME FROM - a bare number would read as a fact, when it is a
@@ -4691,6 +4764,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_downgrades(data)
     _render_token_forecast(data)
     _render_cost_budget(data)
+    _render_cost_forecast(data)
     _render_capacity(data)
     _render_gate_briefing(data)
     _render_phase_lessons(data)
@@ -11355,6 +11429,7 @@ def _render_preview(data: dict, index: int) -> None:
           f"{', '.join(ids) if ids else '(empty)'}")
     _render_token_forecast(data)
     _render_cost_budget(data)
+    _render_cost_forecast(data)
     _render_capacity(data)
 
 

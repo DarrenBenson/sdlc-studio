@@ -3656,6 +3656,9 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "planned_points": plan.get("planned_points"),
             "forecast_minutes": plan.get("forecast_minutes"),
             "forecast_tokens": plan.get("forecast_tokens"),
+            "forecast_priced": plan.get("forecast_priced"),
+            "forecast_usd": plan.get("forecast_usd"),
+            "forecast_span_minutes": plan.get("forecast_span_minutes"),
             "minutes": (agent["minutes"] if agent_minutes else
                         None if still_open else act.get("minutes")),
             "tokens": agent["tokens"] if agent else None if still_open else act.get("tokens"),
@@ -4045,11 +4048,91 @@ def _unit_usd(u: dict, usd: dict) -> dict:
                                     f", {_usd_reach(got)}"))
 
 
+def _cost_forecasts(state: dict, live: list[dict]) -> dict:
+    """The plan snapshot's forecast for each cost row, `{measure: (value, reason, basis)}`:
+    a run figure is the sum over the live units, None when any lacks it, never a partial sum
+    (`run_state.plan_totals`' rule); a per-point figure is the snapshot's rate. `reason` says
+    why a value is None; `basis` is what the row's basis adds when the value is a number."""
+    snap = state.get(run_state.PLAN_SNAPSHOT) or {}
+    rates = snap.get("rates") or {}
+
+    def rate(key: str, label: str) -> tuple:
+        got = rates.get(key) if isinstance(rates.get(key), dict) else {}
+        if not snap:
+            return None, "no plan snapshot is recorded", got
+        if not _num(got.get("value")):
+            return None, got.get("source") or f"the plan recorded no {label} rate", got
+        return got["value"], None, got
+
+    def whole(key: str, rate_key: str, label: str) -> tuple:
+        vals = [u.get(key) for u in live]
+        if vals and all(_num(v) for v in vals):
+            return sum(vals), None
+        _v, why, _g = rate(rate_key, label)
+        lack = sum(1 for v in vals if not _num(v))
+        return None, why or (f"{lack} of {len(live)} unit(s) planned or added and not dropped "
+                             f"carry no {label} forecast" if live else
+                             "no unit is planned or added and not dropped")
+    pp, pp_why, pp_rate = rate("priced_per_point", "priced per point")
+    per_m, usd_why, usd_rate = rate("usd_per_million", "dollar")
+    priced, priced_why = whole("forecast_priced", "priced_per_point", "priced per point")
+    dollars, dollars_why = whole("forecast_usd", "usd_per_million", "dollar")
+    span, span_why = whole("forecast_span_minutes", "points_per_elapsed_hour",
+                           "points per elapsed hour")
+    if priced is None:
+        dollars_why = f"no priced forecast to price ({priced_why})"
+    priced_note = ("forecast: the plan's points times its priced per point rate "
+                   f"({pp_rate.get('source')})")
+    usd_note = (f"forecast: the plan's priced forecast at {usd_rate.get('model')}'s input price "
+                f"per million, price table effective {usd_rate.get('effective') or 'never'}")
+    return {"Priced cost": (priced, priced_why, priced_note),
+            "Priced per point": (pp, pp_why, priced_note),
+            "Dollar cost": (dollars, dollars_why, usd_note),
+            "Dollars per point": (pp * per_m / 1_000_000 if pp is not None and per_m is not None
+                                  else None,
+                                  usd_why if pp is not None else
+                                  f"no priced forecast to price ({pp_why})", usd_note),
+            "Wall-clock span": (span, span_why,
+                                "forecast: the plan's points over points per elapsed hour "
+                                f"({(rates.get('points_per_elapsed_hour') or {}).get('source')}), "
+                                "never the active-minutes forecast, which the Minutes row "
+                                "compares")}
+
+
+def _state_cost_forecasts(rows: list[dict], forecasts: dict, actuals: dict, src: str) -> None:
+    """Under `COST_FORECAST_RULE`, give each cost row its forecast and actual over forecast, or
+    `not forecast: <reason>`, and the first such row `FORECAST_NOTE`. In place. `actuals` holds
+    each row's actual as a number, since a Dollar row's cell is text."""
+    noted = False
+    for row in rows:
+        measure = row["est_measure"]["value"]
+        if measure not in forecasts:
+            continue
+        value, why, note = forecasts[measure]
+        actual = actuals.get(measure)
+        if measure == "Wall-clock span":
+            row["est_basis"]["value"] = ("the run's minutes, start to end, so waiting counts; "
+                                         "never compared with the Minutes row's active work")
+        if not _num(value):
+            row["est_forecast"] = fig("est_forecast", f"not forecast: {why}", src)
+        else:
+            usd = measure.startswith("Dollar")
+            row["est_forecast"] = fig("est_forecast", _usd_text(value) if usd else
+                                      round(value, 1) if isinstance(value, float) else value, src)
+            row["est_ratio"] = (fig("est_ratio", f"{round(actual / value, 2)}x", src)
+                                if _num(actual) and value else
+                                unmeasured("est_ratio", src, "needs both a forecast and an actual"))
+            row["est_basis"]["value"] += f"; {note}"
+        if not noted:
+            row["est_basis"]["value"] += f"; {FORECAST_NOTE}"
+            noted = True
+
+
 def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_tokens,
                        span_minutes, ratio_rule: bool = True, minutes_rule: bool = True,
                        delegated_rule: bool = True, priced_rule: bool = True,
                        priced_unit_rule: bool = True, usd: dict | None = None,
-                       prices_rule: bool = True) -> dict:
+                       prices_rule: bool = True, cost_forecast_rule: bool = True) -> dict:
     """Forecast, actual and actual over forecast. Points over the units the run delivered;
     tokens over the WHOLE run - its meter - because units open at the same time share their
     tokens, so the per-unit figures beneath overlap and summing them over-counts the run.
@@ -4170,6 +4253,17 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
     if head and usd is not None:
         rows += _usd_rows(run_tokens, delivered, state_rel, usd,
                           run_state.delegated_split(state) if prices_rule and agents else None)
+    # Under `COST_FORECAST_RULE` the cost rows state the plan's forecasts; a page filed before
+    # it keeps each row's literal `not forecast` and `no ratio`.
+    if cost_forecast_rule:
+        dollars = (usd.get("got") or {}).get("usd") if usd and usd.get("why") is None else None
+        points = sum(u["points"] for u in delivered if _num(u["points"]))
+        actuals = {r["est_measure"]["value"]: r["est_actual"]["value"] for r in rows
+                   if _num(r["est_actual"]["value"])}
+        actuals.update({"Dollar cost": dollars,
+                        "Dollars per point": dollars / points if _num(dollars) and points
+                        else None})
+        _state_cost_forecasts(rows, _cost_forecasts(state, live), actuals, state_rel)
 
     def cell(key, value, why, label=None):
         if _num(value):
@@ -4642,6 +4736,15 @@ PRICES_SOURCE = ("sdlc-studio/.config.yaml, "
 #: requests priced at the request price.
 BILLED_BY_REQUEST = "billed_by_request"
 
+#: The envelope mark of a page whose Priced cost, Priced per point, Dollar cost, Dollars per
+#: point and Wall-clock span rows state the plan snapshot's forecast and actual over forecast,
+#: or `not forecast: <reason>`, with `FORECAST_NOTE` beside them (`_state_cost_forecasts`). A
+#: page filed before it re-derives with each row's literal `not forecast` and `no ratio`.
+COST_FORECAST_RULE = "cost_forecast"
+COST_FORECAST_STATED = "forecast-actual-ratio"
+FORECAST_NOTE = ("forecasts are descriptive: each is the plan's points times a rate measured "
+                 "from earlier runs, and no ratio refuses or warns")
+
 #: The envelope mark of a page whose unit minutes are its agents' supplied minutes when any
 #: agent supplied them, not only when every agent did (`_unit_ledger`). A page filed before it
 #: re-derives as signed.
@@ -4671,7 +4774,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  usd_rule: bool = True, table_rule: bool = True,
                  filed_prices: dict | None = None, premium_usd_rule: bool = True,
                  prices_rule: bool = True, stamp_rule: bool = True,
-                 evidence_schema: str | None = None) -> dict:
+                 evidence_schema: str | None = None,
+                 cost_forecast_rule: bool = True) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4808,7 +4912,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                                    else None, ratio_rule=ratio_rule, minutes_rule=minutes_rule,
                                    delegated_rule=delegated_rule, priced_rule=priced_rule,
                                    priced_unit_rule=priced_unit_rule, usd=usd,
-                                   prices_rule=prices_rule)
+                                   prices_rule=prices_rule,
+                                   cost_forecast_rule=cost_forecast_rule)
     sections = [
         _section("goal", "Goal", goal_figs),
         estimates,
@@ -4860,7 +4965,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
               **({TABLE_RULE: TABLE_REPLAYED}
                  if table_rule and usd and usd["table"] is not None else {}),
               **({PREMIUM_USD_RULE: PREMIUM_PRICED} if premium_usd_rule and usd_rule else {}),
-              **({PRICES_RULE: PRICES_STATED} if prices_rule and usd_rule else {})}
+              **({PRICES_RULE: PRICES_STATED} if prices_rule and usd_rule else {}),
+              **({COST_FORECAST_RULE: COST_FORECAST_STATED} if cost_forecast_rule else {})}
     _refuse_sourceless(report, root)
     report["fingerprint"] = fingerprint(report)
     return report
@@ -5997,6 +6103,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          prices_rule=basis.get(PRICES_RULE) == PRICES_STATED,
                          stamp_rule=bool(basis.get(run_state.EVIDENCE_SCHEMA)),
                          evidence_schema=basis.get(run_state.EVIDENCE_SCHEMA),
+                         cost_forecast_rule=basis.get(COST_FORECAST_RULE)
+                         == COST_FORECAST_STATED,
                          # Unsigned, the page's own table is the one its digest covers.
                          filed_prices=stored.get(PRICE_TABLE)
                          if replays and anchor is None else None)

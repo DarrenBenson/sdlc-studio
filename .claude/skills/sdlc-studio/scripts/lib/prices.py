@@ -474,6 +474,16 @@ def cost(model: str | None, components: Mapping[str, int],
                                   f"every token here is priced at the shorter prompts' rate")
 
 
+def input_price(model: str | None, table: PriceTable) -> tuple[Price | None, str | None]:
+    """`(price, None)`: the entry `cost` prices `model` from, whose `input` is the US dollars per
+    million an input-equivalent (priced) token costs; or `(None, reason)`, with `cost`'s own
+    refusal, for a model the table does not price. Never a price of 0 for an unlisted model."""
+    got = cost(model, {}, table)
+    if got.usd is None:
+        return None, got.unpriced
+    return table.models[(model or "").strip()], None
+
+
 def stale(table: PriceTable, today: dt.date | None = None) -> str | None:
     """A sentence naming the table as stale once its newest effective date is more than
     `stale_after_days` before `today`; None while it is fresh. An empty table is stale."""

@@ -2932,8 +2932,10 @@ def record_ruling(repo_root: Path | str, did: str | None, by: str, seat: str | N
 
 # --- lean loop: plan snapshot and close (EP0260) ---
 #: The plan's forecast, written when the plan is approved and never overwritten after:
-#: `{"units": {id: {"planned_points", "forecast_tokens", "forecast_minutes", "added"}},
-#: "rates": {"tokens_per_point": {"value", "source"}, "minutes_per_point": {...}}}`. None means
+#: `{"units": {id: {"planned_points", "forecast_tokens", "forecast_minutes", "forecast_priced",
+#: "forecast_usd", "forecast_span_minutes", "added"}}, "rates": {"tokens_per_point": {"value",
+#: "source"}, "minutes_per_point", "priced_per_point", "usd_per_million",
+#: "points_per_elapsed_hour": {...}}}`; a snapshot written before a key existed lacks it. None means
 #: not measured. A unit that joins later gets its own row marked `added`, so the approved plan's
 #: totals stay what was approved.
 PLAN_SNAPSHOT = "plan_snapshot"
@@ -2943,15 +2945,26 @@ CLOSE_KNOWN_ISSUES = "close_known_issues"
 
 
 def forecast_row(points, rates: dict, added: bool = False) -> dict:
-    """One unit's forecast: its points times each rate, None where either is not measured."""
+    """One unit's forecast: its points times each rate, None where either is not measured.
+    Dollars are the priced forecast times the input price per million (`usd_per_million`); the
+    wall-clock span is points over points per elapsed hour, kept apart from active minutes."""
+    def rate(key: str):
+        return ((rates or {}).get(key) or {}).get("value")
+
     def times(key: str):
-        rate = ((rates or {}).get(key) or {}).get("value")
-        return None if points is None or rate is None else points * rate
+        return None if points is None or rate(key) is None else points * rate(key)
 
     tokens, minutes = times("tokens_per_point"), times("minutes_per_point")
+    priced, per_m, pph = times("priced_per_point"), rate("usd_per_million"), \
+        rate("points_per_elapsed_hour")
     return {"planned_points": points,
             "forecast_tokens": None if tokens is None else int(round(tokens)),
             "forecast_minutes": None if minutes is None else round(float(minutes), 1),
+            "forecast_priced": None if priced is None else int(round(priced)),
+            "forecast_usd": (None if priced is None or per_m is None
+                             else round(priced * per_m / 1_000_000, 4)),
+            "forecast_span_minutes": (None if points is None or not pph
+                                      else round(points / pph * 60, 1)),
             "added": added}
 
 
@@ -3007,4 +3020,6 @@ def plan_totals(snapshot: dict) -> dict:
         return None if any(v is None for v in vals) else sum(vals)
 
     return {"units": len(rows), "points": total("planned_points"),
-            "tokens": total("forecast_tokens"), "minutes": total("forecast_minutes")}
+            "tokens": total("forecast_tokens"), "minutes": total("forecast_minutes"),
+            "priced": total("forecast_priced"), "usd": total("forecast_usd"),
+            "span_minutes": total("forecast_span_minutes")}

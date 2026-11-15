@@ -677,7 +677,7 @@ agent's transcript at their models' rates and names a supplied total, which has 
 token count. An unlisted model is named with its share of the priced tokens; neither is summed in as $0. The row states
 the table's date, marked STALE when `prices.stale` says so on the run's end date, and the appendix's Prices table lists
 each priced model's five prices (US dollars per million tokens), date and source from the table the page carries, so a
-filed page, signed or not, re-derives at its own prices. Premium requests are their own row, never in Dollar cost. The retro's priced line states dollars and dollars per point beside priced tokens per point, with the same date and stale mark.
+filed page, signed or not, re-derives at its own prices. Premium requests are their own row, never in Dollar cost. The retro's priced line states dollars and dollars per point beside priced tokens per point, with the same date and stale mark. The Priced cost, Priced per point, Dollar cost, Dollars per point and Wall-clock span rows show the plan snapshot's forecast and actual over forecast, or `not forecast: <reason>`: dollars name the forecast's price table date, the span's forecast is points over points per elapsed hour and the Minutes row is never compared with it, the first such row says forecasts are descriptive, and a page filed before this (no `cost_forecast` mark) keeps its literal rows.
 
 ## Cost regression at the close {#cost-regression}
 
@@ -721,7 +721,7 @@ to go unattended. The appetite is that ceiling (Shape Up's fixed timebox: appeti
   measured cost (+0.78 at 8 points and below), so a unit over 8 points is split rather than
   forecast. A fitted base term did worse than none on per-unit actuals with no sprint ceremony,
   review rounds or close in the numerator, so the forecast prices the build, not a whole sprint.
-  **Read the velocity history** - `retro.py velocity`.
+  **Read the velocity history** - `retro.py velocity`. Beside it the plan states, and `--write` records per unit, a priced forecast (the median priced per point of the five latest priced runs, once three are recorded, naming them), a dollar forecast (priced times the work model's input price per million, naming the price table's effective date) and a wall-clock span forecast (points over the median points per elapsed hour of the latest signed reports, never active minutes); a row with no rate prints `not forecast: <reason>` and the plan goes on.
 - **Batch size trades fixed cost against review convergence - and this project names no
   optimum.** The fixed cost of a sprint's ceremony, close and review setup is amortised over its
   points, so its share per point falls as the batch grows; review convergence cost rises with the

@@ -64,7 +64,7 @@ ALLOWLIST = {
     # record, its fingerprint, the run record, the lesson store, the evidence logs and the
     # ledgers. Each is a contract table a conformance test reads by heading, so splitting
     # the page would split the contract; held at its measured size, guide included.
-    "reference-evidence-schema.md": 745,
+    "reference-evidence-schema.md": 746,
     "reference-epic.md": 1102,
     "reference-story.md": 1091,
     "reference-code.md": 974,
