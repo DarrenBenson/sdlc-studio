@@ -28,6 +28,8 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - NOT IN RUN 13. Its AC3 (footer --reviewer) moves into US1061. AC1/AC2 need US1029 (Draft); leave Draft.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: brief keeps --seat required, or defaults an absent --seat to engineering instead of calling seats_for
 - AC2 must fail on: the derived seat overrides an explicit --seat, or the explicit path never consults seats_for
@@ -50,3 +52,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: notes |

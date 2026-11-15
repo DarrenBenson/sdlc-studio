@@ -1,15 +1,15 @@
 # US1062: retro.py seats scores each seat on its own verdicts and authored units from the ledger
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, changelog.d/US1062.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, changelog.d/US1062.md
 > **Epic:** EP0287
 > **Points:** 5
-> **Depends on:** US1061, US1030, US1012
-> **Persona:** Maya Okafor
+> **Depends on:** US1061
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -30,6 +30,11 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 2 (an accountable seat per verdict); End goal 4 (defects found later are charged to where they got through).
+  - Dependency: US1061 real `(critic.recorded_seat`). US1030 dropped from Depends on; US1012 is Done. Both lie in the same lane as US1061, so US1062 builds on a landed helper. ACs (4) and must-fail lines are sound as written. Missing: pinning tests `(test_retro.py`, `test_lean_retro.py`), help/retro.md if the verb is listed in help (check `test_help_coverage`), and `test_doc_coverage.py` for the new verb.
+  - Builder note: the 1,552/51 ledger counts in the story are as of 2026-10-21; they are context, not criteria.
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: rows attributed through `critic.seat_for`, which gives Sam's row to product (US1032 AC4's shape, probed), or unattributed rows dropped rather than counted
 - AC2 must fail on: a later-round finding charged to every earlier verdict, the seat's own REJECT included, so a reviewer is blamed for a defect the author's repair introduced
@@ -58,3 +63,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |

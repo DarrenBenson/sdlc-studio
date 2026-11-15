@@ -1,23 +1,23 @@
 # Story Index
 
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-15
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 63 |
-| Ready | 4 |
+| Draft | 54 |
+| Ready | 14 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 906 |
+| Done | 908 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1156** |
+| **Total** | **1159** |
 
 ## All Stories
 
@@ -95,17 +95,17 @@
 | [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1060](US1060-a-learning-past-its-horizon-is-reported-at.md) | A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1068](US1068-a-learning-reaches-a-brief-only-once-a.md) | A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1068](US1068-a-learning-reaches-a-brief-only-once-a.md) | A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1069](US1069-the-close-runs-each-traced-persona-s-executable.md) | The close runs each traced persona's executable End goal Verify and records the result beside the goal verdict | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1070](US1070-the-sprint-report-shows-each-traced-end-goal.md) | The sprint report shows each traced End goal's result beside the goal verdict | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1071](US1071-the-plan-runs-the-traced-end-goals-once.md) | The plan runs the traced End goals once, so the close can say which turned green in the run | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
@@ -187,13 +187,16 @@
 | [US1147](US1147-graham-doyle-joins-the-registry-as-served-and.md) | Graham Doyle joins the registry as Served and Trevor Hale narrows to what the skill declines | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1148](US1148-the-prd-leads-with-human-in-the-lead.md) | The PRD leads with human in the lead and its outcomes cite Abena Osei and Graham Doyle | Done | EP0305 | 2026-11-09 | 2026-11-09 |
 | [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Done | EP0302 | 2026-11-09 | 2026-11-09 |
-| [US1150](US1150-the-plan-records-a-priced-dollar-and-wall.md) | The plan records a priced, dollar and wall-clock forecast beside tokens and minutes | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
-| [US1151](US1151-the-report-s-estimates-table-shows-forecast-actual.md) | The report's Estimates table shows forecast, actual and ratio for every cost row | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
+| [US1150](US1150-the-plan-records-a-priced-dollar-and-wall.md) | The plan records a priced, dollar and wall-clock forecast beside tokens and minutes | Done | EP0306 | 2026-11-14 | 2026-11-14 |
+| [US1151](US1151-the-report-s-estimates-table-shows-forecast-actual.md) | The report's Estimates table shows forecast, actual and ratio for every cost row | Done | EP0306 | 2026-11-14 | 2026-11-14 |
 | [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Done | EP0308 | 2026-11-14 | 2026-11-14 |
+| [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

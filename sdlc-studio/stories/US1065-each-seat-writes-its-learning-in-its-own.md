@@ -1,15 +1,15 @@
 # US1065: Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py, changelog.d/US1065.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, changelog.d/US1065.md
 > **Epic:** EP0287
 > **Points:** 3
-> **Depends on:** US1062, US1063, US1064, US1059
-> **Persona:** Maya Okafor
+> **Depends on:** US1059, US1062
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -28,6 +28,10 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 4 (each seat writes what to do differently, with evidence); End goal 6 (about six contexts per close, stated in the changelog).
+  - Dependencies: US1059 and US1062 real (the brief carries live learnings via digest and the seat record). US1063 and US1064 are SOFT: learn-brief embeds `retro.py seats --format json` for whatever items it holds; provenance (1063) and later-bug items (1064) appear when those land. Dropping them from Depends on is what lets 1065 start the wave after 1062. AC3's 'a seat with only later-bug items may propose' is then exercised by a fixture, not by US1064's code.
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief embeds the whole seats report, so the seat reads another seat's record, or omits the adverse items the approver will ask about
 - AC2 must fail on: evidence taken from the persona's own text (the self-flattering risk RFC0061 names), or the text folded or paraphrased
@@ -54,3 +58,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |

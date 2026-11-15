@@ -1,6 +1,6 @@
 # US1150: The plan records a priced, dollar and wall-clock forecast beside tokens and minutes
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0694
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a project whose velocity history holds three or more runs with a priced-per-point figure, when `sprint plan --write` opens a run, then the run's plan snapshot records a `priced_per_point` rate with its source naming the runs it was fitted from, and each unit's row carries a priced forecast of its points times that rate.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_cost_forecast.py::PlanPricedRateTests::test_plan_write_records_priced_rate_with_source
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a priced forecast and a price table listing the planned model, when the plan is written, then the snapshot records a dollar forecast equal to the priced forecast times that model's input price per million, naming the table's effective date.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_cost_forecast.py::PlanDollarForecastTests::test_dollar_forecast_names_model_and_effective_date
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given delivered runs with a recorded elapsed span and points, when the plan is written, then it records a wall-clock forecast in minutes from points per elapsed hour, kept apart from the active-minutes forecast.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_cost_forecast.py::PlanWallClockForecastTests::test_wall_clock_forecast_is_separate_from_active_minutes
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given a project with no measured rate for a row, when `sprint plan` runs (preview or --write), then it prints one line per unforecast row reading 'not forecast: <reason>' and exits 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_cost_forecast.py::PlanUnforecastRowTests::test_plan_names_each_row_it_cannot_forecast
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

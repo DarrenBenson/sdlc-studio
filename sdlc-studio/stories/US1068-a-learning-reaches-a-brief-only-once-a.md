@@ -1,15 +1,15 @@
 # US1068: A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, changelog.d/US1068.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_close_output_vocabulary.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py, changelog.d/US1068.md
 > **Epic:** EP0287
 > **Points:** 5
-> **Depends on:** US1067, US1059
-> **Persona:** Maya Okafor
+> **Depends on:** US1059, US1067
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -30,6 +30,10 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 2 (the operator signs and can strike); End goal 1.
+  - Both dependencies real: US1059 owns the liveness predicate in `persona_memory.digest` this story narrows; US1067 stamps Listed-in and `persona_learnings_listed` on the run state that the sign reads. Build last in its lane. `cmd_sign` also edited by US1018 (Draft, not in run).
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the strike written only where the renderer does not read, so the struck learning still reaches the qa brief
 - AC2 must fail on: approved learnings injected before the signature, so the operator's strike arrives after a seat has read the learning
@@ -57,3 +61,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |

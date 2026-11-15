@@ -1,6 +1,6 @@
 # EP0306: Every cost row a run reports has a forecast and a ratio to learn from, and a row that cannot be forecast says why
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0694
 > **Created:** 2026-11-14
@@ -14,8 +14,8 @@ Decomposed from CR0694. Delivers the work CR0694 requested.
 
 ## Story Breakdown
 
-- [ ] [US1150: The plan records a priced, dollar and wall-clock forecast beside tokens and minutes](../stories/US1150-the-plan-records-a-priced-dollar-and-wall.md)
-- [ ] [US1151: The report's Estimates table shows forecast, actual and ratio for every cost row](../stories/US1151-the-report-s-estimates-table-shows-forecast-actual.md)
+- [x] [US1150: The plan records a priced, dollar and wall-clock forecast beside tokens and minutes](../stories/US1150-the-plan-records-a-priced-dollar-and-wall.md)
+- [x] [US1151: The report's Estimates table shows forecast, actual and ratio for every cost row](../stories/US1151-the-report-s-estimates-table-shows-forecast-actual.md)
 
 ## Acceptance Criteria (Epic Level)
 

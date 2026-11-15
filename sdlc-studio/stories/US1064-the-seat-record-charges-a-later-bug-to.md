@@ -1,15 +1,15 @@
 # US1064: The seat record charges a later bug to the approval that missed it, by the narrow rule
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py, changelog.d/US1064.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, changelog.d/US1064.md
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1062
-> **Persona:** Maya Okafor
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -28,6 +28,10 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 4 (an escaped defect traced to the approval that missed it); End goal 2.
+  - Dependency US1062 real (extends `retro.py seats`). Missing: Affects omits `test_retro_seat_evidence.py` (shares the seats fixtures it extends). Precision bar (8 of 12 sampled 'miss' lines judged real by another seat) is a pre-ship measurement, not a Verify line: record it in the story notes before Done, or ship the label as 'possible miss' per its triage. Edits retro.py in the region US1062 landed; same wave as US1067's retro.py learnings verb (different functions; rebase).
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: any of the shared-file test, the citation test, the three-id cap, the carried exclusion or the previous-retro window dropped
 - AC2 must fail on: every later bug read as a miss, so a seat is told it missed what it found and chose to pass
@@ -55,3 +59,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |

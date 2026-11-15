@@ -28,6 +28,8 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - NOT IN RUN 13. Depends on BG1002 and BG1015 (both Open). Its only consumer in the slice was US1059 AC3's goal-review clause, now removed.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G10, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the brief action ignores --seat (HEAD: the text is byte-identical for every seat)
 - AC2 must fail on: an unresolvable seat falls back to the unframed brief with exit 0
@@ -52,3 +54,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G10 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: notes |

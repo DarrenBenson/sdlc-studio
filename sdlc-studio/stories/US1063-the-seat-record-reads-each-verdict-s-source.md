@@ -28,6 +28,8 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - NOT IN RUN 13 (3 pts, extends retro.py seats with provenance and rulings; soft for US1065). Candidate for run 14.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the bare role word matched (43 decisions here name 'product' in passing), or the seat's own `ruling:` rows counted as operator rulings about it
 - AC2 must fail on: provenance dropped, or findings read from the folded ledger cell when the reviewer's own file exists
@@ -52,3 +54,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: notes |

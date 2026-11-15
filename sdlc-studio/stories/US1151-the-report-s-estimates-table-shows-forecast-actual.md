@@ -1,6 +1,6 @@
 # US1151: The report's Estimates table shows forecast, actual and ratio for every cost row
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0694
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a run whose snapshot holds a priced forecast, when `sprint_report.py show` renders its page, then the Priced cost and Priced per point rows show forecast, actual and an actual-over-forecast ratio.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py::PricedRowsTests::test_priced_rows_show_forecast_actual_ratio
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a snapshot with a dollar forecast, when the page renders, then Dollar cost and Dollars per point show a ratio, and the basis names the price table's effective date.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py::DollarRowsTests::test_dollar_rows_show_ratio_and_price_date
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a wall-clock forecast, when the page renders, then the Wall-clock span row shows its forecast and ratio, and the Minutes row is still never compared with the span.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py::SpanRowTests::test_span_row_has_ratio_and_minutes_row_unchanged
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given a run with no rate for a row, when the page renders, then that row reads 'not forecast: <reason>' (never bare), the page states beside the table that forecasts are descriptive, and a page filed before this change re-derives with its old rows unchanged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py::UnforecastRowTests::test_reason_text_descriptive_note_and_old_page_replay
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

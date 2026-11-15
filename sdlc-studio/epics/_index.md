@@ -1,6 +1,6 @@
 # Epic Index
 
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-15
 
 ## Summary
 
@@ -10,9 +10,9 @@
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 264 |
+| Done | 265 |
 | Superseded | 33 |
-| **Total** | **308** |
+| **Total** | **309** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -56,9 +56,10 @@
 | [EP0303](EP0303-grok-and-composer-runs-are-priced-in-us.md) | Grok and Composer runs are priced in US dollars from each provider's own dated page | Done | 1 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0304](EP0304-a-copilot-run-is-priced-on-the-basis.md) | A Copilot run is priced on the basis its plan is billed by: tokens in AI credits by default, premium requests only on request billing | Done | 2 | -- | 2026-11-09 | 2026-11-09 |
 | [EP0305](EP0305-the-persona-registry-and-the-prd-name-abena.md) | The persona registry and the PRD name Abena Osei as the shipped skill's Primary and Graham Doyle as Served | Done | 3 | -- | 2026-11-09 | 2026-11-09 |
-| [EP0306](EP0306-every-cost-row-a-run-reports-has-a.md) | Every cost row a run reports has a forecast and a ratio to learn from, and a row that cannot be forecast says why | Draft | 2 | -- | 2026-11-14 | 2026-11-14 |
+| [EP0306](EP0306-every-cost-row-a-run-reports-has-a.md) | Every cost row a run reports has a forecast and a ratio to learn from, and a row that cannot be forecast says why | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0307](EP0307-a-change-that-touches-a-high-risk-component.md) | A change that touches a high-risk component is classed from a declared map, flagged at plan and reviewed by a second independent seat whose yield is reported | Draft | 3 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0308](EP0308-a-change-board-can-approve-a-release-from.md) | A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
+| [EP0309](EP0309-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review | Draft | 3 | -- | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

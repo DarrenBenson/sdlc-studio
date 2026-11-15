@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 332 |
+| Open | 334 |
 | In Progress | 0 |
 | Fixed | 918 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1441** |
+| **Total** | **1443** |
 
 ## All Bugs
 
@@ -517,6 +517,8 @@
 | [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1440](BG1440-lane-return-model-with-no-total-is-dropped.md) | lane return --model with no total is dropped without a word, the model trim is untested, and help/sprint.md omits that a several-unit total is not split when a unit has no Points | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1441](BG1441-evidence-pack-py-s-module-docstring-still-describes.md) | evidence_pack.py's module docstring still describes the wider author refusal BG1439 removed | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1442](BG1442-evidence-pack-py-reaches-into-critic-s-private.md) | evidence_pack.py reaches into critic's private `_id` normaliser, so test_critic's one-independence-authority guard is red on main | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1443](BG1443-four-cost-forecast-behaviours-are-correct-but-unpinned.md) | Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

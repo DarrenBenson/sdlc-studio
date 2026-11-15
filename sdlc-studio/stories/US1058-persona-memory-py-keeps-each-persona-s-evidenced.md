@@ -1,14 +1,14 @@
 # US1058: persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0632
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/memory-template.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/references.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py, changelog.d/US1058.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/memory-template.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/references.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, tools/tests/test_lean_trd_refresh.py, changelog.d/US1058.md
 > **Epic:** EP0287
 > **Points:** 5
-> **Persona:** Maya Okafor
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -18,19 +18,25 @@
 
 ## Acceptance Criteria
 
-- **AC1:** Given a project with a qa seat card and Maya Okafor's card, when `persona_memory.py add --persona qa --title ... --body ... --evidence US0001` and then the same with `--persona maya-okafor-founder-engineer` run, then `sdlc-studio/personas/memory/qa.md` holds `## M-0001` and `memory/maya-okafor-founder-engineer.md` holds `## M-0002`, each with Persona, Evidence, Added, a Review-by 90 days on and State proposed.
+- **AC1:** Given a project with a qa seat card and Maya Okafor's card, when `persona_memory.py add --persona qa --title ... --body ... --evidence US0001` and then the same with `--persona maya-okafor-founder-engineer` run, then `sdlc-studio/personas/memory/qa.md` holds `## M-0001` and the other file holds `## M-0002`, each with Persona, Evidence, Added, a Review-by 90 days on and State proposed, and every field the later stories write (Approved-by, Addresses, Listed-in, Struck, Retired) is accepted by a `set-field` helper that reuses `lessons.upsert_field`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_add_writes_a_stamped_proposed_learning_with_a_unique_id
-- **AC2:** Given an add with no `--evidence`, one whose evidence cites only ids that resolve to nothing on disk, one whose `--persona` names neither a declared seat role nor a persona card, and one whose key is both a role and a card stem, when `persona_memory.py add` runs, then each exits 2 naming its reason and no file is written.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_an_unevidenced_unknown_or_ambiguous_persona_is_refused
-- **AC3:** Given a `.gitignore` rule matching `sdlc-studio/personas/memory/`, when `persona_memory.py add` runs, then it exits 2 naming the ignore rule and writes nothing.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_a_memory_git_ignores_is_refused
-- **AC4:** Given entries for qa and product in several states, when `persona_memory.py list --persona qa --query race` runs as text and as `--format json`, then only qa's entries whose title or body mention race are listed, each with its state and horizon.
+- **AC2:** Given an add with no `--evidence`, one citing only ids that resolve to nothing on disk, one whose `--persona` names neither a seat role nor a card, one whose key is both, and one run under a `.gitignore` rule matching `sdlc-studio/personas/memory/`, when `persona_memory.py add` runs, then each exits 2 naming its reason (the ignore rule included) and no file is written.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_an_unevidenced_unknown_ambiguous_or_ignored_add_is_refused
+- **AC3:** Given entries for qa and product in several states, when `persona_memory.py list --persona qa --query race` runs as text and as `--format json`, then only qa's entries whose title or body mention race are listed, each with its state and horizon.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_list_and_recall_read_one_personas_memory
-- **AC5:** Given a project with seat cards, no design persona cards and a memory file `personas/memory/qa.md`, when `validate.py personas` runs, then it prints no persona-layout warning naming the memory file.
+- **AC4:** Given seat cards, no design persona cards and a memory file `personas/memory/qa.md`, when `validate.py personas` runs, then it prints no persona-layout warning naming the memory file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py::PersonaMemoryStoreTests::test_memory_files_are_never_read_as_misplaced_persona_cards
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - AC1 must fail on: ids numbered per file, no Review-by stamped, or the later stories' fields not round-tripped through one parser (US1066/US1067/US1068 would each hand-roll one)
+  - AC2 must fail on: evidence optional or never resolved, role checked before stem, or the write made where git never holds it
+  - AC3 must fail on: list globs every memory file, so another persona's learnings leak into qa's listing
+  - AC4 must fail on: personas/memory/ left out of the nested-layout exclusions beside seats/ and stakeholders/ in `validate.check_personas`
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 4 (a cause is recorded and not repeated); also 2 via the evidence every entry carries.
+  - Gaps: no ADR-012 trd.md edit in Affects (the note in the story says to add it); no existing pinning tests in Affects `(test_validate.py`, `test_lessons.py` for the `parse_project_lessons` entry-pattern parameter, `test_doc_coverage.py` for the new script's catalogue row); five ACs, brief wants 2-4 (AC2 and AC3 merged); the entry schema must name the fields US1066-US1068 write so those stories can be built from fixtures without 1066/1067 (this is what lets the chain be broken).
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - From US1101 (2026-11-01): tools/tests/test_lean_trd_refresh.py's ADR-012 test fails if a path named in the TRD's ADR-012 'Not yet built' paragraph comes to exist. When this unit lands its script, edit sdlc-studio/trd.md's ADR-012 in the same commit; add trd.md to this unit's Affects when it is planned.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: ids numbered per file, so two personas' first learnings are both M-0001 and an approval or a strike naming one is ambiguous, or no Review-by stamped
@@ -63,3 +69,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, criteria rewritten to four or fewer, notes |

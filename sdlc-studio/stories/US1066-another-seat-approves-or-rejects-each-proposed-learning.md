@@ -1,15 +1,15 @@
 # US1066: Another seat approves or rejects each proposed learning against its evidence and its card
 
-> **Status:** Draft
+> **Status:** Ready
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, changelog.d/US1066.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, changelog.d/US1066.md
 > **Epic:** EP0287
 > **Points:** 5
-> **Depends on:** US1065
-> **Persona:** Maya Okafor
+> **Depends on:** US1058, US1062
+> **Persona:** Abena Osei
 
 ## User Story
 
@@ -30,6 +30,11 @@
 
 ## Notes
 
+- Run thirteen grooming (D0479):
+  - Persona: change Maya Okafor to Abena Osei (Primary). Serves End goal 2 (a different, accountable seat approves); End goal 4.
+  - Dependency on US1065 is SOFT: approve needs a proposed entry, which US1058 `add` creates (state proposed) and a fixture can write; it needs the adverse-item keys from US1062 to validate --addresses. Real deps: US1058 and US1062. It still builds after US1065 in the same lane.
+  - Four ACs and must-fail lines are sound; only pinning tests and the doc-coverage test are missing from Affects.
+  - Line numbers in this story's notes are stale at HEAD (critic.py brief 2527->3755, `_lessons_block` 2358->3283, sprint.py `_CLOSE_CHAIN` 5668->5906, `cmd_sign` 9708->10474, retro.py extract 3535->4045, `lessons.phase_digest` 1864->1999, validate.py `check_personas` 1342->1278/1391); builder re-greps by name.
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: independence judged by reviewer name, so a second qa card holder approves qa's learning
 - AC2 must fail on: an approval recorded with no account of which adverse item the learning engages, so a learning that addresses nothing reads as one that addresses everything
@@ -56,3 +61,4 @@ Kept (D0387). To plan it:
 | 2026-10-12 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |
