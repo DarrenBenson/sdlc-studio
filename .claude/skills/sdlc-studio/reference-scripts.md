@@ -219,6 +219,7 @@ lists every script with a one-line summary; open the linked page for the full en
   a file with its fix, each with its recorded verdict and seat; `--confirm UNIT` records one.
   `to-class` turns a confirmed escape's written Root Cause into a failure class in
   `sdlc-studio/lessons.jsonl` through `lessons.py class-add`, carrying the bug's Affects as `files`
+- `persona_memory.py` - Keeps each persona's evidenced learnings in a committed memory file beside its card: `add`, `list`, `recall`.
 
 ### Upgrade, deploy & version - [reference-scripts-upgrade.md](reference-scripts-upgrade.md)
 

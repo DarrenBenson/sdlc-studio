@@ -236,7 +236,7 @@ def amigo_panel(root: Path | str, roles, *, skip_personas: bool = False,
         card = None if skip_personas else resolve_consult(root, role)
         panel.append({"role": role, "seat": seat_name(card, role),
                       "card_path": str(card) if card else None,
-                      "framing": frame(card, role, render)})
+                      "framing": frame(card, role, render, root=root)})
     return panel
 
 
@@ -258,12 +258,18 @@ def consult(root: Path | str, roles, questions, *, skip_personas: bool = False) 
             "lead": p[0]["seat"] if p else None}
 
 
-def frame(card: Path | None, seat: str, render: str) -> str:
+def frame(card: Path | None, seat: str, render: str, *, root: Path | str | None = None) -> str:
     """The framing text to append after the caller's concrete contract. Empty string for
-    the generic path, so `--skip-personas` yields a byte-equivalent contract."""
+    the generic path, so `--skip-personas` yields a byte-equivalent contract. Given the project
+    `root`, the seat's own live learnings come between the note and the card, in a block
+    labelled with the render (`persona_memory.brief_block`), so the framing still ends with the
+    card; a caller passing no root gets the card alone."""
     if card is None:
         return ""
     body = card.read_text(encoding="utf-8")
+    if root is not None:
+        import persona_memory  # noqa: PLC0415 - sibling; it imports this module for the roster
+        body = persona_memory.brief_block(root, seat, render) + "\n\n---\n\n" + body
     note = (
         f"\n\n---\n\nYou are the {seat} amigo. Adopt the charter below as your working stance "
         f"(the {render} render). It is a disposition layer ONLY: the concrete contract it comes "
@@ -285,12 +291,13 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     if getattr(args, "format", "text") == "json":
         print(json.dumps({"seat": args.seat, "render": args.render,
                           "card_path": str(card) if card else None,
-                          "framing": frame(card, args.seat, args.render)}, indent=2))
+                          "framing": frame(card, args.seat, args.render, root=args.root)},
+                         indent=2))
         return 0
     if args.path_only:
         print(str(card) if card else "")
         return 0
-    print(frame(card, args.seat, args.render))
+    print(frame(card, args.seat, args.render, root=args.root))
     return 0
 
 
@@ -377,7 +384,7 @@ def cmd_resolve_consult(args: argparse.Namespace) -> int:
     if args.path_only:
         print(str(card) if card else "")
         return 0
-    print(frame(card, args.role.lower(), "review"))
+    print(frame(card, args.role.lower(), "review", root=args.root))
     return 0
 
 

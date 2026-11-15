@@ -1263,7 +1263,8 @@ class PersonaWellFormedTests(unittest.TestCase):
         # cards get their own schema warnings instead - a different rule family)
         with tempfile.TemporaryDirectory() as d:
             repo = pathlib.Path(d)
-            for sub in ("seats", "stakeholders"):
+            # memory/ holds each persona's learnings log beside the cards, never a card.
+            for sub in ("seats", "stakeholders", "memory"):
                 pdir = repo / "sdlc-studio" / "personas" / sub
                 pdir.mkdir(parents=True)
                 (pdir / "x.md").write_text("# X\n", encoding="utf-8")

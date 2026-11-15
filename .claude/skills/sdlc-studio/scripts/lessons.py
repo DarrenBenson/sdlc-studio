@@ -116,13 +116,17 @@ PROJECT_HEADER = """# Project Lessons
 # -----------------------------------------------------------------------------
 
 
-def parse_project_lessons(text: str) -> list[dict]:
-    """Entries from a project lessons file, in file order (newest first)."""
+def parse_project_lessons(text: str, entry_re: re.Pattern = PROJECT_ENTRY_RE) -> list[dict]:
+    """Entries from a project lessons file, in file order (newest first).
+
+    `entry_re` is the heading an entry opens with, its id and title as groups 1 and 2. It
+    defaults to the lessons log's `## L-NNNN:`; another log in the same shape (a persona's
+    memory, `## M-NNNN:`) passes its own, so one parser reads both and their fields agree."""
     entries: list[dict] = []
     current: dict | None = None
     body: list[str] = []
     for line in text.splitlines():
-        m = PROJECT_ENTRY_RE.match(line)
+        m = entry_re.match(line)
         if m:
             if current:
                 current["body"] = "\n".join(body).strip()
@@ -167,11 +171,12 @@ def heading_title(title: str) -> str:
     return text + ELLIPSIS if elided and text else text
 
 
-def project_header_of(text: str) -> str:
-    """Everything before the first `## L-NNNN:` heading (the file header)."""
+def project_header_of(text: str, entry_re: re.Pattern = PROJECT_ENTRY_RE) -> str:
+    """Everything before the first entry heading (the file header); `entry_re` as in
+    `parse_project_lessons`."""
     lines = text.splitlines()
     for i, line in enumerate(lines):
-        if PROJECT_ENTRY_RE.match(line):
+        if entry_re.match(line):
             return "\n".join(lines[:i]).rstrip() + "\n"
     return text.rstrip() + "\n" if text.strip() else ""
 
@@ -343,6 +348,25 @@ def untracked_reason(lessons_dir: Path) -> str | None:
     if not _git_ok(["ls-files", "--error-unmatch", "_index.md"], lessons_dir):
         return (f"git does not track its registry ({lessons_dir / '_index.md'}), so a lesson "
                 "written beside it is not version-controlled either")
+    return None
+
+
+def ignored_reason(repo_root: Path, rel: str) -> str | None:
+    """Why a file written at `rel` under `repo_root` would never reach git, or None when git
+    would see it. The reason names the ignore rule that matches (its source file, line and
+    pattern), so the operator can see what to change. Unprovable counts as unheld: outside a
+    work tree, or with git unable to run, the reason says so rather than passing."""
+    root = Path(repo_root)
+    inside = _git(["rev-parse", "--is-inside-work-tree"], root)
+    if inside is None or inside.returncode != 0 or inside.stdout.strip() != "true":
+        return f"{root} is not inside a git work tree, so nothing written there is committed"
+    proc = _git(["check-ignore", "-v", "--no-index", "--", rel], root)
+    if proc is None:
+        return "git could not be run to prove the file would be committed"
+    if proc.returncode == 0:
+        rule = proc.stdout.strip().split("\t", 1)[0] or "a gitignore rule"
+        return (f"git ignores {rel} (rule {rule}), so a learning written there is never "
+                "committed; remove the rule or commit the directory")
     return None
 
 

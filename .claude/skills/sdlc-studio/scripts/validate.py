@@ -1389,12 +1389,12 @@ def check_personas(root: Path) -> list[dict]:
     # the flat glob found no design personas but persona-shaped files sit in subdirs (e.g.
     # personas/team/, personas/amigos/), emit an advisory rather than a vacuous clean pass.
     # seats/ (review-seat charters) and stakeholders/ (the generated panel) are the generator's
-    # canonical output homes - different schemas, excluded by design.
+    # canonical output homes, and memory/ holds each persona's learnings log, not a card -
+    # different schemas, excluded by design.
     if inspected == 0:
         nested = [p for p in pdir.rglob("*.md")
                   if p.parent != pdir
-                  and "seats" not in p.relative_to(pdir).parts
-                  and "stakeholders" not in p.relative_to(pdir).parts
+                  and not {"seats", "stakeholders", "memory"} & set(p.relative_to(pdir).parts)
                   and p.name.lower() not in {"index.md", "readme.md", "consult-guide.md"}
                   and not p.name.startswith("_")]
         if nested:

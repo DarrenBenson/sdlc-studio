@@ -3952,7 +3952,16 @@ change, not finding it.
 
 {_lessons_block(root)}
 
+{_seat_memory_block(root, seat, affects)}
+
 {_RETURN_CONTRACT}"""
+
+
+def _seat_memory_block(root: Path, seat: str, affects: list[str]) -> str:
+    """The seat's own live learnings, from its memory file alone, capped and ranked by the
+    files they share with this unit; an unreadable file is reported, an absent one said."""
+    import persona_memory  # noqa: PLC0415 - sibling; deferred so only a brief pays for it
+    return persona_memory.brief_block(root, seat, "review", affects)
 
 
 def rejoinder_brief(repo_root: Path | str, unit: str, seat: str,

@@ -902,6 +902,8 @@ NON_CEREMONY_VERBS = {
     # `to-class` turns its root cause into a failure class; both are post-release records, run
     # after a defect is found, so no close can certify them.
     "escape": ("to-class", "trace"),
+    # A persona's learnings are recorded and read between runs; no verb certifies a close.
+    "persona_memory": ("add", "list", "recall"),
     "lessons": ("add", "carried", "carry", "class-add", "classes", "list", "propose", "prune",
                 "rank", "recall", "repeats", "revalidate", "violated"),
     "retro": ("accuracy", "collate", "cost-baseline", "dispose", "estimator", "extract", "seats",

@@ -51,10 +51,10 @@ script joins the family classified rather than silently.
 
 | Classification | Scripts |
 | --- | --- |
-| anchored | 66 |
+| anchored | 67 |
 | unanchored | 1 |
 | non-root | 5 |
-| **total** | **72** |
+| **total** | **73** |
 
 These counts are now PARSED by the guard and held to the measurement. They were not before, which
 is how the block came to claim 5 anchored / 59 unanchored while the family measured otherwise: a
@@ -117,6 +117,7 @@ re-export.
 | `mutation.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `next_id.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `persona_gen.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
+| `persona_memory.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `persona_resolve.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |
 | `plan.py` | non-root | operates on the operator's `~/.claude/plans/` tree via `--plans-dir`, which sits outside any project |
 | `project_upgrade.py` | anchored | resolves through `sdlc_md.resolve_root` and writes the value back onto `args` in `main`, so every verb receives it |

@@ -326,6 +326,42 @@ class ParseProjectLessonsTests(unittest.TestCase):
         self.assertEqual(lessons.parse_project_lessons(text), [])
 
 
+class EntryPatternTests(unittest.TestCase):
+    """Another log in the lessons shape passes its own entry heading; the default stays L-."""
+
+    TEXT = ("# Memory\n\nnotes\n\n## M-0001: First\n\n- **State:** proposed\n\nbody\n\n"
+            "## L-0002: Not an entry here\n")
+
+    def test_a_given_entry_pattern_reads_that_logs_entries_only(self) -> None:
+        import re
+        memory = re.compile(r"^##\s+(M-\d{4}):\s*(.+?)\s*$")
+        [e] = lessons.parse_project_lessons(self.TEXT, entry_re=memory)
+        self.assertEqual((e["id"], e["title"], e["fields"]), ("M-0001", "First",
+                                                               {"state": "proposed"}))
+        self.assertIn("## L-0002", e["body"])
+        self.assertEqual(lessons.project_header_of(self.TEXT, entry_re=memory),
+                         "# Memory\n\nnotes\n")
+        # The default is unchanged: only the L- heading is an entry.
+        self.assertEqual([x["id"] for x in lessons.parse_project_lessons(self.TEXT)], ["L-0002"])
+        self.assertTrue(lessons.project_header_of(self.TEXT).rstrip().endswith("body"))
+
+
+class IgnoredReasonTests(unittest.TestCase):
+    """`ignored_reason` names the gitignore rule that would keep a write out of git."""
+
+    def test_an_ignored_path_is_named_with_its_rule_and_a_held_one_is_not(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            outside = lessons.ignored_reason(root, "a/b.md")
+            self.assertIn("not inside a git work tree", outside or "")
+            gitutil.git(["init", "-q"], root)
+            self.assertIsNone(lessons.ignored_reason(root, "a/b.md"))
+            (root / ".gitignore").write_text("a/\n", encoding="utf-8")
+            reason = lessons.ignored_reason(root, "a/b.md") or ""
+            self.assertIn("git ignores a/b.md", reason)
+            self.assertIn(".gitignore:1:a/", reason)
+
+
 class ProjectHeaderTests(unittest.TestCase):
     def test_header_is_everything_before_first_entry(self) -> None:
         text = "# Project Lessons\n\nnotes\n\n## L-0001: First\nbody\n"

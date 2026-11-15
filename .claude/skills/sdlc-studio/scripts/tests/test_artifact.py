@@ -1746,7 +1746,9 @@ SAFE_INPUT_WRITERS = {"file_finding.py", "artifact.py",
                       # ...and the four the six original flag spellings could not see at all:
                       "decisions.py", "lessons.py", "ledger.py",
                       # ...and verify_ac.py, whose `coverage rule --reason` gained --fields-file (US0816):
-                      "verify_ac.py"}
+                      "verify_ac.py",
+                      # ...and persona_memory.py, whose `add --title/--body` take --fields-file (US1058):
+                      "persona_memory.py"}
 
 #: The sibling prose writers the sweep found and could NOT reach in this batch, each with the
 #: reason. D0052 ruled the sweep WIDER than the two files CR0384 names, and these four carry the

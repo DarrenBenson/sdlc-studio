@@ -406,6 +406,10 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "triage.py": "rewrites the artefacts it dispositions",
     "rfc.py": "writes the RFC it is asked to amend",
     "lessons.py": "writes the lessons store it owns",
+    "persona_memory.py": ("writes only the memory files it owns, sdlc-studio/personas/memory/"
+                          "<persona>.md, each through atomic_write, and refuses a write the "
+                          "repository would ignore; test_persona_memory_store holds that a "
+                          "refused add writes no file"),
     "docgen.py": "writes only between generation markers in the targets it owns, and refuses any file that carries none - the marker is the confinement",
     "digest.py": "writes the digest it owns",
     "sprint_report.py": ("writes the report of record it owns - the JSON and its Markdown twin "

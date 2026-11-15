@@ -258,10 +258,10 @@ The Persona Review pass of `/sdlc-studio review` uses this window to decide whet
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `staleness_days` | 90 | Days without a touch before a persona is flagged stale |
+| `personas.memory.validity_days` | 90 | Days from a learning's `Added` to the `Review-by` that `persona_memory.py add` stamps ([persona learning](reference-persona-learning.md)) |
+| `personas.memory.inject_max` | 5 | Most live learnings a seat's brief or framing carries; the block counts the rest as withheld |
 
 A project where personas are consulted rarely by design (e.g. stable archetypes) can extend this; a project where personas are expected to be high-touch can shorten it. See `reference-review.md` for the cross-doc check that reads this value.
-
----
 
 ## Lessons Validity {#lessons-validity}
 

@@ -1246,11 +1246,13 @@ generalisable learning reaches the shipped amigos only by deliberate promotion. 
 CR0631 (review), CR0632 (memory), CR0633 (the learning loop), CR0634 (user personas and
 promotion).
 
-**Built so far:** none of it. The four workstreams are open requests decomposed into EP0287,
-whose stories are open, and the persona code that exists (`persona_gen.py`,
-`persona_resolve.py`) reads no memory file and holds a card to no review standard.
-**Not yet built:** `sdlc-studio/personas/memory/`, `persona_memory.py` (US1058) and
-`persona_review.py` (US1052).
+**Built so far:** the memory and the brief side of it. `persona_memory.py` (US1058) records a
+persona's evidenced learnings as proposed in its committed memory file and lists them, and a
+review brief and every `persona_resolve.py` framing carry the seat's live learnings, capped and
+ranked (US1059). Approval, the close's listing and the signature are open stories of EP0287,
+so no learning is live yet, and `persona_gen.py` holds a card to no review standard.
+**Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning)
+and `persona_review.py` (US1052).
 
 **Consequences:**
 
@@ -1355,6 +1357,7 @@ touches the component. The constraints below span components.
 | 2026-11-04 | 6.2.0 | BG1163: §6's run lifecycle names `sprint.py stop` and `sprint.py close --file-and-close` and what each files; the Run state's tracked row says `--file-and-close` files none; the boundary note says it runs a close; the claim-drift writer cell names US0577 alone, from git; the `.local` paragraph says how the pin reads a writer |
 | 2026-11-08 | 6.2.0 | The 6.3 work on `main` (US1138): §5's Network paths and rule 6 name the Cursor usage GET, held to every shipped script that imports `urllib.request`; §4, §7 and §9 name it, and the skill stores no secret and sends one, `CURSOR_API_KEY`, only in that request's header. §10's cost model reads the running harness's store, a reading holding delegated agents' spend being the whole figure. The `.local/` table adds `meter-reads.json`, `cursor-usage.jsonl`, `lane-runs/`, the `lane/` hand-in, its `landed/` copies and `briefs/` |
 | 2026-11-08 | 6.3.0 | US1139: the release cut. The Coverage line reads v6.3.0 as cut, plus the 6.4 work on `main` |
+| 2026-11-15 | 6.3.0 | US1058, US1059: ADR-012's Built so far names `persona_memory.py` and the brief's learnings block; Not yet built keeps the memory directory and `persona_review.py` |
 
 ---
 

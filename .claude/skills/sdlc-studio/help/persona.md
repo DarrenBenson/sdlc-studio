@@ -1,7 +1,7 @@
 <!--
 Load when: /sdlc-studio persona or /sdlc-studio persona help
 Dependencies: SKILL.md (always loaded first)
-Related: reference-persona.md, reference-persona-generate.md
+Related: reference-persona.md, reference-persona-generate.md, reference-persona-learning.md
 -->
 
 # /sdlc-studio persona - User Personas
@@ -328,6 +328,7 @@ After creating personas:
 
 - `reference-persona.md` - Main persona reference
 - `reference-persona-generate.md` - Generate workflow details
+- `reference-persona-learning.md` - A persona's memory: `persona_memory.py add`, `list` and `recall`, and how its learnings reach a brief
 - `reference-philosophy.md#generate-mode` - Generate mode philosophy
 
 **Related commands:**
