@@ -1,6 +1,6 @@
 # BG1471: persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, changelog.d/BG1471.md
@@ -27,8 +27,10 @@ Refuse a field value holding a line break in `set_fields` (or fold it to one lin
 
 - [ ] **AC1** Given a proposed learning, when approve --reject runs with a reason holding a line break and a field line, then it exits 2, writes nothing, and list reads the learning back as proposed. Fails on: `set_fields` writing the multi-line reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given an approved learning, when strike runs with such a reason, then it is refused and the entry reads back unchanged. Fails on: strike writing the multi-line reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

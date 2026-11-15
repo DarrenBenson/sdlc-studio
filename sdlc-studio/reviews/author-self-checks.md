@@ -316,3 +316,4 @@
 | BG1468 | agent-adaf7b272447a856c | 2026-11-15 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | 6ab0e4e9cb5b2f58 at 8207a961bf65 |
 | BG1469 | agent-adaf7b272447a856c | 2026-11-15 | TRUE 6, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 0 | c6e451c9860bb1cd at 8207a961bf65 |
 | BG1471 | agent-adaf7b272447a856c | 2026-11-15 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 2 | 6623127d8fb9e957 at 8207a961bf65 |
+| BG1471 | agent-a9f0da518ea618ee8 | 2026-11-15 | TRUE 11, FALSE 0, UNVERIFIABLE 0 | killed 6, survived 0 | bf463cc4f1b3d322 at 7675c0e8f633 |

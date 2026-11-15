@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 356 |
+| Open | 355 |
 | In Progress | 0 |
-| Fixed | 926 |
+| Fixed | 927 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
@@ -546,7 +546,7 @@
 | [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
 
