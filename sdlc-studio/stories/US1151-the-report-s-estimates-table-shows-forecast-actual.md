@@ -5,7 +5,7 @@
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_minutes_like_for_like.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py, changelog.d/US1151.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_minutes_like_for_like.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_estimates_cost_rows.py, changelog.d/US1151.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-evidence-schema.md, tools/check_budgets.py
 > **Epic:** EP0306
 > **Points:** 3
 > **Depends on:** US1150
@@ -47,3 +47,4 @@
 | --- | --- | --- |
 | 2026-11-14 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0476) | Groomed: criteria with Verify lines, must-fail notes, Affects with the tests each change exercises and this unit's fragment |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Affects gains the evidence annex and its line ceiling: the annex's conformance test, landed earlier this run, requires the new `cost_forecast` envelope mark to be documented |

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 63 |
-| Ready | 7 |
+| Ready | 6 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 903 |
+| Done | 904 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -36,7 +36,7 @@
 | [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
-| [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
+| [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1000](US1000-the-cost-section-states-the-run-s-cost.md) | The cost section states the run's cost in money from a pricing snapshot frozen at the close | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1001](US1001-the-lane-yield-appendix-is-read-from-the.md) | The lane-yield appendix is read from the committed run record, as the close froze it | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US1002](US1002-filing-into-the-skill-source-refuses-a-blocklisted.md) | Filing into the skill source refuses a blocklisted project name before an id is spent | Draft | EP0277 | 2026-10-09 | 2026-10-09 |

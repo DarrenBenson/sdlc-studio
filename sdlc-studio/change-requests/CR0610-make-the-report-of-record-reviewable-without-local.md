@@ -1,6 +1,6 @@
 # CR-0610: Make the report of record reviewable without .local/, and let it carry money
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Consulted:** Dani Okafor, Lena Marsh, Sam Eriksson (2026-10-09)
 > **Decomposed-into:** EP0276
 > **Priority:** Medium

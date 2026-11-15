@@ -1,6 +1,6 @@
 # US0999: A delegated agent's token total records the model that spent it
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Delivers:** CR0610
 > **Created:** 2026-10-09
@@ -21,8 +21,10 @@
 
 - **AC1:** Given an open run, when a builder's total is returned with `sprint lane return --units <unit> --tokens 120000 --model claude-sonnet-4-6` and another is recorded with `retro.py accuracy --delegated-tokens 80000 --delegated-model claude-opus-5-5`, then each delegated entry on the run record carries the model it was given and each command prints it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegated_tokens_model.py::DelegatedModelTests::test_both_recorders_store_the_model
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a delegated total returned with no `--model`, when the entry is recorded, then it carries no model and nothing is filled in for it, and a page filed for that run reads exactly as it would before this change.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_delegated_tokens_model.py::DelegatedModelTests::test_a_missing_model_is_never_guessed
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

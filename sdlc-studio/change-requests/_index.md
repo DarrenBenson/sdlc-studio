@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 34 |
 | Approved | 0 |
-| In Progress | 24 |
-| Complete | 549 |
+| In Progress | 23 |
+| Complete | 550 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 63 |
@@ -21,7 +21,7 @@
 | ID | Title | Status | Priority | Type | Date | Linked Epics |
 | --- | --- | --- | --- | --- | --- | --- |
 | [CR-0609](CR0609-publish-a-versioned-evidence-annex-for-the-committed.md) | Publish a versioned evidence annex for the committed sprint records | In Progress | High | Feature | 2026-10-05 | EP0275 |
-| [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | In Progress | Medium | Feature | 2026-10-05 | EP0276 |
+| [CR-0610](CR0610-make-the-report-of-record-reviewable-without-local.md) | Make the report of record reviewable without .local/, and let it carry money | Complete | Medium | Feature | 2026-10-05 | EP0276 |
 | [CR-0611](CR0611-read-cursor-copilot-and-opencode-token-meters-when.md) | Read Cursor, Copilot, and OpenCode token meters when those harnesses are in use | Complete | High | Feature | 2026-10-06 | EP0274 |
 | [CR-0612](CR0612-check-a-finding-filed-into-the-skill-source.md) | Check a finding filed into the skill source repository against the neutrality blocklist when it is filed, not first at commit | In Progress | Medium | Improvement | 2026-10-07 | EP0277 |
 | [CR-0613](CR0613-make-a-clone-that-cannot-run-the-gates.md) | Make a clone that cannot run the gates say so at setup, not 50 minutes into a push | Complete | Medium | Improvement | 2026-10-07 | EP0278 |
