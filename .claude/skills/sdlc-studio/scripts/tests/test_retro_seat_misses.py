@@ -25,16 +25,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 from test_retro_seat_evidence import (  # noqa: E402
-    BUILDER, CRITIC, PRODUCT, QA, _project, _seats, _write)
+    BUILDER, CRITIC, PRODUCT, QA, SCRIPTS, _git, _project, _seats, _write)
 
 RETROS = (("RETRO0001", "2026-10-01", "US0002"), ("RETRO0002", "2026-10-08", "US0002"))
 
 
 def _bug(root: Path, bid: str, created: str, title: str, affects: str, body: str = "",
-         evidence: str = "", escaped: str = "") -> None:
+         evidence: str = "", escaped: str = "", shipped: str = "") -> None:
     """A bug artefact with the fields the record reads: title, Affects, Created, and optionally
-    Evidence and Escaped-via; `body` is its Summary."""
+    Evidence, Escaped-via and Shipped-in; `body` is its Summary."""
     fields = (f"> **Status:** Open\n> **Affects:** {affects}\n"
+              + (f"> **Shipped-in:** {shipped}\n" if shipped else "")
               + (f"> **Evidence:** {evidence}\n" if evidence else "")
               + (f"> **Escaped-via:** {escaped}\n" if escaped else "")
               + f"> **Created:** {created}\n")
@@ -157,6 +158,38 @@ class SeatMissTests(unittest.TestCase):
             self.assertIn("missed BG0009 after its 2026-09-10 approval of US0003", text)
             self.assertIn("missed BG0016 after its 2026-09-10 approval of US0004: recorded as "
                           "Escaped-via US0004", text)
+
+    def test_an_escaped_via_unit_with_no_live_verdict_is_charged_to_no_seat(self) -> None:
+        """`escape.py trace --confirm` records a unit no review approved, since a proposal with
+        no verdict can still be confirmed. The record names that bug as charged to no seat, with
+        the reason, and goes on charging the rest of the window. Mutants: the unit looked up in
+        the ledger unguarded (KeyError, exit 1); the bug dropped silently; the walk stopped at
+        it, so BG0002 is never charged."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, [("US0001", "APPROVE", PRODUCT, BUILDER, "2026-09-20", "none")],
+                     units=("US0001", "US0002", "US0007"), retros=RETROS)
+            _git(root, "init", "-q")
+            _git(root, "add", "-A")
+            _git(root, "commit", "-q", "-m", "feat(US0007): round the total")
+            _git(root, "tag", "v1.0.0")
+            _bug(root, "BG0019", "2026-10-06", "the total rounds wrongly", "scripts/a.py",
+                 "The total rounds wrongly.", shipped="v1.0.0")
+            _bug(root, "BG0020", "2026-10-07", "the widget drops a row", "scripts/a.py",
+                 "US0001 drops a row.")
+            r = subprocess.run([sys.executable, "-B", str(SCRIPTS / "escape.py"), "trace",
+                                "--bug", "BG0019", "--confirm", "US0007", "--root", str(root)],
+                               capture_output=True, text=True, timeout=300,
+                               env=gitutil.git_env(), check=False)
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertIn("> **Escaped-via:** US0007",
+                          (root / "sdlc-studio/bugs/BG0019-defect.md").read_text("utf-8"))
+            out, text = _record(root)
+            self.assertEqual([("BG0019", "US0007", "escaped-via")],
+                             [(u["bug"], u["unit"], u["rule"]) for u in out["uncharged"]])
+            self.assertIn("BG0019 is charged to no seat: recorded as Escaped-via US0007, but "
+                          "US0007 has no live verdict in the ledger", text)
+            self.assertEqual(["BG0020"], [m["bug"] for m in out["seats"]["product"]["missed"]])
 
     def test_a_bug_is_charged_once_and_never_through_a_superseded_approval(self) -> None:
         """Two retros dated one day are ordered by id, so a bug on that day is charged by the

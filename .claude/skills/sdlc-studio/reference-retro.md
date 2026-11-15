@@ -130,8 +130,9 @@ evidence. A bug counts in the retro whose window holds its `Created` day: after 
 retro's `Date`, on or before this retro's (a retro with no `Date` charges nothing, and says
 so). A bug whose title reads `<unit> did not converge in review` is never charged: it records
 the review's outcome, not a defect it let through. A bug carrying `Escaped-via` (written by
-`escape.py trace --confirm`) is charged to that unit on the recorded link alone. Otherwise the
-narrow rule applies: the bug cites the unit, shares an `Affects` file with it, and cites three
+`escape.py trace --confirm`) is charged to that unit on the recorded link alone; when no live
+verdict on that unit stands, the bug is named as charged to no seat, with the reason. Otherwise
+the narrow rule applies: the bug cites the unit, shares an `Affects` file with it, and cites three
 story, bug or change request ids or fewer above its Revision History, its own aside. The charge
 goes to every seat whose latest verdict on the unit, on or before the bug's day, approved, in
 any run, so a seat that reviewed nothing in the batch still appears with its misses. Each miss

@@ -1589,7 +1589,8 @@ def _charged_units(root, text: str, own: str, reviewed) -> list:
     """(unit, basis) for each unit a bug is charged to. A recorded `Escaped-via` unit is the
     strongest evidence and stands alone. Otherwise the narrow rule: the bug cites the unit,
     shares an Affects file with it, and cites `MISS_ID_CAP` ids or fewer above its Revision
-    History, its own id aside. Only units in `reviewed` are looked up; the rest still count."""
+    History, its own id aside. The narrow rule looks up only units in `reviewed`, though the
+    rest still count; a recorded `Escaped-via` unit is returned whether reviewed or not."""
     escaped = _ids_in(sdlc_md.extract_field(text, "Escaped-via") or "")
     if escaped:
         return [(escaped[0], {"rule": "escaped-via", "shared": [], "ids": None,
@@ -1624,17 +1625,20 @@ def _own_finding(evidence: str, unit: str, role: str, row: dict, roles: set) -> 
 
 def seat_misses(root, retro_path) -> dict:
     """The later bugs charged to the seats whose approvals missed them, over the retro's
-    window: {window: {since, until, undated}, seats: {role: {missed, approved_over_own_finding}}}.
+    window: {window: {since, until, undated}, seats: {role: {missed, approved_over_own_finding}},
+    uncharged: [{bug, unit, reason, **the charge's basis}]}.
 
     A bug created in the window, whose title does not read `did not converge in review`, is
     charged to every seat whose latest live verdict on a charged unit (`_charged_units`), on or
     before the bug's Created day, approves, in whichever run that was: a seat is charged though
     it reviewed nothing in the batch. Where `_own_finding` holds it is listed as approved over
     the seat's own finding, not as a miss. A bug with no Created date sits in no window and is
-    named in `undated`; a retro with no Date reads no bug at all."""
+    named in `undated`; a retro with no Date reads no bug at all. A charged unit with no live
+    ledger row (an `Escaped-via` unit no review approved, or whose rows are all superseded)
+    charges no seat and is named in `uncharged` with the reason."""
     import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
     window = miss_window(root, retro_path)
-    out: dict = {"window": {**window, "undated": []}, "seats": {}}
+    out: dict = {"window": {**window, "undated": []}, "seats": {}, "uncharged": []}
     since, until = window["since"], window["until"]
     if until is None:
         return out
@@ -1656,6 +1660,10 @@ def seat_misses(root, retro_path) -> dict:
             continue
         evidence = sdlc_md.extract_field(text, "Evidence") or ""
         for unit, basis in _charged_units(root, text, sdlc_md.norm_id(bid), rows):
+            if unit not in rows:
+                out["uncharged"].append({"bug": bid, "unit": unit, **basis,
+                                         "reason": f"{unit} has no live verdict in the ledger"})
+                continue
             latest: dict = {}
             for row in rows[unit]:
                 role, day = critic.recorded_seat(row.get("reviewer") or ""), _day(row.get("date"))
@@ -1686,7 +1694,8 @@ def seat_record(root, retro_path, unit_ids: list) -> dict:
     for role, charged in misses["seats"].items():
         for key, items in charged.items():
             seats.setdefault(role, _empty_seat())[key].extend(items)
-    return {**ev, "window": misses["window"], "seats": {r: seats[r] for r in sorted(seats)}}
+    return {**ev, "window": misses["window"], "uncharged": misses["uncharged"],
+            "seats": {r: seats[r] for r in sorted(seats)}}
 
 
 def _changed_words(item: dict) -> str:
@@ -1711,6 +1720,8 @@ def render_seat_evidence(ev: dict, retro_id: str) -> list:
     if window.get("undated"):
         out.append(f"  {len(window['undated'])} bug(s) carry no Created date, so no window "
                    f"holds them")
+    out.extend(f"  {u['bug']} is charged to no seat: {u['basis']}, but {u['reason']}"
+               for u in ev.get("uncharged", []))
     for role, s in ev["seats"].items():
         out.append(f"  {role}: {s['approve']} APPROVE, {s['reject']} REJECT"
                    if s["verdicts"] else f"  {role}: no verdict of its own")
