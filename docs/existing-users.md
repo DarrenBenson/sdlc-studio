@@ -156,7 +156,7 @@ as an argparse error; a retired key is ignored where it is still set.
 | `review.signoff`, `review.two_role_after` (keys), `review.two-role` (`[check:]` id) | The operator signs the run at `sprint.py sign`; `migrate --apply` removes the keys and strips the tag |
 | `critic.py evidence`, `critic.py sprint-review`, `sprint.py review-batch` | One delivery verdict per unit: `critic.py record` |
 | `critic.py repair` | Answer a REJECT with a round-2 `critic.py record` from the same reviewer, or carry the unit at the review cap |
-| `--phase` on `critic.py brief`, `record`, `correct`, `show` or `supersede`; `critic.py record --kind` | Drop the flag: every verdict is a delivery verdict |
+| `critic.py brief --phase`, and the same flag on `record`, `correct`, `show` or `supersede`; `critic.py record --kind` | Drop the flag: every verdict is a delivery verdict |
 | `mutation.py register`, `mutation.py retract`, `mutation.py retractions`, `mutation.py audit`, `mutation.py run --from-plan` | No ledger is kept: measure on demand with `mutation.py run --story <id>` |
 | `mutation.py run --unit` | Drop the flag; `run` records a series row, read back with `mutation.py yield --run <id>` |
 | `review.mutation_evidence` (key), `repair.mutation-evidence` (`[check:]` id) | No repair-mutation gate: `migrate --apply` removes the key and strips the tag |
