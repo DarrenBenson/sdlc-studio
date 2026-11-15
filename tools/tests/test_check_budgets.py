@@ -242,7 +242,8 @@ class DriftTests(unittest.TestCase):
             "reference-outputs.md": 869,
             "reference-decisions.md": 812,
             "reference-test-best-practices.md": 788,
-            "reference-config.md": 695,
+            # 695 -> 698: the routing.effort key's three lines, a config surface, not a guide.
+            "reference-config.md": 698,
             "reference-review.md": 819,
             # 855 -> 859: US0823's close-refusal doctrine in step 5c, hand-written prose for a
             # delivered behaviour rather than a generated guide, and tightened by four lines

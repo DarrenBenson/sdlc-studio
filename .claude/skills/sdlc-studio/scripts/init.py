@@ -75,6 +75,20 @@ INSTRUCTION_FILES = [("agent-instructions.md", "AGENTS.md"),
 AGENT_DEFINITIONS = [("agents/sdlc-builder.md", ".claude/agents/sdlc-builder.md"),
                      ("agents/sdlc-reviewer.md", ".claude/agents/sdlc-reviewer.md")]
 AGENT_FILES = INSTRUCTION_FILES + AGENT_DEFINITIONS
+# The definitions' destinations. One that cannot be written (a `.claude` that is a regular file)
+# is skipped with its reason; the instruction files and the rest of the project are still written.
+DEFINITION_PATHS = frozenset(dst for _src, dst in AGENT_DEFINITIONS)
+
+
+def _write_definition(path: Path, text: str) -> str | None:
+    """Write one subagent definition, creating its directory; None when written, else the
+    OSError's reason as `<ErrorName>: <message>` for the report that it was skipped."""
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    except OSError as exc:
+        return f"{type(exc).__name__}: {exc.strerror or exc}"
+    return None
 # The placeholders init can derive without judgement. Everything else is left visibly
 # unfilled - see `_fill_known`, which owns the substitution and its postcondition.
 KNOWN_FIELDS = ("project_name", "language", "date", "last_updated")
@@ -522,14 +536,19 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
               "draft what it promises. Reinstall the skill rather than onboarding a repo whose "
               "agents would inherit no instructions.")
     fields = seed_fields(root, date.today().isoformat())
-    created, skipped = [], []
+    created, skipped, unwritable = [], [], []
     for st, dst in starters:
         p = root / dst
         if p.exists() and not force:
             skipped.append(dst)
             continue
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(seed_text(st, fields), encoding="utf-8")
+        if dst in DEFINITION_PATHS:
+            if why := _write_definition(p, seed_text(st, fields)):
+                unwritable.append({"path": dst, "reason": why})
+                continue
+        else:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(seed_text(st, fields), encoding="utf-8")
         created.append(dst)
     # A pre-existing AGENTS.md is the project's own and is never rewritten, so the stage OFFERS
     # the doctrine it lacks rather than ticking a file the project's agents learn nothing from.
@@ -545,7 +564,7 @@ def stage_agents(root: Path | str, force: bool = False) -> dict:
     if "AGENTS.md" not in unreadable and not _authored(root, root / "AGENTS.md", starters[0][0]):
         todo.append("fill in the {{placeholders}} in AGENTS.md - the project specifics an agent "
                     "cannot infer")
-    return {"created": created, "skipped": skipped,
+    return {"created": created, "skipped": skipped, "unwritable": unwritable,
             **({"directive": "; ".join(todo)} if todo else {})}
 
 
@@ -690,6 +709,8 @@ def cmd_guided(args: argparse.Namespace) -> int:
                 continue
             how = "seeded from its template" if _is_seed(root, f) else "already present"
             print(f"  {f} {how} - review it, then `init guided --confirm`")
+        for u in drafted.get("unwritable", []):
+            print(f"  {u['path']} skipped - cannot be written ({u['reason']})")
         if drafted.get("directive"):
             print(f"  next: {drafted['directive']}")
     return 0
@@ -706,16 +727,21 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
         fields["language"] = lang
     created: list[str] = []
     skipped: list[str] = []
+    unwritable: list[dict] = []
 
     def _write(rel: str, content: str) -> None:
         p = root / rel
         if p.exists() and not force:
             skipped.append(rel)
             return
-        created.append(rel)
         if not dry_run:
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(content, encoding="utf-8")
+            if rel not in DEFINITION_PATHS:
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(content, encoding="utf-8")
+            elif why := _write_definition(p, content):
+                unwritable.append({"path": rel, "reason": why})
+                return
+        created.append(rel)
 
     # 1. directory tree
     for d in tree_dirs():
@@ -807,7 +833,7 @@ def init(repo_root: Path | str, detect: bool = False, scaffold: bool = False,
             if st.exists():
                 _write(rel, seed_text(st, fields))
 
-    return {"created": created, "skipped": skipped, "language": lang,
+    return {"created": created, "skipped": skipped, "unwritable": unwritable, "language": lang,
             "scaffold": scaffold, "dry_run": dry_run,
             "tailoring": {"suggestions": suggestions, "applied": applied,
                           "written": written,
@@ -826,6 +852,8 @@ def cmd_run(args: argparse.Namespace) -> int:
           + (f" (stack: {r['language']})" if r["language"] else ""))
     for c in r["created"]:
         print(f"  + {c}")
+    for u in r["unwritable"]:
+        print(f"  ! {u['path']} skipped - cannot be written ({u['reason']})")
     if r["skipped"]:
         print(f"  ({len(r['skipped'])} existing left untouched)")
     tailoring = r.get("tailoring") or {}

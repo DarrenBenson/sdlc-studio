@@ -71,7 +71,10 @@ ALLOWLIST = {
     "reference-outputs.md": 869,  # +RFC0012 index-archival + slice-read conventions (CR0041)
     "reference-decisions.md": 812,
     "reference-test-best-practices.md": 788,  # +assertion-integrity + mutation-check section (CR0131)
-    "reference-config.md": 695,  # +repair-plan gate keys (EP0106): a new opt-in config surface
+    "reference-config.md": 698,  # +repair-plan gate keys (EP0106): a new opt-in config surface
+                                 # Raised 695 -> 698 for US1165: the routing.effort key's YAML
+                                 # line and two table rows, a new config surface documented
+                                 # where its siblings are; the page was at its +5% tolerance.
     "reference-review.md": 819,  # +closing-review brief (EP0108/EP0109) +supersession boundary rule
                                  # first pass and the standing adversarial practices;
                                  # +the verdict-log supersession section (EP0133/US0374/US0375):

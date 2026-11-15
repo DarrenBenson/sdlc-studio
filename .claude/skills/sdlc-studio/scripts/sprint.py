@@ -1156,6 +1156,83 @@ def _enrich_routing(root: Path, out: list[dict]) -> None:
             continue
 
 
+#: The reasoning efforts an agent spawn takes, lowest first, after `inherit` (the session's own
+#: effort, which ranks against nothing because the session's level is not known here).
+EFFORT_INHERIT = "inherit"
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
+EFFORT_VALUES = (EFFORT_INHERIT, *EFFORT_LEVELS)
+
+
+class EffortError(ValueError):
+    """`routing.effort` holds a value `sprint plan` refuses; the message names the key."""
+
+
+def _decision_recorded(root: Path, decision_id: str) -> bool:
+    """True when `sdlc-studio/decisions.md` holds a row whose first cell is `decision_id`; an id
+    only mentioned inside another row is not a recorded decision."""
+    path = root / "sdlc-studio" / "decisions.md"
+    if not decision_id or not path.is_file():
+        return False
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return re.search(rf"(?m)^\|\s*{re.escape(decision_id)}\s*\|", text) is not None
+
+
+def effort_setting(root: Path) -> dict:
+    """`routing.effort` as `{builder, reviewer, reviewer_below_builder}`, validated. Raises
+    EffortError on a value outside `EFFORT_VALUES`, and on a reviewer ranked below its builder
+    unless `reviewer_below_builder` names a decision row in decisions.md; that id is returned
+    only when it is what lets the plan run, else None. Read whether or not routing is enabled."""
+    routing = config.get(root, "routing", None) or {}
+    raw = routing.get("effort") if isinstance(routing, dict) else None
+    if raw is not None and not isinstance(raw, dict):
+        raise EffortError(f"routing.effort must map builder and reviewer to an effort, got "
+                          f"{raw!r}; allowed values: {', '.join(EFFORT_VALUES)}")
+    raw = raw or {}
+    out: dict = {}
+    for role in ("builder", "reviewer"):
+        value = raw.get(role, EFFORT_INHERIT)
+        value = value.strip().lower() if isinstance(value, str) else value
+        if value not in EFFORT_VALUES:
+            raise EffortError(f"routing.effort.{role}: {value!r} is not an effort; allowed "
+                              f"values: {', '.join(EFFORT_VALUES)}")
+        out[role] = value
+    out["reviewer_below_builder"] = None
+    builder, reviewer = out["builder"], out["reviewer"]
+    if EFFORT_INHERIT in (builder, reviewer) or \
+            EFFORT_LEVELS.index(reviewer) >= EFFORT_LEVELS.index(builder):
+        return out
+    decision = str(raw.get("reviewer_below_builder") or "").strip()
+    if not decision:
+        raise EffortError(
+            f"routing.effort: the reviewer's effort ({reviewer}) is below its builder's "
+            f"({builder}); an independent reviewer reasons at least as hard as the author it "
+            f"judges. Raise routing.effort.reviewer, or record the exception in "
+            f"sdlc-studio/decisions.md and name it in routing.effort.reviewer_below_builder")
+    if not _decision_recorded(root, decision):
+        raise EffortError(
+            f"routing.effort.reviewer_below_builder names {decision}, which "
+            f"sdlc-studio/decisions.md does not record, so the reviewer's effort ({reviewer}) "
+            f"below its builder's ({builder}) is refused")
+    out["reviewer_below_builder"] = decision
+    return out
+
+
+def _stamp_effort(root: Path, out: list[dict]) -> None:
+    """Stamp each unit's `effort: {builder, reviewer}` (plus the decision id that accepts a
+    reviewer below its builder) on the plan's batch rows, which `plan --write` persists to
+    `sprint-plan.json`. A setting that does
+    not validate stamps nothing: `cmd_plan` has already refused it, and an unknown value must
+    never reach a plan row."""
+    try:
+        setting = effort_setting(root)
+    except EffortError:
+        return
+    for it in out:
+        it["effort"] = {"builder": setting["builder"], "reviewer": setting["reviewer"]}
+        if setting["reviewer_below_builder"]:
+            it["effort"]["reviewer_below_builder"] = setting["reviewer_below_builder"]
+
+
 def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
                  skip_personas: bool) -> list[dict]:
     """WSJF enrichment + dependency-topological ordering over one (possibly mixed) batch.
@@ -1170,6 +1247,7 @@ def _order_batch(root: Path, out: list[dict], deps: dict[str, set], order: str,
     a unit nobody sized cannot be ranked by size.
     """
     _enrich_routing(root, out)  # difficulty always; tier/model when routing.enabled
+    _stamp_effort(root, out)    # effort always, routing enabled or not
     if order == "wsjf":
         seat_inputs = {} if skip_personas else _wsjf_inputs(root)
         for it in out:
@@ -2672,6 +2750,12 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
     seat = persona_resolve.resolve_card(root, build_seat, render="build")
     # The building seat as `<holder> (<role>)`, the form the review footer carries as --author.
     builder = critic.seat_signature(root, build_seat)
+    # The effort to spawn the builder and its reviewer at, one fact about the project read once
+    # per dispatch. A setting `sprint plan` refuses is never passed on: the brief says so.
+    try:
+        effort = effort_setting(root)
+    except EffortError:
+        effort = None
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -2692,7 +2776,7 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
                        "points": sdlc_md.read_points(contract["text"]),
                        "home_isolated": lane_home_isolated(contract["text"]),
                        "seat_card": str(seat) if seat else None,
-                       "seat": build_seat, "builder": builder})
+                       "seat": build_seat, "builder": builder, "effort": effort})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
     # corpus is walked once per dispatch rather than once per lane; opened here and nowhere
@@ -2767,6 +2851,25 @@ def trd_constraints(root: Path, unit_text: str) -> list[dict]:
                    for f in files)]
 
 
+def _effort_brief_line(brief: dict) -> str:
+    """The effort to spawn the unit's builder and its reviewer at, from `routing.effort`. A
+    brief record built before the setting existed carries no `effort` and reads as inherit."""
+    effort = brief.get("effort", {})
+    if effort is None:
+        return ("Effort: routing.effort is not valid and `sprint plan` refuses it - dispatch the "
+                "builder and its reviewer at the session's own effort until it is fixed.")
+    builder = effort.get("builder", EFFORT_INHERIT)
+    reviewer = effort.get("reviewer", EFFORT_INHERIT)
+    if builder == reviewer == EFFORT_INHERIT:
+        return ("Effort: dispatch the builder and its reviewer at the session's own effort "
+                "(routing.effort is not set).")
+
+    def at(value: str) -> str:
+        return "the session's own effort" if value == EFFORT_INHERIT else f"{value} effort"
+    return (f"Effort: dispatch the builder at {at(builder)} and its reviewer at {at(reviewer)} "
+            f"(routing.effort) - pass each to the agent spawn.")
+
+
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
     criteria it is held to, its Affects, the seat card to adopt, the history of the files it
@@ -2806,6 +2909,7 @@ def lane_brief_text(brief: dict) -> str:
     if brief.get("builder"):
         lines.append(f"Building seat: {brief['builder']} - the review brief's record command "
                      f"names it as the unit's author.")
+    lines.append(_effort_brief_line(brief))
     rules = brief.get("trd_constraints") or []
     lines.append("TRD constraints on the components this unit touches:" if rules
                  else TRD_NO_CONSTRAINTS)
@@ -11094,6 +11198,16 @@ def cmd_plan(args: argparse.Namespace) -> int:
     if err:
         print(f"policy refused: {err}", file=sys.stderr)
         return 2
+    # THE EFFORT SETTING is policy too, refused before anything is selected or written.
+    try:
+        effort = effort_setting(Path(args.root))
+    except EffortError as exc:
+        print(f"plan refused: {exc}", file=sys.stderr)
+        return 2
+    if effort["reviewer_below_builder"]:
+        print(f"effort: the reviewer's {effort['reviewer']} is below its builder's "
+              f"{effort['builder']}, accepted under {effort['reviewer_below_builder']}",
+              file=sys.stderr)
     # ONE RUN AT A TIME, ACROSS CHECKOUTS. Whether a run is open was a fact about the machine
     # that closed it; the tracked run records make it one every clone holds.
     if getattr(args, "write", False) and (held := _run_held_elsewhere(args.root)):
