@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 341 |
+| Open | 344 |
 | In Progress | 0 |
 | Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1454** |
+| **Total** | **1457** |
 
 ## All Bugs
 
@@ -530,6 +530,9 @@
 | [BG1452](BG1452-reconcile-derives-a-request-complete-when-every-child.md) | reconcile derives a request Complete when every child of a partial refine resolves, though its unrefined criteria are undelivered | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1453](BG1453-file-finding-keeps-a-placeholder-id-such-as.md) | file_finding keeps a placeholder id such as changelog.d/BGXXXX.md in Affects verbatim instead of substituting the minted id or refusing it | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1454](BG1454-sprint-lane-return-agent-agent-id-leaves-the.md) | sprint lane return --agent agent-<id> leaves the unit unpriced, while lane land prints the builder as agent-<id> | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1455](BG1455-escape-py-trace-counts-a-mentions-trailer-id.md) | escape.py trace counts a Mentions: trailer id as a unit the release shipped, so a commit that only names a unit puts it among the suspects | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1456](BG1456-the-escaped-bug-fixed-gate-s-scaffold-stripping.md) | The escaped-bug Fixed gate's scaffold stripping is untested and matches the scaffold by exact string, and test_file_finding's selector reader test fails outside a git checkout | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1457](BG1457-the-seat-record-reads-any-bracketed-word-as.md) | The seat record reads any bracketed word as a seat, lane brief --seat accepts any value, and retro seats counts rounds across deliveries | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

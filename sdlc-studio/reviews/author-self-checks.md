@@ -294,3 +294,8 @@
 | US1154 | agent-afc49710ee7fa674a | 2026-11-15 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 5, survived 1 | c08a3a562953ed1f at e657560b35ce |
 | BG1437 | agent-aafafd38780b86f62 | 2026-11-15 | TRUE 6, FALSE 0, UNVERIFIABLE 0 | killed 1, survived 1 | 69403fa10e4bfde4 at 2fac2fdfd37d |
 | BG1445 | agent-aafafd38780b86f62 | 2026-11-15 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 5, survived 2 | 3f30d6687736829e at 2fac2fdfd37d |
+| US1157 | agent-a01cf57063a7495e1 | 2026-11-15 | TRUE 13, FALSE 0, UNVERIFIABLE 2 | killed 15, survived 0 | 1d552334651069fb at ef4d25e2c0ae |
+| US1158 | agent-a01cf57063a7495e1 | 2026-11-15 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 2 | 660c05cf5dc7e659 at ef4d25e2c0ae |
+| US1061 | agent-a7fec24ddc3b52893 | 2026-11-15 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 1 | bd3d8351ef4b6112 at 01e3aa92b85e |
+| US1062 | agent-a7fec24ddc3b52893 | 2026-11-15 | TRUE 12, FALSE 0, UNVERIFIABLE 0 | killed 15, survived 1 | a96d4827f9d6f4f0 at 01e3aa92b85e |
+| US1159 | agent-a07112df881a20581 | 2026-11-15 | TRUE 17, FALSE 0, UNVERIFIABLE 2 | killed 14, survived 0 | a02a9145bde738c1 at a805cec77643 |

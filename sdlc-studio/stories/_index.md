@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 54 |
-| Ready | 12 |
+| Ready | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 910 |
+| Done | 914 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -98,8 +98,8 @@
 | [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1060](US1060-a-learning-past-its-horizon-is-reported-at.md) | A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Done | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
@@ -194,8 +194,8 @@
 | [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Done | EP0308 | 2026-11-14 | 2026-11-14 |
-| [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
-| [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Done | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Ready | EP0309 | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases

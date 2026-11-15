@@ -1,6 +1,6 @@
 # US1062: retro.py seats scores each seat on its own verdicts and authored units from the ledger
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a retro whose Batch is US0001 and US0002, and ledger rows by `Sam Eriksson (qa) re-checking the product finding` (REJECT, then APPROVE, on US0001), `Lena Marsh (product)` (APPROVE on US0002) and `independent-critic` (APPROVE on US0002), when `retro.py seats --id RETRO0001` runs, then it lists qa with one REJECT, one APPROVE and US0001 converging in two rounds, product with one APPROVE, and says one of four verdict rows names no seat, naming independent-critic.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::SeatEvidenceTests::test_each_seat_is_scored_on_the_rows_that_name_it
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given US0001 approved in round 1 by `Lena Marsh (product)` and rejected in round 2 by `Sam Eriksson (qa)` with a blocking finding citing `scripts/a.py:12` that no round-1 finding cites, and US0002 rejected by qa in round 1 and again in round 2 with a new finding, when `retro.py seats` runs, then product's record lists the US0001 finding as found only after its approval, saying whether `scripts/a.py` changed between the two rows' dates or that it cannot be told, and qa is charged nothing for US0002's round-2 finding.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::SeatEvidenceTests::test_only_an_earlier_approval_is_charged_with_a_later_rounds_defect
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a qa APPROVE later superseded with `critic.py supersede` as recorded against the wrong reviewer, when `retro.py seats` runs, then the row is left out of qa's verdicts and listed as recorded in error with the supersession's reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::SeatEvidenceTests::test_a_superseded_row_is_recorded_in_error_not_overturned
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given US0001 whose Author cell is `Dani Okafor (engineering)`, rejected twice and then approved, when `retro.py seats` runs, then engineering's record lists US0001 as a unit it built, converging in three rounds, with each round's blocking findings.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::SeatEvidenceTests::test_an_authoring_seat_is_scored_on_the_rounds_its_units_took
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

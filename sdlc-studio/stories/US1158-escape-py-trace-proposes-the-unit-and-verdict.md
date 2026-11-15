@@ -1,6 +1,6 @@
 # US1158: escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0693
 > **Created:** 2026-11-15
@@ -22,10 +22,13 @@
 
 - **AC1:** Given an escaped bug with `Shipped-in: v1.0.0` whose Affects name `scripts/a.py`, and two units that shipped in v1.0.0 (US0001 with Affects `scripts/a.py` approved by `Lena Marsh (product)`, US0002 with Affects `docs/x.md`), when `escape.py trace --bug BG0001` runs, then it lists US0001 first with the shared file and its recorded verdict and seat, and does not list US0002.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_the_unit_sharing_the_fixed_file_is_proposed_with_its_verdict
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given `escape.py trace --bug BG0001 --confirm US0001`, then the bug's `Escaped-via` is set to US0001 and the verdict row (round, reviewer seat) is stamped as `Escaped-verdict`; given a unit that shares no file with the fix, then `--confirm` refuses naming the unit, and no unit proposed is written without `--confirm`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_confirmed_unit_is_recorded_and_an_unrelated_one_refused
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a bug with no `Shipped-in`, or a release that tags no unit, when `escape.py trace` runs, then it exits 2 naming what is missing and proposes nothing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_with_no_release_or_an_empty_release_proposes_nothing
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # US1061: A unit's review record names the seat that built it, so an author's repairs can be scored
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given a project whose engineering card is held by Dani Okafor and whose qa card by Sam Eriksson, when `sprint.py lane brief --units US0001` runs and then `critic.py brief --unit US0001 --seat product` runs, then the lane brief names Dani Okafor (engineering) as the building seat and the review footer's record command carries `--author "Dani Okafor (engineering)"`, and after `lane brief --units US0002 --seat qa` the footer for US0002 carries `--author "Sam Eriksson (qa)"`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_author_seat.py::ReviewAuthorSeatTests::test_the_record_command_names_the_seat_that_built_the_unit
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a project that declares seats, when `critic.py record --unit US0001 --verdict APPROVE --reviewer "Lena Marsh (product)" --author "engineering-seat build worker"` runs, then the row is written and stderr names the `<holder> (<role>)` form the author lacks, and with `--author "Dani Okafor (engineering)"` nothing is printed about the author.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_author_seat.py::ReviewAuthorSeatTests::test_a_seatless_author_is_named_and_recorded
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a brief for `--seat qa` on a project where qa's card is held by Sam Eriksson, when `critic.py brief --unit US0001 --seat qa` runs, then the footer's record command carries `--reviewer "Sam Eriksson (qa)"` (the US1030 AC3 shape), and with an explicit `--seat engineering` it carries the engineering holder, so a recorded Reviewer cell always names its seat in the form `critic.recorded_seat` reads.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_author_seat.py::ReviewAuthorSeatTests::test_the_footer_names_the_seat_as_reviewer
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

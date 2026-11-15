@@ -1,6 +1,6 @@
 # US1157: A bug records that it escaped to production, the release it shipped in and the unit that let it through
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0693
 > **Created:** 2026-11-15
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a project with a tag v1.0.0, when `artifact.py new bug --escaped --shipped-in v1.0.0 --escaped-via US0001 ...` (and the same through `file_finding.py bug --escaped ...`) runs, then the bug header carries `Escaped: yes`, `Shipped-in: v1.0.0` and `Escaped-via: US0001`, and the Root Cause section is scaffolded in the body.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_an_escaped_bug_carries_release_and_unit
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given `--escaped` with no `--shipped-in`, a `--shipped-in` naming no tag or release in the project, or an `--escaped-via` naming no unit on disk, when the command runs, then it exits 2 naming the missing or unresolved value and writes no file; a bug without `--escaped` is created exactly as before.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_an_escape_without_a_resolvable_release_or_unit_is_refused
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given an escaped bug, when `transition.py` sets it Fixed, then it is refused until the Root Cause section holds text other than the scaffold.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_an_escaped_bug_is_not_fixed_with_an_empty_root_cause
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
