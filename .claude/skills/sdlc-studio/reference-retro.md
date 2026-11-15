@@ -125,6 +125,20 @@ two rows' days, or that it cannot be told. A superseded row counts nowhere and i
 recorded in error with the supersession's reason; rows naming no seat are counted and named.
 Read-only; `--format json` is the same record.
 
+The record also charges each later bug to the approval that missed it, by the narrowest
+evidence. A bug counts in the retro whose window holds its `Created` day: after the previous
+retro's `Date`, on or before this retro's (a retro with no `Date` charges nothing, and says
+so). A bug whose title reads `<unit> did not converge in review` is never charged: it records
+the review's outcome, not a defect it let through. A bug carrying `Escaped-via` (written by
+`escape.py trace --confirm`) is charged to that unit on the recorded link alone. Otherwise the
+narrow rule applies: the bug cites the unit, shares an `Affects` file with it, and cites three
+story, bug or change request ids or fewer above its Revision History, its own aside. The charge
+goes to every seat whose latest verdict on the unit, on or before the bug's day, approved, in
+any run, so a seat that reviewed nothing in the batch still appears with its misses. Each miss
+carries its basis. When the bug's `Evidence` names the unit's review or its verdict file, and
+names no other seat's, and the approving row carried a finding, the bug reads as approved over
+the seat's own finding instead: the seat saw it and chose to pass.
+
 ## Extraction: a lesson must leave the retro
 
 `retro.py extract --id RETROxxxx` lifts the Try items (an older retro's `## Lessons`

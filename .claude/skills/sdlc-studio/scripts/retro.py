@@ -1453,6 +1453,14 @@ def _cites(text: str) -> list[str]:
     return [f"{path}:{line}" for path, line in _CITE_RE.findall(text or "")]
 
 
+def _empty_seat() -> dict:
+    """One seat's record before anything is charged to it: the ledger counts and lists, then
+    the later bugs charged to its approvals."""
+    return {"verdicts": [], "approve": 0, "reject": 0, "converged": [], "unconverged": [],
+            "found_after_approval": [], "built": [], "recorded_in_error": [],
+            "missed": [], "approved_over_own_finding": []}
+
+
 def seat_evidence(root, unit_ids: list) -> dict:
     """Each seat's record over `unit_ids`, read from the delivery verdict ledger.
 
@@ -1469,10 +1477,7 @@ def seat_evidence(root, unit_ids: list) -> dict:
     seats: dict = {}
 
     def seat(role: str) -> dict:
-        return seats.setdefault(role, {"verdicts": [], "approve": 0, "reject": 0,
-                                       "converged": [], "unconverged": [],
-                                       "found_after_approval": [], "built": [],
-                                       "recorded_in_error": []})
+        return seats.setdefault(role, _empty_seat())
 
     unattributed, error_unattributed, no_author = [], [], []
     for uid in order:
@@ -1537,6 +1542,153 @@ def seat_evidence(root, unit_ids: list) -> dict:
             "seats": {role: seats[role] for role in sorted(seats)}}
 
 
+# --- Later bugs: each charged to the APPROVE that missed it, by the narrowest evidence ------
+
+#: The ids a bug's citation count reads: stories, bugs and change requests.
+_MISS_ID_RE = sdlc_md.cited_id_re(("US", "BG", "CR"))
+#: The title the review loop gives the bug it files when a unit does not converge: a record of
+#: the review's own outcome, not a defect the review let through.
+_UNCONVERGED_RE = re.compile(r"did not converge in review", re.IGNORECASE)
+#: Evidence that names a unit's review, or its verdict file under `reviews/verdicts/<unit>/`.
+_REVIEW_RE = re.compile(r"\breview|verdicts/", re.IGNORECASE)
+#: The most ids a bug may cite, its own aside, and still be charged by the narrow rule: a bug
+#: citing more is a sweep over many units, not the miss of one.
+MISS_ID_CAP = 3
+
+
+def _day(value) -> str:
+    """The `YYYY-MM-DD` a field opens with, or '' when it opens with no date."""
+    day = str(value or "").strip()[:10]
+    return day if _DAY_RE.match(day) else ""
+
+
+def _ids_in(text: str) -> list[str]:
+    """The distinct US, BG and CR ids `text` names, normalised, in first-seen order."""
+    return list(dict.fromkeys(i for i in (sdlc_md.norm_id(m.group(0))
+                                          for m in _MISS_ID_RE.finditer(text or "")) if i))
+
+
+def miss_window(root, retro_path) -> dict:
+    """{since, until}: a retro charges the bugs created after the previous retro's Date
+    (`since`, None when no earlier retro is dated) and on or before its own Date (`until`, None
+    when it carries none, so it charges nothing). Two retros dated one day are ordered by id,
+    so each bug falls in one window."""
+    def dated(path) -> tuple:
+        m = _STEM_ID_RE.match(path.stem)
+        return (_day(sdlc_md.extract_field(sdlc_md.read_text_safe(path), "Date")),
+                sdlc_md.norm_id(m.group(1)) if m else "")
+    here = dated(Path(retro_path))
+    if not here[0]:
+        return {"since": None, "until": None}
+    earlier = [d for d in (dated(p) for p in sdlc_md.walk_glob(Path(root) / RETRO_DIR, "*.md")
+                           if _STEM_ID_RE.match(p.stem)) if d[0] and d[1] and d < here]
+    return {"since": max(earlier)[0] if earlier else None, "until": here[0]}
+
+
+def _charged_units(root, text: str, own: str, reviewed) -> list:
+    """(unit, basis) for each unit a bug is charged to. A recorded `Escaped-via` unit is the
+    strongest evidence and stands alone. Otherwise the narrow rule: the bug cites the unit,
+    shares an Affects file with it, and cites `MISS_ID_CAP` ids or fewer above its Revision
+    History, its own id aside. Only units in `reviewed` are looked up; the rest still count."""
+    escaped = _ids_in(sdlc_md.extract_field(text, "Escaped-via") or "")
+    if escaped:
+        return [(escaped[0], {"rule": "escaped-via", "shared": [], "ids": None,
+                              "basis": f"recorded as Escaped-via {escaped[0]}"})]
+    head = re.split(r"(?m)^##\s+Revision History\b", text, maxsplit=1)[0]
+    cited = [i for i in _ids_in(head) if i != own]
+    if len(cited) > MISS_ID_CAP:
+        return []
+    fix, out = set(sdlc_md.affects_files(text)), []
+    for uid in (u for u in cited if u in reviewed):
+        hit = sdlc_md.find_by_id(root, uid)
+        shared = sorted(fix & set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0])))) \
+            if hit else []
+        if shared:
+            out.append((uid, {"rule": "narrow", "shared": shared, "ids": len(cited),
+                              "basis": f"cites {uid} among {len(cited)} id(s) and shares "
+                                       f"{', '.join(shared)}"}))
+    return out
+
+
+def _own_finding(evidence: str, unit: str, role: str, row: dict, roles: set) -> str | None:
+    """The approving row's first finding when the bug's Evidence names the unit's review (or
+    its verdict file) and names no other seat's: the seat raised what the bug records and chose
+    to pass it. None when the row raised nothing or the Evidence points elsewhere."""
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
+    findings = critic.parse_findings(row.get("issues") or "")
+    if not findings or unit not in _ids_in(evidence) or not _REVIEW_RE.search(evidence or ""):
+        return None
+    named = {r for r in roles if re.search(rf"\b{re.escape(r)}\b", evidence, re.IGNORECASE)}
+    return None if named and role not in named else findings[0]["text"]
+
+
+def seat_misses(root, retro_path) -> dict:
+    """The later bugs charged to the seats whose approvals missed them, over the retro's
+    window: {window: {since, until, undated}, seats: {role: {missed, approved_over_own_finding}}}.
+
+    A bug created in the window, whose title does not read `did not converge in review`, is
+    charged to every seat whose latest live verdict on a charged unit (`_charged_units`), on or
+    before the bug's Created day, approves, in whichever run that was: a seat is charged though
+    it reviewed nothing in the batch. Where `_own_finding` holds it is listed as approved over
+    the seat's own finding, not as a miss. A bug with no Created date sits in no window and is
+    named in `undated`; a retro with no Date reads no bug at all."""
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
+    window = miss_window(root, retro_path)
+    out: dict = {"window": {**window, "undated": []}, "seats": {}}
+    since, until = window["since"], window["until"]
+    if until is None:
+        return out
+    rows: dict = {}
+    for row in critic.read_verdicts(root):
+        if not critic.is_superseded(row):
+            rows.setdefault(sdlc_md.norm_id(row.get("unit", "")), []).append(row)
+    roles = {critic.recorded_seat(r.get("reviewer") or "") for rs in rows.values() for r in rs}
+    roles.discard(None)
+    for path in sdlc_md.artifact_files("bug", Path(root)):
+        text = sdlc_md.read_text_safe(path)
+        bid = sdlc_md.extract_record_id(path.stem) or path.stem
+        created = _day(sdlc_md.extract_field(text, "Created"))
+        if not created:
+            out["window"]["undated"].append(bid)
+            continue
+        if (since is not None and created <= since) or created > until \
+                or _UNCONVERGED_RE.search(sdlc_md.extract_h1_title(text) or ""):
+            continue
+        evidence = sdlc_md.extract_field(text, "Evidence") or ""
+        for unit, basis in _charged_units(root, text, sdlc_md.norm_id(bid), rows):
+            latest: dict = {}
+            for row in rows[unit]:
+                role, day = critic.recorded_seat(row.get("reviewer") or ""), _day(row.get("date"))
+                if role and day and day <= created:
+                    latest[role] = row
+            for role, row in sorted(latest.items()):
+                if str(row.get("verdict") or "").strip().upper() != "APPROVE":
+                    continue
+                entry = {"bug": bid, "unit": unit, "created": created,
+                         "approved": _day(row.get("date")), "reviewer": row.get("reviewer") or "",
+                         **basis}
+                s = out["seats"].setdefault(role, {"missed": [], "approved_over_own_finding": []})
+                own = _own_finding(evidence, unit, role, row, roles)
+                if own is None:
+                    s["missed"].append(entry)
+                else:
+                    s["approved_over_own_finding"].append({**entry, "finding": own,
+                                                           "evidence": evidence})
+    return out
+
+
+def seat_record(root, retro_path, unit_ids: list) -> dict:
+    """`seat_evidence` over the batch with `seat_misses` over the retro's window folded in: a
+    seat charged a later bug joins the record even when it reviewed nothing in the batch."""
+    ev = seat_evidence(root, unit_ids)
+    misses = seat_misses(root, retro_path)
+    seats = ev["seats"]
+    for role, charged in misses["seats"].items():
+        for key, items in charged.items():
+            seats.setdefault(role, _empty_seat())[key].extend(items)
+    return {**ev, "window": misses["window"], "seats": {r: seats[r] for r in sorted(seats)}}
+
+
 def _changed_words(item: dict) -> str:
     path = item["cites"].rsplit(":", 1)[0]
     span = f"between {item['approved']} and {item['found']}"
@@ -1549,6 +1701,16 @@ def render_seat_evidence(ev: dict, retro_id: str) -> list:
     """The record as prose: one block per seat, then the rows and units naming no seat."""
     out = [f"Seat evidence for {retro_id} over {len(ev['units'])} unit(s), read from the "
            f"delivery verdict ledger:"]
+    window = ev.get("window") or {}
+    if window.get("until") is None:
+        out.append(f"  {retro_id} carries no Date, so no later bug is charged to an approval")
+    else:
+        after = f"after {window['since']} and " if window.get("since") else ""
+        out.append(f"  later bugs charged to the approval that missed them: bugs created "
+                   f"{after}on or before {window['until']}")
+    if window.get("undated"):
+        out.append(f"  {len(window['undated'])} bug(s) carry no Created date, so no window "
+                   f"holds them")
     for role, s in ev["seats"].items():
         out.append(f"  {role}: {s['approve']} APPROVE, {s['reject']} REJECT"
                    if s["verdicts"] else f"  {role}: no verdict of its own")
@@ -1558,6 +1720,11 @@ def render_seat_evidence(ev: dict, retro_id: str) -> list:
         out.extend(f"    found only after its round {f['approved_round']} approval of "
                    f"{f['unit']}: round {f['round']} [{f['key']}] {f['finding']}; "
                    f"{_changed_words(f)}" for f in s["found_after_approval"])
+        out.extend(f"    missed {m['bug']} after its {m['approved']} approval of {m['unit']}: "
+                   f"{m['basis']}" for m in s.get("missed", []))
+        out.extend(f"    approved {o['unit']} on {o['approved']} over its own finding, later "
+                   f"filed as {o['bug']}: {o['finding']}"
+                   for o in s.get("approved_over_own_finding", []))
         for b in s["built"]:
             state = "converged" if b["converged"] else "not converged"
             out.append(f"    built {b['unit']}: {state} in {b['rounds']} round(s)")
@@ -1580,7 +1747,8 @@ def render_seat_evidence(ev: dict, retro_id: str) -> list:
 
 
 def cmd_seats(args) -> int:
-    """Read-only: each seat scored on its own verdicts and the units it built."""
+    """Read-only: each seat scored on its own verdicts, the units it built and the later bugs
+    charged to its approvals."""
     path = find_retro(args.root, args.id)
     if path is None:
         print(f"retro {args.id}: not found", file=sys.stderr)
@@ -1591,7 +1759,7 @@ def cmd_seats(args) -> int:
         print(f"retro {retro_id}: no units named in '> **Batch:**' - nothing to score",
               file=sys.stderr)
         return 1
-    ev = seat_evidence(args.root, units)
+    ev = seat_record(args.root, path, units)
     if args.format == "json":
         print(json.dumps({"id": retro_id, **ev}, indent=2))
     else:

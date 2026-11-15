@@ -35,19 +35,23 @@ def _write(root: Path, rel: str, body: str) -> None:
     path.write_text(body, encoding="utf-8")
 
 
-def _project(root: Path, rows: list[tuple]) -> None:
-    """Two stories, three seat cards, a retro over both and a ledger of `rows`, each
+def _project(root: Path, rows: list[tuple], units: tuple = ("US0001", "US0002"),
+             retros: tuple = (("RETRO0001", "", "US0001, US0002"),)) -> None:
+    """Stories `units` (each affecting scripts/a.py), three seat cards, `retros` (each
+    (id, date or '' for none, batch)) and a ledger of `rows`, each
     (unit, verdict, reviewer, author, date, issues)."""
     for role, holder in (("engineering", "Dani Okafor"), ("qa", "Sam Eriksson"),
                          ("product", "Lena Marsh")):
         _write(root, f"sdlc-studio/personas/seats/{role}.md",
                f"<!-- role: {role} -->\n# {holder} - {role} seat\n\ncharter\n")
-    for uid in ("US0001", "US0002"):
+    for uid in units:
         _write(root, f"sdlc-studio/stories/{uid}-widget.md",
                f"# {uid}: widget\n\n> **Status:** Done\n> **Points:** 2\n"
                "> **Affects:** scripts/a.py\n")
-    _write(root, "sdlc-studio/retros/RETRO0001-run.md",
-           "# RETRO0001: run\n\n> **Batch:** US0001, US0002\n")
+    for rid, date, batch in retros:
+        dated = f"> **Date:** {date}\n" if date else ""
+        _write(root, f"sdlc-studio/retros/{rid}-run.md",
+               f"# {rid}: run\n\n{dated}> **Batch:** {batch}\n")
     _write(root, "sdlc-studio/reviews/critic-verdicts.md",
            "# Critic Verdicts\n\n"
            "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
@@ -56,9 +60,10 @@ def _project(root: Path, rows: list[tuple]) -> None:
                      for u, v, r, a, d, i in rows))
 
 
-def _seats(root: Path, fmt: str = "json") -> subprocess.CompletedProcess:
+def _seats(root: Path, fmt: str = "json",
+           retro: str = "RETRO0001") -> subprocess.CompletedProcess:
     r = subprocess.run([sys.executable, "-B", str(RETRO), "--root", str(root), "seats", "--id",
-                        "RETRO0001", "--format", fmt], capture_output=True, text=True,
+                        retro, "--format", fmt], capture_output=True, text=True,
                        timeout=300, env=gitutil.git_env(), check=False)
     assert r.returncode == 0, r.stderr
     return r
@@ -227,6 +232,29 @@ class SeatEvidenceTests(unittest.TestCase):
             text = _seats(root, "text").stdout
             self.assertIn("built US0001: converged in 3 round(s)", text)
             self.assertIn("round 2 blocking: the repair broke v (scripts/a.py:9)", text)
+
+    def test_a_retro_with_no_date_charges_no_later_bug_and_scores_the_same(self) -> None:
+        """The seam with the later-bug record: a retro carrying no Date has no window, so a bug
+        that cites and shares a file with an approved unit is charged to nobody, the record says
+        why, and every count above is what it was without the bug."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rows = [("US0001", "APPROVE", PRODUCT, BUILDER, "2026-10-01", "none")]
+            _project(root, rows)
+            before = json.loads(_seats(root).stdout)
+            _write(root, "sdlc-studio/bugs/BG0002-widget-drops-a-row.md",
+                   "# BG0002: the widget drops a row\n\n> **Status:** Open\n"
+                   "> **Affects:** scripts/a.py\n> **Created:** 2026-10-03\n\n"
+                   "## Summary\n\nUS0001 drops a row.\n")
+            out = json.loads(_seats(root).stdout)
+            self.assertEqual([], out["seats"]["product"]["missed"])
+            self.assertIsNone(out["window"]["until"])
+            for key in ("units", "rows", "unattributed", "unattributed_authors"):
+                self.assertEqual(before[key], out[key], key)
+            self.assertEqual((0, 1), (out["seats"]["product"]["reject"],
+                                      out["seats"]["product"]["approve"]))
+            self.assertIn("RETRO0001 carries no Date, so no later bug is charged to an approval",
+                          _seats(root, "text").stdout)
 
 
 if __name__ == "__main__":
