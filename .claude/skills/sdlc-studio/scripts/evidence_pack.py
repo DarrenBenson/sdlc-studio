@@ -109,11 +109,15 @@ def _signed(report: dict) -> bool:
     return isinstance(sig, dict) and bool(str(sig.get("signed_at") or "").strip())
 
 
-def recorded_authors(ledger_root: Path) -> list[str]:
-    """Every author id the review ledgers under `ledger_root` record: the verdict ledger's and
-    the self-check ledger's Author cells, superseded rows included, less any typed `human`."""
-    cells = [str(r.get("author") or "") for r in critic.read_verdicts(ledger_root)]
-    cells += [str(r.get("author") or "") for r in critic.read_self_checks(ledger_root)]
+def unit_authors(ledger_root: Path, units: list[str]) -> list[str]:
+    """The author ids the review ledgers under `ledger_root` record on `units`: the Author cell
+    of each live verdict row (`critic.unit_review_rounds`, which drops a superseded row) and of
+    each self-check row, with a typed author's name beside its cell, less any typed `human`."""
+    want = {sdlc_md.norm_id(u) for u in units if str(u).strip()}
+    cells = [str(r.get("author") or "") for unit in sorted(want)
+             for r in critic.unit_review_rounds(ledger_root, unit)]
+    cells += [str(r.get("author") or "") for r in critic.read_self_checks(ledger_root)
+              if sdlc_md.norm_id(str(r.get("unit") or "")) in want]
     out: list[str] = []
     for cell in cells:
         typed = sdlc_md.parse_authorship_value(cell.strip()) or {}
@@ -129,9 +133,10 @@ def principal_refusal(signature: dict, authors: list[str] | tuple[str, ...] = ()
     """Why a signature's principal cannot be named accountable, or None when it names a person.
 
     Refused: a blank principal (no letter or digit); one holding the word agent; and one that
-    `authors` (the ids the committed review ledgers record as an author, `recorded_authors`)
-    names. A recorded author other than a typed `human` one is taken as the agent session that
-    wrote the unit, so a model name no word rule can see is caught by the record."""
+    `authors` (the ids the committed review ledgers record as a live author of the report's own
+    units, `unit_authors`) names, the author `sprint sign` refuses. Such an author, other than a
+    typed `human` one, is taken as the agent session that wrote the unit, so a builder's model
+    name no word rule can see is caught; an author of any other unit is not refused."""
     principal = str((signature or {}).get("principal") or "").strip()
     if not any(ch.isalnum() for ch in principal):
         return "its signature names no principal, so no person is accountable"
@@ -139,14 +144,16 @@ def principal_refusal(signature: dict, authors: list[str] | tuple[str, ...] = ()
         return (f"its signature principal {principal!r} reads as an agent, and an agent is "
                 "never the accountable person")
     if any(critic.same_identity(principal, author) for author in authors):
-        return (f"its signature principal {principal!r} is recorded as an author in the "
-                "committed review ledgers, so it is an authoring agent and never the "
-                "accountable person")
+        return (f"its signature principal {principal!r} is recorded as an author of the "
+                "report's own units in the committed review ledgers, so it is an authoring "
+                "agent and never the accountable person")
     return None
 
 
-def _read_reports(root: Path, sha: str, ids: list[str], authors: list[str]) -> list[dict]:
-    """Each named report as committed; every refusal is collected before one is raised."""
+def _read_reports(root: Path, sha: str, ids: list[str], ledger_root: Path) -> list[dict]:
+    """Each named report as committed; every refusal is collected before one is raised. A
+    report's own units are every unit row its delivered section records, delivered or not, as
+    `sprint sign` judges every unit of the run."""
     out, refusals = [], []
     for rid in ids:
         if not _REPORT_RE.match(rid):
@@ -165,7 +172,8 @@ def _read_reports(root: Path, sha: str, ids: list[str], authors: list[str]) -> l
             refusals.append(f"{rid}: the committed file does not hold report {rid}")
         elif not _signed(data):
             refusals.append(f"{rid}: the report is not signed, so it is not evidence")
-        elif reason := principal_refusal(data["signature"], authors):
+        elif reason := principal_refusal(data["signature"], unit_authors(
+                ledger_root, [str(_val(r, "unit_id") or "") for r in _section(data, "delivered")])):
             refusals.append(f"{rid}: {reason}")
         else:
             out.append(data)
@@ -304,7 +312,7 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
         # rounds are counted with (`critic.unit_review_rounds`).
         for rel in (LEDGER_REL, SELF_CHECKS_REL):
             sdlc_md.atomic_write(Path(tmp) / rel, _show(root, sha, rel) or "")
-        data = _read_reports(root, sha, reports, recorded_authors(Path(tmp)))
+        data = _read_reports(root, sha, reports, Path(tmp))
         changes = [(str(rep["report_id"]).upper(), rep["signature"], row,
                     sdlc_md.norm_id(str(_val(row, "unit_id")).strip()))
                    for rep in data for row in _delivered(rep)]
@@ -336,7 +344,8 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
             "Each change names the principal recorded on its report's signature, with the signing "
             "date. No record names an accountable person per unit, so every change of a report "
             "names that report's signer; a blank principal, one that reads as an agent or one the "
-            "review ledgers record as an author refuses the pack.", ""]
+            "review ledgers record as an author of that report's own units refuses the pack.",
+            ""]
     return "\n".join(head + body + tail).rstrip("\n") + "\n"
 
 
