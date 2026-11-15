@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 356 |
+| Open | 359 |
 | In Progress | 0 |
 | Fixed | 927 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1474** |
+| **Total** | **1477** |
 
 ## All Bugs
 
@@ -550,6 +550,9 @@
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
