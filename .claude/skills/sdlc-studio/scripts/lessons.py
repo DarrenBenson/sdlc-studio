@@ -2521,6 +2521,20 @@ def build_parser() -> argparse.ArgumentParser:
     _common(cl)
     cl.set_defaults(func=cmd_classes)
 
+    ca = sub.add_parser("class-add",
+                        help=f"Record one new failure class in {STORE_FILE} outside a retro: the "
+                             f"next LC- code, the open run and the source.")
+    ca.add_argument("--class", dest="class_name", required=True, metavar="NAME",
+                    help="The class's short name; refused when the store already holds it")
+    ca.add_argument("--rule", required=True, help="What the class is and the rule it breaks")
+    ca.add_argument("--behaviour", required=True, help="What to do differently")
+    ca.add_argument("--phase", action="append", required=True, choices=PHASES,
+                    help="A phase whose brief carries the class; repeat for more than one")
+    ca.add_argument("--source", required=True,
+                    help="Where the class was found, e.g. finding:<unit> or run:<run id>")
+    _common(ca)
+    ca.set_defaults(func=cmd_class_add)
+
     cd = sub.add_parser("carried", help="Show the carried set (and what it displaced).")
     _common(cd)
     cd.set_defaults(func=cmd_carried)
@@ -2610,6 +2624,50 @@ def cmd_classes(args: argparse.Namespace) -> int:
               if source != STORE_FILE else "")
     print(f"\n{len(rows)} class(es){seeded}. Cite one in a Try item as `[LC-NNN] what "
           f"happened`.")
+    return 0
+
+
+def _open_run_id(repo_root) -> str:
+    """The open run's id, or "" with no run open. An unreadable run state raises
+    `run_state.RunStateError`: a class stamped with no run when one is open is a repeat the
+    close cannot count against it."""
+    from lib import run_state  # noqa: PLC0415 - deferred, like the other sibling imports
+    state = run_state.read(repo_root)
+    return (state.get("run_id") or "") if state.get("outcome") == run_state.RUNNING else ""
+
+
+def cmd_class_add(args: argparse.Namespace) -> int:
+    """Record one new class in the project's store outside a retro, through the same
+    `new_lesson` and `save_store` a retro's `[new: <class name>]` Try item goes through. Every
+    check runs before the write, so a refusal leaves the store byte-identical."""
+    from lib import run_state  # noqa: PLC0415 - deferred, like the other sibling imports
+    root = _root(args)
+    fields = {"--class": args.class_name, "--rule": args.rule, "--behaviour": args.behaviour,
+              "--source": args.source}
+    blank = [flag for flag, value in fields.items() if not " ".join(str(value).split())]
+    try:
+        if blank:
+            raise ValueError(f"{', '.join(blank)} must not be blank")
+        if CLASS_CODE_RE.match(args.class_name.strip().upper()):
+            raise ValueError(f"--class {args.class_name!r} is a class code, not a name; cite "
+                             f"a recorded class by its code in a Try item instead")
+        rows = load_store(root)
+        known = find_class(rows, args.class_name)
+        if known:
+            raise ValueError(f"{STORE_FILE} already holds this class as {known['id']} "
+                             f"({known.get('class')}); cite {known['id']} instead")
+        row = new_lesson(rows, args.class_name, args.rule, args.behaviour, args.phase,
+                         _open_run_id(root), " ".join(args.source.split()))
+        save_store(root, rows)
+    except (OSError, ValueError, run_state.RunStateError) as exc:
+        print(f"class-add refused: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        print(json.dumps(row, indent=2))
+        return 0
+    run = f", run {row['recorded_run']}" if row["recorded_run"] else ""
+    print(f"recorded {row['id']} {row['class']} [{', '.join(row['inject'])}] in {STORE_FILE}"
+          f"{run}, from {row['recorded_source']}")
     return 0
 
 

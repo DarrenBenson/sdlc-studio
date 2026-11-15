@@ -898,8 +898,8 @@ NON_CEREMONY_VERBS = {
                "handoff", "resume"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
-    "lessons": ("add", "carried", "carry", "classes", "list", "propose", "prune", "rank",
-                "recall", "repeats", "revalidate", "violated"),
+    "lessons": ("add", "carried", "carry", "class-add", "classes", "list", "propose", "prune",
+                "rank", "recall", "repeats", "revalidate", "violated"),
     "retro": ("accuracy", "collate", "cost-baseline", "dispose", "estimator", "extract", "velocity"),
 }
 

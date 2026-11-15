@@ -27,7 +27,7 @@ project-specific *fact* (a config path, an incident, a box name) is **memory**,
 not a lesson – keep those in the project's memory store.
 
 All actions are backed by `python3 "$CLAUDE_SKILL_DIR/scripts/lessons.py"`
-(`list` / `add` / `prune` / `recall` / `revalidate` / `summary` / `classes`).
+(`list` / `add` / `prune` / `recall` / `revalidate` / `summary` / `classes` / `class-add`).
 
 The sprint's own learning loop runs on a third store: `sdlc-studio/lessons.jsonl`, committed,
 one row per failure CLASS. A retro Try item cites a class (`[LC-003] ...`) or records one
@@ -35,6 +35,14 @@ one row per failure CLASS. A retro Try item cites a class (`[LC-003] ...`) or re
 lane and review briefs carry the classes injected at their phase. `lessons classes` lists every
 code, name, state and hit count, so the code to cite is one command away
 (`reference-retro.md#extraction-a-lesson-must-leave-the-retro`).
+
+`retro.py extract` records a `[new: <class name>]` Try item as a class at the close. To record
+one outside a retro, when a finding names a class mid-run, run
+`lessons.py class-add --class <name> --rule <text> --behaviour <text> --phase build --source <text>`
+(repeat `--phase` for each of plan, build and review that should carry it). It appends one active
+row with the next `LC-` code, the open run's id and the source, and refuses a class the store
+already holds, leaving the store untouched. The lane brief reads the store, not the `lessons/`
+registry: a class reaches a lane as a row in `sdlc-studio/lessons.jsonl`.
 
 ## You can just ask
 
