@@ -34,10 +34,9 @@ def _load(name: str):
 file_finding = _load("file_finding")
 artifact = _load("artifact")
 
-# check_links is a repo CI tool (tools/), not shipped runtime - the retitle locates it, and the
-# tests check its inbound scan directly, so resolve it the same way the module does.
-_CL_PATH = SCR.resolve().parents[3] / "tools" / "check_links.py"
-check_links = _load_from("check_links", _CL_PATH) if _CL_PATH.exists() else None
+# The inbound-reference scan the retitle runs is shipped runtime, so the tests check it directly
+# and none of them needs the repository's own link checker.
+link_refs = artifact.link_refs
 
 
 def _cr(crd: Path, title: str, disp: str = "CR-0001", fid: str = "CR0001") -> Path:
@@ -61,10 +60,9 @@ def _cr_index(crd: Path, title: str, disp: str = "CR-0001", fid: str = "CR0001")
 
 
 class InboundRefTests(unittest.TestCase):
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_inbound_links_are_rewritten_to_the_new_slug(self):
-        """AC1: every inbound link the check_links scan finds is repointed to the new slug,
-        so link resolution reports no new break."""
+        """AC1: every inbound link the shipped scan finds is repointed to the new slug, and
+        every link to the artefact resolves to a file that exists."""
         root = Path(tempfile.mkdtemp())
         crd = root / "sdlc-studio" / "change-requests"
         old = "the mistaken title needing correction now"
@@ -80,8 +78,8 @@ class InboundRefTests(unittest.TestCase):
             f"Delivered by [CR-0001](../change-requests/CR0001-{old_slug}.md).\n\n"
             "## Revision History\n\n| Date | Author | Change |\n| --- | --- | --- |\n",
             encoding="utf-8")
-        # the check_links scan finds it before the rename
-        found = check_links.inbound_references(root, target.name)
+        # the shipped scan finds it before the rename
+        found = link_refs.inbound_references(root, target.name)
         self.assertIn(epic.relative_to(root).as_posix(), [f["rel"] for f in found])
 
         new = "the corrected title"
@@ -92,11 +90,13 @@ class InboundRefTests(unittest.TestCase):
         self.assertIn(f"CR0001-{new_slug}.md", text)          # rewritten to the new slug
         self.assertNotIn(f"CR0001-{old_slug}.md", text)       # no dangling old link
         self.assertIn(epic.relative_to(root).as_posix(), r["references"])
-        # and link resolution finds no break against the renamed file
-        broken = check_links.check_body_links(root / "sdlc-studio", set())
-        self.assertEqual([b for b in broken if "CR0001" in b], [])
+        # and no link still names the old file, while each link to the new one resolves
+        self.assertEqual(link_refs.inbound_references(root, target.name), [])
+        after = link_refs.inbound_references(root, r["path"].rsplit("/", 1)[-1])
+        self.assertEqual([f["rel"] for f in after], [epic.relative_to(root).as_posix()])
+        for f in after:
+            self.assertTrue((Path(f["path"]).parent / f["target"]).exists(), f)
 
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_an_unrewritable_reference_blocks_the_rename_and_is_named(self):
         """AC2: an inbound reference the retitle cannot safely rewrite (a row in immutable
         archived history) blocks the rename and is named - never renamed-and-left-dangling."""
@@ -124,7 +124,6 @@ class InboundRefTests(unittest.TestCase):
 
 
 class RetitleRecordTests(unittest.TestCase):
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_a_revision_row_records_the_old_title(self):
         """AC3: a successful retitle writes a dated Revision History row naming the retitle
         and the previous title, via the shared revision machinery."""
@@ -193,7 +192,6 @@ class RetitleRollbackTests(unittest.TestCase):
 
         return atomic, write_bytes
 
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_a_fault_mid_write_leaves_every_surface_byte_identical(self):
         """AC1: the file, its name, the index row and the already-rewritten reference all
         go back exactly as they were."""
@@ -219,7 +217,6 @@ class RetitleRollbackTests(unittest.TestCase):
         self.assertIn(f"CR0001-{file_finding._slug(old)}.md",
                       refs[0].read_text(encoding="utf-8"))
 
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_the_fault_is_reported_and_the_cli_exits_non_zero(self):
         """AC2: the caller is told which write failed and that the tree was put back."""
         root = Path(tempfile.mkdtemp())
@@ -239,7 +236,6 @@ class RetitleRollbackTests(unittest.TestCase):
             self.assertNotEqual(rc, 0)
             self.assertIn("rolled back", err.getvalue().lower())
 
-    @unittest.skipIf(check_links is None, "tools/check_links.py not present")
     def test_a_failed_rollback_names_what_it_could_not_restore(self):
         """AC3: a partial rollback reported as a clean one is worse than the fault itself."""
         root = Path(tempfile.mkdtemp())

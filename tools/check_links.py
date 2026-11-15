@@ -45,27 +45,34 @@ from pathlib import Path
 DEFAULT_ROOT = ".claude/skills/sdlc-studio"
 
 
-def _load_sdlc_md():
-    """The skill's own markdown parser, for the ONE CommonMark fenced-block rule (`fence_step`).
+def _load_link_refs():
+    """The skill's shipped `lib/link_refs.py`, which owns the inbound-reference scan, the
+    link rewrite and the code-blind line reader this guard shares with the runtime.
 
-    This guard and the runtime scripts must never disagree about where a block ends: a
-    three-character toggle released a ````markdown block on its inner ```, and the documented
-    example beneath it was then reported as a live broken reference - the guard crying wolf on the
-    very artefact that DOCUMENTS a broken link.
+    The runtime's retitle and this guard must never disagree about which links are references
+    or where a fenced block ends: a three-character toggle released a ````markdown block on its
+    inner ```, and the documented example beneath it was then reported as a live broken
+    reference. So the functions live once, in shipped code, and are imported here.
 
-    Loaded BY PATH rather than by putting the skill's `scripts/` directory on `sys.path`: that
-    directory holds sixty modules with ordinary names (`config`, `status`, `plan`, `gate`), and
-    prepending it would shadow them for every other module sharing this process."""
-    import importlib.util  # noqa: PLC0415 - local: only this loader needs it
-    path = Path(__file__).resolve().parents[1] / DEFAULT_ROOT / "scripts" / "lib" / "sdlc_md.py"
-    spec = importlib.util.spec_from_file_location("check_links_sdlc_md", path)
+    The `lib` package is loaded BY PATH under a private name rather than by putting the skill's
+    `scripts/` directory on `sys.path`: that directory holds dozens of modules with ordinary names
+    (`config`, `status`, `plan`, `gate`), and prepending it would shadow them for every other
+    module sharing this process. Loading the package, not the file, keeps the module's own
+    `from . import sdlc_md` working."""
+    import importlib  # noqa: PLC0415 - local: only this loader needs it
+    import importlib.util  # noqa: PLC0415
+    lib_dir = Path(__file__).resolve().parents[1] / DEFAULT_ROOT / "scripts" / "lib"
+    spec = importlib.util.spec_from_file_location(
+        "check_links_lib", lib_dir / "__init__.py", submodule_search_locations=[str(lib_dir)])
     assert spec and spec.loader
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    pkg = importlib.util.module_from_spec(spec)
+    sys.modules["check_links_lib"] = pkg
+    spec.loader.exec_module(pkg)
+    return importlib.import_module("check_links_lib.link_refs")
 
 
-sdlc_md = _load_sdlc_md()
+link_refs = _load_link_refs()
+sdlc_md = link_refs.sdlc_md
 
 # Illustrative link examples that are not real references.
 DEFAULT_ALLOW = {"doc.md#section-name"}
@@ -85,7 +92,7 @@ _REF_RE = re.compile(r"([\w./-]+\.md)#([\w-]+)")
 # The skill tree is NOT scanned this way: its templates and doc examples carry many legitimate
 # non-resolving bare links (`../prd.md`, `path/to/guide.md`), so only anchored intra-skill
 # references are checked there. Root docs (README, AGENTS, ...) link to real files.
-_LINK_RE = re.compile(r"\]\(([\w./-]+\.md)(?:#[\w-]+)?\)")
+_LINK_RE = link_refs.LINK_RE
 
 # Repo-root docs that link into the skill (and each other) but sit outside the skill tree,
 # so the skill-scoped scan never saw them.
@@ -195,28 +202,9 @@ def check_index_links(workspace: Path) -> list[str]:
     return sorted(broken)
 
 
-_SPAN_RE = re.compile(r"`[^`]*`")
-
-
-def _without_code(text: str) -> list[str]:
-    """The document's lines with every fenced block and inline code span blanked out.
-
-    A link inside backticks or a fence is an EXAMPLE, not a reference. Without this, an
-    artefact cannot DOCUMENT a broken link - and a bug report about broken links must quote
-    the broken link it reports (BG0137 does exactly that, and failed the gate on it).
-
-    Line COUNT is preserved, never collapsed, so a reported line number still points at the
-    line the reader will open.
-    """
-    out: list[str] = []
-    fence = None
-    for line in text.splitlines():
-        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
-        if is_fence_line or fence is not None:
-            out.append("")
-            continue
-        out.append(_SPAN_RE.sub("", line))
-    return out
+# A link in a fence or a code span is an example, not a reference: the shipped reader
+# blanks them and keeps the line count, so a reported line number still points at the line.
+_without_code = link_refs.without_code
 
 
 def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
@@ -254,85 +242,9 @@ def check_body_links(workspace: Path, allow: set[str]) -> list[str]:
     return sorted(broken)
 
 
-def inbound_references(repo_root: Path | str, target_name: str,
-                       workspace: Path | str | None = None) -> list[dict]:
-    """Every markdown link across the SDLC workspace that resolves to the artefact file
-    `target_name` (a bare filename, e.g. `CR0001-foo.md`), for a retitle to rewrite or name.
-
-    Each item: {"path": abspath, "rel": path relative to the repo root, "line": 1-based,
-    "target": the link's `.md` target, "immutable": bool}. `immutable` marks a reference the
-    retitle must NOT rewrite - a row in an `archive/<release>/` sub-index, which archive.py
-    alone owns; the caller refuses the retitle and names it rather than leaving it dangling.
-
-    Two exclusions keep the scan to references a retitle is responsible for: the live
-    `_index.md` of a type (the retitle updates the target's own row through reconcile, not
-    here) and the target file itself. Fenced and inline-code links are ignored (they are
-    examples, not references), matching the body-link pass. Returns [] when the workspace
-    does not exist - a consuming repo need not have one."""
-    root = Path(repo_root)
-    ws = Path(workspace) if workspace else root / "sdlc-studio"
-    out: list[dict] = []
-    if not ws.is_dir():
-        return out
-    for path in sorted(ws.rglob("*.md")):
-        parts = path.relative_to(ws).parts
-        in_archive = "archive" in parts
-        if path.name == "_index.md" and not in_archive:
-            continue  # the live index is reconcile's domain (the retitle syncs it there)
-        if path.name == target_name:
-            continue  # the artefact itself
-        for i, line in enumerate(_without_code(path.read_text(encoding="utf-8")), 1):
-            for tgt in _LINK_RE.findall(line):
-                if Path(tgt).name == target_name:
-                    out.append({"path": str(path),
-                                "rel": path.relative_to(root).as_posix(),
-                                "line": i, "target": tgt, "immutable": in_archive})
-    return out
-
-
-_INBOUND_LINK_RE = re.compile(r"(\]\()([\w./-]+\.md)(#[\w-]+)?(\))")
-
-
-def rewrite_inbound_links(text: str, old_name: str, new_name: str) -> tuple[str, int]:
-    """`text` with every markdown link whose target basename is `old_name` repointed to
-    `new_name`, preserving each link's directory prefix and anchor. Returns (new_text, n)
-    where n counts the lines changed.
-
-    Fenced blocks and inline-code spans are left untouched, so an example link that quotes
-    the old filename survives a rename - the same code-blindness `inbound_references` uses to
-    find them, so the finder and the rewriter agree about which references are real."""
-    def _sub(seg: str) -> str:
-        def repl(m: re.Match) -> str:
-            inner = m.group(2)
-            if Path(inner).name != old_name:
-                return m.group(0)
-            prefix = inner[: len(inner) - len(old_name)]
-            return f"{m.group(1)}{prefix}{new_name}{m.group(3) or ''}{m.group(4)}"
-        return _INBOUND_LINK_RE.sub(repl, seg)
-
-    out: list[str] = []
-    fence = None
-    changed = 0
-    for line in text.splitlines():
-        fence, is_fence_line = sdlc_md.fence_step(line.lstrip(), fence)
-        if is_fence_line or fence is not None:
-            out.append(line)   # illustration: a rename never rewrites an example
-            continue
-        # rewrite only the segments OUTSIDE inline code spans (odd `-split indices are code)
-        segs = line.split("`")
-        line_changed = False
-        for k in range(0, len(segs), 2):
-            new_seg = _sub(segs[k])
-            if new_seg != segs[k]:
-                segs[k] = new_seg
-                line_changed = True
-        out.append("`".join(segs))
-        if line_changed:
-            changed += 1
-    new_text = "\n".join(out)
-    if text.endswith("\n"):
-        new_text += "\n"
-    return new_text, changed
+# The retitle's inbound-reference scan and rewrite, shipped so an installed skill has them.
+inbound_references = link_refs.inbound_references
+rewrite_inbound_links = link_refs.rewrite_inbound_links
 
 
 def check_root_docs(repo_root: Path) -> list[str]:

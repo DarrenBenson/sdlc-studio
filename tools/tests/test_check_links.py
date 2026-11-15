@@ -477,6 +477,57 @@ class NestedFenceTests(unittest.TestCase):
         self.assertEqual(new_text, text)
 
 
+class SharedLinkRefsTests(unittest.TestCase):
+    """The inbound-reference scan, the rewrite and the code-blind reader are shipped runtime
+    (`scripts/lib/link_refs.py`), so an installed skill's retitle has them; this guard imports
+    them rather than keeping a second copy that could drift from the retitle's."""
+
+    SHIPPED = (Path(__file__).resolve().parents[2]
+               / ".claude/skills/sdlc-studio/scripts/lib/link_refs.py")
+
+    def test_the_guard_runs_the_shipped_functions(self) -> None:
+        import inspect  # noqa: PLC0415
+        for fn in (check_links.inbound_references, check_links.rewrite_inbound_links,
+                   check_links._without_code):
+            self.assertEqual(Path(inspect.getsourcefile(fn)).resolve(), self.SHIPPED,
+                             fn.__name__)
+        self.assertIs(check_links._LINK_RE, check_links.link_refs.LINK_RE)
+        self.assertIs(check_links.sdlc_md, check_links.link_refs.sdlc_md)
+
+    def test_the_guard_defines_no_copy_of_them(self) -> None:
+        import ast  # noqa: PLC0415
+        tree = ast.parse(Path(check_links.__file__).read_text(encoding="utf-8"))
+        defined = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+        self.assertFalse(defined & {"inbound_references", "rewrite_inbound_links",
+                                    "_without_code", "without_code"}, defined)
+        # an identity check cannot see a re-compiled copy of the link pattern, because `re`
+        # caches compiled patterns: so each shared name must be bound from `link_refs` itself
+        bound = {t.id: ast.unparse(n.value) for n in tree.body if isinstance(n, ast.Assign)
+                 for t in n.targets if isinstance(t, ast.Name)}
+        for name, source in (("_LINK_RE", "link_refs.LINK_RE"),
+                             ("_without_code", "link_refs.without_code"),
+                             ("inbound_references", "link_refs.inbound_references"),
+                             ("rewrite_inbound_links", "link_refs.rewrite_inbound_links")):
+            self.assertEqual(bound.get(name), source, name)
+
+    def test_loading_the_guard_puts_no_skill_module_on_the_import_path(self) -> None:
+        """The skill's `scripts/` holds modules with ordinary names (`config`, `plan`); loading
+        the guard must not put them, or a bare `lib` or `sdlc_md`, where an import finds them."""
+        import subprocess  # noqa: PLC0415
+        probe = (
+            "import importlib.util, sys\n"
+            f"spec = importlib.util.spec_from_file_location('check_links', {str(TOOLS)!r})\n"
+            "mod = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(mod)\n"
+            "print(sorted(m for m in ('lib', 'sdlc_md', 'link_refs', 'lib.link_refs')"
+            " if m in sys.modules))\n"
+            "print(any(p.rstrip('/').endswith('scripts') for p in sys.path))\n")
+        r = subprocess.run([sys.executable, "-I", "-c", probe], capture_output=True, text=True,
+                           timeout=60, check=False)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.split("\n")[:2], ["[]", "False"], r.stdout)
+
+
 SKILL = Path(__file__).resolve().parents[2] / ".claude" / "skills" / "sdlc-studio"
 
 

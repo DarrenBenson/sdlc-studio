@@ -19,7 +19,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import conventions, sdlc_md, tiers  # noqa: E402
+from lib import conventions, link_refs, sdlc_md, tiers  # noqa: E402
 import file_finding  # noqa: E402  (reuse _slug, _next_number, append_index_row)
 import reconcile  # noqa: E402
 import triage_noise  # noqa: E402  (v3 triage noise controls; dormant on v2)
@@ -2056,26 +2056,6 @@ class RetitleBlocked(ValueError):
         self.surface = surface
 
 
-def _load_check_links(repo_root: Path | str):
-    """The check_links module (the link authority the retitle reuses to find inbound
-    references), located in the operated repo's `tools/` or this skill's own repo, or None.
-
-    check_links is a repo CI tool, not shipped runtime payload, so it is loaded by path rather
-    than imported - and its absence is a hard refusal, never a silent skip: a retitle that
-    could not see the inbound references would rename the file and leave them dangling, which
-    is the exact failure the reference handling exists to prevent."""
-    import importlib.util  # noqa: PLC0415 - local: only the retitle path needs it
-    candidates = [Path(repo_root) / "tools" / "check_links.py",
-                  Path(__file__).resolve().parents[4] / "tools" / "check_links.py"]
-    for cand in candidates:
-        if cand.exists():
-            spec = importlib.util.spec_from_file_location("check_links", cand)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            return mod
-    return None
-
-
 class _WriteJournal:
     """The prior bytes of every file a multi-file write phase is about to touch, so a fault
     partway through can put all of them back.
@@ -2184,13 +2164,9 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
             f"the row first, then retitle. Nothing was written.")
 
     # --- surface 4: inbound references ---
-    cl = _load_check_links(root)
-    if cl is None:
-        raise RetitleBlocked("references",
-            f"{artifact_id}: cannot locate check_links (tools/check_links.py) to find inbound "
-            f"references - refusing rather than rename the file and risk leaving links dangling. "
-            f"Nothing was written.")
-    refs = cl.inbound_references(root, path.name)
+    # The scan is shipped runtime (lib/link_refs.py), so an installed skill in a consuming
+    # project, which has no repository tools beside it, finds and rewrites them too.
+    refs = link_refs.inbound_references(root, path.name)
     unrewritable = [r for r in refs if r["immutable"]]
     rewritable = [r for r in refs if not r["immutable"]]
     if unrewritable:
@@ -2265,7 +2241,7 @@ def retitle(repo_root: Path | str, artifact_id: str, new_title: str,
         for r in rewritable:
             rp = Path(r["path"])
             body = rp.read_text(encoding="utf-8")
-            updated, n = cl.rewrite_inbound_links(body, path.name, new_name)
+            updated, n = link_refs.rewrite_inbound_links(body, path.name, new_name)
             if n and updated != body:
                 sdlc_md.atomic_write(rp, updated)
                 rewritten.append(r["rel"])
