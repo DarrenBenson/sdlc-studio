@@ -410,8 +410,10 @@ def _ran_no_tests(kind: str, stdout: str, stderr: str) -> bool:
     if kind not in _TEST_KINDS:
         return False
     blob = f"{stdout}\n{stderr}"
+    pytest_zero = (_PYTEST_ZERO.match(_pytest_closing_line(stdout, stderr)) if kind == "pytest"
+                   else _PYTEST_ZERO.search(blob))
     return bool(_UNITTEST_ZERO.search(blob)
-                or _PYTEST_ZERO.search(blob)
+                or pytest_zero
                 or _go_ran_nothing(blob)
                 or _jest_ran_nothing(blob)
                 or _all_skipped(kind, stdout, stderr))
@@ -484,6 +486,19 @@ def _pytest_final_summary(stdout: str, stderr: str) -> str:
     return ""
 
 
+def _pytest_closing_line(stdout: str, stderr: str) -> str:
+    """pytest's own closing summary line for a `pytest` Verify line: the last line on stdout
+    shaped like a count summary or a `no tests ran` line, else the last such line on stderr.
+    The all-skipped and no-tests verdicts read this line alone, as the partial-skip read does,
+    so a summary-shaped line a test printed under `-s` before it is never the one judged."""
+    for stream in (stdout, stderr):
+        lines = [ln for ln in stream.splitlines()
+                 if _PYTEST_SUMMARY.match(ln) or _PYTEST_ZERO.match(ln)]
+        if lines:
+            return lines[-1]
+    return ""
+
+
 def _pytest_partial_skips(stdout: str, stderr: str, cwd: Path) -> str:
     """The partial-skip verdict for a clean pytest run naming each skipped test as `name
     (reason)`; empty when it skipped none. A skip the report does not list (a `-r` on the
@@ -550,7 +565,9 @@ def _all_skipped(kind: str, stdout: str, stderr: str) -> bool:
     if kind not in _TEST_KINDS:
         return False
     blob = f"{stdout}\n{stderr}"
-    return bool(_pytest_all_skipped(blob)
+    pytest_skipped = (_PYTEST_ONLY_SKIPPED.match(_pytest_closing_line(stdout, stderr))
+                      if kind == "pytest" else _pytest_all_skipped(blob))
+    return bool(pytest_skipped
                 or _unittest_all_skipped(blob)
                 or _jest_all_skipped(blob)
                 or _vitest_all_skipped(blob)
@@ -3684,11 +3701,14 @@ def cmd_run(args: argparse.Namespace) -> int:
         report_path = report_path.with_name(report_path.stem + ".dry-run" + report_path.suffix)
     write_report(report_path, reports, dry_run=args.dry_run, merge=not getattr(args, "fresh", False))
     append_history(repo_root / "sdlc-studio" / ".local" / "verify-history.jsonl", reports, args.dry_run)
-    print(_total_line(
-        sum(r.verified for r in reports), overall_fail, sum(r.manual for r in reports),
-        sum(r.unspecified for r in reports),
-        [f"{sdlc_md.extract_record_id(Path(r.path).stem) or Path(r.path).stem} {f['ac']}"
-         for r in reports for f in r.failures if f.get("partly_skipped")]))
+    partly = [f"{sdlc_md.extract_record_id(Path(r.path).stem) or Path(r.path).stem} {f['ac']}"
+              for r in reports for f in r.failures if f.get("partly_skipped")]
+    # Over one artefact with no partial skip the total repeats its story line's counts, so it is
+    # printed only when it adds something and a clean single-artefact success stays two lines.
+    if len(reports) > 1 or partly:
+        print(_total_line(
+            sum(r.verified for r in reports), overall_fail, sum(r.manual for r in reports),
+            sum(r.unspecified for r in reports), partly))
     print(f"wrote {report_path}")
 
     # A UNIT THIS COMMAND COULD NOT READ IS NOT A UNIT THAT PASSED. Three states are refused,

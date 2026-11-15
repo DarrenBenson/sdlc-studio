@@ -25,6 +25,6 @@ at each major release.
 
 | Version | Supported |
 | --- | --- |
-| 4.x | Yes |
-| 3.x | Security fixes only |
-| < 3.0 | No |
+| 6.x | Yes |
+| 5.x | Security fixes only |
+| < 5.0 | No |

@@ -79,10 +79,11 @@ writes the report.
 **Output example:**
 
 ```text
-[APL] US0001-login.md: ac=5 pass=4 fail=1 manual=0 changes=2
+[APL] US0001-login.md: ac=5 pass=4 fail=1 partly_skipped=0 manual=0 unspecified=0 changes=2
         FAIL AC4: pytest tests/test_auth.py::test_locked_account
           | AssertionError: expected 423, got 200
-[APL] US0002-logout.md: ac=3 pass=3 fail=0 manual=0 changes=0
+[APL] US0002-logout.md: ac=3 pass=3 fail=0 partly_skipped=0 manual=0 unspecified=0 changes=0
+total: pass=7 fail=1 partly_skipped=0 manual=0 unspecified=0
 wrote sdlc-studio/.local/verify-report.json
 ```
 
@@ -199,10 +200,10 @@ Prints the latest verification report in text or JSON. Reads
 
 ```text
 generated_at: 2026-04-15T12:34:56Z
-US0001-login: ac=5 pass=4 fail=1 manual=0
+US0001-login: ac=5 pass=4 fail=1 partly_skipped=0 manual=0 unspecified=0
   FAIL AC4: pytest tests/test_auth.py::test_locked_account
-US0002-logout: ac=3 pass=3 fail=0 manual=0
-total: pass=7 fail=1 manual=0
+US0002-logout: ac=3 pass=3 fail=0 partly_skipped=0 manual=0 unspecified=0
+total: pass=7 fail=1 partly_skipped=0 manual=0 unspecified=0
 ```
 
 ## Arguments

@@ -48,6 +48,16 @@ class TestClean:
 class TestPrints:
     def test_prints(self):
         print("1 passed, 1 skipped in 0.01s")
+
+
+class TestPrintsAllSkipped:
+    def test_prints(self):
+        print("1 skipped in 0.01s")
+
+
+class TestPrintsNoTests:
+    def test_prints(self):
+        print("no tests ran in 0.01s")
 '''
 
 HEAD = "# {uid}: a bug\n\n> **Status:** Open\n> **Severity:** Medium\n\n## Acceptance Criteria\n\n"
@@ -129,6 +139,42 @@ class QuietFlagSkipReadTests(unittest.TestCase):
         self.assertIn(NAMED, msg)
         self.assertIn("tests/test_q.py::TestOther::test_x (not here)", msg)
         self.assertNotIn("add -rs", msg, "the report named its skips")
+
+
+class AllSkippedReadUnderSTests(unittest.TestCase):
+    """The all-skipped and no-tests verdicts read pytest's closing summary only, as the
+    partial-skip read does, so a passing test that prints such a line under `-s` passes."""
+
+    _project = QuietFlagSkipReadTests._project
+    _run = QuietFlagSkipReadTests._run
+    _stamped = QuietFlagSkipReadTests._stamped
+
+    def test_a_printed_all_skipped_or_no_tests_line_under_s_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, {"BG9111": "pytest tests/test_q.py::TestPrintsAllSkipped -s",
+                                 "BG9112": "pytest tests/test_q.py::TestPrintsNoTests -s",
+                                 "BG9113": "pytest tests/test_q.py::TestAllSkip -s"})
+            for uid in ("BG9111", "BG9112"):
+                with self.subTest(uid):
+                    rc, text = self._run(root, uid)
+                    self.assertEqual(rc, 0, text)
+                    self.assertTrue(self._stamped(root, uid), text)
+            # Control: under -s a target that really skips everything still fails as all-skipped.
+            rc, text = self._run(root, "BG9113")
+            self.assertNotEqual(rc, 0, text)
+            self.assertFalse(self._stamped(root, "BG9113"), "an all-skipped run was stamped")
+            self.assertIn("every selected test was SKIPPED", text)
+
+    def test_the_closing_summary_decides_for_a_pytest_line(self):
+        # An earlier summary-shaped line neither makes a run vacuous nor hides that it was.
+        self.assertFalse(verify_ac._all_skipped("pytest", "1 skipped in 0.01s\n.\n1 passed in 0.02s\n", ""))
+        self.assertTrue(verify_ac._all_skipped("pytest", "1 passed in 0.01s\ns\n1 skipped in 0.02s\n", ""))
+        self.assertFalse(verify_ac._ran_no_tests("pytest", "no tests ran in 0.01s\n.\n1 passed in 0.02s\n", ""))
+        self.assertTrue(verify_ac._ran_no_tests("pytest", "1 passed in 0.01s\nno tests ran in 0.02s\n", ""))
+        # pytest writes its summary to stdout; stderr is read only when stdout holds none.
+        self.assertFalse(verify_ac._all_skipped("pytest", "1 passed in 0.01s\n", "1 skipped in 0.01s\n"))
+        self.assertTrue(verify_ac._ran_no_tests("pytest", "", "no tests ran in 0.01s\n"))
 
 
 if __name__ == "__main__":

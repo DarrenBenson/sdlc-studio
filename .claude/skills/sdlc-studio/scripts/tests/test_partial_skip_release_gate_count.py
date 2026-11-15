@@ -123,5 +123,36 @@ class PartialSkipReleaseGateCountTests(unittest.TestCase):
             self.assertFalse(failure["partly_skipped"], failure)
 
 
+class RunTotalLineTests(unittest.TestCase):
+    """`run` closes with its total line when it covers more than one artefact or a criterion ran
+    only in part; over one artefact with no partial skip the story line already says it all, so
+    a clean single-artefact success stays at two lines."""
+
+    _project = PartialSkipReleaseGateCountTests._project
+    _main = PartialSkipReleaseGateCountTests._main
+    _total = PartialSkipReleaseGateCountTests._total
+
+    def test_one_artefact_prints_the_total_only_for_a_partial_skip(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._project(root, {"BG9205": "pytest tests/test_g.py::TestPartial",
+                                 "BG9206": "pytest tests/test_g.py::TestClean",
+                                 "BG9207": "pytest tests/test_g.py::TestFails",
+                                 "BG9208": "pytest tests/test_g.py::TestClean"})
+            rc, text = self._main(["run", "--id", "BG9205", "--root", str(root)])
+            self.assertNotEqual(rc, 0, text)
+            self.assertIn(" fail=1 partly_skipped=1 ", self._total(text))
+            self.assertIn("(partly skipped: BG9205 AC1)", self._total(text))
+            for uid in ("BG9206", "BG9207"):
+                with self.subTest(uid):
+                    _, text = self._main(["run", "--id", uid, "--root", str(root)])
+                    self.assertIn(f"BG{uid[2:]}-x.md: ac=1 ", text)
+                    self.assertNotRegex(text, r"(?m)^total: ", "one artefact, no partial skip")
+            # Positive control: two clean artefacts still close with the total.
+            rc, text = self._main(["run", "--ids", "BG9206,BG9208", "--root", str(root)])
+            self.assertEqual(rc, 0, text)
+            self.assertIn("total: pass=2 fail=0 partly_skipped=0 ", self._total(text))
+
+
 if __name__ == "__main__":
     unittest.main()

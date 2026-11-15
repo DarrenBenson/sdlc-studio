@@ -174,6 +174,57 @@ def dollar_problems(body: str, page: Path = PAGE) -> list[str]:
     return problems
 
 
+#: A clause that prices each model at its own rate: true of the dollar actual only.
+_PER_MODEL = re.compile(r"\bown rate\b|\bper model\b|\bnever priced at one model", re.I)
+#: A clause that says the forecast is priced at one model's rate.
+_FORECAST_ONE_RATE = re.compile(r"\bforecast\b[^.;]*\bone model's\b[^.;]*\brate\b", re.I)
+#: The over-claim that every verdict stamps the author, which older ledger rows do not.
+_EVERY_STAMPS = re.compile(r"\bevery\s+(?:\w+\s+)?verdicts?\s+stamps?\b", re.I)
+_CLAUSE = re.compile(r"(?<=[.;])\s+")
+
+
+def clauses(body: str) -> list[str]:
+    """Each sentence or semicolon clause of each claim in a section body."""
+    return [c for claim in claims(body) for c in _CLAUSE.split(claim) if c.strip()]
+
+
+def pricing_problems(body: str) -> list[str]:
+    """Per-model pricing said of anything but the dollar actual, or a forecast left unpriced."""
+    problems = [f"per-model pricing not limited to the dollar actual: {c[:70]}"
+                for c in clauses(body) if _PER_MODEL.search(c)
+                and (not re.search(r"\bactual\b", c, re.I) or re.search(r"\bforecast", c, re.I))]
+    if not any(_FORECAST_ONE_RATE.search(c) for c in clauses(body)):
+        problems.append("the forecast is not said to be priced at one model's rate")
+    return problems
+
+
+def refusal_link_problems(body: str) -> list[str]:
+    """The evidence pack's refusals linked anywhere but the script that enforces them."""
+    problems = []
+    named = [c for c in claims(body) if re.search(r"\bpack\b", c, re.I)
+             and re.search(r"\brefuses?\b", c, re.I)]
+    for claim in named:
+        scripts = {Path(t.partition("#")[0]).name for t in _LINK.findall(claim)}
+        if "release_cut.py" in scripts:
+            problems.append(f"links release_cut.py for the pack's refusals: {claim[:60]}")
+        if "evidence_pack.py" not in scripts:
+            problems.append(f"does not link evidence_pack.py for the pack's refusals: {claim[:60]}")
+    return problems if named else ["names no refusal of the evidence pack"]
+
+
+def author_stamp_problems(body: str) -> list[str]:
+    """An author-stamping claim stronger than the verdict writer enforces."""
+    problems = []
+    for c in clauses(body):
+        if _EVERY_STAMPS.search(c):
+            problems.append(f"claims every verdict stamps the author: {c[:60]}")
+        if re.search(r"\bby name and role\b", c, re.I) and not re.search(r"\bbrief\b", c, re.I):
+            problems.append(f"credits name and role to the verdict, not the brief: {c[:60]}")
+    if not any(re.search(r"\bauthor\b[^.;]*\breviewer\b", c, re.I) for c in clauses(body)):
+        problems.append("no verdict is said to record the author beside the reviewer")
+    return problems
+
+
 SCRIPT = "../.claude/skills/sdlc-studio/scripts/transition.py"
 REPORT = "../sdlc-studio/reports/RPT0031-sprint-report-run-01m7e52t.md"
 
@@ -228,6 +279,52 @@ class EngineeringLeadersPageTests(unittest.TestCase):
                          ["$2.27 links no report under sdlc-studio/reports/"])
         self.assertEqual(dollar_problems(f"It cost $9.99 a point ([report]({REPORT}))."),
                          ["$9.99 is in none of the reports its paragraph links"])
+
+
+class FactualWordingTests(unittest.TestCase):
+    """Three sentences held to what the code does: pricing, the pack's refusals, author stamping."""
+
+    def setUp(self) -> None:
+        self.text = PAGE.read_text(encoding="utf-8")
+
+    def test_per_model_pricing_is_limited_to_the_dollar_actual(self) -> None:
+        self.assertEqual(pricing_problems(section_body(self.text, "cost in dollars a point")), [])
+        # Planted failures beside a positive control.
+        good = ("The dollar actual prices each model at its own rate. The forecast is priced at "
+                "one model's input rate.")
+        self.assertEqual(pricing_problems(good), [])
+        both = ("Each model is priced at its own rate, so a run that mixes models is never priced "
+                "at one model's rate. The forecast is priced at one model's input rate.")
+        self.assertEqual(len(pricing_problems(both)), 1)
+        self.assertIn("the forecast is not said to be priced at one model's rate",
+                      pricing_problems("The dollar actual prices each model at its own rate."))
+        self.assertTrue(pricing_problems("The forecast and the actual are each priced per model; "
+                                         "the forecast is priced at one model's rate."))
+
+    def test_the_packs_refusals_link_evidence_pack_py(self) -> None:
+        self.assertEqual(refusal_link_problems(section_body(self.text, "change approval")), [])
+        # Planted failures beside a positive control.
+        script = "../.claude/skills/sdlc-studio/scripts/{}"
+        good = f"The pack refuses a report nobody signed ([e]({script.format('evidence_pack.py')}))."
+        self.assertEqual(refusal_link_problems(good), [])
+        cut = good.replace("evidence_pack.py", "release_cut.py")
+        self.assertEqual(len(refusal_link_problems(cut)), 2)
+        self.assertEqual(refusal_link_problems("The pack lists each change."),
+                         ["names no refusal of the evidence pack"])
+
+    def test_author_stamping_claims_no_more_than_the_writer_enforces(self) -> None:
+        self.assertEqual(author_stamp_problems(section_body(self.text, "separation of duties")), [])
+        # Planted failures beside a positive control.
+        good = ("A review verdict records the author beside the reviewer, and the review brief "
+                "asks for both by name and role.")
+        self.assertEqual(author_stamp_problems(good), [])
+        self.assertTrue(author_stamp_problems(
+            "Every review verdict stamps the author beside the reviewer, by name and role."))
+        self.assertTrue(author_stamp_problems("Every verdict stamps the author beside the reviewer."))
+        self.assertTrue(author_stamp_problems(
+            "A verdict records the author beside the reviewer, by name and role."))
+        self.assertEqual(author_stamp_problems("The review brief asks for both by name and role."),
+                         ["no verdict is said to record the author beside the reviewer"])
 
 
 if __name__ == "__main__":

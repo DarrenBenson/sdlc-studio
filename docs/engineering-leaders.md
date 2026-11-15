@@ -15,7 +15,7 @@ signed the run's report ([evidence_pack.py](../.claude/skills/sdlc-studio/script
 
 The pack refuses a report nobody has signed, and it refuses to name an agent as the accountable
 person. It reads only what is committed, so an edit nobody has committed cannot change what the
-board sees ([release_cut.py](../.claude/skills/sdlc-studio/scripts/release_cut.py)).
+board sees ([evidence_pack.py](../.claude/skills/sdlc-studio/scripts/evidence_pack.py)).
 
 A story reaches Done only through one gate, which refuses it while any of its executable
 acceptance criteria is failing or has never run
@@ -32,8 +32,8 @@ names each one, so work is never put down to "the agent". The signature refuses 
 one of them held two duties on the same unit
 ([sprint.py](../.claude/skills/sdlc-studio/scripts/sprint.py)).
 
-- **Author.** The seat that builds the unit is recorded on the open run, and every review verdict
-  stamps the author beside the reviewer, by name and role
+- **Author.** The seat that builds the unit is recorded on the open run. A review verdict records
+  the author beside the reviewer, and the review brief asks for both by name and role
   ([critic.py](../.claude/skills/sdlc-studio/reference-scripts-review.md#criticpy)).
 - **Reviewer.** A fresh reviewer who did not write the change is briefed by a script, with the
   unit's acceptance criteria as the contract, and tries to break it
@@ -82,9 +82,10 @@ This repository's own runs are signed this way, for example
 The report states a Dollar cost row and a Dollars per point row: the run's estimated cost in US
 dollars, and that cost over the story points delivered
 ([sprint_report.py](../.claude/skills/sdlc-studio/scripts/sprint_report.py),
-[how dollars are priced](../.claude/skills/sdlc-studio/reference-sprint.md#dollar-cost)). Each
-model is priced at its own rate from a dated table of list prices, so a run that mixes models
-is never priced at one model's rate
+[how dollars are priced](../.claude/skills/sdlc-studio/reference-sprint.md#dollar-cost)). The
+dollar actual prices each model at its own rate from a dated table of list prices, so the actual
+for a run that mixes models is never priced at one model's rate. The forecast beside it is priced
+at one model's input rate
 ([the price table](../.claude/skills/sdlc-studio/templates/model-prices.json)). These are
 estimates at list price, not an invoice.
 
