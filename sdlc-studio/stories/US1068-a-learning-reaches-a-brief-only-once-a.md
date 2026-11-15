@@ -1,6 +1,6 @@
 # US1068: A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a closed run that listed M-0001 (qa) and M-0002 (product), when `sprint.py sign --principal <operator> --strike M-0001 --strike-reason ...` runs, then the run is sealed with M-0001 recorded as struck by the principal with the date and reason, the next qa brief does not carry M-0001, the next product brief carries M-0002, and `persona_memory.py list` shows M-0001 struck.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_struck_learning_never_reaches_the_brief
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given an approved learning listed by a run that is closed but not signed, when `critic.py brief --seat qa` runs, then the learning is not carried and the brief says one approved learning awaits its run's signature.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_learning_of_an_unsigned_run_is_held
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a signed run that listed M-0002, when `sprint.py reopen --reason ...` runs, then the next product brief holds M-0002, and after the close and `sprint.py sign --strike M-0002` it is struck and never carried.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_reopened_run_holds_its_learnings_until_resigned
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given `--strike` naming a learning another run listed and an id no memory file holds, when `sprint.py sign` runs, then it exits 2 naming both, nothing is sealed and no memory file changes.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_bad_strike_refuses_the_seal_and_writes_nothing
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

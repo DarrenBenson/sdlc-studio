@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 356 |
+| Open | 358 |
 | In Progress | 0 |
 | Fixed | 924 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1471** |
+| **Total** | **1473** |
 
 ## All Bugs
 
@@ -547,6 +547,8 @@
 | [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

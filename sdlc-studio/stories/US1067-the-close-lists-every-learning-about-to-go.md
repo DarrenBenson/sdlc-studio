@@ -1,6 +1,6 @@
 # US1067: The close lists every learning about to go live on the retro, with what it addresses and who approved it
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given qa's learning proposed in this run and approved by `Lena Marsh (product)`, and a product learning written with `persona_memory.py add` and approved by qa outside any retro, when `sprint.py close` runs, then the retro gains a delimited `## Persona learnings` block listing both with their approvers and addressed items, each entry is stamped Listed-in with the run, and the run record names both ids.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_the_close_lists_every_approved_learning_not_yet_live
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a batch where product has a later-bug item and no learning, qa has no adverse item and no learning, and two of five verdict rows name no seat, when `sprint.py close` runs, then the close output and the block name product as a seat with adverse evidence and no learning, do not name qa, and say two of five verdict rows name no seat, with the close's outcome unchanged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_the_close_names_unlearned_adverse_evidence_and_unattributed_rows
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given that block and prose the author wrote around it, when the close runs again after another learning is approved, then the block is replaced in place, lists all three, and the author's prose is byte-identical.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_a_reclose_refreshes_the_block_in_place
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
