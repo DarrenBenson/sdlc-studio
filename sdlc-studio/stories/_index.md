@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 63 |
-| Ready | 13 |
+| Ready | 11 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 897 |
+| Done | 899 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -29,7 +29,7 @@
 | [US0989](US0989-a-cursor-cloud-run-records-its-token-actual.md) | A Cursor cloud run records its token actual from the usage API when a key is present | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0990](US0990-a-cursor-cli-run-records-its-token-actual.md) | A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Done | EP0274 | 2026-10-06 | 2026-10-06 |
-| [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
@@ -189,7 +189,7 @@
 | [US1149](US1149-the-sprint-entry-names-the-projected-re-read.md) | The sprint entry names the projected re-read cost when the orchestrating session holds more than 80k tokens, under sprint.fresh_session warn or block, and the cost anatomy flags a run whose orchestrator averages over 150k a call | Done | EP0302 | 2026-11-09 | 2026-11-09 |
 | [US1150](US1150-the-plan-records-a-priced-dollar-and-wall.md) | The plan records a priced, dollar and wall-clock forecast beside tokens and minutes | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
 | [US1151](US1151-the-report-s-estimates-table-shows-forecast-actual.md) | The report's Estimates table shows forecast, actual and ratio for every cost row | Ready | EP0306 | 2026-11-14 | 2026-11-14 |
-| [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
+| [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Ready | EP0308 | 2026-11-14 | 2026-11-14 |

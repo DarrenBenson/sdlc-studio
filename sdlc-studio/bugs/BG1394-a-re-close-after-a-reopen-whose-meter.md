@@ -1,6 +1,6 @@
 # BG1394: A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_re_close_unreadable_meter.py, changelog.d/BG1394.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py
@@ -26,6 +26,7 @@ Keep the earlier window and write the gap on the page.
 
 - [ ] **AC1** Given a reopened run whose meter cannot be read at the second close, when the close runs, then the first window is kept and the page says the second reading is missing. Fails on: the window dropped silently.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_re_close_unreadable_meter.py::ReCloseUnreadableMeterTests
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

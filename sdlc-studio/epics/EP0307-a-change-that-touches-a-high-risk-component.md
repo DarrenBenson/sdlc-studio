@@ -14,7 +14,7 @@ Decomposed from CR0696. Delivers the work CR0696 requested.
 
 ## Story Breakdown
 
-- [ ] [US1152: A declared component map gives each story a risk and compliance class at refine](../stories/US1152-a-declared-component-map-gives-each-story-a.md)
+- [x] [US1152: A declared component map gives each story a risk and compliance class at refine](../stories/US1152-a-declared-component-map-gives-each-story-a.md)
 - [ ] [US1153: sprint plan shows each unit's class and flags a unit that touches a higher class than its tag](../stories/US1153-sprint-plan-shows-each-unit-s-class-and.md)
 - [ ] [US1154: A high-class unit gets a second independent review seat, and the retro reports what that seat found](../stories/US1154-a-high-class-unit-gets-a-second-independent.md)
 

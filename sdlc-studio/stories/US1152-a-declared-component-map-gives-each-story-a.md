@@ -1,6 +1,6 @@
 # US1152: A declared component map gives each story a risk and compliance class at refine
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0696
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -20,10 +20,13 @@
 
 - **AC1:** Given a project whose committed config declares a component map (path prefixes to a class: standard, elevated or high), when `refine apply` mints a story, then the story carries a Risk-class field equal to the highest class among the components its Affects touch.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_risk_class_map.py::RefineStampsClassTests::test_story_takes_highest_class_of_its_affects
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given no component map, when `refine apply` runs, then every story is standard, one line says no map is declared, and the command exits 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_risk_class_map.py::NoMapTests::test_no_map_means_standard_one_line_exit_zero
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a map entry naming an unknown class, when `refine apply` runs, then it reports the entry in one line, treats it as standard, and still mints the stories.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_risk_class_map.py::BadMapTests::test_unknown_class_is_reported_not_refused
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

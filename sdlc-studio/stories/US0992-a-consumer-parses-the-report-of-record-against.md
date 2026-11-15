@@ -1,6 +1,6 @@
 # US0992: A consumer parses the report of record against a published, versioned annex
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Delivers:** CR0609
 > **Created:** 2026-10-09
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a report filed by `sprint close` in a fixture run carrying every section (metered cost, a refusal log, a not-measured close item, a ruling and a waiver), when the conformance test parses the annex's catalogue tables by their headings and reads the report against them, then every envelope key, section key, figure key and row key the report holds is in those tables, and every section the tables mark always emitted is present.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py::ReportAnnexTests::test_a_filed_report_conforms_to_the_annex
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given two fixture runs closed through `sprint close`, one with a refusal log and a not-measured close item and one with neither, when the sections each filed page carries are compared with the annex's catalogue, then their union equals the catalogue, and the sections the bare run lacks are exactly those the catalogue marks conditional, each naming the condition under which it is absent.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py::ReportAnnexTests::test_the_section_catalogue_matches_what_the_builder_emits
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given the four schema-1 pages this repository holds (RPT0002-RPT0005), copied into a fixture, when the test reads their section and envelope keys and runs `sprint_report.py check` on each, then the union of their sections equals the annex's schema-1 catalogue with `waivers` marked optional and `window_end` an optional envelope key, and each check answers that the page stands as filed, as the annex says.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_report.py::ReportAnnexTests::test_schema_one_is_documented_as_it_stands
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

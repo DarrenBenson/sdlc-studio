@@ -1,6 +1,6 @@
 # BG1397: sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py, .claude/skills/sdlc-studio/scripts/tests/test_multi_unit_lane_split.py, changelog.d/BG1397.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_delegated_tokens.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -26,6 +26,7 @@ Split by points and mark the figure as apportioned.
 
 - [ ] **AC1** Given a lane of three units and one agent total, when `sprint lane return --agent` runs, then the total is split by points, each unit is priced and the page says it was split. Fails on: the refusal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_multi_unit_lane_split.py::MultiUnitLaneSplitTests
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

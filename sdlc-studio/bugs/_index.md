@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 329 |
+| Open | 328 |
 | In Progress | 0 |
-| Fixed | 913 |
+| Fixed | 915 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1433** |
+| **Total** | **1434** |
 
 ## All Bugs
 
@@ -469,10 +469,10 @@
 | [BG1391](BG1391-the-report-s-dollar-cost-row-does-not.md) | The report's Dollar cost row does not carry the lower-bound label for a Grok figure priced from a session total, so a lower bound reads as exact | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1392](BG1392-prices-and-token-meters-have-untested-edges-rates.md) | prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1393](BG1393-a-project-that-replaces-grok-4-7-under.md) | A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading | Fixed | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1394](BG1394-a-re-close-after-a-reopen-whose-meter.md) | A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1394](BG1394-a-re-close-after-a-reopen-whose-meter.md) | A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1395](BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md) | BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Open | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1398](BG1398-the-tool-call-budget-in-a-multi-unit.md) | The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1400](BG1400-lane-accept-takes-reviewer-as-free-text-so.md) | lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires | Open | Medium | 2026-11-13 | 2026-11-13 |
@@ -509,6 +509,7 @@
 | [BG1431](BG1431-two-release-notes-tests-take-120-s-to.md) | Two release-notes tests take 120 s to over 300 s under load, past verify_ac's default per-verifier timeout, so BG1420's and BG1425's recorded runs fail on time unless given --timeout | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1432](BG1432-three-lane-pricing-and-re-close-behaviours-are.md) | Three lane-pricing and re-close behaviours are pinned by no test: each split share's per-model split, the minutes split, and the lane-yield re-freeze over a kept window | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1433](BG1433-the-report-templates-still-say-the-wall-clock.md) | The report templates still say the wall-clock span has no ratio, which is wrong on a page filed under the cost-forecast mark | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

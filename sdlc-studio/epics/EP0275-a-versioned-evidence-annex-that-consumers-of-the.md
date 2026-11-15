@@ -14,7 +14,7 @@ Decomposed from CR0609. Delivers the work CR0609 requested.
 
 ## Story Breakdown
 
-- [ ] [US0992: A consumer parses the report of record against a published, versioned annex](../stories/US0992-a-consumer-parses-the-report-of-record-against.md)
+- [x] [US0992: A consumer parses the report of record against a published, versioned annex](../stories/US0992-a-consumer-parses-the-report-of-record-against.md)
 - [ ] [US0993: A consumer recomputes a report's fingerprint from the annex alone](../stories/US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md)
 - [ ] [US0994: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex](../stories/US0994-a-consumer-reads-the-committed-run-record-awaiting.md)
 - [ ] [US0995: A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex](../stories/US0995-a-consumer-reads-the-lesson-class-store-the.md)
