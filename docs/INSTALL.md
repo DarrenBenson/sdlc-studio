@@ -7,6 +7,9 @@ skill. Installing is therefore just copying the skill into the tool's skills
 folder - which the installer scripts do for you.
 
 - [Quick start](#quick-start)
+- [Requirements](#requirements)
+- [What it writes into your project](#what-it-writes-into-your-project)
+- [For agents evaluating this skill](#for-agents-evaluating-this-skill)
 - [Choosing tools](#choosing-tools)
 - [Where each tool reads skills](#where-each-tool-reads-skills)
 - [Global vs local](#global-vs-local)
@@ -35,6 +38,30 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 
 To install into every coding agent you have, add `--target auto` (PowerShell:
 `-Target auto`). See below.
+
+## Requirements
+
+You need Python 3.10+ for the bundled scripts (standard library only, with two optional dependencies: **PyYAML**, needed only if you set a project `.config.yaml`, without which the scripts degrade to the built-in defaults with a one-line warning, never a crash; and **coverage** 7.10 or later, needed only by `verify_ac run --coverage`, which measures a unit's own added lines). You need the `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
+
+It is not an npm package or an SDK. It is a curl-installed Agent Skill (a plug-in for AI coding tools) - a folder of instructions, templates, and scripts. There is nothing to import into your code.
+
+It works in Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot - one install covers them (Cursor via the generic `agents` skills dir). It is a standard Agent Skill (`SKILL.md` format).
+
+## What it writes into your project
+
+Plain markdown under `sdlc-studio/` in your project, so everything is reviewable and version-controlled:
+
+```text
+sdlc-studio/
+  prd.md  trd.md  tsd.md  personas.md
+  epics/  stories/  plans/  bugs/  test-specs/  crs/  rfcs/  reviews/
+  .local/        # gitignored: caches, reports, lessons
+tests/           # generated test code (project root)
+```
+
+## For agents evaluating this skill
+
+Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](../.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](../llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `audit --profile repo` (read-only three-leg audit of the host repo, refute-panel verified, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](../AGENTS.md).
 
 ## Choosing tools
 
@@ -241,3 +268,5 @@ touching other copies at all.
   into the repo's `.github/skills/` instead.
 - **Windows piping**: `iex` cannot take arguments; download the script first (see
   [Windows](#windows)).
+- **Installer download fails**: check network/proxy, or [install manually](#manual-install): `git clone` this repo and copy `.claude/skills/sdlc-studio/` into your tool's skills directory.
+- **Commands run but nothing happens**: run `/sdlc-studio status`; if the pipeline is empty the next step is `prd create` or `prd generate`.

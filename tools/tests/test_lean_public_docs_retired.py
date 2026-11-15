@@ -30,6 +30,8 @@ _spec.loader.exec_module(check_versions)
 
 README = REPO / "README.md"
 FRONT_DOOR = ("README.md", "CONTRIBUTING.md", "docs/INSTALL.md")
+#: The README's first section after the badges: its three routes in (evaluate, try, upgrade).
+ROUTES_HEADING = "Three ways in"
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
@@ -120,20 +122,22 @@ class PublicDocsTests(unittest.TestCase):
     def test_the_readme_leads_with_v6(self) -> None:
         """AC2. MUTANTS: the `## New in 5.1` section restored first; the loop link dropped; the
         FAQ upgrade answer without `migrate --apply`; routes to docs/existing-users.md cut from
-        four to two; a route's paragraph calling v6 a drop-in."""
+        four to two; a route's paragraph calling v6 a drop-in. The README now opens with its
+        routes section (evaluate, try, upgrade), so the lead is read there, where it once read
+        'New in 6'."""
         text = README.read_text(encoding="utf-8")
         version = release()
         self.assertTrue(version.startswith("6."), f"the version homes declare {version}")
         body = text.split("</div>", 1)[1]
         first = re.search(r"^## (.*)$", body, re.M)
         self.assertIsNotNone(first, "README has no section after the badges")
-        self.assertTrue(first.group(1).startswith("New in 6"),
+        self.assertTrue(first.group(1).startswith(ROUTES_HEADING),
                         f"README's first section after the badges is '{first.group(1)}'")
-        lead = _section(body, "New in 6")
+        lead = _section(body, ROUTES_HEADING)
         self.assertIn(f"(docs/release-notes-v{version}.md)", lead,
-                      f"'New in 6' does not link the {version} release notes")
+                      f"'{ROUTES_HEADING}' does not link the {version} release notes")
         self.assertRegex(lead, r"\(\.claude/skills/sdlc-studio/reference-sprint\.md#the-loop\)",
-                         "'New in 6' does not link the loop")
+                         f"'{ROUTES_HEADING}' does not link the loop")
         faq = re.search(r"<summary>How do I upgrade\?</summary>(.*?)</details>", text, re.S)
         self.assertIsNotNone(faq, "README's FAQ has no upgrade answer")
         self.assertIn("migrate --apply", faq.group(1))

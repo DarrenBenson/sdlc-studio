@@ -14,21 +14,43 @@ Ask for software in plain language. The team plans it, builds it, tests it, and 
 
 </div>
 
-SDLC Studio is an open [Agent Skill](https://agentskills.io) - a plug-in for AI coding tools - that runs your whole software development lifecycle (SDLC), from first idea to tested, working code. You describe what you want in plain language; the agent does the work, and you review and approve each step. It follows the proven path a real team uses - clear requirements, a plan, build, test, review - and keeps every document in step with the code that was actually built.
+SDLC Studio is an open [Agent Skill](https://agentskills.io), a plug-in for AI coding tools, that
+runs your software development lifecycle from first idea to tested, working code. You describe
+what you want in plain language; the agent does the work, and a person you can name reviews and
+approves each step. Every requirement, review and sign-off is a plain file committed beside the
+code, so the record the work leaves is the evidence. One install works in **Claude Code, Cursor,
+OpenAI Codex, Gemini CLI, opencode and GitHub Copilot**.
 
-**Who it is for:** product managers scoping work, engineers building it, QA proving it, eng leads keeping it honest - and non-technical founders who want a fully-equipped engineering team without running the process by hand.
+## Three ways in
 
-One install works in **Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot**.
+- **Evaluate it.** If you answer for your teams' releases, start with
+  [SDLC Studio for engineering leaders](docs/engineering-leaders.md): what the record a run
+  leaves proves, who answers for each part of it, and what a point of delivery costs. You do not
+  need to run a command to follow it. Then check it against
+  [the evidence from the runs](docs/evidence.md), every signed run read from its report, with
+  nothing typed by hand.
+- **Try it.** Install it once ([below](#quick-start), or [the install guide](docs/INSTALL.md)
+  for every tool, Windows and a verified download), then say "start a new project" or "extract
+  the spec from this code". On a repository you already have, `/sdlc-studio audit --profile repo`
+  audits the code without changing it and files what it finds as bugs and change requests.
+- **Upgrade.** Already running SDLC Studio? Your artefacts are safe and nothing is rewritten
+  without asking, but v6 is not a drop-in: it refuses the verbs, flags and config keys it
+  retired, each by name with its replacement. Run `migrate`, then `migrate --apply`, and follow
+  [docs/existing-users.md](docs/existing-users.md).
 
-## New in 6: one plan, one review, one signature
+What changed in the current release: [the 6.3.0 release notes](docs/release-notes-v6.3.0.md).
+How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
 
-v6 keeps what catches defects - acceptance criteria that run, and a review by someone other than
-the author - and drops the ceremony around each unit that caught nothing.
+## What a run gives you
+
+v6 keeps what catches defects, acceptance criteria that run and a review by someone other than
+the author, and drops the ceremony around each unit that caught nothing.
 
 - **One plan.** A Sprint Goal is one sentence. `sprint plan` orders and sizes the batch, and you
   approve it once.
 - **One review per unit.** Each unit is built against its acceptance criteria and reviewed by one
-  independent reviewer, in at most two rounds, recorded in one verdict ledger.
+  independent reviewer, in at most two rounds, recorded in one verdict ledger. The author of a
+  change is never its reviewer, and a story reaches Done only when its criteria pass.
 - **One signature.** `sprint close` files a one-page report that states every known issue, and
   `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
 - **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
@@ -39,29 +61,21 @@ the author - and drops the ceremony around each unit that caught nothing.
   the tokens went, and `sprint lane run --harness <h>` runs one unit headless in any of their
   CLIs.
 
-How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
-What changed and why: [the release notes](docs/release-notes-v6.3.0.md). Upgrading a v5
-project: `migrate`, then `migrate --apply`, and [docs/existing-users.md](docs/existing-users.md).
-
-### Removed in v6
-
-The plan review, the test plan, repair plans, per-unit sign-off, the verification-depth gate and
-the mutation evidence ledger are gone. Their verbs, flags and config keys are refused by name, with
-the replacement printed; the full inventory is under **Breaking** in the
-[CHANGELOG](CHANGELOG.md). `mutation.py run` still measures a suite when you ask it to.
+People and agents work side by side: a new project mints ids that never clash, so several people
+and agents on different machines can file work at once, and `persona generate --team` grows the
+seats that build and review from your own project. How it fits together, with worked examples, is
+in [Why SDLC Studio](docs/why-sdlc-studio.md#how-it-works).
 
 ## Quick start
 
-**Step 0 - install** (macOS / Linux, Claude Code, globally):
+Install for Claude Code on macOS or Linux, for every project:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
 ```
 
-> New to the command line? You only do this once. Hand that one line to any developer, or follow [docs/INSTALL.md](docs/INSTALL.md) step by step.
-
 <details>
-<summary>Other tools, Windows, and where it installs</summary>
+<summary>Other tools, Windows, and a verified install</summary>
 
 ```bash
 # Every tool you have installed
@@ -82,419 +96,90 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 | Copilot | `~/.agents/skills` | `.github/skills` | from chat; `copilot skill list` to confirm |
 | `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
 
-`--target claude,codex` picks tools; `--local` installs into the current project; `--list-targets` shows the map. The installer also refreshes any other copies it finds (opt out with `--no-sweep`). Full detail: [docs/INSTALL.md](docs/INSTALL.md).
+`--target claude,codex` picks tools; `--local` installs into the current project.
 
-**Installing in a sensitive environment?** The default install fetches the latest published release and verifies it against its `.sha256` sidecar; if the release cannot be looked up (offline, rate-limited) it falls back to `main`, which publishes no sidecar, and proceeds unverified with a warning. To make that fallback impossible, pin a tagged release and make the checksum mandatory:
+**Installing in a sensitive environment?** Pin a tagged release and make the checksum
+mandatory, so the installer refuses rather than proceed unverified:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.3.0
 ```
 
-That pins the current release; name any later tag the same way. What it verifies: an archive this project built from the tag and published as a release asset, against a `.sha256` published beside it in the same step. Both halves are ours, so they cannot drift apart. Tags before v5.0.1 have no published assets and this command will refuse them rather than pretend - see [Verifying the download](docs/INSTALL.md#verifying-the-download).
+That pins the current release. What it verifies: [Verifying the download](docs/INSTALL.md#verifying-the-download).
 
 </details>
 
-<details>
-<summary><strong>For agents evaluating this skill</strong></summary>
-
-Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `audit --profile repo` (read-only three-leg audit of the host repo, refute-panel verified, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](AGENTS.md).
-
-</details>
-
-**Step 1 - pick your path:**
-
-| You have... | Just say | Command |
-| --- | --- | --- |
-| A new idea | "start a new project" | `/sdlc-studio init` then `prd create` |
-| Existing code | "extract the spec from this code" | `/sdlc-studio prd generate` |
-
-**Step 2 - never lose your place:** `/sdlc-studio status` shows where you are; `/sdlc-studio hint` tells you the single next thing to do.
-
-## Evaluating it
-
-> **Evaluating this for a team?** The white paper - *[The Mill, Not the Engine](docs/whitepaper.md)*
-> ([designed PDF](docs/whitepaper.pdf)) - is the deep version: the operating model, the measured
-> benchmark evidence across three model tiers, governance, and the adoption path, with every claim
-> mapped to its verification.
-
-And a word from the team that builds it:
-
-> *"I'm the frontier model in its benchmark - the one that cleared every trap. It still caught me
-> misquoting my operator's own essays, skipping a review ceremony, and tagging past a failing gate,
-> all in one day. Five stars. Grudgingly."*
-> so says **Claude Fable 5**, which builds this project through its own pipeline. Every incident
-> in that quote is in the repo's review ledger, which is rather the point.
-
-## Built for multi-team work
-
-SDLC Studio is **truly multi-team compatible - human teams and agent teams together**.
-Every new project mints **collision-free artifact ids** (ULIDs like `US-01JQK3F8` instead of
-sequential `US0001`), so several people and agents on different machines - with different git
-states - can file bugs, stories, and change requests concurrently and never mint a clashing id.
-No coordination, no renumber-on-merge.
-
-Around that identity sits the quality floor: a mechanical **independence gate** (the author
-of a change can never be its reviewer), **executable acceptance criteria** (a story reaches
-Done, and a bug Fixed, only when its criteria pass), a **portable CI gate** (`gate.py`, runs the
-same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
-the files - recomputed from them, not asserted.
-
-And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to
-life**. Ask for your team and it is **grown from your project** - `persona generate --team`
-reads the PRD, the stack, and the risk signals, asks you the questions it cannot infer, and
-writes fresh named seats whose non-negotiables come from YOUR domain (a payments QA is paranoid
-about idempotency; a games QA about frame budgets). Until then, Dani (Engineering), Sam (QA)
-and Lena (Product) work out of the box. Where other tooling ships a fixed cast of role-prompts identically to
-every project, here the working seats, the design personas, and the stakeholder panel live in
-one system, generated from the project itself - and no seat may mark its own homework. The
-persona that argued for the requirement is the one who refuses to approve work that does not
-meet it. The point is **coverage**: a project-specific cast is built to
-catch the blind spots a generic prompt walks past - it does not make the model smarter,
-and we do not claim it does.
-
-The meet-your-team moment looks like this:
+Then ask in plain language. Each phrase has a command if you prefer it, and Python 3.10 or later
+runs the bundled scripts ([requirements](docs/INSTALL.md#requirements)).
 
 ```text
-/sdlc-studio persona generate --team
-
-Analysing project... card payments PRD, Python + Stripe, no compliance regime declared.
-Q1: Which risk class fits this product?
-    [money-movement / PII-health / uptime-SLA / low-stakes]
-> money-movement
-Q2: money-movement implies a compliance regime - which applies?
-    [PCI-DSS / none / other]
-> PCI-DSS
-Q3: Strong payment signals - add a Security seat? [yes / no]
-> yes
-
-Generated into personas/seats/ (provisional until you accept):
-  Priya Sharma  - QA          refuses untested refund paths; paranoid about idempotency
-  Marcus Webb   - Engineering ledger-first; will not ship a mutable money type
-  Ana Silva     - Product     guards the checkout conversion goal
-  Imran Hadid   - Security    PCI scope hawk; vetoes card data outside the vault
+"start a new project"                                 →  /sdlc-studio init, then prd create
+"extract the spec from this code"                     →  /sdlc-studio prd generate
+"plan the next sprint"                                →  /sdlc-studio sprint --crs Proposed --goal plan
+"build the proposed change requests"                  →  /sdlc-studio sprint --crs Proposed --goal done
+"create a change request to delete archived records"  →  /sdlc-studio cr create
+"log an issue: checkout 500s intermittently"          →  /sdlc-studio issue create
+"triage that issue into bugs"                         →  /sdlc-studio triage apply --issue IS0001
+"what should I work on next?"                         →  /sdlc-studio hint
+"where is the project up to?"                         →  /sdlc-studio status
 ```
-
-Every card is yours to edit - and the moment you edit one, generation treats it as
-authored and will never overwrite it.
-
-**Already running SDLC Studio on a project?** Your artifacts are safe and nothing is
-rewritten without asking, but v6 is not a drop-in: it refuses the verbs, flags and config keys it
-retired, each by name with its replacement, and `migrate --apply` carries the project across.
-Your page is **[docs/existing-users.md](docs/existing-users.md)**.
-
-## You just ask
-
-You drive the whole lifecycle in plain language - the AI works out what you mean, so you do not memorise commands. Every phrase also has an explicit command if you prefer it.
-
-```text
-"plan the next sprint"                               →  /sdlc-studio sprint --crs Proposed --goal plan
-"build the proposed change requests"                 →  /sdlc-studio sprint --crs Proposed --goal done
-"create a change request to delete archived records" →  /sdlc-studio cr create
-"log an issue: checkout 500s intermittently"         →  /sdlc-studio issue create
-"triage that issue into bugs"                        →  /sdlc-studio triage apply --issue IS0001
-"what should I work on next?"                        →  /sdlc-studio hint
-"where is the project up to?"                        →  /sdlc-studio status
-```
-
-## How it works
-
-Most AI coding jumps from a vague prompt straight to code, then drifts as the project grows. SDLC Studio runs your work through five stages - **spec -> criteria -> plan -> review -> evidence** - and holds the agent to each. Two backlogs organise it: a **discovery** backlog of requests (change requests and RFCs) that become **delivery** work (epics, stories, bugs, each with acceptance criteria) only once `refine` sizes them; a sprint then plans, builds, verifies, and closes with an independent review. Each step writes a plain markdown file under `sdlc-studio/`; deterministic scripts do the mechanical checks, the model does the thinking, and you review and approve.
-
-```mermaid
-flowchart TB
-  A[New idea] -->|prd create| P[PRD]
-  B[Existing code] -->|prd generate| P
-  P --> E[Epics] --> S
-  RQ[Request: CR / RFC - discovery backlog] -->|refine| S[Stories + bugs, acceptance criteria - delivery backlog]
-  S -->|sprint plan| BLD[Build under TDD] --> VF[Verify criteria]
-  VF -->|independent review| DN[Done]
-  DN -->|sprint close + one signature| RPT[Sprint report]
-  VF -. reconcile keeps docs true .-> S
-```
-
-Two backlogs, one disciplined path through. A request is not work until `refine` decomposes it into sized units (the two-backlog rule). A story reaches Done only when its executable acceptance criteria pass **and** an independent reviewer - never the author - approves it; the run closes with a one-page report you sign once. The dotted line back is reconcile, keeping every document true to what was built.
-
-Run `/sdlc-studio status` any time for the at-a-glance dashboard:
-
-```text
-══════════════════════════════════════════════════════════
-                      SDLC STATUS
-══════════════════════════════════════════════════════════
-📋 REQUIREMENTS         ▓▓▓▓▓▓▓▓░░ 85%    # what is specified
-   ✅ PRD: 14 features   ✅ Personas: 4
-   ⚠️ Epics: 2/3 Ready   ✅ Stories: 12/12 Done
-💻 CODE                 ▓▓▓▓▓▓▓▓▓░ 90%    # what is built
-   ✅ Lint: passing      ⚠️ TODOs: 5 remaining
-🧪 TESTS                ▓▓▓▓▓▓▓▓▓░ 94%    # what is proven
-   ✅ 1,027 tests        ✅ E2E 7/7 features
-🔍 REVIEWS              ▓▓▓▓▓▓▓▓░░ 80%    # what is checked
-   ⚠️ EP0001: 3 stories changed since review
-──────────────────────────────────────────────────────────
-▶️ SUGGESTED: /sdlc-studio epic review --epic EP0001    # the next thing to do
-══════════════════════════════════════════════════════════
-```
-
-Two more ideas worth knowing:
-
-- **Two modes.** For a brand-new project (greenfield), `create` interviews you to write the spec. For existing code (brownfield), `generate` reads the code and writes the spec for you, then checks it by running tests against the real implementation. See [reference-philosophy.md](.claude/skills/sdlc-studio/reference-philosophy.md).
-- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it, and `persona generate --team` replaces them with fresh named seats grown from your project. The reviewer is always a different seat than the author, so no one approves their own code.
-
-## What you can do
-
-| Capability | What it does | Command |
-| --- | --- | --- |
-| Plan from scratch | Interview to a PRD, then epics and stories | `prd create` -> `epic` -> `story` |
-| Adopt existing code | Extract a testable spec (migration blueprint) | `prd generate` |
-| Try it on an existing repo | Zero-setup audit - three legs, refute-panel verified, findings filed as Bug/CR, remediation-only on secrets | `audit --profile repo` |
-| Run lean on a small repo | Collapse the pipeline to PRD -> story -> implement; promote to full later | `.config.yaml` `profile: lite` |
-| Decompose work | Epics and stories with Given/When/Then acceptance criteria | `epic`, `story` |
-| Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |
-| Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
-| Keep status honest | Detect and fix index drift from a file census; run executable `Verify:` lines | `reconcile`, `reconcile --verify` |
-| Prove tests can fail | On demand, mutate the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
-| Keep your house style | Declare status columns, companion suffixes, bug headings, and templates once - every check honours them | `.config.yaml` `conventions:` |
-| Upgrade and onboard | Migrate a project to current conventions AND see the capability delta since your version | `project upgrade` |
-| Stay token-lean | Archive terminal index rows by release when the advisory fires; the state anchor stays a capped window | `archive --type <t> --release <r>` |
-| Review like a team | The Three Amigos consult, with a mechanical author != reviewer gate | `consult team` |
-| Remember across projects | A lessons registry recalled before big decisions | `lessons recall`, `lessons add --global` |
-| Sync to GitHub | CRs, stories, and epics to GitHub Issues; merged PRs close them | `cr sync`, `story sync` |
-
-## Worked examples
-
-<details>
-<summary><b>Product</b> - scope a new product</summary>
-
-You say: *"I want to build a tool where customers can export their own data."*
-
-```text
-/sdlc-studio prd create     # interview -> prd.md
-/sdlc-studio epic           # PRD -> EP0001 (the export capability)
-/sdlc-studio story --epic EP0001
-```
-
-> Adding a feature to a product that already exists? Say "create a change request" (`cr create`) instead of starting a whole new PRD.
-
-You get an epic broken into stories, each carrying acceptance criteria (the checkable conditions for "done") you can read and edit:
-
-```text
-US0001  Export is requested and queued
-  AC1  Given a signed-in customer, When they request an export,
-       Then a job is queued and they see "export started"
-US0002  Export file is delivered
-  AC1  Given a completed job, When the file is ready,
-       Then the customer is emailed a time-limited download link
-```
-
-Writes `sdlc-studio/epics/EP0001-*.md` and `sdlc-studio/stories/US000*.md`. Review them, then hand to engineering.
-
-</details>
-
-<details>
-<summary><b>Engineer</b> - build the next story under test</summary>
-
-You say: *"Build the next story."*
-
-```text
-/sdlc-studio code plan        # plan tasks against every acceptance criterion
-/sdlc-studio code implement   # build it under TDD
-/sdlc-studio code verify      # run the acceptance criteria
-```
-
-The plan is written against the acceptance criteria *before* you write code, and `verify` runs the story's executable `Verify:` lines:
-
-```text
-[APL] US0001-export-requested.md: ac=2 pass=2 fail=0 manual=0 changes=2
-# both acceptance criteria pass - the story can reach Done
-```
-
-Writes `sdlc-studio/plans/PL0001-*.md` plus your code and tests. A story only reaches Done when its criteria pass.
-
-</details>
-
-<details>
-<summary><b>QA</b> - turn acceptance criteria into runnable tests</summary>
-
-You say: *"Turn this story's acceptance criteria into tests and check them."*
-
-```text
-/sdlc-studio test-spec          # AC -> a test-case matrix (TS0001)
-/sdlc-studio test-automation    # scaffold the test code
-/sdlc-studio code verify        # run the Verify: lines against the build
-```
-
-The test spec maps every AC to a named test case, so coverage is by construction, not reverse-engineered at the end. Writes `sdlc-studio/test-specs/TS0001-*.md`.
-
-</details>
-
-## Start here by role
-
-| You are... | Start with | Then read |
-| --- | --- | --- |
-| New / non-technical | Quick start, then just say "start a new project" | How it works (above) |
-| Product manager | `/sdlc-studio prd create` (or `prd generate`) | [help/prd.md](.claude/skills/sdlc-studio/help/prd.md), [help/epic.md](.claude/skills/sdlc-studio/help/epic.md) |
-| Engineer (new project) | `/sdlc-studio init` | [help/getting-started.md](.claude/skills/sdlc-studio/help/getting-started.md) |
-| Engineer (existing code) | `/sdlc-studio prd generate` | [help/brownfield-runbook.md](.claude/skills/sdlc-studio/help/brownfield-runbook.md) |
-| QA | `/sdlc-studio test-spec` | [help/test-spec.md](.claude/skills/sdlc-studio/help/test-spec.md), [help/verify.md](.claude/skills/sdlc-studio/help/verify.md) |
-| Eng lead | `/sdlc-studio status` and `review` | [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) |
 
 ## FAQ
 
 <details>
-<summary>Do I need to know the commands?</summary>
-
-No. Say what you want in plain language ("plan the next sprint", "extract the spec from this code"). The commands shown here are the explicit form for people who prefer them.
-
-</details>
-
-<details>
-<summary>What do PRD, epic, story, and acceptance criteria mean?</summary>
-
-Plain-language names for the steps. A **PRD** is the product requirements - what to build and why. **Epics** are the big chunks of that work; **stories** are the small, testable pieces. **Acceptance criteria** are the checkable conditions that say a story is done. SDLC Studio writes them all as files you can read and edit, so you never have to learn a new tool to follow along.
-
-</details>
-
-<details>
-<summary>Greenfield or brownfield - which path?</summary>
-
-Greenfield means a brand-new project; brownfield means existing code. New idea: `/sdlc-studio init` then `prd create`. Existing code: `/sdlc-studio prd generate`, which extracts a spec and validates it by running tests against your real implementation.
-
-</details>
-
-<details>
-<summary>Where does it put files?</summary>
-
-Plain markdown under `sdlc-studio/` in your project, so everything is reviewable and version-controlled:
-
-```text
-sdlc-studio/
-  prd.md  trd.md  tsd.md  personas.md
-  epics/  stories/  plans/  bugs/  test-specs/  crs/  rfcs/  reviews/
-  .local/        # gitignored: caches, reports, lessons
-tests/           # generated test code (project root)
-```
-
-</details>
-
-<details>
-<summary>Which tools does it work in?</summary>
-
-Claude Code, Cursor, OpenAI Codex, Gemini CLI, opencode, and GitHub Copilot - one install covers them (Cursor via the generic `agents` skills dir). It is a standard Agent Skill (`SKILL.md` format).
-
-</details>
-
-<details>
-<summary>Is it an npm package or an SDK?</summary>
-
-No. It is a curl-installed Agent Skill (a plug-in for AI coding tools) - a folder of instructions, templates, and scripts. There is nothing to import into your code.
-
-</details>
-
-<details>
-<summary>What do I need installed?</summary>
-
-Python 3.10+ for the bundled scripts (standard library only, with two optional dependencies: **PyYAML**, needed only if you set a project `.config.yaml`, without which the scripts degrade to the built-in defaults with a one-line warning, never a crash; and **coverage** 7.10 or later, needed only by `verify_ac run --coverage`, which measures a unit's own added lines). The `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
-
-</details>
-
-<details>
-<summary>What are the Three Amigos, and can I change them?</summary>
-
-Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that build and review the work, and never sign off their own. Tune them, author your own specialist, or run `persona generate --team` to grow a fresh named team from your project's PRD and stack; the agent uses the most-specific card.
-
-</details>
-
-<details>
-<summary>What is the sprint loop?</summary>
-
-`sprint` drives a prioritised batch of work toward a one-sentence goal along a goal ladder (`triage -> plan -> design -> done`): you approve the plan once, each unit is built and independently reviewed, and the run closes with a reconcile and a one-page report you sign once. Run a single rung for a checkpoint, or `--goal done` to take it all the way. Step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
-
-</details>
-
-<details>
 <summary>How do I upgrade?</summary>
 
-Re-run the installer, or `/sdlc-studio skill-update`. On 6.0, reinstall, then run `migrate` and `migrate --apply`: **[From 6.0 to 6.1](docs/existing-users.md#from-60-to-61)** names what 6.1 retires and what replaces it. To carry a v5 project to v6, run `migrate` (a dry run naming what it would change), then `migrate --apply`: it removes the config keys and `[check:]` tags v6 retired and restamps the project version, keeping every other byte. It reports, and never rewrites, any instruction-file line naming a retired verb or key, and your own scripts and CI are yours to search against the CHANGELOG's **Breaking** inventory. If you installed the 6.0.0-rc.1 candidate, its version check will not offer a later 6.0.0: reinstall with the installer instead of waiting for the prompt. The upgrade steps, the numbering question and its three answers live in **[docs/existing-users.md](docs/existing-users.md)** and, in full, at **[sdlc-studio.com](https://sdlc-studio.com)**.
+Re-run the installer, or `/sdlc-studio skill-update`. Each release's steps are a section of
+**[docs/existing-users.md](docs/existing-users.md)**: on 6.0, reinstall, then run `migrate` and
+`migrate --apply`, and **[From 6.0 to 6.1](docs/existing-users.md#from-60-to-61)** names what 6.1
+retires and what replaces it. To carry a v5 project to v6, run `migrate` (a dry run naming what
+it would change), then `migrate --apply`: it removes the config keys and `[check:]` tags v6
+retired and restamps the project version, keeping every other byte.
 
 </details>
 
-## Why SDLC Studio
-
-The philosophy in one breath: faster code generation attacks the wrong constraint - the
-bottleneck is knowing what to build and being able to prove it worked. So SDLC Studio is
-not a faster engine; it is the mill - the organisation of specification, evidence, and
-independent review around the code - with you in the lead and the tooling holding the
-discipline when pressure arrives. The full argument, in the author's own essays and with
-the evidence, is **[Why SDLC Studio](docs/why-sdlc-studio.md)**.
-
-The antidote claim is earned, not asserted. Three ways to build software with an AI:
-
-- **Vibe coding.** You prompt, it writes code, you hope. Fast for a demo, but the intent lives only in the chat, nothing checks the result against what you asked, and by release nobody (the model included) can say what "done" meant.
-- **Spec-driven.** You write the intent down first - a spec, a plan, tasks - and the agent builds to it. A real step up: the model has a target. But the spec is prose the agent produced and is then trusted to honour, and nothing recomputes whether the code and the documents still agree a week and ten changes later.
-- **Governed (this).** The same specs and plans, plus a source of truth the tools recompute from the files and hold the agent to. The status you claim is checked against a census of what actually exists. Acceptance criteria are executable and get run. A pre-commit gate refuses a change whose paperwork, style, or counts do not match reality - and tells you the exact line and the fix. The discipline does not depend on the agent remembering it.
-
-The difference is simple: spec-driven tools **align** the agent on intent; SDLC Studio also **argues back with facts**. Ask it to mark something done and the acceptance test decides. Claim a count and `reconcile` recomputes it from the files. Let a document drift from the code and the commit gate stops you. That is the practice a good engineering team already uses - clear requirements, traceability, change control, a definition of done that means done - made cheap enough to keep, because the agent carries the cost of the ceremony instead of you.
-
-**And we measure it.** We benchmark the tool against plain AI coding with a genuinely good CLAUDE.md, on fixture repos with held-back test suites the agent never sees, under a pre-registered protocol - and publish the results whichever way they point. Measured findings (N=5 per cell): on small well-specified tasks there is no difference (use the lite profile there); on a multi-file task with interacting requirements, every unstructured run shipped the same defect - ten out of ten - while the mandated planning pass caught it in three runs of five (direction consistent, below formal significance at this sample size; the two misses are documented as a named failure mode with a fix on the roadmap). A 2026-07-10 rerun against the v4 release candidate across three model eras is published with the same honesty - including the finding that on current frontier models the traps no longer bite, and on common base models judgement-gated process skips itself exactly when it is needed. The full argument, the production field results, and the honest caveats live in **[Why SDLC Studio](docs/why-sdlc-studio.md)** - the raw data in [docs/benchmarks/](docs/benchmarks/protocol-v2.md), and the distributable deep version in **[the white paper](docs/whitepaper.md)** ([PDF](docs/whitepaper.pdf)).
-
-<details>
-<summary>The longer argument</summary>
-
-A wave of AI tools is inventing new, AI-native ways to deliver software: fresh artifact formats, fresh ceremonies, fresh vocabularies for the model to follow. SDLC Studio does the opposite. Software engineering already worked out how to ship software that survives contact with reality - clear requirements, acceptance criteria, traceability from intent to code, change control, and a definition of done that means done. Teams quietly dropped those practices not because they were wrong, but because maintaining them by hand was expensive, so specifications went stale and the discipline lapsed. That economics has changed: an agent can author the requirements, keep them current, and prove the code against them, with acceptance criteria as a machine-checkable oracle and continuous reconciliation keeping every artifact true. The agent carries the cost of the ceremony, and the discipline stays.
-
-It is also built for where this is heading: small human teams directing larger agentic ones, trunk-based. These foundations are the default for new projects (`schema_version: 3`) - distributed artifact identity so parallel agents never fight over sequential ids, atomic index writes, typed authorship with a separation-of-duties lint, and the two-backlog workflow that separates a request from the sized work it becomes. An existing project is never auto-flipped; it upgrades explicitly via `project upgrade`.
-
-It also reframes the lifecycle as a loop-engineering problem already solved. An agent runs in a loop that cannot judge its own exit condition; the lifecycle has always been that loop - specify, build, validate against the specification, reconcile, repeat - with acceptance criteria as the test that closes it. This is the lineage Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development: you set the goal and the criteria, the agent drives the proven lifecycle to it.
-
-</details>
-
-## Under the hood
-
-- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync), each under its own unit tests, do the mechanical work.
-- **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
-- **Tests that prove they can fail.** `mutation run`, on demand, injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
-- **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
-
-## Troubleshooting
-
-<details>
-<summary>Common issues</summary>
-
-- **`/sdlc-studio` not found** - confirm the skill directory exists for your tool (`install.sh --list-targets`), then restart the session; Claude Code also live-reloads project-level skills.
-- **Installer download fails** - check network/proxy, or install manually: `git clone` this repo and copy `.claude/skills/sdlc-studio/` into your tool's skills directory.
-- **Commands run but nothing happens** - run `/sdlc-studio status`; if the pipeline is empty the next step is `prd create` or `prd generate`.
-- **Uninstall** - `./install.sh --uninstall` (same `--target`/scope you installed with); preview with `--dry-run`.
-
-</details>
+More answers: [what it needs and where it writes](docs/INSTALL.md#requirements), and
+[the ideas in plain words](docs/why-sdlc-studio.md#common-questions).
 
 ## Documentation
 
-- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: getting started with guided `init`, greenfield and brownfield worked walkthroughs, the specification layer (PRD, TRD, TSD and the multi-repo PVD), personas and the Three Amigos, the concept guides (two-backlog, sprint planning, independent review, executable acceptance criteria), the FAQ, and the multi-harness install guide. The files below are the in-repo reference the skill loads at runtime.
-- [The white paper](docs/whitepaper.md) - the mill, described properly: the operating model, the measured evidence, governance, and adoption, for the engineering leader evaluating an agentic SDLC
-- [docs/why-sdlc-studio.md](docs/why-sdlc-studio.md) - the full value argument: thesis, evidence (field + benchmark), economics, and honest caveats
-- [docs/existing-users.md](docs/existing-users.md) - already running SDLC Studio? The upgrade steps, what a new version refuses and how to clear it, the two-backlog workflow, the numbering question
-- [docs/INSTALL.md](docs/INSTALL.md) - full installer reference
-- `/sdlc-studio help` - the command catalogue (also [help/help.md](.claude/skills/sdlc-studio/help/help.md))
-- [Greenfield runbook](.claude/skills/sdlc-studio/help/getting-started.md) and [Brownfield runbook](.claude/skills/sdlc-studio/help/brownfield-runbook.md) - the step-by-step paths
-- [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md) - the operating doctrine for running any project with this skill
+- **[sdlc-studio.com](https://sdlc-studio.com)** - the documentation home: guided
+  walkthroughs, the concept guides, the FAQ and the install guide for every tool.
+- [Why SDLC Studio](docs/why-sdlc-studio.md) - the argument, the evidence, the economics, how it
+  works and worked examples; [the white paper](docs/whitepaper.md) ([PDF](docs/whitepaper.pdf))
+  is the deep version.
+- [docs/existing-users.md](docs/existing-users.md) - the upgrade steps, and what a new version
+  refuses and how to clear it.
+- [docs/INSTALL.md](docs/INSTALL.md) - the installer reference, requirements and troubleshooting.
+- `/sdlc-studio help` - the command catalogue ([help/help.md](.claude/skills/sdlc-studio/help/help.md)),
+  with the [greenfield](.claude/skills/sdlc-studio/help/getting-started.md) and
+  [brownfield](.claude/skills/sdlc-studio/help/brownfield-runbook.md) runbooks.
+- [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, and the bar
+  it was held to.
+- [CHANGELOG.md](CHANGELOG.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md).
+
+Release notes:
+
 - [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - the current release: a run's cost is measured on whichever harness ran it and priced in dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
-- [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md) - a reviewer judges only work its author has self-checked, one command gives a builder its whole brief, a run states what it cost, the gates cost less, and the 6.1 upgrade path
-- [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - a run ends with its signed report, the report states what it measured, a plain install is the latest verified release, and the 6.0 upgrade path
-- [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, what changed since the candidate, both upgrade paths and the known issues
-- [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the release candidate: the lean loop, one verdict ledger, one signature, every retired surface and how `migrate --apply` carries a v5.1 project across
-- [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - what v5 is, what it refuses, and what changed, for a reader deciding whether to upgrade
-- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md) - faster `status`, and the carried list closed with every Medium disposed of or ruled
-- [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) - one defect, the verified install path that had never worked
-- [docs/known-issues.md](docs/known-issues.md) - the defects this release ships with, by id, and the bar it was held to
-- [CHANGELOG.md](CHANGELOG.md) - release history | [SECURITY.md](SECURITY.md) | [SUPPORT.md](SUPPORT.md)
+- [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md) - a review brief can require the author's own check first, a run states what it cost, and the 6.1 upgrade path
+- [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - a run ends with its signed report, and the 6.0 upgrade path
+- [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, both upgrade paths and the known issues
+- [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the release candidate, and every surface it retired
+- [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md), [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) and [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - the v5 releases
 
 ## Contributing
 
-Dev instructions live in [AGENTS.md](AGENTS.md) (read natively by Codex, Copilot, Cursor, Gemini; Claude Code imports it via CLAUDE.md). Lint with `npm run lint`; test with `npm test`. Behavioural eval scenarios live in [evals/](evals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
+Dev instructions live in [AGENTS.md](AGENTS.md), read natively by Codex, Copilot, Cursor and
+Gemini; Claude Code imports it through CLAUDE.md. Behavioural eval scenarios live in
+[evals/](evals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Sponsor
 
-Proudly supported by **Anthropic** through the **Claude for Open Source** programme. Sponsorship supports the project's development; it is not an endorsement of any claim made here, and the benchmark evidence is published whichever way it points.
+Proudly supported by **Anthropic** through the **Claude for Open Source** programme. Sponsorship
+supports the project's development; it is not an endorsement of any claim made here, and the
+benchmark evidence is published whichever way it points.
 
 ## Licence
 
-[MIT](LICENSE). Runs entirely in your own repository - no account, no server, no data leaves your machine.
+[MIT](LICENSE). Runs entirely in your own repository: no account, no server, no data leaves your
+machine.

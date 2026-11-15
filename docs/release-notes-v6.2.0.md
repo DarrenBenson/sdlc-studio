@@ -9,7 +9,7 @@ Every entry is in [the CHANGELOG's 6.2 section](../CHANGELOG.md#620---2026-11-02
 
 ## What changed for you
 
-- **A reviewer judges only work its author has self-checked.** `critic.py brief` prints an
+- **A review brief can require the author's own check first.** `critic.py brief` prints an
   author self-check on stderr: the claims to inventory (the commit message, each prose surface
   the brief names, each changelog fragment the unit declares) and the test files to mutate.
   `critic.py self-check record` writes that pass to `sdlc-studio/reviews/author-self-checks.md`,
@@ -173,7 +173,7 @@ Unit ids behind each passage, in this repository.
 | Passage | Ids |
 | --- | --- |
 | Figures | RPT0023 (`sdlc-studio/reports/`), its Estimates table; BG1109's changelog entry; `GATE_BUDGET_MEASURED` in `gate.py` |
-| A reviewer judges only work its author has self-checked | US1087, US1088, US1089, US1094, BG1117 |
+| A review brief can require the author's own check first | US1087, US1088, US1089, US1094, BG1117 |
 | One command gives a builder its whole brief | US1093 |
 | A run states what it cost | US1091, US1092, US1095, US1097, BG1111, BG1127 |
 | The gates cost less | BG1065, BG1109 |

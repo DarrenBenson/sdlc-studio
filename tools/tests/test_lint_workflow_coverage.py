@@ -181,9 +181,12 @@ class CoverageBeforeSuiteTests(unittest.TestCase):
         agents = (REPO / "AGENTS.md").read_text(encoding="utf-8")
         start = agents.index("## Soft dependencies")
         self.assertIn("`coverage` 7.10 or later", agents[start:start + 2000], "AGENTS.md's soft-dependency table must name coverage")
-        readme = (REPO / "README.md").read_text(encoding="utf-8")
-        self.assertIn("**coverage** 7.10 or later, needed only by `verify_ac run --coverage`", readme, "README's dependency sentence must name coverage and what needs it")
-        self.assertNotIn("PyYAML** is the one optional dependency", readme)
+        # The dependency sentence moved from the README to the install guide's requirements,
+        # which the README's try route links; the stale wording is refused on both pages.
+        install_doc = (REPO / "docs" / "INSTALL.md").read_text(encoding="utf-8")
+        self.assertIn("**coverage** 7.10 or later, needed only by `verify_ac run --coverage`", install_doc, "INSTALL.md's dependency sentence must name coverage and what needs it")
+        for page in ("README.md", "docs/INSTALL.md"):
+            self.assertNotIn("PyYAML** is the one optional dependency", (REPO / page).read_text(encoding="utf-8"), page)
 
 
 class CorpusJobEnvironmentTests(unittest.TestCase):

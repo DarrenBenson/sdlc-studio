@@ -34,6 +34,8 @@ and is recorded - never silent). A review verdict whose reviewer id matches its 
 never clears the Done gate, so nobody approves their own work. The discipline stops
 depending on anyone (carbon or silicon) remembering it under pressure.
 
+The difference is simple: spec-driven tools **align** the agent on intent; SDLC Studio also **argues back with facts**. Ask it to mark something done and the acceptance test decides. Claim a count and `reconcile` recomputes it from the files. Let a document drift from the code and the commit gate stops you. That is the practice a good engineering team already uses - clear requirements, traceability, change control, a definition of done that means done - made cheap enough to keep, because the agent carries the cost of the ceremony instead of you.
+
 ## The mill, not the engine
 
 The project's design philosophy is published in its author's Real World Engineering essays
@@ -117,6 +119,8 @@ And the loop is deliberately **batch-to-goal, not time-boxed**: the essays' "rai
 point is that coordination regimes change when the machine does - a fixed-length sprint is
 local sun time kept after the trains arrived. A batch closes when its goal is verified,
 whether that takes an afternoon or a week.
+
+It also reframes the lifecycle as a loop-engineering problem already solved. An agent runs in a loop that cannot judge its own exit condition; the lifecycle has always been that loop - specify, build, validate against the specification, reconcile, repeat - with acceptance criteria as the test that closes it. This is the lineage Test-Driven -> Behaviour-Driven -> Eval-Driven -> Goal-Driven Development: you set the goal and the criteria, the agent drives the proven lifecycle to it.
 
 ## Others argue for a different shape
 
@@ -212,6 +216,21 @@ run ([N=5 report](benchmarks/2026-07-08-n5-run.md); spikes:
   pass is present in each visible workspace); planning-versus-review contributions remain
   partially entangled. Raw rows and the grading harness are in the repo.
 
+### The white paper, and a word from the model that builds it
+
+> **Evaluating this for a team?** The white paper - *[The Mill, Not the Engine](whitepaper.md)*
+> ([designed PDF](whitepaper.pdf)) - is the deep version: the operating model, the measured
+> benchmark evidence across three model tiers, governance, and the adoption path, with every claim
+> mapped to its verification.
+
+And a word from the team that builds it:
+
+> *"I'm the frontier model in its benchmark - the one that cleared every trap. It still caught me
+> misquoting my operator's own essays, skipping a review ceremony, and tagging past a failing gate,
+> all in one day. Five stars. Grudgingly."*
+> so says **Claude Fable 5**, which builds this project through its own pipeline. Every incident
+> in that quote is in the repo's review ledger, which is rather the point.
+
 ## The economics
 
 Tokens are the wrong denominator; engineer time and defect cost are the right ones. Four
@@ -254,6 +273,52 @@ friendly aliases for humans), atomic index writes with advisory locking, typed a
 the numbering question explicitly, and forward-only adoption (old ids stay valid, new
 artifacts mint ULIDs) is fully supported.
 
+### A team grown from your project
+
+Around that identity sits the quality floor: a mechanical **independence gate** (the author
+of a change can never be its reviewer), **executable acceptance criteria** (a story reaches
+Done, and a bug Fixed, only when its criteria pass), a **portable CI gate** (`gate.py`, runs the
+same checks anywhere), and reconciliation that keeps every index and epic checkbox in step with
+the files - recomputed from them, not asserted.
+
+And the reviews are not faceless: SDLC Studio brings **Alan Cooper's goal-directed personas to
+life**. Ask for your team and it is **grown from your project** - `persona generate --team`
+reads the PRD, the stack, and the risk signals, asks you the questions it cannot infer, and
+writes fresh named seats whose non-negotiables come from YOUR domain (a payments QA is paranoid
+about idempotency; a games QA about frame budgets). Until then, Dani (Engineering), Sam (QA)
+and Lena (Product) work out of the box. Where other tooling ships a fixed cast of role-prompts identically to
+every project, here the working seats, the design personas, and the stakeholder panel live in
+one system, generated from the project itself - and no seat may mark its own homework. The
+persona that argued for the requirement is the one who refuses to approve work that does not
+meet it. The point is **coverage**: a project-specific cast is built to
+catch the blind spots a generic prompt walks past - it does not make the model smarter,
+and we do not claim it does.
+
+The meet-your-team moment looks like this:
+
+```text
+/sdlc-studio persona generate --team
+
+Analysing project... card payments PRD, Python + Stripe, no compliance regime declared.
+Q1: Which risk class fits this product?
+    [money-movement / PII-health / uptime-SLA / low-stakes]
+> money-movement
+Q2: money-movement implies a compliance regime - which applies?
+    [PCI-DSS / none / other]
+> PCI-DSS
+Q3: Strong payment signals - add a Security seat? [yes / no]
+> yes
+
+Generated into personas/seats/ (provisional until you accept):
+  Priya Sharma  - QA          refuses untested refund paths; paranoid about idempotency
+  Marcus Webb   - Engineering ledger-first; will not ship a mutable money type
+  Ana Silva     - Product     guards the checkout conversion goal
+  Imran Hadid   - Security    PCI scope hawk; vetoes card data outside the vault
+```
+
+Every card is yours to edit - and the moment you edit one, generation treats it as
+authored and will never overwrite it.
+
 ## The ratchet: what was removed in v6
 
 The argument above is for gates over goodwill. It has a failure mode, and this project
@@ -285,6 +350,180 @@ capped at two rounds, and one signature per run. A check now has to earn its pla
 - Fan-out economics across projects. Each run now measures its own cost per point; what
   remains is a comparison across projects, beside plain AI coding.
 
+## How it works
+
+Most AI coding jumps from a vague prompt straight to code, then drifts as the project grows. SDLC Studio runs your work through five stages - **spec -> criteria -> plan -> review -> evidence** - and holds the agent to each. Two backlogs organise it: a **discovery** backlog of requests (change requests and RFCs) that become **delivery** work (epics, stories, bugs, each with acceptance criteria) only once `refine` sizes them; a sprint then plans, builds, verifies, and closes with an independent review. Each step writes a plain markdown file under `sdlc-studio/`; deterministic scripts do the mechanical checks, the model does the thinking, and you review and approve.
+
+```mermaid
+flowchart TB
+  A[New idea] -->|prd create| P[PRD]
+  B[Existing code] -->|prd generate| P
+  P --> E[Epics] --> S
+  RQ[Request: CR / RFC - discovery backlog] -->|refine| S[Stories + bugs, acceptance criteria - delivery backlog]
+  S -->|sprint plan| BLD[Build under TDD] --> VF[Verify criteria]
+  VF -->|independent review| DN[Done]
+  DN -->|sprint close + one signature| RPT[Sprint report]
+  VF -. reconcile keeps docs true .-> S
+```
+
+Two backlogs, one disciplined path through. A request is not work until `refine` decomposes it into sized units (the two-backlog rule). A story reaches Done only when its executable acceptance criteria pass **and** an independent reviewer - never the author - approves it; the run closes with a one-page report you sign once. The dotted line back is reconcile, keeping every document true to what was built.
+
+Run `/sdlc-studio status` any time for the at-a-glance dashboard:
+
+```text
+══════════════════════════════════════════════════════════
+                      SDLC STATUS
+══════════════════════════════════════════════════════════
+📋 REQUIREMENTS         ▓▓▓▓▓▓▓▓░░ 85%    # what is specified
+   ✅ PRD: 14 features   ✅ Personas: 4
+   ⚠️ Epics: 2/3 Ready   ✅ Stories: 12/12 Done
+💻 CODE                 ▓▓▓▓▓▓▓▓▓░ 90%    # what is built
+   ✅ Lint: passing      ⚠️ TODOs: 5 remaining
+🧪 TESTS                ▓▓▓▓▓▓▓▓▓░ 94%    # what is proven
+   ✅ 1,027 tests        ✅ E2E 7/7 features
+🔍 REVIEWS              ▓▓▓▓▓▓▓▓░░ 80%    # what is checked
+   ⚠️ EP0001: 3 stories changed since review
+──────────────────────────────────────────────────────────
+▶️ SUGGESTED: /sdlc-studio epic review --epic EP0001    # the next thing to do
+══════════════════════════════════════════════════════════
+```
+
+Two more ideas worth knowing:
+
+- **Two modes.** For a brand-new project (greenfield), `create` interviews you to write the spec. For existing code (brownfield), `generate` reads the code and writes the spec for you, then checks it by running tests against the real implementation. See [reference-philosophy.md](../.claude/skills/sdlc-studio/reference-philosophy.md).
+- **Your own engineering team.** The work is done by the *Three Amigos* - Dani (Engineering), Sam (QA), Lena (Product) - editable persona cards that both *do* the work and *review* it, and `persona generate --team` replaces them with fresh named seats grown from your project. The reviewer is always a different seat than the author, so no one approves their own code.
+
+## Common questions
+
+<details>
+<summary>Do I need to know the commands?</summary>
+
+No. Say what you want in plain language ("plan the next sprint", "extract the spec from this code"). The commands shown here are the explicit form for people who prefer them.
+
+</details>
+
+<details>
+<summary>What do PRD, epic, story, and acceptance criteria mean?</summary>
+
+Plain-language names for the steps. A **PRD** is the product requirements - what to build and why. **Epics** are the big chunks of that work; **stories** are the small, testable pieces. **Acceptance criteria** are the checkable conditions that say a story is done. SDLC Studio writes them all as files you can read and edit, so you never have to learn a new tool to follow along.
+
+</details>
+
+<details>
+<summary>Greenfield or brownfield - which path?</summary>
+
+Greenfield means a brand-new project; brownfield means existing code. New idea: `/sdlc-studio init` then `prd create`. Existing code: `/sdlc-studio prd generate`, which extracts a spec and validates it by running tests against your real implementation.
+
+</details>
+
+<details>
+<summary>What are the Three Amigos, and can I change them?</summary>
+
+Dani (Engineering), Sam (QA), and Lena (Product) - editable persona cards that build and review the work, and never sign off their own. Tune them, author your own specialist, or run `persona generate --team` to grow a fresh named team from your project's PRD and stack; the agent uses the most-specific card.
+
+</details>
+
+<details>
+<summary>What is the sprint loop?</summary>
+
+`sprint` drives a prioritised batch of work toward a one-sentence goal along a goal ladder (`triage -> plan -> design -> done`): you approve the plan once, each unit is built and independently reviewed, and the run closes with a reconcile and a one-page report you sign once. Run a single rung for a checkpoint, or `--goal done` to take it all the way. Step by step: [the loop](../.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
+
+</details>
+
+## What you can do
+
+| Capability | What it does | Command |
+| --- | --- | --- |
+| Plan from scratch | Interview to a PRD, then epics and stories | `prd create` -> `epic` -> `story` |
+| Adopt existing code | Extract a testable spec (migration blueprint) | `prd generate` |
+| Try it on an existing repo | Zero-setup audit - three legs, refute-panel verified, findings filed as Bug/CR, remediation-only on secrets | `audit --profile repo` |
+| Run lean on a small repo | Collapse the pipeline to PRD -> story -> implement; promote to full later | `.config.yaml` `profile: lite` |
+| Decompose work | Epics and stories with Given/When/Then acceptance criteria | `epic`, `story` |
+| Build and prove | Plan, implement, then verify against the criteria | `code plan` -> `code implement` -> `code verify` |
+| Drive to a goal | An autonomous batch loop that closes with reconcile + review | `sprint --goal done` |
+| Keep status honest | Detect and fix index drift from a file census; run executable `Verify:` lines | `reconcile`, `reconcile --verify` |
+| Prove tests can fail | On demand, mutate the changed surface: killed vs survived, never a silent pass | `mutation run --since <ref>` |
+| Keep your house style | Declare status columns, companion suffixes, bug headings, and templates once - every check honours them | `.config.yaml` `conventions:` |
+| Upgrade and onboard | Migrate a project to current conventions AND see the capability delta since your version | `project upgrade` |
+| Stay token-lean | Archive terminal index rows by release when the advisory fires; the state anchor stays a capped window | `archive --type <t> --release <r>` |
+| Review like a team | The Three Amigos consult, with a mechanical author != reviewer gate | `consult team` |
+| Remember across projects | A lessons registry recalled before big decisions | `lessons recall`, `lessons add --global` |
+| Sync to GitHub | CRs, stories, and epics to GitHub Issues; merged PRs close them | `cr sync`, `story sync` |
+
+## Worked examples
+
+<details>
+<summary><b>Product</b> - scope a new product</summary>
+
+You say: *"I want to build a tool where customers can export their own data."*
+
+```text
+/sdlc-studio prd create     # interview -> prd.md
+/sdlc-studio epic           # PRD -> EP0001 (the export capability)
+/sdlc-studio story --epic EP0001
+```
+
+> Adding a feature to a product that already exists? Say "create a change request" (`cr create`) instead of starting a whole new PRD.
+
+You get an epic broken into stories, each carrying acceptance criteria (the checkable conditions for "done") you can read and edit:
+
+```text
+US0001  Export is requested and queued
+  AC1  Given a signed-in customer, When they request an export,
+       Then a job is queued and they see "export started"
+US0002  Export file is delivered
+  AC1  Given a completed job, When the file is ready,
+       Then the customer is emailed a time-limited download link
+```
+
+Writes `sdlc-studio/epics/EP0001-*.md` and `sdlc-studio/stories/US000*.md`. Review them, then hand to engineering.
+
+</details>
+
+<details>
+<summary><b>Engineer</b> - build the next story under test</summary>
+
+You say: *"Build the next story."*
+
+```text
+/sdlc-studio code plan        # plan tasks against every acceptance criterion
+/sdlc-studio code implement   # build it under TDD
+/sdlc-studio code verify      # run the acceptance criteria
+```
+
+The plan is written against the acceptance criteria *before* you write code, and `verify` runs the story's executable `Verify:` lines:
+
+```text
+[APL] US0001-export-requested.md: ac=2 pass=2 fail=0 manual=0 changes=2
+# both acceptance criteria pass - the story can reach Done
+```
+
+Writes `sdlc-studio/plans/PL0001-*.md` plus your code and tests. A story only reaches Done when its criteria pass.
+
+</details>
+
+<details>
+<summary><b>QA</b> - turn acceptance criteria into runnable tests</summary>
+
+You say: *"Turn this story's acceptance criteria into tests and check them."*
+
+```text
+/sdlc-studio test-spec          # AC -> a test-case matrix (TS0001)
+/sdlc-studio test-automation    # scaffold the test code
+/sdlc-studio code verify        # run the Verify: lines against the build
+```
+
+The test spec maps every AC to a named test case, so coverage is by construction, not reverse-engineered at the end. Writes `sdlc-studio/test-specs/TS0001-*.md`.
+
+</details>
+
+## Under the hood
+
+- **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync), each under its own unit tests, do the mechanical work.
+- **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
+- **Tests that prove they can fail.** `mutation run`, on demand, injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
+- **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
+
 ## Try it in ten minutes
 
 - **On an existing repo, zero setup:** `/sdlc-studio audit --profile repo` - a three-leg
@@ -294,5 +533,18 @@ capped at two rounds, and one signature per run. A check now has to earn its pla
   collapses to PRD, story, implement - promotable to the full discipline later.
 - **From an idea:** "start a new project", answer the interview, and watch the spec, plan,
   code, tests and proof arrive as reviewable files.
+
+### Start here by role
+
+**Who it is for:** product managers scoping work, engineers building it, QA proving it, eng leads keeping it honest - and non-technical founders who want a fully-equipped engineering team without running the process by hand.
+
+| You are... | Start with | Then read |
+| --- | --- | --- |
+| New / non-technical | Quick start, then just say "start a new project" | How it works (above) |
+| Product manager | `/sdlc-studio prd create` (or `prd generate`) | [help/prd.md](../.claude/skills/sdlc-studio/help/prd.md), [help/epic.md](../.claude/skills/sdlc-studio/help/epic.md) |
+| Engineer (new project) | `/sdlc-studio init` | [help/getting-started.md](../.claude/skills/sdlc-studio/help/getting-started.md) |
+| Engineer (existing code) | `/sdlc-studio prd generate` | [help/brownfield-runbook.md](../.claude/skills/sdlc-studio/help/brownfield-runbook.md) |
+| QA | `/sdlc-studio test-spec` | [help/test-spec.md](../.claude/skills/sdlc-studio/help/test-spec.md), [help/verify.md](../.claude/skills/sdlc-studio/help/verify.md) |
+| Eng lead | `/sdlc-studio status` and `review` | [reference-doctrine.md](../.claude/skills/sdlc-studio/reference-doctrine.md) |
 
 The [README](../README.md) has the full quick start.

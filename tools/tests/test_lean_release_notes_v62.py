@@ -45,7 +45,7 @@ FRAGMENTS = REPO / "changelog.d"
 
 #: Each theme of the first section -> the units its bullet names, and no others.
 THEMES = {
-    "a reviewer judges only work its author has self-checked":
+    "a review brief can require the author's own check first":
         {"US1087", "US1088", "US1089", "US1094"},
     "one command gives a builder its whole brief": {"US1093"},
     "a run states what it cost, priced, over the main thread and every subagent":
