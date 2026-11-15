@@ -1,6 +1,6 @@
 # US1161: docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0702
 > **Created:** 2026-11-15
@@ -22,8 +22,10 @@
 
 - **AC1:** Given this repository's committed reports, when `sprint_report.py evidence --out docs/evidence.md --check` runs, then it exits 0, and the page names the newest report it covers.
   - **Verify:** pytest tools/tests/test_evidence_page_committed.py::CommittedEvidencePageTests::test_the_committed_page_matches_the_reports
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given docs/evidence.md, when its hand-written part is read, then it has a section on what 'Judged partial' means and where its reason comes from, one on how the wait for a signature is measured (report built to report signed), and one naming the command that regenerates the page, and every link in them resolves to an existing file and heading.
   - **Verify:** pytest tools/tests/test_evidence_page_committed.py::CommittedEvidencePageTests::test_the_page_explains_partial_verdicts_waiting_and_regeneration
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
