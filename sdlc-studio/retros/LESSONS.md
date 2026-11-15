@@ -6,6 +6,33 @@
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
 
+## L-0480: Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer…
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer added to persona_memory.py inherits it rather than reopening the bypass.
+
+Recorded from retro RETRO0146.
+
+## L-0479: The plan-time registry check (CR0705, now in run fourteen as US1169), naming the prose-writer sweep and command-audit.md among the files a…
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+The plan-time registry check (CR0705, now in run fourteen as US1169), naming the prose-writer sweep and command-audit.md among the files a new script or flag implies.
+
+Recorded from retro RETRO0146.
+
+## L-0478: A lane rebase step (CR0707) that carries a waiting lane's staged work onto a moved main, regenerates the derived pages, and drops the stash…
+
+- **Added:** 2026-11-15
+- **Review-by:** 2027-02-13
+
+A lane rebase step (CR0707) that carries a waiting lane's staged work onto a moved main, regenerates the derived pages, and drops the stash only after the apply succeeds, so no orchestrator hand-rolls it again.
+
+Recorded from retro RETRO0146.
+
 ## L-0477: Rebase a waiting lane's worktree onto main before its builder hands back when another lane has landed on the same files, so `lane land`…
 
 - **Added:** 2026-11-15

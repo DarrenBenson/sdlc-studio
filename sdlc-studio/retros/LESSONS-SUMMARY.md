@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0480: Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer…**
+- **L-0479: The plan-time registry check (CR0705, now in run fourteen as US1169), naming the prose-writer sweep and command-audit.md among the files a…**
+- **L-0478: A lane rebase step (CR0707) that carries a waiting lane's staged work onto a moved main, regenerates the derived pages, and drops the stash…**
 - **L-0477: Rebase a waiting lane's worktree onto main before its builder hands back when another lane has landed on the same files, so `lane land`…**
 - **L-0476: Run `tools/run-suite.sh all` after each wave, not only before the close, so a red main is found within one wave of the lane that caused it**
 - **L-0475: A plan-time check that a unit adding a script or a verb declares the registry files that implies, so the refusal comes before the build…**

@@ -155,3 +155,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0143](RETRO0143-run-ten-verdict-binding-and-the-report-of.md) | Run ten: verdict binding and the report of record | 2026-11-12 | -- | -- |
 | [RETRO-0144](RETRO0144-lanes-land-and-die-cleanly-verifiers-never-read.md) | Lanes land and die cleanly, verifiers never read green wrongly, and every unit's cost is priced | 2026-11-13 | -- | -- |
 | [RETRO-0145](RETRO0145-run-twelve-evidence-you-can-parse-and-cost.md) | Run twelve: evidence you can parse and cost you can forecast | 2026-11-15 | -- | -- |
+| [RETRO-0146](RETRO0146-run-thirteen-each-seat-s-record-the-escapes.md) | Run thirteen: each seat's record, the escapes it missed, and learnings only a signature puts live | 2026-11-15 | -- | -- |
