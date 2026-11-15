@@ -35,6 +35,15 @@ SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
 critic = loader.load_script("critic")
 
+
+def _seats_dropped(argv: list[str]) -> list[str]:
+    """The footer's record argv without the `--reviewer` and `--author` seats it names, so a
+    case records under its own ids; a footer missing either flag fails here."""
+    for flag in ("--reviewer", "--author"):
+        at = argv.index(flag)
+        del argv[at:at + 2]
+    return argv
+
 SESSION = "acd73b30-154a-4170-83eb-043073708d4b"
 
 
@@ -81,7 +90,7 @@ def _brief(cwd: Path, root: Path, unit: str) -> tuple[Path, str, list[str]]:
     path = next(Path(ln.strip()) for ln in tail.splitlines() if ln.strip().endswith(".txt"))
     m = re.search(r"record the verdict with:\s+critic\.py (record .*)$", r.stderr, re.M)
     assert m, r.stderr
-    return path, path.stem, [a for a in shlex.split(m.group(1)) if a != "..."]
+    return path, path.stem, _seats_dropped(shlex.split(m.group(1)))
 
 
 def _block(unit: str, stem: str, remark: str = "") -> str:
@@ -182,7 +191,8 @@ class VerdictProvenanceTests(unittest.TestCase):
 
     def _record(self, cwd: Path, root: Path, argv: list[str], env: dict
                 ) -> subprocess.CompletedProcess:
-        r = _critic(cwd, *argv, "--reviewer", "qa-seat", "--author", "builder",
+        # an author naming its seat, so the only WARNING a case can meet is the one it is about
+        r = _critic(cwd, *argv, "--reviewer", "qa-seat", "--author", "builder (engineering)",
                     "--root", str(root), env=env)
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertRegex(r.stdout, r"^recorded US000\d APPROVE \[delivery\] round 1 -> ")

@@ -512,6 +512,11 @@ def _write_verdict(repo_root, unit, verdict, reviewer, author, issues, phase, br
               f"({verdict_provenance.SELF_REVIEW}:{edited['path']}), so the close's review "
               f"coverage and the signature's review bar do not count it as independent",
               file=sys.stderr)
+    # Here, so every delivery writer warns alike (`record`, `transition set --verdict`,
+    # `artifact.py close --verdict`); after the write, because an author naming no seat is
+    # recorded as given and never refused.
+    if phase == "delivery" and (seatless := _seatless_author_warning(repo_root, author)):
+        print(f"WARNING: {seatless}", file=sys.stderr)
     return path, row
 
 
@@ -2613,6 +2618,46 @@ def _seat_drift_warning(repo_root: Path | str, reviewer: str) -> str | None:
             f"reference-workflow-personas.md")
 
 
+#: A recorded seat: the first `(<role>)` or `(<role> seat)` group in a Reviewer or Author cell.
+_RECORDED_SEAT = re.compile(r"\(\s*([a-z][a-z0-9-]*)(?:\s+seat)?\s*\)", re.I)
+
+#: The default building seat, when no lane brief recorded which seat built a unit.
+BUILD_SEAT = "engineering"
+
+
+def recorded_seat(cell: str) -> str | None:
+    """The seat role a recorded Reviewer or Author cell names, lower-cased, or None.
+
+    Read from the first `(<role>)` or `(<role> seat)` group only, never from the words around
+    it: `seat_for`'s name heuristic reads `engineering-seat build worker` as the engineering
+    seat, so a cell naming no seat would pass as naming one, and a seat's verdicts could not be
+    told from anyone else's.
+    """
+    m = _RECORDED_SEAT.search(_unescape(cell or ""))
+    return m.group(1).lower() if m else None
+
+
+def seat_signature(repo_root: Path | str, role: str) -> str:
+    """`<holder> (<role>)` for a seat: the holder is the name the project's card for that role
+    carries, or `<role> seat` when the project declares no card for it."""
+    holder = next((name for r, name in _declared_reviewers(repo_root) if r == role),
+                  f"{role} seat")
+    return f"{holder} ({role})"
+
+
+def _seatless_author_warning(repo_root: Path | str, author: str) -> str | None:
+    """Advisory when a project declares seats and a recorded author carries no `(<role>)` group
+    (`recorded_seat`), so its repairs cannot be scored as a seat's. Never a refusal, and silent
+    on a project that declares no seat, or for an absent author."""
+    if not _declared_reviewers(repo_root) or not _id(author) or _id(author) == PRE_GATE:
+        return None
+    if recorded_seat(author):
+        return None
+    return (f"author '{author}' lacks the `<holder> (<role>)` form (for example "
+            f"'{seat_signature(repo_root, BUILD_SEAT)}'), so the retro cannot score its repairs "
+            f"as a seat's; the row is recorded as given")
+
+
 _RETURN_CONTRACT = """Return EXACTLY (raw data, no wrapper):
 VERDICT: APPROVE or REJECT
 ISSUES: <semicolon-separated findings, each one TAGGED with its origin and carrying
@@ -4627,16 +4672,31 @@ def _print_with_verdict_file(root: Path | str, unit: str, text: str, fp: str) ->
 
 
 def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: str,
-                   path: Path) -> str:
+                   path: Path, seat: str) -> str:
     """The tier and fingerprint lines (`lib/lanes.py` parses both) and the record command, which
     reads the reviewer's own file, so what is recorded is what the reviewer wrote. The tier is
-    carried INTO that command: a tier printed and not recorded is the state this flag was in."""
+    carried INTO that command: a tier printed and not recorded is the state this flag was in.
+
+    The command names both seats as `<holder> (<role>)`, the form `recorded_seat` reads: the
+    reviewer is `seat`, the one briefed, and the author is the seat the unit's lane brief
+    recorded as building it, or the engineering seat, said so, when no lane recorded one."""
     how = "chosen" if explicit else "derived from the unit's risk band"
+    shown = sdlc_md.display_id(root, unit)
+    built_by = run_state.lane_seat(root, unit)
+    reviewer = seat_signature(root, seat)
+    author = seat_signature(root, built_by or BUILD_SEAT)
+    notes = "" if built_by else (
+        f"\nnote: no lane recorded the seat that built {shown}, so the author is taken as the "
+        f"{BUILD_SEAT} seat; correct --author if another seat built it")
+    if reviewer == author:
+        notes += (f"\nnote: {reviewer} built {shown} and is the seat briefed to review it, so "
+                  f"a verdict recorded as printed is a self-review; brief another seat")
     return (f"\nreview tier: {tier} ({how})\n"
             f"brief fingerprint: {fp}\n"
             f"  record the verdict with:  critic.py record --unit "
-            f"{sdlc_md.display_id(root, unit)} --from-verdict {shlex.quote(str(path))} "
-            f"--brief {fp} --tier {tier}{' --tier-explicit' if explicit else ''} ...")
+            f"{shown} --from-verdict {shlex.quote(str(path))} "
+            f"--brief {fp} --tier {tier}{' --tier-explicit' if explicit else ''} "
+            f"--reviewer {shlex.quote(reviewer)} --author {shlex.quote(author)}{notes}")
 
 
 def cmd_brief(args: argparse.Namespace) -> int:
@@ -4669,7 +4729,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             for line in (notice, quoted):
                 if line:
                     print(line, file=sys.stderr)
-            print(_record_footer(args.root, args.unit, tier, explicit, fp, path),
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat),
                   file=sys.stderr)
         else:
             # DERIVED unless the operator named one. `--tier` no longer defaults to `full`
@@ -4703,7 +4763,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # On stderr so the brief itself stays pipeable, and stated as the next command so
             # a reviewer does not have to know the flag exists. The tier is carried INTO that
             # command: a tier printed and not recorded is the state this whole flag was in.
-            print(_record_footer(args.root, args.unit, tier, explicit, fp, path),
+            print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat),
                   file=sys.stderr)
     except (OSError, ValueError) as exc:
         print(f"brief refused: {exc}", file=sys.stderr)

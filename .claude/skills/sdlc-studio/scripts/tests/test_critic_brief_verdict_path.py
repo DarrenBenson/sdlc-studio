@@ -28,6 +28,15 @@ SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
 critic = loader.load_script("critic")
 
+
+def _seats_dropped(argv: list[str]) -> list[str]:
+    """The footer's record argv without the `--reviewer` and `--author` seats it names, so a
+    case records under its own ids; a footer missing either flag fails here."""
+    for flag in ("--reviewer", "--author"):
+        at = argv.index(flag)
+        del argv[at:at + 2]
+    return argv
+
 UNIT = "US0001"
 
 
@@ -71,10 +80,10 @@ def _named(stdout: str) -> tuple[Path, str]:
 
 
 def _footer(stderr: str) -> list[str]:
-    """The record command the footer prints, as argv after `critic.py`, without its `...`."""
+    """The record command the footer prints, as argv after `critic.py`, without its seats."""
     m = re.search(r"record the verdict with:\s+critic\.py (record .*)$", stderr, re.M)
     assert m, f"no record command in the footer:\n{stderr}"
-    return [a for a in shlex.split(m.group(1)) if a != "..."]
+    return _seats_dropped(shlex.split(m.group(1)))
 
 
 def _fingerprint(stderr: str) -> str:

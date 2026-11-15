@@ -334,6 +334,11 @@ something to interrogate other than the filesystem.
   stores. A classed item (`[LC-003] ...`, `[new: <class>] Rule. Behaviour.`) counts on its
   class in `sdlc-studio/lessons.jsonl`; an untagged one goes to the project lessons log.
   Idempotent - re-running converges rather than duplicating.
+- `seats --id RETROxxxx [--format json]`: each seat scored on its own verdicts and the units
+  it built over the retro's batch, read from the delivery ledger by `critic.recorded_seat` on
+  the Reviewer and Author cells; rows naming no seat counted and named, superseded rows listed
+  as recorded in error, and a later round's new blocking finding charged only to a seat whose
+  earlier verdict approved, with whether the cited file changed (`git log`). Read-only.
 
 **The disposition rule.** A finding is dispositioned when it is either filed as an artefact
 or **declined with a reason**. Declining is a first-class answer and is equally green, so

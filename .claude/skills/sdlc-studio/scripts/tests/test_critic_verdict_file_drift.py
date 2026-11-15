@@ -28,6 +28,15 @@ SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
 critic = loader.load_script("critic")
 
+
+def _seats_dropped(argv: list[str]) -> list[str]:
+    """The footer's record argv without the `--reviewer` and `--author` seats it names, so a
+    case records under its own ids; a footer missing either flag fails here."""
+    for flag in ("--reviewer", "--author"):
+        at = argv.index(flag)
+        del argv[at:at + 2]
+    return argv
+
 UNIT = "US0001"
 DRIFT = "differs from"
 #: Three findings, wrapped across lines, a BLOCKING none and a RULINGS line the row keeps apart.
@@ -74,7 +83,7 @@ def _brief(cwd: Path, root: Path, unit: str = UNIT) -> tuple[Path, list[str]]:
     path = next(Path(ln.strip()) for ln in tail.splitlines() if ln.strip().endswith(".txt"))
     m = re.search(r"record the verdict with:\s+critic\.py (record .*)$", r.stderr, re.M)
     assert m, r.stderr
-    return path, [a for a in shlex.split(m.group(1)) if a != "..."]
+    return path, _seats_dropped(shlex.split(m.group(1)))
 
 
 def _header(path: Path, unit: str = UNIT, stem: str | None = None) -> str:

@@ -110,6 +110,21 @@ one** - and those same 9 retros reference exactly *one* artefact id between them
 nothing ever asked what to file. People answer the questions they are asked. Ask the
 question, then enforce the answer. A gate on a question nobody was asked is just a wall.
 
+## Seat evidence: each seat on its own record
+
+`retro.py seats --id RETROxxxx [--format json]` reads the delivery verdict ledger over the
+batch and attributes each row by `critic.recorded_seat`, the first `(<role>)` or
+`(<role> seat)` group of its Reviewer cell, and each unit by the same group in its Author
+cell; a name heuristic would hand a qa row that mentions the product finding to product. Per
+seat it reports its APPROVE and REJECT counts, the round each reviewed unit converged in, the
+units it built with their rounds and each round's blocking findings, and the defects found
+only after its approval: a blocking finding of round k whose `file:line` no earlier round's
+finding cites, charged only to a seat whose latest verdict before round k approved (each keyed
+`round:<unit>r<k>`), with whether `git log` shows the cited file changing strictly between the
+two rows' days, or that it cannot be told. A superseded row counts nowhere and is listed as
+recorded in error with the supersession's reason; rows naming no seat are counted and named.
+Read-only; `--format json` is the same record.
+
 ## Extraction: a lesson must leave the retro
 
 `retro.py extract --id RETROxxxx` lifts the Try items (an older retro's `## Lessons`

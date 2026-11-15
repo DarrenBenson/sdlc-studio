@@ -2396,17 +2396,28 @@ def appetite_overage(repo_root: Path | str) -> dict | None:
 #: taken at dispatch and cleared at return can.
 IN_FLIGHT = "lanes_in_flight"
 
+#: The seat ROLE each unit's latest lane brief framed to build it, `{unit: role}`. Kept apart
+#: from the in-flight marker, which the lane's return clears: the review brief that names the
+#: unit's author is issued after the lane hands back, and must still know which seat built it.
+LANE_SEATS = "lane_seats"
 
-def record_lane_start(repo_root: Path | str, unit: str) -> dict | None:
-    """Mark a unit as dispatched to a lane. Returns the entry, or None when no run is open."""
+
+def record_lane_start(repo_root: Path | str, unit: str,
+                      seat: str | None = None) -> dict | None:
+    """Mark a unit as dispatched to a lane, and record `seat`, the role that builds it, when one
+    is named. Returns the entry, or None when no run is open."""
     uid = sdlc_md.norm_id(unit)
     if not uid or not read(repo_root).get("run_id"):
         return None
     entry = {"unit": uid, "started_at": sdlc_md.now_iso8601()}
+    if seat:
+        entry["seat"] = seat
 
     def apply(state: dict) -> dict:
         rows = [r for r in (state.get(IN_FLIGHT) or []) if r.get("unit") != uid]
         state[IN_FLIGHT] = rows + [entry]
+        if seat:
+            state[LANE_SEATS] = {**(state.get(LANE_SEATS) or {}), uid: seat}
         return state
 
     _mutate(repo_root, apply)
@@ -2425,6 +2436,18 @@ def record_lane_return(repo_root: Path | str, unit: str) -> bool:
     if found:
         _mutate(repo_root, apply)
     return found
+
+
+def lane_seat(repo_root: Path | str, unit: str) -> str | None:
+    """The seat role the unit's latest lane brief recorded as building it, or None when no lane
+    brief in the open run recorded one or the run state cannot be read."""
+    try:
+        seats = read(repo_root).get(LANE_SEATS) or {}
+    except Exception as exc:  # noqa: BLE001 - the caller reports a missing record as unknown
+        sdlc_md.debug("run_state.lane_seat", exc)
+        return None
+    seat = seats.get(sdlc_md.norm_id(unit)) if isinstance(seats, dict) else None
+    return seat if isinstance(seat, str) and seat else None
 
 
 def lanes_in_flight(repo_root: Path | str) -> list[dict]:

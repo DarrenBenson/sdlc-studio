@@ -306,7 +306,10 @@ Each unit is reviewed by an independent seat, and its delivery verdict is record
 `critic.py record`: one verdict ledger says whether a unit was reviewed. `critic.py brief` names
 a fresh file under `sdlc-studio/reviews/verdicts/<unit>/` for the reviewer's own block, and the
 record command its footer prints reads it with `--from-verdict`, binding the row's `Source` cell
-to the file's exact bytes; commit the file with its row. A verdict from anywhere else is recorded
+to the file's exact bytes; commit the file with its row. That command names both seats as
+`<holder> (<role>)`: `--reviewer` the seat briefed, `--author` the seat `lane brief --seat`
+(default engineering) recorded as building the unit. `critic.py record` warns, and records the
+row as given, when a project declaring seats records an author without that form. A verdict from anywhere else is recorded
 with `Source` `-` and the note that it was transcribed. By hand, each finding in
 `--issues` carries an origin tag, and the items are separated by semicolons:
 
@@ -589,6 +592,7 @@ the obligations travel with the work rather than with whoever wrote the prompt.
 
 ```bash
 python3 <skill>/scripts/sprint.py lane brief  --units US0123 US0124     # the contract, the obligations, the proof owed, the build lessons
+python3 <skill>/scripts/sprint.py lane brief  --units US0125 --seat qa  # a unit the qa seat builds: its card frames the brief, and the review names it as the author
 python3 <skill>/scripts/sprint.py lane return --units US0123 --proof unit="<evidence>"   # runs the unit's OWN criteria and reports each
 ```
 

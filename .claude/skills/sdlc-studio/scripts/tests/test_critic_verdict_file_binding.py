@@ -29,6 +29,15 @@ import loader  # noqa: E402
 SCRIPTS = Path(__file__).resolve().parent.parent
 CRITIC = SCRIPTS / "critic.py"
 critic = loader.load_script("critic")
+
+
+def _seats_dropped(argv: list[str]) -> list[str]:
+    """The footer's record argv without the `--reviewer` and `--author` seats it names, so a
+    case records under its own ids; a footer missing either flag fails here."""
+    for flag in ("--reviewer", "--author"):
+        at = argv.index(flag)
+        del argv[at:at + 2]
+    return argv
 table_cells = critic.sdlc_md.table_cells
 
 UNIT = "US0001"
@@ -67,7 +76,7 @@ def _brief(cwd: Path, root: Path, unit: str = UNIT) -> tuple[Path, str, list[str
     path = next(Path(ln.strip()) for ln in tail.splitlines() if ln.strip().endswith(".txt"))
     m = re.search(r"record the verdict with:\s+critic\.py (record .*)$", r.stderr, re.M)
     assert m, r.stderr
-    return path, path.stem, [a for a in shlex.split(m.group(1)) if a != "..."]
+    return path, path.stem, _seats_dropped(shlex.split(m.group(1)))
 
 
 def _record(cwd: Path, root: Path, argv: list[str], stdin: str | None = None,

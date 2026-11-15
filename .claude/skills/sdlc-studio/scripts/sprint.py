@@ -2621,8 +2621,10 @@ def lane_contract(repo_root: Path | str, unit_id: str) -> dict:
             "criteria": blocks, "text": text}
 
 
-def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
-    """Dispatch lanes onto `unit_ids`, refusing any unit whose contract cannot be read.
+def lane_dispatch(repo_root: Path | str, unit_ids: list[str],
+                  build_seat: str = "engineering") -> dict:
+    """Dispatch lanes onto `unit_ids`, refusing any unit whose contract cannot be read. Each
+    brief is framed by `build_seat`'s card and names that seat as the one building the unit.
 
     Returns `{briefs, refused}`. A refused unit never reaches a brief: the refusal is the
     answer, and it names the unit and what is missing so the operator can groom it rather than
@@ -2667,7 +2669,9 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
     # read once per dispatch.
     import critic  # noqa: PLC0415 - sibling; the author's self-check is critic's own text
     import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
-    seat = persona_resolve.resolve_card(root, "engineering", render="build")
+    seat = persona_resolve.resolve_card(root, build_seat, render="build")
+    # The building seat as `<holder> (<role>)`, the form the review footer carries as --author.
+    builder = critic.seat_signature(root, build_seat)
     briefs: list[dict] = []
     refused: list[dict] = []
     for uid in unit_ids or []:
@@ -2687,7 +2691,8 @@ def lane_dispatch(repo_root: Path | str, unit_ids: list[str]) -> dict:
                            critic.author_self_check(root, contract["id"]), contract["id"]),
                        "points": sdlc_md.read_points(contract["text"]),
                        "home_isolated": lane_home_isolated(contract["text"]),
-                       "seat_card": str(seat) if seat else None})
+                       "seat_card": str(seat) if seat else None,
+                       "seat": build_seat, "builder": builder})
     # THE FILES' HISTORY, the section the unit's reviewer will read (`critic.py brief`), from the
     # same renderer under the same bounds. One corpus cache around every unit, so the Done-unit
     # corpus is walked once per dispatch rather than once per lane; opened here and nowhere
@@ -2793,11 +2798,14 @@ def lane_brief_text(brief: dict) -> str:
                      f"which a worktree-isolated agent's command check refuses. Build it in the "
                      f"main checkout and run it as the wave's last lane, with every other lane's "
                      f"commit held until its own is made.")
-    card = brief.get("seat_card")
-    lines.append(f"Seat: adopt the work render of the engineering seat card {card} - it frames "
+    card, role = brief.get("seat_card"), brief.get("seat") or "engineering"
+    lines.append(f"Seat: adopt the work render of the {role} seat card {card} - it frames "
                  f"how you build and never overrides the criteria above." if card else
-                 "Seat: no engineering seat card resolves (neither the project nor the skill "
+                 f"Seat: no {role} seat card resolves (neither the project nor the skill "
                  "carries one) - build from the criteria alone.")
+    if brief.get("builder"):
+        lines.append(f"Building seat: {brief['builder']} - the review brief's record command "
+                     f"names it as the unit's author.")
     rules = brief.get("trd_constraints") or []
     lines.append("TRD constraints on the components this unit touches:" if rules
                  else TRD_NO_CONSTRAINTS)
@@ -9397,7 +9405,8 @@ def cmd_lane(args: argparse.Namespace) -> int:
             if getattr(args, flag, None) is not None:
                 print(f"WARNING --{flag} was not recorded: a brief records no agent total - "
                       f"pass the builder's total to `sprint lane return`", file=sys.stderr)
-        dispatch = lane_dispatch(root, units)
+        build_seat = getattr(args, "seat", None) or "engineering"
+        dispatch = lane_dispatch(root, units, build_seat)
         if args.action == "run" and dispatch["refused"]:
             for ref in dispatch["refused"]:
                 print(f"REFUSED {ref['refusal']}", file=sys.stderr)
@@ -9427,7 +9436,8 @@ def cmd_lane(args: argparse.Namespace) -> int:
                   f"a partial edit reached a commit.", file=sys.stderr)
         def start_lane(b: dict) -> None:
             _lane_run_state(
-                "record_lane_start", lambda b=b: run_state.record_lane_start(root, b["id"]), None,
+                "record_lane_start",
+                lambda b=b: run_state.record_lane_start(root, b["id"], build_seat), None,
                 f"{b['id']}'s lane start could not be recorded (the run state is unreadable), "
                 f"so a restart will not know this lane was briefed")
             # The brief is where a lane's work starts, so it opens the unit's span by the
@@ -13189,6 +13199,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "--agent on, recorded on its delegated record as given; optional")
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
+    ln.add_argument("--seat", default="engineering", metavar="ROLE",
+                    help="(brief, run) the seat that builds the units: its card frames the "
+                         "brief, and the run records it so the review's record command names "
+                         "it as the author (default: engineering)")
     ln.add_argument("--claimed", default="fixed",
                     help="(return) what the lane believes it achieved; the criteria may refuse it")
     ln.add_argument("--proof", action="append", default=None, metavar="BAND=EVIDENCE",

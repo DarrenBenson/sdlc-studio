@@ -9868,9 +9868,10 @@ class LaneContractTests(unittest.TestCase):
         for concern in ("acceptance criteria", "before returning", "proof"):
             self.assertIn(concern, joined, f"no obligation covers the {concern!r} concern")
         # the caller cannot supply them: there is nowhere in the signature to put them, so a
-        # dispatch is never as good or as bad as the memory of whoever wrote that night's prompt
+        # dispatch is never as good or as bad as the memory of whoever wrote that night's prompt.
+        # The building seat is the one other parameter: it picks a card, not an obligation.
         self.assertEqual(list(inspect.signature(sprint.lane_dispatch).parameters),
-                         ["repo_root", "unit_ids"],
+                         ["repo_root", "unit_ids", "build_seat"],
                          "the dispatch must take its obligations from the shared template, "
                          "never from its caller")
         with tempfile.TemporaryDirectory() as d:

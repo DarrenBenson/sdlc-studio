@@ -52,6 +52,16 @@ raised issues after the first seat approved. It says in one line when a high-cla
 no second-seat verdict, or when a seat caught nothing; a seat that keeps catching nothing is
 yours to drop, and nothing drops it for you.
 
+## Each seat's own record
+
+`retro seats --id RETROxxxx [--format json]` scores each seat on the ledger rows that name it
+as `<holder> (<role>)`: its APPROVE and REJECT counts and the rounds each unit took to
+converge as a reviewer, and as the author the units it built, their rounds and each round's
+blocking findings. A blocking finding citing a `file:line` no earlier round cited is charged
+only to a seat whose earlier verdict on the unit approved, saying whether the file changed
+between the two rows' dates or that it cannot be told. A superseded row is listed as recorded
+in error with its reason, and the rows naming no seat are counted and named, never guessed.
+
 ## A Try item becomes a lesson
 
 `retro extract`, run by the close, lifts each Try item into the lessons stores. Tag it with its

@@ -1404,6 +1404,201 @@ def render_second_seat_yield(y: dict) -> list:
                    f"each")
     return out
 
+
+# --- Seat evidence: each seat scored on the ledger rows that name it ----------------------
+
+#: A finding's `file:line` evidence, the citation a later round's defect is matched on.
+_CITE_RE = re.compile(r"([A-Za-z0-9_./-]+\.[A-Za-z0-9]+):(\d+)")
+_DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+#: The answer when the history cannot say whether a cited file changed between two rows.
+CANNOT_BE_TOLD = "cannot be told"
+
+
+def _git_read(root, *args: str) -> str | None:
+    """A read-only git command's output, run from `root`; None when git or the command fails."""
+    import subprocess  # noqa: PLC0415 - only the seat evidence reads history
+    try:
+        proc = subprocess.run(["git", *args], cwd=str(root), capture_output=True, text=True,
+                              encoding="utf-8", timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def file_changed_between(root, path: str, since: str, until: str) -> str:
+    """`changed`, `unchanged` or `cannot be told`: whether git records a commit touching `path`
+    between two ledger dates, which are whole days.
+
+    A commit on either boundary day may fall on either side of its row, so only a commit on a
+    day strictly between them is a change, and only a window holding no commit at all is
+    unchanged. Rows sharing a day, a path git never tracked and an unreadable history all read
+    `cannot be told`, never unchanged."""
+    if not (_DAY_RE.match(since or "") and _DAY_RE.match(until or "")) or since >= until:
+        return CANNOT_BE_TOLD
+    if not (_git_read(root, "log", "-1", "--format=%H", "--", path) or "").strip():
+        return CANNOT_BE_TOLD
+    inside = _git_read(root, "log", "--format=%H", f"--since={since}T23:59:59",
+                       f"--until={until}T00:00:00", "--", path)
+    window = _git_read(root, "log", "--format=%H", f"--since={since}T00:00:00",
+                       f"--until={until}T23:59:59", "--", path)
+    if inside is None or window is None:
+        return CANNOT_BE_TOLD
+    if inside.strip():
+        return "changed"
+    return CANNOT_BE_TOLD if window.strip() else "unchanged"
+
+
+def _cites(text: str) -> list[str]:
+    return [f"{path}:{line}" for path, line in _CITE_RE.findall(text or "")]
+
+
+def seat_evidence(root, unit_ids: list) -> dict:
+    """Each seat's record over `unit_ids`, read from the delivery verdict ledger.
+
+    A row belongs to the seat its Reviewer cell names and its unit to the seat its Author cell
+    names, both read by `critic.recorded_seat`; a row naming no seat is counted and named in
+    `unattributed`, never guessed. Rounds are a unit's live rows in ledger order. A blocking
+    finding of round k citing a `file:line` no earlier round's finding cites is charged only to
+    a seat whose latest verdict on the unit before round k approved. A superseded row is left
+    out of every count and listed as recorded in error, with the supersession's reason.
+    """
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and its reader
+    order = list(dict.fromkeys(sdlc_md.norm_id(str(u)) for u in unit_ids))
+    ledger = critic.read_verdicts(root)
+    seats: dict = {}
+
+    def seat(role: str) -> dict:
+        return seats.setdefault(role, {"verdicts": [], "approve": 0, "reject": 0,
+                                       "converged": [], "unconverged": [],
+                                       "found_after_approval": [], "built": [],
+                                       "recorded_in_error": []})
+
+    unattributed, error_unattributed, no_author = [], [], []
+    for uid in order:
+        rows = [r for r in ledger if sdlc_md.norm_id(r.get("unit", "")) == uid]
+        live = []
+        for row in rows:
+            if not critic.is_superseded(row):
+                live.append(row)
+                continue
+            entry = {"unit": uid, "verdict": str(row.get("verdict") or "").upper(),
+                     "date": row.get("date") or "", "reviewer": row.get("reviewer") or "",
+                     "reason": row.get("superseded_reason") or ""}
+            role = critic.recorded_seat(entry["reviewer"])
+            (seat(role)["recorded_in_error"] if role else error_unattributed).append(entry)
+        latest: dict = {}  # role -> (round, verdict, date) of its latest verdict so far
+        cited: set = set()
+        for k, row in enumerate(live, 1):
+            verdict = str(row.get("verdict") or "").upper()
+            reviewer, date = row.get("reviewer") or "", row.get("date") or ""
+            for finding in critic.blocking_findings(row.get("issues") or "") if k > 1 else []:
+                fresh = [c for c in _cites(finding["text"]) if c not in cited]
+                for role, (j, was, approved) in sorted(latest.items()):
+                    if was == "APPROVE" and fresh:
+                        seat(role)["found_after_approval"].append({
+                            "unit": uid, "round": k, "finding": finding["text"],
+                            "cites": fresh[0], "found_by": reviewer, "approved_round": j,
+                            "approved": approved, "found": date, "key": f"round:{uid}r{k}",
+                            "file_changed": file_changed_between(
+                                root, fresh[0].rsplit(":", 1)[0], approved, date)})
+            for finding in critic.parse_findings(row.get("issues") or ""):
+                cited.update(_cites(finding["text"]))
+            role = critic.recorded_seat(reviewer)
+            if role is None:
+                unattributed.append({"unit": uid, "round": k, "verdict": verdict,
+                                     "reviewer": reviewer, "date": date})
+                continue
+            s = seat(role)
+            s["verdicts"].append({"unit": uid, "round": k, "verdict": verdict,
+                                  "reviewer": reviewer, "date": date, "key": f"round:{uid}r{k}"})
+            s["approve" if verdict == "APPROVE" else "reject"] += 1
+            latest[role] = (k, verdict, date)
+        for role, (k, verdict, _date) in latest.items():
+            if verdict == "APPROVE":
+                seat(role)["converged"].append({"unit": uid, "rounds": k})
+            else:
+                seat(role)["unconverged"].append(uid)
+        authors = list(dict.fromkeys(r for r in (critic.recorded_seat(row.get("author") or "")
+                                                 for row in live) if r))
+        if live and not authors:
+            no_author.append(uid)
+        done = bool(live) and str(live[-1].get("verdict") or "").upper() == "APPROVE"
+        for role in authors:
+            seat(role)["built"].append({
+                "unit": uid, "rounds": len(live), "converged": done,
+                "rounds_detail": [{"round": k, "verdict": str(row.get("verdict") or "").upper(),
+                                   "blocking": [f["text"] for f in critic.blocking_findings(
+                                       row.get("issues") or "")]}
+                                  for k, row in enumerate(live, 1)]})
+    return {"units": order, "rows": sum(len(s["verdicts"]) for s in seats.values())
+            + len(unattributed), "unattributed": unattributed,
+            "unattributed_authors": no_author, "recorded_in_error_unattributed": error_unattributed,
+            "seats": {role: seats[role] for role in sorted(seats)}}
+
+
+def _changed_words(item: dict) -> str:
+    path = item["cites"].rsplit(":", 1)[0]
+    span = f"between {item['approved']} and {item['found']}"
+    return {"changed": f"{path} changed {span}",
+            "unchanged": f"{path} did not change {span}"}.get(
+        item["file_changed"], f"whether {path} changed {span} {CANNOT_BE_TOLD}")
+
+
+def render_seat_evidence(ev: dict, retro_id: str) -> list:
+    """The record as prose: one block per seat, then the rows and units naming no seat."""
+    out = [f"Seat evidence for {retro_id} over {len(ev['units'])} unit(s), read from the "
+           f"delivery verdict ledger:"]
+    for role, s in ev["seats"].items():
+        out.append(f"  {role}: {s['approve']} APPROVE, {s['reject']} REJECT"
+                   if s["verdicts"] else f"  {role}: no verdict of its own")
+        out.extend(f"    reviewed {c['unit']}: converged in {c['rounds']} round(s)"
+                   for c in s["converged"])
+        out.extend(f"    reviewed {uid}: its latest verdict rejects" for uid in s["unconverged"])
+        out.extend(f"    found only after its round {f['approved_round']} approval of "
+                   f"{f['unit']}: round {f['round']} [{f['key']}] {f['finding']}; "
+                   f"{_changed_words(f)}" for f in s["found_after_approval"])
+        for b in s["built"]:
+            state = "converged" if b["converged"] else "not converged"
+            out.append(f"    built {b['unit']}: {state} in {b['rounds']} round(s)")
+            out.extend(f"      round {r['round']} blocking: {'; '.join(r['blocking'])}"
+                       for r in b["rounds_detail"] if r["blocking"])
+        out.extend(f"    recorded in error: {e['unit']} {e['verdict']} {e['date']} "
+                   f"({e['reason'] or 'no reason recorded'})" for e in s["recorded_in_error"])
+    if ev["unattributed"]:
+        out.append(f"  {len(ev['unattributed'])} of {ev['rows']} verdict row(s) name no seat: "
+                   + ", ".join(f"{r['reviewer'] or '-'} ({r['unit']} round {r['round']})"
+                               for r in ev["unattributed"]))
+    else:
+        out.append(f"  every one of {ev['rows']} verdict row(s) names its seat")
+    if ev["unattributed_authors"]:
+        out.append(f"  no Author cell names a seat on {', '.join(ev['unattributed_authors'])}")
+    out.extend(f"  recorded in error, naming no seat: {e['unit']} {e['verdict']} {e['date']} by "
+               f"{e['reviewer'] or '-'} ({e['reason'] or 'no reason recorded'})"
+               for e in ev["recorded_in_error_unattributed"])
+    return out
+
+
+def cmd_seats(args) -> int:
+    """Read-only: each seat scored on its own verdicts and the units it built."""
+    path = find_retro(args.root, args.id)
+    if path is None:
+        print(f"retro {args.id}: not found", file=sys.stderr)
+        return 1
+    retro_id = path.name.split("-", 1)[0]
+    units = batch_ids(sdlc_md.read_text_safe(path))
+    if not units:
+        print(f"retro {retro_id}: no units named in '> **Batch:**' - nothing to score",
+              file=sys.stderr)
+        return 1
+    ev = seat_evidence(args.root, units)
+    if args.format == "json":
+        print(json.dumps({"id": retro_id, **ev}, indent=2))
+    else:
+        print("\n".join(render_seat_evidence(ev, retro_id)))
+    return 0
+
+
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
              elapsed_hours: float | None = None, sprint_model: str | None = None,
              priced: dict | None = None) -> dict:
@@ -4295,6 +4490,9 @@ def build_parser() -> argparse.ArgumentParser:
         ("collate", cmd_collate, "the tokens-per-point rate per (project, model) cell, pooled "
                                  "across several project evidence dirs and never summed across "
                                  "cells - the multi-project tuning read"),
+        ("seats", cmd_seats, "each seat scored on its own verdicts and the units it built, read "
+                             "from the ledger rows whose Reviewer or Author cell names it; rows "
+                             "naming no seat are counted and named"),
     ):
         p = sub.add_parser(name, help=helptext)
         if name not in ("velocity", "estimator", "collate"):  # these span sprints, not one
