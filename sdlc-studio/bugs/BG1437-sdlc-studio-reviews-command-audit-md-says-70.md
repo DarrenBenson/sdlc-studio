@@ -1,9 +1,9 @@
 # BG1437: sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count
 
 > **Status:** Open
-> **Severity:** Low
+> **Severity:** High
 > **Points:** 1
-> **Affects:** sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_command_audit_fresh.py, changelog.d/BG1437.md
+> **Affects:** sdlc-studio/reviews/command-audit.md, tools/tests/test_lean_release_verify.py, changelog.d/BG1437.md
 > **Evidence:** Run twelve (RUN-01M7E52T) review of BG1268, qa-seat-BG1268-r1 ([pre-existing])
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,12 @@ Regenerate the audit, and add a check (in the suite or the budgets lane, like do
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Given a tree with a script the committed audit does not count, when the suite runs, then a check names the drift. Fails on: a stale audit passing.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit_fresh.py::CommandAuditFreshTests
+- [ ] **AC1** Given HEAD, when `command_audit.py --check-tools` output is compared with the committed `sdlc-studio/reviews/command-audit.md`, then they are identical, so US0251's AC2 and the release-verify tests pass at the push boundary. Fails on: the committed audit still counting 70 scripts.
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/command_audit.py --check-tools | diff - sdlc-studio/reviews/command-audit.md
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-15 | Claude Opus 5.5 (run twelve) | Raised to High and re-scoped: the release-verify test (US0251 AC2, tools/tests/test_lean_release_verify.py) already refuses a stale audit at the push boundary and is red now, so the fix is regenerating the audit; the criterion names that check |

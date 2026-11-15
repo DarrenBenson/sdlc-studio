@@ -1,6 +1,6 @@
 # US1153: sprint plan shows each unit's class and flags a unit that touches a higher class than its tag
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0696
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a map and a batch, when `sprint plan` runs, then the plan lists each unit's class and the second review seat each high-class unit will need.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py::PlanShowsClassTests::test_plan_lists_class_per_unit_and_second_seat
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a unit tagged standard whose Affects touch a high-class component, when `sprint plan` runs, then it flags the unit, naming the file, the component and both classes, and exits 0 with no per-unit sign-off asked.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py::PlanFlagsHigherClassTests::test_flag_names_file_component_and_classes_and_never_refuses
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given no component map, when `sprint plan` runs, then it prints exactly one line saying every unit is standard, and nothing refuses.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py::PlanNoMapTests::test_no_map_prints_one_line
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

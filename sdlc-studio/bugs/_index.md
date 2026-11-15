@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 332 |
+| Open | 334 |
 | In Progress | 0 |
 | Fixed | 920 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1443** |
+| **Total** | **1445** |
 
 ## All Bugs
 
@@ -512,13 +512,15 @@
 | [BG1434](BG1434-the-risk-class-map-reader-drops-an-empty.md) | The risk-class map reader drops an empty-prefix entry and a scalar risk value silently, and four refine stamping paths are pinned by no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | High | 2026-11-15 | 2026-11-15 |
 | [BG1438](BG1438-the-evidence-annex-says-fingerprint-strings-escape-all.md) | The evidence annex says fingerprint strings escape all control characters while the reference implementation escapes only U+0000 to U+001F, and it omits the no-closed-sprint limit of the version stamp | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1440](BG1440-lane-return-model-with-no-total-is-dropped.md) | lane return --model with no total is dropped without a word, the model trim is untested, and help/sprint.md omits that a several-unit total is not split when a unit has no Points | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1441](BG1441-evidence-pack-py-s-module-docstring-still-describes.md) | evidence_pack.py's module docstring still describes the wider author refusal BG1439 removed | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1442](BG1442-evidence-pack-py-reaches-into-critic-s-private.md) | evidence_pack.py reaches into critic's private `_id` normaliser, so test_critic's one-independence-authority guard is red on main | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1443](BG1443-four-cost-forecast-behaviours-are-correct-but-unpinned.md) | Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1444](BG1444-sprint-plan-reports-a-malformed-risk-map-as.md) | sprint plan reports a malformed risk map as 'no component map is declared', says nothing when a unit's risk tag is outside the vocabulary, and no test pins which component the flag names when prefixes overlap | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1445](BG1445-lessons-py-class-add-declares-a-phase-flag.md) | lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red | Open | High | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
