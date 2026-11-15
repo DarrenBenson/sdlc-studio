@@ -1,6 +1,6 @@
 # US1059: A persona's brief carries its own live learnings, capped and ranked, and never another persona's
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0632
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given qa memory holding seven approved learnings (one with a 5,000-character body), one proposed and one past its Review-by, and product memory holding two approved, when `critic.py brief --unit US0001 --seat qa` runs, then the brief carries five qa learnings and none of product's, omits the proposed and the expired one, says two more were withheld by the cap and one is past its horizon, and carries the long learning as its id, title and a gist of at most 200 characters.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py::PersonaMemoryBriefTests::test_the_review_brief_carries_its_own_seats_capped_bounded_learnings
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given two approved qa learnings, an older one whose evidence cites US0005 (Affects `scripts/a.py`) and a newer one citing US0006 (Affects `docs/x.md`), when `critic.py brief --unit US0001` runs for a unit whose Affects include `scripts/a.py`, with `personas.memory.inject_max: 1`, then the older, relevant one is carried.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py::PersonaMemoryBriefTests::test_a_learning_whose_evidence_shares_the_units_files_outranks_a_newer_one
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given the same memory files, when `persona_resolve.py resolve --seat qa --render build` and `resolve-consult --role qa` run, then each carries qa's learnings in a block labelled with its render and neither carries another seat's.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py::PersonaMemoryBriefTests::test_every_persona_resolve_framing_carries_its_own_seats_learnings
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given a qa memory file that cannot be parsed, and a project with no qa memory file, when `critic.py brief --seat qa` runs on each, then the first brief says qa's learnings could not be read, naming the file, and the second says none are recorded.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py::PersonaMemoryBriefTests::test_unreadable_and_absent_memory_are_told_apart
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

@@ -2,7 +2,7 @@
 
 > **Status:** Accepted
 > **Forced-override:** 2026-11-14: --force waived 1 gate(s) on Accepted - RFC0063 cannot be Accepted: its status is DERIVED from its children, and 4 is/are not yet resolved: CR0691 (Proposed), CR0692 (Proposed), CR0693 (Proposed), CR0694 (Proposed). Finish or close them first
-> **Decomposed-into:** CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702, CR0704
+> **Decomposed-into:** CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702, CR0704, CR0706
 > **Priority:** High
 > **Size:** XL
 > **Author:** Darren Benson (operator); drafted with Claude Opus 5.5
