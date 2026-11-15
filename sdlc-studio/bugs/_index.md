@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 347 |
+| Open | 349 |
 | In Progress | 0 |
 | Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1460** |
+| **Total** | **1462** |
 
 ## All Bugs
 
@@ -536,6 +536,8 @@
 | [BG1458](BG1458-escape-py-to-class-records-a-class-with.md) | escape.py to-class records a class with no files for a hand-edited bug with no Affects, collapses whitespace inside Affects paths, and the catalogue pages lag the new verb and flags | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1459](BG1459-persona-memory-py-s-new-fields-file-flag.md) | persona_memory.py's new --fields-file flag is neither judged nor in the unjudged-flags baseline, so test_command_audit's ratchet is red on main | Open | High | 2026-11-15 | 2026-11-15 |
 | [BG1460](BG1460-us1058-did-not-converge-in-review-round-2.md) | US1058 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1461](BG1461-lane-brief-warns-a-landed-unit-under-review.md) | lane brief warns a landed unit under review never returned, and that the tree may already carry its work | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

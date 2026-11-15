@@ -22,9 +22,11 @@ Serves Abena Osei's End goal 3 (cost per point): each refused land cost 5 to 20 
 
 - [ ] `sprint plan` reports, for each unit whose criteria add a script or a verb, every registry file that implies and is missing from its Affects
 - [ ] `sprint plan` reports a unit whose reference page would cross a reading-guide or line-ceiling threshold without the generated guide or the ceiling file in its Affects
+- [ ] `sprint plan` reports a unit whose criteria add a script taking free prose, or a new flag, without `test_artifact.py` (the prose-writer sweep's `--fields-file` and `SAFE_INPUT_WRITERS` registry) or the unjudged-flags baseline and command audit in its Affects
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Raised |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen orchestrator) | Added the prose-writer sweep and the unjudged-flags ratchet, two more registries a new script or flag implies: US1058's land was refused on the first and its repair turned main red on the second (BG1459) |
