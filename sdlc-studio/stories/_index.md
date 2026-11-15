@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 54 |
-| Ready | 6 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 916 |
+| Done | 917 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -101,7 +101,7 @@
 | [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Ready | EP0287 | 2026-10-12 | 2026-10-12 |

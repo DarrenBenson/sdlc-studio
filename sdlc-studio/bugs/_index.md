@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 349 |
+| Open | 352 |
 | In Progress | 0 |
 | Fixed | 922 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1462** |
+| **Total** | **1465** |
 
 ## All Bugs
 
@@ -538,6 +538,9 @@
 | [BG1460](BG1460-us1058-did-not-converge-in-review-round-2.md) | US1058 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1461](BG1461-lane-brief-warns-a-landed-unit-under-review.md) | lane brief warns a landed unit under review never returned, and that the tree may already carry its work | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US1064: The seat record charges a later bug to the approval that missed it, by the narrow rule
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given RETRO0001 dated 2026-10-01 and RETRO0002 dated 2026-10-08, US0001 approved by `Lena Marsh (product)` on 2026-09-20 with Affects `scripts/a.py`, and bugs dated within the window: BG0002 (cites US0001, affects scripts/a.py), BG0003 (cites US0001, affects only docs/x.md), BG0004 (affects scripts/a.py, cites nothing), BG0006 (cites US0001 and four other ids, affects scripts/a.py), BG0007 ('US0001 did not converge in review'), and BG0005 dated 2026-09-25, when `retro.py seats --id RETRO0002` runs, then product's record lists BG0002 alone as a miss, with its basis.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_later_bug_is_charged_by_the_narrow_rule
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given product's APPROVE of US0001 carrying a non-blocking finding and BG0008, in the window, whose Evidence names US0001's product review, when `retro.py seats` runs, then product's record lists BG0008 as approved over its own finding, not as a miss.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_bug_the_approver_raised_reads_approved_over_its_own_finding
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given US0003 approved by qa in an earlier run and BG0009, in this retro's window, charged to it by the narrow rule, when `retro.py seats --id RETRO0002` runs on a batch qa did not review, then qa appears in the record with BG0009.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_seat_outside_the_batch_is_charged_its_misses
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 
