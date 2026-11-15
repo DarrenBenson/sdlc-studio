@@ -328,7 +328,7 @@ After creating personas:
 
 - `reference-persona.md` - Main persona reference
 - `reference-persona-generate.md` - Generate workflow details
-- `reference-persona-learning.md` - A persona's memory: `persona_memory.py add`, `list` and `recall`, and how its learnings reach a brief
+- `reference-persona-learning.md` - A persona's memory: `persona_memory.py add`, `list` and `recall`, how its learnings reach a brief, and how a seat writes one from a retro (`learn-brief`, `propose`) and another seat approves it (`approve-brief`, `approve`)
 - `reference-philosophy.md#generate-mode` - Generate mode philosophy
 
 **Related commands:**

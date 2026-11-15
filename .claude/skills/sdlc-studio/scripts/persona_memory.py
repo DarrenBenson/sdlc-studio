@@ -29,6 +29,14 @@ run's tracked record is signed, lists it and does not strike it (`standing`). Si
 from that record and never written into memory, so a reopened run holds its learnings until it
 is signed again. The close lists every approved learning not yet live (`pending_listing`) and
 stamps it Listed-in (`mark_listed`); the signature may strike any it listed (`strike`).
+
+The retro side is `learn-brief` and `propose`. A seat is briefed with its own record from
+`retro.py seats` (read through retro's functions, never re-derived), each adverse item with
+its key, and its card framed with its live learnings; what it writes is recorded verbatim as
+proposed, its evidence the ids that record lists rather than ids its text names, one open
+proposal per seat and run. `approve-brief` and `approve` let another seat, told apart by its
+recorded role and never by name, approve it against those adverse items and the subject
+card's Non-Negotiables and Authority, or reject it so no brief carries it.
 """
 from __future__ import annotations
 
@@ -51,11 +59,14 @@ ID_RE = re.compile(r"^M-\d{4}$")
 #: Every state an entry can hold. Only `add` writes proposed; approval and revalidation
 #: move the rest, and observed records usage evidence.
 STATES = ("proposed", "approved", "rejected", "retired", "observed")
-#: Every field an entry may carry, in the order `add` stamps the first five. The rest are
+#: Every field an entry may carry, in the order `add` stamps the first five. The next five are
 #: written later through `set_field`: who approved it, what it addresses, the close that
-#: listed it, a strike, a retirement.
+#: listed it, a strike, a retirement. `propose` stamps Run and Retro: the run the learning
+#: looks back on and the retro whose seat record its evidence came from. `approve` writes
+#: Rejected-by for a rejection, the Reason given and the date it Decided.
 FIELDS = ("Persona", "Evidence", "Added", "Review-by", "State",
-          "Approved-by", "Addresses", "Listed-in", "Struck", "Retired")
+          "Approved-by", "Addresses", "Listed-in", "Struck", "Retired",
+          "Run", "Retro", "Rejected-by", "Reason", "Decided")
 VALIDITY_DAYS_KEY = "personas.memory.validity_days"
 INJECT_MAX_KEY = "personas.memory.inject_max"
 DEFAULT_INJECT_MAX = 5
@@ -236,11 +247,20 @@ def _new_header(key: str) -> str:
     return template.replace("{{persona}}", key).replace("{{date}}", sdlc_md.now_date())
 
 
-def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) -> dict:
-    """Write one proposed learning for `key` and return it. Refuses, writing nothing: no
-    evidence, any cited id that resolves to nothing, an unknown or ambiguous key, a blank
-    title or body, a body holding a level-two heading line or any learning `parse` would not
-    read back, and a memory directory git would never hold."""
+def _field_line(body: str) -> str:
+    """The first line of `body` with a `- **Field:** value` shape, or "": it would read back
+    as the entry's own field, so a learning could set its own State or Evidence."""
+    return next((ln for ln in (body or "").splitlines() if lessons.FIELD_BULLET_RE.match(ln)),
+                "")
+
+
+def add(root: Path | str, key: str, title: str, body: str, evidence: list[str],
+        extra: dict | None = None) -> dict:
+    """Write one proposed learning for `key` and return it, stamping `extra` (field: value)
+    after its State. Refuses, writing nothing: no evidence, any cited id that resolves to
+    nothing, an unknown or ambiguous key, a blank title or body, a body holding a level-two
+    heading line or a field line or any learning `parse` would not read back, and a memory
+    directory git would never hold."""
     root = Path(root)
     cited = evidence_tokens(evidence)
     if not cited:
@@ -256,6 +276,10 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) 
     if heading:
         raise MemoryRefusal(f"the --body line {heading.strip()!r} is a level-two heading, which "
                             "the memory file reads as an entry: use ### or plain text")
+    field = _field_line(body)
+    if field:
+        raise MemoryRefusal(f"the --body line {field.strip()!r} has a field's shape, which the "
+                            "memory file reads as the entry's own field")
     path = memory_path(root, key)
     rel = path.relative_to(root).as_posix()
     held = lessons.ignored_reason(root, rel)
@@ -270,7 +294,7 @@ def add(root: Path | str, key: str, title: str, body: str, evidence: list[str]) 
            "title": lessons.heading_title(title), "fields": {}, "body": body.strip()}
     for name, value in (("Persona", key), ("Evidence", ", ".join(cited)), ("Added", today),
                         ("Review-by", lessons.add_days(today, validity_days(root))),
-                        ("State", "proposed")):
+                        ("State", "proposed"), *(extra or {}).items()):
         lessons.upsert_field(new, name, value)
     if path.exists():
         text = path.read_text(encoding="utf-8")
@@ -292,11 +316,20 @@ def set_field(root: Path | str, entry_id: str, name: str, value: str) -> dict:
     """Set one field on the entry `entry_id`, wherever it lives, through
     `lessons.upsert_field`, and rewrite its file. Refuses a field outside FIELDS, a State
     outside STATES and an id no memory file holds."""
-    canonical = next((f for f in FIELDS if f.lower() == (name or "").strip().lower()), None)
-    if canonical is None:
-        raise MemoryRefusal(f"{name!r} is not a memory field ({', '.join(FIELDS)})")
-    if canonical == "State" and value.strip().lower() not in STATES:
-        raise MemoryRefusal(f"State {value!r} is not one of {', '.join(STATES)}")
+    return set_fields(root, entry_id, [(name, value)])
+
+
+def set_fields(root: Path | str, entry_id: str, pairs: list[tuple[str, str]]) -> dict:
+    """`set_field` for several fields in one rewrite: every pair is checked before any is set,
+    so a refused pair leaves the file as it was."""
+    canon = []
+    for name, value in pairs:
+        canonical = next((f for f in FIELDS if f.lower() == (name or "").strip().lower()), None)
+        if canonical is None:
+            raise MemoryRefusal(f"{name!r} is not a memory field ({', '.join(FIELDS)})")
+        if canonical == "State" and value.strip().lower() not in STATES:
+            raise MemoryRefusal(f"State {value!r} is not one of {', '.join(STATES)}")
+        canon.append((canonical, value))
     try:
         stores = all_stores(root)
     except StoreError as exc:
@@ -304,7 +337,8 @@ def set_field(root: Path | str, entry_id: str, name: str, value: str) -> dict:
     for path, entries in stores.items():
         for e in entries:
             if e["id"] == entry_id:
-                lessons.upsert_field(e, canonical, value)
+                for canonical, value in canon:
+                    lessons.upsert_field(e, canonical, value)
                 header = lessons.project_header_of(path.read_text(encoding="utf-8"),
                                                    entry_re=ENTRY_RE)
                 sdlc_md.atomic_write(path, _render_file(header, entries))
@@ -569,15 +603,347 @@ def strike(root: Path | str, entry_id: str, principal: str, date: str, reason: s
     return set_field(root, entry_id, "Struck", f"{principal} on {date}: {reason}")
 
 
+# ----------------------------------------------------------------------------- the seat's learning
+
+#: Where a seat writes its learning before `propose` records it: scratch, never committed.
+LEARNING_REL = "sdlc-studio/.local/persona-learning"
+_ROUND_KEY_RE = re.compile(r"^round:(\S+?)r(\d+)$")
+#: The words an adverse item is told by, in the order a record's item is searched for them.
+_ITEM_WORDS = ("finding", "basis", "reason", "title", "summary")
+
+
+def seats_report(root: Path | str, retro_id: str) -> dict:
+    """What `retro.py seats --id <retro> --format json` prints: the retro's id and the seat
+    record over its batch and window, read through retro's own functions, never re-derived."""
+    import retro  # noqa: PLC0415 - sibling; only the learning verbs pay for the ledger read
+    path = retro.find_retro(root, retro_id)
+    if path is None:
+        raise MemoryRefusal(f"retro {retro_id} not found")
+    rid = path.name.split("-", 1)[0]
+    units = retro.batch_ids(sdlc_md.read_text_safe(path))
+    if not units:
+        raise MemoryRefusal(f"retro {rid} names no units in '> **Batch:**', so no seat has a "
+                            f"record in it")
+    return {"id": rid, **retro.seat_record(root, path, units)}
+
+
+def _item_key(item) -> str:
+    """An adverse item's key: the one it carries, else `bug:<id>` for a later bug charged to
+    the seat (the record names the bug, not a key); "" for anything else."""
+    if not isinstance(item, dict):
+        return ""
+    return str(item.get("key") or (f"bug:{item['bug']}" if item.get("bug") else ""))
+
+
+def adverse_items(record: dict | None) -> list[dict]:
+    """A seat's adverse items, each `{key, text}`: every item its record lists outside its own
+    verdicts that carries a key or names a bug (a defect found after its approval, a later bug
+    it missed or approved over its own finding), then each round of a unit it built that a
+    blocking finding stopped. Keys are unique; the first item to carry one is kept."""
+    items: dict[str, str] = {}
+    for name, value in (record or {}).items():
+        if name == "verdicts" or not isinstance(value, list):
+            continue
+        for item in value:
+            key = _item_key(item)
+            if not key:
+                continue
+            words = next((str(item[w]) for w in _ITEM_WORDS if item.get(w)), "")
+            if name == "found_after_approval":
+                words = (f"found only after your round {item.get('approved_round')} approval "
+                         f"of {item.get('unit')}: {words}")
+            elif item.get("bug"):
+                words = (f"{name.replace('_', ' ')} {item['bug']} after your "
+                         f"{item.get('approved', '')} approval of {item.get('unit')}: {words}")
+            items.setdefault(key, words or name.replace("_", " "))
+    for built in (record or {}).get("built") or []:
+        for r in built.get("rounds_detail") or []:
+            if r.get("blocking"):
+                items.setdefault(f"round:{built['unit']}r{r['round']}",
+                                 f"round {r['round']} of {built['unit']}, which you built, "
+                                 f"blocked: {'; '.join(r['blocking'])}")
+    return [{"key": k, "text": t} for k, t in items.items()]
+
+
+def own_record(report: dict, key: str) -> dict | None:
+    """`key`'s record in a seats report, or None when it holds no verdict, no unit built and
+    no adverse item: a seat with nothing on record has nothing to learn from."""
+    record = (report.get("seats") or {}).get(key)
+    if not record or not (record.get("verdicts") or record.get("built")
+                          or adverse_items(record)):
+        return None
+    return record
+
+
+def _key_id(key: str) -> str:
+    """The id an adverse item's key names, in the form `resolves` reads: `round:US0001r2` is
+    the verdict reference `US0001 r2`, `bug:BG0002` the artefact `BG0002`."""
+    m = _ROUND_KEY_RE.match(key)
+    return f"{m.group(1)} r{m.group(2)}" if m else key.split(":", 1)[-1]
+
+
+def record_ids(record: dict) -> list[str]:
+    """The ids a seat's record lists, in order and once each: its verdicts as `<unit>
+    r<round>`, the units it built, then its adverse items' ids. A proposal's evidence."""
+    ids = [f"{v['unit']} r{v['round']}" for v in record.get("verdicts") or []]
+    ids += [b["unit"] for b in record.get("built") or []]
+    ids += [_key_id(i["key"]) for i in adverse_items(record)]
+    return list(dict.fromkeys(ids))
+
+
+def learning_file(retro_id: str, key: str) -> str:
+    """The repo-relative file a seat writes its learning for `retro_id` to."""
+    return f"{LEARNING_REL}/{retro_id}-{key}.md"
+
+
+def _record_of(root: Path, key: str, retro_id: str) -> tuple[str, str, dict]:
+    key = resolve_key(root, key)
+    report = seats_report(root, retro_id)
+    record = own_record(report, key)
+    if record is None:
+        raise MemoryRefusal(f"{key} has no record in {report['id']}: no verdict, no unit built "
+                            f"and no adverse item, so there is nothing to learn from")
+    return key, report["id"], record
+
+
+def learn_brief(root: Path | str, key: str, retro_id: str) -> str:
+    """The brief a seat writes its learning from: its own record and adverse items, what a
+    learning may not change, the file to write and the command that records it, then its card
+    framed with its live learnings. No other seat's record is read into it."""
+    root = Path(root)
+    key, rid, record = _record_of(root, key, retro_id)
+    try:
+        card = persona_resolve.resolve_card(root, key, render="review")
+    except persona_resolve.RenderError as exc:
+        raise MemoryRefusal(str(exc))
+    target = learning_file(rid, key)
+    lines = [f"--- LEARNING BRIEF: {key}, {rid} ---",
+             f"You are the {key} seat, looking back on {rid}. Your record below is read from the "
+             f"review ledger by `retro.py seats`, not from your own account. Write, in your own "
+             f"words, what you will do differently, and cite by key the adverse items it answers.",
+             "",
+             f"--- RECORD: {key} in {rid} (`retro.py seats --id {rid} --format json`, this seat "
+             f"only) ---",
+             "```json", json.dumps({"id": rid, "seat": key, **record}, indent=2), "```", "",
+             "Adverse items (cite each by its key; another seat approves the learning against "
+             "them):"]
+    lines += ([f"  [{i['key']}] {i['text']}" for i in adverse_items(record)] or
+              ["  none: the record holds no adverse item, so a learning keeps a habit that held"])
+    lines += ["", "--- WHAT A LEARNING MAY NOT DO ---",
+              f"A learning cannot change the {key} card's Non-Negotiables or its Authority: it "
+              f"shapes how the seat works within them, and the approving seat rejects one that "
+              f"contradicts or loosens either.",
+              "", "--- WRITE IT ---",
+              f"Write the learning to {target}: its first line is the title and the whole file "
+              f"is the body, kept as written. Then record it as proposed:",
+              f"  persona_memory.py propose --persona {key} --retro {rid} --from-file {target}",
+              "Its evidence is the ids your record lists, never the ids your text names."]
+    return "\n".join(lines) + persona_resolve.frame(card, key, "review", root=root)
+
+
+def _first_line_title(text: str, limit: int = 80) -> str:
+    line = next((ln for ln in text.splitlines() if ln.strip()), "")
+    line = re.sub(r"^\s*(?:#+|[-*])\s*", "", line).strip()
+    return line if len(line) <= limit else line[:limit - 1].rstrip() + lessons.ELLIPSIS
+
+
+def propose(root: Path | str, key: str, retro_id: str, text: str, title: str | None = None,
+            run: str | None = None) -> dict:
+    """Record a seat's learning, `text` as written less its outer blank space, as proposed
+    for the retro's run, with the ids its record lists as evidence and the title `title` or
+    the text's first line. Refuses, writing nothing: a seat with no record in the retro, and a
+    second proposal while that seat's first for the run is still proposed."""
+    import retro  # noqa: PLC0415 - sibling; the one reader of the run a retro's close names
+    from lib import run_state  # noqa: PLC0415
+    root = Path(root)
+    key, rid, record = _record_of(root, key, retro_id)
+    try:
+        run = retro.extract_run(root, run, rid)
+    except run_state.RunStateError as exc:
+        raise MemoryRefusal(str(exc))
+    open_ = [e["id"] for e in read_store(memory_path(root, key))
+             if state_of(e) == "proposed" and e["fields"].get("run", "").strip() == run]
+    if open_:
+        raise MemoryRefusal(f"{open_[0]} is still proposed for {key} in {run}: a seat holds one "
+                            f"open proposal per run, so approve or reject it first")
+    return add(root, key, title or _first_line_title(text), text, record_ids(record),
+               extra={"Run": run, "Retro": rid})
+
+
+# ----------------------------------------------------------------------------- approval
+
+#: The subject card's sections an approver checks a learning against.
+GUARDED_SECTIONS = ("Non-Negotiables", "Authority")
+NONE_ADDRESSED = "none"
+
+
+def _proposed(root: Path, entry_id: str) -> dict:
+    """The entry `entry_id`, refused unless some memory file holds it and it is proposed."""
+    try:
+        stores = all_stores(root)
+    except StoreError as exc:
+        raise MemoryRefusal(str(exc))
+    entry = next((e for entries in stores.values() for e in entries if e["id"] == entry_id),
+                 None)
+    if entry is None:
+        raise MemoryRefusal(f"no memory file holds {entry_id}")
+    if state_of(entry) != "proposed":
+        raise MemoryRefusal(f"{entry_id} is {state_of(entry)}, not proposed: only a proposed "
+                            f"learning is approved or rejected")
+    return entry
+
+
+def _other_seat(root: Path, entry: dict, role: str) -> None:
+    """Refuse `role` unless a seat card declares it and it is not the learning's own seat.
+    Judged by the recorded seat, never by name: a second holder of the card is the same seat."""
+    if role not in persona_resolve.seat_roster(root):
+        raise MemoryRefusal(f"no seat card declares {role}, so it cannot approve a learning")
+    subject = entry["fields"].get("persona", "").strip()
+    if role == subject:
+        raise MemoryRefusal(f"{entry['id']} is {subject}'s learning and a seat never approves "
+                            f"its own learning, whoever holds it: brief another seat")
+
+
+def subject_items(root: Path | str, entry: dict) -> list[dict]:
+    """The adverse items the learning's own seat record lists in the retro it was proposed
+    from, each `{key, text}`; [] for an entry no retro stamped."""
+    retro_id = entry["fields"].get("retro", "").strip()
+    if not retro_id:
+        return []
+    report = seats_report(root, retro_id)
+    return adverse_items((report.get("seats") or {}).get(entry["fields"].get("persona", "")))
+
+
+def approve(root: Path | str, entry_id: str, reviewer: str, addresses: list[str] | None,
+            reason: str | None = None, reject: bool = False) -> dict:
+    """Record another seat's decision on a proposed learning and return the entry.
+
+    An approval writes State approved, Approved-by, Decided and Addresses: the adverse items
+    of the subject's record it addresses, or `none` with a Reason. A rejection writes State
+    rejected, Rejected-by, Decided and its Reason. Refuses, writing nothing: an entry not
+    proposed, a reviewer naming no `(<role>)` group or a role no card declares, the
+    learning's own seat, an addressed item the record does not list, no `--addresses`, and
+    `none` or a rejection with no reason."""
+    import critic  # noqa: PLC0415 - sibling; the one reader of a recorded seat
+    root = Path(root)
+    entry = _proposed(root, entry_id)
+    role = critic.recorded_seat(reviewer)
+    if role is None:
+        raise MemoryRefusal(f"--reviewer {reviewer!r} names no `(<role>)` group, so its seat "
+                            f"cannot be told")
+    _other_seat(root, entry, role)
+    reason = (reason or "").strip()
+    decided = [("Decided", sdlc_md.now_date())]
+    if reject:
+        if not reason:
+            raise MemoryRefusal("a rejection needs --reason: what the learning dodges or loosens")
+        return set_fields(root, entry_id, [("State", "rejected"), ("Rejected-by", reviewer),
+                                           *decided, ("Reason", reason)])
+    listed = [i["key"] for i in subject_items(root, entry)]
+    named = ", ".join(listed) if listed else "none listed"
+    keys = list(dict.fromkeys(evidence_tokens(addresses)))
+    if keys == [NONE_ADDRESSED]:
+        if not reason:
+            raise MemoryRefusal(f"--addresses none needs --reason saying why the learning "
+                                f"engages none of the record's adverse items ({named})")
+    elif not keys or any(k not in listed for k in keys):
+        wrong = [k for k in keys if k not in listed]
+        said = (f"--addresses {', '.join(wrong)} is not" if wrong
+                else "an approval names with --addresses")
+        raise MemoryRefusal(f"{said} an adverse item {entry['fields'].get('persona')}'s record "
+                            f"lists: {named}; or pass --addresses none with --reason")
+    pairs = [("State", "approved"), ("Approved-by", reviewer), *decided,
+             ("Addresses", ", ".join(keys))]
+    return set_fields(root, entry_id, pairs + ([("Reason", reason)] if reason else []))
+
+
+def _card_section(text: str, name: str) -> str:
+    """The `## <name>...` section of a card, heading included, up to the next heading of the
+    same or a higher level; "" when the card has none."""
+    lines, out, level = text.splitlines(), [], 0
+    for line in lines:
+        m = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if level and m and len(m.group(1)) <= level:
+            break
+        if not level and m and m.group(2).strip().startswith(name):
+            level = len(m.group(1))
+        if level:
+            out.append(line)
+    return "\n".join(out).strip()
+
+
+def _subject_card(root: Path, key: str) -> Path | None:
+    if key in persona_resolve.seat_roster(root):
+        return persona_resolve.resolve_card(root, key, render="review")
+    card = root / PERSONAS_REL / f"{key}.md"
+    return card if card.is_file() else None
+
+
+def approve_brief(root: Path | str, entry_id: str, seat: str) -> str:
+    """The brief another seat approves or rejects a proposed learning from: the learning
+    verbatim, the subject's adverse items with their keys, the subject card's Non-Negotiables
+    and Authority, the question whether the learning contradicts or loosens them, the commands
+    that record the decision, then the approving seat's card. Refuses the learning's own seat."""
+    import critic  # noqa: PLC0415 - sibling; the one source of a seat's signature
+    root = Path(root)
+    entry = _proposed(root, entry_id)
+    _other_seat(root, entry, seat)
+    subject = entry["fields"].get("persona", "").strip()
+    try:
+        card = _subject_card(root, subject)
+        mine = persona_resolve.resolve_card(root, seat, render="review")
+    except persona_resolve.RenderError as exc:
+        raise MemoryRefusal(str(exc))
+    text = card.read_text(encoding="utf-8") if card else ""
+    items = subject_items(root, entry)
+    sig = critic.seat_signature(root, seat)
+    head = f'persona_memory.py approve --id {entry_id} --reviewer "{sig}"'
+    retro_id = entry["fields"].get("retro", "") or "no retro"
+    lines = [f"--- APPROVAL BRIEF: {entry_id}, {subject}'s learning "
+             f"(proposed for {entry['fields'].get('run', '') or 'no run'}) ---",
+             f"You are the {seat} seat. Approve or reject {subject}'s learning against the "
+             f"record it answers and the card it must not drift from; a seat never approves "
+             f"its own learning.", "",
+             f"--- THE LEARNING, VERBATIM: {entry['title']} ---", prose_of(entry), "",
+             f"--- {subject.upper()}'S ADVERSE ITEMS ({retro_id}, from `retro.py seats`) ---"]
+    lines += ([f"  [{i['key']}] {i['text']}" for i in items] or
+              ["  none: the record lists no adverse item"])
+    lines += ["", f"--- {subject.upper()}'S CARD: Non-Negotiables and Authority ---"]
+    for name in GUARDED_SECTIONS:
+        lines += [_card_section(text, name) or f"(the card has no {name} section)", ""]
+    lines += ["--- THE QUESTION ---",
+              f"Does the learning contradict or loosen any line of {subject}'s Non-Negotiables "
+              f"or Authority above? If it does, reject it. If not, name the adverse items it "
+              f"addresses, or say why it addresses none.", "",
+              "--- RECORD THE DECISION ---",
+              f"  {head} --addresses <key>[,<key>]",
+              f'  {head} --addresses none --reason "..."',
+              f'  {head} --reject --reason "..."']
+    return "\n".join(lines) + persona_resolve.frame(mine, seat, "review", root=root)
+
+
 # ----------------------------------------------------------------------------- CLI
+
+
+def _prose(fields_file: str | None, flags: dict, required: tuple[str, ...] = ()) -> dict:
+    """The prose fields from `--fields-file` and the flags, a flag overriding its key, through
+    file_finding's one shared loader, so text quoting a command is stored as written, not as a
+    shell ate it. Each caller reads its flags by name, so the dead-flag audit can judge every
+    one. Raises ValueError when a required field is in neither."""
+    import file_finding  # noqa: PLC0415 - the shared prose-fields loader, as lessons uses it
+    fields = file_finding.resolve_prose_fields(fields_file, flags, allowed=tuple(flags))
+    missing = [k for k in required if not str(fields.get(k) or "").strip()]
+    if missing:
+        raise ValueError(f"no {'/'.join(missing)} - pass --{missing[0]}, or a "
+                         f"\"{missing[0]}\" key in the --fields-file document")
+    return fields
 
 
 def cmd_add(args: argparse.Namespace) -> int:
     try:
-        # The title and body through the one shared prose loader (file_finding's, by way of
-        # lessons), so a learning quoting a command is stored as written, not as a shell ate it.
-        lessons.resolve_prose(args, ("title", "body"), required=("title", "body"))
-        new = add(args.root, args.persona, args.title, args.body, args.evidence)
+        prose = _prose(args.fields_file, {"title": args.title, "body": args.body},
+                       required=("title", "body"))
+        new = add(args.root, args.persona, prose.get("title"), prose.get("body"), args.evidence)
     except ValueError as exc:  # a refusal, an unreadable store or a bad --fields-file
         print(f"error: {exc}; nothing was written", file=sys.stderr)
         return 2
@@ -602,6 +968,54 @@ def cmd_list(args: argparse.Namespace) -> int:
     for r in rows:
         print(f"{r['id']}  {r['state']:<9} review by {r['horizon'] or 'unknown'}  {r['title']}"
               + (f"  (struck: {r['struck']})" if r["struck"] else ""))
+    return 0
+
+
+def cmd_learn_brief(args: argparse.Namespace) -> int:
+    try:
+        print(learn_brief(args.root, args.persona, args.retro))
+    except (MemoryRefusal, StoreError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def cmd_propose(args: argparse.Namespace) -> int:
+    path = Path(args.from_file)
+    path = path if path.is_absolute() else Path(args.root) / path
+    try:
+        title = _prose(args.fields_file, {"title": args.title}).get("title")
+        text = path.read_text(encoding="utf-8")
+        new = propose(args.root, args.persona, args.retro, text, title, args.run)
+    except (OSError, ValueError) as exc:  # a refusal, an unreadable file or store
+        print(f"error: {exc}; nothing was written", file=sys.stderr)
+        return 2
+    f = new["fields"]
+    print(f"{new['id']} proposed in {MEMORY_REL}/{f['persona']}.md for {f['run']} "
+          f"(evidence {f['evidence']}); another seat approves it with `approve-brief`")
+    return 0
+
+
+def cmd_approve_brief(args: argparse.Namespace) -> int:
+    try:
+        print(approve_brief(args.root, args.id, args.seat))
+    except (MemoryRefusal, StoreError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def cmd_approve(args: argparse.Namespace) -> int:
+    try:
+        reason = _prose(args.fields_file, {"reason": args.reason}).get("reason")
+        e = approve(args.root, args.id, args.reviewer, args.addresses, reason, args.reject)
+    except ValueError as exc:  # a refusal, an unreadable store or a bad --fields-file
+        print(f"error: {exc}; nothing was written", file=sys.stderr)
+        return 2
+    f = e["fields"]
+    what = (f"rejected by {f['rejected-by']}" if f["state"] == "rejected"
+            else f"approved by {f['approved-by']}, addressing {f['addresses']}")
+    print(f"{e['id']} {what} ({f['decided']})")
     return 0
 
 
@@ -633,6 +1047,50 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--root", default=".", help="project root")
         sdlc_md.add_format_arg(sp)
         sp.set_defaults(func=cmd_list)
+    lb = sub.add_parser("learn-brief", help="Brief a seat to write its learning from its own "
+                                            "record in a retro.")
+    lb.add_argument("--persona", required=True, help="the seat's declared role (qa)")
+    lb.add_argument("--retro", required=True, metavar="RETROxxxx",
+                    help="the retro whose seat record the brief carries")
+    lb.add_argument("--root", default=".", help="project root")
+    lb.set_defaults(func=cmd_learn_brief)
+    pr = sub.add_parser("propose", help="Record the learning a seat wrote, verbatim, as "
+                                        "proposed, with its record's ids as evidence.")
+    pr.add_argument("--persona", required=True, help="the seat's declared role (qa)")
+    pr.add_argument("--retro", required=True, metavar="RETROxxxx",
+                    help="the retro whose seat record supplies the evidence")
+    pr.add_argument("--from-file", dest="from_file", required=True, metavar="PATH",
+                    help="the file the seat wrote, stored as the body as written, less its "
+                         "outer blank space; a relative path is read from the project root")
+    pr.add_argument("--title", help="the heading (default: the file's first line)")
+    pr.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help="read the title from a JSON object ({\"title\": ...}) so text carrying "
+                         "shell metacharacters is stored verbatim; `-` reads it from stdin")
+    pr.add_argument("--run", default=None,
+                    help="the run it looks back on (default: the open run, else the retro)")
+    pr.add_argument("--root", default=".", help="project root")
+    pr.set_defaults(func=cmd_propose)
+    ab = sub.add_parser("approve-brief", help="Brief another seat to approve or reject a "
+                                              "proposed learning.")
+    ab.add_argument("--id", required=True, metavar="M-NNNN", help="the proposed learning")
+    ab.add_argument("--seat", required=True, help="the approving seat's role (product)")
+    ab.add_argument("--root", default=".", help="project root")
+    ab.set_defaults(func=cmd_approve_brief)
+    ap = sub.add_parser("approve", help="Record another seat's approval or rejection of a "
+                                        "proposed learning.")
+    ap.add_argument("--id", required=True, metavar="M-NNNN", help="the proposed learning")
+    ap.add_argument("--reviewer", required=True,
+                    help="the approving seat, as `<holder> (<role>)`")
+    ap.add_argument("--addresses", action="append", default=[], metavar="KEY",
+                    help="an adverse item's key the learning addresses (round:US0001r2), or "
+                         "`none` with --reason. Repeatable or comma-separated")
+    ap.add_argument("--reject", action="store_true", help="reject it; needs --reason")
+    ap.add_argument("--reason", help="why: required to reject or with --addresses none")
+    ap.add_argument("--fields-file", dest="fields_file", metavar="FIELDS.json",
+                    help="read the reason from a JSON object ({\"reason\": ...}) so text "
+                         "carrying shell metacharacters is stored verbatim; `-` reads stdin")
+    ap.add_argument("--root", default=".", help="project root")
+    ap.set_defaults(func=cmd_approve)
     sdlc_md.add_global_root(parser)
     return parser
 

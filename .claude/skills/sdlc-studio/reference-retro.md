@@ -140,6 +140,12 @@ carries its basis. When the bug's `Evidence` names the unit's review or its verd
 names no other seat's, and the approving row carried a finding, the bug reads as approved over
 the seat's own finding instead: the seat saw it and chose to pass.
 
+Each seat then writes its learning from that record: `persona_memory.py learn-brief --persona
+<seat> --retro RETROxxxx` briefs it with its own record alone, and `persona_memory.py propose`
+records what it wrote as a proposed learning whose evidence is the record's ids. Another
+seat then approves or rejects it with `approve-brief` and `approve`, naming the adverse items
+it addresses (`reference-persona-learning.md#from-a-retro`).
+
 ## Persona learnings: what goes live when you sign
 
 The close's `persona-memory` step writes a delimited `## Persona learnings` block on the retro:
