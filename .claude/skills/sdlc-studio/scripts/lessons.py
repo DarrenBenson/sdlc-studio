@@ -1911,7 +1911,9 @@ STATES = ("active", "graduating", "graduated", "retired")
 LIVE_STATES = ("active", "graduating")
 #: Repeats after recording that make a class a request to fix its path, not a note to reread.
 GRADUATE_AT = 2
-#: A class with no hit in this many of the most recent runs retires.
+#: A class with no hit in this many of the most recent runs retires, unless it is injected at
+#: build: a builder trap reaches every lane brief, so it is quiet because it works, and it leaves
+#: the briefs only when its graduation CR closes.
 QUIET_RUNS = 5
 #: How many lessons one phase's output carries. Five is what a reader holds while working.
 INJECT_MAX = 5
@@ -2154,9 +2156,11 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     ONE CR for a class repeated GRADUATE_AT times after it was recorded (the row then reads
     `graduating`), close a `graduating` class whose CR reached a terminal status - `graduated`
     when the CR shipped (Complete or Superseded), `retired` when it was Rejected - and retire an
-    active class quiet for the last QUIET_RUNS runs. A class with a hit recorded in this run -
-    by a cited REJECT, by a retro Try item the close's extract lifted, or on an earlier pass of
-    this same close - stays `graduating`: the repeat is evidence the fix has not held.
+    active class quiet for the last QUIET_RUNS runs unless it is injected at build (a builder
+    trap reaches every brief, so quiet is no sign it is obsolete: it leaves only when its
+    graduation CR closes). A class with a hit recorded in this run - by a cited REJECT, by a
+    retro Try item the close's extract lifted, or on an earlier pass of this same close - stays
+    `graduating`: the repeat is evidence the fix has not held.
     Idempotent: a re-run close adds no hit, files no CR and moves nothing twice.
 
     Quiet is judged on the last QUIET_RUNS runs THIS clone's archive knows, and only once it
@@ -2197,6 +2201,8 @@ def close_pass(repo_root, run: str, state: dict | None = None) -> dict:
     window = set(known[-QUIET_RUNS:])
     for row in rows:
         if row.get("state") != "active" or len(known) <= QUIET_RUNS:
+            continue
+        if "build" in (row.get("inject") or ()):
             continue
         named = {row.get("recorded_run")} | {h.get("run") for h in row.get("hits") or ()}
         if not (named & window):

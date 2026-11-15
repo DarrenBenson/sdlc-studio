@@ -34,7 +34,9 @@ one row per failure CLASS. A retro Try item cites a class (`[LC-003] ...`) or re
 (`[new: <class name>] Rule. Behaviour.`), a repeat counts as a hit on the class, and the plan,
 lane and review briefs carry the classes injected at their phase. `lessons classes` lists every
 code, name, state and hit count, so the code to cite is one command away
-(`reference-retro.md#extraction-a-lesson-must-leave-the-retro`).
+(`reference-retro.md#extraction-a-lesson-must-leave-the-retro`). The close retires a class
+quiet for its last five runs, except one injected at build: a builder trap reaches every lane
+brief, so it is quiet because it works, and it leaves only when its graduation CR closes.
 
 `retro.py extract` records a `[new: <class name>]` Try item as a class at the close. To record
 one outside a retro, when a finding names a class mid-run, run

@@ -607,9 +607,10 @@ class _GraduationWorkspace(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
 
-    def _row(self, code: str, recorded: str, *hits: dict, state: str = "active") -> dict:
+    def _row(self, code: str, recorded: str, *hits: dict, state: str = "active",
+             inject: tuple[str, ...] = ("build",)) -> dict:
         return {"id": code, "class": f"class {code}", "rule": f"Rule of {code} holds.",
-                "behaviour": f"Do {code} differently.", "inject": ["build"],
+                "behaviour": f"Do {code} differently.", "inject": list(inject),
                 "hits": list(hits), "state": state, "recorded_run": recorded}
 
     def _ledger(self, *rows: tuple[str, str, str]) -> None:
@@ -781,11 +782,12 @@ class GraduationTests(_GraduationWorkspace):
         make it four runs - LC-002, hit in RUN-3, the oldest of the last five, then retires
         too. MUTANT: make it six runs - LC-001, hit in RUN-2, then stays."""
         self._archive("RUN-1", "RUN-2", "RUN-3", "RUN-4", "RUN-5", "RUN-6")
+        quiet = ("review",)                # a build class is never retired for being quiet
         self._store(
-            self._row("LC-001", "RUN-1", _hit("RUN-2", "US0001")),
-            self._row("LC-002", "RUN-1", _hit("RUN-3", "US0002")),
-            self._row("LC-003", "RUN-5"),
-            self._row("LC-004", "RUN-1", state="graduating"))
+            self._row("LC-001", "RUN-1", _hit("RUN-2", "US0001"), inject=quiet),
+            self._row("LC-002", "RUN-1", _hit("RUN-3", "US0002"), inject=quiet),
+            self._row("LC-003", "RUN-5", inject=quiet),
+            self._row("LC-004", "RUN-1", state="graduating", inject=quiet))
         state = self._state("RUN-7")       # the last five runs are RUN-3 .. RUN-7
         detail = self._close(state)
         rows = self._by_id()
@@ -794,10 +796,10 @@ class GraduationTests(_GraduationWorkspace):
                          {k: rows[k]["state"] for k in ("LC-001", "LC-002", "LC-003", "LC-004")})
         self.assertIn("retired LC-001", detail)
         self.assertNotIn("Rule of LC-001", "\n".join(
-            lessons.render_phase(lessons.phase_digest(self.root, "build"))),
+            lessons.render_phase(lessons.phase_digest(self.root, "review"))),
             "a retired class is still injected")
         # Five runs on record retire nothing: no run is older than the window yet.
-        self._store(self._row("LC-001", "RUN-1"))
+        self._store(self._row("LC-001", "RUN-1", inject=quiet))
         for p in (self.root / "sdlc-studio" / ".local" / "run-archive").glob("*.json"):
             p.unlink()
         self._archive("RUN-1", "RUN-2", "RUN-3", "RUN-4")
@@ -811,9 +813,10 @@ class GraduationTests(_GraduationWorkspace):
         HEAD, where an unknown run kept the class active for ever. MUTANT: count an unknown run
         as inside the window - LC-008, hit in a run only clone B holds, then never retires on
         clone A. Clone B knows LC-008's hit in RUN-B6, inside its window, so it stays there."""
-        store = [self._row("LC-007", "RUN-B1"),
-                 self._row("LC-008", "RUN-1", _hit("RUN-B6", "US0001")),
-                 self._row("LC-009", "RUN-1", _hit("RUN-2", "US0002"))]
+        quiet = ("review",)                # a build class is never retired for being quiet
+        store = [self._row("LC-007", "RUN-B1", inject=quiet),
+                 self._row("LC-008", "RUN-1", _hit("RUN-B6", "US0001"), inject=quiet),
+                 self._row("LC-009", "RUN-1", _hit("RUN-2", "US0002"), inject=quiet)]
         self._store(*store)
         self._archive("RUN-1", "RUN-2", "RUN-3", "RUN-4", "RUN-5", "RUN-6")
         detail = self._close(self._state("RUN-7"))

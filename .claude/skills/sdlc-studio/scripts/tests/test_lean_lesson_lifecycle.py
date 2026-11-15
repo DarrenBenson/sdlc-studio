@@ -44,9 +44,9 @@ class LessonLifecycleTests(unittest.TestCase):
         (self.root / "sdlc-studio" / "change-requests").mkdir(parents=True)
 
     def _row(self, code: str, recorded: str, *hit_runs: str, state: str = "active",
-             cr: str | None = None) -> dict:
+             cr: str | None = None, inject: tuple[str, ...] = ("build",)) -> dict:
         row = {"id": code, "class": f"class {code}", "rule": f"Rule of {code} holds.",
-               "behaviour": f"Do {code} differently.", "inject": ["build"],
+               "behaviour": f"Do {code} differently.", "inject": list(inject),
                "hits": [{"run": r, "unit": "US0001", "source": f"critic:{r}"} for r in hit_runs],
                "state": state, "recorded_run": recorded}
         if cr:
@@ -182,8 +182,9 @@ class LessonLifecycleTests(unittest.TestCase):
         clone knows. MUTANT: retire on unknown runs alone, ignoring the window - LC-002, hit in
         RUN-6, which this clone knows and is one of its last five, retires too. MUTANT: judge
         before this clone has seen a full window - with five runs on record LC-001 retires."""
-        self._store(self._row("LC-001", "RUN-B1", "RUN-B4"),
-                    self._row("LC-002", "RUN-B1", "RUN-6"))
+        quiet = ("review",)                # a build class is never retired for being quiet
+        self._store(self._row("LC-001", "RUN-B1", "RUN-B4", inject=quiet),
+                    self._row("LC-002", "RUN-B1", "RUN-6", inject=quiet))
         self._archive("RUN-1", "RUN-2", "RUN-3", "RUN-4")
         self._close("RUN-5")
         self.assertEqual({"LC-001": "active", "LC-002": "active"}, self._classes(),

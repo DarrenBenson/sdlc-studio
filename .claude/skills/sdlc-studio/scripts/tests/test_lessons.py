@@ -1941,6 +1941,64 @@ class RepeatReadIsPinnedTests(unittest.TestCase):
         self.assertEqual(4, lessons.repeats(root)[0]["count"])
 
 
+class QuietBuildClassTests(unittest.TestCase):
+    """A class injected at build reaches every builder, so it is quiet because it works: the
+    close's quiet retirement passes it over, and it leaves the briefs only by graduating. A
+    quiet class injected only at plan or review still retires."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="quietbuild_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        archive = d / "sdlc-studio" / ".local" / "run-archive"
+        archive.mkdir(parents=True)
+        for n in range(1, 7):
+            (archive / f"RUN-{n}.json").write_text(json.dumps(
+                {"run_id": f"RUN-{n}", "started_at": f"2026-09-{n:02d}T08:00:00Z",
+                 "outcome": "goal-reached"}), encoding="utf-8")
+        return d
+
+    @staticmethod
+    def _row(code: str, inject: list[str], **extra) -> dict:
+        return {"id": code, "class": f"class {code}", "rule": f"Rule of {code} holds.",
+                "behaviour": f"Do {code} differently.", "inject": inject, "hits": [],
+                "state": "active", "recorded_run": "RUN-1", **extra}
+
+    def _states(self, root: Path) -> dict[str, str]:
+        return {r["id"]: r["state"] for r in lessons.load_store(root)}
+
+    def test_a_quiet_build_class_stays_while_a_quiet_plan_or_review_class_retires(self):
+        """MUTANT: HEAD, which retires LC-001 and LC-002 with the rest, so the lane brief loses
+        their rules. MUTANT: exempt only a class injected at build alone - LC-002, injected at
+        build and review, then retires. MUTANT: exempt every class - LC-003 and LC-004 stay."""
+        root = self._root()
+        (root / lessons.STORE_FILE).write_text("".join(json.dumps(r) + "\n" for r in (
+            self._row("LC-001", ["build"]), self._row("LC-002", ["build", "review"]),
+            self._row("LC-003", ["review"]), self._row("LC-004", ["plan"]))), encoding="utf-8")
+        res = lessons.close_pass(root, "RUN-7", {"run_id": "RUN-7", "batch": []})
+        self.assertEqual({"LC-001": "active", "LC-002": "active", "LC-003": "retired",
+                          "LC-004": "retired"}, self._states(root))
+        self.assertEqual(["LC-003", "LC-004"], res["retired"])
+        self.assertIn("quiet for 5 runs, retired LC-003, LC-004", lessons.close_pass_line(res))
+        build = "\n".join(lessons.render_phase(lessons.phase_digest(root, "build")))
+        self.assertIn("Rule of LC-001", build)
+        self.assertIn("Rule of LC-002", build)
+
+    def test_a_build_class_still_leaves_by_graduating(self):
+        """MUTANT: skip a build class in the graduation close too - LC-001, whose CR shipped,
+        then stays `graduating` and its rule is injected for ever."""
+        root = self._root()
+        crs = root / "sdlc-studio" / "change-requests"
+        crs.mkdir(parents=True)
+        (crs / "CR0001-a-graduation-request.md").write_text(
+            "# CR0001: a graduation request\n\n> **Status:** Complete\n> **Priority:** Medium\n"
+            "> **Type:** Enhancement\n\n## Summary\n\nFix the path.\n", encoding="utf-8")
+        (root / lessons.STORE_FILE).write_text(json.dumps(self._row(
+            "LC-001", ["build"], state="graduating", cr="CR0001")) + "\n", encoding="utf-8")
+        res = lessons.close_pass(root, "RUN-7", {"run_id": "RUN-7", "batch": []})
+        self.assertEqual({"LC-001": "graduated"}, self._states(root))
+        self.assertEqual(["LC-001"], res["graduated"])
+
+
 class ClassFilesAndEvidenceTests(unittest.TestCase):
     """A class may carry the files it applies to and the evidence it was found from. Both are
     optional: a row without them keeps its shape, and the reader and the phase digest carry a
