@@ -1,6 +1,6 @@
 # BG1395: BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py, changelog.d/BG1395.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -26,8 +26,10 @@ Measure before the next release; allow an explicit skip allowance if needed.
 
 - [ ] **AC1** Given two stories, one whose pytest Verify target passes with one test skipped and one whose target fails outright, when `verify_ac.py run` covers both, then each story's summary line and the total line report the partial skip as its own count (for example `partly_skipped=1`) beside `fail=2`, and name the partly-skipped criterion.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py::PartialSkipReleaseGateCountTests::test_the_summary_counts_partial_skips_apart_from_other_failures
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given a target whose every selected test is skipped and a target that runs clean with no skip, when the same run covers them, then neither adds to the partial-skip count, and the all-skipped target keeps its own vacuous verdict.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py::PartialSkipReleaseGateCountTests::test_an_all_skipped_or_clean_target_is_not_counted
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

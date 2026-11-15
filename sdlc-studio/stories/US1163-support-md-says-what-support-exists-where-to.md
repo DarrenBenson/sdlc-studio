@@ -1,6 +1,6 @@
 # US1163: SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0702
 > **Created:** 2026-11-15
@@ -21,10 +21,13 @@
 
 - **AC1:** Given SUPPORT.md, when its sections are read, then it has one for what support exists, one for where to ask and one for what is not supported.
   - **Verify:** pytest tools/tests/test_support_page.py::SupportPageTests::test_the_three_sections_are_present
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given every channel SUPPORT.md names, when each is checked against the repository, then a GitHub link names only the repository's issues or its security policy (backed by .github/ISSUE_TEMPLATE/ and SECURITY.md), each issue template it names exists under .github/ISSUE_TEMPLATE/, and it gives no install command of its own but links docs/INSTALL.md.
   - **Verify:** pytest tools/tests/test_support_page.py::SupportPageTests::test_every_channel_named_exists
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given tools/check_links.py, when it scans the root docs, then SUPPORT.md is among them and a SUPPORT.md link to a missing file is reported.
   - **Verify:** pytest tools/tests/test_check_links.py::RootDocsTests::test_support_md_is_a_root_doc
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

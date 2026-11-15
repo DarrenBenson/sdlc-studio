@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 64 |
+| Draft | 62 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 921 |
+| Done | 923 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -199,8 +199,8 @@
 | [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1160](US1160-sprint-report-py-evidence-renders-the-signed-reports.md) | `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1161](US1161-docs-evidence-md-is-generated-from-this-repository.md) | docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
-| [US1162](US1162-docs-engineering-leaders-md-explains-change-approval-separation.md) | docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
-| [US1163](US1163-support-md-says-what-support-exists-where-to.md) | SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1162](US1162-docs-engineering-leaders-md-explains-change-approval-separation.md) | docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it | Done | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1163](US1163-support-md-says-what-support-exists-where-to.md) | SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has | Done | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1164](US1164-readme-md-is-about-1-500-words-and.md) | README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1165](US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md) | A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision | Draft | EP0311 | 2026-11-15 | 2026-11-15 |
 | [US1166](US1166-each-run-s-report-of-record-states-the.md) | Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record | Draft | EP0311 | 2026-11-15 | 2026-11-15 |

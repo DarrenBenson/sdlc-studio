@@ -1,6 +1,6 @@
 # US1162: docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0702
 > **Created:** 2026-11-15
@@ -21,10 +21,13 @@
 
 - **AC1:** Given docs/engineering-leaders.md, when its sections are read, then it has one each for change approval, separation of duties (author, reviewer and signer), the signed report, and cost in dollars a point, and the page is at most 1,200 words as `wc -w` counts them.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::EngineeringLeadersPageTests::test_the_four_sections_are_present_and_the_page_is_short
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given each paragraph and bullet in those four sections, when its links are read, then each carries at least one link to a script, a reference page heading or a committed record in this repository, and every link resolves to an existing file and, where anchored, an existing heading.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::EngineeringLeadersPageTests::test_every_claim_links_a_mechanism_that_exists
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given the cost section, when it states a dollar figure, then the same paragraph links the committed report that holds it.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::EngineeringLeadersPageTests::test_every_dollar_figure_cites_its_report
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

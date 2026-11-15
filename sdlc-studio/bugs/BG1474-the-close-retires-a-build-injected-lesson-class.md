@@ -1,6 +1,6 @@
 # BG1474: The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, sdlc-studio/lessons.jsonl, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-retro.md, changelog.d/BG1474.md
@@ -28,8 +28,10 @@ A class injected at build leaves the briefs only by graduating (its CR shipped, 
 
 - [ ] **AC1** Given a lessons store holding an active class injected at build with no hit in the last `QUIET_RUNS` runs, when the close's quiet-retirement step runs, then that class stays active, while a quiet class injected only at plan or review still retires. Fails on: a build-injected class retired for being quiet.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given HEAD, when the lane brief's lessons block is built, then it carries every builder trap `test_agent_definitions` names, with LC-019, LC-020 and LC-021 active in sdlc-studio/lessons.jsonl. Fails on: any of the three left retired.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::SpawnSiteTests::test_the_lane_brief_carries_the_builder_traps
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

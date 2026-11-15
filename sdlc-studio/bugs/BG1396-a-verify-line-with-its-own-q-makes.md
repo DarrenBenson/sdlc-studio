@@ -1,6 +1,6 @@
 # BG1396: A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py, changelog.d/BG1396.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -26,10 +26,13 @@ Force a known verbosity and pin the regex.
 
 - [ ] **AC1** Given a Verify line `pytest <file> -q` whose target has one passing and one skipped test, and another whose target is entirely skipped, when `verify_ac.py run` runs them, then neither criterion is stamped yes: the first fails naming the skipped test and the second gets the all-skipped verdict.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::QuietFlagSkipReadTests::test_a_q_on_the_verify_line_still_reads_the_skips
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given a Verify line with `-s` whose passing test prints a line shaped like a pytest summary (`1 passed, 1 skipped in 0.01s`), when it runs, then the criterion passes.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::QuietFlagSkipReadTests::test_a_summary_like_line_under_s_is_not_read_as_a_skip
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given a run report holding `SKIPPED path::Class::test - reason` lines, when the partial-skip verdict is built, then it names each as `path::Class::test (reason)`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::QuietFlagSkipReadTests::test_a_skip_node_line_names_its_test
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

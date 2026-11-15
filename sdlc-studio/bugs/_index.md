@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 365 |
+| Open | 362 |
 | In Progress | 0 |
-| Fixed | 927 |
+| Fixed | 930 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
@@ -470,8 +470,8 @@
 | [BG1392](BG1392-prices-and-token-meters-have-untested-edges-rates.md) | prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1393](BG1393-a-project-that-replaces-grok-4-7-under.md) | A project that replaces grok-4.7 under pricing.models loses grok-4.7@long-context from its own table, so run_state.usd prices only part of the reading | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1394](BG1394-a-re-close-after-a-reopen-whose-meter.md) | A re-close after a reopen whose meter cannot be read drops the first window, takes no reading and says nothing on the page | Fixed | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1395](BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md) | BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured | Open | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1395](BG1395-bg1005-makes-a-criterion-whose-pytest-target-partly.md) | BG1005 makes a criterion whose pytest target partly skips on the running machine read red, including Done criteria the release gate re-runs, and the count is not measured | Fixed | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1398](BG1398-the-tool-call-budget-in-a-multi-unit.md) | The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Open | Medium | 2026-11-13 | 2026-11-13 |
@@ -549,7 +549,7 @@
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
