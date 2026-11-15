@@ -165,6 +165,9 @@ project has been burned by). `report.enabled: false` gates the TEXT PAGE only (a
 json data remains available under it - `show --format json` returns the whole composed report
 either way - and RECORDING is never gated, because a report not drawn can be drawn later while a
 measurement not taken is gone.
+`evidence --out PAGE` writes one row per signed run, from its latest signed report, between the
+page's generation markers; `--check` exits 1 naming a run whose row differs, and only notes a report
+signed after the newest one the page names, so a sprint close never fails it.
 
 ### `pvd.py`
 

@@ -898,6 +898,9 @@ NON_CEREMONY_VERBS = {
                "handoff", "resume"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
+    # `evidence` renders the signed reports onto a page after the runs are signed; it reads
+    # the record and certifies nothing a close could hold.
+    "sprint_report": ("evidence",),
     # `trace` reads an escaped bug back to the unit and verdict that let it through, and
     # `to-class` turns its root cause into a failure class; both are post-release records, run
     # after a defect is found, so no close can certify them.
@@ -6553,6 +6556,158 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1
 
 
+# ------------------------------------------------------------------- evidence page
+# One row per signed run, every cell READ from the run's latest signed report of record, the
+# hours being only the gap between two of its timestamps: a change board is shown what the run
+# recorded, never a cost or a verdict worked out again here. The signoff section is not read:
+# the report is built before the sign, so it reads not yet signed there, and the top-level
+# `signature` block is the record.
+
+#: Each column, and the report field the legend above the table names as its source.
+EVIDENCE_COLUMNS = (
+    ("Run", "`run_id`"),
+    ("Report", "`report_id`"),
+    ("Goal verdict", "`goal_verdict` in the `goal` section"),
+    ("Verdict note", "`goal_verdict_note` in the `goal` section, shown when the verdict is not "
+                     "Judged achieved and `-` when it is, or not recorded where the report holds "
+                     "no note"),
+    ("Dollars per point", "`est_actual` of the `estimates` row whose `est_measure` is Dollars "
+                          "per point, or not recorded where the report holds no such row"),
+    ("Hours to signature", "the hours from `generated_at` to `signature.signed_at`"),
+)
+_ACHIEVED = "Judged achieved"
+
+
+def _signed_reports(root) -> list[dict]:
+    """Every report of record carrying a signature, oldest signature first."""
+    out = []
+    for p in sorted(report_dir(root).glob("RPT*.json")):
+        try:
+            rep = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ReportError(f"{_rel(Path(root), p)} could not be read: {exc}") from exc
+        sig = rep.get("signature") or {}
+        if sig.get("principal") and _at(sig.get("signed_at")):
+            out.append(rep)
+    return sorted(out, key=_signed_key)
+
+
+def _signed_key(rep: dict) -> tuple:
+    """Signing time, then report id: the order "latest signed" means."""
+    return _at(rep["signature"]["signed_at"]), str(rep.get("report_id"))
+
+
+def _section_of(rep: dict, key: str) -> dict:
+    return next((s for s in rep.get("sections") or [] if s.get("key") == key), {})
+
+
+def _evidence_cell(value) -> str:
+    """One table cell. Never empty: an empty cell breaks the compact table style, and a blank
+    cannot be told apart from a value left out on purpose, so a missing value reads not
+    recorded."""
+    text = " ".join(str(value).split()).replace("|", r"\|")
+    return text or "not recorded"
+
+
+def _evidence_row(rep: dict) -> tuple[str, str]:
+    """`(run, table line)` for one report, each cell read from the field its column names."""
+    goal = _section_of(rep, "goal")
+    verdict = ((goal.get("figures") or {}).get("goal_verdict")
+               or goal.get("not_measured") or {}).get("value", "not recorded")
+    note = ((goal.get("figures") or {}).get("goal_verdict_note") or {}).get("value", "")
+    dollars = next((row["est_actual"].get("value") for row in
+                    _section_of(rep, "estimates").get("rows") or []
+                    if (row.get("est_measure") or {}).get("value") == "Dollars per point"
+                    and isinstance(row.get("est_actual"), dict)), "not recorded")
+    built, signed = _at(rep.get("generated_at")), _at(rep["signature"]["signed_at"])
+    hours = f"{(signed - built).total_seconds() / 3600:.1f}" if built else "not recorded"
+    cells = (rep.get("run_id"), rep.get("report_id"), verdict,
+             "-" if verdict == _ACHIEVED else note, dollars, hours)
+    return str(rep.get("run_id")), "| " + " | ".join(_evidence_cell(c) for c in cells) + " |"
+
+
+def render_evidence(reports: list[dict]) -> str:
+    """The generated region: the newest report covered, the table and its legend."""
+    latest: dict[str, dict] = {}
+    for rep in reports:                          # oldest signature first, so the last one wins
+        latest[str(rep.get("run_id"))] = rep
+    if not latest:
+        return "No report of record has been signed yet.\n"
+    newest = reports[-1]
+    rows = sorted(latest.values(), key=lambda r: _at(r["signature"]["signed_at"]), reverse=True)
+    lines = [f"The newest report this page covers is {newest.get('report_id')}, signed at "
+             f"{newest['signature']['signed_at']}.", "",
+             "Each column reads one field of the report its row names:", ""]
+    lines += [f"- {column}: {field}." for column, field in EVIDENCE_COLUMNS]
+    # The table ends the region, as on the generated surface page, so the END marker follows
+    # a table rather than a list.
+    lines += ["", "| " + " | ".join(c for c, _ in EVIDENCE_COLUMNS) + " |",
+              "|" + " --- |" * len(EVIDENCE_COLUMNS)]
+    lines += [_evidence_row(rep)[1] for rep in rows]
+    return "\n".join(lines) + "\n"
+
+
+def _page_rows(region: str) -> dict[str, str]:
+    """`{run: table line}` for each row of the page's generated table."""
+    out = {}
+    for line in region.splitlines():
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+        if line.startswith("|") and cells and cells[0] not in ("Run", "---"):
+            out[cells[0]] = line.strip()
+    return out
+
+
+def cmd_evidence(args: argparse.Namespace) -> int:
+    """Write the evidence table between the page's markers, or `--check` it against the reports.
+
+    A report signed after the newest one the page names is not yet on the page: `--check`
+    prints that and does not fail on it, so a sprint close never turns the check red. A cell
+    that differs from the reports the page names is drift, and exits 1 naming its run.
+    """
+    import docgen  # noqa: PLC0415 - the one marker parser, loaded only by this verb
+    root = Path(args.root)
+    page = Path(args.out) if Path(args.out).is_absolute() else root / args.out
+    if not page.is_file():
+        print(f"error: no page at {args.out} - create it with {docgen.BEGIN} and {docgen.END} "
+              f"around the table first", file=sys.stderr)
+        return 2
+    text = page.read_text(encoding="utf-8")
+    try:
+        reports = _signed_reports(root)
+        start, end = docgen.find_region(text, args.out)
+    except (ReportError, docgen.MarkerError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not args.check:
+        new = docgen.splice(text, render_evidence(reports), args.out)
+        if new != text:
+            sdlc_md.atomic_write(page, new)
+        print(f"evidence: {'wrote' if new != text else 'no change to'} {args.out}")
+        return 0
+    region = text[start:end]
+    named = {line.split("|")[2].strip() for line in _page_rows(region).values()}
+    on_page = [_signed_key(r) for r in reports if r.get("report_id") in named]
+    cut = max(on_page) if on_page else None
+    covered = [r for r in reports if cut is None or _signed_key(r) <= cut]
+    newer = [r for r in reports if r not in covered]
+    want = render_evidence(covered)
+    drift = want.strip() != region.strip()
+    if drift:
+        have, need = _page_rows(region), dict(_evidence_row(r) for r in covered)
+        runs = sorted(run for run in set(have) | set(need) if have.get(run) != need.get(run))
+        for run in runs:
+            print(f"evidence: {args.out} differs from the reports for {run}")
+        if not runs:
+            print(f"evidence: {args.out} differs from the reports outside the table rows")
+    for rep in newer:
+        print(f"evidence: {rep.get('run_id')} ({rep.get('report_id')}, signed "
+              f"{rep['signature']['signed_at']}) is not yet on the page; regenerate with "
+              f"`sprint_report.py evidence --out {args.out}`")
+    if not drift:
+        print(f"evidence: {args.out} matches the signed reports it names")
+    return 1 if drift else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="The end-of-sprint report: delivered, cost, velocity.")
     p.add_argument("--root", default=".")
@@ -6605,6 +6760,15 @@ def build_parser() -> argparse.ArgumentParser:
                                      "and names every figure that moved. Non-zero when it has.")
     k.add_argument("--report", required=True, metavar="RPTxxxx")
     k.set_defaults(func=cmd_check)
+    e = sub.add_parser("evidence", help="Write the signed reports of record as one evidence "
+                                        "table between a page's generation markers: one row per "
+                                        "run from its latest signed report.")
+    e.add_argument("--out", required=True, metavar="PAGE",
+                   help="the page to write, relative to the root; it must carry the markers")
+    e.add_argument("--check", action="store_true",
+                   help="write nothing; exit 1 naming each run whose row differs from the "
+                        "reports the page names, and note a report signed after them")
+    e.set_defaults(func=cmd_evidence)
     return p
 
 
