@@ -1,6 +1,6 @@
 # US0994: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Delivers:** CR0609
 > **Created:** 2026-10-09
@@ -22,8 +22,10 @@
 
 - **AC1:** Given a run closed with `sprint close` and signed with `sprint sign` in a fixture, when the conformance test reads the tracked record after each command, then every key the annex contracts for that state is present with its documented type, and a key the annex does not contract is tolerated rather than failed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_tracked_record_holds_its_contracted_keys
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given three tracked records from fixture runs, one closed, one closed and signed, and one closed and then ended with `sprint stop`, when the test evaluates the annex's own awaiting-signature predicate, extracted from the annex, on each record, then it agrees with `sprint plan --write` in a fresh clone, which is refused for the first and not refused for the other two.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_annex_awaiting_rule_matches_the_plan_guard
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

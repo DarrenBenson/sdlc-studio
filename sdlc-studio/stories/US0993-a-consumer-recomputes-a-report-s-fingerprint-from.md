@@ -1,6 +1,6 @@
 # US0993: A consumer recomputes a report's fingerprint from the annex alone
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Supersedes:** BG1007
 > **Delivers:** CR0609
@@ -23,8 +23,10 @@
 
 - **AC1:** Given the reference implementation the annex states for the schema-2 fingerprint, when the test extracts it and runs it with `python3 -I` from a temporary working directory with no skill scripts on the path, over a report filed by `sprint close` in a fixture and over every committed schema-2 page (RPT0006 onward, found by glob so each later page joins the check), then it returns the fingerprint each page records.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_fingerprint.py::FingerprintAnnexTests::test_the_annex_procedure_recomputes_filed_fingerprints_in_isolation
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given the annex's lists of figures and sections left out of the digest, when they are compared with OUTSIDE_THE_DIGEST and SECTIONS_OUTSIDE_THE_DIGEST, then they are equal, and both the annex and reference-sprint.md state that the signature block, the generation time and each figure's source are not signed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_fingerprint.py::FingerprintAnnexTests::test_the_annex_exclusions_match_the_code
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

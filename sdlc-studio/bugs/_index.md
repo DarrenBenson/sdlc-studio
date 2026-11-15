@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 329 |
+| Open | 331 |
 | In Progress | 0 |
 | Fixed | 917 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1437** |
+| **Total** | **1439** |
 
 ## All Bugs
 
@@ -513,6 +513,8 @@
 | [BG1435](BG1435-retitle-leaves-a-reference-style-link-definition-and.md) | retitle leaves a reference-style link definition and a link in the project-root README dangling, while its changelog says it finds every link to the renamed file | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1436](BG1436-a-lesson-class-recorded-with-no-run-open.md) | A lesson class recorded with no run open retires at the next close in a clone with more than the quiet-run count of archived runs, from class-add and from retro extract alike | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1437](BG1437-sdlc-studio-reviews-command-audit-md-says-70.md) | sdlc-studio/reviews/command-audit.md says 70 scripts while the tree holds 71, since evidence_pack.py landed, and no check refuses the stale count | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1438](BG1438-the-evidence-annex-says-fingerprint-strings-escape-all.md) | The evidence annex says fingerprint strings escape all control characters while the reference implementation escapes only U+0000 to U+001F, and it omits the no-closed-sprint limit of the version stamp | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1439](BG1439-us1156-did-not-converge-in-review-round-2.md) | US1156 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US0996: Each committed report and run record states the evidence-schema version it was written under
 
-> **Status:** Ready
+> **Status:** Done
 > **Release:** 6.4 (D0474)
 > **Delivers:** CR0609
 > **Created:** 2026-10-09
@@ -22,12 +22,16 @@
 
 - **AC1:** Given a run closed and signed through `sprint close` and `sprint sign` and committed, when a fresh clone reads the filed report JSON and the tracked run record, then each carries `evidence_schema` equal to the version the annex masthead states.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_report_and_run_record_carry_the_annex_version
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a run closed while the annex version is 1.0 and signed after the version moves to 1.1, when the sealed run record is read, then it carries 1.0, the version its page was stamped with.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_the_record_keeps_its_pages_version_across_an_upgrade
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a signed page filed before the stamp and a page filed after it, when `sprint_report check` runs on each, then both read VALID and only the later page carries `evidence_schema`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_an_unstamped_page_still_checks_valid
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given the annex's compatibility policy, when the test reads it, then the masthead version parses as major.minor and the policy states that an added field is a minor bump, a removed or renamed field is a major bump carrying a migration note in the annex, and a consumer must tolerate unknown keys.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_the_annex_states_its_compatibility_policy
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

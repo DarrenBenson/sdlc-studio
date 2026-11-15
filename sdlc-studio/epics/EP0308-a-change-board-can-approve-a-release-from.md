@@ -14,7 +14,7 @@ Decomposed from CR0692. Delivers the work CR0692 requested.
 
 ## Story Breakdown
 
-- [ ] [US1155: One command writes a release's evidence pack from committed records](../stories/US1155-one-command-writes-a-release-s-evidence-pack.md)
+- [x] [US1155: One command writes a release's evidence pack from committed records](../stories/US1155-one-command-writes-a-release-s-evidence-pack.md)
 - [ ] [US1156: Each change in the pack states what is known wrong and names the accountable person, never the agent](../stories/US1156-each-change-in-the-pack-states-what-is.md)
 
 ## Acceptance Criteria (Epic Level)

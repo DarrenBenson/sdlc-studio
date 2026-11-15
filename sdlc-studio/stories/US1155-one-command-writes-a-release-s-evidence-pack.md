@@ -1,6 +1,6 @@
 # US1155: One command writes a release's evidence pack from committed records
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0692
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given committed signed reports, when `release_cut.py evidence-pack --version 6.4.0 --reports RPT0001,RPT0002` runs, then it writes one markdown pack under sdlc-studio/reports/ listing each delivered unit of those reports, and exits 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::BuildPackTests::test_pack_lists_delivered_units_of_signed_reports
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given an unsigned or unknown report, when the command runs, then it exits non-zero naming the report and writes no pack.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::BuildPackTests::test_unsigned_or_unknown_report_is_refused
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given an uncommitted edit to a unit's file or the verdict ledger, when the pack is built, then the pack reads the committed copy and is byte-identical to one built before the edit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::CommittedOnlyTests::test_working_tree_edits_do_not_change_the_pack
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given a delivered unit, when the pack is built, then its entry states what changed (title and points), which criteria passed (its ticked criteria and their Verify lines) and who reviewed it independently (the latest verdict per seat whose reviewer differs from the author).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::UnitEntryTests::test_entry_has_change_criteria_and_independent_reviewer
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 63 |
-| Ready | 11 |
+| Ready | 7 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 899 |
+| Done | 903 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -30,10 +30,10 @@
 | [US0990](US0990-a-cursor-cli-run-records-its-token-actual.md) | A Cursor CLI run records its token actual from the store the CLI persists, or says why it cannot | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0991](US0991-the-close-and-the-report-state-each-reading.md) | The close and the report state each reading's own basis, and add delegated tokens only when the reading excludes subagent spend | Done | EP0274 | 2026-10-06 | 2026-10-06 |
 | [US0992](US0992-a-consumer-parses-the-report-of-record-against.md) | A consumer parses the report of record against a published, versioned annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0993](US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md) | A consumer recomputes a report's fingerprint from the annex alone | Done | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0994](US0994-a-consumer-reads-the-committed-run-record-awaiting.md) | A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0995](US0995-a-consumer-reads-the-lesson-class-store-the.md) | A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
-| [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Ready | EP0275 | 2026-10-09 | 2026-10-09 |
+| [US0996](US0996-each-committed-report-and-run-record-states-the.md) | Each committed report and run record states the evidence-schema version it was written under | Done | EP0275 | 2026-10-09 | 2026-10-09 |
 | [US0997](US0997-a-report-the-close-files-cites-the-committed.md) | A report the close files cites the committed run record, never .local/run-state.json | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0998](US0998-the-committed-run-record-names-its-sprint-plan.md) | The committed run record names its sprint plan by digest, not by a .local path | Done | EP0276 | 2026-10-09 | 2026-10-09 |
 | [US0999](US0999-a-delegated-agent-s-token-total-records-the.md) | A delegated agent's token total records the model that spent it | Ready | EP0276 | 2026-10-09 | 2026-10-09 |
@@ -192,7 +192,7 @@
 | [US1152](US1152-a-declared-component-map-gives-each-story-a.md) | A declared component map gives each story a risk and compliance class at refine | Done | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1153](US1153-sprint-plan-shows-each-unit-s-class-and.md) | sprint plan shows each unit's class and flags a unit that touches a higher class than its tag | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
 | [US1154](US1154-a-high-class-unit-gets-a-second-independent.md) | A high-class unit gets a second independent review seat, and the retro reports what that seat found | Ready | EP0307 | 2026-11-14 | 2026-11-14 |
-| [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Ready | EP0308 | 2026-11-14 | 2026-11-14 |
+| [US1155](US1155-one-command-writes-a-release-s-evidence-pack.md) | One command writes a release's evidence pack from committed records | Done | EP0308 | 2026-11-14 | 2026-11-14 |
 | [US1156](US1156-each-change-in-the-pack-states-what-is.md) | Each change in the pack states what is known wrong and names the accountable person, never the agent | Ready | EP0308 | 2026-11-14 | 2026-11-14 |
 
 ## Archived Releases

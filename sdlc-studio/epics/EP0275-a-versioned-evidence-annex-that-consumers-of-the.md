@@ -15,10 +15,10 @@ Decomposed from CR0609. Delivers the work CR0609 requested.
 ## Story Breakdown
 
 - [x] [US0992: A consumer parses the report of record against a published, versioned annex](../stories/US0992-a-consumer-parses-the-report-of-record-against.md)
-- [ ] [US0993: A consumer recomputes a report's fingerprint from the annex alone](../stories/US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md)
-- [ ] [US0994: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex](../stories/US0994-a-consumer-reads-the-committed-run-record-awaiting.md)
+- [x] [US0993: A consumer recomputes a report's fingerprint from the annex alone](../stories/US0993-a-consumer-recomputes-a-report-s-fingerprint-from.md)
+- [x] [US0994: A consumer reads the committed run record, awaiting signature, sealed or stopped, against the annex](../stories/US0994-a-consumer-reads-the-committed-run-record-awaiting.md)
 - [ ] [US0995: A consumer reads the lesson class store, the evidence logs and the four ledgers against the annex](../stories/US0995-a-consumer-reads-the-lesson-class-store-the.md)
-- [ ] [US0996: Each committed report and run record states the evidence-schema version it was written under](../stories/US0996-each-committed-report-and-run-record-states-the.md)
+- [x] [US0996: Each committed report and run record states the evidence-schema version it was written under](../stories/US0996-each-committed-report-and-run-record-states-the.md)
 
 ## Acceptance Criteria (Epic Level)
 
