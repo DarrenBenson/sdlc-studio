@@ -42,3 +42,5 @@
 {"id": "CR0693", "type": "cr", "project": "sdlc-studio"}
 {"id": "US1059", "type": "story", "project": "sdlc-studio"}
 {"id": "US1064", "type": "story", "project": "sdlc-studio"}
+{"id": "US1066", "type": "story", "project": "sdlc-studio"}
+{"id": "BG1459", "type": "bug", "project": "sdlc-studio"}

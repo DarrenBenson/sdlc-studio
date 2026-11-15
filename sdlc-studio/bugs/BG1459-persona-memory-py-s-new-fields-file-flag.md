@@ -1,6 +1,6 @@
 # BG1459: persona_memory.py's new --fields-file flag is neither judged nor in the unjudged-flags baseline, so test_command_audit's ratchet is red on main
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, sdlc-studio/.unjudged-flags-baseline.txt, sdlc-studio/reviews/command-audit.md, changelog.d/BG1459.md
@@ -26,6 +26,7 @@ Judge each new `persona_memory` flag the way the ratchet's documentation asks (o
 
 - [ ] **AC1** Given HEAD with `persona_memory.py`'s flags, when the unjudged-flags ratchet runs, then it passes with every `persona_memory` flag judged or baselined with a reason. Fails on: any `persona_memory` flag reported unjudged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_command_audit.py::UnjudgedRatchetTests::test_the_shipped_corpus_matches_its_baseline
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

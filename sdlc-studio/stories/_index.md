@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 54 |
-| Ready | 5 |
+| Ready | 4 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 917 |
+| Done | 918 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -103,7 +103,7 @@
 | [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1068](US1068-a-learning-reaches-a-brief-only-once-a.md) | A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1069](US1069-the-close-runs-each-traced-persona-s-executable.md) | The close runs each traced persona's executable End goal Verify and records the result beside the goal verdict | Draft | EP0287 | 2026-10-12 | 2026-10-12 |

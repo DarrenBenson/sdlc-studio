@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 353 |
+| Open | 355 |
 | In Progress | 0 |
-| Fixed | 922 |
+| Fixed | 923 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1466** |
+| **Total** | **1469** |
 
 ## All Bugs
 
@@ -534,7 +534,7 @@
 | [BG1456](BG1456-the-escaped-bug-fixed-gate-s-scaffold-stripping.md) | The escaped-bug Fixed gate's scaffold stripping is untested and matches the scaffold by exact string, and test_file_finding's selector reader test fails outside a git checkout | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1457](BG1457-the-seat-record-reads-any-bracketed-word-as.md) | The seat record reads any bracketed word as a seat, lane brief --seat accepts any value, and retro seats counts rounds across deliveries | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1458](BG1458-escape-py-to-class-records-a-class-with.md) | escape.py to-class records a class with no files for a hand-edited bug with no Affects, collapses whitespace inside Affects paths, and the catalogue pages lag the new verb and flags | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1459](BG1459-persona-memory-py-s-new-fields-file-flag.md) | persona_memory.py's new --fields-file flag is neither judged nor in the unjudged-flags baseline, so test_command_audit's ratchet is red on main | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1459](BG1459-persona-memory-py-s-new-fields-file-flag.md) | persona_memory.py's new --fields-file flag is neither judged nor in the unjudged-flags baseline, so test_command_audit's ratchet is red on main | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1460](BG1460-us1058-did-not-converge-in-review-round-2.md) | US1058 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1461](BG1461-lane-brief-warns-a-landed-unit-under-review.md) | lane brief warns a landed unit under review never returned, and that the tree may already carry its work | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Open | Low | 2026-11-15 | 2026-11-15 |
@@ -542,6 +542,9 @@
 | [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1466](BG1466-a-signed-report-s-signoff-principal-and-signed.md) | A signed report's signoff principal and signed_at figures still read not yet signed, though the evidence schema says they hold who signed and when | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1467](BG1467-a-review-cap-carry-bug-copies-the-carried.md) | A review-cap carry bug copies the carried unit's Affects verbatim, so it declares the unit's changelog fragment, not its own | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
