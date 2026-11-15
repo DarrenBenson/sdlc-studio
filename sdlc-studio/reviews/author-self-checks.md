@@ -302,3 +302,4 @@
 | US1058 | agent-a8d7bb2339263220d | 2026-11-15 | TRUE 26, FALSE 0, UNVERIFIABLE 0 | killed 17, survived 0 | 03ead1b0e545ec80 at 2766fda51a6f |
 | US1059 | agent-a8d7bb2339263220d | 2026-11-15 | TRUE 14, FALSE 0, UNVERIFIABLE 1 | killed 10, survived 1 | d60750cfd3ed20c8 at 2766fda51a6f |
 | US1064 | agent-ad6b0b9722170a11f | 2026-11-15 | TRUE 25, FALSE 0, UNVERIFIABLE 1 | killed 22, survived 2 | 3dab770acd67ad78 at 3ee13b96c40c |
+| US1058 | agent-afbd3d2a94a3f7d31 | 2026-11-15 | TRUE 8, FALSE 0, UNVERIFIABLE 0 | killed 9, survived 2 | a2848b8de53c1042 at 75ba6de1177f |
