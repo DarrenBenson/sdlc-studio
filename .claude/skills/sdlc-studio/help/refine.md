@@ -54,6 +54,16 @@ leaves no half-decomposition behind.
 An `Affects` naming only files the unit will CREATE is refused when NONE of them resolves.
 Anchor it to one existing path the work touches.
 
+## The risk class each story carries
+
+When the project declares a component map (`risk.components` in `sdlc-studio/.config.yaml`),
+each story `apply` or `add` mints carries `> **Risk-class:**`: the highest of `standard`,
+`elevated` or `high` among the components its `Affects` touch, inherited or seeded `Affects`
+included. A path no component covers is `standard`. Nothing here refuses: with no map every
+story is `standard` and one line says so, and an entry naming an unknown class is reported in
+one line and read as `standard`. See
+[reference-config.md#risk-map](../reference-config.md#risk-map).
+
 ## The grooming cost, stated plainly
 
 A refined story arrives **ungroomed**: its acceptance criteria are a marker, not content. That

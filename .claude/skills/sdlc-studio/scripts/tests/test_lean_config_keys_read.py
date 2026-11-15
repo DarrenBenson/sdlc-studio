@@ -101,6 +101,16 @@ class ConfigKeysReadTests(unittest.TestCase):
                          "reference-config.md documents `sprint.split_above`, which nothing reads")
 
     @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_the_documented_risk_key_is_the_one_read(self) -> None:
+        """The component map key `refine` reads is the one the reference and the defaults
+        declare. MUTANT: the reader moves to another key -> the documented key changes nothing."""
+        from lib import risk_class  # noqa: PLC0415
+        self.assertEqual("risk.components", risk_class.CONFIG_KEY)
+        self.assertIn(f"`{risk_class.CONFIG_KEY}` (default `{{}}`)",
+                      (SKILL / "reference-config.md").read_text(encoding="utf-8"))
+        self.assertIn("risk:\n  components: {}\n",
+                      (SKILL / "templates" / "config-defaults.yaml").read_text(encoding="utf-8"))
+
     def test_review_policy_is_retired_not_documented(self) -> None:
         """AC2. MUTANTS: (1) leave `review.policy` out of `RETIRED_CONFIG_KEYS` - migrate keeps
         the line; (2) keep shipping `carry_forward.py`; (3) keep the `review.policy` row in

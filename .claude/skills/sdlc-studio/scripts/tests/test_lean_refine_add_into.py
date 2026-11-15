@@ -67,6 +67,20 @@ class RefineAddIntoTests(unittest.TestCase):
         decomposed = re.search(r"> \*\*Decomposed-into:\*\* (.*)", self.cr.read_text("utf-8"))
         self.assertEqual(self.epic, decomposed.group(1).strip())
 
+    def test_add_into_stamps_the_risk_class_from_the_map(self) -> None:
+        """`add` mints through the same stamp as `apply`. MUTANT: drop the class from the
+        `--into` mint path -> the added story carries no `Risk-class`."""
+        (self.root / "sdlc-studio" / ".config.yaml").write_text(
+            "risk:\n  components:\n    src: high\n", encoding="utf-8")
+        before = set(self._stories())
+        proc = _refine(self.root, "add", "--request", "CR0001", "--into", self.epic,
+                       "--story", "B|1|src/a.py")
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        new = [v for k, v in self._stories().items() if k not in before]
+        self.assertEqual(1, len(new))
+        self.assertIn("> **Risk-class:** high", new[0])
+        self.assertNotIn("no component map", proc.stdout + proc.stderr)
+
     def test_add_takes_one_target_not_both(self) -> None:
         """`--into` and `--epic-title` name two different targets. MUTANT: let `--epic-title`
         win silently - a new epic is minted and `--into` ignored."""

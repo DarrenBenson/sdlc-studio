@@ -3582,6 +3582,11 @@ def _file_shaped(tok: str) -> bool:
                 or tok.lower() in _EXTENSIONLESS_FILES)
 
 
+#: The metadata field a refined story carries its risk class in (`> **Risk-class:** high`),
+#: derived from its `Affects` against the project's component map (`lib/risk_class.py`).
+RISK_CLASS_FIELD = "Risk-class"
+
+
 def affects_files(text: str) -> list[str]:
     """File paths a unit declares it will touch (its `Affects` field).
 

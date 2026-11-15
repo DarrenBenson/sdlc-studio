@@ -23,10 +23,10 @@ from datetime import date
 from pathlib import Path
 
 try:
-    from lib import sdlc_md
+    from lib import risk_class, sdlc_md
 except ImportError:  # invoked from inside scripts/
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from lib import sdlc_md
+    from lib import risk_class, sdlc_md
 
 import artifact
 import file_finding
@@ -259,10 +259,26 @@ def _mark_ungroomed(story_path: Path) -> None:
     sdlc_md.atomic_write(story_path, new)
 
 
+def _risk_classes(root: Path, stories: list[tuple[str, int, str | None]]
+                  ) -> tuple[list[str | None], list[str]]:
+    """Each story's risk class from its resolved Affects against the project's component map
+    (None for a story with no Affects: it touches no component), and the map reader's notes."""
+    rmap = risk_class.load_map(root)
+    return ([rmap.classify_affects(a)[0] if a else None for _, _, a in stories],
+            list(rmap.notes))
+
+
+def _stamp_class(story_path: Path, classes: list[str | None] | None, idx: int) -> None:
+    """Write the story's `Risk-class` field when it has a class to carry."""
+    if classes and classes[idx]:
+        _insert_after_status(story_path, f"> **{risk_class.FIELD}:** {classes[idx]}")
+
+
 def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
                stories: list[tuple[str, int, str | None]], total: int,
                existing_children: list[str],
-               seed_criteria: list[str] | None = None) -> tuple[str, list[str]]:
+               seed_criteria: list[str] | None = None,
+               classes: list[str | None] | None = None) -> tuple[str, list[str]]:
     """Mint the epic + its stories and wire everything under ONE rollback guard, then set the
     request's `Decomposed-into:` to `existing_children` + the new epic (append-only). The shared
     core of `apply` (existing_children=[]) and `add` (existing_children=the request's current
@@ -290,6 +306,7 @@ def _decompose(repo_root, rid: str, rpath: Path, epic_title: str,
             # must be machine-resolvable, not only in the title. A secondary traceability link -
             # the story's Parent stays the epic, so derivation and the link gates are untouched.
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")
+            _stamp_class(Path(s["path"]), classes, idx)
             # Fill the User Story block from the title and the request, so no `{{...}}` field
             # ships unfilled - an unfilled field reads as an omission rather than a prompt.
             _fill_user_story(Path(s["path"]), title, rid)
@@ -361,7 +378,8 @@ def _roll_point_total(epic_path: Path, add: int) -> None:
 def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
                     stories: list[tuple[str, int, str | None]], total: int,
                     existing_children: list[str],
-                    seed_criteria: list[str] | None = None) -> tuple[str, list[str]]:
+                    seed_criteria: list[str] | None = None,
+                    classes: list[str | None] | None = None) -> tuple[str, list[str]]:
     """Mint the request's stories UNDER an existing epic (`--into`), roll that epic's point total,
     and wire the request's `Decomposed-into:`. The `--into` sibling of `_decompose`: it never mints
     an epic, so a themed batch epic can hold the stories of several small requests instead of each
@@ -380,6 +398,7 @@ def _decompose_into(repo_root, rid: str, rpath: Path, epic_id: str,
             minted.append(Path(s["path"]))
             story_ids.append(s["id"])
             _insert_after_status(Path(s["path"]), f"> **Delivers:** {rid}")  # originating request
+            _stamp_class(Path(s["path"]), classes, idx)
             # Fill the User Story block from the title and the request, so no `{{...}}` field
             # ships unfilled - an unfilled field reads as an omission rather than a prompt.
             _fill_user_story(Path(s["path"]), title, rid)
@@ -784,20 +803,25 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     # `--skip-personas` bypasses resolution entirely (byte-equivalent, no framing), the escape hatch.
     amigo_consult = persona_resolve.consult(root, persona_resolve.REFINE_PANEL, open_questions,
                                             skip_personas=skip_personas)
+    # Each story's risk class from its resolved Affects (explicit, inherited or seeded) against the
+    # component map. Never a refusal: what the map cannot say is a note, and the class reads standard.
+    classes, risk_notes = _risk_classes(root, stories)
     if dry_run:
         return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
                 "open_questions": open_questions, "consult": amigo_consult, "dry_run": True,
-                "seeded_notes": seeded_notes}
+                "seeded_notes": seeded_notes, "risk_classes": classes, "risk_notes": risk_notes}
 
     seed_criteria = (_request_criteria(rpath.read_text(encoding="utf-8"))
                      if seed_acs else None)
     if into_epic:
         epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
-                                             existing_children=[], seed_criteria=seed_criteria)
+                                             existing_children=[], seed_criteria=seed_criteria,
+                                             classes=classes)
     else:
         epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
-                                        existing_children=[], seed_criteria=seed_criteria)
+                                        existing_children=[], seed_criteria=seed_criteria,
+                                        classes=classes)
     # 4. close the loop on the request's status: it is now being DELIVERED via its children, so it
     # moves to its working state (it reaches terminal only by derivation, G2). Best-effort - if a
     # gate we do not force past declines the move, the decomposition still stands.
@@ -823,7 +847,8 @@ def refine(repo_root: Path | str, request_id: str, epic_title: str | None,
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "status": moved_to,
             "open_questions": open_questions, "consult": amigo_consult,
-            "dry_run": False, "seeded_notes": seeded_notes}
+            "dry_run": False, "seeded_notes": seeded_notes,
+            "risk_classes": classes, "risk_notes": risk_notes}
 
 
 def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
@@ -875,21 +900,23 @@ def refine_add(repo_root: Path | str, request_id: str, epic_title: str | None,
             file_finding.check_affects_resolvable(root, affects, "story", label=f"story {title!r}")
     rid = sdlc_md.extract_record_id(rpath.stem) or request_id
     total = sum(p for _, p, _ in stories)
+    classes, risk_notes = _risk_classes(root, stories)   # same stamp as `apply`
     if dry_run:
         return {"request": rid, "epic": into_epic or "(dry-run)", "epic_size": _tshirt_for(total),
                 "stories": [t for t, _, _ in stories], "points": total,
-                "existing_epics": existing, "dry_run": True, "seeded_notes": seeded_notes}
+                "existing_epics": existing, "dry_run": True, "seeded_notes": seeded_notes,
+                "risk_classes": classes, "risk_notes": risk_notes}
     if into_epic:
         epic_id, story_ids = _decompose_into(root, rid, rpath, into_epic, stories, total,
-                                             existing_children=existing)
+                                             existing_children=existing, classes=classes)
     else:
         epic_id, story_ids = _decompose(root, rid, rpath, epic_title, stories, total,
-                                        existing_children=existing)
+                                        existing_children=existing, classes=classes)
     return {"request": rid, "epic": epic_id, "epic_size": _tshirt_for(total),
             "stories": story_ids, "points": total, "existing_epics": existing,
             "all_epics": sdlc_md.decomposed_ids(rpath.read_text(encoding="utf-8")),
             "dry_run": False,
-            "seeded_notes": seeded_notes}
+            "seeded_notes": seeded_notes, "risk_classes": classes, "risk_notes": risk_notes}
 
 
 def _section(text: str, heading: str) -> str:
@@ -1147,6 +1174,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         return 0
     for note in result.get("seeded_notes") or []:   # the confirmation each seeded story owes
         print(note, file=sys.stderr)
+    for note in result.get("risk_notes") or []:     # what the component map could not say
+        print(note, file=sys.stderr)
     verb = "would refine" if result["dry_run"] else "refined"
     print(f"{verb} {result['request']} -> {result['epic']} ({result['epic_size']}, "
           f"{result['points']} pts) with {len(result['stories'])} story(ies): "
@@ -1190,6 +1219,8 @@ def cmd_add(args: argparse.Namespace) -> int:
         print(json.dumps(result, indent=2))
         return 0
     for note in result.get("seeded_notes") or []:   # the confirmation each seeded story owes
+        print(note, file=sys.stderr)
+    for note in result.get("risk_notes") or []:     # what the component map could not say
         print(note, file=sys.stderr)
     verb = "would add" if result["dry_run"] else "added"
     print(f"{verb} {result['epic']} ({result['epic_size']}, {result['points']} pts, "

@@ -17,10 +17,12 @@ Related: help/story.md, reference-story.md
 > **Created:** {{created_date}}
 > **GitHub Issue:** {{github_issue}}
 > **Affects:** {{source files this story touches, comma-separated}}
+> **Risk-class:** {{standard, elevated or high: written by refine, the highest class its Affects touch in the project's component map}}
 
 <!-- Affects: the source files this story changes. Declaring it lets the engagement floor
      confirm a single-file change is genuinely small; a multi-file change without an acceptance
-     criterion is refused. See reference-config.md#engagement-floor. -->
+     criterion is refused. See reference-config.md#engagement-floor.
+     Risk-class: refine derives it from Affects. See reference-config.md#risk-map. -->
 
 ## User Story
 

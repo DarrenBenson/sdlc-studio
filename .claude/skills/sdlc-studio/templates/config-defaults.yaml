@@ -169,6 +169,19 @@ status_vocab: {}
 conformance:
   adopt_after: null
 
+# Component risk map. Path prefixes (matched on whole path segments) to a class from the
+# fixed, ordered vocabulary standard < elevated < high. `refine` stamps each story it mints
+# with a `Risk-class` field: the highest class among the components its Affects touch; a path
+# no prefix covers is standard. Empty (the default) reads every story as standard, and refine
+# says so in one line. An unknown class is reported in one line and read as standard.
+# Example (in your project's sdlc-studio/.config.yaml):
+# risk:
+#   components:
+#     src/payments: high
+#     src/auth: elevated
+risk:
+  components: {}
+
 # Skill source checkout. Where `lessons add --global` writes a promoted (cross-project)
 # lesson. The INSTALLED skill is a deployment artefact - the next skill update replaces it
 # wholesale - so a lesson authored there is destroyed. Point this at your sdlc-studio source

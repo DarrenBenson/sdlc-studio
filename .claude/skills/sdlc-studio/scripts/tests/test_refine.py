@@ -503,6 +503,34 @@ class AffectsRequiredAtRefineTests(unittest.TestCase):
             self.assertIn("no Affects", err.getvalue())       # ... but never quietly
 
 
+class RiskClassAtRefineTests(unittest.TestCase):
+    """The class refine derives from the component map, as its result reports it."""
+
+    def test_dry_run_reports_each_class_and_mints_nothing(self) -> None:
+        """MUTANT: classify after the dry-run return -> the dry run carries no classes.
+        MUTANT: classify the raw spec, not the resolved Affects -> the seeded story reads None.
+        MUTANT: drop the notes from the result -> a JSON caller never sees the no-map line."""
+        from lib import risk_class  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["it works"])
+            _write(root / "sdlc-studio" / ".config.yaml",
+                   "risk:\n  components:\n    src/CR0001.py: high\n")
+            res = refine.refine(root, "CR0001", "An epic", [("Hot", 1, "src/CR0001.py"),
+                                                           ("Seeded", 1, None)],
+                                dry_run=True, skip_personas=True)
+            self.assertEqual(["high", "high"], res["risk_classes"])
+            self.assertEqual([], res["risk_notes"])
+            self.assertEqual([], list((root / "sdlc-studio").glob("stories/US*.md")))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _cr(root, "CR0001", ["it works"])
+            res = refine.refine(root, "CR0001", "An epic", [("Plain", 1, "src/CR0001.py")],
+                                skip_personas=True)
+            self.assertEqual(["standard"], res["risk_classes"])
+            self.assertEqual([risk_class.NO_MAP_NOTE], res["risk_notes"])
+
+
 class InheritSubsetTests(unittest.TestCase):
     """BG0273: `inherit:subset` took three shortcuts the bare `inherit` did not.
 

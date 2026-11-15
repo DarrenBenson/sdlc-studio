@@ -176,6 +176,19 @@ class DocTests(unittest.TestCase):
             self.assertIn(int(val), [int(m) for m in matches], f"{key}={val} drifted from YAML {matches}")
 
 
+class RiskMapDefaultTests(unittest.TestCase):
+    @unittest.skipUnless(HAVE_YAML, "PyYAML not installed")
+    def test_the_component_map_defaults_empty_and_is_documented(self) -> None:
+        """The shipped default declares no components, so a project that sets nothing reads
+        every story as standard. MUTANT: ship a populated default map -> a project inherits
+        classes it never declared. MUTANT: drop the documented section -> no reader finds it."""
+        defaults = yaml.safe_load(DEFAULTS.read_text(encoding="utf-8"))
+        self.assertEqual({}, defaults["risk"]["components"])
+        doc = REF_DOC.read_text(encoding="utf-8")
+        self.assertIn("{#risk-map}", doc)
+        self.assertIn("`risk.components` (default `{}`)", doc)
+
+
 class GracefulDegradeTests(unittest.TestCase):
     """BG0093: config.get must warn-and-default when config cannot be loaded (no PyYAML /
     unreadable), never crash - unifying the three failure regimes into one."""
