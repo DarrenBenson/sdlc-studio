@@ -132,6 +132,22 @@ class EvidencePageTests(unittest.TestCase):
                                                        "Dollars per point", "Hours to signature")])
         self.assertNotIn("RPT0105", self._region())
         self.assertNotIn("$9.99", self._region())
+        # The latest signature wins, not the highest report id.
+        self._file(_report("RPT0100", "RUN-CCC", "2026-01-06T06:30:00Z", "2026-01-06T07:00:00Z",
+                           "Judged achieved", "signed last under a lower id", "$3.20"))
+        self.assertEqual(0, self._run()[0])
+        rows = {r["Run"]: r for r in _table(self._region())}
+        self.assertEqual("RPT0100", rows["RUN-CCC"]["Report"], "latest signature, not highest id")
+
+    def test_a_goal_not_measured_reads_its_not_measured_figure(self) -> None:
+        rep = _report("RPT0106", "RUN-EEE", "2026-02-01T00:00:00Z", "2026-02-01T01:00:00Z",
+                      "unused", "", None)
+        rep["sections"][0].update(figures={}, not_measured={
+            **_figure("goal", "NOT MEASURED"), "reason": "the run set no goal"})
+        self._file(rep)
+        self.assertEqual(0, self._run()[0])
+        rows = {r["Run"]: r for r in _table(self._region())}
+        self.assertEqual("NOT MEASURED", rows["RUN-EEE"]["Goal verdict"])
 
     def test_no_cell_is_empty_and_a_missing_note_reads_not_recorded(self) -> None:
         """An empty cell fails markdownlint's compact table style, and a reader cannot tell a
@@ -219,6 +235,45 @@ class EvidencePageTests(unittest.TestCase):
         differs = [line for line in out.splitlines() if "differs" in line]
         self.assertEqual(1, len(differs), out)
         self.assertIn("RUN-BBB", differs[0])
+
+    def test_a_page_naming_no_report_only_notes_the_first_signed_report(self) -> None:
+        """A page built before any report was signed names none, so every signed report is
+        newer than it: noted, never drift. Its empty-state line is still checked."""
+        for rep in FIXTURE:
+            if rep["signature"]:
+                (self.reports / f"{rep['report_id']}.json").unlink()
+        self.assertEqual(0, self._run()[0])
+        self.assertIn("No report of record has been signed yet.", self._region())
+        empty = self.page.read_text(encoding="utf-8")
+        self._file(FIXTURE[0])
+        code, out = self._run("--check")
+        self.assertEqual(0, code, out)
+        self.assertRegex(out, r"RUN-AAA \(RPT0101, signed .*\) is not yet on the page")
+        self.assertNotIn("differs", out)
+        self.assertEqual(empty, self.page.read_text(encoding="utf-8"), "--check writes nothing")
+        # The empty-state line is generated text: an edit to it is drift.
+        self.page.write_text(empty.replace("No report of record has been signed yet.",
+                                           "No report has been signed."), encoding="utf-8")
+        code, out = self._run("--check")
+        self.assertEqual(1, code, out)
+        self.assertIn("differs from the reports outside the table rows", out)
+        self.assertRegex(out, r"RUN-AAA.*not yet on the page")
+
+    def test_check_names_reordered_or_repeated_rows_as_row_drift(self) -> None:
+        self.assertEqual(0, self._run()[0])
+        fresh = self.page.read_text(encoding="utf-8")
+        rows = [ln for ln in fresh.splitlines() if ln.startswith("| RUN-")]
+        rows_msg, legend_msg = "in the order or number of its table rows", "outside the table rows"
+        swapped = fresh.replace(f"{rows[0]}\n{rows[1]}", f"{rows[1]}\n{rows[0]}")
+        for page, said, unsaid in (
+                (swapped, rows_msg, legend_msg),
+                (fresh.replace(rows[0], f"{rows[0]}\n{rows[0]}"), rows_msg, legend_msg),
+                (fresh.replace("Each column reads", "Each column shows"), legend_msg, rows_msg)):
+            self.page.write_text(page, encoding="utf-8")
+            code, out = self._run("--check")
+            self.assertEqual(1, code, out)
+            self.assertIn(said, out)
+            self.assertNotIn(unsaid, out)
 
     def test_the_verb_is_in_every_registry_a_new_verb_implies(self) -> None:
         import argparse  # noqa: PLC0415

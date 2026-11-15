@@ -6660,9 +6660,10 @@ def _page_rows(region: str) -> dict[str, str]:
 def cmd_evidence(args: argparse.Namespace) -> int:
     """Write the evidence table between the page's markers, or `--check` it against the reports.
 
-    A report signed after the newest one the page names is not yet on the page: `--check`
-    prints that and does not fail on it, so a sprint close never turns the check red. A cell
-    that differs from the reports the page names is drift, and exits 1 naming its run.
+    A report signed after the newest one the page names, or any signed report when the page
+    names none, is not yet on the page: `--check` prints that and does not fail on it, so a
+    sprint close never turns the check red. A cell that differs from the reports the page
+    names is drift, and exits 1 naming its run.
     """
     import docgen  # noqa: PLC0415 - the one marker parser, loaded only by this verb
     root = Path(args.root)
@@ -6688,7 +6689,8 @@ def cmd_evidence(args: argparse.Namespace) -> int:
     named = {line.split("|")[2].strip() for line in _page_rows(region).values()}
     on_page = [_signed_key(r) for r in reports if r.get("report_id") in named]
     cut = max(on_page) if on_page else None
-    covered = [r for r in reports if cut is None or _signed_key(r) <= cut]
+    # A page naming no report was built before any was signed: every signed report is newer.
+    covered = [r for r in reports if cut is not None and _signed_key(r) <= cut]
     newer = [r for r in reports if r not in covered]
     want = render_evidence(covered)
     drift = want.strip() != region.strip()
@@ -6698,7 +6700,11 @@ def cmd_evidence(args: argparse.Namespace) -> int:
         for run in runs:
             print(f"evidence: {args.out} differs from the reports for {run}")
         if not runs:
-            print(f"evidence: {args.out} differs from the reports outside the table rows")
+            rows_moved = [ln.strip() for ln in region.splitlines() if ln.startswith("|")] != \
+                [ln for ln in want.splitlines() if ln.startswith("|")]
+            where = "in the order or number of its table rows" if rows_moved else \
+                "outside the table rows"
+            print(f"evidence: {args.out} differs from the reports {where}")
     for rep in newer:
         print(f"evidence: {rep.get('run_id')} ({rep.get('report_id')}, signed "
               f"{rep['signature']['signed_at']}) is not yet on the page; regenerate with "
