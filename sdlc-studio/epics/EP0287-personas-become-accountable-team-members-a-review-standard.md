@@ -31,7 +31,7 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 - [x] [US1062: retro.py seats scores each seat on its own verdicts and authored units from the ledger](../stories/US1062-retro-py-seats-scores-each-seat-on-its.md)
 - [ ] [US1063: The seat record reads each verdict's source and the operator rulings that name the seat](../stories/US1063-the-seat-record-reads-each-verdict-s-source.md)
 - [x] [US1064: The seat record charges a later bug to the approval that missed it, by the narrow rule](../stories/US1064-the-seat-record-charges-a-later-bug-to.md)
-- [ ] [US1065: Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed](../stories/US1065-each-seat-writes-its-learning-in-its-own.md)
+- [x] [US1065: Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed](../stories/US1065-each-seat-writes-its-learning-in-its-own.md)
 - [x] [US1066: Another seat approves or rejects each proposed learning against its evidence and its card](../stories/US1066-another-seat-approves-or-rejects-each-proposed-learning.md)
 - [x] [US1067: The close lists every learning about to go live on the retro, with what it addresses and who approved it](../stories/US1067-the-close-lists-every-learning-about-to-go.md)
 - [x] [US1068: A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does](../stories/US1068-a-learning-reaches-a-brief-only-once-a.md)

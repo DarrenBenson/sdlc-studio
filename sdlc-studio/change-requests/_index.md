@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 38 |
+| Proposed | 34 |
 | Approved | 0 |
-| In Progress | 20 |
+| In Progress | 24 |
 | Complete | 554 |
 | Rejected | 33 |
 | Deferred | 0 |
@@ -82,7 +82,7 @@
 | [CR-0668](CR0668-the-token-meter-recognises-a-codex-cli-run.md) | The token meter recognises a Codex CLI run and reads its token actual from the Codex store | Complete | Medium | Feature | 2026-11-06 | EP0299 |
 | [CR-0669](CR0669-the-benchmark-runs-a-fixture-headless-in-any.md) | The benchmark runs a fixture headless in any supported CLI against a pinned skill version and records the usage that CLI prints | Complete | High | Improvement | 2026-11-06 | EP0299 |
 | [CR-0670](CR0670-run-each-sprint-wave-and-the-close-in.md) | Run each sprint wave, and the close, in a fresh orchestrator session started from a bounded on-disk resume brief, so no session carries earlier waves or the planning conversation. | Complete | High | Feature | 2026-11-06 | EP0302 |
-| [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | Proposed | High | Improvement | 2026-11-06 | -- |
+| [CR-0671](CR0671-give-the-commit-hook-a-sweep-lane-that.md) | Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push. | In Progress | High | Improvement | 2026-11-06 | EP0312 |
 | [CR-0672](CR0672-add-a-deterministic-sprint-py-drive-loop-that.md) | Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end. | Proposed | High | Feature | 2026-11-06 | -- |
 | [CR-0673](CR0673-replace-the-author-s-and-the-reviewer-s.md) | Replace the author's and the reviewer's hand-rolled mutation passes with one shipped runner (`mutation.py` with drop-conjunct and prose-polarity operators, plus arbitrary file, old and new edits), and have `critic.py self-check record` take its report and refuse unanswered survivors. | Proposed | High | Improvement | 2026-11-06 | -- |
 | [CR-0674](CR0674-ship-restricted-tool-agent-definitions-for-builders-reviewers.md) | Ship restricted-tool agent definitions for builders, reviewers and repairs and spawn every lane and review with them, carrying a hand-back contract (commands in the foreground, at most three lines, detail on disk) and the run's builder notes folded into the shipped lane brief. | Complete | High | Improvement | 2026-11-06 | EP0300 |
@@ -110,13 +110,13 @@
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Complete | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | Proposed | Medium | enhancement | 2026-11-10 | -- |
-| [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Proposed | High | Improvement | 2026-11-12 | -- |
+| [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | In Progress | High | Improvement | 2026-11-12 | EP0311 |
 | [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | Proposed | Medium | Improvement | 2026-11-12 | -- |
 | [CR-0701](CR0701-a-consolidation-unit-s-builder-brief-can-carry.md) | A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it | Proposed | Low | Improvement | 2026-11-12 | -- |
-| [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | Proposed | High | Improvement | 2026-11-14 | -- |
+| [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | In Progress | High | Improvement | 2026-11-14 | EP0310 |
 | [CR-0703](CR0703-fit-the-plan-s-dollar-forecast-from-measured.md) | Fit the plan's dollar forecast from measured dollars per point, not priced tokens times the input price | Proposed | Medium | enhancement | 2026-11-15 | -- |
 | [CR-0704](CR0704-the-change-evidence-pack-groups-changes-by-risk.md) | The change evidence pack groups changes by risk and compliance class, lists high-risk changes first with their second seat's verdict, and reads through the evidence annex | Proposed | High | feature | 2026-11-15 | -- |
-| [CR-0705](CR0705-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build | Proposed | High | enhancement | 2026-11-15 | -- |
+| [CR-0705](CR0705-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build | In Progress | High | enhancement | 2026-11-15 | EP0313 |
 | [CR-0706](CR0706-an-incident-is-triaged-into-the-escaped-bugs.md) | An incident is triaged into the escaped bugs it caused, the report states escapes per 100 points, and an escape's class reaches only the briefs whose files it matches | Proposed | Medium | feature | 2026-11-15 | -- |
 | [CR-0707](CR0707-sprint-lane-offers-a-rebase-step-that-carries.md) | sprint lane offers a rebase step that carries a waiting lane's staged work onto a moved main | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 | [CR-0708](CR0708-file-finding-writes-criteria-a-plan-can-take.md) | file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line | Proposed | Medium | Enhancement | 2026-11-15 | -- |

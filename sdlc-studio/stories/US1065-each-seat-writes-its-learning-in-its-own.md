@@ -1,6 +1,6 @@
 # US1065: Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed
 
-> **Status:** Ready
+> **Status:** Done
 > **Delivers:** CR0633
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a retro whose batch qa and product reviewed, when `persona_memory.py learn-brief --persona qa --retro RETRO0002` runs, then the brief frames the qa card, carries qa's record from `retro.py seats` with each adverse item and its key and qa's live learnings, says the learning cannot change the card's Non-Negotiables or Authority, and names the file to write, and no line of product's record appears.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py::ProposeLearningTests::test_the_learning_brief_carries_only_its_own_seats_record
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given a file holding the qa seat's learning, when `persona_memory.py propose --persona qa --retro RETRO0002 --from-file <path>` runs, then qa's memory gains one entry with State proposed, Run the retro's run, the body the file's text verbatim and Evidence the ids `retro.py seats` lists for qa rather than ids the file names.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py::ProposeLearningTests::test_a_proposal_keeps_the_seats_words_and_the_ledgers_evidence
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given a seat with no record in the retro (no verdict, no unit built, no adverse item), or a second proposal while qa's first for that run is still proposed, when `persona_memory.py propose` runs, then it exits 2 and memory is unchanged, and once the first is rejected a new proposal is accepted.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py::ProposeLearningTests::test_one_open_proposal_per_seat_and_run
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

@@ -1,6 +1,7 @@
 # CR-0671: Give the commit hook a sweep lane that always runs the cheap repo-wide sweep tests and refuses a staged new test module without a `test-census-subject` marker, so a sweep red is found at commit rather than at review or push
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0312
 > **Parent:** RFC0062
 > **Priority:** High
 > **Type:** Improvement

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** README.md, docs/release-notes-v6.2.0.md, tools/tests/test_lean_release_notes_v62.py, changelog.d/BG1177.md
+> **Affects:** README.md, docs/release-notes-v6.2.0.md, tools/tests/test_lean_release_notes_v62.py, tools/tests/test_self_check_claim_wording.py, changelog.d/BG1177.md
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio file
 > **Raised-by:** claude; human; v1
@@ -24,15 +24,30 @@ Word the README line and the theme heading as the notes' opening line does: a re
 
 ## Acceptance Criteria
 
-- [ ] **AC1** README's release-notes line and the notes' first theme say a brief CAN require the author's self-check, not that every review judges only self-checked work.
-  - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py
+- [ ] **AC1** Given docs/release-notes-v6.2.0.md, when its first theme bullet and its theme table row are read, then both say a review brief can require the author's own check first, and neither says a reviewer judges only self-checked work.
+  - **Verify:** pytest tools/tests/test_self_check_claim_wording.py::SelfCheckClaimWordingTests::test_the_62_notes_say_a_brief_can_require_the_self_check
+- [ ] **AC2** Given README.md, when every line naming the author's self-check is read, then none says a reviewer judges only self-checked work.
+  - **Verify:** pytest tools/tests/test_self_check_claim_wording.py::SelfCheckClaimWordingTests::test_the_readme_claims_no_enforced_self_check
+- [ ] **AC3** Given the renamed theme, when the 6.2 notes' lead test runs, then it passes with THEMES keyed on the new heading and the same four units.
+  - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
 
 ## Impact
 
 A reader of the front page believes self-checks are enforced by default.
+
+## Notes
+
+- AC1 must fail on: docs/release-notes-v6.2.0.md:12 or :176 as they stand
+- AC2 must fail on: README.md:480 as it stands
+- AC3 must fail on: THEMES (test_lean_release_notes_v62.py:47-48) left on the old heading
+- Still true at HEAD: README.md:480, docs/release-notes-v6.2.0.md:12 and :176; config-defaults.yaml:87 ships `review.author_self_check: report`, under which `critic.py brief` prints the brief.
+- The filed Verify ran the whole module; replaced with named tests. The README check is phrased so it survives CR0702's README rewrite, which may drop the line.
+- Shares README.md with CR0702's README story: same lane, BG1177 first.
+- End goal 1 (the front door claims only what the shipped default enforces).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-15 | Claude Opus 5.5 (run fourteen grooming, D0479) | Groomed for run fourteen: Affects, criteria with Verify lines, notes |

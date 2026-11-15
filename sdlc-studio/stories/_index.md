@@ -7,17 +7,17 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 54 |
-| Ready | 2 |
+| Draft | 64 |
+| Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 920 |
+| Done | 921 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1159** |
+| **Total** | **1169** |
 
 ## All Stories
 
@@ -102,7 +102,7 @@
 | [US1062](US1062-retro-py-seats-scores-each-seat-on-its.md) | retro.py seats scores each seat on its own verdicts and authored units from the ledger | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1063](US1063-the-seat-record-reads-each-verdict-s-source.md) | The seat record reads each verdict's source and the operator rulings that name the seat | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1064](US1064-the-seat-record-charges-a-later-bug-to.md) | The seat record charges a later bug to the approval that missed it, by the narrow rule | Done | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1065](US1065-each-seat-writes-its-learning-in-its-own.md) | Each seat writes its learning in its own words from a brief carrying its record, and it is recorded as proposed | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1066](US1066-another-seat-approves-or-rejects-each-proposed-learning.md) | Another seat approves or rejects each proposed learning against its evidence and its card | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1067](US1067-the-close-lists-every-learning-about-to-go.md) | The close lists every learning about to go live on the retro, with what it addresses and who approved it | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1068](US1068-a-learning-reaches-a-brief-only-once-a.md) | A learning reaches a brief only once a signed close has listed it, and one the operator strikes at the signature never does | Done | EP0287 | 2026-10-12 | 2026-10-12 |
@@ -197,6 +197,16 @@
 | [US1157](US1157-a-bug-records-that-it-escaped-to-production.md) | A bug records that it escaped to production, the release it shipped in and the unit that let it through | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1158](US1158-escape-py-trace-proposes-the-unit-and-verdict.md) | escape.py trace proposes the unit and verdict that let an escaped bug through, from the release and the files the fix touches | Done | EP0309 | 2026-11-15 | 2026-11-15 |
 | [US1159](US1159-an-escape-s-root-cause-becomes-a-failure.md) | An escape's root cause becomes a failure class that carries the files it applies to | Done | EP0309 | 2026-11-15 | 2026-11-15 |
+| [US1160](US1160-sprint-report-py-evidence-renders-the-signed-reports.md) | `sprint_report.py evidence` renders the signed reports of record as one evidence table, and `--check` names a page that has drifted from them | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1161](US1161-docs-evidence-md-is-generated-from-this-repository.md) | docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1162](US1162-docs-engineering-leaders-md-explains-change-approval-separation.md) | docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1163](US1163-support-md-says-what-support-exists-where-to.md) | SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1164](US1164-readme-md-is-about-1-500-words-and.md) | README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade | Draft | EP0310 | 2026-11-15 | 2026-11-15 |
+| [US1165](US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md) | A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision | Draft | EP0311 | 2026-11-15 | 2026-11-15 |
+| [US1166](US1166-each-run-s-report-of-record-states-the.md) | Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record | Draft | EP0311 | 2026-11-15 | 2026-11-15 |
+| [US1167](US1167-a-test-module-or-class-marked-test-selection.md) | A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget | Draft | EP0312 | 2026-11-15 | 2026-11-15 |
+| [US1168](US1168-the-commit-hook-refuses-a-staged-new-test.md) | The commit hook refuses a staged new test module with no `test-census-subject` marker | Draft | EP0312 | 2026-11-15 | 2026-11-15 |
+| [US1169](US1169-sprint-plan-reports-per-unit-every-registry-file.md) | sprint plan reports, per unit, every registry file its new script, verb or flag implies, and every page threshold it nears, that its Affects omits | Draft | EP0313 | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

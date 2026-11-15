@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 358 |
+| Open | 356 |
 | In Progress | 0 |
-| Fixed | 924 |
+| Fixed | 926 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
@@ -543,8 +543,8 @@
 | [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1466](BG1466-a-signed-report-s-signoff-principal-and-signed.md) | A signed report's signoff principal and signed_at figures still read not yet signed, though the evidence schema says they hold who signed and when | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1467](BG1467-a-review-cap-carry-bug-copies-the-carried.md) | A review-cap carry bug copies the carried unit's Affects verbatim, so it declares the unit's changelog fragment, not its own | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Open | High | 2026-11-15 | 2026-11-15 |
-| [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Fixed | High | 2026-11-15 | 2026-11-15 |
+| [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |

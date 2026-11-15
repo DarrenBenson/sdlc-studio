@@ -1,6 +1,6 @@
 # BG1469: persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, changelog.d/BG1469.md
@@ -26,8 +26,10 @@ Add one test each, driving `propose --fields-file` and `approve --reject --field
 
 - [ ] **AC1** Given a propose run with --fields-file holding a title with a semicolon and $(t), when it records, then the stored title is the document's text verbatim, and a --title flag beside it wins. Fails on: `cmd_propose` ignoring the document's title.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given an approve --reject run with --fields-file holding a reason, when it records, then the stored reason is the document's text verbatim. Fails on: `cmd_approve` ignoring the document's reason.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

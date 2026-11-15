@@ -23,10 +23,20 @@ Generate the table from `sdlc_md.STATUS_VOCAB` and `TERMINAL_STATUS`, or add a t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The Status Vocabulary table in reference-outputs.md has a row for every type in `sdlc_md.STATUS_VOCAB` (issue and charter included), and each row's allowed and terminal sets equal `STATUS_VOCAB` and `TERMINAL_STATUS`
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py -k table_matches_code
-- [ ] **AC2** A table that differs from the code by one terminal status fails the check, naming the type and the status
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py -k divergence_named
+- [ ] **AC1** Given `sdlc_md.STATUS_VOCAB` and `sdlc_md.TERMINAL_STATUS`, when the Status Vocabulary table in reference-outputs.md is parsed, then it has exactly one row per type in STATUS_VOCAB (issue and charter included) and each row's allowed and terminal sets equal the code's.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_the_table_matches_the_code
+- [ ] **AC2** Given a copy of the corrected table with one terminal status removed from one row, when the same comparison runs on it, then it fails naming that type and that status.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py::StatusVocabDocTests::test_a_divergence_names_the_type_and_status
+
+## Notes
+
+- AC1 must fail on: the table at HEAD: bug terminal without Fixed and Verified, story allowed without Blocked, Deferred listed as terminal for story and CR, RFC Accepted read as live, no issue or charter row
+- AC2 must fail on: a comparison of row counts, or of the allowed column only
+- Still true at HEAD: reference-outputs.md:272-281 against sdlc_md.py:1556-1611. Since filing, STATUS_VOCAB's story list gained Blocked, which the table also lacks.
+- The filed Verify lines used `-k` patterns; replaced with node ids. The test maps the table's display names (Test Spec, CR, RFC) to the code's keys; the RFC row's 'stays live' parenthetical goes.
+- Two new rows shift the page's generated reading guide (docgen.py reading-guides), which lives in the same file. At 871 lines the page stays inside its ALLOWLIST ceiling (869 + 5%), so tools/check_budgets.py is not touched.
+- Affects at HEAD are already right (reference-outputs.md, the new test, changelog.d/BG0947.md). The new module carries a `# test-census-subject:` line naming reference-outputs.md.
+- End goal 6 (an agent following the reference gets the vocabulary the gates use) and 1.
 
 ## Revision History
 
@@ -35,3 +45,4 @@ Generate the table from `sdlc_md.STATUS_VOCAB` and `TERMINAL_STATUS`, or add a t
 | 2026-10-05 | Claude Opus 5.5 | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: reproduced against HEAD (bug terminal lacks Fixed/Verified, story and CR list Deferred as terminal, RFC Accepted read as live, no issue or charter rows); Affects adds the test AC2 needs; Verify lines added |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-15 | Claude Opus 5.5 (run fourteen grooming, D0479) | Groomed for run fourteen: criteria with Verify lines, notes |

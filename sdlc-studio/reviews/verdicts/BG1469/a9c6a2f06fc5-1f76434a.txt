@@ -1,0 +1,6 @@
+UNIT: BG1469
+BRIEF: a9c6a2f06fc5-1f76434a
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac run --id BG1469 --dry-run gives ac=2 pass=2. The two mutants this bug was filed from now fail the new tests in an isolated archive of 8207a961: `cmd_propose` ignoring the document's title fails ProposeFieldsFileTests (the file's first line is stored instead), and `cmd_approve` ignoring the document's reason fails ApproveFieldsFileTests (exit 2, a rejection needs --reason). Two further mutants fail too: the document's title winning over a `--title` flag, and the reason folded with its quotes rewritten. AC1's title holds a semicolon and `$(t)`, and AC2's reason holds a semicolon, `$(t)` and a backticked command, each compared whole with what is stored. BG1469's own change is these two test classes and its changelog fragment, whose sentence is TRUE by these runs. The other new tests in the same files are US1065's and BG1471's to judge. The isolated tree is byte-identical after the mutants.

@@ -1,6 +1,7 @@
 # CR-0699: Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0311
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

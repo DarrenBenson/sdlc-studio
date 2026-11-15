@@ -1,6 +1,7 @@
 # CR-0705: sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0313
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** M

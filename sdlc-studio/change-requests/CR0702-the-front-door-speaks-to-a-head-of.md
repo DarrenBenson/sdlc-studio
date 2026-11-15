@@ -1,6 +1,7 @@
 # CR-0702: The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0310
 > **Parent:** RFC0063
 > **Priority:** High
 > **Type:** Improvement

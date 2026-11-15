@@ -1,6 +1,6 @@
 # BG1468: Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, .claude/skills/sdlc-studio/scripts/tests/test_ledger.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_store.py, changelog.d/BG1468.md
@@ -26,8 +26,10 @@ Add `personas.memory.validity_days: 90` under a personas.memory block in config-
 
 - [ ] **AC1** Given HEAD, when `test_config.py`'s DocTests run, then `test_doc_defaults_match_yaml` passes, with `personas.memory.validity_days` and `personas.memory.inject_max` present in config-defaults.yaml at their documented defaults. Fails on: the key absent or with a different default.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_config.py::DocTests::test_doc_defaults_match_yaml
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given HEAD, when `test_ledger.py`'s FieldsFileTypeTests run, then the or-empty guard check passes with `persona_memory.py` registering no new guard. Fails on: any or-empty guard on a fields-file value in `persona_memory.py.`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ledger.py::FieldsFileTypeTests::test_a_new_or_empty_guard_is_refused_by_the_repository_check
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

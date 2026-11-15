@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, changelog.d/BG1471.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_approve.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, changelog.d/BG1471.md
 > **Evidence:** QA seat's review of BG1460, run thirteen (sdlc-studio/reviews/verdicts/BG1460/aee11910c42b-85956e17.txt), reproduced at 2d9239a9 and 61be40f3.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

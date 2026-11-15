@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_stage_confirm.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_stage_confirm.py, .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py, changelog.d/BG1260.md
 > **Evidence:** run eight (RUN-01M6RZQZ) US1131 review round 1 ([regression] and [new]), and the orchestrator's friction log (R8-F2)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,11 +24,27 @@ Catch `OSError` per definition file while drafting `.claude/agents/`, report the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** Following the recorded steps no longer reproduces the defect: In a fixture directory create `.claude` as an empty regular file, then run `init run` and `init guided` against it: each exits 1 reporting...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Catch `OSError` per definition file while drafting `.claude/agents/`, report the definition skipped with its reason, and let the stage finish the instruction...
+- [ ] **AC1** Given a fixture whose `.claude` is an empty regular file, when `init.py run` runs on it, then it exits 0, writes AGENTS.md, CLAUDE.md and every later scaffold file (the decisions log among them), and reports each agent definition under `.claude/agents/` as skipped with its OSError reason.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_init_run_finishes_and_names_each_skipped_definition
+- [ ] **AC2** Given the same fixture, when `init.py guided` drafts its agents stage, then the stage writes the instruction files, exits 0 and names each skipped definition with its reason; with `.claude` absent (the control) both definitions are written.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_init_guided_agents_stage_finishes
+- [ ] **AC3** Given an agent definition at `.claude/agents/sdlc-builder.md` that cannot be read and an AGENTS.md without the doctrine, when the agents stage runs, then it prints no 'so the doctrine check can read it' directive for the definition and still offers the doctrine.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init_claude_not_a_directory.py::ClaudeIsAFileTests::test_an_unreadable_definition_neither_misdirects_nor_hides_the_doctrine_offer
+
+## Notes
+
+- AC1 must fail on: exit 1 with NotADirectoryError, the decisions log unwritten, or a skip that names no reason
+- AC2 must fail on: stage_agents' unguarded mkdir and write (init.py:527-533)
+- AC3 must fail on: the unreadable check at init.py:537 iterating AGENT_FILES instead of INSTRUCTION_FILES
+- Still true at HEAD: stage_agents (init.py:503-533) and the scaffold's step 4 (init.py:768-772, through `_write` at :710) catch no OSError per file. The last change to init.py is c985273f, the US1131 landing that regressed it.
+- The filed criteria were file_finding's derived stubs (truncated with '...', no Verify line) and Affects had no changelog fragment; both replaced.
+- Make the definition unreadable without chmod (root ignores mode bits): a directory at the definition's path raises IsADirectoryError on read. A skipped test now reads its criterion red (BG1005), so the test must not skip on any host.
+- Which entry point reaches which line: confirm with the fixture rather than the bug's line numbers, which name them the other way round.
+- End goal 6 (onboarding never leaves a half-built project).
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-15 | Claude Opus 5.5 (run fourteen grooming, D0479) | Groomed for run fourteen: Affects, criteria with Verify lines, notes |
