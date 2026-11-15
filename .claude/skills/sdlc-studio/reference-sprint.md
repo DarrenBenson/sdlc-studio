@@ -130,9 +130,9 @@ links here rather than listing its own.
    (`artifact.py new --type retro`: allocated id, template and index row) and stops for you to
    write it; `sprint.py close --retro RETROxxxx --goal-verdict achieved|partial|missed --note
    "..."` then records the goal verdict and runs the chain - review coverage, the retro's
-   validation and extraction, estimate against actual, the lessons summary, the compulsory
-   checklist, the close gate (`gate.py --require-retro --require-review`, which runs the
-   conformance, reconcile and lessons lanes), the reconcile and the review anchor -
+   validation and extraction, estimate against actual, the persona learnings about to go live
+   (listed on the retro), the lessons summary, the compulsory checklist, the close gate
+   (`gate.py --require-retro --require-review`, which runs the conformance, reconcile and lessons lanes), the reconcile and the review anchor -
    then draws the sprint report and files it: the one page you sign. A failing step is printed with its remedy and handed
    over as a known issue on the report; the close does not refuse over it. What still stops it:
    no sprint goal, no goal verdict, no retro, and an uncommitted change to a file a batch unit
@@ -142,7 +142,7 @@ links here rather than listing its own.
    (Done for a story, Fixed for a bug) through that unit's own gate, writes the run's signature
    and stops; no per-unit sign-off row is written. A principal who authored a unit or reviewed
    one is refused before anything is written, and a unit with no independent APPROVE stops it
-   before anything moves. The signature is over the page's fingerprint, a digest of each figure's value; the signature block, the generation time and each figure's source are not signed ([how to recompute it](reference-evidence-schema.md#report-fingerprint)).
+   before anything moves. `--strike M-NNNN --strike-reason "..."` strikes a persona learning the close listed, so it never goes live. The signature is over the page's fingerprint, a digest of each figure's value; the signature block, the generation time and each figure's source are not signed ([how to recompute it](reference-evidence-schema.md#report-fingerprint)).
 6. **Learn.** The retro is three lines - Keep, Stop and Try, with a capped number of Try items
    (`help/retro.md`) - and the close's `retro.py extract` turns each Try item into a lesson. A
    Try item tagged with a failure class counts a repeat on that class in

@@ -139,6 +139,16 @@ carries its basis. When the bug's `Evidence` names the unit's review or its verd
 names no other seat's, and the approving row carried a finding, the bug reads as approved over
 the seat's own finding instead: the seat saw it and chose to pass.
 
+## Persona learnings: what goes live when you sign
+
+The close's `persona-memory` step writes a delimited `## Persona learnings` block on the retro:
+every approved learning not yet live, whatever wrote it, with its seat, its approver and the
+adverse items it addresses, each stamped Listed-in with the run. The same lines, printed by the
+close, name each seat whose record holds adverse evidence (a defect found after its approval, a
+later bug charged to it) and no learning listed, and say how many verdict rows name no seat, so
+an empty block never reads as a clean run. A re-close replaces the block between its markers
+and leaves the prose around it as written. It never blocks the close.
+
 ## Extraction: a lesson must leave the retro
 
 `retro.py extract --id RETROxxxx` lifts the Try items (an older retro's `## Lessons`

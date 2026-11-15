@@ -19,10 +19,16 @@ matching the memory directory) is refused, naming the rule. `list` and `recall` 
 persona's file only. `set_field` is the helper later verbs use to record an approval, what a
 learning addresses, the close that listed it, a strike or a retirement.
 
-The brief side is `digest` and `render`: a persona's live learnings (approved and within their
-horizon), ranked so one whose evidence shares the unit's files comes first, capped at
+The brief side is `digest` and `render`: a persona's live learnings, ranked so one whose
+evidence shares the unit's files comes first, capped at
 `personas.memory.inject_max` (default 5), each carried as its id, title and a short gist. A
 store that cannot be read is reported as unreadable, never as a store with nothing in it.
+
+Live means approved, within its horizon, not struck or retired, and listed by a close whose
+run's tracked record is signed, lists it and does not strike it (`standing`). Signed is read
+from that record and never written into memory, so a reopened run holds its learnings until it
+is signed again. The close lists every approved learning not yet live (`pending_listing`) and
+stamps it Listed-in (`mark_listed`); the signature may strike any it listed (`strike`).
 """
 from __future__ import annotations
 
@@ -35,7 +41,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lessons  # noqa: E402  (sibling: the one entry parser and field writer)
 import persona_resolve  # noqa: E402  (sibling: the one seat roster)
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 
 MEMORY_REL = "sdlc-studio/personas/memory"
 PERSONAS_REL = "sdlc-studio/personas"
@@ -314,7 +320,7 @@ def _row(entry: dict, days: int) -> dict:
     return {"id": entry["id"], "title": entry["title"], "persona": f.get("persona", ""),
             "state": state_of(entry), "horizon": lessons.horizon_of(entry, days),
             "evidence": f.get("evidence", ""), "added": f.get("added", ""),
-            "body": prose_of(entry)}
+            "struck": f.get("struck", ""), "body": prose_of(entry)}
 
 
 def prose_of(entry: dict) -> str:
@@ -378,18 +384,21 @@ def _norm(path: str) -> str:
 
 
 def digest(root: Path | str, key: str, affects=(), *, today: str | None = None) -> dict:
-    """What a brief carries for `key`: its live learnings (State approved, Review-by not yet
-    passed), ranked by relevance to `affects` and then recency, capped at `inject_max`.
+    """What a brief carries for `key`: its live learnings (approved, Review-by not yet passed
+    and `standing` live), ranked by relevance to `affects` and then recency, capped at
+    `inject_max`.
 
-    Returns `{persona, path, learnings, live, withheld, expired, cap, absent, error}`. Only the
-    persona's own file is read. A file that cannot be parsed sets `error`, never reads as
-    empty; a missing file sets `absent`."""
+    Returns `{persona, path, learnings, live, withheld, expired, unsigned, unlisted, cap,
+    absent, error}`: `unsigned` counts approved learnings whose listing run is not signed,
+    `unlisted` those no signed close has listed. Only the persona's own file is read. A file
+    that cannot be parsed sets `error`, never reads as empty; a missing file sets `absent`."""
     root = Path(root)
     path = memory_path(root, key)
     rel = path.relative_to(root).as_posix()
     cap = inject_max(root)
     out = {"persona": key, "path": rel, "learnings": [], "live": 0, "withheld": 0,
-           "expired": 0, "cap": cap, "absent": not path.exists(), "error": ""}
+           "expired": 0, "unsigned": 0, "unlisted": 0, "cap": cap,
+           "absent": not path.exists(), "error": ""}
     if out["absent"]:
         return out
     try:
@@ -400,13 +409,18 @@ def digest(root: Path | str, key: str, affects=(), *, today: str | None = None) 
     today = today or sdlc_md.now_date()
     days = validity_days(root)
     unit_files = {_norm(a) for a in affects or ()}
-    live = []
+    live, records = [], {}
     for e in entries:
-        if state_of(e) != "approved":
+        if state_of(e) != "approved" or e["fields"].get("retired"):
             continue
         horizon = lessons.horizon_of(e, days)
         if horizon is None or horizon < today:
             out["expired"] += 1
+            continue
+        held = standing(root, e, records)
+        if held in ("unsigned", "unlisted"):
+            out[held] += 1
+        if held != "live":
             continue
         relevant = bool(unit_files & _cited_files(root, e["fields"].get("evidence", "")))
         live.append((relevant, e["fields"].get("added", ""), e["id"], e))
@@ -442,12 +456,117 @@ def render(d: dict, render_name: str) -> list[str]:
         lines.append(f"  ({d['expired']} approved {'learning' if one else 'learnings'} past "
                      f"{'its' if one else 'their'} Review-by horizon, not carried: revalidate "
                      f"or retire {'it' if one else 'them'})")
+    if d.get("unsigned"):
+        one = d["unsigned"] == 1
+        lines.append(f"  ({d['unsigned']} approved "
+                     + ("learning awaits its run's signature, not carried until that run is "
+                        "signed)" if one else
+                        "learnings await their runs' signatures, not carried until those runs "
+                        "are signed)"))
+    if d.get("unlisted"):
+        one = d["unlisted"] == 1
+        lines.append(f"  ({d['unlisted']} approved {'learning' if one else 'learnings'} no "
+                     f"signed close has listed, not carried until one lists "
+                     f"{'it' if one else 'them'})")
     return lines
 
 
 def brief_block(root: Path | str, key: str, render_name: str, affects=()) -> str:
     """The learnings block a brief or a framing appends for `key`."""
     return "\n".join(render(digest(root, key, affects), render_name))
+
+
+# --------------------------------------------------------------- the close and the signature
+
+
+def _struck_ids(record: dict) -> set[str]:
+    return {s.get("id") for s in record.get(run_state.PERSONA_STRUCK) or []
+            if isinstance(s, dict)}
+
+
+def standing(root: Path | str, entry: dict, records: dict | None = None) -> str:
+    """Where an approved learning stands against the signature: `live` when the run its
+    Listed-in names has a signed tracked record (`run_state.signed_record`) that lists it and
+    does not strike it; `struck` when that record strikes it or its Struck field is set;
+    `unsigned` when its run is not signed; `unlisted` when no signed close has listed it.
+    `records` caches each run's signed record across calls."""
+    f = entry["fields"]
+    if f.get("struck"):
+        return "struck"
+    run = (f.get("listed-in") or "").strip()
+    if not run:
+        return "unlisted"
+    cache = records if records is not None else {}
+    if run not in cache:
+        cache[run] = run_state.signed_record(root, run)
+    rec = cache[run]
+    if rec is None:
+        return "unsigned"
+    if entry["id"] in _struck_ids(rec):
+        return "struck"
+    return "live" if entry["id"] in (rec.get(run_state.PERSONA_LISTED) or []) else "unlisted"
+
+
+def pending_listing(root: Path | str, *, today: str | None = None) -> list[dict]:
+    """Every approved learning, across every memory file, that is not yet live and could go
+    live at the next signature, whatever wrote it: within its horizon, not struck or retired,
+    and `standing` unlisted or unsigned. Each as `{id, title, persona, approved_by, addresses}`.
+    Raises StoreError on a memory file that cannot be read: a listing that skipped it would
+    let its learnings go live unlisted."""
+    root = Path(root)
+    today = today or sdlc_md.now_date()
+    days = validity_days(root)
+    out, records = [], {}
+    for entries in all_stores(root).values():
+        for e in entries:
+            f = e["fields"]
+            if state_of(e) != "approved" or f.get("retired"):
+                continue
+            horizon = lessons.horizon_of(e, days)
+            if horizon is None or horizon < today:
+                continue
+            if standing(root, e, records) in ("unlisted", "unsigned"):
+                out.append({"id": e["id"], "title": e["title"], "persona": f.get("persona", ""),
+                            "approved_by": f.get("approved-by", ""),
+                            "addresses": f.get("addresses", "")})
+    return sorted(out, key=lambda r: sdlc_md.id_number(r["id"]) or 0)
+
+
+def mark_listed(root: Path | str, ids, run_id: str) -> list[str]:
+    """Stamp Listed-in `run_id` on each of `ids` that does not already carry it, through
+    `set_field`. Returns the repo-relative memory files written."""
+    root = Path(root)
+    wanted = set(ids)
+    written: list[str] = []
+    for path, entries in all_stores(root).items():
+        for e in entries:
+            if e["id"] in wanted and e["fields"].get("listed-in", "").strip() != run_id:
+                set_field(root, e["id"], "Listed-in", run_id)
+                rel = path.relative_to(root).as_posix()
+                if rel not in written:
+                    written.append(rel)
+    return written
+
+
+def strike_refusals(root: Path | str, run_id: str, listed, ids) -> list[str]:
+    """Why `ids` cannot be struck at `run_id`'s signature, one line per id: an id no memory file
+    holds, or one this run's close did not list. Writes nothing; [] when every id may be
+    struck. Raises StoreError on a memory file that cannot be read."""
+    held = {e["id"]: e for entries in all_stores(root).values() for e in entries}
+    out = []
+    for i in ids:
+        if i not in held:
+            out.append(f"{i}: no memory file holds it")
+        elif i not in set(listed or ()):
+            other = held[i]["fields"].get("listed-in", "").strip()
+            out.append(f"{i}: listed by {other}, not by {run_id}" if other and other != run_id
+                       else f"{i}: {run_id}'s close did not list it")
+    return out
+
+
+def strike(root: Path | str, entry_id: str, principal: str, date: str, reason: str) -> dict:
+    """Record the operator's strike on `entry_id`: who struck it, when and why."""
+    return set_field(root, entry_id, "Struck", f"{principal} on {date}: {reason}")
 
 
 # ----------------------------------------------------------------------------- CLI
@@ -481,7 +600,8 @@ def cmd_list(args: argparse.Namespace) -> int:
         print(f"{args.persona}: no learnings{' match ' + repr(args.query) if args.query else ''}")
         return 0
     for r in rows:
-        print(f"{r['id']}  {r['state']:<9} review by {r['horizon'] or 'unknown'}  {r['title']}")
+        print(f"{r['id']}  {r['state']:<9} review by {r['horizon'] or 'unknown'}  {r['title']}"
+              + (f"  (struck: {r['struck']})" if r["struck"] else ""))
     return 0
 
 

@@ -36,12 +36,17 @@ def _story(root: Path, sid: str, affects: str) -> None:
            "- **Verify:** shell true\n")
 
 
+#: The signed run every fixture learning is listed by: a learning is live only once a signed
+#: close has listed it.
+SIGNED_RUN = "RUN-SIGNED"
+
+
 def _entry(id_: str, title: str, body: str = "Short learning.", state: str = "approved",
            added: str = "2026-10-01", review_by: str = "2099-01-01",
            evidence: str = "US0001") -> str:
     return (f"\n## {id_}: {title}\n\n- **Persona:** x\n- **Evidence:** {evidence}\n"
-            f"- **Added:** {added}\n- **Review-by:** {review_by}\n- **State:** {state}\n\n"
-            f"{body}\n")
+            f"- **Added:** {added}\n- **Review-by:** {review_by}\n- **State:** {state}\n"
+            f"- **Listed-in:** {SIGNED_RUN}\n\n{body}\n")
 
 
 def _memory(root: Path, key: str, entries: list[str]) -> None:
@@ -65,6 +70,10 @@ class PersonaMemoryBriefTests(unittest.TestCase):
             _write(self.root, f"sdlc-studio/personas/seats/{role}.md", CARD.format(role=role))
         _write(self.root, "scripts/a.py", "x = 1\n")
         _story(self.root, "US0001", "scripts/a.py, src/w.py")
+        _write(self.root, f"sdlc-studio/reports/runs/{SIGNED_RUN}.json",
+               '{"schema": 1, "run_id": "%s", "outcome": "goal-reached", '
+               '"signature": {"principal": "Darren"}, "persona_learnings_listed": [%s]}'
+               % (SIGNED_RUN, ", ".join(f'"M-{n:04d}"' for n in range(1, 12))))
 
     def tearDown(self):
         self._tmp.cleanup()

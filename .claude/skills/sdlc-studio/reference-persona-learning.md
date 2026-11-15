@@ -72,8 +72,10 @@ A review brief (`critic.py brief --seat <seat>`) and every `persona_resolve.py` 
 seat's own live learnings in a block labelled with the render. Another seat's file is never
 read.
 
-- **Live** means State approved and the Review-by date not yet passed. A proposed learning is
-  not carried; an approved one past its horizon is not carried, and the block counts it.
+- **Live** means State approved, the Review-by date not yet passed, and listed by a close
+  whose run is signed and did not strike it. A proposed learning is not carried; an approved
+  one past its horizon, one whose run awaits its signature and one no signed close has listed
+  are not carried, and the block counts each.
 - **Ranked** by relevance, then recency. A learning is relevant to a unit when a unit its
   evidence cites shares an Affects path with the unit being briefed; no field records it, so
   nothing can set it wrongly. A brief with no unit ranks by recency alone.
@@ -85,6 +87,18 @@ read.
 A memory file that cannot be parsed is reported in the block as unreadable, naming the file,
 so a brief that lost its learnings is never mistaken for one that has none. A seat with no
 memory file is told none are recorded.
+
+### Listed at the close, struck at the signature {#listed-and-struck}
+
+`sprint.py close` lists every approved learning not yet live on the retro, whatever wrote it,
+and stamps each Listed-in with the run; the run record names the ids. `sprint.py sign
+--strike M-NNNN --strike-reason "..."` strikes any of them as it seals the run, recording the
+principal, the date and the reason on the entry and on the run record; `list` shows the
+strike. A strike naming an id no memory file holds, or one this run's close did not list, is
+refused with every reason named, and nothing is sealed or written. Signed is read from the
+run's tracked record in `sdlc-studio/reports/runs/`, never written into memory, so `sprint.py
+reopen` holds the run's learnings until it is signed again: at once in the checkout that
+reopened it, and in every clone once the re-close files the record.
 
 ---
 

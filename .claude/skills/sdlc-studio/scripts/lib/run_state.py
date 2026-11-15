@@ -677,6 +677,34 @@ def read_tracked(repo_root: Path | str, run_id: str) -> dict:
     return rec
 
 
+#: The persona learnings a close listed on the retro, by id, and the strikes the signature
+#: recorded over them, each `{id, principal, date, reason}`. Both ride on the run record, so
+#: whether a signature covered a learning is read from the record every clone holds, never
+#: from memory.
+PERSONA_LISTED = "persona_learnings_listed"
+PERSONA_STRUCK = "persona_learnings_struck"
+
+
+def signed_record(repo_root: Path | str, run_id: str | None) -> dict | None:
+    """The tracked record of `run_id` when it is sealed and signed and this checkout has not
+    reopened the run past it; None otherwise, and for a record that cannot be read. A reopen
+    here holds what the signature covered until the run is signed again, without anything
+    written into the record or the memory it governs."""
+    if not run_id:
+        return None
+    try:
+        rec = read_tracked(repo_root, run_id)
+        live = read(repo_root)
+    except (RunStateError, OSError):
+        return None
+    if rec.get("outcome") not in CLOSED or not rec.get("signature"):
+        return None
+    if (live.get("run_id") == run_id and live.get("outcome") == RUNNING
+            and len(live.get("reopened") or []) > len(rec.get("reopened") or [])):
+        return None
+    return rec
+
+
 def awaiting_signature(repo_root: Path | str) -> list[dict]:
     """The tracked run records whose run the close filed and nobody has signed: a record that
     names a report and whose outcome is still running. Every clone holds them, so whether a

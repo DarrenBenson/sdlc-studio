@@ -5102,6 +5102,35 @@ def _is_nil_accuracy(out: str) -> bool:
     return any(marker in low for marker in _NIL_ACCURACY)
 
 
+def _close_persona_memory(root, retro_id, state):
+    """List on the retro every approved learning about to go live, whatever wrote it, and stamp
+    each Listed-in with the run, so the signature that follows is the operator's chance to
+    strike it (`sprint sign --strike`). The same lines name each seat whose record holds
+    adverse evidence and no learning, and how many verdict rows name no seat, so an empty
+    listing never reads as nothing to learn.
+
+    NEVER BLOCKING on what it finds. It fails only when the retro, a memory file or the run
+    state cannot be read or written, which is a known issue the operator reads before signing."""
+    import persona_memory  # noqa: PLC0415 - deferred siblings, like the other retro steps
+    import retro  # noqa: PLC0415
+    run = (state or {}).get("run_id") or ""
+    try:
+        res = retro.learnings_review(root, retro_id, run)
+        path = retro.write_learnings(root, res)
+        ids = [r["id"] for r in res["listed"]]
+        written = persona_memory.mark_listed(root, ids, run)
+        run_state.update(root, **{run_state.PERSONA_LISTED: ids})
+    except (OSError, ValueError, run_state.RunStateError) as exc:
+        return False, f"persona learnings could not be listed: {exc}", (
+            "fix what is named above and re-run the close - a learning no close lists can "
+            "never go live")
+    record_close_output(root, _repo_rel(root, path), *written)
+    lines = retro.learnings_lines(res)
+    for line in lines[1:]:
+        print(f"close: persona learnings: {line}")
+    return True, f"persona learnings: {lines[0]}", ""
+
+
 def _close_lessons_summary(root, retro_id, state):
     rc, out = _run_cli(lessons.main, ["--root", str(root), "summary"])
     if rc != 0:
@@ -5997,7 +6026,7 @@ def _close_checklist(root, retro, state, read_root=None):
 # Chain order is the ceremony's order; cmd_close resolves each step through globals() at
 # call time so a test can patch one step without rebuilding the table.
 _CLOSE_CHAIN = ("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
-                "lessons-summary", "checklist",
+                "persona-memory", "lessons-summary", "checklist",
                 "gate", "reconcile", "review-anchor")
 
 #: The machine-maintained status block inside the review anchor. DELIMITED, because the anchor is
@@ -10686,6 +10715,13 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print("  the run is untouched and still open - sign as an operator outside "
               "the authoring session's control", file=sys.stderr)
         return 2
+    strikes, refused = _sign_strikes(root, state, args)
+    if refused:
+        for line in refused:
+            print(f"sign REFUSED: --strike {line}", file=sys.stderr)
+        print("  nothing is sealed and no memory file is changed - strike only learnings this "
+              "run's close listed on the retro", file=sys.stderr)
+        return 2
     if take_up:
         # Every check above read the record as it stands; only now does it become this
         # checkout's run, so a refused sign leaves the live state as it found it.
@@ -10717,6 +10753,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
             run_state.update(root, **unanswered_record(None, f"{type(exc).__name__}: {exc}"))
         else:
             run_state.update(root, **unanswered_record(ua))
+        _apply_strikes(root, strikes, args.principal, getattr(args, "strike_reason", ""))
         signature = _write_the_signature(root, report_id, args.principal)
         sealed = run_state.close_run(root, outcome, handoff=state.get("handoff"))
         try:
@@ -10742,6 +10779,41 @@ def cmd_sign(args: argparse.Namespace) -> int:
           f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
                             if signature.get("fingerprint") else ""))
     return 0
+
+
+def _sign_strikes(root, state: dict, args) -> tuple[list, list]:
+    """The learnings `--strike` names, and every reason they cannot be struck at this
+    signature, read before anything is written: no `--strike-reason`, an id no memory file
+    holds, and one this run's close did not list. Every reason is named at once."""
+    ids = list(dict.fromkeys(getattr(args, "strike", None) or []))
+    if not ids:
+        return [], []
+    import persona_memory  # noqa: PLC0415 - deferred sibling; only a strike reads memory
+    out = []
+    if not (getattr(args, "strike_reason", None) or "").strip():
+        out.append("needs --strike-reason: a strike is recorded with who made it, when and why")
+    try:
+        out += persona_memory.strike_refusals(root, state.get("run_id") or "",
+                                              state.get(run_state.PERSONA_LISTED) or [], ids)
+    except ValueError as exc:
+        out.append(f"cannot be checked, as a memory file cannot be read: {exc}")
+    return ids, out
+
+
+def _apply_strikes(root, ids: list, principal: str, reason: str) -> None:
+    """Write the strikes this signature carries, checked by `_sign_strikes` before anything was
+    written: each learning's Struck field, and the run's struck list, which the sealed record
+    files. A strike from an earlier signature of the run is kept."""
+    if not ids:
+        return
+    import persona_memory  # noqa: PLC0415
+    today, reason = sdlc_md.now_date(), (reason or "").strip()
+    for entry_id in ids:
+        persona_memory.strike(root, entry_id, principal, today, reason)
+    kept = [s for s in (run_state.read(root).get(run_state.PERSONA_STRUCK) or [])
+            if isinstance(s, dict) and s.get("id") not in ids]
+    run_state.update(root, **{run_state.PERSONA_STRUCK: kept + [
+        {"id": i, "principal": principal, "date": today, "reason": reason} for i in ids]})
 
 
 def _page_no_longer_matches(root, report_id: str) -> str:
@@ -12884,6 +12956,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the operator who signs the run - refused when it is a unit's author "
                          "or a reviewer recorded on it")
     sg.add_argument("--author", default=None, help="the authoring seat, for the independence check")
+    sg.add_argument("--strike", action="append", default=[], metavar="M-NNNN",
+                    help="strike a persona learning this run's close listed, so it never "
+                         "reaches a brief. Repeatable; needs --strike-reason")
+    sg.add_argument("--strike-reason", dest="strike_reason", default=None,
+                    help="why the learnings named by --strike are struck, recorded with the "
+                         "principal and the date")
     sg.add_argument("--retro", default=None, metavar="RETROxxxx")
     sg.add_argument("--root", default=".")
     sg.set_defaults(func=cmd_sign)

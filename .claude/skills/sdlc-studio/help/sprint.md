@@ -48,6 +48,7 @@ sign -> learn. Each step, and the one command that performs it, is in
 /sdlc-studio sprint close --retro RETRO0001          # the close ceremony as one command (retro already filled)
 /sdlc-studio sprint close --retro RETRO0001 --file-and-close  # bounded exit: file the ceremony debt, close honestly (refused while a hard gate is red or a batch unit is unanswered)
 python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You"   # SEAL: sign the prepared run - the last thing that happens
+python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You" --strike M-0001 --strike-reason "loosens the bar"   # seal, striking a learning the close listed
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
@@ -141,6 +142,8 @@ A unit the close's retro (the one the filed page records) carries in `## Known i
 with a valid ruling keeps the status it was ruled on and is named as carried, not moved: a bug
 ruled not-stop-ship and left Open stays Open. Once the run
 is sealed, `sprint.py reopen --reason` is the only way to change a batch unit's status.
+`--strike M-NNNN --strike-reason "..."` strikes a persona learning the close listed on the retro,
+so it never reaches a brief; a strike the close did not list refuses the seal.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
 close names the same units first - one short of its terminal as a known issue, one already moved
 to Done in the pre-flight's blocking `review-coverage` row - so the page you sign already shows

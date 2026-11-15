@@ -5227,7 +5227,7 @@ class UnansweredUnitHoldsTheCloseTests(unittest.TestCase):
                     self.assertIn("none outstanding", detail.splitlines()[0],
                                   "tree b must leave nothing else to refuse the step")
         self.assertEqual(("review-coverage", "retro-validate", "retro-extract", "retro-accuracy",
-                          "lessons-summary", "checklist", "gate", "reconcile",
+                          "persona-memory", "lessons-summary", "checklist", "gate", "reconcile",
                           "review-anchor"), mod._CLOSE_CHAIN,
                          "the hold is part of the stop-ship step, not a new chain step")
 
