@@ -3336,6 +3336,54 @@ def _criteria_from_whole_file(text: str) -> str:
     return "\n\n".join(out)
 
 
+def unit_risk_class(repo_root: Path | str, text: str, rmap=None) -> str:
+    """A unit's risk class: its `Risk-class` tag, else (a bug carries none) the highest class its
+    Affects touch through the project's component map. With no map declared every unit is the
+    default class, as `sprint plan` reads it."""
+    from lib import risk_class  # noqa: PLC0415 - deferred; only class readers need the map
+    rmap = rmap if rmap is not None else risk_class.load_map(repo_root)
+    if not rmap.declared:
+        return risk_class.DEFAULT
+    tag = (sdlc_md.extract_field(text, risk_class.FIELD) or "").strip().lower()
+    return tag if tag in risk_class.CLASSES else rmap.classify(sdlc_md.affects_files(text))[0]
+
+
+def verdict_seat(repo_root: Path | str, reviewer: str) -> str:
+    """The seat a ledger row's reviewer stands in: its declared seat, else a seat name the
+    reviewer id spells as a word, else the reviewer id itself."""
+    seat = seat_for(repo_root, reviewer)
+    if seat:
+        return seat
+    import persona_resolve  # noqa: PLC0415 - sibling; the seat vocabulary
+    words = re.findall(r"[a-z0-9]+", (reviewer or "").lower())
+    return next((w for w in words if w in persona_resolve.SEATS), (reviewer or "").strip())
+
+
+def first_review_seat(repo_root: Path | str, unit: str) -> str:
+    """The seat that reviewed `unit` first: the seat of its first live delivery verdict, else,
+    with none recorded, the seat a lane briefs every unit at first."""
+    for row in unit_review_rounds(repo_root, unit):
+        if str(row.get("reviewer") or "").strip():
+            return verdict_seat(repo_root, row["reviewer"])
+    import sprint  # noqa: PLC0415 - deferred sibling; it owns the lane's first seat
+    return sprint.FIRST_REVIEW_SEAT
+
+
+def _risk_class_block(root: Path, text: str, unit: str, seat: str) -> str:
+    """The brief's risk-class section: empty below the top class, else the class and whether
+    this seat is the first or the second of the unit's two independent seats."""
+    from lib import risk_class  # noqa: PLC0415
+    if unit_risk_class(root, text) != risk_class.CLASSES[-1]:
+        return ""
+    first = first_review_seat(root, unit)
+    role = ("You are the first of two independent seats; a second seat reviews it as well."
+            if seat == first else
+            f"You are the second independent seat: the {first} seat reviews it too, and you "
+            f"judge the diff yourself, not that seat's verdict.")
+    return (f"--- RISK CLASS ---\nThis unit's risk class is {risk_class.CLASSES[-1]}, so it takes "
+            f"two independent review seats. {role}\n\n")
+
+
 def _review_seat_card(root: Path, seat: str) -> Path:
     """The seat's charter, by persona_resolve's one resolver: the project card whose declared
     `role:` is the seat, else the shipped default, so a fresh project briefs its review on the
@@ -3833,6 +3881,8 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
         import reconcile  # noqa: PLC0415 - sibling; the corpus walk is the already-delivered lane's
         history = (f"--- FILE HISTORY ---\n"
                    f"{reconcile.file_history_section(root, unit_id, affects)}\n")
+    # A top-class unit takes two independent seats; the brief says which one this is.
+    risk = _risk_class_block(root, text, unit_id, seat)
     return f"""You are the {seat} review seat. Read and adopt the charter at
 {card} (the review render). You did NOT author this diff; your job is
 independent judgement of it against the ACs below - they are law, your stance never
@@ -3849,7 +3899,7 @@ Diff scope (the unit's declared Affects - inspect with git diff/status on these 
 Acceptance criteria (canonical - judge against THESE, not a paraphrase):
 {acs}
 {shared}
-{history}Review depth: {depth}
+{risk}{history}Review depth: {depth}
 Tool-call budget: {TIER_TOOL_BUDGET[tier]} tool calls at the {tier} tier; spend them judging the
 change, not finding it.
 

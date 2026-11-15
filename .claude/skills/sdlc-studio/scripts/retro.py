@@ -1337,6 +1337,71 @@ def render_review_cost(split: dict) -> list:
             f"{s['rejected']} rejected"]
 
 
+def second_seat_yield(root, unit_ids: list) -> dict:
+    """What each top-class unit's second review seat caught after its first seat approved, read
+    from the delivery verdict ledger.
+
+    A unit's first seat is the seat of its first recorded verdict; every other seat on it is a
+    second seat. A second seat catches something on a unit when a verdict of its rejects, or
+    records issues, while the first seat's latest verdict so far approves. A run with no
+    top-class unit is not in force; a top-class unit no second seat reviewed is named in
+    `missing`, never counted as nought.
+    """
+    import critic  # noqa: PLC0415 - deferred; the module that owns the ledger and the class read
+    from lib import risk_class  # noqa: PLC0415
+    rmap = risk_class.load_map(root)
+    high = []
+    for uid in unit_ids:
+        hit = sdlc_md.find_by_id(Path(root), uid)
+        text = sdlc_md.read_text_safe(Path(hit[0])) if hit else ""
+        if hit and critic.unit_risk_class(root, text, rmap) == risk_class.CLASSES[-1]:
+            high.append(sdlc_md.norm_id(uid))
+    if not high:
+        return {"state": NOT_IN_FORCE, "units": [], "missing": [], "seats": {}}
+    seats: dict = {}
+    missing = []
+    for uid in high:
+        rows = [r for r in critic.unit_review_rounds(root, uid)
+                if str(r.get("reviewer") or "").strip()]
+        first = critic.verdict_seat(root, rows[0]["reviewer"]) if rows else None
+        first_latest = ""
+        for row in rows:
+            seat = critic.verdict_seat(root, row["reviewer"])
+            verdict = str(row.get("verdict") or "").strip().upper()
+            if seat == first:
+                first_latest = verdict
+                continue
+            entry = seats.setdefault(seat, {"reviewed": [], "caught": []})
+            if uid not in entry["reviewed"]:
+                entry["reviewed"].append(uid)
+            raised = verdict == "REJECT" or str(row.get("issues") or "").strip(" -")
+            if first_latest == "APPROVE" and raised and uid not in entry["caught"]:
+                entry["caught"].append(uid)
+        if not any(uid in s["reviewed"] for s in seats.values()):
+            missing.append(uid)
+    return {"state": "measured", "units": high, "missing": missing,
+            "seats": {s: seats[s] for s in sorted(seats)}}
+
+
+def render_second_seat_yield(y: dict) -> list:
+    """The yield as prose: one line per second seat, one for the units no second seat reviewed,
+    and nothing at all for a run with no top-class unit."""
+    if not y or y.get("state") != "measured":
+        return []
+    out = [f"Second review seats on {len(y['units'])} high-class unit(s) - read from the "
+           f"verdict ledger:"]
+    for seat, s in y["seats"].items():
+        if s["caught"]:
+            out.append(f"  second seat {seat}: caught {len(s['caught'])} of {len(s['reviewed'])} "
+                       f"unit(s) after the first seat approved: {', '.join(s['caught'])}")
+        else:
+            out.append(f"  second seat {seat}: caught nothing after the first seat approved, "
+                       f"over {len(s['reviewed'])} unit(s)")
+    if y["missing"]:
+        out.append(f"  no second-seat verdict on {', '.join(y['missing'])}: one seat reviewed "
+                   f"each")
+    return out
+
 def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
              elapsed_hours: float | None = None, sprint_model: str | None = None,
              priced: dict | None = None) -> dict:
@@ -1610,6 +1675,7 @@ def accuracy(root, retro_id: str, sprint_tokens: int | None = None,
             "unaccepted_ids": split["unaccepted_ids"],
             "delivered_points": delivered_points,
             "review_cost": review_cost_split(root, [u["id"] for u in units]),
+            "second_seat": second_seat_yield(root, [u["id"] for u in units]),
             "sprint_elapsed_idle_gaps": elapsed_gaps,
             # US0401 / CR0407: a run driven to a rung OTHER than `done` (a design/plan run)
             # records its token actual but leaves the tokens-per-point BLANK - a non-build rung
@@ -1892,6 +1958,7 @@ def _points_lines(res: dict) -> list[str]:
     if b.get("review_cost"):
         out.append("Review passes - read from the verdict ledger:")
         out.extend(render_review_cost(b["review_cost"]))
+    out.extend(render_second_seat_yield(b.get("second_seat") or {}))
     if not b["points"]:
         if res["n_measured"]:
             out.append(

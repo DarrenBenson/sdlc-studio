@@ -266,6 +266,13 @@ The refusal names each unit, what it lacks, and the fix. `sprint breakdown <batc
 same census read-only. Opt out only as a recorded decision: `sprint.breakdown: judgement` in
 `sdlc-studio/.config.yaml` makes the lane report instead of block.
 
+**Risk class (advisory):** with a `risk.components` map in `.config.yaml`, the plan lists each
+unit's class (a story's `Risk-class` tag; a bug's, which carries none, from its Affects) and
+the second review seat each high-class unit needs, and flags a unit whose Affects touch a
+component ranked above its tag, naming the file, the component and both classes. It refuses
+nothing and asks nothing per unit: keep or re-tag the unit when you approve the plan. With no
+map it prints one line saying every unit is standard.
+
 ## What happens
 
 The steps, in order, with the command for each, are in

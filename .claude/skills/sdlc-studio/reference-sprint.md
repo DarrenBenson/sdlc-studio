@@ -116,7 +116,7 @@ links here rather than listing its own.
    (`general-purpose` where the harness has no agent config). Brief the seat with
    `critic.py brief --unit <id> --seat engineering|product|qa` and record its verdict with
    `critic.py record`, each finding tagged `[regression]`, `[new]` or `[pre-existing]` (only the
-   first two block). An APPROVE clears the unit. A REJECT is answered in the next round by the
+   first two block). A high-class unit (a story's `Risk-class` tag, or a bug's Affects read through `risk.components`) also takes a second independent seat, which `sprint plan` names beside its class; `critic.py brief` at that seat says so, and the retro reports what each second seat caught after the first approved. An APPROVE clears the unit. A REJECT is answered in the next round by the
    reviewer who rejected, re-checking the fixes, and the rounds stop at the round cap: a unit still
    rejected at the cap is carried, its findings filed as a bug and the unit dropped from the batch,
    so the run continues without it. The cap's value and what carrying means are in

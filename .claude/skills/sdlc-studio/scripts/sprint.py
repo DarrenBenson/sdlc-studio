@@ -3214,6 +3214,17 @@ def review_seats(repo_root: Path | str) -> tuple[list[str], bool]:
     return sorted(persona_resolve.SEATS), True
 
 
+#: The seat that reviews every unit first: a lane writes each unit's brief at this seat.
+FIRST_REVIEW_SEAT = "qa"
+
+
+def second_review_seat(repo_root: Path | str) -> str:
+    """The seat a high-class unit's second independent review takes: the first of the project's
+    review seats, in `review_seats` order, that is not the first review seat."""
+    seats, _shipped = review_seats(repo_root)
+    return next((s for s in seats if s != FIRST_REVIEW_SEAT), "engineering")
+
+
 def _norm_goal(goal: str | None) -> str:
     """A goal compared as text: whitespace collapsed, case folded. Two spellings of one
     sentence are one goal; two different sentences are never the same review."""
@@ -6214,6 +6225,57 @@ def _print_test_strategy(args, data) -> None:
                              "recorded_at": sdlc_md.now_iso8601()}
     for line in render_test_strategy(strat):
         print(line, file=sys.stderr)
+
+
+def _print_risk_classes(args, data) -> None:
+    """The plan-time risk-class block: each unit's class, the second review seat a high-class
+    unit needs, and a flag for a unit whose Affects touch a component ranked above its tag.
+
+    A story's class is its refine-time `Risk-class` tag; a unit with no tag (a bug) takes the
+    highest class its Affects touch through the map. Printed, and recorded as
+    `data["risk_classes"]` so a written plan keeps it; nothing refuses and nothing asks for a
+    per-unit confirmation, since the operator approves the classes with the plan."""
+    from lib import risk_class  # noqa: PLC0415 - deferred; here only the plan block reads the map
+    root = getattr(args, "root", ".")
+    rmap = risk_class.load_map(root)
+    record = {"map_declared": rmap.declared, "units": {}, "flags": [], "notes": list(rmap.notes)}
+    data["risk_classes"] = record
+    if not rmap.declared:
+        print(f"  risk class: no component map is declared (`{risk_class.CONFIG_KEY}` in "
+              f"sdlc-studio/.config.yaml), so every unit is {risk_class.DEFAULT}", file=sys.stderr)
+        return
+    for note in rmap.notes:
+        print(f"  {note}", file=sys.stderr)
+    second = second_review_seat(root)
+    for unit in data.get("batch") or []:
+        uid = unit["id"] if isinstance(unit, dict) else str(unit)
+        path = unit.get("path") if isinstance(unit, dict) else None
+        if not path:
+            hit = sdlc_md.find_by_id(Path(root), uid)
+            path = hit[0] if hit else None
+        text = sdlc_md.read_text_safe(Path(path)) if path else ""
+        files = sdlc_md.affects_files(text)
+        tag = (sdlc_md.extract_field(text, risk_class.FIELD) or "").strip().lower()
+        cls, source = ((tag, "tag") if tag in risk_class.CLASSES
+                       else (rmap.classify(files)[0], "affects"))
+        seat = second if cls == risk_class.CLASSES[-1] else None
+        record["units"][uid] = {"class": cls, "source": source, "second_seat": seat}
+        how = f"{risk_class.FIELD} tag" if source == "tag" else "from Affects"
+        print(f"  risk class: {uid} {cls} ({how})"
+              + (f", second review seat: {seat}" if seat else ""), file=sys.stderr)
+        over = []
+        for f in files:
+            fcls, comps = rmap.classify([f])
+            if risk_class.rank(fcls) > risk_class.rank(cls):
+                comp = next(c for c in comps if rmap.components.get(c) == fcls)
+                over.append({"unit": uid, "tag": cls, "file": f, "component": comp,
+                             "class": fcls})
+        if over:
+            record["flags"].extend(over)
+            named = "; ".join(f"{o['file']} lies under {o['component']} ({o['class']})"
+                              for o in over)
+            print(f"  risk class FLAG: {uid} is tagged {cls} but {named}; keep or re-tag it "
+                  f"when approving the plan", file=sys.stderr)
 
 
 def claimed_proof_gaps(root, batch: list[str]) -> list[str]:
@@ -11059,6 +11121,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
         if bd["oversized"]:
             _report_oversized(bd, data["count"])
     _print_test_strategy(args, data)
+    _print_risk_classes(args, data)
     rc = _origin_drift_preflight(args, data)
     if rc is not None:
         return rc

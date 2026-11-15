@@ -43,6 +43,15 @@ the sprint report, so the retro does not repeat them.
 Every line must be this run's own: an empty section or a `{{placeholder}}` left from the template
 is refused.
 
+## What a second review seat caught
+
+A high-class unit (its `Risk-class` tag, or a bug's Affects read through `risk.components`)
+takes a second independent review seat, briefed with `critic.py brief`. The retro's accuracy
+block reads the verdict ledger and names, per second seat, the units where it rejected or
+raised issues after the first seat approved. It says in one line when a high-class unit had
+no second-seat verdict, or when a seat caught nothing; a seat that keeps catching nothing is
+yours to drop, and nothing drops it for you.
+
 ## A Try item becomes a lesson
 
 `retro extract`, run by the close, lifts each Try item into the lessons stores. Tag it with its
