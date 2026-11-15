@@ -898,9 +898,10 @@ NON_CEREMONY_VERBS = {
                "handoff", "resume"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
-    # `trace` reads an escaped bug back to the unit and verdict that let it through; it is a
-    # post-release record, run after a defect is found, so no close can certify it.
-    "escape": ("trace",),
+    # `trace` reads an escaped bug back to the unit and verdict that let it through, and
+    # `to-class` turns its root cause into a failure class; both are post-release records, run
+    # after a defect is found, so no close can certify them.
+    "escape": ("to-class", "trace"),
     "lessons": ("add", "carried", "carry", "class-add", "classes", "list", "propose", "prune",
                 "rank", "recall", "repeats", "revalidate", "violated"),
     "retro": ("accuracy", "collate", "cost-baseline", "dispose", "estimator", "extract", "seats",

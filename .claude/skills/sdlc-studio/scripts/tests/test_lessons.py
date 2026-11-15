@@ -1905,5 +1905,66 @@ class RepeatReadIsPinnedTests(unittest.TestCase):
         self.assertEqual(4, lessons.repeats(root)[0]["count"])
 
 
+class ClassFilesAndEvidenceTests(unittest.TestCase):
+    """A class may carry the files it applies to and the evidence it was found from. Both are
+    optional: a row without them keeps its shape, and the reader and the phase digest carry a
+    row that has them like any other."""
+
+    def _root(self) -> Path:
+        d = Path(tempfile.mkdtemp(prefix="classfiles_"))
+        self.addCleanup(shutil.rmtree, d, ignore_errors=True)
+        (d / "sdlc-studio").mkdir()
+        (d / lessons.STORE_FILE).write_text("", encoding="utf-8")
+        return d
+
+    def _rows(self, root: Path) -> list[dict]:
+        return [json.loads(ln) for ln in (root / lessons.STORE_FILE).read_text(
+            encoding="utf-8").splitlines() if ln.strip()]
+
+    def test_class_add_records_files_and_evidence_when_given(self):
+        root = self._root()
+        rc, _, err = _run(["class-add", "--class", "a boundary never pinned", "--rule", "r",
+                           "--behaviour", "b", "--phase", "build", "--source", "escape:BG0001",
+                           "--file", "scripts/a.py", "--file", " scripts/b.py ",
+                           "--file", "scripts/a.py", "--evidence", "BG0001",
+                           "--evidence", "US0002", "--root", str(root)])
+        self.assertEqual(rc, 0, err)
+        row = self._rows(root)[0]
+        self.assertEqual(row["files"], ["scripts/a.py", "scripts/b.py"])
+        self.assertEqual(row["evidence"], ["BG0001", "US0002"])
+
+    def test_a_row_without_them_keeps_its_shape(self):
+        root = self._root()
+        rc, _, err = _run(["class-add", "--class", "a plain class", "--rule", "r",
+                           "--behaviour", "b", "--phase", "plan", "--source", "run:R",
+                           "--root", str(root)])
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(set(self._rows(root)[0]),
+                         {"id", "class", "rule", "behaviour", "inject", "hits", "state",
+                          "recorded_run", "recorded_source"})
+
+    def test_the_reader_and_the_digest_carry_a_row_with_files(self):
+        root = self._root()
+        row = lessons.class_add(root, "a boundary never pinned", "the rule", "the behaviour",
+                                ["build", "review"], "escape:BG0001",
+                                files=["scripts/a.py"], evidence=["BG0001", "US0002"])
+        self.assertEqual(lessons.load_store(root), [row])
+        for phase in ("build", "review"):
+            digest = lessons.phase_digest(root, phase)
+            self.assertEqual(digest["error"], "")
+            self.assertEqual([r["id"] for r in digest["lessons"]], [row["id"]])
+            self.assertEqual(digest["lessons"][0]["files"], ["scripts/a.py"])
+            self.assertIn("the behaviour", "\n".join(lessons.render_phase(digest)))
+
+    def test_a_refused_class_add_leaves_the_store_unchanged(self):
+        root = self._root()
+        lessons.class_add(root, "a known class", "r", "b", ["build"], "run:R")
+        before = (root / lessons.STORE_FILE).read_bytes()
+        with self.assertRaisesRegex(ValueError, "already holds this class as LC-001"):
+            lessons.class_add(root, "A Known-Class", "r", "b", ["build"], "run:R",
+                              files=["scripts/a.py"])
+        self.assertEqual((root / lessons.STORE_FILE).read_bytes(), before)
+
+
 if __name__ == "__main__":
     unittest.main()

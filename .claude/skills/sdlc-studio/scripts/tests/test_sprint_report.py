@@ -4934,6 +4934,15 @@ class NonCeremonyVerbTests(ReportOfRecordBase):
                                {**real, "sprint": real["sprint"] + ("no-such-verb",)}):
             self.assertEqual(["sprint no-such-verb"], sr.cycle_drift()["stale"])
 
+    def test_escape_declares_every_verb_its_parser_exposes(self) -> None:
+        # No checklist row names escape, so the drift guard's uncovered walk never reaches it;
+        # this pins the declaration in the direction the stale bucket does not.
+        import argparse  # noqa: PLC0415
+        import escape  # noqa: PLC0415
+        sub = next(a for a in escape.build_parser()._actions
+                   if isinstance(a, argparse._SubParsersAction))
+        self.assertEqual(sorted(sub.choices), sorted(sr.NON_CEREMONY_VERBS["escape"]))
+
     def test_stop_ship_rulings_are_read_through_the_constant(self) -> None:
         # The module object the report bound, not `import retro`: another suite module can
         # re-import retro, and a patch on a second copy would not reach the report.

@@ -2532,6 +2532,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="A phase whose brief carries the class; repeat for more than one")
     ca.add_argument("--source", required=True,
                     help="Where the class was found, e.g. finding:<unit> or run:<run id>")
+    ca.add_argument("--file", action="append", metavar="PATH",
+                    help="A path the class applies to; repeat for more than one")
+    ca.add_argument("--evidence", action="append", metavar="ID",
+                    help="A record the class was found from, e.g. a bug id; repeat for more")
     _common(ca)
     ca.set_defaults(func=cmd_class_add)
 
@@ -2636,30 +2640,56 @@ def _open_run_id(repo_root) -> str:
     return (state.get("run_id") or "") if state.get("outcome") == run_state.RUNNING else ""
 
 
-def cmd_class_add(args: argparse.Namespace) -> int:
-    """Record one new class in the project's store outside a retro, through the same
-    `new_lesson` and `save_store` a retro's `[new: <class name>]` Try item goes through. Every
-    check runs before the write, so a refusal leaves the store byte-identical."""
+def _distinct(values) -> list[str]:
+    """`values` with each one's whitespace collapsed, blanks dropped and repeats kept once, in
+    first-seen order."""
+    out: list[str] = []
+    for v in values or ():
+        v = " ".join(str(v).split())
+        if v and v not in out:
+            out.append(v)
+    return out
+
+
+def class_add(repo_root, class_name: str, rule: str, behaviour: str, phases, source: str,
+              files=(), evidence=()) -> dict:
+    """Record one new class in the project's store outside a retro and return its row, through
+    the same `new_lesson` and `save_store` a retro's `[new: <class name>]` Try item goes through.
+    `files` are the paths the class applies to and `evidence` the records it was found from;
+    each key is written only when given, so a row without them keeps its shape. Every check runs
+    before the write, so a refusal (ValueError, OSError) leaves the store byte-identical."""
     from lib import run_state  # noqa: PLC0415 - deferred, like the other sibling imports
-    root = _root(args)
-    fields = {"--class": args.class_name, "--rule": args.rule, "--behaviour": args.behaviour,
-              "--source": args.source}
+    fields = {"--class": class_name, "--rule": rule, "--behaviour": behaviour,
+              "--source": source}
     blank = [flag for flag, value in fields.items() if not " ".join(str(value).split())]
+    if blank:
+        raise ValueError(f"{', '.join(blank)} must not be blank")
+    if CLASS_CODE_RE.match(str(class_name).strip().upper()):
+        raise ValueError(f"--class {class_name!r} is a class code, not a name; cite "
+                         f"a recorded class by its code in a Try item instead")
+    rows = load_store(repo_root)
+    known = find_class(rows, class_name)
+    if known:
+        raise ValueError(f"{STORE_FILE} already holds this class as {known['id']} "
+                         f"({known.get('class')}); cite {known['id']} instead")
     try:
-        if blank:
-            raise ValueError(f"{', '.join(blank)} must not be blank")
-        if CLASS_CODE_RE.match(args.class_name.strip().upper()):
-            raise ValueError(f"--class {args.class_name!r} is a class code, not a name; cite "
-                             f"a recorded class by its code in a Try item instead")
-        rows = load_store(root)
-        known = find_class(rows, args.class_name)
-        if known:
-            raise ValueError(f"{STORE_FILE} already holds this class as {known['id']} "
-                             f"({known.get('class')}); cite {known['id']} instead")
-        row = new_lesson(rows, args.class_name, args.rule, args.behaviour, args.phase,
-                         _open_run_id(root), " ".join(args.source.split()))
-        save_store(root, rows)
-    except (OSError, ValueError, run_state.RunStateError) as exc:
+        run = _open_run_id(repo_root)
+    except run_state.RunStateError as exc:
+        raise ValueError(str(exc)) from exc
+    row = new_lesson(rows, class_name, rule, behaviour, phases, run, " ".join(source.split()))
+    for key, values in (("files", files), ("evidence", evidence)):
+        if _distinct(values):
+            row[key] = _distinct(values)
+    save_store(repo_root, rows)
+    return row
+
+
+def cmd_class_add(args: argparse.Namespace) -> int:
+    """Record one new class in the project's store outside a retro, through `class_add`."""
+    try:
+        row = class_add(_root(args), args.class_name, args.rule, args.behaviour, args.phase,
+                        args.source, args.file or (), args.evidence or ())
+    except (OSError, ValueError) as exc:
         print(f"class-add refused: {exc}", file=sys.stderr)
         return 1
     if args.format == "json":

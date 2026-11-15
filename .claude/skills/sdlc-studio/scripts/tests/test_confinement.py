@@ -426,7 +426,10 @@ CONFINEMENT_ALLOWLIST: dict[str, str] = {
     "escape.py": ("with trace --confirm, writes only the Escaped-via and Escaped-verdict lines "
                   "of the bug it traces. Not a WriterCase because a trace needs a git repository "
                   "with a tagged release, which this fixture is not; test_escape_trace snapshots "
-                  "its own fixture around a confirm and holds the bug to be the one file changed"),
+                  "its own fixture around a confirm and holds the bug to be the one file "
+                  "changed. With to-class, writes only sdlc-studio/lessons.jsonl, through "
+                  "lessons.class_add; test_escape_class snapshots its fixture around a to-class "
+                  "and holds the store to be the one file changed"),
     "provenance.py": "writes the provenance record it owns",
     "close_owed.py": "writes the close-owed report it owns",
     "loop_guard.py": "writes the loop-guard state it owns",

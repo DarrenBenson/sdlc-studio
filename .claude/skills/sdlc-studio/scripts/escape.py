@@ -12,7 +12,13 @@ release's tag holds and the previous tag does not. Without a release on the bug,
 tags no unit, nothing is proposed: a guess from the bug's prose would point somewhere nobody can
 check. Verdicts are read through `critic`'s public readers, the one authority on the ledger.
 
-Verbs are subcommands, so a further step of the escape record adds a parser beside `trace`.
+`to-class --bug BGxxxx --class NAME --rule ... --behaviour ...` turns a confirmed escape's
+written Root Cause into a failure class in the lessons store, through `lessons.class_add`:
+injected at build and review, citing the bug and its `Escaped-via` unit as evidence and carrying
+the bug's Affects as the files it applies to. A bug not escaped, not confirmed, or whose Root
+Cause is unwritten, and a class the store already holds, are refused with nothing written.
+
+Verbs are subcommands, so a further step of the escape record adds a parser beside these.
 """
 from __future__ import annotations
 
@@ -26,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import sdlc_md  # noqa: E402
 import critic  # noqa: E402
+import lessons  # noqa: E402
 
 #: The artefact types a release ships as units, and so the only ones a trace proposes.
 UNIT_TYPES = ("story", "bug")
@@ -158,6 +165,56 @@ def confirm(root: Path | str, bug: str, unit: str) -> dict:
     return {**result, "confirmed": pick}
 
 
+def to_class(root: Path | str, bug: str, name: str, rule: str, behaviour: str) -> dict:
+    """Record a confirmed escape's root cause as a failure class and return its row.
+
+    The bug must be escaped (`Escaped: yes`), confirmed (an `Escaped-via` unit) and have a
+    written Root Cause. The row goes through `lessons.class_add`, the function `lessons.py
+    class-add` runs, injected at build and review, its `evidence` the bug and the unit, its
+    `files` the bug's Affects paths and its source `escape:<bug>`. Raises `TraceRefused`,
+    writing nothing, for any other bug or for a class the store already holds."""
+    # Deferred sibling: its gate is the one reader of an unwritten Root Cause.
+    import transition  # noqa: PLC0415
+    root = Path(root)
+    hit = sdlc_md.find_by_id(root, bug)
+    if not hit or hit[1] != "bug":
+        raise TraceRefused(f"{bug} names no bug on disk")
+    text = sdlc_md.read_text_safe(hit[0]) or ""
+    bid = sdlc_md.extract_record_id(hit[0].stem) or bug
+    if (sdlc_md.extract_field(text, "Escaped") or "").strip().lower() != "yes":
+        raise TraceRefused(f"{bid} is not escaped (no `Escaped: yes`), so it reached no "
+                           f"production and carries no escape to learn from - nothing written")
+    via = (sdlc_md.extract_field(text, "Escaped-via") or "").strip()
+    if not via:
+        raise TraceRefused(f"{bid} records no Escaped-via, so no unit is confirmed as the one "
+                           f"that let it through - run escape.py trace --bug {bid} --confirm "
+                           f"UNIT first; nothing written")
+    unwritten = transition._escaped_root_cause_gate(text, "made a failure class")
+    if unwritten:
+        raise TraceRefused(f"{bid}: {unwritten}; nothing written")
+    try:
+        return lessons.class_add(root, name, rule, behaviour, ("build", "review"),
+                                 f"escape:{bid}", files=sdlc_md.affects_files(text),
+                                 evidence=[bid, via])
+    except (OSError, ValueError) as exc:
+        raise TraceRefused(f"{exc}; nothing written") from exc
+
+
+def cmd_to_class(args: argparse.Namespace) -> int:
+    try:
+        row = to_class(args.root, args.bug, args.class_name, args.rule, args.behaviour)
+    except TraceRefused as exc:
+        print(f"escape to-class refused: {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(row, indent=2))
+        return 0
+    files = ", ".join(row.get("files") or ()) or "no files"
+    print(f"recorded {row['id']} {row['class']} [{', '.join(row['inject'])}] in "
+          f"{lessons.STORE_FILE}, from {', '.join(row.get('evidence') or ())}; applies to {files}")
+    return 0
+
+
 def cmd_trace(args: argparse.Namespace) -> int:
     try:
         result = (confirm(args.root, args.bug, args.confirm) if args.confirm
@@ -200,6 +257,17 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--root", default=".")
     t.add_argument("--format", choices=("text", "json"), default="text")
     t.set_defaults(func=cmd_trace)
+    c = sub.add_parser("to-class", help="record a confirmed escape's root cause as a failure "
+                                        "class in the lessons store, carrying the bug's Affects")
+    c.add_argument("--bug", required=True,
+                   help="the escaped bug, carrying Escaped-via and a written Root Cause")
+    c.add_argument("--class", dest="class_name", required=True, metavar="NAME",
+                   help="the class's short name; refused when the store already holds it")
+    c.add_argument("--rule", required=True, help="what the class is and the rule it breaks")
+    c.add_argument("--behaviour", required=True, help="what to do differently")
+    c.add_argument("--root", default=".")
+    c.add_argument("--format", choices=("text", "json"), default="text")
+    c.set_defaults(func=cmd_to_class)
     sdlc_md.add_global_root(p)
     return p
 

@@ -216,7 +216,9 @@ lists every script with a one-line summary; open the linked page for the full en
 - `critic.py` - The independent-critic verdict ledger. `record` writes a committed verdict to `sdlc-studio/reviews/critic-ve...
 - `persona_resolve.py` - Resolves the worker amigo for a delegated sub-agent, most-specific-first: a project-authored practitioner am...
 - `escape.py` - `trace --bug BGxxxx` proposes the units an escaped bug's release shipped that share
-  a file with its fix, each with its recorded verdict and seat; `--confirm UNIT` records one
+  a file with its fix, each with its recorded verdict and seat; `--confirm UNIT` records one.
+  `to-class` turns a confirmed escape's written Root Cause into a failure class in
+  `sdlc-studio/lessons.jsonl` through `lessons.py class-add`, carrying the bug's Affects as `files`
 
 ### Upgrade, deploy & version - [reference-scripts-upgrade.md](reference-scripts-upgrade.md)
 
