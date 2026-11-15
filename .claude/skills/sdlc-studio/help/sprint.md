@@ -165,7 +165,10 @@ seal commit carries it; commit it with the page. It is the run record (`.local/r
 as sealed - `signature`, `outcome`, `ended_at`, `reopened` and every other field - through one
 projection: an absolute path inside the repository becomes repo-relative, any other becomes
 `sha256:<12 hex>` of itself, which keeps the home directory and session transcript ids out of
-the tree and still groups a session's token stamps. A page derived since then reads its run
+the tree and still groups a session's token stamps. A page states `evidence_schema`, the
+[evidence annex](../reference-evidence-schema.md#versioning) version it was filed under, and the
+record copies it from the page, so a run signed after an upgrade keeps its page's version; a
+page filed before the stamp leaves both without one. A page derived since then reads its run
 record through the same projection and says so (`record_paths: portable`), so it names a
 session outside the repository exactly as the tracked record does; a page derived before is
 re-derived from the record as it stands. `sprint_report.py check --report RPTxxxx` reads the run

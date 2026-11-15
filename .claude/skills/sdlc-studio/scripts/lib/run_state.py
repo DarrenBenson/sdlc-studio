@@ -624,12 +624,41 @@ def content_digest(path: Path | str) -> str:
     return "sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+#: The key a filed report page and the tracked run record state the evidence annex version under
+#: (`reference-evidence-schema.md`'s masthead). The page is stamped when it is derived; the
+#: record copies the stamp from the page it names (`file_tracked`).
+EVIDENCE_SCHEMA = "evidence_schema"
+
+
+def _filed_page(repo_root: Path | str, report_id) -> dict | None:
+    """The report page `report_id` as filed beside the tracked records, or None when the record
+    names none or the page cannot be read."""
+    if not report_id:
+        return None
+    try:
+        page = json.loads((Path(repo_root) / TRACKED_REL.parent / f"{report_id}.json")
+                          .read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return page if isinstance(page, dict) else None
+
+
 def file_tracked(repo_root: Path | str, state: dict) -> Path:
     """File a run's record at `tracked_path`, through `portable`: still running when the close
-    files it, sealed when `sign` does. Returns the path."""
+    files it, sealed when `sign` does. Returns the path.
+
+    The record states the evidence annex version its page was stamped with, copied from the
+    page, never the version current at the write: a run signed after an upgrade keeps its
+    page's version, and a page filed before the stamp leaves the record without one."""
     p = tracked_path(repo_root, state["run_id"])
     p.parent.mkdir(parents=True, exist_ok=True)
-    sdlc_md.atomic_write(p, json.dumps(portable(state, repo_root), indent=2) + "\n")
+    rec = portable(state, repo_root)
+    page = _filed_page(repo_root, state.get("report"))
+    if page is not None:
+        rec.pop(EVIDENCE_SCHEMA, None)
+        if page.get(EVIDENCE_SCHEMA):
+            rec[EVIDENCE_SCHEMA] = page[EVIDENCE_SCHEMA]
+    sdlc_md.atomic_write(p, json.dumps(rec, indent=2) + "\n")
     return p
 
 

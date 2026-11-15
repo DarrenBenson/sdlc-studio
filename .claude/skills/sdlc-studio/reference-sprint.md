@@ -142,7 +142,7 @@ links here rather than listing its own.
    (Done for a story, Fixed for a bug) through that unit's own gate, writes the run's signature
    and stops; no per-unit sign-off row is written. A principal who authored a unit or reviewed
    one is refused before anything is written, and a unit with no independent APPROVE stops it
-   before anything moves.
+   before anything moves. The signature is over the page's fingerprint, a digest of each figure's value; the signature block, the generation time and each figure's source are not signed ([how to recompute it](reference-evidence-schema.md#report-fingerprint)).
 6. **Learn.** The retro is three lines - Keep, Stop and Try, with a capped number of Try items
    (`help/retro.md`) - and the close's `retro.py extract` turns each Try item into a lesson. A
    Try item tagged with a failure class counts a repeat on that class in

@@ -4551,6 +4551,11 @@ def _iso(moment) -> str | None:
 #: stands, so every figure reads as it was signed. An envelope field, never a figure.
 PORTABLE_PATHS = "record_paths"
 
+#: The evidence annex version a page is filed under, as `reference-evidence-schema.md`'s masthead
+#: states it, stamped on the envelope as `run_state.EVIDENCE_SCHEMA`. A page filed before the
+#: stamp carries none and is re-derived without one. An envelope field, never a figure.
+EVIDENCE_SCHEMA_VERSION = "1.0"
+
 #: The envelope mark of a page whose tokens ratio is withheld unless every delivered unit's
 #: delegated spend was supplied (`_tokens_ratio_withheld`). A page filed before the rule carries
 #: no mark and re-derives its ratio as it was signed. An envelope field, never a figure.
@@ -4665,7 +4670,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                  priced_rule: bool = True, priced_unit_rule: bool = True,
                  usd_rule: bool = True, table_rule: bool = True,
                  filed_prices: dict | None = None, premium_usd_rule: bool = True,
-                 prices_rule: bool = True) -> dict:
+                 prices_rule: bool = True, stamp_rule: bool = True,
+                 evidence_schema: str | None = None) -> dict:
     """The report of record for `retro_id`'s run: every figure derived, every figure sourced.
 
     Read-only. Raises `ReportError` when the run cannot be reported honestly - no sprint goal
@@ -4696,6 +4702,8 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     priced model's prices from that table and prices the delegated totals the Tokens row adds
     (`PRICES_RULE`); a re-derivation passes what the page carries. `findings_end` bounds the
     open findings, waivers and DORA when a re-close moves them past `window_end` (`FINDINGS_END`).
+    `stamp_rule` stamps the evidence annex version, `evidence_schema` where a re-derivation
+    replays the page's own and `EVIDENCE_SCHEMA_VERSION` otherwise.
     """
     root = Path(root)
     state, read_rel = _run_state_for(root, run_id, record)
@@ -4827,7 +4835,10 @@ def build_report(root, retro_id: str, as_of: str | None = None,
     # Absent, not NOT MEASURED, where no refusal log exists: its only writer is this repository's
     # own commit hooks, so in a consuming project the section could never fill.
     sections = [s for s in sections if s is not None]
-    report = {"schema": SCHEMA, "report_id": None, "run_id": state.get("run_id"),
+    report = {"schema": SCHEMA,
+              **({run_state.EVIDENCE_SCHEMA: evidence_schema or EVIDENCE_SCHEMA_VERSION}
+                 if stamp_rule else {}),
+              "report_id": None, "run_id": state.get("run_id"),
               "retro_id": sdlc_md.norm_id(retro_id), "generated_at": generated_at,
               # An envelope field, never a figure: in the digest, recording the bound would
               # change the fingerprint it protects.
@@ -5984,6 +5995,8 @@ def revalidate(root, report_id: str, record: dict | None = None) -> dict:
                          table_rule=replays,
                          premium_usd_rule=basis.get(PREMIUM_USD_RULE) == PREMIUM_PRICED,
                          prices_rule=basis.get(PRICES_RULE) == PRICES_STATED,
+                         stamp_rule=bool(basis.get(run_state.EVIDENCE_SCHEMA)),
+                         evidence_schema=basis.get(run_state.EVIDENCE_SCHEMA),
                          # Unsigned, the page's own table is the one its digest covers.
                          filed_prices=stored.get(PRICE_TABLE)
                          if replays and anchor is None else None)
