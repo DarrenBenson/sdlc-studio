@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 355 |
+| Open | 356 |
 | In Progress | 0 |
 | Fixed | 927 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1473** |
+| **Total** | **1474** |
 
 ## All Bugs
 
@@ -549,6 +549,7 @@
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Open | High | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
