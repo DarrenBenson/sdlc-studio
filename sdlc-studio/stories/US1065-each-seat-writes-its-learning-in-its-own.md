@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, changelog.d/US1065.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_propose.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_memory_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_doc_coverage.py, changelog.d/US1065.md, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Epic:** EP0287
 > **Points:** 3
 > **Depends on:** US1059, US1062
@@ -59,3 +59,4 @@ Kept (D0387). To plan it:
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Groomed from the D0355 breakdown G13 after the refine panel's review |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |
+| 2026-11-15 | Claude Opus 5.5 (run thirteen planning, D0479) | Affects gains the registry files a new verb imply (the mechanics-verb list, the command surface): run twelve lost five lands to their absence |
