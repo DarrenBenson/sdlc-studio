@@ -95,6 +95,19 @@ class RootDocsTests(unittest.TestCase):
             self.assertEqual(len(broken), 1)
             self.assertIn("docs/missing.md", broken[0])
 
+    def test_support_md_is_a_root_doc(self) -> None:
+        # SUPPORT.md is a front-door page: a link it gives to a missing file is reported.
+        self.assertIn("SUPPORT.md", check_links.ROOT_DOCS)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "SUPPORT.md").write_text("Read [installing](docs/INSTALL.md).\n",
+                                             encoding="utf-8")
+            self.assertEqual(check_links.check_root_docs(root),
+                             ["SUPPORT.md:1 -> docs/INSTALL.md [file missing]"])
+            (root / "docs").mkdir()
+            (root / "docs" / "INSTALL.md").write_text("# Installing\n", encoding="utf-8")
+            self.assertEqual(check_links.check_root_docs(root), [])
+
 
 class RootDocAnchorTests(unittest.TestCase):
     """US0952 AC4: a root doc's `CHANGELOG.md#anchor` must name a CHANGELOG heading.

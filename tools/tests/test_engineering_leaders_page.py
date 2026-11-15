@@ -1,0 +1,234 @@
+"""docs/engineering-leaders.md: the page a head of engineering reads before a change board.
+
+It has four sections (change approval, separation of duties, the signed report, cost in dollars
+a point), stays short, links every claim in those sections to the script, reference heading or
+committed record behind it, and cites the committed report for every dollar figure it states.
+Each check runs on the live page and on a planted failure beside it, so a check that has stopped
+looking cannot pass.
+"""
+# test-census-subject: docs/engineering-leaders.md
+from __future__ import annotations
+
+import re
+import subprocess
+import unittest
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+PAGE = REPO / "docs" / "engineering-leaders.md"
+REPORTS = REPO / "sdlc-studio" / "reports"
+WORD_LIMIT = 1200
+
+#: Each required section, found by its level-two heading.
+SECTIONS = {
+    "change approval": re.compile(r"\bchange approval\b", re.I),
+    "separation of duties": re.compile(r"\bseparation of duties\b", re.I),
+    "the signed report": re.compile(r"\bsigned report\b", re.I),
+    "cost in dollars a point": re.compile(r"\bdollars a point\b", re.I),
+}
+#: The three duties the separation-of-duties section must name.
+DUTIES = ("author", "reviewer", "signer")
+
+_H2 = re.compile(r"^##\s+(.*?)\s*$")
+_HEADING = re.compile(r"^#{1,6}\s+(.*?)\s*$")
+_EXPLICIT_ID = re.compile(r"\{#([\w-]+)\}")
+_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
+_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+_DOLLARS = re.compile(r"\$\d[\d,]*(?:\.\d+)?")
+
+
+def sections(text: str) -> list[tuple[str, str]]:
+    """Each level-two section as (heading, body), in page order."""
+    out: list[tuple[str, list[str]]] = []
+    for line in text.splitlines():
+        m = _H2.match(line)
+        if m:
+            out.append((m.group(1), []))
+        elif line.startswith("# "):
+            out.append(("", []))
+        elif out:
+            out[-1][1].append(line)
+    return [(h, "\n".join(body)) for h, body in out if h]
+
+
+def section_body(text: str, key: str) -> str:
+    """The body of the one section whose heading matches `key`, or empty."""
+    return "\n".join(b for h, b in sections(text) if SECTIONS[key].search(h))
+
+
+def missing_sections(text: str) -> list[str]:
+    """Each required section the page lacks or repeats, and each duty the duties section omits."""
+    problems = []
+    headings = [h for h, _ in sections(text)]
+    for key, pattern in SECTIONS.items():
+        found = [h for h in headings if pattern.search(h)]
+        if not found:
+            problems.append(f"no section for {key}")
+        elif len(found) > 1:
+            problems.append(f"{len(found)} sections for {key}")
+    duties = section_body(text, "separation of duties").lower()
+    if duties:
+        problems += [f"separation of duties names no {d}" for d in DUTIES
+                     if not re.search(rf"\b{d}s?\b", duties)]
+    return problems
+
+
+def word_count(text: str) -> int:
+    """The page's words as `wc -w` counts them."""
+    out = subprocess.run(["wc", "-w"], input=text, capture_output=True, text=True, check=True)
+    return int(out.stdout.split()[0])
+
+
+def claims(body: str) -> list[str]:
+    """Each paragraph and each list item of a section body; headings are not claims."""
+    out: list[str] = []
+    for block in re.split(r"\n\s*\n", body):
+        lines = [ln for ln in block.splitlines() if ln.strip() and not _HEADING.match(ln)]
+        current: list[str] = []
+        for line in lines:
+            if _ITEM.match(line) and current:
+                out.append(" ".join(current))
+                current = []
+            current.append(line.strip())
+        if current:
+            out.append(" ".join(current))
+    return out
+
+
+def anchors(path: Path) -> set[str]:
+    """The anchors a markdown file's headings render: explicit ids and GitHub slugs."""
+    seen: dict[str, int] = {}
+    out: set[str] = set()
+    fenced = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        m = None if fenced else _HEADING.match(line)
+        if not m:
+            continue
+        out.update(_EXPLICIT_ID.findall(m.group(1)))
+        base = re.sub(r"\s+", "-", re.sub(r"[^\w\s-]", "",
+                                          _EXPLICIT_ID.sub("", m.group(1)).strip().lower()))
+        n = seen.get(base, 0)
+        seen[base] = n + 1
+        out.add(base if n == 0 else f"{base}-{n}")
+    return out
+
+
+def resolve(target: str, page: Path = PAGE) -> tuple[Path | None, str, str]:
+    """(resolved file, anchor, problem) for a link `target` written on `page`."""
+    if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.I):
+        return None, "", f"{target} is not a file in this repository"
+    path_part, _, anchor = target.partition("#")
+    resolved = (page.parent / path_part).resolve() if path_part else page.resolve()
+    if REPO.resolve() not in resolved.parents:
+        return None, anchor, f"{target} resolves outside the repository"
+    if not resolved.is_file():
+        return None, anchor, f"{target} names no file"
+    if anchor and anchor not in anchors(resolved):
+        return None, anchor, f"{target} names no heading in {resolved.name}"
+    return resolved, anchor, ""
+
+
+def is_mechanism(resolved: Path, anchor: str) -> bool:
+    """A script, a reference page heading, or a committed record under sdlc-studio/."""
+    return (resolved.suffix == ".py"
+            or (resolved.suffix == ".md" and bool(anchor))
+            or (REPO / "sdlc-studio").resolve() in resolved.parents)
+
+
+def claim_problems(body: str, page: Path = PAGE) -> list[str]:
+    """Each claim with no mechanism link, and each link that resolves nowhere."""
+    problems = []
+    for claim in claims(body):
+        mechanisms = 0
+        for target in _LINK.findall(claim):
+            resolved, anchor, problem = resolve(target, page)
+            if problem:
+                problems.append(problem)
+            elif is_mechanism(resolved, anchor):
+                mechanisms += 1
+        if not mechanisms:
+            problems.append(f"no mechanism linked: {claim[:70]}")
+    return problems
+
+
+def dollar_problems(body: str, page: Path = PAGE) -> list[str]:
+    """Each dollar figure whose paragraph links no committed report that holds it."""
+    problems = []
+    for claim in claims(body):
+        figures = _DOLLARS.findall(claim)
+        if not figures:
+            continue
+        reports = []
+        for target in _LINK.findall(claim):
+            resolved, _, problem = resolve(target, page)
+            if not problem and REPORTS.resolve() in resolved.parents:
+                reports.append(resolved.read_text(encoding="utf-8"))
+        for figure in figures:
+            if not reports:
+                problems.append(f"{figure} links no report under sdlc-studio/reports/")
+            elif not any(figure in text for text in reports):
+                problems.append(f"{figure} is in none of the reports its paragraph links")
+    return problems
+
+
+SCRIPT = "../.claude/skills/sdlc-studio/scripts/transition.py"
+REPORT = "../sdlc-studio/reports/RPT0031-sprint-report-run-01m7e52t.md"
+
+
+class EngineeringLeadersPageTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.assertTrue(PAGE.is_file(), f"{PAGE.relative_to(REPO)} does not exist")
+        self.text = PAGE.read_text(encoding="utf-8")
+
+    def test_the_four_sections_are_present_and_the_page_is_short(self) -> None:
+        self.assertEqual(missing_sections(self.text), [])
+        self.assertLessEqual(word_count(self.text), WORD_LIMIT)
+        # Planted failures: each section dropped, a duty unnamed, a section repeated, a long page.
+        for key, pattern in SECTIONS.items():
+            heading = next(h for h, _ in sections(self.text) if pattern.search(h))
+            cut = self.text.replace(f"## {heading}\n", "## Elsewhere\n")
+            self.assertIn(f"no section for {key}", missing_sections(cut))
+        duties = "## Separation of duties\n\nThe author writes and the reviewer reads.\n"
+        self.assertEqual(missing_sections(duties)[-1], "separation of duties names no signer")
+        self.assertIn("2 sections for change approval",
+                      missing_sections(self.text + "\n## Change approval again\n"))
+        self.assertLessEqual(word_count("word " * 1200), WORD_LIMIT)
+        self.assertGreater(word_count("word " * 1201), WORD_LIMIT)
+
+    def test_every_claim_links_a_mechanism_that_exists(self) -> None:
+        for key in SECTIONS:
+            body = section_body(self.text, key)
+            self.assertTrue(claims(body), f"the {key} section makes no claim")
+            self.assertEqual(claim_problems(body), [], f"in the {key} section")
+        # Planted failures beside a positive control.
+        self.assertEqual(claim_problems(f"A gate refuses it ([gate]({SCRIPT}))."), [])
+        self.assertEqual(claim_problems(f"- One.\n- Two, [linked]({SCRIPT})."),
+                         ["no mechanism linked: - One."])
+        self.assertIn("no mechanism linked: A gate refuses it.",
+                      claim_problems("A gate refuses it."))
+        self.assertTrue(claim_problems("See [gone](../scripts/gone.py)."))
+        self.assertTrue(claim_problems(
+            "See [s](../.claude/skills/sdlc-studio/reference-sprint.md#no-such-heading)."))
+        self.assertIn("https://example.com/x.py is not a file in this repository",
+                      claim_problems("See [web](https://example.com/x.py)."))
+        self.assertTrue(claim_problems("See [readme](../README.md)."))
+
+    def test_every_dollar_figure_cites_its_report(self) -> None:
+        body = section_body(self.text, "cost in dollars a point")
+        self.assertTrue(_DOLLARS.search(body), "the cost section states no dollar figure")
+        self.assertEqual(dollar_problems(body), [])
+        # Planted failures beside a positive control.
+        self.assertEqual(dollar_problems(f"It cost $2.27 a point ([report]({REPORT}))."), [])
+        self.assertEqual(dollar_problems("It cost $2.27 a point."),
+                         ["$2.27 links no report under sdlc-studio/reports/"])
+        self.assertEqual(dollar_problems(f"It cost $2.27 a point ([script]({SCRIPT}))."),
+                         ["$2.27 links no report under sdlc-studio/reports/"])
+        self.assertEqual(dollar_problems(f"It cost $9.99 a point ([report]({REPORT}))."),
+                         ["$9.99 is in none of the reports its paragraph links"])
+
+
+if __name__ == "__main__":
+    unittest.main()

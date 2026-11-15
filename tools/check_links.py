@@ -97,7 +97,7 @@ _LINK_RE = link_refs.LINK_RE
 # Repo-root docs that link into the skill (and each other) but sit outside the skill tree,
 # so the skill-scoped scan never saw them.
 ROOT_DOCS = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md",
-             "SECURITY.md", "INSTALL.md", "CHANGELOG.md")
+             "SECURITY.md", "SUPPORT.md", "INSTALL.md", "CHANGELOG.md")
 
 
 def slug(text: str) -> str:
