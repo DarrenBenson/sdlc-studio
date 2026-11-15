@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, sdlc-studio/lessons.jsonl, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/help/lessons.md, changelog.d/BG1474.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, sdlc-studio/lessons.jsonl, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, .claude/skills/sdlc-studio/help/lessons.md, .claude/skills/sdlc-studio/reference-retro.md, changelog.d/BG1474.md
 > **Evidence:** Push boundary on devserver1 for 45b97375, 2026-11-15: 1 failed, 9055 passed; run thirteen's close output 'quiet for 5 runs, retired LC-019, LC-020, LC-021'.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file

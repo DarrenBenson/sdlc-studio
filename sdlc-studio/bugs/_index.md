@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 359 |
+| Open | 361 |
 | In Progress | 0 |
 | Fixed | 927 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1477** |
+| **Total** | **1479** |
 
 ## All Bugs
 
@@ -553,6 +553,8 @@
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Open | Low | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 
