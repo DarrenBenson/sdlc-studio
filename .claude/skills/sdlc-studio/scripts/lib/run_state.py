@@ -154,6 +154,10 @@ SUPPLIED = "supplied"
 #: The provenance of a delegated record whose total was read from the agent's own transcript
 #: (`agent_transcript_tokens`), because no total was supplied beside it.
 READ_FROM_TRANSCRIPT = "transcript"
+#: The mark on a delegated record that holds one unit's share of a total returned for several
+#: units at once, split between them by their Points: `{"by": "points", "points", "of",
+#: "units", "tokens"}`, the unit's points, the lane's, its unit count and the whole total.
+APPORTIONED = "apportioned"
 
 #: Where the harness keeps its per-session transcripts, overridable for tests and non-standard
 #: installs. The default is Claude Code's layout: one directory per project (the absolute path
@@ -2603,8 +2607,9 @@ def delegated_split(state: dict) -> dict:
 
 def unit_agent_totals(state: dict) -> dict[str, dict]:
     """Per unit, the delegated totals tagged to it: `{unit: {"tokens", "minutes", "agents",
-    "timed", "priced", "priced_agents"}}`. `priced` sums the priced cost of the `priced_agents`
-    records read from an agent's transcript, None when none was.
+    "timed", "priced", "priced_agents", "apportioned"}}`. `priced` sums the priced cost of the
+    `priced_agents` records read from an agent's transcript, None when none was; `apportioned`
+    counts the records that hold the unit's share of a total split by points (`APPORTIONED`).
 
     A unit's own agents' reported spend, never a span on the main-thread meter, which counts the
     traffic of every unit open beside it. `minutes` sums the `timed` records that carried minutes,
@@ -2620,9 +2625,11 @@ def unit_agent_totals(state: dict) -> dict[str, dict]:
             continue
         t = out.setdefault(sdlc_md.norm_id(uid),
                            {"tokens": 0, "minutes": None, "agents": 0, "timed": 0,
-                            "priced": None, "priced_agents": 0, BY_MODEL: None})
+                            "priced": None, "priced_agents": 0, BY_MODEL: None,
+                            "apportioned": 0})
         t["tokens"] += r["tokens"]
         t["agents"] += 1
+        t["apportioned"] += 1 if isinstance(r.get(APPORTIONED), dict) else 0
         p = r.get("priced")
         if isinstance(p, int) and not isinstance(p, bool) and p >= 0:
             t["priced"] = (t["priced"] or 0) + p
@@ -2666,7 +2673,8 @@ def _page_filed(state: dict) -> bool:
 def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
                             note: str = "", unit: str = "", minutes=None,
                             reading: dict | None = None,
-                            provenance: str = SUPPLIED) -> dict | None:
+                            provenance: str = SUPPLIED,
+                            apportioned: dict | None = None) -> dict | None:
     """Record one delegated agent's SUPPLIED token total against the open run.
 
     Returns the record, or None when no run is open - a spend counted against a run with no
@@ -2691,6 +2699,9 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
     (`unit_agent_totals` then prices it nowhere). A transcript is read whole, so a
     later reading of the same file for the same unit REPLACES the earlier record rather than
     adding to it, which would count the earlier messages twice.
+
+    `apportioned`, when given, marks the total, and the reading's figures with it, as `unit`'s
+    share of one total split between several units by their Points (`APPORTIONED`).
     """
     if isinstance(tokens, bool) or not isinstance(tokens, int) or tokens <= 0:
         raise ValueError(f"a delegated token total must be a positive integer, got {tokens!r} - "
@@ -2718,6 +2729,8 @@ def record_delegated_tokens(repo_root: Path | str, tokens, agent: str = "",
         entry["unit"] = sdlc_md.norm_id(unit)
     if minutes is not None:
         entry["minutes"] = float(minutes)
+    if apportioned:
+        entry[APPORTIONED] = dict(apportioned)
     if reading:
         # A lane run session's reading (`lanes.run_reading`) with no split names its session's
         # one model: its components are booked under that model, so the unit's dollars price

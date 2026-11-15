@@ -8588,6 +8588,62 @@ def _lane_positive_minutes(raw: str) -> float:
     return value
 
 
+def _lane_points(root: Path, units: list[str]) -> tuple[list[int] | None, str]:
+    """Each unit's Points, in order, the weights one lane total is split between them by, or
+    None and why: a unit with no positive whole Points gives the split no weight to place."""
+    weights, unsized = [], []
+    for uid in units:
+        found = sdlc_md.find_by_id(root, uid)
+        pts = sdlc_md.read_points(sdlc_md.read_text_safe(found[0])) if found else None
+        if isinstance(pts, int) and not isinstance(pts, bool) and pts > 0:
+            weights.append(pts)
+        else:
+            unsized.append(uid)
+    if unsized:
+        return None, f"{', '.join(unsized)} {'has' if len(unsized) == 1 else 'have'} no Points"
+    return weights, ""
+
+
+def _lane_apportion(whole: int, weights: list[int]) -> list[int]:
+    """`whole` split in proportion to `weights` by the largest remainder, so the shares add up
+    to it exactly: each floored share, then one more to the largest remainders, in order."""
+    total = sum(weights)
+    shares = [whole * w // total for w in weights]
+    ranked = sorted(range(len(weights)), key=lambda i: (-(whole * weights[i] % total), i))
+    for i in ranked[:whole - sum(shares)]:
+        shares[i] += 1
+    return shares
+
+
+def _lane_shares(whole: int, reading: dict | None, minutes, weights: list[int] | None):
+    """Per unit, `(tokens, reading, minutes, mark)`: one total returned for one unit as it is,
+    unmarked; for several, each unit's share of the tokens, of the reading's priced cost,
+    components and per-model split, and of the minutes, by its Points, marked
+    (`run_state.APPORTIONED`). None when a unit's share of the tokens would be 0, which no
+    delegated record holds."""
+    if weights is None:
+        return [(whole, reading, minutes, None)]
+    tokens = _lane_apportion(whole, weights)
+    if not all(tokens):
+        return None
+    total, n = sum(weights), len(weights)
+    reads: list[dict | None] = [None] * n
+    if reading is not None:
+        priced = _lane_apportion(reading["priced"], weights)
+        comps = {c: _lane_apportion(int(v or 0), weights)
+                 for c, v in (reading.get("components") or {}).items()}
+        models = {m: {c: _lane_apportion(int(v or 0), weights) for c, v in (cs or {}).items()}
+                  for m, cs in (reading.get(run_state.BY_MODEL) or {}).items()}
+        reads = [{**reading, "tokens": tokens[i], "priced": priced[i],
+                  "components": {c: v[i] for c, v in comps.items()},
+                  **({run_state.BY_MODEL: {m: {c: v[i] for c, v in cs.items()}
+                                          for m, cs in models.items()}} if models else {})}
+                 for i in range(n)]
+    return [(tokens[i], reads[i], minutes * w / total if minutes is not None else None,
+             {"by": "points", "points": w, "of": total, "units": n, "tokens": whole})
+            for i, w in enumerate(weights)]
+
+
 def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]) -> None:
     """Record the builder's own `--tokens` (and `--minutes`) for the one unit returned, through
     the delegated record `retro.py accuracy --delegated-unit` writes, so the figure counts once
@@ -8596,7 +8652,11 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     Optional and never a refusal. Recorded whatever the outcome: a blocked lane spent its
     tokens too. Two cases record nothing and say so, because the figure cannot be placed:
     `--minutes` with no `--tokens` or `--agent` (a delegated record IS a token total), and a
-    total given for several units at once (it cannot be split between them).
+    total given for several units at once when one of them has no Points.
+
+    A total given for several units at once is split between them by their Points
+    (`_lane_shares`): each unit's record holds its share of the tokens, the priced cost, the
+    components and the minutes, marked as split, and the page says so.
 
     `--agent` names the builder's own transcript (`run_state.agent_transcript_tokens`): its
     priced cost and components land on the record, and its token sum is the total when no
@@ -8610,48 +8670,63 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
         print("WARNING --minutes was not recorded: an agent's minutes are recorded with its "
               "token total, so pass the builder's --tokens beside them", file=sys.stderr)
         return
+    flag = "--tokens" if tokens is not None else "--agent"
+    weights = None
     if len(results) != 1:
-        print(f"WARNING {'--tokens' if tokens is not None else '--agent'} was not recorded: "
-              f"one total cannot be split between {len(results)} units - return each unit with "
-              f"its own builder's total", file=sys.stderr)
-        return
-    res = results[0]
+        weights, why = _lane_points(root, [res["unit"] for res in results])
+        if why:
+            print(f"WARNING {flag} was not recorded: one total for {len(results)} units is split "
+                  f"between them by their Points, and {why} - size it, or return each unit "
+                  f"with its own builder's total", file=sys.stderr)
+            return
     reading = None
     if agent is not None:
         reading = run_state.agent_transcript_tokens(root, agent)
         if reading.get("priced") is None:
+            whose = (f"{results[0]['unit']}'s return records" if len(results) == 1 else
+                     f"the returns of {', '.join(res['unit'] for res in results)} record")
             print(f"WARNING --agent {agent} was not priced: {reading['reason']}, so "
-                  f"{res['unit']}'s return records no priced cost", file=sys.stderr)
+                  f"{whose} no priced cost", file=sys.stderr)
             reading = None
     if tokens is None and reading is None:
         if minutes is not None:
             print("WARNING --minutes was not recorded: no token total was supplied or read "
                   "beside them", file=sys.stderr)
         return
-    unreadable = object()
-    got = _lane_run_state(
-        "record_agent_total",
-        lambda: run_state.record_delegated_tokens(
-            root, tokens if tokens is not None else reading["tokens"],
-            agent=f"agent-{agent}" if agent is not None else "build lane",
-            note=f"sprint lane return ({res['outcome']})", unit=res["unit"], minutes=minutes,
-            reading=reading, provenance=(run_state.SUPPLIED if tokens is not None
-                                         else run_state.READ_FROM_TRANSCRIPT)),
-        unreadable,
-        f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), so "
-        f"its tokens and minutes will not reach the page")
-    res["agent_total"] = None if got is unreadable else got
-    if got is None:
-        print("WARNING --tokens was not recorded: no run is open, so there is no run to count "
-              "the builder's total against", file=sys.stderr)
-    elif got is not unreadable and got.get("unit") not in _lane_run_state(
-            # the page's own unit set (planned, added or dropped), so a unit dropped at the cap,
-            # whose per-unit row does show the total, is not warned about
-            "agent_total_batch", lambda: _page_units(run_state.read(root)), [],
-            "the run state could not be read, so whether the total is on the batch is UNKNOWN"):
-        print(f"WARNING --tokens was recorded off the batch: {got.get('unit')} was never in the "
-              f"open run's batch, so the total counts in the run's but no per-unit row shows it",
-              file=sys.stderr)
+    whole = tokens if tokens is not None else reading["tokens"]
+    shares = _lane_shares(whole, reading, minutes, weights)
+    if shares is None:
+        print(f"WARNING {flag} was not recorded: its {whole:,} tokens are too few to split "
+              f"between {len(results)} units by their {sum(weights)} points", file=sys.stderr)
+        return
+    for res, (share, read, mins, mark) in zip(results, shares):
+        unreadable = object()
+        got = _lane_run_state(
+            "record_agent_total",
+            lambda res=res, share=share, read=read, mins=mins, mark=mark: (
+                run_state.record_delegated_tokens(
+                root, share, agent=f"agent-{agent}" if agent is not None else "build lane",
+                note=f"sprint lane return ({res['outcome']})", unit=res["unit"], minutes=mins,
+                reading=read, provenance=(run_state.SUPPLIED if tokens is not None
+                                          else run_state.READ_FROM_TRANSCRIPT),
+                apportioned=mark)),
+            unreadable,
+            f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), "
+            f"so its tokens and minutes will not reach the page")
+        res["agent_total"] = None if got is unreadable else got
+        if got is None:
+            print("WARNING --tokens was not recorded: no run is open, so there is no run to "
+                  "count the builder's total against", file=sys.stderr)
+            return
+        if got is not unreadable and got.get("unit") not in _lane_run_state(
+                # the page's own unit set (planned, added or dropped), so a unit dropped at the
+                # cap, whose per-unit row does show the total, is not warned about
+                "agent_total_batch", lambda: _page_units(run_state.read(root)), [],
+                "the run state could not be read, so whether the total is on the batch is "
+                "UNKNOWN"):
+            print(f"WARNING --tokens was recorded off the batch: {got.get('unit')} was never in "
+                  f"the open run's batch, so the total counts in the run's but no per-unit row "
+                  f"shows it", file=sys.stderr)
 
 
 def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tuple[bool, str]]:
@@ -8659,8 +8734,8 @@ def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tupl
     transcript through `_lane_agent_totals`, the record `lane return --agent` writes, so a later
     return reading the same transcript for the unit replaces it rather than counting it twice.
     Each unit answers (priced, what was said), the warnings `_lane_agent_totals` printed carried
-    in what was said rather than printed beside it. Several units share one transcript, so none
-    of them is priced: one total cannot be split between them."""
+    in what was said rather than printed beside it. Several units share one transcript, so each
+    is priced with its share of it, split between them by their Points."""
     results = [{"unit": u, "outcome": "landed"} for u in units]
     said = io.StringIO()
     with contextlib.redirect_stderr(said):
@@ -8671,8 +8746,11 @@ def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tupl
     for res in results:
         got = res.get("agent_total")
         if isinstance(got, dict) and got.get("priced") is not None:
+            part = got.get(run_state.APPORTIONED)
             out[res["unit"]] = (True, f"{got['tokens']:,} tokens, {got['priced']:,} "
                                       f"{run_state.PRICED_LABEL}"
+                                      + (f", split by points ({part['points']} of "
+                                         f"{part['of']})" if isinstance(part, dict) else "")
                                       + (f"; {warned}" if warned else ""))
         else:
             out[res["unit"]] = (False, warned or "no priced return was recorded")
@@ -9313,7 +9391,10 @@ def _print_lane_return(res: dict) -> None:
             read_from = Path(got.get("transcript") or "").name
             how = ("supplied, not measured" if got.get("provenance") == run_state.SUPPLIED
                    else f"read from {read_from}")
-            said.append(f"agent total recorded ({how}): {got['tokens']:,} tokens{timed}")
+            part = got.get(run_state.APPORTIONED)
+            shared = (f", split by points ({part['points']} of the lane's {part['of']} "
+                      f"points, of {part['tokens']:,} tokens)" if isinstance(part, dict) else "")
+            said.append(f"agent total recorded ({how}): {got['tokens']:,} tokens{timed}{shared}")
             if got.get("priced") is not None:
                 said.append(f"agent priced cost recorded (read from {read_from}): "
                             f"{got['priced']:,} {run_state.PRICED_LABEL}")
@@ -10117,6 +10198,7 @@ def _file_the_report(root, retro_id):
     # A REOPEN since that window let run work in, not paperwork: this close re-reads the meter
     # and measures from the run's open to now, as a first close does, and the page says so.
     reopened = sprint_report.reopened_since(run_state.read(root) or {}, first_end)
+    kept = first_end
     if reopened:
         first_end = None
     try:
@@ -10136,6 +10218,7 @@ def _file_the_report(root, retro_id):
     # filed page ended at: the work done after that close is paperwork about the run, not the
     # run's cost. Its open findings, waivers and DORA run to the re-close, as the close's
     # checklist does, so a finding filed since is on the page (`FINDINGS_END`).
+    stamp, unread = None, "the meter returned no reading"
     try:
         if not first_end:
             if stamp := run_state.stamp_tokens(root, "report"):
@@ -10146,8 +10229,23 @@ def _file_the_report(root, retro_id):
     except sdlc_md.AllocationLockTimeout as exc:   # the close goes on; the missing stamp is said
         print(f"warning: the report-time token stamp was not recorded - {exc.reason}",
               file=sys.stderr)
+        unread = exc.reason
     except Exception as exc:               # noqa: BLE001 - an unreadable meter is not a failed close
         sdlc_md.debug("sprint.file_the_report.stamp", exc)
+        unread = f"the meter could not be read: {exc}"
+    if reopened and not stamp:
+        # A reopen whose close cannot read the meter has no reading to measure a new window to,
+        # so the page keeps the window it filed before the reopen, its lane yield frozen over
+        # the same window, and says the second reading is missing (`METER_REREAD`).
+        first_end = kept
+        try:
+            sprint_report.freeze_lane_yield(root, window_end=kept)
+            run_state.update(root, **{sprint_report.METER_REREAD: {
+                "reopened_at": reopened, "read_at": None, "missing": unread,
+                "window_end": kept}})
+        except sprint_report.ReportError as exc:
+            print(f"close: the run cannot be reported yet - {exc}", file=sys.stderr)
+            return "", ""
     try:
         now = sdlc_md.now_iso8601() if first_end else None
         report = sprint_report.build_report(str(root), retro_id, as_of=now,

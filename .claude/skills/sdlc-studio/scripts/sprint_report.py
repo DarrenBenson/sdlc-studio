@@ -3075,7 +3075,8 @@ def _metered(state: dict, end: "datetime | None") -> dict:
 #: The run record's note of a close that re-read the meter after `sprint reopen`,
 #: `{"reopened_at", "read_at"}`. A reopen lets run work in, not paperwork, so that close measures
 #: the page from the run's open to itself; a record without the note was never re-read so, and
-#: its page reads as it did.
+#: its page reads as it did. A close after a reopen that could not read the meter records
+#: `{"reopened_at", "read_at": None, "missing", "window_end"}`: why, and the window it kept.
 METER_REREAD = "meter_reread_after_reopen"
 
 
@@ -3091,8 +3092,14 @@ def reopened_since(state: dict, window_end: str | None) -> str | None:
 
 
 def _reread_note(state: dict) -> str | None:
-    """The Priced cost row's word that a close after a reopen re-read the meter (`METER_REREAD`)."""
+    """The Priced cost row's word that a close after a reopen re-read the meter (`METER_REREAD`),
+    or that it could not, so the page kept the window it filed before the reopen."""
     got = state.get(METER_REREAD)
+    if isinstance(got, dict) and not got.get("read_at") and got.get("missing"):
+        return (f"the run was reopened at {got.get('reopened_at')} and the close after it could "
+                f"not read the meter ({got['missing']}), so the second reading is missing: this "
+                f"figure runs to {got.get('window_end')}, the window filed before the reopen, "
+                f"and leaves out the work since")
     if not isinstance(got, dict) or not got.get("read_at"):
         return None
     return (f"the meter was re-read at the close of {got['read_at']}, after the run was "
@@ -3657,6 +3664,7 @@ def _unit_ledger(root: Path, state: dict, state_rel: str, filed_points: dict | N
             "agents": agent.get("agents", 0), "timed": agent.get("timed", 0),
             "timed_minutes": agent.get("minutes"),
             "priced": agent.get("priced"), "priced_agents": agent.get("priced_agents", 0),
+            "apportioned": agent.get("apportioned", 0),
             "by_model": agent.get(run_state.BY_MODEL),
             "in_plan": bool(plan), "measured": bool(act) or bool(agent),
             "rounds": (None if not ledger_found else
@@ -4185,24 +4193,32 @@ def _estimates_section(state: dict, state_rel: str, ledger: list[dict], run_toke
         return (f"no In Progress span and no agent total tagged to it - record one with "
                 f"`retro.py accuracy --delegated-tokens N --delegated-unit {u['id']} "
                 f"--delegated-minutes M`")
+
+    def split(u):
+        """The labels' word that the unit's agent totals hold its share of one lane total, split
+        between the lane's units by their Points; "" when none does."""
+        ap = u.get("apportioned") or 0
+        return ("" if not ap else ", split by points" if ap == u["agents"] else
+                f", {ap} of {u['agents']} agent totals split by points")
     unit_rows = [{"unit_id": fig("unit_id", u["id"], u["rel"]),
                   "eu_forecast_minutes": cell("eu_forecast_minutes", u["forecast_minutes"],
                                               "not in the plan"),
                   "eu_minutes": cell("eu_minutes", u["minutes"], why(u),
                                      None if not u["agent_minutes"] else
-                                     "agent minutes" if u["timed"] == u["agents"] else
-                                     f"agent minutes ({u['timed']} of {u['agents']} agents)"),
+                                     ("agent minutes" if u["timed"] == u["agents"] else
+                                      f"agent minutes ({u['timed']} of {u['agents']} agents)")
+                                     + split(u)),
                   "eu_forecast_tokens": cell("eu_forecast_tokens", u["forecast_tokens"],
                                              "not in the plan"),
                   "eu_tokens": cell("eu_tokens", u["tokens"], why(u),
-                                    "agent tokens" if u["agent_tokens"] else None),
+                                    "agent tokens" + split(u) if u["agent_tokens"] else None),
                   # Only under the rule, so a page filed before it reads as filed; a unit no
                   # agent was priced for reads NOT MEASURED, as its neighbours do.
                   **({"eu_priced": cell(
                       "eu_priced", u["priced"],
                       f"no agent returned for it was priced from its own transcript - "
                       f"price one with `sprint.py lane return --units {u['id']} --agent A`",
-                      "priced")} if priced_unit_rule else {}),
+                      "priced" + split(u))} if priced_unit_rule else {}),
                   **({"eu_usd": _unit_usd(u, usd)} if usd is not None else {})}
                  for u in ledger if not u["dropped"] and (u["in_plan"] or u["measured"])]
     if not any(_num(u[k]) for u in ledger for k in ("forecast_minutes", "minutes",

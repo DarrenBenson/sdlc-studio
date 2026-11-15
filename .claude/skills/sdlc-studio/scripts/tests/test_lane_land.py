@@ -646,7 +646,10 @@ class LandPricesTheBuilderTests(_LaneFixture):
         self.assertIn(f"{A}'s return UNPRICED: ", r.stderr)
         self.assertIn(f"agent-{self.AGENT}.jsonl in {self.tx.subagents}", r.stderr)
 
-    def test_a_lane_of_several_units_prices_none_of_them_from_one_transcript(self) -> None:
+    def test_a_lane_of_several_units_splits_its_one_transcript_by_points(self) -> None:
+        """One builder's transcript for a lane of two units of 2 points each is split between
+        them by their Points: each unit is priced with its half, the halves add up to the
+        whole, and the line says it was split. MUTANT: the old refusal, so neither is priced."""
         self._builder_says(BUILD_1)
         for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
                           ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
@@ -654,11 +657,19 @@ class LandPricesTheBuilderTests(_LaneFixture):
         self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
         r = self._land(A, B)
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
-        for unit in (A, B):
+        parts = meter._sum(BUILD_1)
+        shares = {unit: self._returns(unit) for unit in (A, B)}
+        for unit, recs in shares.items():
             with self.subTest(unit=unit):
-                self.assertEqual([], self._returns(unit))
-                self.assertIn(f"{unit}'s return UNPRICED: --agent was not recorded: one total "
-                              f"cannot be split between 2 units", r.stderr)
+                self.assertEqual(1, len(recs), r.stdout + r.stderr)
+                self.assertEqual({"by": "points", "points": 2, "of": 4, "units": 2,
+                                  "tokens": meter._tokens(parts)}, recs[0][run_state.APPORTIONED])
+                self.assertIn(f"{unit}'s return priced from {self.WORKTREE}'s transcript: "
+                              f"{recs[0]['tokens']:,} tokens, {recs[0]['priced']:,} "
+                              f"{run_state.PRICED_LABEL}, split by points (2 of 4)", r.stdout)
+        for key, whole in (("tokens", meter._tokens(parts)), ("priced", meter._priced(parts))):
+            self.assertEqual(whole, sum(recs[0][key] for recs in shares.values()), key)
+        self.assertNotIn("UNPRICED", r.stderr)
 
 
 if __name__ == "__main__":

@@ -219,10 +219,11 @@ class LaneDelegatedTokensTests(unittest.TestCase):
 
     def test_totals_are_optional_and_unattributable_ones_are_not_recorded(self) -> None:
         """No refusal: a return with no totals passes as before; `--minutes` with no `--tokens`
-        (a delegated record is a token total) and a total given for two units at once (it
-        cannot be split) each pass with a warning and record nothing. MUTANT: record the
-        minutes-only or the two-unit total, so a figure no agent reported for that unit lands
-        in the run's delegated record."""
+        (a delegated record is a token total) passes with a warning and records nothing, and a
+        total given for two units at once is split between them by their Points (2 each), never
+        recorded whole against each. MUTANTS: record the minutes-only total, so a figure no
+        agent reported lands in the run's delegated record; record the two-unit total whole
+        against each unit, so the run counts it twice."""
         ws = self.ws
         rs = _live("lib.run_state")
         ws.lane("brief", "--units", "US0101", "US0102", at=T0)
@@ -230,11 +231,14 @@ class LaneDelegatedTokensTests(unittest.TestCase):
                           at=T0 + timedelta(minutes=5))
         self.assertEqual(0, rc, out)
         self.assertIn("WARNING", out)
+        self.assertEqual([], rs.delegated_records(rs.read(ws.root)))
         rc, out = ws.lane("return", "--units", "US0101", "US0102", "--tokens", "9000",
                           at=T0 + timedelta(minutes=6))
         self.assertEqual(0, rc, out)
-        self.assertIn("WARNING", out)
-        self.assertEqual([], rs.delegated_records(rs.read(ws.root)))
+        self.assertIn("split by points (2 of the lane's 4 points, of 9,000 tokens)", out)
+        split = rs.delegated_records(rs.read(ws.root))
+        self.assertEqual([("US0101", 4500), ("US0102", 4500)],
+                         [(r["unit"], r["tokens"]) for r in split])
         for flag, value in (("--tokens", "0"), ("--tokens", "-5"), ("--minutes", "0"),
                             ("--minutes", "-3"), ("--minutes", "nan")):
             with self.subTest(flag=flag, value=value):
@@ -243,7 +247,7 @@ class LaneDelegatedTokensTests(unittest.TestCase):
                                   at=T0 + timedelta(minutes=7))
                 self.assertEqual(2, rc, f"{flag} {value} is a malformed value (D0302): {out}")
                 self.assertIn(f"argument {flag}", out)
-        self.assertEqual([], rs.delegated_records(rs.read(ws.root)))
+        self.assertEqual(split, rs.delegated_records(rs.read(ws.root)))
 
     def test_a_page_filed_before_the_rule_re_derives_its_ratio(self) -> None:
         """RPT0006-RPT0014 were signed with a ratio over a partial actual. MUTANTS: apply the
