@@ -1,6 +1,6 @@
 # BG1478: SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** SECURITY.md, tools/tests/test_security_policy_versions.py, changelog.d/BG1478.md
@@ -26,6 +26,7 @@ Restate the table for 6.x (Yes) and 5.x (security fixes only), and add a test th
 
 - [ ] **AC1** Given SECURITY.md and the skill's current version, when the Supported Versions table is read, then its first row names the current major as supported and the row below it the previous major as security fixes only. Fails on: a table naming any older major as current.
   - **Verify:** pytest tools/tests/test_security_policy_versions.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

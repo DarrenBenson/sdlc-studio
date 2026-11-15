@@ -1,6 +1,6 @@
 # BG0998: The story template ships Verified no, which verify_ac treats as an authored miss
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/templates/core/story.md, .claude/skills/sdlc-studio/reference-story.md, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/scripts/tests/test_story_template_verified.py, changelog.d/BG0998.md
@@ -26,10 +26,13 @@ Remove the three starting Verified no lines from templates/core/story.md. In ref
 
 - [ ] **AC1** Given a Draft story whose criterion is copied from templates/core/story.md with the Verify placeholder replaced by `shell true`, when `verify_ac.py run` runs on it, then it reports pass=1 fail=0 and stamps the criterion `Verified: yes`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_story_template_verified.py::StoryTemplateVerifiedTests::test_a_criterion_copied_from_the_template_is_stamped_yes
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given reference-story.md and reference-verify.md, when their guidance on a new criterion is read, then neither tells an author to write `Verified: no` until reconcile runs, and both say a new criterion carries no Verified line and that `Verified: no` is a recorded miss the runner does not overwrite.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_story_template_verified.py::StoryTemplateVerifiedTests::test_the_references_say_a_new_criterion_carries_no_verified_line
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given an existing criterion carrying a hand-written bare `Verified: no` and a passing selector, when `verify_ac.py run` runs, then it still reports fail=1 and leaves the line as written (BG0733's sticky rule holds).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_story_template_verified.py::StoryTemplateVerifiedTests::test_a_hand_written_bare_no_stays_sticky
+  - **Verified:** yes (2026-11-15)
 
 ## Triage
 

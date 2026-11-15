@@ -1,6 +1,6 @@
 # BG1480: docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** docs/engineering-leaders.md, tools/tests/test_engineering_leaders_page.py, changelog.d/BG1480.md
@@ -26,8 +26,10 @@ Say the dollar actual is priced per model and the forecast at one model's rate u
 
 - [ ] **AC1** Given docs/engineering-leaders.md, when its pricing sentence is read, then it limits the per-model pricing to the dollar actual and says the forecast is priced at one model's rate. Fails on: a sentence that covers both columns.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given the page, when the evidence pack's refusals are named, then the link points at `evidence_pack.py`, and the author-stamping sentence claims no more than the writer enforces. Fails on: a link to `release_cut.py` for the refusals or 'every verdict stamps'.
   - **Verify:** pytest tools/tests/test_engineering_leaders_page.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

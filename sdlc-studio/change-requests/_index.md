@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 35 |
+| Proposed | 36 |
 | Approved | 0 |
-| In Progress | 24 |
-| Complete | 554 |
+| In Progress | 22 |
+| Complete | 556 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **709** |
+| **Total** | **710** |
 
 ## All Changes
 
@@ -110,10 +110,10 @@
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Complete | High | feature | 2026-11-10 | EP0307 |
 | [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Proposed | High | enhancement | 2026-11-10 | -- |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | Proposed | Medium | enhancement | 2026-11-10 | -- |
-| [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | In Progress | High | Improvement | 2026-11-12 | EP0311 |
+| [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Complete | High | Improvement | 2026-11-12 | EP0311 |
 | [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | Proposed | Medium | Improvement | 2026-11-12 | -- |
 | [CR-0701](CR0701-a-consolidation-unit-s-builder-brief-can-carry.md) | A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it | Proposed | Low | Improvement | 2026-11-12 | -- |
-| [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | In Progress | High | Improvement | 2026-11-14 | EP0310 |
+| [CR-0702](CR0702-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: a README of about 1,500 words with three routes in, an honest SUPPORT.md, an evidence page built from the signed reports, and a page for engineering leaders | Complete | High | Improvement | 2026-11-14 | EP0310 |
 | [CR-0703](CR0703-fit-the-plan-s-dollar-forecast-from-measured.md) | Fit the plan's dollar forecast from measured dollars per point, not priced tokens times the input price | Proposed | Medium | enhancement | 2026-11-15 | -- |
 | [CR-0704](CR0704-the-change-evidence-pack-groups-changes-by-risk.md) | The change evidence pack groups changes by risk and compliance class, lists high-risk changes first with their second seat's verdict, and reads through the evidence annex | Proposed | High | feature | 2026-11-15 | -- |
 | [CR-0705](CR0705-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit implies when it adds a script, a verb or reference text, before the build | In Progress | High | enhancement | 2026-11-15 | EP0313 |
@@ -121,6 +121,7 @@
 | [CR-0707](CR0707-sprint-lane-offers-a-rebase-step-that-carries.md) | sprint lane offers a rebase step that carries a waiting lane's staged work onto a moved main | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 | [CR-0708](CR0708-file-finding-writes-criteria-a-plan-can-take.md) | file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 | [CR-0709](CR0709-add-lessons-py-reinstate-put-a-retired-class.md) | Add lessons.py reinstate: put a retired class back in force with a recorded run and reason | Proposed | Low | Feature | 2026-11-15 | -- |
+| [CR-0710](CR0710-cr0699-remainder-the-bench-runner-takes-a-builder.md) | CR0699 remainder: the bench runner takes a builder-effort arm and reports priced tokens per point, review rounds and the held-back score per arm | Proposed | Medium | Feature | 2026-11-15 | -- |
 
 ## Archived Releases
 

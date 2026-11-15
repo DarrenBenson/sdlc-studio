@@ -1,6 +1,6 @@
 # BG1484: verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py, changelog.d/BG1484.md
@@ -27,6 +27,7 @@ Keep a clean single-story run to two lines: print the total line only when the r
 
 - [ ] **AC1** Given a story whose one criterion passes, when `verify_ac.py run --id <story>` runs, then it prints one or two lines and exits 0, while a run over two stories or with a partly-skipped criterion still prints the total line BG1395 added. Fails on: a third line on a clean single-story success.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py
+  - **Verified:** yes (2026-11-15)
 
 ## Revision History
 

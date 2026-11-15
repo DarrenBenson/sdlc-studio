@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 13 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 267 |
+| Done | 269 |
 | Superseded | 33 |
 | **Total** | **313** |
 
@@ -60,8 +60,8 @@
 | [EP0307](EP0307-a-change-that-touches-a-high-risk-component.md) | A change that touches a high-risk component is classed from a declared map, flagged at plan and reviewed by a second independent seat whose yield is reported | Done | 3 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0308](EP0308-a-change-board-can-approve-a-release-from.md) | A change board can approve a release from one evidence pack built from the run's committed record, naming who is accountable for each change | Done | 2 | -- | 2026-11-14 | 2026-11-14 |
 | [EP0309](EP0309-an-escaped-defect-is-traced-to-the-unit.md) | An escaped defect is traced to the unit and verdict that let it through, and its cause reaches the next build and review | Done | 3 | -- | 2026-11-15 | 2026-11-15 |
-| [EP0310](EP0310-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: three routes in, an honest SUPPORT.md, a generated evidence page and a page for engineering leaders | Draft | 5 | -- | 2026-11-15 | 2026-11-15 |
-| [EP0311](EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0310](EP0310-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: three routes in, an honest SUPPORT.md, a generated evidence page and a page for engineering leaders | Done | 5 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0311](EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report | Done | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Draft | 1 | -- | 2026-11-15 | 2026-11-15 |
 

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 364 |
+| Open | 359 |
 | In Progress | 0 |
-| Fixed | 931 |
+| Fixed | 937 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1486** |
+| **Total** | **1487** |
 
 ## All Bugs
 
@@ -73,7 +73,7 @@
 | [BG0995](BG0995-refine-leaves-the-bold-acn-label-in-seeded.md) | refine leaves the bold **ACn** label in seeded AC headings, so a request written by the skill's own filer seeds '### AC1: **AC1** ...' (BG0291 incomplete) | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0996](BG0996-the-finding-filer-s-identifier-wrapper-pulls-trailing.md) | The finding filer's identifier wrapper pulls trailing punctuation into the code span: (`API_KEY_2`, `TOKEN_V2)` and `keep_alive.` | Open | Low | 2026-10-08 | 2026-10-08 |
 | [BG0997](BG0997-a-per-unit-engagement-floor-waiver-pasted-with.md) | A per-unit engagement-floor waiver pasted with the dashed v3 id does not waive the unit | Open | Medium | 2026-10-08 | 2026-10-08 |
-| [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Open | Low | 2026-10-08 | 2026-10-08 |
@@ -252,7 +252,7 @@
 | [BG1174](BG1174-the-v6-2-notes-test-exempts-the-whole.md) | The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1175](BG1175-docs-existing-users-md-has-a-from-6.md) | docs/existing-users.md has a From 6.0 to 6.1 section but none for 6.1 to 6.2, so the upgrade page stops one release short | Superseded | Low | 2026-11-02 | 2026-11-02 |
 | [BG1176](BG1176-eight-done-criteria-went-stale-in-the-6.md) | Eight Done criteria went stale in the 6.2 work: five Verify greps lost their sentences to run four's spec refreshes, and three criteria still name v6.1.0 or a folded fragment after the cut | Fixed | Low | 2026-11-02 | 2026-11-02 |
-| [BG1177](BG1177-readme-s-6-2-0-line-and-the.md) | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1177](BG1177-readme-s-6-2-0-line-and-the.md) | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check | Fixed | Low | 2026-11-02 | 2026-11-02 |
 | [BG1178](BG1178-known-issues-py-check-compares-the-page-with.md) | known_issues.py check compares the page with the corpus but never reads the release notes' count sentence, so a hand edit of that line goes unchecked until the tag | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1179](BG1179-the-trd-refresh-test-pins-vocabulary-rather-than.md) | The TRD refresh test pins vocabulary rather than US1101's corrected claims: the ADR-012 row, the ADR sentences and an aliased urlopen all slip past it | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1180](BG1180-the-prd-s-section-8-says-git-fetch.md) | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches | Open | Low | 2026-11-02 | 2026-11-02 |
@@ -553,15 +553,16 @@
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1476](BG1476-file-finding-stamps-raised-in-batch-as-none.md) | file_finding stamps Raised-in-batch as none open for a finding filed while a run is open | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1477](BG1477-lane-accept-agent-on-a-multi-unit-lane.md) | lane accept --agent on a multi-unit lane charges the builder's whole transcript to each unit, overriding the land's split by points | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1480](BG1480-docs-engineering-leaders-md-states-three-things-more.md) | docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1478](BG1478-security-md-s-supported-versions-table-lists-4.md) | SECURITY.md's Supported Versions table lists 4.x as current and 3.x as security-only, though the current major is 6 | Fixed | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1479](BG1479-help-verify-md-s-example-output-lacks-the.md) | help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s | Fixed | Low | 2026-11-15 | 2026-11-15 |
+| [BG1480](BG1480-docs-engineering-leaders-md-states-three-things-more.md) | docs/engineering-leaders.md states three things more strongly than the code does: pricing, the evidence pack's refusals and author stamping | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1481](BG1481-test-support-page-lets-four-planted-support-md.md) | test_support_page lets four planted SUPPORT.md defects through: a gh skills install line, an install command in prose, and Stack Overflow or IRC named in prose | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1482](BG1482-a-build-injected-lesson-class-can-no-longer.md) | A build-injected lesson class can no longer retire, so once more than INJECT_MAX build classes are live the digest cap drops the oldest builder traps | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1483](BG1483-a-run-s-repeat-of-a-lesson-class.md) | A run's repeat of a lesson class is counted only from a cited REJECT or retro Try item, so a repeat caught by the land or the push gate goes unrecorded | Open | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1484](BG1484-verify-ac-py-run-prints-three-lines-on.md) | verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary | Open | High | 2026-11-15 | 2026-11-15 |
+| [BG1484](BG1484-verify-ac-py-run-prints-three-lines-on.md) | verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1485](BG1485-a-shell-verify-line-run-with-s-still.md) | A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1487](BG1487-the-readme-s-opening-says-a-person-you.md) | The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md | Open | Medium | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

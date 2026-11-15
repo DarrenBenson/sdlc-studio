@@ -1,6 +1,6 @@
 # BG1177: README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** README.md, docs/release-notes-v6.2.0.md, tools/tests/test_lean_release_notes_v62.py, tools/tests/test_self_check_claim_wording.py, changelog.d/BG1177.md
@@ -26,10 +26,13 @@ Word the README line and the theme heading as the notes' opening line does: a re
 
 - [ ] **AC1** Given docs/release-notes-v6.2.0.md, when its first theme bullet and its theme table row are read, then both say a review brief can require the author's own check first, and neither says a reviewer judges only self-checked work.
   - **Verify:** pytest tools/tests/test_self_check_claim_wording.py::SelfCheckClaimWordingTests::test_the_62_notes_say_a_brief_can_require_the_self_check
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given README.md, when every line naming the author's self-check is read, then none says a reviewer judges only self-checked work.
   - **Verify:** pytest tools/tests/test_self_check_claim_wording.py::SelfCheckClaimWordingTests::test_the_readme_claims_no_enforced_self_check
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given the renamed theme, when the 6.2 notes' lead test runs, then it passes with THEMES keyed on the new heading and the same four units.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v62.py::ReleaseNotesTests::test_the_notes_lead_with_what_changed_for_you
+  - **Verified:** yes (2026-11-15)
 
 ## Impact
 

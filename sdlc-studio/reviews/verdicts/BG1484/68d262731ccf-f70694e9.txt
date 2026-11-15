@@ -1,0 +1,6 @@
+UNIT: BG1484
+BRIEF: 68d262731ccf-f70694e9
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged on this unit's own hunk in 92e59e38, the condition on cmd_run's total line (verify_ac.py:3704-3711) and RunTotalLineTests. The closing-line read in the same commit is BG1479's and is judged there. AC1 through the CLI on a fixture: one passing criterion prints two lines (the story line and the wrote line) and exits 0, two clean artefacts print the total line, and one artefact with a partly skipped criterion prints the total line naming it. No script parses run's total line, so dropping it on one clean artefact breaks no reader. Claim inventory: the BG1484 fragment, the code comment and the RunTotalLineTests docstring each match those probes. Mutation in an isolated copy, six mutants, all killed: always print the total (the pre-fix behaviour, killed by test_quiet_success), never print it, print only for several artefacts, print only for a partial skip, print for one or more artefacts, and drop the partly skipped names. test_quiet_success.py run in full with test_partial_skip_release_gate_count.py: 5 passed, 19 subtests\; verify_ac --dry-run ac=1 pass=1.

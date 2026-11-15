@@ -1,6 +1,6 @@
 # US1164: README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0702
 > **Created:** 2026-11-15
@@ -22,12 +22,16 @@
 
 - **AC1:** Given README.md, when its words are counted as `wc -w` counts them over the whole file, then there are at most 1,800.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_readme_is_at_most_1800_words
+  - **Verified:** yes (2026-11-15)
 - **AC2:** Given README.md, when its first section after the badges is read, then it offers three routes in the order evaluate, try, upgrade, and each links pages that exist: evaluate to docs/engineering-leaders.md and docs/evidence.md, try to docs/INSTALL.md, upgrade to docs/existing-users.md.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_first_section_offers_three_routes_each_to_a_page_that_exists
+  - **Verified:** yes (2026-11-15)
 - **AC3:** Given the routes section first, when the v6 lead test runs, then it reads the routes section where it read 'New in 6' and still finds the current release notes link, the loop link, the FAQ upgrade answer with `migrate --apply` and at least three routes to docs/existing-users.md, none calling v6 a drop-in.
   - **Verify:** pytest tools/tests/test_lean_public_docs_retired.py::PublicDocsTests::test_the_readme_leads_with_v6
+  - **Verified:** yes (2026-11-15)
 - **AC4:** Given text cut from the README, when the tests that pin it run, then each passes where the text now lives, and none has had an assertion removed: the 6.3 cost paragraph, the coverage sentence, the Copilot row, the release-notes list and the bolded version declaration.
   - **Verify:** pytest tools/tests/test_lean_docs_v63.py::DocsV63Tests::test_the_public_pages_name_what_63_adds
+  - **Verified:** yes (2026-11-15)
 
 ## Notes
 

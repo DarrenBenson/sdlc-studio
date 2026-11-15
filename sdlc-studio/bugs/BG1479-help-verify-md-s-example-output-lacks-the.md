@@ -1,6 +1,6 @@
 # BG1479: help/verify.md's example output lacks the unspecified= and partly_skipped= fields verify_ac prints, and the all-skipped check reads test output under -s
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_help_example.py, changelog.d/BG1395.md, changelog.d/BG1396.md, changelog.d/BG1479.md
@@ -27,9 +27,12 @@ Regenerate the help page's examples from the tool's real output, and read the al
 
 - [ ] **AC1** Given a pytest Verify line run with `-s` whose test prints a bare `1 skipped in 0.01s` line (and, separately, a `no tests ran in` line) and then passes, when `verify_ac.py run` runs that criterion, then it passes: the all-skipped verdict is read from pytest's final summary line only, as the partial-skip read is. Fails on: a printed summary-shaped line read as an all-skipped run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC2** Given help/verify.md, when its example `run` and `report` output is compared with what `verify_ac.py` prints for the same fixture, then each example story line carries the `unspecified=` and `partly_skipped=` fields and the `run` example carries the `total:` line. Fails on: an example line missing a field the tool prints.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_help_example.py
+  - **Verified:** yes (2026-11-15)
 - [ ] **AC3** Given changelog.d/BG1395.md and changelog.d/BG1396.md, when each is read against the code, then neither claims what the code does not do: BG1395's says the count is printed and recorded by `verify_ac.py` and makes no claim that `gate.py --release` reads it, and BG1396's claim about summary-shaped lines under `-s` is true once AC1 holds. Fails on: either fragment naming a reader or a case the code does not serve.
+  - **Verify:** manual read changelog.d/BG1395.md and changelog.d/BG1396.md against verify_ac.py and gate.py; judged TRUE by the QA seat in verdict 9b72a4d2d2bf-d5c6eb43
 
 ## Revision History
 

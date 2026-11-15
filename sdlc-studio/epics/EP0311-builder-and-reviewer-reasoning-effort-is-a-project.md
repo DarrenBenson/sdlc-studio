@@ -1,6 +1,6 @@
 # EP0311: Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 6
 > **Parent:** CR0699
 > **Created:** 2026-11-15
@@ -15,7 +15,7 @@ Decomposed from CR0699. Delivers the work CR0699 requested.
 ## Story Breakdown
 
 - [x] [US1165: A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision](../stories/US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md)
-- [ ] [US1166: Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record](../stories/US1166-each-run-s-report-of-record-states-the.md)
+- [x] [US1166: Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record](../stories/US1166-each-run-s-report-of-record-states-the.md)
 
 ## Acceptance Criteria (Epic Level)
 

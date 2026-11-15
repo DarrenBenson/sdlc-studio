@@ -1,6 +1,6 @@
 # EP0310: The front door speaks to a head of engineering: three routes in, an honest SUPPORT.md, a generated evidence page and a page for engineering leaders
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 15
 > **Parent:** CR0702
 > **Created:** 2026-11-15
@@ -18,7 +18,7 @@ Decomposed from CR0702. Delivers the work CR0702 requested.
 - [x] [US1161: docs/evidence.md is generated from this repository's signed reports and explains a partial verdict, the wait for a signature and how to regenerate it](../stories/US1161-docs-evidence-md-is-generated-from-this-repository.md)
 - [x] [US1162: docs/engineering-leaders.md explains change approval, separation of duties, the signed report and cost in dollars a point, each claim linked to the mechanism that enforces it](../stories/US1162-docs-engineering-leaders-md-explains-change-approval-separation.md)
 - [x] [US1163: SUPPORT.md says what support exists, where to ask and what is not supported, naming only channels the repository has](../stories/US1163-support-md-says-what-support-exists-where-to.md)
-- [ ] [US1164: README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade](../stories/US1164-readme-md-is-about-1-500-words-and.md)
+- [x] [US1164: README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade](../stories/US1164-readme-md-is-about-1-500-words-and.md)
 
 ## Acceptance Criteria (Epic Level)
 

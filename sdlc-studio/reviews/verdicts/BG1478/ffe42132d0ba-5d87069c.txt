@@ -1,0 +1,6 @@
+UNIT: BG1478
+BRIEF: ffe42132d0ba-5d87069c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 met and exercised. The table now reads 6.x Yes, 5.x security fixes only, older than 5.0 no (SECURITY.md:28-31), and the skill reports 6.3.0 from SKILL.md frontmatter (the latest tag is v6.3.0). The named suite passes (7 passed) and verify_ac --dry-run reports ac=1 pass=1. Mutation by probe, outside the tree: the base ref's SECURITY.md run through problems() against 6.3.0 is refused on all three rows, the live page against 5.0.0 is refused, and the live page with its first row set to 5.x is refused, so the check fails on the stale table the bug describes and on the next major. The test pins the third row too (older than the previous major is unsupported), which the policy text states and the AC does not forbid. The version is read through tools/check_versions.py from_skill_md, not hard-coded, as the changelog fragment says.
