@@ -6,7 +6,7 @@
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, tools/tests/test_doc_claims.py, tools/tests/test_precommit_floor_pending.py, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, tools/tests/test_skill_tests_env.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py, changelog.d/US1167.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, tools/tests/test_doc_claims.py, tools/tests/test_precommit_floor_pending.py, .claude/skills/sdlc-studio/scripts/tests/test_root_census.py, tools/tests/test_skill_tests_env.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, tools/tests/test_commit_msg_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py, changelog.d/US1167.md, tools/tests/test_precommit_selection.py
 > **Epic:** EP0312
 > **Points:** 3
 > **Persona:** Abena Osei
