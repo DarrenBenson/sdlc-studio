@@ -386,9 +386,12 @@ else
   # running from inside tools/tests would move the cwd these fixtures resolve against.
   if [ -n "$tool_sel" ]; then
     tool_mods=""
+    # A class sweep arrives as a pytest node id, `dir/test_x.py::Class`; unittest loads the
+    # same class by the dotted name `test_x.Class`.
     for f in $tool_sel; do
-      base="${f##*/}"
-      tool_mods="$tool_mods ${base%.py}"
+      path="${f%%::*}"; node="${f#"$path"}"
+      base="${path##*/}"
+      tool_mods="$tool_mods ${base%.py}${node//::/.}"
     done
     set -- python3 -m unittest $tool_mods
   else

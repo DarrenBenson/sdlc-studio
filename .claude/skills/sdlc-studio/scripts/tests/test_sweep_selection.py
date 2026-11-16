@@ -121,7 +121,23 @@ class SweepSelectionTests(unittest.TestCase):
                 text = (REPO / path).read_text(encoding="utf-8")
                 self.assertRegex(text, rf"(?m)^class {re.escape(cls)}\b",
                                  f"{selector}: the marker names a class the module lacks")
+        # The parsed times are the times the markers write, read here by a pattern of the test's
+        # own, so a parser that under-reads them (zero, or a figure cut short) cannot keep the
+        # total inside the budget.
+        written: dict = {}
+        for path in sorted({m["module"] for m in markers}):
+            head = (REPO / path).read_text(encoding="utf-8").splitlines()[:gate._CENSUS_HEAD_LINES]
+            written[path] = [float(w[:-1]) for line in head
+                             if re.match(r"#\s*test-selection:\s*sweep\b", line)
+                             for w in line.split() if re.fullmatch(r"\d+(?:\.\d+)?s", w)]
+        read: dict = {}
+        for m in markers:
+            read.setdefault(m["module"], []).append(m["seconds"])
+        self.assertEqual(written, read, "the parsed times are not the times the markers write")
+        self.assertTrue(all(s > 0 for times in written.values() for s in times), written)
         budget = gate.sweep_budget(markers)
+        self.assertAlmostEqual(sum(s for times in written.values() for s in times),
+                               budget["seconds"], places=2)
         self.assertEqual([], budget["unrecorded"], "a sweep with no recorded time")
         self.assertLessEqual(budget["seconds"], gate.SWEEP_BUDGET_SECONDS)
         self.assertEqual(30, gate.SWEEP_BUDGET_SECONDS)

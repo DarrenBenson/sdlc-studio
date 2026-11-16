@@ -211,6 +211,49 @@ class SelectionTests(unittest.TestCase):
         self.assertRegex(out, r"\bok\S*\s+(unit-tests|tool-tests)\b", out)
         self.assertTrue(swept, f"the docs-only commit did not run the sweep:\n{out}")
 
+    def test_a_docs_only_commit_runs_class_sweeps_without_pytest(self) -> None:
+        """A clone without pytest takes the hook's unittest fallback, and a class sweep reaches
+        it as a `path::Class` node id: both lanes must load that class, and only it. The real
+        tools/skill-tests.sh runs the skill lane, and the skill sweep's one leaked line is held
+        to its module's noise budget. MUTANTS: hand unittest the node id as written (it cannot
+        load it); strip the class and run the whole module (its sibling fails); read the noise
+        budget for the dotted name, which has no entry and so allows no leak."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _hook_fixture(Path(d))
+            for name in ("skill-tests.sh", "test_noise.py"):
+                _write(root, f"tools/{name}", (REPO / "tools" / name).read_text(encoding="utf-8"))
+            _write(root, "tools/test-noise-baseline.json",
+                   '{"_total": 0, "test_skill_sweep": 1}\n')
+            leak = "        sys.stderr.write('error: the leak its module has on record\\n')\n"
+            for rel, cls, body in (("tools/tests/test_tool_sweep.py", "ToolSweepTests", ""),
+                                   (f"{SKILL}/tests/test_skill_sweep.py", "SkillSweepTests", leak)):
+                _write(root, rel, "# test-selection: " + f"sweep {cls} 0.1s\n"
+                       "import sys\nimport unittest\nfrom pathlib import Path\n\n\n"
+                       f"class {cls}(unittest.TestCase):\n    def test_sweep(self):\n{body}"
+                       f"        Path(__file__).with_name('{cls}.ran').write_text('yes')\n\n\n"
+                       "class SiblingTests(unittest.TestCase):\n    def test_sibling(self):\n"
+                       "        self.fail('the whole module ran, not the marked class')\n")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-q", "--no-verify", "-m", "two class sweeps"], cwd=root)
+            hidden = Path(d) / "no-pytest"
+            _write(hidden, "pytest.py", "raise ImportError('pytest is hidden for this test')\n")
+            env = {**_hook_env(), "PYTHONPATH": str(hidden)}
+            probe = subprocess.run([sys.executable, "-c", "import pytest"], env=env,
+                                   capture_output=True, text=True, timeout=60)
+            self.assertNotEqual(0, probe.returncode, "pytest is not hidden, so the fallback "
+                                "is never taken and this test proves nothing")
+            _write(root, "docs/guide.md", "# Guide, again\n")
+            gitutil.git(["add", "-A"], cwd=root)
+            out = subprocess.run(["git", "-C", str(root), "commit", "-m", "docs: paperwork"],
+                                 capture_output=True, text=True, env=env, timeout=600)
+            text = out.stdout + out.stderr
+            ran = {p.name for p in root.rglob("*.ran")}
+        self.assertEqual(0, out.returncode, text)
+        self.assertNotRegex(text, r"\bunit-tests\b", "pytest ran, so the fallback was not taken")
+        self.assertRegex(text, r"\bok\S*\s+skill-tests\b", text)
+        self.assertRegex(text, r"\bok\S*\s+tool-tests\b", text)
+        self.assertEqual({"ToolSweepTests.ran", "SkillSweepTests.ran"}, ran, text)
+
     def test_the_budget_is_reported_not_enforced(self) -> None:
         """AC3. MUTANTS: set `fail` when over budget; drop the report; run the selection
         serially where pytest-xdist is installed; drop the selected suite lane; ignore the

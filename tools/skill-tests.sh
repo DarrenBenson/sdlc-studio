@@ -99,10 +99,14 @@ runner=(python3)
 [ "${SKILL_TESTS_COVERAGE:-}" = 1 ] && runner=(python3 -m coverage run --source="$skill")
 
 if [ "$#" -gt 0 ]; then
-  mods=""
+  # A class sweep arrives as a pytest node id, `dir/test_x.py::Class`: unittest loads it by the
+  # dotted name `test_x.Class`, and the noise budget below is still read for its module.
+  mods=""; budget_mods=""
   for f in "$@"; do
-    base="${f##*/}"
-    mods="$mods ${base%.py}"
+    path="${f%%::*}"; node="${f#"$path"}"
+    base="${path##*/}"
+    mods="$mods ${base%.py}${node//::/.}"
+    case " $budget_mods " in *" ${base%.py} "*) ;; *) budget_mods="$budget_mods ${base%.py}" ;; esac
   done
   out="$(PYTHONPATH="$skill/tests${PYTHONPATH:+:$PYTHONPATH}" "${runner[@]}" -m unittest $mods 2>&1)"
   rc=$?
@@ -201,7 +205,7 @@ fi
 # three captures down, 106 -> 104.
 if [ -n "${mods:-}" ]; then
   # shellcheck disable=SC2086
-  printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget" --select $mods
+  printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget" --select $budget_mods
 else
   printf '%s\n' "$out" | python3 "$(dirname "$0")/test_noise.py" --budget "$budget"
 fi
