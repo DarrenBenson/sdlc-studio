@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 376 |
+| Open | 377 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 53 |
 | Superseded | 52 |
-| **Total** | **1514** |
+| **Total** | **1515** |
 
 ## All Bugs
 
@@ -590,6 +590,7 @@
 | [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

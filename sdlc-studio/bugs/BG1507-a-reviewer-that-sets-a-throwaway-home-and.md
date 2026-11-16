@@ -15,7 +15,7 @@ Several QA reviewer agents in runs ten to fifteen isolated a test run with `expo
 
 ## Steps to Reproduce
 
-1. On a host with `XDG_CONFIG_HOME`=/home/<user>/.config and no ~/.gitconfig, run: export HOME=$(mktemp -d); git config --global user.name x
+1. On a host with `XDG_CONFIG_HOME`=/home/<user>/.config and no ~/.gitconfig, set HOME to a new empty directory made with mktemp -d, then run git config --global user.name x
 2. git config --file /home/<user>/.config/git/config user.name prints x.
 
 ## Proposed Fix

@@ -11,7 +11,7 @@
 
 ## Summary
 
-The v6.4.0 tag push's release boundary (gate on devserver1, f5317b26) failed only the module-alone lane, on two of its fourteen serial-phase modules: `test_lean_test_selection` `SchedulingTests.test_a_sibling_temp_file_cannot_redden_the_leak_check` ('5 != 0 : the sibling never wrote, so a pass proves nothing') and `test_verify_lane_batch` `ProjectConfigurationTests.test_a_serial_only_mark_from_a_hook_runs_in_the_serial_phase` ('the parallel phase exited 1 with no usable ...'). Run alone on the same host with the gate's Python 3.14.4, each passed twice; locally they pass too. The same commit had passed gate.py --release and the push boundary. The refusal also named a full log at /home/ops/sdlc-gate/local/<clone>/boundary-suite-last.log that did not exist when read minutes later.
+The v6.4.0 tag push's release boundary (gate on devserver1, f5317b26) failed only the module-alone lane, on two of its fourteen serial-phase modules: `test_lean_test_selection` `SchedulingTests.test_a_sibling_temp_file_cannot_redden_the_leak_check` (5 != 0, 'the sibling never wrote, so a pass proves nothing') and `test_verify_lane_batch` `ProjectConfigurationTests.test_a_serial_only_mark_from_a_hook_runs_in_the_serial_phase` (its message begins 'the parallel phase exited 1 with no usable', the rest clipped by the gate). Run alone on the same host with the gate's Python 3.14.4, each passed twice; locally they pass too. The same commit had passed gate.py --release and the push boundary. The refusal also named a full log at /home/ops/sdlc-gate/local/<clone>/boundary-suite-last.log that did not exist when read minutes later.
 
 ## Steps to Reproduce
 
