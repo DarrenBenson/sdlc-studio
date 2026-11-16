@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-15
+**Last Updated:** 2026-11-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 36 |
+| Proposed | 37 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 557 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **710** |
+| **Total** | **711** |
 
 ## All Changes
 
@@ -122,6 +122,7 @@
 | [CR-0708](CR0708-file-finding-writes-criteria-a-plan-can-take.md) | file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line | Proposed | Medium | Enhancement | 2026-11-15 | -- |
 | [CR-0709](CR0709-add-lessons-py-reinstate-put-a-retired-class.md) | Add lessons.py reinstate: put a retired class back in force with a recorded run and reason | Proposed | Low | Feature | 2026-11-15 | -- |
 | [CR-0710](CR0710-cr0699-remainder-the-bench-runner-takes-a-builder.md) | CR0699 remainder: the bench runner takes a builder-effort arm and reports priced tokens per point, review rounds and the held-back score per arm | Proposed | Medium | Feature | 2026-11-15 | -- |
+| [CR-0711](CR0711-show-each-open-lane-s-liveness-so-a.md) | Show each open lane's liveness, so a stalled builder is caught in minutes rather than hours | Proposed | Medium | Feature | 2026-11-16 | -- |
 
 ## Archived Releases
 
