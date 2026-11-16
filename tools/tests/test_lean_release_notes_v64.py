@@ -21,10 +21,12 @@ import json
 import re
 import shlex
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 SKILL_REL = ".claude/skills/sdlc-studio"
@@ -134,16 +136,22 @@ print(json.dumps({"deterministic": [{"detail": "%s"}]}))
 
 def shipped(rel: str, tag: str = "v6.4.0") -> str:
     """`rel` at `tag` once this clone holds it, else, for v6.4.0 alone, as this tree holds it.
-    An earlier release is never this tree: a tree that is not a git clone holds none, so the
-    check reading it is skipped, naming why, and a clone lacking its tag fails."""
-    if _run("git", "-C", str(REPO), "rev-parse", "-q", "--verify",
-            f"refs/tags/{tag}").returncode != 0:
+    An earlier release is never this tree. A tree holding no `.git`, which git does not read as a
+    work tree, is not a clone and holds none, so the check reading it is skipped, naming why. A
+    clone fails instead: where its git fails, naming the failure, and where it lacks the tag."""
+    ref = _run("git", "-C", str(REPO), "rev-parse", "-q", "--verify", f"refs/tags/{tag}")
+    if ref.returncode != 0:
         if tag == "v6.4.0":
             return (REPO / rel).read_text(encoding="utf-8")
         top = _run("git", "-C", str(REPO), "rev-parse", "--show-toplevel")
-        if top.returncode != 0 or Path(top.stdout.strip()).resolve() != REPO.resolve():
+        if not (REPO / ".git").exists() and (
+                top.returncode != 0 or Path(top.stdout.strip()).resolve() != REPO.resolve()):
             raise unittest.SkipTest(f"this tree is not a git clone, so it holds no {tag} "
                                     f"tree to read {rel} from")
+        if top.returncode != 0 or ref.returncode != 1:
+            bad = top if top.returncode != 0 else ref
+            raise AssertionError(f"git failed in this clone reading the {tag} tag for {rel}: "
+                                 f"exit {bad.returncode}: {bad.stderr.strip()}")
         raise AssertionError(f"this clone has no {tag} tag to read {rel} from: fetch tags")
     proc = _run("git", "-C", str(REPO), "show", f"{tag}:{rel}")
     if proc.returncode != 0:
@@ -186,19 +194,27 @@ def _flat(tree: dict, prefix: str = "") -> dict[str, str]:
     return out
 
 
-def defaults(reference: str | None = None, new: str | None = None,
-             old: str | None = None) -> tuple[dict, dict]:
-    """(the default `reference-config.md` states for each key AC3 names, or None where it states
-    none; each key 6.4's `config-defaults.yaml` holds and 6.3.0's does not, with its value)."""
-    import yaml  # noqa: PLC0415 - config.py, whose defaults this reads, needs it too
-    rel = f"{SKILL_REL}/templates/config-defaults.yaml"
+def stated_defaults(reference: str | None = None) -> dict:
+    """The default 6.4's `reference-config.md` states for each key AC3 names, or None where it
+    states none. No earlier release is read, so this holds in a tree that is not a git clone."""
     reference = shipped(f"{SKILL_REL}/reference-config.md") if reference is None else reference
-    new = shipped(rel) if new is None else new
-    old = shipped(rel, "v6.3.0") if old is None else old
     stated = {}
     for key, rx in REFERENCE_DEFAULTS.items():
         m = re.search(rx, reference, re.M)
         stated[key] = m.group(1) if m else None
+    return stated
+
+
+def defaults(reference: str | None = None, new: str | None = None,
+             old: str | None = None) -> tuple[dict, dict]:
+    """(`stated_defaults`; each key 6.4's `config-defaults.yaml` holds and 6.3.0's does not, with
+    its value). 6.3.0's is read from the v6.3.0 tag, so a check calling this is skipped where
+    `shipped` finds no git clone."""
+    import yaml  # noqa: PLC0415 - config.py, whose defaults this reads, needs it too
+    rel = f"{SKILL_REL}/templates/config-defaults.yaml"
+    stated = stated_defaults(reference)
+    new = shipped(rel) if new is None else new
+    old = shipped(rel, "v6.3.0") if old is None else old
     was = _flat(yaml.safe_load(old) or {})
     added = {k: v for k, v in _flat(yaml.safe_load(new) or {}).items() if k not in was}
     return stated, added
@@ -274,17 +290,13 @@ def breaking_problems(text: str, entries: list[tuple[str, str]]) -> list[str]:
     return problems
 
 
-def changed_problems(text: str, entries: list[tuple[str, str]],
-                     configured: dict | None = None) -> list[str]:
+def changed_problems(text: str, entries: list[tuple[str, str]]) -> list[str]:
     """AC2: each listed change a 6.3 habit meets in exactly one bullet, beside what to do
-    instead, no bullet but a listed change, no text but the no-Breaking paragraph outside them,
-    and each changed default equal to the one the configuration states."""
+    instead, no bullet but a listed change, and no text but the no-Breaking paragraph outside
+    them. `default_problems` judges the defaults the section states."""
     body = section(text, r"^Changed defaults and new refusals$")
     if body is None:
         return ["no 'Changed defaults and new refusals' section"]
-    if configured is None:
-        stated, added = defaults()
-        configured = {**added, **{k: v for k, v in stated.items() if v is not None}}
     found, paras = _blocks(body)
     bullets = [" ".join(b.split()) for b in found]
     problems = [f"the section holds text outside its change bullets: {' '.join(p.split())[:80]!r}"
@@ -311,12 +323,25 @@ def changed_problems(text: str, entries: list[tuple[str, str]],
                      if not re.search(rx, hit.partition("Instead:")[0])]
         if not re.search(instead, hit.partition("Instead:")[2]):
             problems.append(f"{label} is named with no replacement beside it")
-    flat = " ".join(body.split())
-    for rx, key in CHANGED_DEFAULTS.items():
-        problems += [f"the section says {key} defaults to {v!r}, where the configuration states "
-                     f"{configured.get(key)!r}" for v in re.findall(rx, flat)
-                     if v != configured.get(key)]
     return problems + breaking_problems(text, entries)
+
+
+def configured(stated: dict, added: dict) -> dict:
+    """Each key's default as the configuration states it: `reference-config.md`'s where it
+    states one, else the value 6.4's shipped defaults add."""
+    return {**added, **{k: v for k, v in stated.items() if v is not None}}
+
+
+def default_problems(text: str, config: dict) -> list[str]:
+    """AC2: each changed default the 'Changed defaults and new refusals' section states equal to
+    the one `config` holds for its key."""
+    body = section(text, r"^Changed defaults and new refusals$")
+    if body is None:
+        return ["no 'Changed defaults and new refusals' section"]
+    flat = " ".join(body.split())
+    return [f"the section says {key} defaults to {v!r}, where the configuration states "
+            f"{config.get(key)!r}" for rx, key in CHANGED_DEFAULTS.items()
+            for v in re.findall(rx, flat) if v != config.get(key)]
 
 
 def _steps(text: str) -> list[tuple[str, list[str]]]:
@@ -361,9 +386,9 @@ def config_problems(old: str, stated: dict, added: dict) -> list[str]:
     return problems
 
 
-def upgrade_problems(text: str, configured: tuple[dict, dict] | None = None) -> list[str]:
-    """AC3: reinstall, `migrate` then `migrate --apply`, what each reports for a 6.3 project as
-    the notes say it, and the keys 6.4 adds with their defaults."""
+def upgrade_problems(text: str) -> list[str]:
+    """AC3: reinstall, `migrate` then `migrate --apply`, and what each reports for a 6.3 project
+    as the notes say it. `config_problems` judges the keys the path names with their defaults."""
     old = section(text, r"^Upgrading from 6\.3$")
     if old is None:
         return ["no 'Upgrading from 6.3' section"]
@@ -394,8 +419,7 @@ def upgrade_problems(text: str, configured: tuple[dict, dict] | None = None) -> 
         problems.append("the path does not say `migrate --apply` writes the stamp and nothing else")
     if re.search(r"(?i)\bremoves\b", apply):
         problems.append("the path says `migrate --apply` removes something")
-    stated, added = defaults() if configured is None else configured
-    return problems + config_problems(old, stated, added)
+    return problems
 
 
 def step_problems(text: str, scripts: Path, project: Path) -> list[str]:
@@ -600,9 +624,11 @@ class ReleaseNotesTests(unittest.TestCase):
         """AC2. MUTANTS: a section copied from the entries filed under Changed alone, which never
         names the replayed verdict file (filed under Added); the Copilot billing bullet with its
         'Instead:' cut; an added bullet whose 'Instead:' says nothing, one no listed change
-        names, and a change given as a paragraph; `tokens` read as `requests`; a 'Breaking
-        changes' heading no fragment records; the no-Breaking statement cut, and kept beside a
-        Breaking entry; a bullet naming two listed changes."""
+        names, and a change given as a paragraph; a 'Breaking changes' heading no fragment records;
+        the no-Breaking statement cut, and kept beside a Breaking entry; a bullet naming two
+        listed changes; `tokens` read as `requests`, against `reference-config.md`. Each changed
+        default is then judged against the configuration, whose keys 6.4 adds are read against
+        v6.3.0's defaults: that subtest alone is skipped in a tree that is not a git clone."""
         entries = entries_64(self.changelog)
         self.assertGreater(len(entries), 1, "premise: the 6.4 entries are read")
         self.assertEqual([], [s for s, _b in entries if s in NOT_FILED])
@@ -624,10 +650,6 @@ class ReleaseNotesTests(unittest.TestCase):
                 self.assertFlags(changed_problems(self.mutant(tail, f"{bullet}{tail}"), entries),
                                  expected)
         self.assertFlags(changed_problems(self.mutant(
-            "`pricing.copilot_billing` defaults to `tokens`.**",
-            "`pricing.copilot_billing` defaults to `requests`.**"), entries),
-            "defaults to 'requests'")
-        self.assertFlags(changed_problems(self.mutant(
             "\n## Upgrading from 6.3", "\n## Breaking changes\n\nNone.\n\n## Upgrading from 6.3"),
             entries), "a heading claims a breaking change")
         self.assertFlags(changed_problems(self.mutant(
@@ -641,17 +663,24 @@ class ReleaseNotesTests(unittest.TestCase):
             entries), "names 2 listed changes")
         self.assertEqual([], changed_problems(self.text, entries))
 
+        stated = configured(stated_defaults(), {})
+        self.assertFlags(default_problems(self.mutant(
+            "`pricing.copilot_billing` defaults to `tokens`.**",
+            "`pricing.copilot_billing` defaults to `requests`.**"), stated),
+            "defaults to 'requests', where the configuration states 'tokens'")
+        with self.subTest("each changed default, with the keys 6.4 adds read against v6.3.0"):
+            self.assertEqual([], default_problems(self.text, configured(*defaults())))
+
     def test_the_63_upgrade_path_is_given(self) -> None:
         """AC3. MUTANTS: notes telling a 6.3 project a reinstall is all it needs (no `migrate`
         lines); the two `migrate` steps in the wrong order; a step naming a flag the shipped CLI
         refuses (`--write` for `--apply`); the reinstall URL misspelt (`instal.sh`); `--apply`
         said to remove a config key; the dry run's version stamp misquoted; a default
-        `reference-config.md` contradicts (`requests` for `tokens`); a key 6.4 adds left out
-        (`sprint.fresh_session`); `reference-config.md` with a default moved; a `migrate.py`
-        that writes a file of its own. The notes' own steps are then run, in their order, on a
-        project v6.3.0's `init.py` made."""
-        stated, added = defaults()
-        self.assertTrue(added, "premise: 6.4's shipped defaults add keys")
+        `reference-config.md` contradicts (`requests` for `tokens`); `reference-config.md` with a
+        default moved; a key 6.4 adds left out (`sprint.fresh_session`); a `migrate.py` that
+        writes a file of its own. The keys 6.4 adds are read against v6.3.0's defaults, and the
+        notes' own steps are run, in their order, on a project v6.3.0's `init.py` made: in a tree
+        that is not a git clone those two are skipped, and every check of the text still runs."""
         old = section(self.text, r"^Upgrading from 6\.3$")
         steps = [ln for ln in old.splitlines() if "/migrate.py" in ln and ln.startswith("python3")]
         self.assertEqual(2, len(steps), steps)
@@ -664,18 +693,26 @@ class ReleaseNotesTests(unittest.TestCase):
             "and changes nothing else.", "and removes `review.policy`.")), "removes something")
         self.assertFlags(upgrade_problems(self.mutant("main/install.sh |", "main/instal.sh |")),
                          "not one docs/INSTALL.md gives")
-        self.assertFlags(upgrade_problems(self.mutant(
+        self.assertEqual([], upgrade_problems(self.text))
+
+        # The defaults `reference-config.md` states, judged with no key 6.4 adds given.
+        path = lambda text: section(text, r"^Upgrading from 6\.3$")  # noqa: E731
+        self.assertFlags(config_problems(path(self.mutant(
             "- `pricing.copilot_billing`, default `tokens`:",
-            "- `pricing.copilot_billing`, default `requests`:")),
+            "- `pricing.copilot_billing`, default `requests`:")), stated_defaults(), {}),
             "reference-config.md states 'tokens'")
-        start = self.text.index("- `sprint.fresh_session`, default")
-        dropped = self.text[:start] + self.text[self.text.index("\n## Known issues", start):]
-        self.assertFlags(upgrade_problems(dropped), "does not name sprint.fresh_session")
         moved = re.sub(r"(?m)^(\| `personas\.memory\.inject_max` \| )5 ", r"\g<1>7 ",
                        shipped(f"{SKILL_REL}/reference-config.md"))
-        self.assertFlags(upgrade_problems(self.text, defaults(reference=moved)),
+        self.assertFlags(config_problems(old, stated_defaults(moved), {}),
                          "reference-config.md states '7'")
-        self.assertEqual([], upgrade_problems(self.text))
+        with self.subTest("the keys 6.4 adds, read against v6.3.0's defaults"):
+            stated, added = defaults()
+            self.assertTrue(added, "premise: 6.4's shipped defaults add keys")
+            start = self.text.index("- `sprint.fresh_session`, default")
+            dropped = self.text[:start] + self.text[self.text.index("\n## Known issues", start):]
+            self.assertFlags(config_problems(path(dropped), stated, added),
+                             "does not name sprint.fresh_session")
+            self.assertEqual([], config_problems(old, stated, added))
 
         self.needs_cli()
         scripts = _FIX["scripts"]
@@ -747,6 +784,89 @@ class ReleaseNotesTests(unittest.TestCase):
             self.assertEqual([], breaking_problems(self.text, after))
             precut = "## [Unreleased]\n\n## [6.3.0] - 2026-11-08\n"
             self.assertEqual([("Breaking", late)], entries_64(precut, frags))
+
+
+class EarlierReleaseTests(unittest.TestCase):
+    """`shipped` reading a release before 6.4 skips only where both signals say the tree is not a
+    git clone: it holds no `.git`, and git does not read it as a work tree."""
+
+    @staticmethod
+    def git(verify: int, top: str | None):
+        """A git whose `rev-parse --verify` exits `verify` and whose `--show-toplevel` prints `top`,
+        or exits 128 where `top` is None, as a git refusing a repository it does not trust does."""
+        def run(*argv: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+            refused = "fatal: detected dubious ownership in repository"
+            if "--verify" in argv:
+                return subprocess.CompletedProcess(argv, verify, "",
+                                                   "" if verify in (0, 1) else refused)
+            if "--show-toplevel" in argv:
+                return (subprocess.CompletedProcess(argv, 128, "", refused) if top is None
+                        else subprocess.CompletedProcess(argv, 0, f"{top}\n", ""))
+            raise AssertionError(f"an unexpected git call: {argv}")
+        return run
+
+    def outcome(self, root: Path, git) -> str:
+        """What `shipped` does reading v6.3.0 in `root` under `git`: skip or fail, with why."""
+        with mock.patch.dict(shipped.__globals__, REPO=root, _run=git):
+            try:
+                shipped("docs/notes.md", "v6.3.0")
+            except unittest.SkipTest as e:
+                return f"skip: {e}"
+            except AssertionError as e:
+                return f"fail: {e}"
+        return "read"
+
+    def test_only_a_tree_both_signals_call_no_clone_skips(self) -> None:
+        """MUTANTS: the skip decided from a failing git alone, so a clone whose git exits 128
+        skipped; the skip decided from a missing `.git` alone, so a tree git reads as its work
+        tree skipped; a clone's git failure reported as a missing tag, without its exit status
+        or message."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertRegex(self.outcome(root, self.git(128, None)), r"^skip: .*not a git clone")
+            self.assertRegex(self.outcome(root, self.git(1, d)), r"^fail: .*fetch tags")
+            (root / ".git").mkdir()
+            for top in (None, d):
+                with self.subTest(top=top):
+                    self.assertRegex(self.outcome(root, self.git(128, top)),
+                                     r"^fail: git failed in this clone.*exit 128.*dubious")
+            self.assertRegex(self.outcome(root, self.git(1, d)),
+                             r"^fail: .*no v6\.3\.0 tag.*fetch tags")
+
+
+class WithoutAnEarlierReleaseTests(unittest.TestCase):
+    """Where v6.3.0's defaults cannot be read, only the checks reading them skip: every check of
+    the notes' text still runs, so a text defect fails there as it does in a clone."""
+
+    def outcome(self, name: str, notes: str) -> unittest.TestResult:
+        """`ReleaseNotesTests.<name>` run on `notes`, with v6.3.0's defaults unreadable."""
+        def unreadable(*_args: object, **_kwargs: object) -> tuple[dict, dict]:
+            raise unittest.SkipTest("no v6.3.0 tree to read")
+        result = unittest.TestResult()
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "release-notes-v6.4.0.md"
+            path.write_text(notes, encoding="utf-8")
+            with mock.patch.dict(shipped.__globals__, NOTES=path, defaults=unreadable):
+                ReleaseNotesTests(name).run(result)
+        return result
+
+    def test_a_text_defect_fails_where_the_defaults_cannot_be_read(self) -> None:
+        """MUTANTS: AC2 or AC3 reading v6.3.0's defaults before its text checks, so a tree that
+        is not a git clone skipped the whole test and passed notes with the reinstall URL
+        misspelt (`instal.sh`) or the Copilot bullet's `Instead:` renamed."""
+        text = NOTES.read_text(encoding="utf-8")
+        for name, old, new in (
+                ("test_the_63_upgrade_path_is_given", "main/install.sh |", "main/instal.sh |"),
+                ("test_every_changed_behaviour_names_what_to_do",
+                 "\n  Instead: a plan still billed", "\n  Otherwise: a plan still billed")):
+            with self.subTest(name):
+                self.assertEqual(1, text.count(old), f"mutant anchor not unique: {old!r}")
+                result = self.outcome(name, text.replace(old, new))
+                self.assertEqual(1, len(result.failures) + len(result.errors),
+                                 f"a text defect passed with the defaults unreadable: {result}")
+        result = self.outcome("test_every_changed_behaviour_names_what_to_do", text)
+        self.assertTrue(result.wasSuccessful(), result.failures + result.errors)
+        self.assertEqual(["no v6.3.0 tree to read"], [why for _t, why in result.skipped])
 
 
 if __name__ == "__main__":

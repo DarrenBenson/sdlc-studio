@@ -462,7 +462,7 @@ linking its reference section. `help/sprint.md` names `routing.effort` and
 `docs/engineering-leaders.md` and `docs/evidence.md`, the evidence section of
 `docs/why-sdlc-studio.md` names the release evidence pack, and `docs/existing-users.md` opens
 with a "From 6.3 to 6.4" section.
-- The README is a front door of about 1,300 words, down from over 5,200 (US1164). Its first section
+- The README is a front door of about 1,500 words, down from over 5,200 (US1164). Its first section
   offers three routes in, in order: evaluate (the engineering-leaders page and the evidence
   from the runs), try (the install guide) and upgrade (the existing-users page). The longer
   passages moved rather than went: how it works, the common questions, what you can do, the
@@ -601,12 +601,12 @@ checks VALID in a fresh clone, because `check` compares figures and never their 
   the v6.3.0 tag through git; outside a clone they now skip, naming why, as its checks that run
   the CLI already did, and a clone without the tag still fails. The frozen-copy test, which files
   a finding in such a copy and runs every module that reads the notes, passes again.
-The test that the lane watchdog sends SIGTERM and waits its grace no longer fails at random on a
-slow runner. It polled until the child's marker file existed and then read it, so a read between
-the trap creating the file and writing TERM into it saw an empty file. It now waits until the
-marker holds TERM, and the fake trap creates the marker 0.2 s before writing to it, so the old
-poll fails every time rather than now and then. A watchdog that sends SIGKILL with no SIGTERM
-first still fails the test. (BG1494)
+- The test that the lane watchdog sends SIGTERM and waits its grace no longer fails at random on
+  a slow runner. It polled until the child's marker file existed and then read it, so a read
+  between the trap creating the file and writing TERM into it saw an empty file. It now waits
+  until the marker holds TERM, and the fake trap creates the marker 0.2 s before writing to it,
+  so the old poll fails every time rather than now and then. A watchdog that sends SIGKILL with
+  no SIGTERM first still fails the test. (BG1494)
 - The push gate now applies CI's green-run noise gate, so a line a passing test prints refuses the
   push instead of turning GitHub Lint red after it. The pre-push hook, on this machine and on the
   gate host alike, runs the boundary gate inside `tools/run-suite.sh --noise-gate`, which records
