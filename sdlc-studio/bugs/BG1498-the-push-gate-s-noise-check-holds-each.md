@@ -1,7 +1,7 @@
 # BG1498: The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their budget refuses a push CI would pass; and its report counts modules that leaked nothing
 
 > **Status:** Open
-> **Severity:** Low
+> **Severity:** High
 > **Points:** 2
 > **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, changelog.d/BG1498.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) BG1493 QA verdict 52018e76dcb4-e6969996, 2026-11-16.
@@ -24,9 +24,12 @@ Either have the push gate check `_total` only for a full run (as CI does), with 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1493's QA seat approved it in run fifteen with two non-blocking notes.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Add one print to a passing test in a module at its budget, push: the gate refuses though CI's `_total` check would pass.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Either have the push gate check `_total` only for a full run (as CI does), with per-module entries checked on a selected run, or lower the budgets as leaks are...
+- [ ] **AC1** Given a full push-boundary run (no selection) whose passing suite leaks no more lines in total than `_total` in tools/test-noise-baseline.json, when `tools/run-suite.sh --noise-gate` judges it, then it passes even where one module is over its own entry, as CI's full-run check does; a run whose total is over `_total` is still refused, naming the modules that leaked. Fails on: a full run refused for a per-module overrun within `_total`.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k noise
+- [ ] **AC2** Given a selected run (a commit's module selection), when the noise gate judges it, then each selected module is still held to its own entry and the run to the sum over the selection, as tools/skill-tests.sh does. Fails on: a selected module over its entry passing.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k noise
+- [ ] **AC3** Given the gate's report, when it names leaking modules, then it counts only modules that leaked at least one line. Fails on: a count that includes modules with no leak.
+  - **Verify:** pytest tools/tests/test_run_suite.py -k noise
 
 ## Revision History
 
