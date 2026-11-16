@@ -8,6 +8,13 @@ operator authorised the orchestrator to sign each run it closed and open the nex
 renewed under D0493); the orchestrator entered `sprint sign --principal "Darren Benson"` on that
 authorisation. The operator then asked for the release itself (D0500).
 
+**v6.4.0 is released (2026-11-16).** The tag is on f5317b26 (BG1506's acceptance), tagged by Darren
+Benson; GitHub published the tar.gz and zip with their sha256 files, and a pinned install with
+`SDLC_STUDIO_REQUIRE_CHECKSUM=1` verified and matched the tagged tree. The release boundary
+refused the tag push twice on its module-alone lane alone (BG1514); the operator approved one
+`git push --no-verify` for the tag (D0501). sdlc-studio.com serves 6.4.0 (web RUN-01M7JM21
+SIGNED over RPT0007).
+
 > **RUN-01M7HA6R, run fifteen.** Goal: "A head of engineering upgrades to 6.4 from notes, pages
 > and specs that match the code, nothing High open." 10 units, 34 points (27 planned, and BG1501,
 > BG1498 and BG1503 added in-run under D0497 to D0499), all delivered on independent APPROVEs.
@@ -32,7 +39,10 @@ authorisation. The operator then asked for the release itself (D0500).
 - **Carried, not stop-ship** (RETRO0148): BG1495 to BG1497, BG1499, BG1500, BG1502, BG1504 and
   BG1505, and CR0713 (the LC-019 graduation).
 - **Deferred out of 6.4**: CR0673, CR0710 (the effort trial) and US1168 (needs a regroom).
-- **Release**: the tag, the publish and the sdlc-studio.com update run under D0500.
+- **After the tag**: BG1507 (High: reviewer agents rewrote the operator's global git identity
+  through XDG_CONFIG_HOME; restored by hand, backup beside it), BG1514 (the module-alone flake
+  that refused the tag push), BG1508, BG1510 to BG1513, and BG1301 (the .version restamp, its
+  fourth recurrence; BG1509 closed as its duplicate).
 - **Headroom**: the green-run noise total sits at 104 of 104, so one more leaked line reddens
   both CI and the push.
 
@@ -44,3 +54,7 @@ authorisation. The operator then asked for the release itself (D0500).
   one signal (LC-006).
 - A builder that cleans up with a glob over a shared directory deletes what other lanes made
   (BG1504): remove only the paths you created.
+- Redirecting HOME does not isolate git: with XDG_CONFIG_HOME exported, `git config --global` in
+  a throwaway HOME writes the real ~/.config/git/config (BG1507). Pass identity with `-c`.
+- A lane that passes alone on the same host can still be red in the gate's full lane sequence:
+  reproduce with the lanes that ran before it, not the module alone (BG1514).
