@@ -94,6 +94,13 @@ longer holds those records, the total reads not attributable: never a difference
 across two counting rules. A run whose stamps all predate the priced meter keeps the page it
 had.
 
+**Copilot billing:** `pricing.copilot_billing` says which basis the project's Copilot plan
+bills on. The default, `tokens`, is token billing in AI credits: the Dollar cost row prices the
+Copilot models' tokens and the premium requests are counted on their own row, unpriced.
+`requests`, for a Copilot Pro or Pro+ annual plan kept on request-based billing, prices the
+premium requests instead, and those models' tokens read not priced, never $0. Any other value
+is refused ([model prices](../reference-config.md#pricing)).
+
 **The compulsory checklist is part of that report, not a second document.** It carries one row per
 STAGE of the cycle - the pre-plan reconcile, the goal's seat review, the grooming gate, the run
 opening, the review verdicts, the ticked criteria the tree supports, the goal verdict, the retro,
@@ -291,6 +298,14 @@ stamps each unit with an advisory `tier`/`model` recommendation (difficulty-scor
 `route.py` from complexity, scope, novelty and spec size), so cheap units run on your
 smaller model and hard ones on your bigger one. Map tiers to your own models in
 `routing.models`; see `reference-config.md#routing`.
+
+**Reasoning effort:** `routing.effort.builder` and `routing.effort.reviewer` set the effort each
+unit's builder and its reviewer are spawned at: `inherit` (the session's own effort, the
+default), `low`, `medium`, `high`, `xhigh` or `max`. `sprint plan` stamps both on every unit,
+routing enabled or not, and `sprint lane brief` names them. The plan refuses any other value,
+naming the key, and refuses a reviewer below its builder unless
+`routing.effort.reviewer_below_builder` names a decision recorded in `sdlc-studio/decisions.md`
+([routing](../reference-config.md#routing)).
 
 ## How big should a batch be
 

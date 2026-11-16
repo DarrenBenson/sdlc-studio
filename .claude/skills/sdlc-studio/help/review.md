@@ -63,14 +63,14 @@ written. See [correcting the verdict log](../reference-review.md#superseding-a-v
 `critic.py brief --unit <id> --seat <seat>` prints the brief a reviewer is given. Beside the seat
 charter, the criteria and the return contract it carries:
 
-- VERIFY COMMAND: `python3 <skill>/scripts/verify_ac.py run --id <id> --dry-run`, the one command
-  that runs the unit's Verify lines. Run from the repo root, it writes nothing to the unit's file.
-- UNIT DIFF, when a run names the unit and it declares Affects: each changed Affects file's
-  `git diff <base> HEAD -- <file>` from the run's base, committed work only, held to
-  `review.brief_diff_lines` (400 lines at full, 150 at light). Past the cap, one line names each
-  file cut or left out, how many of its lines are not shown and the command that prints it. With
-  no run naming the unit, the brief says no base is recorded and carries no diff.
+- VERIFY COMMAND: `python3 <skill>/scripts/verify_ac.py run --id <id> --dry-run`, the one command that runs the unit's Verify lines. Run from the repo root, it writes nothing to the unit's file.
+- UNIT DIFF, when a run names the unit and it declares Affects: each changed Affects file's `git diff <base> HEAD -- <file>` from the run's base, committed work only, held to `review.brief_diff_lines` (400 lines at full, 150 at light). Past the cap, one line names each file cut or left out, how many of its lines are not shown and the command that prints it. With no run naming the unit, the brief says no base is recorded and carries no diff.
 - A tool-call budget, 40 at full and 15 at light, stated in the brief and not enforced.
+- The seat's own live learnings (approved, listed by a signed close and inside their Review-by date), at most `personas.memory.inject_max` (5), one whose evidence cites a unit sharing a file with this one ranked first ([into the brief](../reference-persona-learning.md#into-the-brief)).
+- On a high-class unit only, its risk class and whether this seat is the first or the second of its two independent seats ([what a second seat caught](retro.md#what-a-second-review-seat-caught)).
+- Last, a fresh file no other brief names under the main checkout's `sdlc-studio/reviews/verdicts/<unit>/`, for the reviewer's own block, with the `UNIT:` and `BRIEF:` lines it opens with.
+
+**The verdict is recorded from that file.** The footer's record command, `critic.py record --unit <id> --from-verdict <file>`, binds the row to the file's exact bytes in the ledger's `Source` column (the hash and the file's name), and refuses, with exit 2 and nothing written, a file whose bytes an earlier row's `Source` already carries; a verdict given any other way is recorded as transcribed. A verdict written by the context that edited the unit, as the session's Claude Code transcripts show, is recorded as a self-review whatever reviewer it names: `critic.py record`, `transition.py set --verdict` and `artifact.py close --verdict` each add `self-review:<path>` to its `Source`, and the close's review coverage and `sprint sign` do not count it. After a REJECT, `--rejoinder`, with no value, quotes the seat's unanswered REJECT from the ledger ([the verdict log](../reference-review.md#superseding-a-verdict)).
 
 The light tier drops the files' history, the claim inventory and the two mutation practices,
 and is refused only for a practice it carries. See

@@ -148,6 +148,13 @@ below is labelled by what it is, includes the results that flatter us and the re
 do not, and links to the raw data. (In a category full of framework hype, publishing the
 unflattering findings is itself the differentiator.)
 
+Two records come from the tool itself. Each release has an evidence pack, built by
+`release_cut.py evidence-pack` from committed records alone, that a change board reads without
+running anything: for each change, what changed, which criteria passed, who reviewed it
+independently, what is known to be wrong and who signed for it
+([for engineering leaders](engineering-leaders.md#change-approval)). And every run its operator
+signed is one row of [the evidence from the runs](evidence.md), read from its signed report.
+
 ### Production field results (operator-reported, uncontrolled)
 
 Reported by the tool's author from his own production deliveries with SDLC Studio - real

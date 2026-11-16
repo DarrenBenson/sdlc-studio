@@ -49,6 +49,33 @@ pre-release as equal to its final release, so it never offers you the final. Lat
 a pre-release below its final, so this happens once. Then run `migrate --apply` again: it restamps
 `sdlc-studio/.version` with the version you now run.
 
+### From 6.3 to 6.4
+
+A project already on 6.3 reinstalls and runs `migrate`. The rest of this list is what 6.4 changes
+in how you work.
+
+1. **Reinstall.** A plain `install.sh` or `install.ps1` fetches the latest published release; pass
+   `main` as the version for the moving branch.
+2. **`migrate`** is the dry run, and `migrate --apply` writes what it lists. A 6.3 project owes it
+   at most the version stamp in `sdlc-studio/.version`: 6.4 retires no config key or command, so
+   `--apply` removes nothing.
+3. **Leave the verdict ledger as it is.** A 6.3 `sdlc-studio/reviews/critic-verdicts.md` has no
+   `Source` column. The first verdict recorded on 6.4 adds it and pads every earlier row with `-`,
+   keeping its cells, so the ledger needs nothing from you. Upgrade everyone who records verdicts
+   together: 6.3 reads a row with the new column as malformed and skips it.
+4. **Record from the verdict file.** `critic.py brief` names a file under
+   `sdlc-studio/reviews/verdicts/<unit>/` for the reviewer's own block, and the record command
+   its footer prints reads it with `--from-verdict`. Commit the file with its row.
+5. **On Copilot, say how you are billed.** For a Copilot plan still billed per premium request
+   (a Pro or Pro+ annual plan kept on request-based billing), set
+   `pricing.copilot_billing: requests` in `sdlc-studio/.config.yaml`; the default bills Copilot
+   by token, in AI credits.
+6. **The new keys are optional.** Each reads its shipped default until you set it:
+   `risk.components` (`{}`), `routing.effort.builder` and `routing.effort.reviewer` (`inherit`),
+   `routing.effort.reviewer_below_builder` (`""`), `personas.memory.validity_days` (90),
+   `personas.memory.inject_max` (5), `pricing.copilot_billing` (`tokens`) and
+   `sprint.fresh_session` (`warn`).
+
 ### From 6.2 to 6.3
 
 A project already on 6.2 reinstalls and runs `migrate`. The rest of this list is what 6.3 changes

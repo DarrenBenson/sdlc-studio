@@ -58,6 +58,12 @@ the author, and drops the ceremony around each unit that caught nothing.
   `sprint sign` seals it once, from someone who neither built nor reviewed a unit in it.
 - **It learns from its own runs.** What went wrong is recorded as a failure class and its rule is
   carried into the next plan, build and review.
+- **New in 6.4: evidence a change board can read.** `release_cut.py evidence-pack` builds one
+  evidence pack per release from committed records alone: for each change, what changed, which
+  criteria passed, who reviewed it independently, what is known to be wrong and who signed for
+  it. `retro.py seats` keeps each review seat's record, and `escape.py trace` traces an escaped
+  defect to the approval that missed it, which that record then counts. `sprint plan` forecasts
+  a run's cost and wall-clock span, and the signed report sets each forecast beside the actual.
 - **New in 6.3: a cost you can read.** The signed report states the run's priced tokens and
   estimated US dollars per point, priced per model, read from the store of whichever harness ran
   it: Claude Code, Codex CLI, Copilot CLI, OpenCode or Cursor. `sprint cost --anatomy` names where

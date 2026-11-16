@@ -54,13 +54,42 @@ yours to drop, and nothing drops it for you.
 
 ## Each seat's own record
 
-`retro seats --id RETROxxxx [--format json]` scores each seat on the ledger rows that name it
+`retro.py seats --id RETROxxxx [--format json]` scores each seat on the ledger rows that name it
 as `<holder> (<role>)`: its APPROVE and REJECT counts and the rounds each unit took to
 converge as a reviewer, and as the author the units it built, their rounds and each round's
 blocking findings. A blocking finding citing a `file:line` no earlier round cited is charged
 only to a seat whose earlier verdict on the unit approved, saying whether the file changed
 between the two rows' dates or that it cannot be told. A superseded row is listed as recorded
 in error with its reason, and the rows naming no seat are counted and named, never guessed.
+
+It also charges each later bug to the approval that missed it. A bug counts in the retro whose
+window holds its `Created` day. One carrying `Escaped-via` is charged to that unit; any other
+only when it cites the unit, shares an `Affects` file with it and cites three ids or fewer. The
+charge goes to every seat whose latest verdict on the unit approved, in any run, each miss with
+its basis. See [seat evidence](../reference-retro.md#seat-evidence-each-seat-on-its-own-record).
+
+## Persona learnings, listed at the close and struck at the signature
+
+The close's `persona-memory` step writes a `## Persona learnings` block on the retro: every
+approved learning not yet live, with its seat, its approver and the adverse items it addresses.
+It names each seat whose record holds adverse evidence and no learning listed, and never blocks
+the close ([what goes live when you sign](../reference-retro.md#persona-learnings-what-goes-live-when-you-sign)).
+A listed learning reaches a brief only once the run is signed, and
+`sprint.py sign --strike M-NNNN --strike-reason "..."` strikes one as it seals the run; a strike
+with no reason, or naming a learning this run's close did not list, is refused before anything
+is sealed ([listed and struck](../reference-persona-learning.md#listed-and-struck)).
+
+## An escaped bug
+
+`escape.py trace --bug BGxxxx` reads an escaped bug's `Shipped-in` release and proposes the
+units that release shipped which share a file with the fix, each with its recorded verdict,
+round and seat, and writes nothing. `--confirm <unit>` records one as the bug's `Escaped-via`,
+and `retro.py seats` then charges the bug to that unit's approving seats.
+`escape.py to-class --bug BGxxxx --class NAME --rule "..." --behaviour "..."` turns the
+confirmed escape's written Root Cause into a failure class in `sdlc-studio/lessons.jsonl`,
+carrying the bug's Affects paths, injected at build and review.
+See [`escape.py`](../reference-scripts-review.md#escapepy) and `help/bug.md` for recording an
+escaped bug.
 
 ## A Try item becomes a lesson
 

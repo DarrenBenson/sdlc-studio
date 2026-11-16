@@ -218,10 +218,14 @@ class DocsV63Tests(unittest.TestCase):
 
     def test_existing_users_has_the_62_and_63_upgrade_paths(self):
         """Mutant: the upgrade page whose newest section is still 'From 6.0 to 6.1', with no 6.2
-        section (BG1175) and no 6.3 one. AC4."""
+        section (BG1175) and no 6.3 one. AC4. The order is read from the 6.3 section on, so a
+        later release's section above it does not fail this test."""
         page = _read(UPGRADE)
         froms = re.findall(r"(?m)^### (From \S+ to \S+)\s*$", page)
-        self.assertEqual(froms[:3], ["From 6.2 to 6.3", "From 6.1 to 6.2", "From 6.0 to 6.1"])
+        self.assertIn("From 6.2 to 6.3", froms, "the upgrade page has no 6.3 section")
+        at = froms.index("From 6.2 to 6.3")
+        self.assertEqual(froms[at:at + 3],
+                         ["From 6.2 to 6.3", "From 6.1 to 6.2", "From 6.0 to 6.1"])
         six_two = _flat(_heading_section(page, "### From 6.1 to 6.2"))
         self.assertIn("release-notes-v6.2.0.md", six_two)
         six_three = _flat(_heading_section(page, "### From 6.2 to 6.3"))
