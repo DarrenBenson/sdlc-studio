@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 364 |
+| Open | 363 |
 | In Progress | 0 |
-| Fixed | 938 |
+| Fixed | 939 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
@@ -564,7 +564,7 @@
 | [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1487](BG1487-the-readme-s-opening-says-a-person-you.md) | The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1488](BG1488-reference-outputs-md-still-calls-deferred-a-story.md) | reference-outputs.md still calls Deferred a story terminal status at lines 134, 745 and 755, against its own Story row and sdlc_md.TERMINAL_STATUS | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1489](BG1489-github-ci-s-green-run-noise-gate-fails.md) | GitHub CI's green-run noise gate fails on main: critic record's new author-form warning leaks from passing tests, 112 diagnostic lines against a baseline of 104 | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1489](BG1489-github-ci-s-green-run-noise-gate-fails.md) | GitHub CI's green-run noise gate fails on main: critic record's new author-form warning leaks from passing tests, 112 diagnostic lines against a baseline of 104 | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1490](BG1490-test-critic-rejoinder-from-ledger-and-test-critic.md) | test_critic_rejoinder_from_ledger and test_critic_verdict_file_binding fail when run inside an agent session, because the harness session id reaches the verdict's source field | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
