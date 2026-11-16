@@ -631,8 +631,8 @@ class PushNoiseGateTests(unittest.TestCase):
     transport to a fake host) committing a leaking skill suite, this repository's run-suite.sh and
     test_noise.py, and the budget given."""
 
-    #: test_leaky prints 2, test_serial 1, test_quiet none: 3 in all.
-    OVER_MODULE = {"_total": 10, "test_leaky": 1, "test_quiet": 0, "test_serial": 1}
+    #: test_leaky prints 2, test_serial 1, test_quiet none: 3 in all. The push runs every module,
+    #: so it is a full run, held to `_total` alone as CI's full run is.
     OVER_TOTAL = {"_total": 2, "test_leaky": 2, "test_quiet": 0, "test_serial": 1}
     WITHIN = {"_total": 3, "test_leaky": 2, "test_quiet": 0, "test_serial": 1}
 
@@ -663,35 +663,27 @@ class PushNoiseGateTests(unittest.TestCase):
     def test_a_passing_test_leaking_above_budget_refuses_a_local_push(self) -> None:
         """AC1. MUTANTS: (1) the hook runs the gate without the noise wrapper; (2) the capture
         plugin is never armed, so nothing is judged; (3) the plugin writes its record afresh per
-        session, so the serial phase erases the parallel phase's leak; (4) only the total is
-        judged, so a module over its own entry passes; (5) stderr is not recorded."""
-        fx, rg = self._clone(self.OVER_MODULE)
+        session, so the serial phase erases the parallel phase's leak; (4) the full run is not
+        held to `_total`; (5) stderr is not recorded. Every module is within its entry and the
+        run is above `_total`, the serial phase's line counted beside the parallel's."""
+        fx, rg = self._clone(self.OVER_TOTAL)
         r = fx.push(local=True)
-        self.assertNotEqual(0, r.returncode, "a leak above its module's budget was pushed:\n" + r.stderr)
+        self.assertNotEqual(0, r.returncode, "a leak above the full-run total was pushed:\n" + r.stderr)
         self.assertFalse(self._landed(fx, rg), "the remote advanced despite the refusal")
         self.assertTrue(self._ran_in(r.stderr), "the stub suite never ran:\n" + r.stderr)
         self.assertFalse(any(p.is_relative_to(fx.host_home.resolve()) for p in self._ran_in(r.stderr)),
                          "the local route ran on the host:\n" + r.stderr)
         self.assertIn("[FAIL] green-run noise gate", r.stderr, r.stderr)
-        self.assertRegex(r.stderr, r"(?m)^    test_leaky: 2 diagnostic line\(s\), above its budget of 1",
-                         "the refusal does not name the module over its budget:\n" + r.stderr)
-        self.assertNotRegex(r.stderr, r"(?m)^    test_(quiet|serial):",
-                            "a module within its budget was named as over it:\n" + r.stderr)
+        self.assertIn("the run: 3 diagnostic line(s), above the recorded full-run total of 2", r.stderr,
+                      "the total was not judged over both phases:\n" + r.stderr)
+        self.assertIn("leaked by 2 module(s): test_leaky 2, test_serial 1", r.stderr,
+                      "the refusal does not name the modules that leaked:\n" + r.stderr)
         self.assertIn("leaky-tool: and this one, on stderr", r.stderr, "stderr was not judged:\n" + r.stderr)
-
-        # The full-run total binds too, as CI's discovery run binds it: every module within its
-        # entry, the run above `_total`, the serial phase's line counted beside the parallel's.
-        fx2, rg2 = self._clone(self.OVER_TOTAL)
-        r2 = fx2.push(local=True)
-        self.assertNotEqual(0, r2.returncode, "a run above the full-run total was pushed:\n" + r2.stderr)
-        self.assertFalse(self._landed(fx2, rg2))
-        self.assertIn("the run: 3 diagnostic line(s), above the full-run total of 2", r2.stderr,
-                      "the total was not judged over both phases:\n" + r2.stderr)
 
     def test_the_gate_host_applies_the_same_noise_gate(self) -> None:
         """AC2. MUTANTS: (1) the host runs the boundary gate without the noise wrapper; (2) the
         host keeps the gate's exit and drops the wrapper's, so its refusal reads green."""
-        fx, rg = self._clone(self.OVER_MODULE)
+        fx, rg = self._clone(self.OVER_TOTAL)
         r = fx.push()
         self.assertNotEqual(0, r.returncode, "the gate host passed a leak a local run refuses:\n" + r.stderr)
         self.assertFalse(self._landed(fx, rg), "the remote advanced despite the host's refusal")
@@ -699,8 +691,8 @@ class PushNoiseGateTests(unittest.TestCase):
         self.assertTrue(ran and all(p.is_relative_to(fx.host_home.resolve()) for p in ran),
                         "the suite did not run on the host:\n" + r.stderr)
         self.assertIn("[FAIL] green-run noise gate", r.stderr, r.stderr)
-        self.assertRegex(r.stderr, r"(?m)^    test_leaky: 2 diagnostic line\(s\), above its budget of 1",
-                         "the host's refusal does not name the module over its budget:\n" + r.stderr)
+        self.assertIn("leaked by 2 module(s): test_leaky 2, test_serial 1", r.stderr,
+                      "the host's refusal does not name the modules that leaked:\n" + r.stderr)
         self.assertIn(f"{rg.HOST} refused commit", r.stderr, r.stderr)
 
     def test_a_suite_within_budget_passes_the_push(self) -> None:
@@ -736,6 +728,103 @@ class PushNoiseGateTests(unittest.TestCase):
                                    cwd=root, capture_output=True, text=True)
             self.assertEqual(1, empty.returncode, "a run that judged nothing passed as silent:\n" + empty.stdout)
             self.assertIn("[FAIL] green-run noise gate - no pytest run reported a test", empty.stdout)
+
+
+#: A passing module that prints, under capture, a line no diagnostic shape matches: output, no leak.
+NOISE_CHATTY = textwrap.dedent("""
+    import unittest
+    class Chatty(unittest.TestCase):
+        def test_passes_and_prints_prose(self):
+            print("plain progress text with no diagnostic shape")
+""")
+
+#: The three modules the push fixture commits: test_leaky leaks 2 lines, test_serial 1.
+NOISE_MODULES = {"test_leaky": NOISE_LEAKY, "test_quiet": NOISE_QUIET, "test_serial": NOISE_SERIAL}
+
+
+class NoiseGateRunScopeTests(unittest.TestCase):
+    """BG1498: the noise gate takes its ceiling from tools/test_noise.py's own rule. A full run, every
+    skill test module given to pytest over however many phases, answers to `_total` alone, as
+    tools/skill-tests.sh's full run does; a selected run holds each module to its entry and the
+    run to the sum over the selection. The wrapper runs alone, on a tree holding the modules,
+    test_noise.py and the budget given; the full run is the push gate's two-phase stub, a
+    selected run a pytest given some of the modules."""
+
+    TESTS = ".claude/skills/sdlc-studio/scripts/tests"
+
+    def _tree(self, budget: dict, modules: dict) -> Path:
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        root = _fixture(Path(d.name))
+        tests = root / self.TESTS
+        tests.mkdir(parents=True)
+        for name, body in modules.items():
+            (tests / f"{name}.py").write_text(body, encoding="utf-8")
+        (root / "tools").mkdir()
+        shutil.copy(REPO / "tools" / "test_noise.py", root / "tools" / "test_noise.py")
+        self._budget(root, budget)
+        (root / "stub_gate.py").write_text(NOISE_STUB_GATE, encoding="utf-8")
+        return root
+
+    def _budget(self, root: Path, budget: dict) -> None:
+        (root / "tools" / "test-noise-baseline.json").write_text(json.dumps(budget), encoding="utf-8")
+
+    def _judge(self, root: Path, *gate: str):
+        return subprocess.run(["bash", str(SCRIPT), "--noise-gate", *gate], cwd=root,
+                              capture_output=True, text=True, timeout=120)
+
+    def _pytest(self, *names: str) -> tuple:
+        return (sys.executable, "-B", "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                *(f"{self.TESTS}/{n}.py" for n in names))
+
+    def test_a_full_run_within_the_total_passes_with_modules_over_their_entries(self) -> None:
+        """AC1. The stub's two phases give pytest every module, so the run is full: both leaking
+        modules are over an entry of 0 and the 3 lines are within `_total`. MUTANTS: (1) every run held to each module's entry, as before;
+        (2) the phases read as two selections rather than one full run."""
+        root = self._tree({"_total": 3, "test_leaky": 0, "test_quiet": 0, "test_serial": 0}, NOISE_MODULES)
+        r = self._judge(root, sys.executable, "stub_gate.py")
+        self.assertEqual(0, r.returncode, "a full run within `_total` was refused:\n" + r.stdout + r.stderr)
+        self.assertIn("[PASS] green-run noise gate - 3 diagnostic line(s) from 2 skill test module(s), "
+                      "within the recorded full-run total of 3", r.stdout, r.stdout)
+
+    def test_a_full_run_over_the_total_is_refused_naming_the_modules_that_leaked(self) -> None:
+        """AC1. Every entry generous, the run one line over `_total`. MUTANTS: (1) a full run held
+        to the sum of its entries; (2) the refusal names no module, or only some of them."""
+        root = self._tree({"_total": 2, "test_leaky": 5, "test_quiet": 5, "test_serial": 5}, NOISE_MODULES)
+        r = self._judge(root, sys.executable, "stub_gate.py")
+        self.assertEqual(1, r.returncode, "a full run over `_total` passed:\n" + r.stdout + r.stderr)
+        self.assertIn("[FAIL] green-run noise gate - a PASSING full run printed 3 diagnostic line(s)", r.stdout)
+        self.assertIn("    the run: 3 diagnostic line(s), above the recorded full-run total of 2", r.stdout)
+        self.assertIn("    leaked by 2 module(s): test_leaky 2, test_serial 1", r.stdout, r.stdout)
+
+    def test_a_selected_run_holds_each_module_to_its_entry(self) -> None:
+        """AC2. pytest given test_leaky alone is a selection of one: its 2 lines are over its entry
+        of 1 though far within `_total`. The positive control, an entry of 2 under a `_total` of 0,
+        passes against the summed budget, so the run was judged as a selection. MUTANTS: (1) every
+        run held to `_total` alone; (2) a selection read as a full run."""
+        root = self._tree({"_total": 10, "test_leaky": 1, "test_quiet": 0, "test_serial": 0}, NOISE_MODULES)
+        r = self._judge(root, *self._pytest("test_leaky"))
+        self.assertEqual(1, r.returncode, "a selected module over its entry passed:\n" + r.stdout + r.stderr)
+        self.assertRegex(r.stdout, r"(?m)^    test_leaky: 2 diagnostic line\(s\), above its budget of 1$", r.stdout)
+        self._budget(root, {"_total": 0, "test_leaky": 2, "test_quiet": 0, "test_serial": 0})
+        ok = self._judge(root, *self._pytest("test_leaky"))
+        self.assertEqual(0, ok.returncode, "a selection within its entries was refused:\n" + ok.stdout)
+        self.assertIn("within the summed budget of 2 over 1 selected module(s)", ok.stdout, ok.stdout)
+
+    def test_the_report_counts_only_modules_that_leaked(self) -> None:
+        """AC3. test_chatty prints under capture, but nothing a diagnostic shape matches. MUTANTS:
+        (1) a module counted for printing anything; (2) the refusal lists a module that leaked
+        nothing."""
+        mods = dict(NOISE_MODULES, test_chatty=NOISE_CHATTY)
+        root = self._tree({"_total": 3, **{m: 0 for m in mods}}, mods)
+        r = self._judge(root, *self._pytest(*sorted(mods)))
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertIn("3 diagnostic line(s) from 2 skill test module(s)", r.stdout, r.stdout)
+        self._budget(root, {"_total": 2, **{m: 0 for m in mods}})
+        r = self._judge(root, *self._pytest(*sorted(mods)))
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("    leaked by 2 module(s): test_leaky 2, test_serial 1", r.stdout, r.stdout)
+        self.assertNotIn("test_chatty", r.stdout, "a module that leaked nothing was named:\n" + r.stdout)
 
 
 if __name__ == "__main__":

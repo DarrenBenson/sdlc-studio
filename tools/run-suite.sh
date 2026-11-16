@@ -61,10 +61,11 @@ asserts the narrower thing; an `all` verdict satisfies it, having run that suite
 --noise-gate runs the gate command it is given (the push hook's and the gate
 host's `gate.py --boundary push|release`) and, when that passes, holds what its
 passing tests printed under pytest's capture to CI's green-run noise budget,
-tools/test-noise-baseline.json: each skill test module to its entry and the run
-to `_total`. It exits with the gate's status when the gate is red, 1 when the
-noise is over the budget or cannot be judged, and 0 otherwise. It writes no
-verdict.
+tools/test-noise-baseline.json: a full run (pytest given every skill test module)
+to `_total` alone, as CI's full run is, and a selected run each module to its
+entry and the run to the sum over the selection. It exits with the gate's status when
+the gate is red, 1 when the noise is over the budget or cannot be judged, and 0
+otherwise. It writes no verdict.
 
 Options:
   --help, -h    Show this help
@@ -136,8 +137,12 @@ fi
 # captures a passing test's output and drops it, so a leak passed the push and turned main red
 # after it. This wraps the boundary gate rather than running the suite again: a pytest plugin,
 # written here and armed through the environment for the gate's pytest runs only, appends what
-# each test printed - per test, so per module - to a file this then reads, and the run is held
-# to tools/test_noise.py's own detector, each skill module to its entry and the run to `_total`.
+# each test printed - per test, so per module - and the paths each pytest run was given, to a
+# file this then reads. The run is held to tools/test_noise.py's own detector and ceiling
+# (`budget_for`): a full run, one whose pytest runs were given every skill test module between
+# them, answers to `_total` alone, as tools/skill-tests.sh's full run does, so a module over its
+# entry within `_total` passes here as it passes CI; a selected run holds each module to its
+# entry and the run to the sum over the selection. Only a module that leaked a line is counted.
 # What it does not count: a line a module prints as it is imported, which is no test's output.
 # Only a green gate is judged; a red one keeps its own refusal. pre-push and remote-gate.sh call
 # it the same way, so a push is held to it on this machine and on the gate host alike.
@@ -172,12 +177,16 @@ _kept = [p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p and 
 os.environ["PYTHONPATH"] = os.pathsep.join(_kept)
 if not _kept:
     del os.environ["PYTHONPATH"]
-_root, _files, _printed = "", set(), []
+_root, _files, _printed, _given = "", set(), [], []
 
 
 def pytest_configure(config):
-    global _root
+    # What this run was given, a node id cut to its path: whether the runs between them were given
+    # every module is what makes them a full run rather than a selection.
+    global _root, _given
     _root = str(config.rootpath)
+    here = str(config.invocation_params.dir)
+    _given = [os.path.realpath(os.path.join(here, str(a).split("::", 1)[0])) for a in config.args]
 
 
 def pytest_runtest_logreport(report):
@@ -194,7 +203,7 @@ def pytest_sessionfinish(session, exitstatus):
     if not _LOG or hasattr(session.config, "workerinput"):
         return
     with open(_LOG, "a", encoding="utf-8") as fh:      # appended: the serial phase follows the parallel
-        fh.write(json.dumps({"files": sorted(_files)}) + "\n")
+        fh.write(json.dumps({"files": sorted(_files), "given": _given}) + "\n")
         for rec in _printed:
             fh.write(json.dumps(rec) + "\n")
 PY
@@ -213,33 +222,51 @@ import test_noise
 budget_rel = "tools/test-noise-baseline.json"
 budget = test_noise.read_budget(root / budget_rel)
 tests = os.path.realpath(root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests") + os.sep
-ran, leaks = set(), {}
+ran, given, whole, leaks = set(), set(), False, {}
 for line in (log.read_text(encoding="utf-8").splitlines() if log.exists() else []):
     rec = json.loads(line)
     if "files" in rec:
         ran.update(f for f in rec["files"] if f.startswith(tests))
+        for path in rec.get("given", []):
+            if tests.startswith(path.rstrip(os.sep) + os.sep):
+                whole = True                # the tests directory itself, or one holding it
+            elif path.startswith(tests):
+                p = Path(path)
+                given.update(q.stem for q in p.rglob("test_*.py")) if p.is_dir() else given.add(p.stem)
     elif rec["file"].startswith(tests):
-        leaks.setdefault(Path(rec["file"]).stem, []).extend(test_noise.leaked_lines(rec["text"]))
+        printed = test_noise.leaked_lines(rec["text"])
+        if printed:                         # a module that printed only prose leaked nothing
+            leaks.setdefault(Path(rec["file"]).stem, []).extend(printed)
 if not ran and list(Path(tests).glob("test*.py")):
     print(f"  [FAIL] green-run noise gate - no pytest run reported a test under {tests}, so "
           f"there was nothing to judge and silence cannot be claimed")
     raise SystemExit(1)
-count, ceiling = sum(map(len, leaks.values())), budget[test_noise.TOTAL_KEY]
-over = {m: ln for m, ln in sorted(leaks.items()) if len(ln) > budget.get(m, 0)}
+# The ceiling is CI's own, tools/test_noise.py's `budget_for`: a full run answers to `_total`
+# alone, since tools/skill-tests.sh holds a full run's output to nothing else; a selection to the
+# sum of its entries, and each module to its own as well, since this run, unlike CI's one
+# process, knows who printed what.
+full = whole or {p.stem for p in Path(tests).glob("test_*.py")} <= given
+ceiling, how = test_noise.budget_for(budget, None if full else sorted(given))
+count = sum(map(len, leaks.values()))
+over = {} if full else {m: ln for m, ln in sorted(leaks.items()) if len(ln) > budget.get(m, 0)}
 if not over and count <= ceiling:
     print(f"  [PASS] green-run noise gate - {count} diagnostic line(s) from {len(leaks)} skill test "
-          f"module(s), within {budget_rel} (full-run total {ceiling})")
+          f"module(s), within {how} ({budget_rel})")
     raise SystemExit(0)
-print(f"  [FAIL] green-run noise gate - a PASSING suite printed {count} diagnostic line(s), which "
-      f"GitHub CI's noise gate (tools/skill-tests.sh) refuses against {budget_rel}:")
+scope = "full run" if full else f"run selected to {len(given)} module(s)"
+print(f"  [FAIL] green-run noise gate - a PASSING {scope} printed {count} diagnostic line(s), "
+      f"above its budget in {budget_rel}:")
 for mod, lines in over.items():
     print(f"    {mod}: {len(lines)} diagnostic line(s), above its budget of {budget.get(mod, 0)}")
     for text in lines[:3]:
         print(f"      {text}")
 if count > ceiling:
-    print(f"    the run: {count} diagnostic line(s), above the full-run total of {ceiling}")
-    for mod, lines in sorted(leaks.items(), key=lambda kv: -len(kv[1]))[:3]:
-        print(f"      {mod} printed {len(lines)}")
+    ranked = sorted(leaks.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    print(f"    the run: {count} diagnostic line(s), above {how}")
+    print(f"    leaked by {len(ranked)} module(s): " + ", ".join(f"{m} {len(ln)}" for m, ln in ranked))
+    for mod, lines in ranked[:3]:
+        for text in lines[:2]:
+            print(f"      {mod}: {text}")
 print("  fix: capture the output in the test (contextlib.redirect_stdout/redirect_stderr) and assert "
       "on it; lower an entry as leaks are captured, never raise one")
 raise SystemExit(1)

@@ -629,9 +629,9 @@ the Node one from `package.json`.
    Then the full suite runs once, at the push boundary, with the core gate lanes, inside the
    green-run noise gate CI's Lint run applies: here and on the gate host alike,
    `tools/run-suite.sh --noise-gate` holds what each passing test printed under pytest's capture
-   to `tools/test-noise-baseline.json`, each skill test module to its entry and the run to
-   `_total`, so a passing test that prints refuses the push rather than turning Lint red after
-   it. A branch push
+   to `tools/test-noise-baseline.json`: a full run to `_total` only, as CI's full run is, and a
+   selected run each module to its entry and the run to the sum over the selection, so a passing
+   test that prints refuses the push rather than turning Lint red after it. A branch push
    runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds the
    slow release lanes (release rehearsal and module-alone). `python3 tools/gate_timing.py
    estimate --suite boundary-push` gives the current cost of a run on this machine, and
