@@ -1,6 +1,6 @@
 # BG1501: test_lean_release_notes_v64 fails in a tree that is not a git clone: its text checks read v6.3.0 through git, so FrozenNotesTests' copy goes red and the push gate refuses
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_release_notes_v64.py, changelog.d/BG1501.md
@@ -26,6 +26,7 @@ Skip, naming why, every check in `test_lean_release_notes_v64` that needs git hi
 
 - [ ] **AC1** Given a copy of the working tree that is not a git clone, when FrozenNotesTests files a finding and runs every notes reader, then `test_lean_release_notes_v64` skips its history checks and the run is green. Fails on: a history check failing outside a clone.
   - **Verify:** pytest tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_filing_a_finding_reddens_no_test
+  - **Verified:** yes (2026-11-16)
 
 ## Revision History
 

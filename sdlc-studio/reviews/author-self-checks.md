@@ -349,3 +349,5 @@
 | US1171 | agent-ae16b5e59e84e497e | 2026-11-16 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 0 | 1151ee0ec70ea5d8 at 9673d999c7ce |
 | US1173 | agent-aec412120a0fd965c | 2026-11-16 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 0 | e5002cdef448753b at 9fa295586fad |
 | BG1501 | agent-aec412120a0fd965c | 2026-11-16 | TRUE 12, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 1 | 786db3eba2bd65a6 at 9fa295586fad |
+| BG1501 | agent-a232a9a807062f8c2 | 2026-11-16 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 9, survived 0 | 397cdc13ccdec5df at 2e4aa305b54a |
+| US1173 | agent-a232a9a807062f8c2 | 2026-11-16 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 2, survived 0 | c30bfce43c412957 at 2e4aa305b54a |
