@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 11 |
+| Draft | 10 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 269 |
+| Done | 270 |
 | Superseded | 33 |
 | **Total** | **313** |
 
@@ -63,7 +63,7 @@
 | [EP0310](EP0310-the-front-door-speaks-to-a-head-of.md) | The front door speaks to a head of engineering: three routes in, an honest SUPPORT.md, a generated evidence page and a page for engineering leaders | Done | 5 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0311](EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report | Done | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
-| [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Draft | 1 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Done | 1 | -- | 2026-11-15 | 2026-11-15 |
 
 ## Archived Releases
 

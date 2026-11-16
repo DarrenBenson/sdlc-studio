@@ -1,6 +1,6 @@
 # US1169: sprint plan reports, per unit, every registry file its new script, verb or flag implies, and every page threshold it nears, that its Affects omits
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0705
 > **Created:** 2026-11-15
@@ -22,12 +22,16 @@
 
 - **AC1:** Given a unit whose Affects names a not-yet-existing `.claude/skills/sdlc-studio/scripts/<name>.py`, when `sprint.py plan` runs, then it reports each registry that new script implies and the Affects omits: sdlc-studio/reviews/root-census.md, a reference-scripts page for its `### <name>.py` heading, reference-scripts-surface.md, sdlc-studio/reviews/command-audit.md, and lib/surface.py when the script has no parser.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_registry_advisory.py::PlanRegistryAdvisoryTests::test_a_new_script_names_its_registries
+  - **Verified:** yes (2026-11-16)
 - **AC2:** Given a unit whose criteria name `<script>.py <verb>` for a verb that script's parser does not expose, or a `--flag` it does not take, when the plan runs, then it reports reference-scripts-surface.md and sprint_report.py (NON_CEREMONY_VERBS) for the verb, command-audit.md for the flag, and scripts/tests/test_artifact.py when the flag is `--fields-file` or the script is a free-prose writer; a verb or flag the parser already has is not reported.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_registry_advisory.py::PlanRegistryAdvisoryTests::test_a_new_verb_or_flag_names_its_registries
+  - **Verified:** yes (2026-11-16)
 - **AC3:** Given a unit whose Affects names a reference page within 20 lines below the 400-line reading-guide threshold, past 600 lines with no ALLOWLIST entry, or within 10 lines of its ALLOWLIST ceiling plus 5%, when the plan runs, then it reports the threshold, the page's size and the file to add (the regenerated guide, or tools/check_budgets.py).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_registry_advisory.py::PlanRegistryAdvisoryTests::test_a_page_near_a_threshold_names_the_guide_or_ceiling
+  - **Verified:** yes (2026-11-16)
 - **AC4:** Given the same units with the implied files in their Affects, and a consuming project whose tree has none of these registries, when the plan runs, then it reports nothing for them and never refuses the plan.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_plan_registry_advisory.py::PlanRegistryAdvisoryTests::test_a_unit_naming_its_registries_or_a_consuming_project_is_clean
+  - **Verified:** yes (2026-11-16)
 
 ## Notes
 
