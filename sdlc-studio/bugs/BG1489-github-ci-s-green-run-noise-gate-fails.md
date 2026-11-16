@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py, changelog.d/BG1489.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_under_depth.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_bug_close_review.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_optional.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lock_errors.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_plan_phase.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_rebrief.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_verdict_integrity.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issue_rulings.py, changelog.d/BG1489.md
 > **Evidence:** GitHub Actions Lint run on 7c64bf26, 2026-11-16 00:00 UTC: test-noise 112 > 104.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -26,7 +26,7 @@ In each test that records a verdict with a bare author, capture stderr (`context
 ## Acceptance Criteria
 
 - [ ] **AC1** Given the skill test suite at HEAD, when it runs green under tools/skill-tests.sh's noise gate, then it prints no more diagnostic lines than tools/test-noise-baseline.json records, with the baseline unchanged or lowered. Fails on: any author-form warning reaching the console from a passing test.
-  - **Verify:** bash tools/skill-tests.sh test_critic.py test_critic_under_depth.py test_lean_bug_close_review.py test_lean_brief_optional.py test_lean_lock_errors.py test_lean_no_plan_phase.py test_lean_rebrief.py test_lean_verdict_integrity.py
+  - **Verify:** shell bash tools/skill-tests.sh .claude/skills/sdlc-studio/scripts test_critic.py test_critic_under_depth.py test_lean_bug_close_review.py test_lean_brief_optional.py test_lean_lock_errors.py test_lean_no_plan_phase.py test_lean_rebrief.py test_lean_verdict_integrity.py test_sprint_report.py test_lean_report_known_issue_rulings.py
 
 ## Revision History
 
