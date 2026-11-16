@@ -1,8 +1,8 @@
 # Product Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.3.0
-**Last Updated:** 2026-11-08
+**Version:** 6.4.0
+**Last Updated:** 2026-11-16
 **Status:** Generated (brownfield extraction; epics/stories validated and closed out 2026-07-09, commit 841471e)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -11,7 +11,7 @@
 > tests validate the spec against the implementation. Confidence markers and
 > status values are defined at the foot of this document.
 >
-> **Coverage:** v6.3.0 as cut, plus the 6.4 work on `main` since. The v6 line
+> **Coverage:** v6.4.0 as cut, plus the 6.5 work on `main` since. The v6 line
 > covers the refusal gates (the breakdown gate, the executable-criteria gate on
 > Done, the vacuous-verifier refusal), one independent review per unit and one
 > signature per run (`sprint sign`), the cost work that made the gate cheap enough
@@ -217,7 +217,7 @@ importing it.
 
 ## 3. Feature Inventory
 
-Baseline: v6.3.0 as cut, plus the 6.4 work on `main` (the skill is in production
+Baseline: v6.4.0 as cut, plus the 6.5 work on `main` (the skill is in production
 use); each row's Status column gives its feature's state. Confidence **[HIGH]**
 unless noted – extracted directly from source. The Epic column maps each feature to
 its owning epic (see `sdlc-studio/epics/`); a few rows delivered before the
@@ -789,6 +789,7 @@ none.
 | 2026-11-02 | 6.2.0 | Release cut (US1111): the Coverage note and the Feature Inventory baseline read v6.2.0 as cut, plus the 6.3 work on `main` |
 | 2026-11-08 | 6.3.0 | Release cut (US1139): the Coverage note and the Feature Inventory baseline read v6.3.0 as cut, plus the 6.4 work on `main` |
 | 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): the Feature Inventory gains a row each for the evidence annex and committed run record, the release evidence pack and evidence page, escaped-defect tracing, each seat's record, persona learnings, the risk class and second seat, the cost forecast and dispatch effort, and the resume brief and handoff; the flags table gains `risk.components`, `routing.effort`, `pricing.copilot_billing` and the `personas.memory` keys at the defaults `reference-config.md` states |
+| 2026-11-16 | 6.4.0 | Release cut (US1173): the Coverage note and the Feature Inventory baseline read v6.4.0 as cut, plus the 6.5 work on `main` |
 
 ---
 

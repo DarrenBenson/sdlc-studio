@@ -1,9 +1,9 @@
 # Technical Requirements Document
 
 **Project:** SDLC Studio
-**Version:** 6.3.0
+**Version:** 6.4.0
 **Status:** Draft
-**Last Updated:** 2026-11-08
+**Last Updated:** 2026-11-16
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -34,7 +34,7 @@ shared library, the data architecture (markdown artifacts plus JSON state, and t
 two id eras), the gate architecture, soft runtime dependencies, tool-neutral
 portability, and the architectural decisions (ADRs).
 
-Coverage: v6.3.0 as cut, plus the 6.4 work on `main` since. The document version
+Coverage: v6.4.0 as cut, plus the 6.5 work on `main` since. The document version
 tracks the product version; it is not itself a release artefact.
 
 Not covered: the per-command process flows (these live in the `reference-*.md`
@@ -1370,6 +1370,7 @@ touches the component. The constraints below span components.
 | 2026-11-08 | 6.3.0 | US1139: the release cut. The Coverage line reads v6.3.0 as cut, plus the 6.4 work on `main` |
 | 2026-11-15 | 6.3.0 | US1058, US1059: ADR-012's Built so far names `persona_memory.py` and the brief's learnings block; Not yet built keeps the memory directory and `persona_review.py` |
 | 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): §6's committed records gain the verdict files `critic.py brief` issues and `critic.py record` binds, the persona memory files and a release's evidence pack, each held to its writer's code, and the scan of tracked records reads the verdict and persona memory trees too; §6 names `reference-evidence-schema.md` at annex version 1.0 as the report's contract, and the `.local` table gains `resume-brief.md` from `sprint.py handoff` |
+| 2026-11-16 | 6.4.0 | US1173: the release cut. The Coverage line reads v6.4.0 as cut, plus the 6.5 work on `main` |
 
 ---
 

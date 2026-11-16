@@ -6,7 +6,7 @@
 
 Ask for software in plain language. The team plans it, builds it, tests it, and proves it is done.
 
-**Version:** 6.3.0
+**Version:** 6.4.0
 
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Lint](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml/badge.svg)](https://github.com/DarrenBenson/sdlc-studio/actions/workflows/lint.yml)
@@ -41,7 +41,7 @@ If you are a coding agent, [llms.txt](llms.txt) is a machine-readable index of t
   retired, each by name with its replacement. Run `migrate`, then `migrate --apply`, and follow
   [docs/existing-users.md](docs/existing-users.md).
 
-What changed in the current release: [the 6.3.0 release notes](docs/release-notes-v6.3.0.md).
+What changed in the current release: [the 6.4.0 release notes](docs/release-notes-v6.4.0.md).
 How a run goes, step by step: [the loop](.claude/skills/sdlc-studio/reference-sprint.md#the-loop).
 
 ## What a run gives you
@@ -111,7 +111,7 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 mandatory, so the installer refuses rather than proceed unverified:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.3.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.4.0
 ```
 
 That pins the current release. What it verifies: [Verifying the download](docs/INSTALL.md#verifying-the-download).
@@ -169,7 +169,8 @@ More answers: [what it needs and where it writes](docs/INSTALL.md#requirements),
 
 Release notes:
 
-- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - the current release: a run's cost is measured on whichever harness ran it and priced in dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
+- [docs/release-notes-v6.4.0.md](docs/release-notes-v6.4.0.md) - the current release: a release carries the evidence a change board accepts, a run's cost is forecast before it starts and set beside what it cost, and the 6.3 upgrade path
+- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - a run's cost is measured on whichever harness ran it and priced in dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
 - [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md) - a review brief can require the author's own check first, a run states what it cost, and the 6.1 upgrade path
 - [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - a run ends with its signed report, and the 6.0 upgrade path
 - [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, both upgrade paths and the known issues

@@ -133,10 +133,18 @@ print(json.dumps({"deterministic": [{"detail": "%s"}]}))
 
 
 def shipped(rel: str, tag: str = "v6.4.0") -> str:
-    """`rel` at `tag` once this clone holds it, else as this tree holds it."""
+    """`rel` at `tag` once this clone holds it, else, for v6.4.0 alone, as this tree holds it.
+    An earlier release is never this tree: a tree that is not a git clone holds none, so the
+    check reading it is skipped, naming why, and a clone lacking its tag fails."""
     if _run("git", "-C", str(REPO), "rev-parse", "-q", "--verify",
             f"refs/tags/{tag}").returncode != 0:
-        return (REPO / rel).read_text(encoding="utf-8")
+        if tag == "v6.4.0":
+            return (REPO / rel).read_text(encoding="utf-8")
+        top = _run("git", "-C", str(REPO), "rev-parse", "--show-toplevel")
+        if top.returncode != 0 or Path(top.stdout.strip()).resolve() != REPO.resolve():
+            raise unittest.SkipTest(f"this tree is not a git clone, so it holds no {tag} "
+                                    f"tree to read {rel} from")
+        raise AssertionError(f"this clone has no {tag} tag to read {rel} from: fetch tags")
     proc = _run("git", "-C", str(REPO), "show", f"{tag}:{rel}")
     if proc.returncode != 0:
         raise AssertionError(f"git show {tag}:{rel} failed: {proc.stderr}")

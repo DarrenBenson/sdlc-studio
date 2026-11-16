@@ -7,6 +7,1034 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.4.0] - 2026-11-16
+
+### Added
+
+- **The v6.4.0 release notes lead with what changed for the person answering for the release
+  (US1170).** `docs/release-notes-v6.4.0.md` opens with one headline naming 6.4.0 the current
+  release, then four themes, each naming the units that delivered it: a release carries
+  evidence a change board accepts; a run's cost is forecast before it starts and set beside the
+  actual; each review seat has a record, an escaped defect is traced to the approval that
+  missed it, a seat learns only from a signed run, and a high-risk unit gets a second
+  independent seat; and the front door is written for a head of engineering. Ten changes a 6.3
+  habit meets are each given beside what to do instead, the 6.3 upgrade path gives `migrate`
+  before `migrate --apply` with the keys 6.4 adds and their defaults, and every cost figure
+  names the signed report, RPT0028, RPT0032 or RPT0033, whose committed JSON carries it. The
+  new `tools/tests/test_lean_release_notes_v64.py` refuses the 6.3.0 notes with the version
+  changed, a draft composed from the fragments, a default `reference-config.md` contradicts and
+  a figure its named report does not carry, and runs the upgrade steps on a project v6.3.0's
+  `init.py` made.
+- **`sprint plan` names the registry files a unit's change implies that its Affects omits.** For a new skill script it names the root census, a reference-scripts page heading, the generated surface page, the command audit, and `lib/surface.py` when no criterion's code span names the script. For a verb or flag a criterion's code span names and the script's parser lacks, it names the surface page and `NON_CEREMONY_VERBS`, or the command audit, plus the prose-writer sweep for `--fields-file` or a free-prose writer. For a declared reference page within 20 lines below the reading-guide threshold, past the un-allowlisted budget or within 10 lines of its ceiling plus 5%, it names the regenerated guide or `tools/check_budgets.py` with the page's size. A script a criterion names is judged against the skill's parser only when it is the skill's own copy: its full path, or a bare name or shorter path ending a skill script the unit's Affects declares, so a project's own `scripts/deploy.py` draws none of the skill's registries. The report is advice under every `sprint.affects_check` mode and never refuses a plan, and a registry the tree does not hold is never named. (US1169)
+A test module or class marked `# test-selection: sweep` in its first 40 lines now joins every
+commit's test selection, a docs-only commit's included, beside whatever the change reaches. A
+marker that names classes selects only their node ids, and a class node is dropped when its
+module already runs whole. A clone without pytest runs a class sweep too: the commit hook's
+unittest fallback and `tools/skill-tests.sh` load its node id as the dotted `test_x.Class`, and
+`tools/skill-tests.sh` holds its output to its module's noise budget. Each marker records the seconds it was measured at, and a test holds
+the marked set to a 30-second budget, naming a marker with no recorded time rather than counting
+it as zero. This repository marks six sweeps that selection by reach did not pick for a change
+elsewhere in the tree, measured at about 20 seconds together: `test_doc_claims.py`, `test_precommit_floor_pending.py`,
+`test_root_census.py`, the scrub-site sweep in `test_skill_tests_env.py`, the raw-git-call sweep
+in `test_gitutil.py` and the commit-hook hermeticity tests. The census tests of
+`test_test_census.py` stay at the push gate.
+- The report of record states the effort each unit's builder and reviewer were dispatched at, in its cost section and on the page, as the `effort_builder` and `effort_reviewer` figures. Each is read from the plan the run record names by its digest, never from `routing.effort` at report time, is cited to the run record alone, and lists every value the plan stamped with its unit count, lowest effort first, so a run whose units carried two values shows both. A run planned before the stamp existed, or whose record names no plan or another plan, reads NOT MEASURED with its reason. The figures sit under a new `dispatch_effort` rule mark, documented in the evidence annex, so a page filed before it re-derives as it was filed. Re-checking a filed page, signed or not, replays its own figures, so a clone that does not hold the plan still reads the page as filed.
+- A project can set the reasoning effort its builders and reviewers are spawned at with `routing.effort` (`builder` and `reviewer`, each `inherit`, `low`, `medium`, `high`, `xhigh` or `max`; `inherit`, the session's own effort, is the default). `sprint plan` stamps both values on every unit, model routing on or off, and `sprint lane brief` names the effort to spawn the builder and its reviewer at. The plan refuses an unknown value, naming the key and the allowed values, and refuses a reviewer below its builder unless `routing.effort.reviewer_below_builder` names a decision recorded in `sdlc-studio/decisions.md`, in which case it prints that id.
+`docs/engineering-leaders.md` is a page for a head of engineering whose releases pass a change
+approval board. It covers change approval, separation of duties between author, reviewer and
+signer, the signed report, and cost in dollars a point, in under 1,200 words. Each claim in those
+sections links the script, reference section or committed record that enforces it, and each dollar
+figure links the signed report that holds it. A test holds the page to all three.
+`docs/evidence.md` lists every signed sprint run of this repository, one row per run, generated
+from the signed reports of record by `sprint_report.py evidence`, and names the newest report it
+covers. Around the table it explains what a Judged partial verdict means and where its reason
+comes from, how the wait for a signature is measured (from the report being built to the report
+being signed), and the command that regenerates the page. A test runs the page's `--check` against
+the committed reports and checks every link in the explanation lands on a file and heading that
+exist.
+`sprint_report.py evidence --out PAGE` writes the signed reports of record as one evidence table
+between the page's generation markers: one row per run from its latest signed report, with the
+goal verdict, a partial verdict's note, dollars per point where the report holds it (and not
+recorded where it does not), and the hours from the report being built to its signature. An
+unsigned report is left out, and the text outside the markers is never touched. `--check` writes
+nothing and exits 1 naming each run whose row differs from the reports the page names; a report
+signed after the newest one the page names is noted as not yet on the page and does not fail the
+check, so a sprint close never turns it red.
+`escape.py to-class --bug BGxxxx --class NAME --rule ... --behaviour ...` turns a confirmed
+escape's written Root Cause into a failure class in `sdlc-studio/lessons.jsonl`. The row goes
+through `lessons.py class-add`'s own function, injected at build and review, with `evidence`
+citing the bug and its `Escaped-via` unit and `files` holding the bug's Affects paths, so a later
+unit touching those files can be matched to it. A bug that is not escaped, one with no
+`Escaped-via`, one whose Root Cause is absent or still the scaffold, and a class the store
+already holds each exit 2 naming the reason, with the store unchanged. `lessons.py class-add`
+gains `--file` and `--evidence`, each repeatable; a row given neither keeps its shape.
+`escape.py trace --bug BGxxxx` traces an escaped bug to the unit and review that let it through.
+It reads the bug's `Shipped-in` release and its `Affects`, lists the stories and bugs named in the
+commits that release's tag holds and the previous tag does not, and proposes those that share a
+file with the fix, most shared files first, each with the verdict the review ledger recorded for
+it, the round and the reviewer's seat. It writes nothing; `--confirm UNIT` sets the bug's
+`Escaped-via` and stamps the verdict as `Escaped-verdict`, and refuses a unit that is not
+proposed. A bug with no `Shipped-in`, or a release that is not a tag or whose commits name no
+unit, exits 2 and proposes nothing.
+A bug can record that it escaped to production. `artifact.py new --type bug` and
+`file_finding.py file --type bug` both take `--escaped --shipped-in <release>` and an optional
+`--escaped-via <unit>`, and write `Escaped: yes`, `Shipped-in` and `Escaped-via` into the bug's
+header with a scaffolded Root Cause section. The release must be a git tag or a `CHANGELOG.md`
+version and the unit a story or bug on disk; an escape without a release, or naming a release or
+unit that does not resolve, exits 2 and writes nothing, and a bug filed without `--escaped` is
+unchanged. `transition.py` refuses to set an escaped bug Fixed or Verified until its Root Cause
+section holds more than the scaffold.
+Each change in a release's evidence pack lists the known issues that name it, drawn from every
+report the pack names, or "none recorded", and the pack carries the issues that name no change in
+one release-level list, each issue once. Each change names its report's signing principal, with
+the signing date, as the accountable person; a blank or agent principal refuses the pack and
+nothing is written. A principal reads as an agent when it holds the word agent anywhere
+(`sub-agent`, `an AI agent`) or when the committed verdict or self-check ledger records it as a
+live author of one of that report's own units, such as a builder's model name; a typed human
+author is not counted.
+`release_cut.py evidence-pack --version X.Y.Z --reports RPTxxxx,RPTyyyy` writes a release's
+evidence pack to `sdlc-studio/reports/evidence-pack-<version>.md` from the named signed reports,
+read as committed. Each delivered unit states its title and points, its ticked criteria with
+their Verify lines, and the latest verdict of each seat whose reviewer is not its author. An
+unsigned or unknown report refuses the build and no pack is written; uncommitted edits to a unit,
+a report or the verdict ledger do not change the pack.
+A self-review or a unit closed before the review gate is never counted as an independent review:
+the pack asks `critic.independence`, the project's one independence rule.
+**A high-class unit gets a second independent review seat, and the retro reports its yield.**
+`critic.py brief` names a high-class unit's risk class and whether the seat it briefs is the
+first or the second of its two independent seats; a standard or elevated unit's brief is
+unchanged. The retro's accuracy block reads the delivery verdict ledger and reports, per second
+seat, the units where it rejected or raised issues after the first seat approved, and says in
+one line when a high-class unit has no second-seat verdict or when a seat caught nothing. A
+bug, which carries no class, is classified from its Affects through `risk.components`. Nothing
+refuses, and no seat is dropped automatically.
+**`sprint plan` shows each unit's risk class.** With a `risk.components` map declared, the plan
+lists each unit's class (a story's `Risk-class` tag; a bug's, from its Affects through the map)
+and the second review seat each high-class unit needs, and records them in the written plan as
+`risk_classes`. A unit whose Affects touch a component ranked above its tag is flagged, naming
+the file, the component and both classes, for the operator to keep or re-tag at plan approval.
+Nothing refuses and nothing asks for a per-unit confirmation; with no map the plan prints one
+line saying every unit is standard.
+A project can declare a component map, `risk.components` in `sdlc-studio/.config.yaml`, mapping
+path prefixes to a class from the fixed, ordered vocabulary standard, elevated, high. `refine
+apply` and `refine add` stamp each story they mint with a `Risk-class` field: the highest class
+among the components its Affects touch, inherited and seeded Affects included. A path no prefix
+covers is standard, and a story with no Affects carries no class. Nothing refuses: with no map
+every story is standard and one line says so, and an entry naming an unknown class is reported
+in one line and read as standard. The map reader and the class order live in the new
+`scripts/lib/risk_class.py`.
+The sprint report's Estimates table now shows forecast, actual and actual over forecast on the
+Priced cost, Priced per point, Dollar cost, Dollars per point and Wall-clock span rows, from
+the forecasts the plan snapshot records. The dollar rows' basis names the price table date the
+forecast was priced at, the span's ratio is against its own wall-clock forecast and the Minutes
+row is still never compared with the span. A row with no rate reads `not forecast: <reason>`,
+and the first forecast row states that forecasts are descriptive. A page carries the new
+`cost_forecast` envelope mark; a page filed before it re-derives with its old rows unchanged.
+`sprint plan` now prints a Minutes, Wall-clock span, Priced cost and Dollar cost forecast for
+the batch, and `sprint plan --write` records each per unit in the plan snapshot beside tokens
+and minutes. Priced per point is the median of the five latest priced runs once three are
+recorded, and its source names them. The dollar forecast is the priced forecast times the work
+model's input price per million, naming the price table's effective date; a model the table
+does not list is not forecast, never priced at $0. The wall-clock forecast is points over the
+median points per elapsed hour of the latest signed reports, kept apart from active minutes. A
+row with no measured rate prints `not forecast: <reason>` and the plan exits 0.
+- **The sprint entry names what a large session will cost to carry into a wave (US1149).**
+  `sprint.py resume` and `sprint.py plan --write` read the session's newest call's context
+  (input + cache write + cache read) and, over 80,000 tokens, warn on stderr with that context,
+  the threshold, the re-read priced as a cache read (a tenth of the context a call, and that
+  times 100 over the next 100 calls, about one wave) and the remedy: `sprint.py handoff`, then
+  `sprint.py resume` in a fresh session. The new `sprint.fresh_session` key decides what
+  happens: `warn` (the default) warns and goes on, `block` also makes `resume` exit 2, and `off`
+  reads nothing. `plan --write` never refuses, because `handoff` needs the run it opens. The
+  synthetic records Claude Code writes with model `<synthetic>` and every usage count 0 (as
+  "No response requested.") are no call, so the size is the newest real call's. A size that
+  cannot be read is named under `block` alone and refuses nothing.
+  `sprint.py cost --anatomy` now flags, below its role table, an orchestrator whose calls
+  averaged over 150,000 tokens of context, with the same remedy, and its JSON carries
+  `orchestrator_context_budget` and `orchestrator_over_context_budget`.
+- **A project says which basis its Copilot plan bills on, and a run is billed on that one only (US1145).** `pricing.copilot_billing` takes `tokens`, the default since GitHub moved Copilot to token billing in AI credits on 1 June 2026, or `requests`, for a Copilot Pro or Pro+ annual plan kept on request-based billing. On `tokens` the sprint report prices the Copilot block's models from their credit rates in the Dollar cost row and counts the premium requests on their own row, unpriced, naming the key that switches it. On `requests` it prices the premium requests at the table's `premium_request` price and date, and those models' tokens read not priced because the plan bills by request, never $0. Any other value is refused by name. A filed page carries its basis in its price table, so a re-derivation bills it as it was filed.
+- A Copilot run on token billing now reports a dollar cost. The shipped price table carries a
+  `copilot_token_billing` block of its own: the US-dollar value of one AI credit ($0.01) and, in
+  AI credits per million tokens, the rates of seven models read from GitHub's Copilot models and
+  pricing page on 2026-11-09, each under the dotted id the Copilot CLI records
+  (`claude-sonnet-5.5`, not the Anthropic API's `claude-sonnet-5-5`). The five OpenAI ids the
+  Codex CLI records too keep their provider entry, whose rates match Copilot's for every
+  component a Copilot reading carries. `lib/prices.py` turns each credit rate into dollars at
+  the credit's value, refuses a block missing the credit's value, its date, its source or any
+  rate, and refuses an id the `models` list also prices. A Copilot id the table does not list
+  reads as not priced, never at a similar provider id's rate (US1144).
+- The shipped price table now prices xAI Grok under the OpenCode `xai/<model>` id for each of
+  the eight text models on xAI's page (`grok-4.7`, `grok-build-0.1`, `grok-4.6`, `grok-4.5`,
+  `grok-4.3` and the three Grok 4.20 models) and under the Cursor `--model` slug for the three
+  Cursor offers (`grok-4.7`, `grok-4.6`, `grok-4.5`), and Cursor Composer (`composer-2.5`),
+  each from its provider's own page with the day it was read, so a Cursor or OpenCode run on
+  those models reports a dollar cost; Cursor's Fast variant bills at higher rates a slug cannot
+  tell apart, so a Fast session is under-priced (US1143).
+- `sprint.py handoff` writes the open run's resume brief to `sdlc-studio/.local/resume-brief.md`
+  and prints its path, its estimated tokens against the 8,000 budget and the next action;
+  `--agent <unit>=<agent-id>` and `--issue "<text>"` repeat. With no open run, a brief over the
+  budget or a malformed `--agent` it exits 2 and writes nothing, and it writes no handoff record
+  and no run-state key. `sprint.py resume` prints that brief in a fresh session with the next
+  action the tree yields now, naming the brief's own as stale when the tree's next action has
+  moved since the handoff, and exits 2 with no brief, no open run or a brief of another run.
+  `sprint plan --write` now ends by naming the handoff and a fresh session for wave 1 as its
+  next step.
+- `lib/resume_brief.py`, an internal library, derives an open run's next action and a resume
+  brief of at most 8,000 estimated tokens from the tree and `sdlc-studio/.local/` alone
+  (US1140). The next action climbs a fixed ladder: await the in-flight lanes; review, repair or
+  finish the landed units; brief the first wave holding an unbriefed unit; then run
+  `sprint.py close` in its own fresh session once every batch unit is terminal. A brief over the
+  budget is refused, never cut, and a schema-3 unit spelt with or without its dash is one unit.
+  No command calls it yet.
+A persona learning reaches a brief only once a signed close has listed it. `sprint.py sign
+--strike M-NNNN --strike-reason "..."` strikes a learning the close listed as it seals the run,
+recording the principal, the date and the reason on the entry and on the sealed run record
+(`persona_learnings_struck`), and `persona_memory.py list` shows the strike. A strike with no
+reason, naming an id no memory file holds, or naming one this run's close did not list exits 2
+with every reason named, before anything is sealed or written. Every brief reads whether the
+listing run is signed from its tracked record, so a learning whose run awaits its signature is
+held and counted on the brief. `sprint.py reopen` holds the run's learnings in the checkout
+that reopened it, and in every clone once the re-close files the run's record, until the run is
+signed again.
+`sprint.py close` gains a `persona-memory` step, after the estimate against actual. It writes
+a delimited `## Persona learnings` block on the retro listing every approved learning not yet
+live, whatever wrote it, with its seat, its approver and the adverse items it addresses; it
+stamps each one Listed-in with the run and names the ids on the run record
+(`persona_learnings_listed`). The close output and the block name each seat whose record holds
+adverse evidence and no learning listed, and say how many verdict rows name no seat. The record
+is the one `retro.py seats` reports, so a defect found after a seat's approval and a later bug
+charged to its approval both count. A re-close replaces the block between its markers and
+leaves the prose around it as the author wrote it. The step never blocks the close; it records
+a known issue only when the retro, a memory file or the run state cannot be read or written.
+`persona_memory.py approve-brief --id M-NNNN --seat <seat>` briefs another seat with a
+proposed learning verbatim, the adverse items its own seat's record lists with their keys, that
+card's Non-Negotiables and Authority, the question whether the learning contradicts or loosens
+them, and the commands that record the decision, framed by the approving seat's card.
+`persona_memory.py approve --id M-NNNN --reviewer "<holder> (<role>)"` records an approval with
+Approved-by, the date and the adverse items it addresses (`--addresses round:US0001r2`), or
+`--addresses none` with a `--reason`; `--reject --reason` records a rejection, and a rejected
+learning never reaches a brief. Both exit 2 and write nothing for the learning's own seat, told
+apart by the `(<role>)` group and never by name, so a second holder of the card is refused.
+`approve` also refuses a reviewer naming no role or one no card declares, an entry that is not
+proposed, an addressed item the record does not list, and an approval naming nothing.
+`persona_memory.py learn-brief --persona <seat> --retro RETROxxxx` briefs one seat to write
+what it will do differently: its own record from `retro.py seats` and no other seat's, each
+adverse item with the key an approval cites, the rule that a learning cannot change the card's
+Non-Negotiables or Authority, the file to write and the command that records it, then its card
+framed with its live learnings. `persona_memory.py propose --persona <seat> --retro
+RETROxxxx --from-file <path>` records that file as written, less its outer blank space, as a
+proposed learning, stamped with the retro and the run its own Run line names (else `--run`,
+else the open run, else the retro), whose evidence is the ids the seat's record lists, never
+ids its text names. It exits 2 and writes nothing for a seat with no record in the retro, for
+a `--run` that is not a run id or names another run than the retro's, and while the seat's
+earlier proposal from the same retro is still proposed. Beside the level-two heading `add`
+already refused, `add` and `propose` now refuse a body holding a field line, which would read
+back as the entry's own State or Evidence. The loop costs one learn-brief and one
+approve-brief per seat with a record at each close: about six agent contexts for three seats.
+`retro.py seats` charges each later bug to the approval that missed it, by the narrowest
+evidence. A bug counts once, in the retro whose window holds its `Created` day (after the
+previous retro's `Date`, on or before this one's), and never when its title reads
+`<unit> did not converge in review`. A bug carrying `Escaped-via` is charged to that unit on the
+recorded link, or named as charged to no seat, with the reason, when no live verdict on that
+unit stands; otherwise only when it cites the unit, shares an `Affects` file with it and cites
+three ids or fewer. The charge goes to every seat whose latest verdict on the unit approved, in
+any run, so a seat outside the batch still appears with its misses, each listed with its basis.
+A bug whose `Evidence` names the unit's review, where the approving row carried a finding, reads
+as approved over the seat's own finding, not as a miss.
+`retro.py seats --id RETROxxxx [--format json]` scores each seat on its own record over a
+retro's batch, read from the delivery verdict ledger by `critic.recorded_seat` on the Reviewer
+and Author cells: its APPROVE and REJECT counts, the round each unit it reviewed converged in,
+the units it built with their rounds and each round's blocking findings, and the blocking
+findings a later round raised at a `file:line` no earlier round cited, charged only to a seat
+whose earlier verdict on the unit approved, with whether the cited file changed between the
+two rows' dates or that it cannot be told. A superseded row is listed as recorded in error with
+its reason, and the rows naming no seat are counted and named, never guessed.
+A review record now names the seat that built the unit. `sprint lane brief --seat <role>`
+(default engineering) names the building seat in the brief and records it on the open run, and
+the record command a `critic.py brief` footer prints carries `--reviewer "<holder> (<role>)"`
+for the seat briefed and `--author "<holder> (<role>)"` for that builder. With no lane record
+the author is the engineering seat, and a note says so. `critic.recorded_seat` reads a cell's
+seat from its first `(<role>)` or `(<role> seat)` group, and every delivery writer warns,
+without refusing, when a project declaring seats records an author without that form.
+A review brief (`critic.py brief --seat <seat>`) and the `persona_resolve.py` framings
+(`resolve`, `resolve-consult` and the consult panel) carry the seat's own live learnings from
+its memory file, in a block labelled with the render. A learning is live when it is approved
+and its Review-by date has not passed. One whose evidence cites a unit sharing a file with the
+unit under review ranks first, then the newest. The block holds at most
+`personas.memory.inject_max` learnings (default 5), each as its id, title and a gist of at
+most 200 characters, and says how many the cap withheld and how many are past their horizon.
+A memory file that cannot be parsed is reported as unreadable, naming the file; a seat with
+no memory file is told none are recorded.
+`persona_memory.py` keeps each persona's evidenced learnings in a committed file beside its
+card, `sdlc-studio/personas/memory/<persona>.md`, keyed by a seat's declared role or a user
+persona's card stem. `add` records a learning as proposed with its evidence, the date, a
+Review-by horizon (`personas.memory.validity_days`, default 90) and an `M-NNNN` id unique
+across every memory file; `--fields-file` supplies the title and body from a JSON document,
+stored verbatim, and a flag still overrides its key. It exits 2 and writes nothing when the learning has no evidence, a
+cited id resolves to nothing on disk (a run counts only when a report names its whole id, in
+its own case), the key names no persona or both a seat and a card, the body holds a level-two
+heading line or anything else the file's own reader would refuse, or a gitignore rule would
+keep the file out of the repository, naming that rule. `list` and
+`recall` read one persona's file, each learning with its state and horizon. `validate.py
+personas` no longer reads a memory file as a misplaced persona card. The new
+`reference-persona-learning.md` describes the memory and how it reaches a brief.
+`critic.py brief --rejoinder` with no value, or with `ledger`, quotes the briefed seat's
+unanswered REJECT from the verdict ledger: the latest one in the unit's current delivery from
+a reviewer of that seat. A row bound to the file its brief issued is quoted from that file's
+bytes, found through its `Source` cell, and the brief's fingerprint equals the one
+`--rejoinder <that file>` prints. A transcribed row, or one whose file is missing or changed,
+is rebuilt from its cells, every finding kept with its `BLOCKING:` mark and any rulings, and
+the quote is introduced as rebuilt rather than as the reviewer's own words. No such REJECT
+exits 2 naming the unit and the seat, with nothing on stdout. A plain brief for a seat holding
+one names `--rejoinder` on stderr, and the re-brief warning now prints the bare flag.
+- A delivery verdict written by the context that edited the unit is now recorded as a self-review, whatever reviewer name it carries (US1015). Every verdict writer (`critic.py record`, `transition.py set --verdict` and `artifact.py close --verdict`) shares one check, which reads the session's Claude Code transcripts. It judges the issued verdict file's writer, or for a verdict given by flag the context running the command. When that context made a Write, Edit or NotebookEdit call on one of the unit's Affects files before it first received a verdict path briefed for the unit, the row's `Source` cell gains `self-review:<path>`, the writer warns naming the file, and `critic.py show` marks the row. Edits made in a subagent's worktree are matched to the repository-relative Affects through its `worktreePath`. The check is bounded below by the unit's In Progress span in the open run. `critic.independence` takes the `Source` cell as an optional third argument, and `is_independent` reads it from the row. A self-review row therefore fails the close's review-coverage step and `sprint.py sign`'s review bar, and nothing new is refused at Done. A mutant a briefed reviewer applies and reverts in its own worktree comes after its brief and does not count; an edit made through Bash is not seen.
+`critic.py record --from-verdict` now names who wrote a verdict file a brief issued, read from the session's Claude Code transcripts: the row's `Source` cell carries `session:<id> agent:<id>` after the hash for the subagent briefed with the path whose write carried the bytes on disk, and `show` labels it `(written by agent <id>)`. When the main thread or another agent wrote the file after it, or the bytes on disk are not the ones the last write carried, the row still records, gains `last-writer:<context>`, and `record` warns, naming the briefed agent and the last writer. Another harness's store, a missing `CLAUDE_CODE_SESSION_ID`, or transcripts holding no write of the path by a briefed agent record `provenance:unknown` with the reason, and the row names no agent. No transcript is taken as the writer for being the newest; a context is named only for a write its transcript holds.
+- `critic.py record` now reads back the hash a verdict row's `Source` cell carries.
+  `record --from-verdict <path>` refuses, with exit 2 and nothing written, a file whose bytes
+  an earlier row's `Source` already carries (decided on the hash, so a copy at a fresh path is
+  refused too), or whose `UNIT` line names a unit other than the one recorded. A file a brief in
+  this clone issued is refused too when its `BRIEF` line names a stem other than the file's own;
+  a block saved anywhere else keeps the header of the file it was written to and records as
+  transcribed. The refusal names the earlier row or the mismatched line. A file that opens with
+  neither line is not checked for them.
+- A verdict transcribed with `--brief <fp>`, by `--from-verdict -` or by `--verdict` and
+  `--issues`, is compared with each file a brief in this clone issued for the unit under that
+  fingerprint that exists, holds a block and no row records. The verdict and the findings are
+  compared in order, as the ledger reads them, so a reflowed block matches and a dropped or
+  changed finding does not. Unless one file matches, `record` prints a warning on stderr naming
+  the newest such file and the first finding that differs, and writes the row as transcribed.
+- `critic.py show` adds `(changed since it was recorded)` or `(missing)` to the line of a row
+  whose issued file no longer holds the bytes its `Source` hash names, or is gone, and
+  `--format json` carries the same as `verdict_file_state`: `unchanged`, `changed`, `missing`,
+  or `null` for a transcribed row.
+- A recorded verdict is bound to the bytes of the file its brief issued. The delivery ledger
+  `sdlc-studio/reviews/critic-verdicts.md` gains a ninth column, `Source`, before `Issues`:
+  `critic.py record --from-verdict <path>` writes `sha256:<first 16 hex digits> <basename>`
+  of the file's exact bytes when a brief noted in this clone issued that path for the unit,
+  and leaves the file as it was. A verdict given by `--verdict`, by stdin or from any other
+  file, including one in the same `verdicts/<unit>/` folder, is written with `-` and `record`
+  prints, on its own line after the `recorded` line, that it was transcribed. `critic.py show`
+  reads the first as "from the brief's verdict file (writer unread)" and names
+  `sdlc-studio/reviews/verdicts/<unit>/<basename>`, reads `-` as "transcribed", and
+  `--format json` carries the same as `provenance` and `verdict_file`. Commit the verdict file
+  with its row.
+- The first verdict recorded after upgrading pads every earlier eight-cell row with `-`,
+  keeping its cells, and `row_identity` still digests the first eight cells, so no identity
+  a signed run record froze moves. The padding now inserts before the last unescaped pipe, so an escaped
+  pipe inside an `Issues` cell is no longer split by this or the earlier column migrations.
+  Mixed versions: a reader on 6.3.0 or earlier treats every nine-cell row as malformed and
+  skips it, so a teammate on an older install sees no verdict from a padded or later row
+  until they upgrade.
+- `critic.py brief` names the file the reviewer writes its verdict block to: after the
+  unchanged return contract it prints an absolute path under the main checkout's
+  `sdlc-studio/reviews/verdicts/<unit>/`, fresh for every brief, and the `UNIT:` and `BRIEF:`
+  lines the file opens with. The footer's record command now reads that file with
+  `--from-verdict` in place of `--verdict <APPROVE|REJECT>`, so what is recorded is what the
+  reviewer wrote. The path and its header lines stay out of the brief fingerprint, so two
+  briefs of one scope still share one, and a rejoinder names a new file and quotes the earlier
+  verdict without its header lines.
+- **The sprint report states the prices its dollars were costed at, and prices the delegated
+  totals the Tokens row adds (US1000).** The report's appendix carries a Prices table, in the
+  HTML page and its Markdown twin: each model the Dollar cost row priced, with its input,
+  output, cache write 5m, cache write 1h and cache read prices in US dollars per million
+  tokens, the entry's effective date and its source, read from the price table the page
+  carries, beside that model's dollars. A `pricing.models` revision after the close moves
+  nothing on a filed page. Over a meter that leaves delegated agents' spend out, the Dollar
+  cost row now adds the totals read from an agent's own transcript at their models' prices and
+  names each supplied `--tokens` total, which has no per-model split, as unpriced with its
+  token count and the tokens the dollars leave unpriced, never as $0. Over a meter that reads
+  the subagent transcripts nothing is priced twice. A page filed before the change carries no
+  `usd_prices` mark and re-derives as it was filed.
+A delegated agent's supplied token total now records the model it ran on. `sprint lane return
+--model X` and `lane accept --model X` store the model on each unit's delegated record, a total
+split between several units by their Points included, and `retro.py accuracy
+--delegated-model X` does the same for a `--delegated-tokens` total. Each command prints the
+model beside the total. A total given with no model records none: the session's model is never
+filled in, and the record and the page read as they did. The model names a supplied total; it
+does not price it. The sprint help no longer says a total given for several units is not
+recorded: it is split by points, and each unit's record says so.
+- **Each committed report and run record states the evidence-schema version it was written
+  under (US0996).** `sprint close` now stamps the JSON page with `evidence_schema`, the version
+  the evidence annex's masthead states (1.0), and the tracked run record copies the stamp from
+  the page it names whenever the close or `sprint sign` files it, so a run signed after the annex
+  moves keeps the version its page was stamped with. `sprint_report.py check` re-derives a page
+  with the stamp it carries, or none, and the stamp is outside the fingerprint, so a page filed
+  before the stamp still reads VALID. The annex lists `evidence_schema` among the envelope's rule
+  marks and its Versioning section states the rule and the compatibility policy: an added field
+  is a minor bump, a removed or renamed field is a major bump carrying a migration note in the
+  annex, and a consumer must tolerate unknown keys. `help/sprint.md` says the tracked record
+  carries the stamp. The new `test_evidence_schema_stamp.py` closes and signs fixture runs and
+  reads the page and the record from a fresh clone.
+- **The evidence annex documents the lesson class store, the evidence logs and the four ledgers
+  (US0995).** `reference-evidence-schema.md` gains the fields of a lesson class row and of its
+  hits, of an actuals, forecast and audit-cost line, each marked required or not, with the two
+  forecast field names older lines carry, and the header columns, in order, of the critic ledger
+  (nine columns, with the narrower rows an older ledger holds), the velocity history, the
+  decisions ledger with its waiver markers, and the deploy log. A conformance test drives
+  `telemetry.py record`, `telemetry.py forecast`, `audit_cost.py record`, `retro.py extract`,
+  `critic.py record`, `retro.py accuracy --write`, `decisions.py add` and `deploy.py record` in a
+  throwaway project and holds what each writes to those tables. The critic ledger's `Tier`
+  cell is documented as `critic.py record` fills it: `full` or `light`, then `(explicit)` when
+  the tier was chosen with `--tier-explicit`, or `-` when no tier was recorded, and the test
+  holds the cell to rows recorded with and without a tier.
+- **The evidence annex contracts the committed run record and the rule that makes it await its
+  signature (US0994).** `reference-evidence-schema.md` gains a Run record section: the record
+  `sprint close` files under `sdlc-studio/reports/runs/`, its three states (awaiting its
+  signature, sealed by `sprint sign`, ended by `sprint stop`), the type each contracted key holds
+  in each state, the signature's fields, the legacy `plan` values an older record holds, and the
+  awaiting rule as a table: `outcome` is `running` and `report` is set. A consumer tolerates any
+  key the table does not name. A conformance test reads those tables and holds them to records
+  the shipped `sprint plan --write`, `sprint close`, `sprint sign` and `sprint stop` file in a
+  throwaway run, and evaluates the annex's own awaiting rule against what `sprint plan --write`
+  does in a fresh clone of each record.
+- **A consumer can recompute a report's fingerprint from the evidence annex alone (US0993).**
+  `reference-evidence-schema.md` gains a Report fingerprint section: the schema-2 digest in six
+  steps (the figure walk with each row's bracketed position, the exclusions, the price table
+  entry on a page that replays it, the compact JSON writing and the truncated SHA-256), a
+  reference implementation that needs only the Python standard library, and two tables naming
+  the figures (`goal.ended_at`, `goal.duration_hours`) and the sections (`lessons`, `lane_yield`)
+  left out of the digest. The annex and the Sign step of `reference-sprint.md` both state that
+  the signature block, the generation time and each figure's source are not signed. The new
+  `test_evidence_annex_fingerprint.py` lifts the block off the page and runs it with
+  `python3 -I` from an empty directory over a page a fixture `sprint close` files and over every
+  committed schema-2 page, found by glob, and holds both tables and the block's own lists to the
+  code's. The annex is long enough now to carry a generated reading guide.
+- **The report of record has a published, versioned annex a consumer can parse it against
+  (US0992).** The new `reference-evidence-schema.md`, at annex version 1.0 and versioned apart
+  from the skill, catalogues the JSON page `sprint close` files: its envelope keys with each
+  rule mark's fixed value, the shape of a section and of a figure, the fifteen schema-2 sections
+  in page order with the two conditional ones (`lane_yield`, `unmeasured`) and when each is
+  absent, every figure key and row key, and the source grammar with its declared non-path
+  sources and workspace prefixes. A figure's fields include the `label` that a per-unit figure
+  read from the agents tagged to its unit carries, and the annex names the sections an older
+  schema-2 page lacks, `lessons` among them. Schema 1 is documented as it stands: sixteen sections with
+  `waivers` optional, `window_end` an optional envelope key, and `sprint_report.py check`
+  answering that the page cannot be re-derived and stands as filed. Every contract is a table
+  under a fixed heading, and the new `test_evidence_annex_report.py` reads those tables the way
+  a parser would and holds them to pages two fixture runs file through `sprint close` and to
+  the four schema-1 pages this repository holds. The Markdown twin and the HTML stay
+  uncontracted. `reference-schema.md` now points its evidence consumers at the annex.
+`lessons.py class-add` records one failure class in `sdlc-studio/lessons.jsonl` outside a
+retro. It appends one active row with the next `LC-` code, the open run's id and the
+`--source` given, through the same store functions `retro.py extract` uses for a
+`[new: <class name>]` Try item, so `lessons classes` lists it and the lane brief's build digest
+carries it. A class the store already holds, a class code given as a name, a blank field or a
+`--phase` other than plan, build or review is refused with the reason and leaves the store
+byte-identical. `help/lessons.md` and `reference-scripts.md` name the verb beside
+`retro.py extract` and say the lane brief reads the store, not the `lessons/` registry.
+
+### Changed
+
+- v6.4.0 is cut (US1173). `package.json`, `package-lock.json`, `templates/version.yaml`, the
+  `SKILL.md` frontmatter, README and the PRD, TRD and TSD Version fields carry 6.4.0, and
+  `check_versions.py --strict` agrees. `release_cut.py changelog-cut` folded every pending
+  fragment into this section, `known_issues.py write --release 6.4.0` rewrote
+  `docs/known-issues.md` and filled the release notes' count line, and README and
+  `docs/INSTALL.md` pin `--version v6.4.0`. README links the 6.4.0 notes and calls 6.4.0, and
+  only 6.4.0, the current release; the notes link this section in place of `[Unreleased]`. The
+  three specs' Coverage lines read v6.4.0 as cut, plus the 6.5 work on `main`.
+- **The PRD, TRD and TSD describe what 6.4 ships (US1172).** The PRD's Feature Inventory gains a
+  row each, naming its units, for the evidence annex and committed run record, the release
+  evidence pack and evidence page, escaped-defect tracing, each seat's record, persona learnings,
+  the risk class and second seat, the cost forecast and dispatch effort, and the resume brief and
+  handoff. Its flags table gains `risk.components`, `routing.effort`, `pricing.copilot_billing`
+  and the `personas.memory` keys, each at the default `reference-config.md` states. The TRD's
+  committed records gain the verdict files `critic.py brief` issues and `critic.py record` binds,
+  the persona memory files `persona_memory.py` writes and a release's evidence pack from
+  `release_cut.py evidence-pack`; its state table gains `resume-brief.md` from
+  `sprint.py handoff`, and its data architecture names `reference-evidence-schema.md`, at annex
+  version 1.0, as the contract a consumer parses a report against.
+  `tools/tests/test_lean_trd_refresh.py` now checks every tracked file under
+  `sdlc-studio/reviews/verdicts/` and `sdlc-studio/personas/memory/` against a row, as it already
+  did under the evidence and report directories. The TSD says a module or class marked `# test-selection: sweep` joins every
+  commit's selection, that the push gate runs inside the green-run noise gate CI's Lint applies,
+  and that the evidence annex's tests hold every committed report to the annex.
+The help and public pages describe what 6.4 ships (US1171). `help/review.md`'s section on the
+review brief names the verdict file the brief issues under `sdlc-studio/reviews/verdicts/<unit>/`,
+the `Source` cell `critic.py record --from-verdict` binds to that file's bytes and its refusal of
+a file an earlier row carries, the self-review a verdict from the unit's own editing context is
+recorded as, the bare `--rejoinder` that quotes the seat's unanswered REJECT, the seat's live
+learnings, and the first and second seat on a high-class unit. `help/retro.md` names
+`retro.py seats` and the bugs it charges to the approval that missed them, the close's
+persona-learnings step with `sprint.py sign --strike`, and `escape.py trace` and `to-class`, each
+linking its reference section. `help/sprint.md` names `routing.effort` and
+`pricing.copilot_billing` with their defaults. README gains a "New in 6.4" line, llms.txt links
+`docs/engineering-leaders.md` and `docs/evidence.md`, the evidence section of
+`docs/why-sdlc-studio.md` names the release evidence pack, and `docs/existing-users.md` opens
+with a "From 6.3 to 6.4" section.
+- The README is a front door of about 1,300 words, down from over 5,200 (US1164). Its first section
+  offers three routes in, in order: evaluate (the engineering-leaders page and the evidence
+  from the runs), try (the install guide) and upgrade (the existing-users page). The longer
+  passages moved rather than went: how it works, the common questions, what you can do, the
+  worked examples, the generated team and what runs under the hood are now in
+  `docs/why-sdlc-studio.md`, and the requirements, what it writes into your project and the
+  notes for agents evaluating the skill are in `docs/INSTALL.md`. A test holds the README to
+  1,800 words and its routes to pages that exist.
+`SUPPORT.md` now says what support exists, where to ask and what is not supported. It names only
+the repository's GitHub issues, with the bug report and feature request forms, and its security
+policy, and it links the install guide rather than giving an install command of its own; the old
+copy-the-directory command is gone. `tools/check_links.py` now checks `SUPPORT.md` with the other
+root documents, so a link it gives to a Markdown file that does not exist is reported.
+- The PRD's Mission now opens with "Human in the lead, not just in the loop." (US1148, CR0689,
+  RFC0063), and its Outcomes gain O10 to O13 after O9, worded as D0438 drafts them and D0446
+  rules them: one evidence pack per change that a change board reads without running the tool,
+  with every specification naming its accountable owner (O10); cost per point in money against
+  a declared monthly budget, whichever harness ran the work (O11); an escaped defect traced to
+  the unit and verdict that let it through, and its lesson carried forward (O12); and the
+  committed record a read-only dashboard reads (O13). They cite Abena Osei's End goals 1 to 5
+  and Graham Doyle's 1 to 3. O5 now cites Abena Osei's End goal 6, the counterweight, beside
+  Maya Okafor's End goal 5 (D0443), so `O5_CITES` in `tools/tests/test_lean_prd_refresh.py`
+  holds that pair in either order. The module holds O10 to O13 word for word, fails an outcome
+  that names Rowan Achterberg (D0380), requires every End goal of Maya Okafor, Jonah Reyes,
+  Abena Osei and Graham Doyle to be cited by exactly one outcome, and checks through
+  `sprint.py plan --serves O10` that a goal serving O10 names both Abena Osei and Graham Doyle.
+- Graham Doyle, who chairs the change approval board, joins the persona registry as Served:
+  affected by the product without using it (US1147, RFC0063, D0437). His new card,
+  `sdlc-studio/personas/graham-doyle-change-approver.md`, states three End goals, from approving a
+  change from one document to seeing fewer surprises in production, and carries no Interface row.
+  The persona index lists him under a new Served heading between Secondary and Negative, and the
+  PRD's Target Users names him after the Secondary bullet. A Sprint Goal planned with
+  `--serves "Graham Doyle"` now prints `goal serves: Graham Doyle (Served)` rather than NONE.
+  Trevor Hale narrows to a GUI-first operator wanting non-technical staff to run the tool and a
+  human approval on every change (D0436, D0446): his excluded End goals are a GUI, an approval on
+  every change, non-technical staff operating the tool and sync to an enterprise tracker. His
+  card names Abena Osei as the Primary those wants would cost, and his Scenario points his wants
+  for boards and dashboards at the read-only companion dashboard over the committed record.
+  `tools/tests/test_persona_coherence.py` holds both cards' End goals word for word. It fails a
+  Scenario that names any of Trevor's three declined wants, in the criterion's own wording,
+  outside a clause that declines it, or a declining clause that holds any word besides its
+  verb, the three wants, commas and "and"; so a want offered inside that clause fails whatever
+  the offering word. A want offered in other words, such as "Jira sync", is not caught.
+- Abena Osei, a head of engineering in an audited organisation, is the shipped skill's Primary,
+  and Maya Okafor moves to Secondary (US1146, RFC0063, D0436). Abena's new card,
+  `sdlc-studio/personas/abena-osei-head-of-engineering.md`, states six End goals, from passing the
+  change approval board on the run's own evidence to keeping the process small enough to serve
+  the work (D0443), each with its Evidence line. The persona index lists her first, so a story
+  minted with no persona names her. Rowan Achterberg's card, Trevor Hale's Boundaries, Jonah
+  Reyes's Primary line and the PRD's Target Users name her as the shipped skill's Primary.
+  Maya's End goals are unchanged, and so are Jonah's. `tools/tests/test_persona_coherence.py`
+  holds Abena's End goals word for word.
+- **The sprint reference defines a wave boundary and runs the close in its own fresh session
+  (US1142).** `reference-sprint.md#wave-boundary` defines a wave boundary as every lane of the
+  wave accepted and none in flight, because a builder's hand-back reaches only the session that
+  spawned its agent. At a boundary `sprint.py handoff` writes the resume brief, and the next
+  wave starts in a fresh session with `sprint.py resume`; the close (the retro, the report,
+  `sprint.py close` and `sprint.py sign`) runs in its own fresh session started from that brief.
+  "The handoff and the run object" now tells the run-local resume brief in
+  `sdlc-studio/.local/resume-brief.md` apart from the retired handoff record the signed report
+  replaced, and `reference-sprint-toolchain.md` carries a row for each of the two verbs. The
+  loop stays six steps, and the reference stays within its line budget.
+The commit hooks print one summary line on a pass, the last line each prints, and the whole
+per-lane list with the failing lane's rule, detail and fix on a refusal; a pass still prints the
+stamps-staged re-read list and the settle report above its summary, and `SDLC_GATE_VERBOSE=1`
+prints the per-lane list and the budget report on a pass too. `sprint.py lane return` prints a
+return that is not blocked in at most two lines and a blocked one in full.
+`docgen.py reading-guides` refuses a root with no skill tree instead of reporting `0 of 0`, and
+`critic.py record` and the retro's accuracy block code-span a bare URL so the markdown they write
+passes the markdown lane unedited (US1134).
+The report's lane-yield appendix is now frozen on the run record by the close, as the CI runs
+and review rows are, so the page reads the same in any clone. `sprint close` reads this clone's
+refusal log and run archive once, on every prepare, and records the per-lane rows on the run
+record (null when the clone holds no log). Every lane-yield figure then cites the tracked run
+record ahead of `git log`, never the `.local/` refusal log, and the note says the tally is this
+clone's refusal log as the close read it. `sprint_report.py build --run <RUN-ID>` in a fresh clone
+holding no refusal log and no run archive shows the section with the rows the filed page carries.
+A record that froze nothing, an open run before its close or a run sealed before this change, is
+still read live from the clone's log. A refusal log that cannot be read is now reported without
+its path.
+The committed run record now names the sprint plan a run was opened from by its content, under
+a new `plan_digest` key: `sha256:` and the full 64-hex digest of the `sprint-plan.json` the
+last `sprint plan --write` left, or, for a rolling run's next cycle, the plan `sprint boundary`
+wrote for that cycle. The record's `plan` is now null, so a teammate's clone no longer reads a
+pointer to `sdlc-studio/.local/sprint-plan.json`, a file only the planner holds, and a copy of
+that plan found later can be matched to its run. Records filed before this change keep their
+`plan` value; nothing rewrites them.
+A sprint report the close files now cites the run record the close commits beside it,
+`sdlc-studio/reports/runs/<RUN-ID>.json`, for every figure it reads from that record, the
+not-measured reasons included, instead of `sdlc-studio/.local/run-state.json`, which only the
+closer's clone holds. Each DORA figure read from the CI runs the close froze cites that record
+first and then the forge reading that filled it (`gh run list`, or why it could not answer);
+figures counted from git history still cite `git log`. A page filed before this change still
+checks VALID in a fresh clone, because `check` compares figures and never their sources.
+- `verify_ac.py run` and `verify_ac.py report` count partial skips apart from other failures.
+  A criterion whose pytest target ran only in part is still counted in `fail=`, and each
+  story's line now also carries `partly_skipped=N`. The closing `total:` line gives the same
+  count beside `fail=` and names each partly skipped criterion. `report` prints that line as
+  before; `run` now prints it too, when the run covers more than one artefact or a criterion
+  ran only in part. The count is printed and recorded by `verify_ac.py`: the verify report
+  records it on each story and a `partly_skipped` flag on each failure. An all-skipped target
+  keeps its own all-skipped verdict and is not counted as a partial skip.
+
+### Fixed
+
+- **The commit-msg trailer derivation reads only the author's text above git's scissors line
+  (US1133).** Under `git commit -v` git puts the staged diff below that line and drops it from
+  the commit, but `engagement_floor.py check-commit-msg --write-trailers` read a diff line
+  holding `Refs: <id>` as the author's trailer and refused the commit as contradicting
+  ownership. The derivation now cuts the message at the scissors line through the one helper
+  `with_trailers` also uses to write the derived trailers above it, and a hook test pins both
+  the reading and the writing.
+- The shipped `AGENTS.md` starter's habit pointer no longer lists temp files among the habits it
+  sheds to `reference-doctrine.md#working-habits`, since it keeps the shared-temp-path rule
+  (BG0280) as one line of its own; it names foundation first there instead (US1130).
+  - The starter's test now holds each non-negotiable gate by its whole rule sentence rather than
+    its heading or opt-out, so cutting the engagement floor's rule or the CR / RFC to Story flow,
+    or rewording "The CODE leg is not optional", fails it. It also holds the temp-path rule
+    inside the starter's Don't list and in the `AGENTS.md` a project is initialised with, and holds
+    the doctrine's Working habits intro to name the temp-file habit as the one item the starter
+    keeps.
+  - The `sprint.py cost --anatomy` test pins that a main thread whose transcript carries no
+    per-call record reads its start context as not available, on the transcript path as well as
+    the harness-total path.
+- A Cursor cloud run signalled only by `SDLC_STUDIO_CURSOR_AGENT_ID` is now read as Cursor's
+  even when no Cursor reader is installed, so it no longer falls through to a Claude transcript
+  left on disk (US0986, BG1205). The variable is one of `token_meters.SIGNALS` itself, beside
+  `CURSOR_AGENT`, rather than only a signal the reader module adds, and
+  `token_meters.selection_variables()` names it with or without that module.
+  - The token-meter tests now pin, in the criteria the transition gate runs, what only a sibling
+    run-state test held before: a run read in a Cursor session and then a Claude one hands no
+    Cursor stamp or baseline to the Claude transcript re-derivation and totals each session on
+    its own terms, and a two-signal refusal names `SDLC_STUDIO_HARNESS` as the way out and that
+    setting reads the harness it names.
+- The 6.4.0 release notes' test no longer fails in a copy of this repository that is not a git
+  clone (BG1501). Its checks that compare 6.4's shipped configuration defaults with v6.3.0's read
+  the v6.3.0 tag through git; outside a clone they now skip, naming why, as its checks that run
+  the CLI already did, and a clone without the tag still fails. The frozen-copy test, which files
+  a finding in such a copy and runs every module that reads the notes, passes again.
+The test that the lane watchdog sends SIGTERM and waits its grace no longer fails at random on a
+slow runner. It polled until the child's marker file existed and then read it, so a read between
+the trap creating the file and writing TERM into it saw an empty file. It now waits until the
+marker holds TERM, and the fake trap creates the marker 0.2 s before writing to it, so the old
+poll fails every time rather than now and then. A watchdog that sends SIGKILL with no SIGTERM
+first still fails the test. (BG1494)
+- The push gate now applies CI's green-run noise gate, so a line a passing test prints refuses the
+  push instead of turning GitHub Lint red after it. The pre-push hook, on this machine and on the
+  gate host alike, runs the boundary gate inside `tools/run-suite.sh --noise-gate`, which records
+  what each test printed while the full-suite lane's pytest captured it and holds that output to
+  `tools/test-noise-baseline.json` with `tools/test_noise.py`'s own detector: each skill test module
+  to its entry and the run to `_total`. A refusal names the noise gate, each module over its budget
+  and up to three of the lines it printed. The suite still runs once. A line a test module prints
+  as it is imported is not counted: the wrapper reads what each test printed, and an import is not a
+  test.
+- The green-run noise gate is green again: the tests that record a verdict with a bare author against
+  a fixture that declares seat cards now capture the author-form advisory instead of printing it, and
+  so do the two tests that let a brief's note or two Verify-selector notes from recorded REJECTs reach
+  the console. No noise budget was raised.
+The README's opening no longer says a person you can name reviews and approves each step. It now
+says each step is reviewed independently of its author, often by another agent, and a person you
+name signs each run once, over the report it ends with: `sprint sign` takes one principal per run
+and refuses a principal who authored or reviewed one of its units. One line now points a coding
+agent at `llms.txt` and `AGENTS.md`; the README stopped linking `llms.txt` when its agent
+paragraph moved to the install guide. `tools/tests/test_readme_front_door.py` pins both. (BG1487)
+- `verify_ac.py run` is quiet again on a clean single-artefact success: two lines, the story line
+  and the report path. The closing `total:` line is printed only when the run covers more than
+  one artefact or a criterion ran only in part, where over one artefact it repeated the story
+  line's counts as a third line.
+docs/engineering-leaders.md no longer says more than the code does in three places. The pricing sentence now limits per-model pricing to the dollar actual and says the forecast beside it is priced at one model's input rate. The evidence pack's refusals link `evidence_pack.py`, which enforces them, instead of `release_cut.py`, which only delegates. The author line says a review verdict records the author beside the reviewer and the review brief asks for both by name and role, where it said every verdict stamps both by name and role. Each sentence is pinned in the page's test, with a planted failure beside each check.
+- A `pytest` Verify line run with `-s` whose test prints a line shaped like pytest's summary,
+  such as `1 skipped in 0.01s` or `no tests ran in 0.01s`, and then passes is no longer failed
+  as all-skipped or as having run no tests. `verify_ac.py run` reads both verdicts from pytest's
+  closing summary line only, as it already read the partial-skip count, and a target that
+  really skips every test still fails as all-skipped.
+- The example `run` and `report` output in the verify help page now carries the
+  `partly_skipped=` and `unspecified=` fields the tool prints, and the `run` example its
+  `total:` line. A test compares both examples with what `verify_ac.py` prints for a fixture.
+SECURITY.md's Supported Versions table now names 6.x as supported and 5.x as security fixes only, where it still read 4.x and 3.x. A new test reads the current version from the skill's SKILL.md frontmatter and refuses a table whose first row is not that major, so the next major release cannot leave the policy stale.
+The close no longer retires a lesson class injected at build for being quiet. A builder trap
+reaches every lane brief, so a run that does not repeat it is no sign it is obsolete; such a
+class now leaves the briefs only when its graduation CR closes. A quiet class injected only at
+plan or review still retires after five runs. The three builder-trap classes the last close
+retired this way are active again in `sdlc-studio/lessons.jsonl`, each row recording the run
+and the reason it was reinstated, so the lane brief's lessons block carries their rules once
+more.
+A later write to a persona learning's fields now stores only what reads back as set, as
+`add` already did. `persona_memory.py approve --reject` with a reason holding a line break
+and a field line such as `- **State:** approved` exits 2 and writes nothing, where it used to
+leave a rejected learning reading back as approved with no Approved-by. A strike given such
+a reason is refused the same way, so the entry reads back unchanged. `sprint.py sign --strike`
+refuses a `--strike-reason` or `--principal` holding a line break before anything is sealed,
+naming it and exiting 2, where the strike's own refusal used to leave the run's units sealed
+and the run unsigned.
+The `--fields-file` option on `persona_memory.py propose` and `approve` is now pinned by
+tests: a title holding a semicolon and `$(t)` is stored as the document wrote it, with a
+`--title` flag beside it still winning, and a rejection's reason is stored from the document
+as written.
+The shipped defaults now carry `personas.memory.validity_days` (90) and
+`personas.memory.inject_max` (5), the two persona memory keys the configuration reference
+documents, so the documented-defaults check passes again. `persona_memory.py` reads a
+required `--fields-file` field through `file_finding.prose_value`, which tests presence,
+instead of an `or ""` guard, so a blank value is refused naming the field and the
+repository check for such guards reads clean.
+`persona_memory.py add` now reads the memory file back before writing it and refuses, writing
+nothing, any learning its own reader would read differently from what it stamped: a second
+entry, another id or title, a field it did not set or a value other than the one it wrote
+(State proposed included), or a body that does not come back as the prose given. A verdict
+reference whose gap is a line break, which resolves but reads back as the unit alone, is
+refused the same way. An `M-NNNN` id two memory files hold, as two clones can mint, is now
+refused by `add`, by `set_field` and by the close's listing, naming both files, rather than
+resolved to whichever file is read first.
+`persona_memory.py` reads every `--fields-file` by name through the shared prose loader rather
+than handing its whole argument namespace to another module, so the dead-flag audit judges each
+of its flags and the unjudged-flags ratchet passes without a new baseline line. The same loader
+serves `add`, `propose` and `approve`, and a flag still overrides its key in the document.
+The upgrade page's retired-surface table now names the retired `--phase` flag beside its retired
+verb in one code span (`critic.py brief --phase`, and the same flag on `record`, `correct`, `show`
+or `supersede`). Since `lessons.py class-add` declares a live `--phase`, the upgrade-page test reads
+critic's retired flag only beside its verb, and the old wording mapped nothing. The class-add flag
+is unchanged.
+`evidence_pack.py` now uses `critic.same_identity`, the independence authority's public API, instead
+of its private normaliser to tell whether an Author cell names anyone and whether two reviewer
+spellings are one seat, so the one-authority guard in `test_critic.py` passes again. The pack still
+lists one seat recorded under two spellings once, and still lists no author for a `-` or blank
+Author cell, each now pinned by a test.
+The `evidence_pack.py` module docstring now says a signing principal is refused only when it reads
+as an agent or the committed review ledgers record it as a live author of one of the report's own
+units, matching the code; it no longer says every recorded author is refused. A new docstring test
+pins the wording.
+The evidence pack no longer refuses a person as accountable because the review ledgers record
+them as the author of some other unit. Its author record now refuses a signer only as a live
+author of one of the report's own units, a superseded verdict row not counted, the rule
+`sprint sign` applies to a run's own units, so a person who authored a unit in another report can
+be accountable for this one. A principal holding the word agent is still refused, and so is a
+builder's model name that signs its own run.
+The committed command audit, `sdlc-studio/reviews/command-audit.md`, is regenerated with
+`command_audit.py --check-tools --write`. It now counts 71 scripts, the new `evidence_pack.py`
+among them, and matches a fresh `command_audit.py --check-tools` run again, so the release-verify
+test that compares the two passes.
+- **A caller whose signal handler drains its verifier pool no longer hangs.** A worker thread
+  that a signal held back waited with no bound for the caller's own handler to run, while a
+  handler that drains its pool with `pool.shutdown(wait=True)` waited on that worker, so the
+  process hung. The worker now waits four seconds from the signal at most (the one-second stop
+  grace plus three), then refuses each verifier still queued, and the drain ends. The same
+  bound frees a worker when a second signal's handler raises inside the first signal's relay
+  before that relay has settled.
+- **An interrupted verify lane starts no more verifiers.** A signal to a caller of `verify_ac`
+  (Ctrl-C, or a cancel sent to its process group) used to leave the worker threads free while
+  the relay waited for the running verifiers to end, so each worker took the next queued story
+  and started it before the interrupt reached the code that cancels the queue. Once the signal
+  arrives, no worker thread starts a verifier until the caller's own handler has run, waiting
+  four seconds from the signal at most (the one-second stop grace plus three). If that handler
+  returns within them, the caller carries on and its workers start the verifiers still queued;
+  if it raises, if the signal ends the process, or if the four seconds pass first, each worker
+  refuses the verifiers it reaches. So a handler that waits on the workers themselves, such as
+  one that drains its pool with `pool.shutdown(wait=True)`, sees its queued verifiers refused
+  once the four seconds pass, and the process ends with no second signal. The main thread
+  carries on as before. The skip-mark scanner's two test-file reads go through the
+  shared tolerant reader, as every tree-walking scanner's must; what they return is unchanged.
+- **A lane of several units is priced per unit from its one builder total.** `sprint lane
+  return --agent A` and `sprint lane land` over several units refused to record the builder's
+  total, so no unit of a multi-unit lane was priced. The total is now split between the units
+  by their Points, the largest remainder keeping the shares summing to the whole. Each unit's
+  record holds its share of the tokens, the priced cost, the components, the per-model split
+  and any minutes, marked `apportioned`. The return line and the report's unit cells say
+  "split by points". A unit with no Points still refuses the split and names the unit.
+- `verify_ac.py run` reads a pytest Verify line's skips whatever verbosity the line asks for.
+  A `-q` on the line stacked on the runner's own, so pytest printed no summary and a partly
+  or entirely skipped target was stamped as passing. The runner now ends pytest's options with
+  `--verbosity=-1`, so the summary is always printed; a partial skip fails naming the skipped
+  test, and an all-skipped target gets the all-skipped verdict. The skip count, and with it the
+  all-skipped and no-tests verdicts, is now read from pytest's own final summary on stdout, so a
+  line shaped like pytest's summary (`1 skipped in 0.01s`, `no tests ran in 0.01s`) that a test
+  prints under `-s` no longer fails a passing criterion. An unfolded skip line
+  (`SKIPPED path::Class::test - reason`) is named as `path::Class::test (reason)`, now pinned
+  by a test.
+- **A close after a reopen that cannot read the meter keeps the first window and says so.**
+  The close after `sprint reopen` re-reads the meter and measures the page to itself. When
+  that reading could not be had, the page stretched its window to the second close with no
+  reading to cover it, overwrote the first window on the run, and said nothing. It now keeps
+  the window filed before the reopen, freezes the lane yield over it, and the Priced cost row
+  says the second reading is missing, why, and the window the figure runs to. A later close
+  that reads the meter replaces the word with the re-read note.
+- **A project that replaces a Grok entry still has its long responses priced.** The Cursor
+  ledger books each long response under the model's long-context id by the shipped price
+  table. A `pricing.models` entry that replaces grok-4.7 whole with no long-context price drops
+  that id from the project's table, so `run_state.usd` priced the short responses alone and
+  listed the long ones as not priced. Tokens booked under a long-context id the table does not
+  list are now priced at its base model's one rate, the rate the project's entry gives every
+  prompt (`prices.priced_id`). A long-context id whose base the table does not list either is
+  still named as not priced, never priced at a guess.
+- **A Grok figure priced in part from a session total is labelled a lower bound on the
+  report.** The report's Dollar cost row added a delegated agent's Grok session total to the
+  meter's split booked request by request, and the run total summed a booked session with one
+  read as a total. Each sum named the long-context id, so the Dollar cost and Dollars per point
+  rows read the figure as exact. The run total and the delegated totals now carry the models
+  any part of them read from a session total, under `from_total`, and `run_state.usd` labels
+  those models a lower bound wherever they are summed. A split booked request by request in
+  every part stays exact.
+- **The report's Markdown twin links the price source's web addresses (BG1374).** The Prices
+  table printed each source as the price table states it, and the shipped table's sources open
+  with a web address, so the committed twin failed markdownlint's MD034 (no-bare-urls) and the
+  close's paperwork could not land. The twin now prints every web address in a Source cell as
+  an autolink (`<https://...>`), the note around it as typed. The figure keeps the source as
+  filed, so the fingerprint, the HTML page and a source that is no address read as before, and
+  a filed page re-derives as filed.
+The markdown lint toolchain takes the patched versions of the four packages GitHub's five
+Dependabot alerts named, all development-only and reached through markdownlint-cli.
+`markdownlint-cli` rises from 0.49.1 to 0.50.0, which brings `markdown-it` 15.0.3 (the two
+markdown-it alerts) and `smol-toml` 1.9.1. The `overrides` block raises `minimatch` to 11.0.8
+and `katex` to 0.18.10, which markdownlint-cli 0.50.0 and markdownlint 0.42.1 (through
+`micromark-extension-math`) still hold below their patched versions, and lifts the `js-yaml`
+floor to 5.5.0, the version markdownlint-cli 0.50.0 asks for. `tools/lint-md.sh` passes over
+every tracked markdown file with the new markdownlint.
+The retro's dollar line now states the same dollars as the sprint report for a run whose
+reading leaves delegated agents out. It adds the totals read from an agent's transcript at their
+models' prices, by the report's own rule, and names a supplied total it cannot price with its
+token count. Over a reading that already holds the agents' transcripts nothing is added, so no
+agent is priced twice.
+A unit whose tests set a temporary HOME can declare `> **Isolation:** home`, and `sprint lane
+brief` then names the main checkout as its lane instead of a worktree: run as the wave's last
+lane with every other lane's commit held, its builder staging the Affects there for the
+orchestrator to commit, since `sprint lane land` lands only a worktree. A unit with no such
+declaration, or another value, is still briefed for the worktree lane.
+- **`transition.py set <story> Ready` refuses a criterion with more than one Verify line
+  (BG1343).** `verify_ac lint` refuses such a criterion at every non-terminal status, but
+  grooming and the move to Ready accepted it, so the first commit after the groom was red. The
+  move to Ready now refuses, naming each stacked criterion and its further Verify lines with
+  the lint's own words, and `--force` does not waive it: the remedy is splitting the criterion
+  in two.
+- **A lane brief's file history no longer lists a reviewer's rulings as a blocking defect
+  (BG1341).** A REJECT row keeps the reviewer's rulings as a `RULINGS:` item in its Issues
+  cell, and `reconcile.blocking_findings`, which feeds the "blocking defects their reviews
+  found" lines of every lane brief, read that item as a finding. It now skips a `RULINGS:`
+  item, in any case, with the pattern `critic.parse_findings` skips it by, while a finding
+  that merely mentions rulings is still listed.
+- **`critic.py brief --rejoinder` with no file quotes a carried unit's REJECT from the run that
+  carried it (BG1340).** A unit carried at the review cap is delivered again in a later run,
+  whose delivery holds no row of it yet, so the ledger rejoinder refused with "no unanswered
+  REJECT from a qa reviewer in its current delivery" while `sprint plan` reported that same
+  REJECT as unanswered. For a unit `carried_by` names, the rejoinder now reads every live
+  delivery row, the rows the carry's APPROVE must answer, and quotes the seat's latest
+  unanswered REJECT. A unit nobody carried still reads its current delivery alone, and a carried
+  REJECT its seat has since approved is refused, not quoted.
+`sprint lane accept` records a round-2 verdict against the rejoinder brief its reviewer read.
+When the verdict file is the one a `critic.py brief --rejoinder` issued for the unit, the
+fingerprint and tier come from that brief's note rather than the saved QA brief, and on an
+APPROVE the unit is verified and moved as before. A rejoinder briefed before the unit's latest
+landing is refused with nothing recorded, naming the command that briefs the seat again.
+- **`sprint lane land` judges a lane on the code it lands on (BG1337).** It committed the
+  staged change at the base the builder started from and rebased afterwards, so when main had
+  fixed a test that was red at that base, the commit hook refused the lane for a failure main no
+  longer had. The landing now replays the staged change onto the root's branch before the
+  commit, still staged, so the hooks run on main's code. A replay that conflicts is undone and
+  the landing goes on as before, naming the conflict after the commit; a staged change main
+  already holds leaves nothing to commit.
+- **`sprint lane land` lands a lane whose builder ran `verify_ac` in its worktree (BG1336).**
+  The run wrote its Verified lines into the unit's own story or bug, a file outside the Affects
+  the builder staged, and the landing's rebase then refused with "cannot rebase: You have
+  unstaged changes". The landing now discards that unstaged edit to each unit's own artefact
+  before it commits, naming the file, since the root's verify rewrites it; an unstaged edit to
+  any other file still stops the landing and is kept. The lane brief now has the builder run
+  `verify_ac.py run --id <unit> --dry-run`, which writes nothing into that file.
+`verify_ac.py`'s markdown-evidence lint refuses a grep over `sdlc-studio/reviews/` again
+(BG1334). A reviewer's verdict file under `sdlc-studio/reviews/verdicts/` is saved as `.txt`,
+and the lint counted it as a non-markdown file the grep reads, so a grep over review prose
+passed as evidence. The lint's one markdown predicate now counts any file under that directory
+as prose; a `.txt` elsewhere and a source file still let their grep through.
+A project whose AGENTS.md was seeded before the template carried the integration rule is now
+told about it. The agent-instructions hygiene check, a whole-tree `validate.py check` and the
+`project_upgrade.py` report each name AGENTS.md with the template's exact "Integrate
+continuously" line to add, read from `templates/agent-instructions.md`; a file that states the
+rule, and a project with no AGENTS.md, are told nothing. The finding is a warning and AGENTS.md
+is never rewritten.
+- **A Grok request of 200k prompt tokens or more is priced at xAI's long-context rate
+  (BG1331).** `templates/model-prices.json` priced grok-4.7, grok-4.6 and grok-4.5, and their
+  `xai/` ids, at xAI's Short context rates alone. Each now carries a `long_context` block beside
+  them, dated and sourced from xAI's Text API pricing page read on 2026-11-12: input $4.00,
+  cached input $1.00 ($0.60 for grok-4.5) and output $12.00 per million tokens, for a request
+  whose prompt is 200,000 tokens or more, billed at that rate for all its tokens. `lib/prices.py`
+  lists it under the id `<model>@long-context`, and `cost` prices one request at the rate its
+  prompt size bills when given that size. `lib/token_meters.py` prices a reading that carries
+  each request's usage request by request (`dollars`) and books those requests into the
+  per-model split the report prices (`book`), naming the long-context id even when no request
+  reached it. The report's Dollar cost row, its Dollars per point row and a unit's dollar cell
+  say a Grok figure priced from a session total is a lower bound and why; a split booked
+  request by request is exact and says nothing. The page's price table carries each
+  long-context threshold, so a re-derivation from the filed table states the same label.
+- **`sprint lane land` prices each unit from its builder's transcript, and the close counts an
+  unpriced unit as a gap (BG1330).** Only a hand-run `lane return --agent` priced a unit, so 15
+  of RPT0028's 19 units read NOT MEASURED while its close reported 0 gaps. Landing a worktree
+  named `agent-<id>` now records each unit's return priced from that agent's transcript, the
+  record `lane return --agent <id>` writes, so a later return reading the same transcript
+  replaces it rather than counting it twice. A transcript that cannot be read, or one shared by
+  several units, leaves each unit named as unpriced and the lane landed. The close names every
+  unit the page reads NOT MEASURED for want of a priced return as a known issue, which the
+  page's close gap count includes. A rolling `sprint boundary` does not halt on such a gap: it
+  is a gap in what the page measured, not in what the cycle delivered.
+- **The sprint reference's WSJF writer line and the resume-brief moment test hold again
+  (BG1329).** The reflow that paid for the wave-boundary section split the sentence telling
+  the agent to write `sdlc-studio/.local/wsjf-inputs.json` across two lines, so the `.local`
+  writer pin found no line naming the file beside its write. The paragraph is rewrapped so that
+  clause reads on one line; no sentence changes and `reference-sprint.md` stays at 859 lines.
+  The resume-brief test that reads a finding's moment through `sprint_report` patched the
+  module its file bound at import, which another test's reload of `sprint_report` left stale,
+  so it failed in some test orders. It now patches the module `resume_brief` imports when it is
+  called, and drops the cached module first to stand in for that reload, so it passes in any
+  order under pytest and under `python3 -m unittest`.
+- `test_resume_brief.py` imports its console-diagnostics helper as `import quiet` with its own tests directory on `sys.path`, as the other skill tests do, so a pytest session that also collects a `tools/tests` module no longer fails to collect it with an ImportError for `quiet` (BG1320).
+- The test holding Trevor Hale's Scenario (US1147 AC7) now fails one of his three declined
+  wants offered inside the sentence that declines the others, whatever word makes the offer
+  (BG1318). It used to look for 17 listed words, so "and sync to an enterprise tracker is
+  offered", "and ships", "and gives him", "declines none of" and "declines, then accepts" all
+  passed. It now takes the three wants out of each declining clause and requires that only the
+  verb, commas and "and" remain; the negation check and the check for a want named outside a
+  declining clause stay. A want offered in other words, such as "Jira sync", is still not
+  caught, because the test matches each want in the criterion's own wording.
+- The resume brief's known-issues section now lists the findings filed while the run is open
+  (BG1312). It matched only a `Raised-in-batch` stamp naming the run id, but `file_finding`
+  stamps a mid-run finding `none open - raised outside a delivery batch, <moment>`, so a brief
+  written mid-run said none while the run's findings were open. A finding is now listed when
+  `sprint_report` places it in the run by that moment, read through the report's own placement
+  rather than a second parser of the stamp, or when its stamp names the run; a finding filed
+  before the run started, or already closed, is still left out. A run state with no start time
+  is named in the section rather than read as none.
+- **The Cursor meter carries the model its usage ledger names (BG1305).** `cursor_usage_hook.py`
+  writes each response's model on its ledger line, but `lib/meter_cursor.py` summed the counts
+  and dropped it, so a reading from the ledger named no model and the dollar figure read it as
+  not priced. The meter now sums each line under its own model, the per-model split the Codex
+  meter produces ("" for a line naming none, which still reads as not priced), and names the
+  reading as its one model or as mixed. Each line is one response whose `input_tokens` is its
+  whole prompt, so a Grok response of 200,000 prompt tokens or more is booked under the model's
+  long-context id and priced at that rate for all its tokens.
+- `sprint lane land` now records the self-check of a schema-3 unit landed by its id as written
+  (BG1303). The lane brief names the hand-in files under the normalised id
+  (`US01M6XQJF-claims.json`), while land looked for them under the id `--units` was given
+  (`US-01M6XQJF-claims.json`), so a builder that followed its brief had its unit committed with
+  `self-check NOT RECORDED` and no QA brief written. The brief and the landing now take the
+  hand-in names from one function keyed by the normalised id, whichever spelling `--units` is
+  given.
+- `sprint lane brief` no longer tells a unit in a schema-3 project that it has a seam with
+  itself (BG1302). The run state holds the id without its hyphen (`US01M6XQJF`) and the command
+  line names it as written (`US-01M6XQJF`), so the seam scope kept both spellings, and a
+  one-unit batch was briefed with a `Seam with :` line naming no other unit. The scope is now
+  deduplicated by the normalised id, and a seam whose two units are one unit is dropped; a seam
+  between two units that share a file is still named.
+The test suite's root `conftest.py` no longer writes its test git identity over the operator's
+`~/.gitconfig` when a copy of it leaves `HOME` unmoved. The identity is written to the session's
+private home by a path built from the private directory, never read back from `HOME`, and it is
+created only where no `.gitconfig` exists: a session that finds one already there leaves it
+byte-identical, stops naming its path and keeps its private directory. Tests start a session
+over a fake home holding a real-looking `.gitconfig`, under the conftest and under copies that
+drop `HOME` from the private home or skip its assignment, and find the file unchanged, beside a
+control copy that writes through `HOME` and is seen to change it (BG1300).
+- **A close after `sprint reopen` re-reads the meter (BG1279).** A re-close kept the first
+  close's window and token reading, so the work a reopen let in was missing from the report's
+  Priced cost. A close after a reopen dated past the filed page's window, with a meter it can
+  read, now takes a new reading and measures the page from the run's open to that close, and
+  the Priced cost row says the meter was re-read after the reopen. The close's cost per point
+  line and its cost known issue judge the figure that page states. A re-close with no reopen
+  since still keeps the filed page's window and reading.
+- **A review commit's `Refs:` line lands at its first attempt (BG1264).** A row a commit adds to
+  `sdlc-studio/reviews/critic-verdicts.md` or `sdlc-studio/reviews/author-self-checks.md` now
+  makes that row's unit an owner of the ledger, so the commit-msg hook no longer refuses a
+  verdict or self-check commit whose `Refs:` names the unit it records; a row already in the
+  ledger makes no unit an owner. The `tools/enable-hooks.sh` header and the `derive_trailers`
+  docstring now say that the refusal of a `Refs:` line naming a unit that owns none of the
+  staged files judges only a subject naming two or more ids, as the hook already did. Ownership
+  by a file's own name and the exemption of an id with no artefact in the workspace each gain a
+  test.
+- **`sprint lane run` sends a lane's process group SIGTERM before SIGKILL, and kills what a
+  finished CLI left running (BG1262).** At a timeout the group was sent SIGKILL at once, so a
+  `git add` killed mid-write could leave `index.lock` in the lane's worktree, and the commit
+  `lane land` needs then refused. The group now gets SIGTERM, up to 2 seconds to exit, then
+  SIGKILL. A child the CLI left running in its process group when it exited, with status 0 or
+  not, is now ended the same way before the staged files are read, so it can no longer stage
+  work the lane record does not name. A CLI that cannot be executed, such as a script whose first line names a
+  missing interpreter, is now refused with exit 2 naming its path rather than a traceback, and
+  leaves no lane marked in flight. The lane run tests run under a PATH of the fake CLIs and the
+  system directories alone, and stop in setup when a fake is missing, so no case can reach a
+  real harness CLI.
+- **A hard kill of `sprint.py` now ends the lane `sprint lane run` was running (BG1261).** Since
+  6.3.0 the lane's CLI runs in a session of its own, so a SIGKILL to `sprint.py` or to its
+  process group left the CLI and its children running in the worktree with no timeout over
+  them, free to stage work no lane record names. A watchdog in a session of its own now ends
+  the lane's process group when `sprint.py` dies while the CLI runs: SIGTERM, up to 2 seconds
+  for the group to exit, then SIGKILL.
+- `init run` and `init guided` finish a project whose `.claude` is a regular file: each subagent definition under `.claude/agents/` that cannot be written is reported skipped with its OSError reason, and AGENTS.md, CLAUDE.md and the rest of the project are written, exit 0. `init run --format json` lists them under `unwritable`. A test now holds that an agent definition that cannot be read draws no "so the doctrine check can read it" directive and leaves the doctrine offer in place.
+- **A signal to a `run_verifier` caller now reaches its verifiers as that signal, not as SIGKILL
+  (BG1190, BG1228).** In 6.3.0 the caller's handler for SIGTERM, SIGINT and SIGHUP sent SIGKILL
+  to every running verifier's group. A verifier that is itself a `run_verifier` caller, such as a
+  Verify line running pytest over tests that call it, or `verify_ac.py` on a fixture, died
+  before it could pass the kill on, so the verifiers it started in sessions of their own ran on
+  with no ceiling. No verifier ran its own trap or `KeyboardInterrupt` teardown either.
+  The handler now sends each live group the signal it received, sends SIGKILL to any group still
+  there 1 s later, and then calls the handler it replaced, or dies by the signal.
+  - A timed-out verifier's group is now sent SIGTERM, then SIGKILL 1 s later if any of it is
+    still there, so a nested caller passes the kill on at a timeout too. 6.3.0's note that the
+    children a timed-out verifier spawned no longer keep running did not hold for such a caller:
+    its verifiers ran on. One limit remains: a nested caller's own verifier that ignores SIGTERM
+    can still outlive it, because both wait the same 1 s and the caller may be killed first.
+  - This also fixes the open duplicate BG1112, whose criterion now has the test it names.
+- The README's 6.2.0 line and the 6.2 release notes' first theme no longer say a reviewer
+  judges only work its author has self-checked. `review.author_self_check` ships as `report`,
+  under which `critic.py brief` prints the brief with a notice; only `block` refuses it. Both
+  now say a review brief can require the author's own check first, and a test refuses the old
+  wording on either page.
+- **A timed-out shell or `eval` verifier leaves no process of its tree running (BG1112).** The
+  group kill BG1190 shipped answers this bug; its criterion's selector,
+  `-k timed_out_verifier_leaves_no_process`, now finds three tests in
+  `test_verify_timeout_reaps.py`: a timed-out `shell` and `eval` verifier each leave their group
+  empty, and so does a verifier that is itself a `run_verifier` caller, whose own verifier runs
+  in a session of its own outside the group the timeout kills.
+`critic.py record --from-verdict` records a block whose `BLOCKING: none` is followed by a
+sentence, or which carries a `RULINGS:` line, unedited (BG1030). Both used to be read as
+blocking items and refused as quoting no ISSUES finding. The text is now kept on the row as one
+`RULINGS:` item, which `parse_findings` never reads as a finding, so a re-review's ruling that
+quotes a `[new]` finding is not recorded as one; `row_rulings` reads it back. The review return
+contract names the optional RULINGS line, and the rejoinder brief asks for each prior finding
+to be ruled CLOSED, OVER-CLAIMED or MOVED there. A tagged item after `none` is still a
+blocking finding.
+`artifact.py retitle` works in a consuming project with the installed skill. It used to load
+the repository's own link checker from a `tools/` directory, which an installed skill and a
+consuming project do not have, so every retitle there refused with "cannot locate
+check_links". The inbound-reference scan and the link rewrite now ship with the skill in
+`scripts/lib/link_refs.py`, and the retitle still finds every link to the renamed file,
+repoints it, leaves an example in a code span or a fence alone, and refuses a reference in
+archived history. The repository's link checker imports the same functions, so the two agree
+about which links are references.
+- **`sprint_report.py build --run RUN-x` renders RUN-x's page (BG1010).** The build resolved
+  the named run only to decide whether `--write` is refused, then built the page with no run
+  id, so it reported the live run's figures under the named run's retro, and in a clean clone,
+  which holds no live record, it refused with "no run record names a run". It now passes the
+  named run to `build_report` when the record it resolved is not the live one, so the page is
+  read from the run record the close and `sprint sign` file under `sdlc-studio/reports/runs/`.
+  Building with no `--run`, or naming the live run, still builds the live record's page,
+  which reads the forge's CI runs until the close freezes them.
+`verify_ac revert-check` now judges only what it measured. A verifier that times out, or exits
+clean without passing (a pytest run that skipped part of its selection), is reported as
+`unmeasured`, never as the red that passes a unit. A shell verifier that exits 126 or 127
+because the revert removed the script it runs is still red, the proof that its criterion reaches
+the change. A revert that would change no byte, because the base holds the production files as
+they stand, reports the unit as not judged (exit 3) before any verifier runs, instead of
+refusing it for a change it never removed. `help/verify.md` states the four verdicts and their
+exit codes, with an example of each.
+`verify_ac run` no longer stamps `Verified: yes` on a `pytest` criterion whose run passed some
+tests and skipped others: the criterion fails, and its FAIL line names what was skipped and the
+reason pytest gave. That is each skipped test, the class or file that a skip mark on a whole
+class or module covers (pytest folds those with no line number), or the file and line of a skip
+at import. The `--batch` route, which hands a partly skipped target back to its own run, reaches
+the same verdict. A Verify line that adds its own `-q` is not yet judged this way, because
+pytest then prints no summary to count.
+- A story written from the shipped template now closes its verify loop. The template no longer puts a bare `Verified: no` under each criterion, which `verify_ac.py run` reads as a recorded miss and fails even when the selector passes, and `reference-story.md` and `reference-verify.md` no longer tell authors to write it until reconcile runs. Both now say a new criterion carries no `Verified:` line, which the runner stamps `yes` once its Verify line passes, and that `Verified: no` is a recorded miss the runner does not overwrite. A hand-written bare `Verified: no` on an existing criterion still fails its run and is left as written.
+`verify_ac` closes a criterion at the next `##` heading, so a `**Verify:**` line in a later
+section (a `## Closed <date>` record, an update note, the revision history) is no longer
+attached to the last criterion and executed as part of it. `verify_ac lint` names each such
+line, with its line number and its section, as an advisory: no criterion holds it and no run
+executes it.
+- **`reconcile` reads every field of a `·`-joined metadata line, and `reconcile apply` repairs
+  the index cells the old reader filled with a swallowed run (BG0990).** The field projection
+  read each `> **Name:** value` line to its end, so on `> **Priority:** P2 · **Type:** x` the
+  Priority value was the whole run and Type was never read, while `sdlc_md.extract_field` read
+  `P2` and `x`. The projection now reads the header through `sdlc_md.metadata_fields`, which
+  values each field as `extract_field` does, and a field whose line holds nothing after its
+  name is left out. An index cell holding a field's value followed by the rest of its line
+  (`sdlc_md.is_swallowed_run`) is now drift rather than a cell that links the value, so
+  `reconcile apply` rewrites it to the single value.
+`retro.py validate` now reads the `## Actions raised` table of a Keep/Stop/Try retro. An
+undecided row fails the content check by name, as it does in a retro of the older shape, and
+`retro.py dispose` reports the rows `validate` read rather than saying no finding was recorded.
+A Keep/Stop/Try retro without the table is judged as before.
+- **The Status Vocabulary table in `reference-outputs.md` now says what the gates enforce.** Bug terminals include Fixed and Verified, Story allows Blocked, Deferred is no longer terminal for Story or CR, an Accepted RFC is terminal, and Issue and Charter have rows. A new test compares every row's allowed and terminal sets with `sdlc_md.STATUS_VOCAB` and `sdlc_md.TERMINAL_STATUS` and names the type and status of any divergence. (BG0947)
+
 ## [6.3.0] - 2026-11-08
 
 ### Added
