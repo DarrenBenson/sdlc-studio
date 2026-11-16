@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 369 |
 | In Progress | 0 |
-| Fixed | 944 |
+| Fixed | 945 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1504** |
+| **Total** | **1505** |
 
 ## All Bugs
 
@@ -578,8 +578,9 @@
 | [BG1500](BG1500-help-retro-md-says-an-escaped-defect-is.md) | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on or before the bug's Created day | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1501](BG1501-test-lean-release-notes-v64-fails-in-a.md) | test_lean_release_notes_v64 fails in a tree that is not a git clone: its text checks read v6.3.0 through git, so FrozenNotesTests' copy goes red and the push gate refuses | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1502](BG1502-critic-py-self-check-record-refuses-a-unit.md) | critic.py self-check record refuses a unit until it claims its changelog.d fragment, though the release cut has already merged that fragment into CHANGELOG.md | Open | Low | 2026-11-16 | 2026-11-16 |
-| [BG1503](BG1503-release-cut-py-changelog-cut-joins-a-fragment.md) | release_cut.py changelog-cut joins a fragment that does not start with a bullet onto the entry above it, so about 60 of 6.4.0's 131 entries run together in CHANGELOG.md | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1503](BG1503-release-cut-py-changelog-cut-joins-a-fragment.md) | release_cut.py changelog-cut joins a fragment that does not start with a bullet onto the entry above it, so about 60 of 6.4.0's 131 entries run together in CHANGELOG.md | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1505](BG1505-6-4-0-s-changelog-says-a-fragment.md) | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

@@ -157,3 +157,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0145](RETRO0145-run-twelve-evidence-you-can-parse-and-cost.md) | Run twelve: evidence you can parse and cost you can forecast | 2026-11-15 | -- | -- |
 | [RETRO-0146](RETRO0146-run-thirteen-each-seat-s-record-the-escapes.md) | Run thirteen: each seat's record, the escapes it missed, and learnings only a signature puts live | 2026-11-15 | -- | -- |
 | [RETRO-0147](RETRO0147-run-fourteen-the-front-door-the-evidence-page.md) | Run fourteen: the front door, the evidence page and the effort each seat ran at | 2026-11-16 | -- | -- |
+| [RETRO-0148](RETRO0148-run-fifteen-the-v6-4-0-cut-and.md) | Run fifteen: the v6.4.0 cut and a push gate that agrees with CI | 2026-11-16 | -- | -- |

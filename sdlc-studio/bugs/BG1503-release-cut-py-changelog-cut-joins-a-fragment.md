@@ -1,6 +1,6 @@
 # BG1503: release_cut.py changelog-cut joins a fragment that does not start with a bullet onto the entry above it, so about 60 of 6.4.0's 131 entries run together in CHANGELOG.md
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/changelog.py, .claude/skills/sdlc-studio/scripts/tests/test_changelog.py, CHANGELOG.md, changelog.d/BG1498.md, changelog.d/BG1503.md
@@ -26,10 +26,13 @@ Have changelog-cut start every fragment on its own bullet (adding a list bullet 
 
 - [ ] **AC1** Given a fragment whose entry opens with prose and no list bullet, when `changelog.py compose` folds it, then it lands as its own top-level bullet, with any continuation lines indented under it, and never runs into the entry above or below it; a fragment that already opens with a bullet folds unchanged. Fails on: an entry folded as a lazy continuation of a neighbour's bullet.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py -k bullet
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC2** Given CHANGELOG.md's 6.4.0 section after the re-cut, when its top-level bullets are counted, then every fragment folded into it begins its own bullet: at least 133, being the 131 the cut consumed plus BG1498's and BG1503's. Fails on: fewer bullets than fragments.
   - **Verify:** shell test "$(awk '/^## \[6\.4\.0\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md | grep -c '^- ')" -ge 133
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC3** Given the re-cut, then the 6.4.0 section carries BG1498's and BG1503's entries, and neither fragment is left pending in changelog.d/. Fails on: a change the 6.4.0 tag holds whose entry waits for the next release.
   - **Verify:** shell awk '/^## \[6\.4\.0\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md | grep -q BG1498 && awk '/^## \[6\.4\.0\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md | grep -q BG1503 && test ! -e changelog.d/BG1498.md && test ! -e changelog.d/BG1503.md
+  - **Verified:** yes (2026-11-16)
 
 ## Revision History
 
