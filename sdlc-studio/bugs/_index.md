@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 369 |
+| Open | 370 |
 | In Progress | 0 |
 | Fixed | 945 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1505** |
+| **Total** | **1506** |
 
 ## All Bugs
 
@@ -581,6 +581,7 @@
 | [BG1503](BG1503-release-cut-py-changelog-cut-joins-a-fragment.md) | release_cut.py changelog-cut joins a fragment that does not start with a bullet onto the entry above it, so about 60 of 6.4.0's 131 entries run together in CHANGELOG.md | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1505](BG1505-6-4-0-s-changelog-says-a-fragment.md) | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1506](BG1506-us0996-s-ac3-test-fails-whenever-test-sprint.md) | US0996's AC3 test fails whenever test_sprint_report's CloseReportTests ran first in the same pytest process, so the release gate and CI's corpus check read it red | Open | Medium | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

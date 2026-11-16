@@ -2504,6 +2504,13 @@ class CloseReportTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             "sprint_report", Path(__file__).resolve().parent.parent / "sprint_report.py")
         mod = importlib.util.module_from_spec(spec)
+        # Put back whatever sys.modules held: a fresh module left in its place makes every later
+        # test in this process that patches the module it imported patch one nobody calls
+        # (BG1506: the stamp tests then read red in the release gate's batched session).
+        missing = object()
+        prior = sys.modules.get("sprint_report", missing)
+        self.addCleanup(lambda: sys.modules.pop("sprint_report", None) if prior is missing
+                        else sys.modules.__setitem__("sprint_report", prior))
         sys.modules["sprint_report"] = mod
         spec.loader.exec_module(mod)
         return mod

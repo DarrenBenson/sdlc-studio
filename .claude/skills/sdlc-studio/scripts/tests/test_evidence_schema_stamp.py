@@ -81,18 +81,20 @@ class EvidenceSchemaStampTests(unittest.TestCase):
         root = self.tmp / name
         root.mkdir()
         annex._run(root, False)
+        # Patch the module `sprint` will import at call time, never the one this file imported at
+        # load: another test may have put a fresh module in sys.modules since (BG1506).
+        live = annex._live("sprint_report")
         with contextlib.ExitStack() as stack:
             for attr, value in (at_close or {}).items():
-                stack.enter_context(unittest.mock.patch.object(sprint_report, attr, value))
+                stack.enter_context(unittest.mock.patch.object(live, attr, value))
             if unstamped:
-                real = sprint_report.build_report
+                real = live.build_report
 
                 def earlier(*a, **k):
                     page = real(*a, **k)
                     page.pop(KEY, None)
                     return page
-                stack.enter_context(unittest.mock.patch.object(sprint_report, "build_report",
-                                                               earlier))
+                stack.enter_context(unittest.mock.patch.object(live, "build_report", earlier))
             page = annex._close(root)
         if unstamped:
             # A live record carrying a stamp of its own, as one taken up from another clone
@@ -101,7 +103,8 @@ class EvidenceSchemaStampTests(unittest.TestCase):
         _commit_all(root, "close paperwork")
         with contextlib.ExitStack() as stack:
             for attr, value in (at_sign or {}).items():
-                stack.enter_context(unittest.mock.patch.object(sprint_report, attr, value))
+                stack.enter_context(unittest.mock.patch.object(annex._live("sprint_report"), attr,
+                                                               value))
             _sign(root, page["report_id"])
         _commit_all(root, "signed")
         return root, page["report_id"]
