@@ -48,3 +48,4 @@ By path, the paperwork lives in docs/, the help pages, the specs, CHANGELOG.md a
 | BG1502 | not-stop-ship | orchestrator | 2026-11-16 |
 | BG1504 | not-stop-ship | orchestrator | 2026-11-16 |
 | BG1505 | not-stop-ship | orchestrator | 2026-11-16 |
+| LC-019 | not-stop-ship | orchestrator | 2026-11-16 |
