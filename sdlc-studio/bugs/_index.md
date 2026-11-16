@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 363 |
+| Open | 364 |
 | In Progress | 0 |
 | Fixed | 939 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1493** |
+| **Total** | **1494** |
 
 ## All Bugs
 
@@ -569,6 +569,7 @@
 | [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Open | Medium | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
