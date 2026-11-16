@@ -1,6 +1,6 @@
 # BG1506: US0996's AC3 test fails whenever test_sprint_report's CloseReportTests ran first in the same pytest process, so the release gate and CI's corpus check read it red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -27,8 +27,10 @@ gate.py --release on devserver1 refused cd0e478e on one red criterion, US0996::A
 
 - [ ] **AC1** Given a fresh sprint_report put in sys.modules after the stamp tests were imported, as CloseReportTests did, when the four EvidenceSchemaStampTests run, then all four pass; and with CloseReportTests collected before them in one pytest process they pass too. Fails on: the stamp tests patching the module they imported at load rather than the live one.
   - **Verify:** shell python3 -m pytest -q -p no:cacheprovider .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::CloseReportTests .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py && python3 -c "import sys,unittest,importlib.util; sys.path[:0]=['.claude/skills/sdlc-studio/scripts','.claude/skills/sdlc-studio/scripts/tests']; import test_evidence_schema_stamp as t; s=importlib.util.spec_from_file_location('sprint_report','.claude/skills/sdlc-studio/scripts/sprint_report.py'); m=importlib.util.module_from_spec(s); sys.modules['sprint_report']=m; s.loader.exec_module(m); r=unittest.TextTestRunner(verbosity=0).run(unittest.defaultTestLoader.loadTestsFromModule(t)); sys.exit(0 if r.wasSuccessful() and r.testsRun==4 else 1)"
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC2** Given CloseReportTests has run, then sys.modules['`sprint_report`'] is the module it held before the class ran, and the stamp tests still pass alone. Fails on: a `_mod` that leaves its fresh module in sys.modules.
   - **Verify:** shell python3 -m pytest -q -p no:cacheprovider .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py && python3 -c "import sys,unittest; sys.path[:0]=['.claude/skills/sdlc-studio/scripts','.claude/skills/sdlc-studio/scripts/tests']; import sprint_report as before; import test_sprint_report as t; r=unittest.TextTestRunner(verbosity=0).run(unittest.defaultTestLoader.loadTestsFromTestCase(t.CloseReportTests)); sys.exit(0 if r.wasSuccessful() and sys.modules['sprint_report'] is before else 1)"
+  - **Verified:** yes (2026-11-16)
 
 ## Impact
 

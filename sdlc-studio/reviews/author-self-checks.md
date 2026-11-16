@@ -353,3 +353,4 @@
 | US1173 | agent-a232a9a807062f8c2 | 2026-11-16 | TRUE 4, FALSE 0, UNVERIFIABLE 0 | killed 2, survived 0 | c30bfce43c412957 at 2e4aa305b54a |
 | BG1498 | agent-a7c71263f42498c21 | 2026-11-16 | TRUE 21, FALSE 0, UNVERIFIABLE 1 | killed 9, survived 0 | 5782819cc8b9699d at 06574db5916b |
 | BG1503 | agent-a0ab399d25656cd7f | 2026-11-16 | TRUE 23, FALSE 0, UNVERIFIABLE 2 | killed 10, survived 3 | abf3f88fc349f849 at 2e5c6027c18e |
+| BG1506 | orchestrator | 2026-11-16 | TRUE 5, FALSE 0, UNVERIFIABLE 1 | killed 2, survived 1 | 4f623464cfa51479 at aa73db00f7ad |
