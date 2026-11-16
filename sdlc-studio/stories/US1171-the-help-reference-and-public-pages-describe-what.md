@@ -6,7 +6,7 @@
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio new
 > **Raised-by:** Claude Opus 5.5; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/help/sprint.md, README.md, llms.txt, docs/existing-users.md, docs/why-sdlc-studio.md, tools/tests/test_lean_docs_v64.py, changelog.d/US1171.md
+> **Affects:** .claude/skills/sdlc-studio/help/review.md, .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/help/sprint.md, README.md, llms.txt, docs/existing-users.md, docs/why-sdlc-studio.md, tools/tests/test_lean_docs_v64.py, changelog.d/US1171.md, tools/tests/test_lean_docs_v63.py
 > **Epic:** EP0314
 > **Points:** 5
 > **Persona:** Abena Osei
