@@ -20,6 +20,7 @@ green over the reverted code. The doctrine must say where a reviewer mutates, an
 author-side rule that follows must be the one the tool actually enforces - so the code
 is read here too, not just the prose that describes it.
 """
+# test-selection: sweep 0.6s
 from __future__ import annotations
 
 import importlib.util

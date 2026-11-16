@@ -11,6 +11,7 @@ fails too - it cannot join unclassified.
 Run from the repo root:
     python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
 """
+# test-selection: sweep 4.2s
 from __future__ import annotations
 
 import argparse

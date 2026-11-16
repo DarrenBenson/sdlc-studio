@@ -16,6 +16,7 @@ lives in. A test for THIS defect must never be reproduced next to a live repo.
 Run from the repo root:
     python3 -m unittest discover -s .claude/skills/sdlc-studio/scripts/tests
 """
+# test-selection: sweep UnconfinedRawGitCallSweepTests 9.0s
 from __future__ import annotations
 
 import ast

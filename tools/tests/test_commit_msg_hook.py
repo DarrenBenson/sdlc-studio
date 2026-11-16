@@ -7,6 +7,7 @@ it (a message file path as $1): a multi-id subject with no `Refs:` trailer is RE
 things it deliberately still lets through keep passing - a solo id, a merge, a revert, a
 fixup/squash, and every honest-degrade case (no script / unreadable message).
 """
+# test-selection: sweep HookInvocationHermeticityTests 0.2s
 from __future__ import annotations
 
 import json

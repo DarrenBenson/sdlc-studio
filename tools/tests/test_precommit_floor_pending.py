@@ -21,6 +21,7 @@ message), so a unit this commit names in prose alone, staging no artefact for it
 still judged one commit later. `test_a_unit_named_only_in_the_message_is_still_not_seen`
 holds that limit to a test rather than to a sentence.
 """
+# test-selection: sweep 5.5s
 from __future__ import annotations
 
 import os

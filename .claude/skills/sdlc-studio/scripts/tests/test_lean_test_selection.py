@@ -193,6 +193,24 @@ class SelectionTests(unittest.TestCase):
             self.assertRegex(out, r"\bok\S*\s+(unit-tests|tool-tests)\b",
                              f"the control commit ran no suite, so the skip proves nothing:\n{out}")
 
+    def test_a_docs_only_commit_runs_the_marked_sweep(self) -> None:
+        """The docs-only case above with one module marked a sweep: the same commit now runs a
+        suite, and only that module. MUTANT: drop the sweeps when the change reaches nothing."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _hook_fixture(Path(d))
+            marker = "# test-selection: " + "sweep 0.1s\n"
+            _write(root, "tools/tests/test_sweep.py",
+                   marker + "from pathlib import Path\n\n\ndef test_sweep():\n"
+                   "    Path(__file__).with_name('swept').write_text('yes')\n")
+            gitutil.git(["add", "-A"], cwd=root)
+            gitutil.git(["commit", "-q", "--no-verify", "-m", "a sweep"], cwd=root)
+            rc, out = _commit(root, {"docs/guide.md": "# Guide, again\n"})
+            swept = (root / "tools/tests/swept").is_file()
+        self.assertEqual(0, rc, out)
+        self.assertNotRegex(out, r"SKIP\S*\s+unit suites", out)
+        self.assertRegex(out, r"\bok\S*\s+(unit-tests|tool-tests)\b", out)
+        self.assertTrue(swept, f"the docs-only commit did not run the sweep:\n{out}")
+
     def test_the_budget_is_reported_not_enforced(self) -> None:
         """AC3. MUTANTS: set `fail` when over budget; drop the report; run the selection
         serially where pytest-xdist is installed; drop the selected suite lane; ignore the

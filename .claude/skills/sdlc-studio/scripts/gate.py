@@ -2476,6 +2476,20 @@ _LOADER_NAME = re.compile(
 _CENSUS_SUBJECT = re.compile(r"^#[ \t]*test-census-subject:[ \t]*(\S+)[ \t]*$", re.M)
 _CENSUS_HEAD_LINES = 40
 
+#: The header that makes a test module, or one class of it, a SWEEP: `# test-selection: sweep`,
+#: then any class names, then the seconds it was measured at (`# test-selection: sweep
+#: ScanTests 2.5s`). A sweep reads the whole repository rather than one script (a census, a scan
+#: for a raw git call), so no import, load, name or census subject ties it to what a commit
+#: changes, and it joins EVERY commit's selection instead. Read from the same head as the census
+#: subject, every marker line there counted. A marker naming classes selects their node ids
+#: (`path::Class`) and not the module; one naming none selects the module.
+_SWEEP = re.compile(r"^#[ \t]*test-selection:[ \t]*sweep\b([^\n]*)$", re.M)
+_SWEEP_SECONDS = re.compile(r"(\d+(?:\.\d+)?)s")
+
+#: What the marked sweeps may cost a commit together, in their recorded seconds. Every commit
+#: pays it, a docs-only one included, so a sweep too dear for it waits for the push gate.
+SWEEP_BUDGET_SECONDS = 30
+
 
 def _imported_names(text: str) -> set[str]:
     """Every module-name component a source imports: `from lib import sdlc_md` yields both
@@ -2494,10 +2508,12 @@ def _imported_names(text: str) -> set[str]:
     return names
 
 
-def _selection_indexes(root: str) -> tuple[dict, dict]:
-    """`(reach, census)` from ONE read of the test sources: `reach` is `{module stem: {test
-    modules that import or load it, or import a fixture test module that does}}`, `census` is
-    `{repo-relative path: {test modules whose test-census-subject names it}}`.
+def _selection_indexes(root: str) -> tuple[dict, dict, list]:
+    """`(reach, census, sweeps)` from ONE read of the test sources: `reach` is `{module stem:
+    {test modules that import or load it, or import a fixture test module that does}}`, `census`
+    is `{repo-relative path: {test modules whose test-census-subject names it}}`, and `sweeps` is
+    one `{"module", "selectors", "seconds"}` per sweep marker, `seconds` None when the marker
+    records no time.
 
     A test module that imports another test module inherits what that module imports or loads,
     one level deep: a module whose tests subclass a fixture module's base class drives the
@@ -2507,6 +2523,7 @@ def _selection_indexes(root: str) -> tuple[dict, dict]:
     reach: dict[str, set[str]] = {}
     by_stem: dict[str, str] = {}
     census: dict = {}
+    sweeps: list = []
     for suite in TEST_SUITE_DIRS:
         tests_dir = base / suite
         if not tests_dir.is_dir():
@@ -2525,6 +2542,8 @@ def _selection_indexes(root: str) -> tuple[dict, dict]:
                 head = "\n".join(text.splitlines()[:_CENSUS_HEAD_LINES])
                 if m := _CENSUS_SUBJECT.search(head):
                     census.setdefault(m.group(1), set()).add(rel)
+            if "test-selection" in text:
+                sweeps.extend(_sweep_markers_in(rel, text))
     out: dict = {}
     for rel, names in reach.items():
         inherited: set[str] = set()
@@ -2534,7 +2553,39 @@ def _selection_indexes(root: str) -> tuple[dict, dict]:
                 inherited |= reach[fixture]     # the fixture's own reach, not its inheritance
         for name in names | inherited:
             out.setdefault(name, set()).add(rel)
-    return out, census
+    return out, census, sweeps
+
+
+def _sweep_markers_in(rel: str, text: str) -> list[dict]:
+    """The sweep markers in the head of one test module's `text`, as `_selection_indexes`
+    returns them. The words after `sweep` are class names, and the one written `<seconds>s` is
+    the recorded time; a word that is neither marks nothing."""
+    head = "\n".join(text.splitlines()[:_CENSUS_HEAD_LINES])
+    out: list[dict] = []
+    for m in _SWEEP.finditer(head):
+        words = m.group(1).split()
+        timed = [w for w in words if _SWEEP_SECONDS.fullmatch(w)]
+        classes = [w for w in words if w.isidentifier()]
+        out.append({"module": rel,
+                    "selectors": [f"{rel}::{c}" for c in classes] or [rel],
+                    "seconds": float(timed[0][:-1]) if timed else None})
+    return out
+
+
+def sweep_markers(root: str = ".") -> list[dict]:
+    """Every sweep marker in both suites: `{"module", "selectors", "seconds"}` each, `seconds`
+    None when the marker records no time."""
+    return _selection_indexes(root)[2]
+
+
+def sweep_budget(markers: list[dict]) -> dict:
+    """What the marked sweeps cost a commit: `{"seconds", "unrecorded", "within"}`. A marker with
+    no recorded time is NAMED in `unrecorded` by its selectors, never counted as zero, and
+    `within` is False while any is, as it is above `SWEEP_BUDGET_SECONDS`."""
+    seconds = sum(m["seconds"] for m in markers if m["seconds"] is not None)
+    unrecorded = [s for m in markers if m["seconds"] is None for s in m["selectors"]]
+    return {"seconds": round(seconds, 2), "unrecorded": unrecorded,
+            "within": not unrecorded and seconds <= SWEEP_BUDGET_SECONDS}
 
 
 def reach_index(root: str) -> dict:
@@ -2561,8 +2612,10 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
     `resolved` False means nothing is known about the change - no suites to select from, or a
     changed-file probe that could not answer - and the caller runs everything. Resolved with no
     selectors is an answer: no changed file is a test module, and no test module imports, loads,
-    is named for or declares as its census subject a changed file, so the commit runs no unit
-    suite and the push's full run is the check.
+    is named for or declares as its census subject a changed file, and no module is a sweep, so
+    the commit runs no unit suite and the push's full run is the check. Every sweep (a module or
+    class marked `# test-selection: sweep`) joins the selectors whatever the change reaches, a
+    class as its `path::Class` node id unless its module already runs whole.
     """
     result: dict = {"resolved": False, "selectors": [], "total": 0, "excluded": 0,
                     "reason": ""}
@@ -2576,7 +2629,7 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
                             "about this diff - running everything")
         return result
     module_set = set(modules)
-    index, census = _selection_indexes(root)
+    index, census, sweeps = _selection_indexes(root)
     selected: set[str] = set()
     paths = _normalise(changed)
     code = [p for p in paths if p.endswith(_CODE_SUFFIXES)]
@@ -2588,15 +2641,31 @@ def select_tests(root: str = ".", changed: "list[str] | None" = None) -> dict:
         selected |= index.get(stem, set())
     for path in paths:
         selected |= census.get(path, set())
+    reached = len(selected)
+    # The sweeps join whatever the change reached. A class node is dropped where its module
+    # already runs whole, so no test runs twice.
+    swept = [s for m in sweeps for s in m["selectors"] if s not in selected]
+    selected.update(s for s in swept if "::" not in s)
+    nodes = sorted({s for s in swept if "::" in s and s.split("::", 1)[0] not in selected})
+    swept = sorted(s for s in swept if "::" not in s) + nodes
     result["resolved"] = True
-    result["selectors"] = sorted(selected)
-    result["excluded"] = len(modules) - len(selected)
-    if selected:
-        result["reason"] = (f"{len(selected)} of {len(modules)} test module(s) selected for "
+    result["selectors"] = sorted(selected) + nodes
+    result["excluded"] = len(modules) - len(selected | {n.split("::", 1)[0] for n in nodes})
+    sweep_note = (f"; and {len(swept)} sweep(s) every commit runs, marked "
+                  f"`# test-selection: sweep`: {', '.join(swept)}") if swept else ""
+    if reached:
+        result["reason"] = (f"{reached} of {len(modules)} test module(s) selected for "
                             f"the {len(paths)} changed file(s): each is one of them, or imports, "
                             f"loads, is named for or declares as its census subject one of them "
-                            f"(an import or load counts through one fixture test module too); "
-                            f"{result['excluded']} excluded, and the full suite runs at push")
+                            f"(an import or load counts through one fixture test module too)"
+                            f"{sweep_note}; {result['excluded']} excluded, and the full suite "
+                            f"runs at push")
+    elif swept:
+        result["reason"] = (f"no test module imports, loads, is named for or declares as its "
+                            f"census subject a changed file, so only the {len(swept)} sweep(s) "
+                            f"every commit runs are selected, marked `# test-selection: sweep`: "
+                            f"{', '.join(swept)}; {result['excluded']} excluded, and the full "
+                            f"suite runs at push")
     else:
         result["reason"] = ("no test module imports, loads, is named for or declares as its "
                             "census subject a changed file (an import or load counts through "

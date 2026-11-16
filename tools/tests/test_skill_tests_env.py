@@ -10,6 +10,7 @@ These tests pin the scrub itself, behaviourally: the script is run with a pollut
 and asked what its child actually sees. A structural grep for `unset` would pass on an `unset`
 that never executes.
 """
+# test-selection: sweep ScrubSiteSweepTests 0.8s
 from __future__ import annotations
 
 import os

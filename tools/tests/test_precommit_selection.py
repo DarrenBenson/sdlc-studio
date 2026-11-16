@@ -30,13 +30,21 @@ MSG_HOOK = GITHOOKS / "commit-msg"
 
 
 def _selects(path: str) -> bool:
-    """True when `path` would select a unit suite, via the call the hook makes."""
+    """True when `path` would select a unit suite beyond the sweeps every commit runs (the
+    modules and classes marked `# test-selection: sweep`), via the call the hook makes."""
     proc = subprocess.run([sys.executable, str(GATE), "--root", str(REPO),
                            "--suite-decision", "--changed", path],
                           text=True, capture_output=True)
     assert proc.returncode in (0, 1), (
         f"the selector failed rather than answering: {proc.stderr.strip()}")
-    return "suite-selector: " in proc.stdout
+    sys.path.insert(0, str(GATE.parent))
+    try:
+        import gate  # noqa: PLC0415
+        sweeps = {s for m in gate.sweep_markers(str(REPO)) for s in m["selectors"]}
+    finally:
+        sys.path.remove(str(GATE.parent))
+    return any(line.removeprefix("suite-selector: ") not in sweeps
+               for line in proc.stdout.splitlines() if line.startswith("suite-selector: "))
 
 
 class RunTests(unittest.TestCase):
