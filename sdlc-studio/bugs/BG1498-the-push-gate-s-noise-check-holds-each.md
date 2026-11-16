@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, changelog.d/BG1498.md
+> **Affects:** tools/run-suite.sh, tools/tests/test_run_suite.py, changelog.d/BG1498.md, sdlc-studio/tsd.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) BG1493 QA verdict 52018e76dcb4-e6969996, 2026-11-16.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
