@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 366 |
+| Open | 367 |
 | In Progress | 0 |
 | Fixed | 942 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1499** |
+| **Total** | **1500** |
 
 ## All Bugs
 
@@ -575,6 +575,7 @@
 | [BG1497](BG1497-two-config-keys-the-code-reads-are-undocumented.md) | Two config keys the code reads are undocumented: sprint.fresh_session is missing from reference-config.md and pricing.copilot_billing from config-defaults.yaml | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1498](BG1498-the-push-gate-s-noise-check-holds-each.md) | The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their budget refuses a push CI would pass; and its report counts modules that leaked nothing | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1499](BG1499-us1058-still-reads-status-ready-though-run-thirteen.md) | US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1500](BG1500-help-retro-md-says-an-escaped-defect-is.md) | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on or before the bug's Created day | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

@@ -12,7 +12,7 @@ The 6.4.0 release paperwork: the release notes and the document updates for what
 ## Story Breakdown
 
 - [x] [US1170: The v6.4 release notes lead with what changed for the person answering for the release](../stories/US1170-the-v6-4-release-notes-lead-with-what.md)
-- [ ] [US1171: The help, reference and public pages describe what 6.4 ships](../stories/US1171-the-help-reference-and-public-pages-describe-what.md)
+- [x] [US1171: The help, reference and public pages describe what 6.4 ships](../stories/US1171-the-help-reference-and-public-pages-describe-what.md)
 - [x] [US1172: The PRD, TRD and TSD describe what 6.4 ships](../stories/US1172-the-prd-trd-and-tsd-describe-what-6.md)
 - [ ] [US1173: v6.4.0 is cut: version, changelog, known issues, install pins and the specs' baseline](../stories/US1173-v6-4-0-is-cut-version-changelog-known.md)
 
