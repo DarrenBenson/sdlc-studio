@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 367 |
+| Open | 368 |
 | In Progress | 0 |
 | Fixed | 942 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1500** |
+| **Total** | **1501** |
 
 ## All Bugs
 
@@ -576,6 +576,7 @@
 | [BG1498](BG1498-the-push-gate-s-noise-check-holds-each.md) | The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their budget refuses a push CI would pass; and its report counts modules that leaked nothing | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1499](BG1499-us1058-still-reads-status-ready-though-run-thirteen.md) | US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1500](BG1500-help-retro-md-says-an-escaped-defect-is.md) | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on or before the bug's Created day | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1501](BG1501-test-lean-release-notes-v64-fails-in-a.md) | test_lean_release_notes_v64 fails in a tree that is not a git clone: its text checks read v6.3.0 through git, so FrozenNotesTests' copy goes red and the push gate refuses | Open | High | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
