@@ -1,6 +1,6 @@
 # BG1487: The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** README.md, tools/tests/test_readme_front_door.py, changelog.d/BG1487.md
@@ -26,8 +26,10 @@ Say each step is reviewed by a seat independent of its author and a named person
 
 - [ ] **AC1** Given README.md, when its opening paragraph is read, then it claims independent review per step and a named person's signature per run, and no named person approving each step. Fails on: the old sentence.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_opening_claims_independent_review_and_one_signature_per_run
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC2** Given README.md, when an agent reads it, then one line links llms.txt and AGENTS.md. Fails on: neither linked.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_one_line_points_agents_at_llms_txt_and_agents_md
+  - **Verified:** yes (2026-11-16)
 
 ## Revision History
 

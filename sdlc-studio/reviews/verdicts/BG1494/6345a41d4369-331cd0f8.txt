@@ -1,0 +1,6 @@
+UNIT: BG1494
+BRIEF: 6345a41d4369-331cd0f8
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC1 holds by execution. `pytest test_lane_run.py -k watchdog` passed, the test alone passed 6 of 6 runs, the whole file passed (20 passed), and `verify_ac.py run --id BG1494 --dry-run` reported ac=1 pass=1 fail=0. The poll at test_lane_run.py:825-827 now waits until the marker holds TERM, not until it exists. Mutants run in an isolated clone at b80bb0af: the watchdog sending SIGKILL with no SIGTERM was KILLED ('TERM' != None), the grace skipped was KILLED ('TERM' != None), a 0.4 s grace that lets the trap create the marker but not write it was KILLED ('TERM' != ''), and the test reverted to the old exists() poll was KILLED 4 of 4 runs ('TERM' != ''), so the 0.2 s gap in TRAP (test_lane_run.py:72-78) turns the original race into a deterministic failure. Control: the old single-write trap with the new poll passes, so the new poll does not depend on the slower trap. Changelog claims checked against those runs: the empty-marker read, the 0.2 s create-before-write gap, the old poll failing every time and the SIGKILL-only watchdog still failing are all TRUE. The diff touches only the test file and its changelog fragment.

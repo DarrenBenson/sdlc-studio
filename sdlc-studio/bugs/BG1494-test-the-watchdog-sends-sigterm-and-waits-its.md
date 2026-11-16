@@ -1,6 +1,6 @@
 # BG1494: test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, changelog.d/BG1494.md
@@ -27,6 +27,7 @@ Poll until the marker's content is TERM (or the deadline passes), not until the 
 
 - [ ] **AC1** Given the watchdog test, when the trap creates its marker before writing to it, then the test waits for the written content and passes. Fails on: a read of an empty marker failing the assertion.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py -k watchdog
+  - **Verified:** yes (2026-11-16)
 
 ## Revision History
 

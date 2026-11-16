@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 365 |
+| Open | 364 |
 | In Progress | 0 |
-| Fixed | 939 |
+| Fixed | 941 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1495** |
+| **Total** | **1496** |
 
 ## All Bugs
 
@@ -562,15 +562,16 @@
 | [BG1484](BG1484-verify-ac-py-run-prints-three-lines-on.md) | verify_ac.py run prints three lines on a clean single-story success since BG1395 added its total line, turning test_quiet_success red at the push boundary | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1485](BG1485-a-shell-verify-line-run-with-s-still.md) | A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1486](BG1486-us1157-s-ac1-names-a-file-finding-py.md) | US1157's AC1 names a file_finding.py bug verb that does not exist, so the plan's registry advice reads it as a new verb | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1487](BG1487-the-readme-s-opening-says-a-person-you.md) | The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1487](BG1487-the-readme-s-opening-says-a-person-you.md) | The README's opening says a person you can name reviews and approves each step, and it no longer points agents at llms.txt or AGENTS.md | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1488](BG1488-reference-outputs-md-still-calls-deferred-a-story.md) | reference-outputs.md still calls Deferred a story terminal status at lines 134, 745 and 755, against its own Story row and sdlc_md.TERMINAL_STATUS | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1489](BG1489-github-ci-s-green-run-noise-gate-fails.md) | GitHub CI's green-run noise gate fails on main: critic record's new author-form warning leaks from passing tests, 112 diagnostic lines against a baseline of 104 | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1490](BG1490-test-critic-rejoinder-from-ledger-and-test-critic.md) | test_critic_rejoinder_from_ledger and test_critic_verdict_file_binding fail when run inside an agent session, because the harness session id reaches the verdict's source field | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Open | High | 2026-11-16 | 2026-11-16 |
-| [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1495](BG1495-sprint-plan-warns-a-wave-is-not-safely.md) | sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1496](BG1496-bg1487-s-readme-opening-guard-lets-a-reworded.md) | BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
