@@ -1,6 +1,6 @@
 # Story Index
 
-**Last Updated:** 2026-11-15
+**Last Updated:** 2026-11-16
 
 ## Summary
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 55 |
-| Ready | 1 |
+| Ready | 5 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1169** |
+| **Total** | **1173** |
 
 ## All Stories
 
@@ -207,6 +207,10 @@
 | [US1167](US1167-a-test-module-or-class-marked-test-selection.md) | A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget | Done | EP0312 | 2026-11-15 | 2026-11-15 |
 | [US1168](US1168-the-commit-hook-refuses-a-staged-new-test.md) | The commit hook refuses a staged new test module with no `test-census-subject` marker | Draft | EP0312 | 2026-11-15 | 2026-11-15 |
 | [US1169](US1169-sprint-plan-reports-per-unit-every-registry-file.md) | sprint plan reports, per unit, every registry file its new script, verb or flag implies, and every page threshold it nears, that its Affects omits | Done | EP0313 | 2026-11-15 | 2026-11-15 |
+| [US1170](US1170-the-v6-4-release-notes-lead-with-what.md) | The v6.4 release notes lead with what changed for the person answering for the release | Ready | EP0314 | 2026-11-16 | 2026-11-16 |
+| [US1171](US1171-the-help-reference-and-public-pages-describe-what.md) | The help, reference and public pages describe what 6.4 ships | Ready | EP0314 | 2026-11-16 | 2026-11-16 |
+| [US1172](US1172-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.4 ships | Ready | EP0314 | 2026-11-16 | 2026-11-16 |
+| [US1173](US1173-v6-4-0-is-cut-version-changelog-known.md) | v6.4.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Ready | EP0314 | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

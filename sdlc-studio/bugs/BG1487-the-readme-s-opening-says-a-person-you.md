@@ -25,12 +25,13 @@ Say each step is reviewed by a seat independent of its author and a named person
 ## Acceptance Criteria
 
 - [ ] **AC1** Given README.md, when its opening paragraph is read, then it claims independent review per step and a named person's signature per run, and no named person approving each step. Fails on: the old sentence.
-  - **Verify:** pytest tools/tests/test_readme_front_door.py
+  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_opening_claims_independent_review_and_one_signature_per_run
 - [ ] **AC2** Given README.md, when an agent reads it, then one line links llms.txt and AGENTS.md. Fails on: neither linked.
-  - **Verify:** pytest tools/tests/test_readme_front_door.py
+  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_one_line_points_agents_at_llms_txt_and_agents_md
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-16 | Claude Opus 5.5 (grooming) | Groomed for EP0314: each criterion's Verify line names its own test, since the two shared one file-wide selector that passes today and could not tell them apart |

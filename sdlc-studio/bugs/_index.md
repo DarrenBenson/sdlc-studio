@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 364 |
+| Open | 365 |
 | In Progress | 0 |
 | Fixed | 939 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1494** |
+| **Total** | **1495** |
 
 ## All Bugs
 
@@ -570,6 +570,7 @@
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Open | High | 2026-11-16 | 2026-11-16 |
 | [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1495](BG1495-sprint-plan-warns-a-wave-is-not-safely.md) | sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 

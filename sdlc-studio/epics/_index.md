@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-15
+**Last Updated:** 2026-11-16
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 10 |
+| Draft | 11 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 270 |
 | Superseded | 33 |
-| **Total** | **313** |
+| **Total** | **314** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -64,6 +64,7 @@
 | [EP0311](EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, stamped on each planned unit and stated in the run's report | Done | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Done | 1 | -- | 2026-11-15 | 2026-11-15 |
+| [EP0314](EP0314-v6-4-0-ships-with-paperwork-that-matches.md) | v6.4.0 ships with paperwork that matches the code | Draft | 4 | -- | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
