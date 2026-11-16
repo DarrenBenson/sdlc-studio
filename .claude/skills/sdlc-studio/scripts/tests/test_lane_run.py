@@ -67,11 +67,14 @@ import json, os, subprocess, sys, time
 LATE = ("import subprocess, sys, time; time.sleep(float(sys.argv[2])); "
         "open(sys.argv[1], 'w').write('LATE = 1'); "
         "subprocess.run(['git', 'add', '--', sys.argv[1]], check=True)")
-# a child that answers SIGTERM by writing TERM to its marker 0.3 s later, then exits
+# a child that answers SIGTERM by creating its marker 0.3 s later and writing TERM into it
+# 0.2 s after that, then exits: the marker exists, empty, before it holds TERM
 TRAP = ("import signal, sys, time\n"
         "def term(*_):\n"
         "    time.sleep(0.3)\n"
-        "    open(sys.argv[1], 'w').write('TERM')\n"
+        "    with open(sys.argv[1], 'w') as fh:\n"
+        "        time.sleep(0.2)\n"
+        "        fh.write('TERM')\n"
         "    sys.exit(0)\n"
         "signal.signal(signal.SIGTERM, term)\n"
         "open(sys.argv[1] + '.ready', 'w').close()\n"
@@ -817,8 +820,10 @@ class LaneDiesWithItsCallerTests(_LaneCase):
         self.addCleanup(_sigkill, cli)
         os.killpg(caller.pid, signal.SIGKILL)
         caller.communicate(timeout=30)
+        # wait for TERM in the marker, not for the marker: the trap creates it before writing
         deadline = time.monotonic() + lanes.KILL_GRACE + 1
-        while not marker.exists() and time.monotonic() < deadline:
+        while (marker.read_text() if marker.exists() else None) != "TERM" \
+                and time.monotonic() < deadline:
             time.sleep(0.02)
         self.assertEqual("TERM", marker.read_text() if marker.exists() else None,
                          "the watchdog killed the child before its SIGTERM trap could write")

@@ -16,10 +16,13 @@ Ask for software in plain language. The team plans it, builds it, tests it, and 
 
 SDLC Studio is an open [Agent Skill](https://agentskills.io), a plug-in for AI coding tools, that
 runs your software development lifecycle from first idea to tested, working code. You describe
-what you want in plain language; the agent does the work, and a person you can name reviews and
-approves each step. Every requirement, review and sign-off is a plain file committed beside the
+what you want in plain language and the agent does the work. Each step is reviewed independently
+of its author, often by another agent, and a person you name signs each run once, over the
+report it ends with. Every requirement, review and sign-off is a plain file committed beside the
 code, so the record the work leaves is the evidence. One install works in **Claude Code, Cursor,
 OpenAI Codex, Gemini CLI, opencode and GitHub Copilot**.
+
+If you are a coding agent, [llms.txt](llms.txt) is a machine-readable index of this repository and [AGENTS.md](AGENTS.md) is the guidance for working in it.
 
 ## Three ways in
 

@@ -7,6 +7,10 @@ page that carries it: evaluate to the engineering-leaders page and the evidence 
 the install guide, upgrade to the existing-users page. Each check returns its problems and runs
 on the live README and on planted failures beside it: a route missing, out of order, or linking
 a file that does not exist.
+
+The opening paragraph claims no more than the process does: each step is reviewed independently
+of its author and a named person signs each run, and no sentence has a person approving each
+step. One line points an agent at llms.txt and AGENTS.md, both files that exist.
 """
 # test-census-subject: README.md
 from __future__ import annotations
@@ -71,6 +75,45 @@ def route_problems(text: str, root: Path = REPO) -> list[str]:
     return problems
 
 
+#: The opening's sentence before it was corrected, kept as a planted failure.
+OLD_OPENING = ("You describe what you want in plain language; the agent does the work, and a "
+               "person you can name reviews and approves each step.")
+
+
+def opening(text: str) -> str:
+    """The first paragraph after the badges' closing `</div>`, its whitespace collapsed."""
+    body = text.split("</div>", 1)[1] if "</div>" in text else text
+    paragraph = next((p for p in re.split(r"\n\s*\n", body) if p.strip()), "")
+    return " ".join(paragraph.split())
+
+
+def opening_problems(text: str) -> list[str]:
+    """What the opening claims against what the process does, judged sentence by sentence."""
+    sentences = re.split(r"(?<=[.;])\s+", opening(text))
+    problems = []
+    if any(re.search(r"\bapprov\w*\b.*\beach step\b", s, re.I) for s in sentences):
+        problems.append("the opening says a person approves each step")
+    if not any(re.search(r"\bindependent", s, re.I) and re.search(r"\beach step\b", s, re.I)
+               for s in sentences):
+        problems.append("the opening does not say each step is reviewed independently")
+    if not any(re.search(r"\bsigns?\b", s, re.I) and re.search(r"\beach run\b", s, re.I)
+               and re.search(r"\b(?:person|principal)\b", s, re.I) for s in sentences):
+        problems.append("the opening does not say a named person signs each run")
+    return problems
+
+
+def agent_pointer_problems(text: str, root: Path = REPO) -> list[str]:
+    """One line links both llms.txt and AGENTS.md, and both files exist."""
+    wanted = ("llms.txt", "AGENTS.md")
+    lines = [ln for ln in text.splitlines()
+             if all(page in [t.split("#", 1)[0].removeprefix("./") for t in _LINK.findall(ln)]
+                    for page in wanted)]
+    if not lines:
+        return ["no line links both llms.txt and AGENTS.md"]
+    return [f"the agent line links {page}, which does not exist"
+            for page in wanted if not (root / page).is_file()]
+
+
 class ReadmeFrontDoorTests(unittest.TestCase):
     def test_the_readme_is_at_most_1800_words(self) -> None:
         """AC1: `wc -w README.md` is at most 1,800; a page one word over is refused."""
@@ -115,6 +158,59 @@ class ReadmeFrontDoorTests(unittest.TestCase):
         self.assertTrue(any("offers the evaluate route 0 times" in p
                             for p in route_problems(inside)),
                         "routes inside the badges block counted as the first section after it")
+
+    def test_the_opening_claims_independent_review_and_one_signature_per_run(self) -> None:
+        """BG1487 AC1: the opening says each step is reviewed independently and a named person
+        signs each run, and never that a person approves each step. The old sentence, the
+        signature clause cut, and the review clause cut are each refused."""
+        text = README.read_text(encoding="utf-8")
+        self.assertEqual(opening_problems(text), [], opening(text))
+        para = opening(text)
+        old = text.replace("</div>\n", f"</div>\n\n{OLD_OPENING}\n", 1)
+        self.assertEqual(opening(old), OLD_OPENING)
+        self.assertEqual(opening_problems(old),
+                         ["the opening says a person approves each step",
+                          "the opening does not say each step is reviewed independently",
+                          "the opening does not say a named person signs each run"])
+        unsigned = text.replace("</div>\n", "</div>\n\n" + re.sub(
+            r"\bsigns\b", "reads", para) + "\n", 1)
+        self.assertEqual(opening_problems(unsigned),
+                         ["the opening does not say a named person signs each run"])
+        for wrong in (para.replace("signs each run", "signs each step", 1),
+                      para.replace("a person you name signs", "the tool signs", 1)):
+            self.assertNotEqual(wrong, para)
+            planted = text.replace("</div>\n", f"</div>\n\n{wrong}\n", 1)
+            self.assertEqual(opening_problems(planted),
+                             ["the opening does not say a named person signs each run"], wrong)
+        unreviewed = text.replace("</div>\n", "</div>\n\n" + re.sub(
+            r"\bindependent\w*", "", para) + "\n", 1)
+        self.assertEqual(opening_problems(unreviewed),
+                         ["the opening does not say each step is reviewed independently"])
+        approved = text.replace("</div>\n", "</div>\n\n" + para.replace(
+            "each run", "each run and approves each step", 1) + "\n", 1)
+        self.assertIn("the opening says a person approves each step", opening_problems(approved))
+
+    def test_one_line_points_agents_at_llms_txt_and_agents_md(self) -> None:
+        """BG1487 AC2: one line links llms.txt and AGENTS.md, both of which exist. The line cut
+        (AGENTS.md still linked elsewhere), one of its links changed, the two split across lines,
+        or a missing file is refused."""
+        text = README.read_text(encoding="utf-8")
+        self.assertEqual(agent_pointer_problems(text), [])
+        line = next(ln for ln in text.splitlines() if "](llms.txt)" in ln and "](AGENTS.md)" in ln)
+        cut = text.replace(line, "", 1)
+        self.assertIn("](AGENTS.md)", cut)
+        self.assertEqual(agent_pointer_problems(cut),
+                         ["no line links both llms.txt and AGENTS.md"])
+        only_one = text.replace(line, line.replace("](llms.txt)", "](docs/INSTALL.md)"), 1)
+        self.assertEqual(agent_pointer_problems(only_one),
+                         ["no line links both llms.txt and AGENTS.md"])
+        split = text.replace(line, line.replace("[AGENTS.md]", "\n[AGENTS.md]", 1), 1)
+        self.assertEqual(agent_pointer_problems(split),
+                         ["no line links both llms.txt and AGENTS.md"])
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "AGENTS.md").write_text("x", encoding="utf-8")
+            self.assertEqual(agent_pointer_problems(text, Path(d)),
+                             ["the agent line links llms.txt, which does not exist"])
 
 
 if __name__ == "__main__":
