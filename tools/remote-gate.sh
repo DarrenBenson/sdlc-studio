@@ -325,6 +325,12 @@ os.kill(int(sys.argv[1]), signal.SIGTERM)' "$$" <&0 >/dev/null 2>&1 &
   elif [ -n "$release" ]; then
     what="the release gate" job_log="" doing="judging $commit with gate.py --release"
     job=(python3 .claude/skills/sdlc-studio/scripts/gate.py --release)
+  # The boundary gate runs inside the commit's green-run noise gate, as the pre-push hook runs it
+  # locally: what a passing test printed under pytest's capture is held to CI's noise budget.
+  elif [ -f tools/run-suite.sh ] && [[ "$(< tools/run-suite.sh)" == *"--noise-gate"* ]]; then
+    job=(bash tools/run-suite.sh --noise-gate "${job[@]}")
+  else
+    echo "remote gate: commit $commit carries no green-run noise gate (tools/run-suite.sh --noise-gate), so what its passing tests print is not judged"
   fi
   echo "remote gate: $here $doing with $(python3 --version 2>&1), load $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo unknown)"
 

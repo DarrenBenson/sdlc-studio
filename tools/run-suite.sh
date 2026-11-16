@@ -29,6 +29,7 @@ usage() {
     cat <<'EOF'
 Usage: tools/run-suite.sh scripts|tools|all
        tools/run-suite.sh --check [scripts|tools|all]
+       tools/run-suite.sh --noise-gate <gate command...>
 
 Runs a suite, prints one verdict line, and writes the full verdict to
 sdlc-studio/.local/suite-verdict.json:
@@ -56,6 +57,14 @@ pre-push hook reads it). The host's suite command comes from the host and its
 suite named it requires `all`, because an unqualified claim of greenness is a
 claim about the whole tree and only `all` establishes that. `--check scripts`
 asserts the narrower thing; an `all` verdict satisfies it, having run that suite.
+
+--noise-gate runs the gate command it is given (the push hook's and the gate
+host's `gate.py --boundary push|release`) and, when that passes, holds what its
+passing tests printed under pytest's capture to CI's green-run noise budget,
+tools/test-noise-baseline.json: each skill test module to its entry and the run
+to `_total`. It exits with the gate's status when the gate is red, 1 when the
+noise is over the budget or cannot be judged, and 0 otherwise. It writes no
+verdict.
 
 Options:
   --help, -h    Show this help
@@ -119,6 +128,123 @@ tree_state() {
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     usage; exit 0
+fi
+
+# THE GREEN-RUN NOISE GATE AT THE PUSH. CI runs the skill suite under unittest through
+# tools/skill-tests.sh, which prints whatever a passing test leaks and refuses the run above
+# tools/test-noise-baseline.json. The push boundary runs the same suite under pytest, which
+# captures a passing test's output and drops it, so a leak passed the push and turned main red
+# after it. This wraps the boundary gate rather than running the suite again: a pytest plugin,
+# written here and armed through the environment for the gate's pytest runs only, appends what
+# each test printed - per test, so per module - to a file this then reads, and the run is held
+# to tools/test_noise.py's own detector, each skill module to its entry and the run to `_total`.
+# What it does not count: a line a module prints as it is imported, which is no test's output.
+# Only a green gate is judged; a red one keeps its own refusal. pre-push and remote-gate.sh call
+# it the same way, so a push is held to it on this machine and on the gate host alike.
+#
+# Bash builtins, git and python3 only: the hook's fixtures run it on a PATH holding nothing else.
+if [[ "${1:-}" == "--noise-gate" ]]; then
+    shift
+    [[ $# -gt 0 ]] || { echo "run-suite --noise-gate: name the gate command to run" >&2; exit 2; }
+    for need in tools/test_noise.py tools/test-noise-baseline.json; do
+        if [[ ! -f "$PROJECT_ROOT/$need" ]]; then
+            echo "  [FAIL] green-run noise gate - this tree has no $need, so a passing suite's output cannot be judged" >&2
+            exit 1
+        fi
+    done
+    NOISE_DIR="$(python3 -c 'import tempfile; print(tempfile.mkdtemp(prefix="sdlc-noise."))')" || exit 2
+    trap 'python3 -c "import shutil, sys; shutil.rmtree(sys.argv[1], ignore_errors=True)" "$NOISE_DIR"' EXIT
+    # The plugin disarms itself as it loads: the tests see the environment they see without it, so
+    # a pytest a test starts is never armed and a fixture suite's output is never counted as this
+    # tree's. The gate's own pytest runs each load it, as each is started by the gate.
+    IFS= read -r -d '' NOISE_PLUGIN <<'PY' || true
+"""What each test printed while pytest captured it, for tools/run-suite.sh --noise-gate."""
+import json
+import os
+
+_LOG = os.environ.pop("SDLC_GREEN_NOISE_LOG", "")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_kept = [p for p in os.environ.get("PYTEST_PLUGINS", "").split(",") if p.strip() not in ("", __name__)]
+os.environ["PYTEST_PLUGINS"] = ",".join(_kept)
+if not _kept:
+    del os.environ["PYTEST_PLUGINS"]
+_kept = [p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p and os.path.abspath(p) != _HERE]
+os.environ["PYTHONPATH"] = os.pathsep.join(_kept)
+if not _kept:
+    del os.environ["PYTHONPATH"]
+_root, _files, _printed = "", set(), []
+
+
+def pytest_configure(config):
+    global _root
+    _root = str(config.rootpath)
+
+
+def pytest_runtest_logreport(report):
+    # Only this phase's own sections: a later phase's report repeats the earlier phases' output.
+    path = os.path.realpath(os.path.join(_root, report.nodeid.split("::", 1)[0]))
+    _files.add(path)
+    own = (f"Captured stdout {report.when}", f"Captured stderr {report.when}")
+    text = "".join(content for name, content in report.sections if name in own)
+    if text:
+        _printed.append({"file": path, "test": report.nodeid, "when": report.when, "text": text})
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not _LOG or hasattr(session.config, "workerinput"):
+        return
+    with open(_LOG, "a", encoding="utf-8") as fh:      # appended: the serial phase follows the parallel
+        fh.write(json.dumps({"files": sorted(_files)}) + "\n")
+        for rec in _printed:
+            fh.write(json.dumps(rec) + "\n")
+PY
+    printf '%s\n' "$NOISE_PLUGIN" > "$NOISE_DIR/sdlc_green_noise.py" || exit 2
+    SDLC_GREEN_NOISE_LOG="$NOISE_DIR/printed.jsonl" \
+        PYTEST_PLUGINS="${PYTEST_PLUGINS:+$PYTEST_PLUGINS,}sdlc_green_noise" \
+        PYTHONPATH="$NOISE_DIR${PYTHONPATH:+:$PYTHONPATH}" "$@"
+    RC=$?
+    [[ $RC -eq 0 ]] || exit "$RC"
+    python3 - "$NOISE_DIR/printed.jsonl" "$PROJECT_ROOT" <<'PY' || exit 1
+import json, os, sys
+from pathlib import Path
+log, root = Path(sys.argv[1]), Path(sys.argv[2])
+sys.path.insert(0, str(root / "tools"))
+import test_noise
+budget_rel = "tools/test-noise-baseline.json"
+budget = test_noise.read_budget(root / budget_rel)
+tests = os.path.realpath(root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests") + os.sep
+ran, leaks = set(), {}
+for line in (log.read_text(encoding="utf-8").splitlines() if log.exists() else []):
+    rec = json.loads(line)
+    if "files" in rec:
+        ran.update(f for f in rec["files"] if f.startswith(tests))
+    elif rec["file"].startswith(tests):
+        leaks.setdefault(Path(rec["file"]).stem, []).extend(test_noise.leaked_lines(rec["text"]))
+if not ran and list(Path(tests).glob("test*.py")):
+    print(f"  [FAIL] green-run noise gate - no pytest run reported a test under {tests}, so "
+          f"there was nothing to judge and silence cannot be claimed")
+    raise SystemExit(1)
+count, ceiling = sum(map(len, leaks.values())), budget[test_noise.TOTAL_KEY]
+over = {m: ln for m, ln in sorted(leaks.items()) if len(ln) > budget.get(m, 0)}
+if not over and count <= ceiling:
+    print(f"  [PASS] green-run noise gate - {count} diagnostic line(s) from {len(leaks)} skill test "
+          f"module(s), within {budget_rel} (full-run total {ceiling})")
+    raise SystemExit(0)
+print(f"  [FAIL] green-run noise gate - a PASSING suite printed {count} diagnostic line(s), which "
+      f"GitHub CI's noise gate (tools/skill-tests.sh) refuses against {budget_rel}:")
+for mod, lines in over.items():
+    print(f"    {mod}: {len(lines)} diagnostic line(s), above its budget of {budget.get(mod, 0)}")
+    for text in lines[:3]:
+        print(f"      {text}")
+if count > ceiling:
+    print(f"    the run: {count} diagnostic line(s), above the full-run total of {ceiling}")
+    for mod, lines in sorted(leaks.items(), key=lambda kv: -len(kv[1]))[:3]:
+        print(f"      {mod} printed {len(lines)}")
+print("  fix: capture the output in the test (contextlib.redirect_stdout/redirect_stderr) and assert "
+      "on it; lower an entry as leaks are captured, never raise one")
+raise SystemExit(1)
+PY
+    exit 0
 fi
 
 # --check is the half that makes the verdict load-bearing. Writing a verdict nobody reads

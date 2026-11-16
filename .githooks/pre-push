@@ -326,19 +326,30 @@ PY
   # lane's runner, and at a tag module-alone's per-module interpreters, inherit it from the gate.
   # Without it the push boundary ran none of the tests deferred to it, and CI was the first thing
   # to see one go red.
+  #
+  # The gate runs inside the commit's own green-run noise gate (`tools/run-suite.sh --noise-gate`,
+  # BG1493): its pytest captures what a passing test prints, which CI's unittest run prints and
+  # counts against tools/test-noise-baseline.json, so the wrapper judges that captured output to
+  # the same budget. A commit whose run-suite.sh predates the wrapper is judged without it, said.
   t0=$SECONDS
   cd "$wt"
+  noise=()
+  if [ -f tools/run-suite.sh ] && [[ "$(< tools/run-suite.sh)" == *"--noise-gate"* ]]; then
+    noise=(bash tools/run-suite.sh --noise-gate)
+  else
+    echo "pre-push: commit $commit carries no green-run noise gate (tools/run-suite.sh --noise-gate), so what its passing tests print is not judged" >&2
+  fi
   if [ "$at" = "release" ]; then
     /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
        -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
        -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary release 1>&2
+       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 ${noise[@]+"${noise[@]}"} python3 "$skill/gate.py" --boundary release 1>&2
     rc=$?
   else
     /usr/bin/env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE \
        -u GIT_INDEX_VERSION -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
        -u GIT_NAMESPACE -u GIT_CEILING_DIRECTORIES -u GIT_DISCOVERY_ACROSS_FILESYSTEM \
-       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 python3 "$skill/gate.py" --boundary push 1>&2
+       -u GIT_PREFIX SDLC_STUDIO_BOUNDARY_SUITE=1 ${noise[@]+"${noise[@]}"} python3 "$skill/gate.py" --boundary push 1>&2
     rc=$?
   fi
   cd "$repo_root"
@@ -346,7 +357,7 @@ PY
   python3 tools/gate_timing.py record --suite "boundary-$at" --seconds "$((SECONDS - t0))" >/dev/null 2>&1 || true
   if [ "$rc" -ne 0 ]; then
     echo "pre-push: the $at boundary gate refused commit $commit - see the lane named above." >&2
-    echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 python3 $skill/gate.py --boundary $at" >&2
+    echo "  re-run: SDLC_STUDIO_BOUNDARY_SUITE=1 ${noise[*]:+${noise[*]} }python3 $skill/gate.py --boundary $at" >&2
     echo "  bypass once (emergency only): git push --no-verify" >&2
     exit "$rc"
   fi

@@ -14,10 +14,12 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import pathlib
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -569,6 +571,171 @@ class TheTwoPhaseSkillSuiteIsHonest(unittest.TestCase):
         self.assertIn('import xdist', s, "the runner does not check whether xdist is present")
         self.assertIn("else", s.split("import xdist")[1][:400],
                       "there is no serial fallback when xdist is absent")
+
+
+#: The push boundary's full-suite lane, in small: the skill tests under pytest in two phases, the
+#: first across workers when pytest-xdist is present, each phase's output captured and DROPPED when
+#: it passes, as the real lane drops it. A leak therefore reaches no reader, which is the bug: CI's
+#: unittest run prints it and its noise gate counts it. The line it prints names where it ran.
+NOISE_STUB_GATE = textwrap.dedent("""
+    import importlib.util, os, subprocess, sys
+    tests = ".claude/skills/sdlc-studio/scripts/tests"
+    base = [sys.executable, "-B", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    workers = ["-n", "2"] if importlib.util.find_spec("xdist") else []
+    phases = [base + workers + [tests + "/test_leaky.py", tests + "/test_quiet.py"],
+              base + [tests + "/test_serial.py"]]
+    red = [p for p in phases if subprocess.run(p, capture_output=True, text=True).returncode]
+    print(("  [FAIL]" if red else "  [PASS]") + " full-suite STUBBED in " + os.getcwd())
+    raise SystemExit(1 if red else 0)
+""")
+
+#: Two lines leaked in the parallel phase, one on each stream.
+NOISE_LEAKY = textwrap.dedent("""
+    import sys, unittest
+    class Leaky(unittest.TestCase):
+        def test_passes_and_prints(self):
+            print("warning: the fixture leaks this line")
+            print("leaky-tool: and this one, on stderr", file=sys.stderr)
+""")
+
+#: The positive control: a passing module that captures what its tool prints and asserts on it,
+#: and finds no trace of the noise gate in the environment it runs in, so a pytest it started
+#: would not be armed and the suite runs as it runs without the gate.
+NOISE_QUIET = textwrap.dedent("""
+    import contextlib, io, os, unittest
+    class Quiet(unittest.TestCase):
+        def test_captures_its_own_diagnostic(self):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                print("warning: captured, so never a leak")
+            self.assertIn("captured", buf.getvalue())
+        def test_the_environment_carries_no_noise_gate(self):
+            self.assertNotIn("SDLC_GREEN_NOISE_LOG", os.environ)
+            self.assertNotIn("sdlc_green_noise", os.environ.get("PYTEST_PLUGINS", ""))
+            self.assertNotIn("sdlc-noise.", os.environ.get("PYTHONPATH", ""))
+""")
+
+#: One line leaked in the serial phase, which runs after the parallel one.
+NOISE_SERIAL = textwrap.dedent("""
+    import unittest
+    class Serial(unittest.TestCase):
+        def test_passes_and_prints_once(self):
+            print("error: the serial phase leaks one line")
+""")
+
+
+class PushNoiseGateTests(unittest.TestCase):
+    """BG1493: the push gate holds a passing suite to CI's green-run noise budget, on this machine
+    and on the gate host, judging the output the full-suite lane already captured. Each fixture is
+    a `test_remote_gate_push` clone (bare origin, the tracked pre-push and remote-gate.sh, a stub
+    transport to a fake host) committing a leaking skill suite, this repository's run-suite.sh and
+    test_noise.py, and the budget given."""
+
+    #: test_leaky prints 2, test_serial 1, test_quiet none: 3 in all.
+    OVER_MODULE = {"_total": 10, "test_leaky": 1, "test_quiet": 0, "test_serial": 1}
+    OVER_TOTAL = {"_total": 2, "test_leaky": 2, "test_quiet": 0, "test_serial": 1}
+    WITHIN = {"_total": 3, "test_leaky": 2, "test_quiet": 0, "test_serial": 1}
+
+    def _clone(self, budget: dict):
+        import test_remote_gate_push as rg   # a module, so unittest does not collect its cases here
+        fx = rg._HostClone()
+        self.addCleanup(fx.cleanup)
+        tests = fx.clone / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+        tests.mkdir(parents=True)
+        for name, body in (("test_leaky.py", NOISE_LEAKY), ("test_quiet.py", NOISE_QUIET),
+                           ("test_serial.py", NOISE_SERIAL)):
+            (tests / name).write_text(body, encoding="utf-8")
+        (tests.parent / "gate.py").write_text(NOISE_STUB_GATE, encoding="utf-8")
+        shutil.copy(SCRIPT, fx.clone / "tools" / "run-suite.sh")
+        shutil.copy(REPO / "tools" / "test_noise.py", fx.clone / "tools" / "test_noise.py")
+        (fx.clone / "tools" / "test-noise-baseline.json").write_text(json.dumps(budget), encoding="utf-8")
+        fx.commit("a passing skill suite that leaks")
+        return fx, rg
+
+    def _landed(self, fx, rg) -> bool:
+        return rg._git(fx.remote, "rev-parse", "-q", "--verify", "refs/heads/main",
+                       check=False).returncode == 0
+
+    def _ran_in(self, out: str) -> list[Path]:
+        return [Path(ln.split("STUBBED in ", 1)[1].strip()).resolve()
+                for ln in out.splitlines() if "full-suite STUBBED in " in ln]
+
+    def test_a_passing_test_leaking_above_budget_refuses_a_local_push(self) -> None:
+        """AC1. MUTANTS: (1) the hook runs the gate without the noise wrapper; (2) the capture
+        plugin is never armed, so nothing is judged; (3) the plugin writes its record afresh per
+        session, so the serial phase erases the parallel phase's leak; (4) only the total is
+        judged, so a module over its own entry passes; (5) stderr is not recorded."""
+        fx, rg = self._clone(self.OVER_MODULE)
+        r = fx.push(local=True)
+        self.assertNotEqual(0, r.returncode, "a leak above its module's budget was pushed:\n" + r.stderr)
+        self.assertFalse(self._landed(fx, rg), "the remote advanced despite the refusal")
+        self.assertTrue(self._ran_in(r.stderr), "the stub suite never ran:\n" + r.stderr)
+        self.assertFalse(any(p.is_relative_to(fx.host_home.resolve()) for p in self._ran_in(r.stderr)),
+                         "the local route ran on the host:\n" + r.stderr)
+        self.assertIn("[FAIL] green-run noise gate", r.stderr, r.stderr)
+        self.assertRegex(r.stderr, r"(?m)^    test_leaky: 2 diagnostic line\(s\), above its budget of 1",
+                         "the refusal does not name the module over its budget:\n" + r.stderr)
+        self.assertNotRegex(r.stderr, r"(?m)^    test_(quiet|serial):",
+                            "a module within its budget was named as over it:\n" + r.stderr)
+        self.assertIn("leaky-tool: and this one, on stderr", r.stderr, "stderr was not judged:\n" + r.stderr)
+
+        # The full-run total binds too, as CI's discovery run binds it: every module within its
+        # entry, the run above `_total`, the serial phase's line counted beside the parallel's.
+        fx2, rg2 = self._clone(self.OVER_TOTAL)
+        r2 = fx2.push(local=True)
+        self.assertNotEqual(0, r2.returncode, "a run above the full-run total was pushed:\n" + r2.stderr)
+        self.assertFalse(self._landed(fx2, rg2))
+        self.assertIn("the run: 3 diagnostic line(s), above the full-run total of 2", r2.stderr,
+                      "the total was not judged over both phases:\n" + r2.stderr)
+
+    def test_the_gate_host_applies_the_same_noise_gate(self) -> None:
+        """AC2. MUTANTS: (1) the host runs the boundary gate without the noise wrapper; (2) the
+        host keeps the gate's exit and drops the wrapper's, so its refusal reads green."""
+        fx, rg = self._clone(self.OVER_MODULE)
+        r = fx.push()
+        self.assertNotEqual(0, r.returncode, "the gate host passed a leak a local run refuses:\n" + r.stderr)
+        self.assertFalse(self._landed(fx, rg), "the remote advanced despite the host's refusal")
+        ran = self._ran_in(r.stderr)
+        self.assertTrue(ran and all(p.is_relative_to(fx.host_home.resolve()) for p in ran),
+                        "the suite did not run on the host:\n" + r.stderr)
+        self.assertIn("[FAIL] green-run noise gate", r.stderr, r.stderr)
+        self.assertRegex(r.stderr, r"(?m)^    test_leaky: 2 diagnostic line\(s\), above its budget of 1",
+                         "the host's refusal does not name the module over its budget:\n" + r.stderr)
+        self.assertIn(f"{rg.HOST} refused commit", r.stderr, r.stderr)
+
+    def test_a_suite_within_budget_passes_the_push(self) -> None:
+        """AC3. MUTANTS: (1) the judge counts pytest's own output or a captured-and-asserted
+        line; (2) the wrapper refuses a green run whatever it counted; (3) the host route
+        refuses what the local route passes."""
+        for local in (True, False):
+            with self.subTest(route="local" if local else "host"):
+                fx, rg = self._clone(self.WITHIN)
+                r = fx.push(local=local)
+                self.assertEqual(0, r.returncode, "a suite within its budget was refused:\n" + r.stderr)
+                self.assertTrue(self._landed(fx, rg), "the push within budget did not land")
+                self.assertIn("[PASS] green-run noise gate - 3 diagnostic line(s)", r.stderr,
+                              "the gate did not judge the run it passed:\n" + r.stderr)
+
+    def test_a_red_gate_keeps_its_refusal_and_an_empty_run_is_not_silence(self) -> None:
+        """The wrapper alone, on a tree with skill tests and the budget. MUTANTS: (1) a red gate's
+        status is replaced by the noise verdict; (2) a gate whose pytest reported no test under
+        the skill tests is passed as silent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _fixture(Path(d))
+            tests = root / ".claude" / "skills" / "sdlc-studio" / "scripts" / "tests"
+            tests.mkdir(parents=True)
+            (tests / "test_quiet.py").write_text(NOISE_QUIET, encoding="utf-8")
+            (root / "tools").mkdir()
+            shutil.copy(REPO / "tools" / "test_noise.py", root / "tools" / "test_noise.py")
+            (root / "tools" / "test-noise-baseline.json").write_text('{"_total": 0}', encoding="utf-8")
+            red = subprocess.run(["bash", str(SCRIPT), "--noise-gate", "bash", "-c", "exit 3"],
+                                 cwd=root, capture_output=True, text=True)
+            self.assertEqual(3, red.returncode, red.stdout + red.stderr)
+            self.assertNotIn("noise gate", red.stdout + red.stderr, "a red gate was judged for noise")
+            empty = subprocess.run(["bash", str(SCRIPT), "--noise-gate", "true"],
+                                   cwd=root, capture_output=True, text=True)
+            self.assertEqual(1, empty.returncode, "a run that judged nothing passed as silent:\n" + empty.stdout)
+            self.assertIn("[FAIL] green-run noise gate - no pytest run reported a test", empty.stdout)
 
 
 if __name__ == "__main__":
