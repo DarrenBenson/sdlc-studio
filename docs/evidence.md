@@ -10,7 +10,7 @@ MEASURED where the report itself recorded that the cost could not be priced.
 ## The runs
 
 <!-- BEGIN GENERATED -->
-The newest report this page covers is RPT0032, signed at 2026-11-15T20:17:48Z.
+The newest report this page covers is RPT0034, signed at 2026-11-16T10:14:53Z.
 
 Each column reads one field of the report its row names:
 
@@ -23,6 +23,8 @@ Each column reads one field of the report its row names:
 
 | Run | Report | Goal verdict | Verdict note | Dollars per point | Hours to signature |
 | --- | --- | --- | --- | --- | --- |
+| RUN-01M7HA6R | RPT0034 | Judged achieved | - | $2.08 | 0.1 |
+| RUN-01M7GEHM | RPT0033 | Judged achieved | - | $2.18 | 0.1 |
 | RUN-01M7EYR3 | RPT0032 | Judged achieved | - | $2.35 | 0.1 |
 | RUN-01M7E52T | RPT0031 | Judged achieved | - | $2.27 | 0.1 |
 | RUN-01M78TKD | RPT0030 | Judged partial | All 24 planned units, 49 points, delivered on independent APPROVEs (four after one repair round each). Lanes land and die cleanly (BG1336, BG1337, BG1339, BG1344, BG1261, BG1262) and verifiers no longer read green wrongly or leak (BG1005, BG1009, BG0991, BG1112, BG1190, BG1228). Cost is priced over the whole window and for long Grok prompts (BG1279, BG1305, BG1330, BG1331), but every lane this run was multi-unit and lane return cannot split one builder's total, so per-unit cost stays unpriced (BG1397). BG1420, added when the push gate found five red tests, fixed them but was carried as BG1425 after its repair's round-2 review. | $2.28 | 35.3 |

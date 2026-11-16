@@ -178,7 +178,7 @@ Every open finding this release ships is listed by id on [the disclosure page](k
 which `tools/known_issues.py write` generates from the bug corpus at the cut, together with the
 count below, so the two cannot disagree.
 
-**v6.4.0 discloses 367 open defects: 65 Medium, 302 Low.**
+**v6.4.0 discloses 369 open defects: 65 Medium, 304 Low.**
 
 ## For contributors to this repository
 

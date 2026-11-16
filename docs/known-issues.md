@@ -336,9 +336,11 @@ buy honestly.
 | `BG1495` | Low | sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave |
 | `BG1496` | Low | BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would |
 | `BG1497` | Low | Two config keys the code reads are undocumented: sprint.fresh_session is missing from reference-config.md and pricing.copilot_billing from config-d... |
-| `BG1498` | Low | The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their bud... |
 | `BG1499` | Low | US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete |
 | `BG1500` | Low | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on... |
+| `BG1502` | Low | critic.py self-check record refuses a unit until it claims its changelog.d fragment, though the release cut has already merged that fragment into C... |
+| `BG1504` | Low | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared tes... |
+| `BG1505` | Low | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later li... |
 | `BG0948` | Medium | A migrating project cannot baseline pre-existing placeholder findings, and v3 ids can never be baselined |
 | `BG0949` | Medium | An inline `ruled:` or `decided:` ruling is never recognised - `_RULING_RE` puts a word boundary after the colon |
 | `BG0954` | Medium | A Draft story transitions straight to Done - the Definition of Ready is never required |
@@ -405,7 +407,7 @@ buy honestly.
 | `BG1491` | Medium | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line |
 | `BG1492` | Medium | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written |
 
-367 findings: 65 Medium, 302 Low.
+369 findings: 65 Medium, 304 Low.
 
 ## Not carried
 
