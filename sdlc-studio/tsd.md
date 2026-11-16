@@ -204,10 +204,12 @@ real one through.
 
 The `test-noise` leg **runs in CI**, held in the one run of the skill suite through
 `tools/skill-tests.sh` in `.github/workflows/lint.yml` (`npm run test:skill` runs the same
-script). Where pytest is installed, neither hook holds it: the commit-msg hook runs the
-selected modules through `gate.py --run-tests`, and pytest captures a passing test's output, as
-it does in the push boundary's full suite. Only on a machine without pytest does the commit-msg
-hook fall back to `tools/skill-tests.sh`, the ratchet included. It was previously described here as
+script). The push gate holds it too: the pre-push hook runs the boundary gate inside
+`tools/run-suite.sh --noise-gate`, which judges what each test printed while the full-suite
+lane's pytest captured it with `tools/test_noise.py`'s own detector. Where pytest is installed,
+the commit-msg hook runs the selected modules through `gate.py --run-tests`, and pytest captures
+a passing test's output; only on a machine without pytest does it fall back to
+`tools/skill-tests.sh`, the ratchet included. It was previously described here as
 holding the line while being wired into nothing, and its detector matched a single shape
 (`ERROR` or `WARN` followed by an absolute path) that this suite never produces - it
 caught almost none of the 233 lines actually leaking. Detection now lives in `tools/test_noise.py`
@@ -315,6 +317,14 @@ pass/fail) is an example of this fixture-workspace pattern. [HIGH]
 | Framework | Python `unittest` with `tempfile`/`shutil` fixtures; a shared `gitutil` helper neutralises the host git config so a developer's `commit.gpgsign` cannot make the suite fail or hang |
 | Key assertions | Correct JSON output; writes bounded to the named target; non-zero exit on halting failures; tolerance of both id eras and legacy artefact forms; a created artefact both validates AND carries the content the caller supplied |
 | Execution | Same command and gate as the unit level |
+
+**The evidence annex holds every committed report.** `reference-evidence-schema.md` is the
+contract a consumer parses a report against, so its tests read the page as a consumer would and
+hold to it the reports this repository commits: `test_evidence_annex_fingerprint.py` recomputes
+the fingerprint of every schema-2 report under `sdlc-studio/reports/` with the annex's own
+reference procedure, run in isolation, and `test_evidence_annex_report.py` holds the four
+schema-1 reports to the annex's schema-1 tables, beside a report `sprint close` files in a
+fixture.
 
 **Reproduce through the public path.** A hazard proven by calling a private helper
 directly is a statement about the helper, not about the pipeline - and the pipeline is
@@ -605,14 +615,23 @@ the Node one from `package.json`.
    so a message defect is refused in seconds, then runs only the test modules the staged change
    selects (`gate.py --suite-decision --help` names the routes), in parallel. The commit's time is
    reported against an advisory 90-second budget, not refused, and a docs or artefact commit runs
-   only the modules whose `test-census-subject` names a file it stages.
+   only the modules whose `test-census-subject` names a file it stages, beside the sweeps. A
+   module, or a class of one, marked `# test-selection: sweep` in its first 40 lines joins every
+   commit's selection, a docs-only one included, because a sweep reads the whole repository
+   rather than one script, and a test holds the marked set to a 30-second budget in the seconds
+   each marker records.
    `.githooks/commit-msg --list` prints its lanes.
 3. **Push (local, enforced):** `.githooks/pre-push` runs its steps in this order. It checks the
    gate's prerequisites (`tools/gate_prereqs.py check --refusing`). For a tag, it checks that
    `docs/known-issues.md` agrees with the bug corpus at the tagged commit (`tools/known_issues.py
    check --at <sha>`). It reads the latest push-triggered Lint run on main and refuses while it
    is red until that run's id is acknowledged once with `SDLC_PUSH_ACK_RED=<run id>` (D0181).
-   Then the full suite runs once, at the push boundary, with the core gate lanes. A branch push
+   Then the full suite runs once, at the push boundary, with the core gate lanes, inside the
+   green-run noise gate CI's Lint run applies: here and on the gate host alike,
+   `tools/run-suite.sh --noise-gate` holds what each passing test printed under pytest's capture
+   to `tools/test-noise-baseline.json`, each skill test module to its entry and the run to
+   `_total`, so a passing test that prints refuses the push rather than turning Lint red after
+   it. A branch push
    runs `gate.py --boundary push`. A tag push runs `gate.py --boundary release`, which adds the
    slow release lanes (release rehearsal and module-alone). `python3 tools/gate_timing.py
    estimate --suite boundary-push` gives the current cost of a run on this machine, and
@@ -794,7 +813,8 @@ phase after the parallel one, and a `boundary_only` test is left out of a commit
 and runs at the push and in CI. `boundary.py` gives the unittest runner the same deferral. The
 hooks run the suites: `commit-msg` runs the modules a commit's change selects through
 `gate.py --run-tests`, and `pre-push` runs `gate.py --boundary push` (on the gate host when one
-is set; see Pipeline Stages), whose `full-suite` lane runs both suites once.
+is set; see Pipeline Stages), whose `full-suite` lane runs both suites once, inside
+`tools/run-suite.sh --noise-gate`.
 
 ---
 
@@ -823,6 +843,7 @@ is set; see Pipeline Stages), whose `full-suite` lane runs both suites once.
 | 2026-11-02 | US1111 | The release cut: the header's Coverage baseline moves to v6.2.0, and the work on `main` beside it to 6.3 |
 | 2026-11-08 | US1138 | The security posture, the Security NFR row and Sensitive Data say the skill stores no secret and sends one, `CURSOR_API_KEY`, only in the Cursor usage request's header, the row now gated by `test_meter_cursor.py::CursorCloudTests` |
 | 2026-11-08 | US1139 | The release cut: the header's Coverage baseline moves to v6.3.0, and the work on `main` beside it to 6.4 |
+| 2026-11-16 | US1172 | The 6.4 work on `main`: the commit stage says a module or class marked `# test-selection: sweep` joins every commit's selection, held to a 30-second budget; the push stage, the test-noise paragraph and the hooks note say the push gate runs inside `tools/run-suite.sh --noise-gate`, CI's green-run noise budget; and the integration level says the evidence annex's tests hold every committed report to `reference-evidence-schema.md` |
 
 ---
 

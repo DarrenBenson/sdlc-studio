@@ -536,7 +536,9 @@ a half-written decomposition never certifies clean.
 #### Committed evidence and records
 
 `tools/tests/test_lean_trd_refresh.py` reads each path below from its writer's code, and checks
-every tracked file under `sdlc-studio/retros/evidence/` and `sdlc-studio/reports/` against it.
+every tracked file under `sdlc-studio/retros/evidence/`, `sdlc-studio/reports/`,
+`sdlc-studio/reviews/verdicts/` and `sdlc-studio/personas/memory/` against it. A `<placeholder>`
+in a path stands for any name.
 
 | Record | Path | Writer | Purpose |
 | --- | --- | --- | --- |
@@ -551,6 +553,14 @@ every tracked file under `sdlc-studio/retros/evidence/` and `sdlc-studio/reports
 | Run reports | `sdlc-studio/reports/RPT*.json` | `sprint_report.py`, through `sprint.py close` and `sprint.py sign` | The report of record for a run, which the sign writes its signature onto. |
 | Report twins | `sdlc-studio/reports/RPT*-*.md` | `sprint_report.py` | The Markdown rendering of each report, re-rendered whenever the JSON is written. |
 | Run records | `sdlc-studio/reports/runs/*.json` | `run_state.py`, through `sprint.py close` and `sprint.py sign` | The tracked run state below. |
+| Verdict files | `sdlc-studio/reviews/verdicts/<unit>/<fp>-<token>.txt` | issued by `critic.py brief`, bound by `critic.py record` | The reviewer's verdict for one brief, in the fresh file the brief names under the unit's folder. `critic.py record --from-verdict` refuses a file whose bytes an earlier row already carries, or whose header names another unit or brief, and writes the file's digest and name into the ledger row's Source cell. |
+| Persona memory | `sdlc-studio/personas/memory/<persona>.md` | `persona_memory.py`, and through it `sprint.py close` and `sprint.py sign` | Each persona's evidenced learnings, one file per seat role or user persona card: `persona_memory.py` records a learning as proposed and another seat's approval or rejection of it, the close stamps each approved learning it lists, and `sprint.py sign --strike` strikes one. A brief carries a learning only once a signed close has listed it. |
+| Release evidence pack | `sdlc-studio/reports/evidence-pack-<version>.md` | `release_cut.py evidence-pack`, through `evidence_pack.py` | A release's evidence, built from the signed reports it names as committed: each delivered unit's criteria with their Verify lines, each independent seat's latest verdict, the known issues that name it and its report's signing principal. An unsigned or unknown report refuses the build, and nothing is written. |
+
+A report's page and its tracked run record are contracted in `reference-evidence-schema.md`, at
+annex version 1.0, the contract a consumer parses a report against. The annex is versioned apart
+from the skill: `sprint.py close` stamps the page with the version it was written under as
+`evidence_schema`, and the run record copies it from the page it names.
 
 #### Run state
 
@@ -603,6 +613,7 @@ closing a record still running `blocked`; `sprint.py boundary --strict` adds ori
 | `lane/` | the builder, in its worktree, as the brief `sprint.py` prints for `lane brief` directs | The lane hand-in: the commit message and the self-check's claims and mutants files that `sprint.py lane land` commits and records from. [HIGH] |
 | `lane/landed/<worktree>/` | `lib/lanes.py`, called by `sprint.py lane land` | The hand-in files copied out of a worktree before it is removed. [HIGH] |
 | `briefs/<unit>-qa.txt`, `briefs/<unit>-qa.none` | `lib/lanes.py`, called by `sprint.py lane land` | Each landed unit's QA brief, which `sprint.py lane accept` records the verdict against. A unit the landing left with no brief has the `.none` note instead, naming that landing and why, and `lane accept` refuses it with that reason. [HIGH] |
+| `resume-brief.md` | `sprint.py`, run as `sprint.py handoff` | The open run's resume brief: the next action and what a fresh session needs to take the run up, within 8,000 estimated tokens, which `sprint.py resume` reads in the next session. With no open run or a brief over that budget it writes nothing. [HIGH] |
 
 Each writer a row names writes its file under `.local/`, which `test_lean_v61_review_residue.py`
 checks for every row by reading each script's code, where a write counts only at module level or
@@ -1358,6 +1369,7 @@ touches the component. The constraints below span components.
 | 2026-11-08 | 6.2.0 | The 6.3 work on `main` (US1138): §5's Network paths and rule 6 name the Cursor usage GET, held to every shipped script that imports `urllib.request`; §4, §7 and §9 name it, and the skill stores no secret and sends one, `CURSOR_API_KEY`, only in that request's header. §10's cost model reads the running harness's store, a reading holding delegated agents' spend being the whole figure. The `.local/` table adds `meter-reads.json`, `cursor-usage.jsonl`, `lane-runs/`, the `lane/` hand-in, its `landed/` copies and `briefs/` |
 | 2026-11-08 | 6.3.0 | US1139: the release cut. The Coverage line reads v6.3.0 as cut, plus the 6.4 work on `main` |
 | 2026-11-15 | 6.3.0 | US1058, US1059: ADR-012's Built so far names `persona_memory.py` and the brief's learnings block; Not yet built keeps the memory directory and `persona_review.py` |
+| 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): §6's committed records gain the verdict files `critic.py brief` issues and `critic.py record` binds, the persona memory files and a release's evidence pack, each held to its writer's code, and the scan of tracked records reads the verdict and persona memory trees too; §6 names `reference-evidence-schema.md` at annex version 1.0 as the report's contract, and the `.local` table gains `resume-brief.md` from `sprint.py handoff` |
 
 ---
 

@@ -43,10 +43,12 @@ sys.path.insert(0, str(SCRIPTS / "tests"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
 import doc_freshness  # noqa: E402
+import evidence_pack  # noqa: E402
 import file_finding  # noqa: E402
 import gitutil  # noqa: E402 - confined git for the scratch and fixture repositories
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
+import persona_memory  # noqa: E402
 from test_lean_prd_refresh import release_baseline  # noqa: E402 - the release the specs name
 import reconcile  # noqa: E402
 import sprint  # noqa: E402
@@ -316,6 +318,25 @@ def _spans(cell: str) -> set[str]:
     return set(re.findall(r"`([^`]+)`", cell))
 
 
+def _glob(path: str) -> str:
+    """A listed path as a glob: each `<placeholder>` in it stands for any name."""
+    return re.sub(r"<[^<>]+>", "*", path)
+
+
+def committed_trees() -> list[str]:
+    """The directories whose every tracked file a committed record's row must match, each read
+    from its writer's code: the evidence shards, the reports, the verdict files a brief issues
+    and the persona memory files."""
+    return [telemetry.EVIDENCE.as_posix(), sprint_report.report_dir("").as_posix(),
+            critic.VERDICTS_DIR_REL.as_posix(), persona_memory.MEMORY_REL]
+
+
+def unlisted(files: list[str], listed: set[str]) -> list[str]:
+    """Each of `files`, other than an `_index.md`, that no listed path matches as a glob."""
+    return [f for f in files if Path(f).name != "_index.md"
+            and not any(fnmatch.fnmatchcase(f, _glob(p)) for p in listed)]
+
+
 def _sprint_verbs() -> dict[str, argparse.ArgumentParser]:
     parser = sprint.build_parser()
     return next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction)).choices
@@ -449,10 +470,13 @@ class TrdStorageTests(unittest.TestCase):
 
     def test_every_committed_record_is_listed(self) -> None:
         """Mutants: a record the code writes and git tracks dropped from the table, or listed at
-        another path; a tracked file under the evidence or report directories that no listed path
-        matches; a listed path that tracks no file. The set is read from the writers' code: the
-        actuals and forecast shards, the lessons store, the verdict log of each `critic.PHASES`
-        phase, the self-check log, the reports and the run records."""
+        another path; a tracked file under the evidence, report, verdict-file or persona memory
+        directories that no listed path matches; a listed path that tracks no file, other than a
+        record the code writes and this repository holds none of yet. The set is read from the
+        writers' code: the actuals and forecast shards, the lessons store, the verdict log of each
+        `critic.PHASES` phase, the verdict files a brief issues, the self-check log, the reports,
+        the run records, and the persona memory files and a release's evidence pack. A listed
+        path's `<placeholder>` matches any name."""
         section = _section(_trd_body(), "Committed evidence and records")
         table = _one_table(section, "Record")
         col = table[0].index("Path")
@@ -462,28 +486,36 @@ class TrdStorageTests(unittest.TestCase):
             telemetry.actuals_path("", "*"), telemetry.forecasts_path("", "*"),
             lessons.store_path(""), critic.self_checks_path(""),
             *(critic.verdicts_path("", phase) for phase in critic.PHASES),
+            critic.VERDICTS_DIR_REL / "<unit>" / "<fp>-<token>.txt",
             report_dir / f"{sdlc_md.META_TYPES['report'][1]}*.json",
             run_state.tracked_path("", "*"))}
+        # Records the code writes that need not be tracked yet: no learning has been recorded and
+        # no release's pack written here, so each is held to its row and not to a tracked file.
+        pending = {persona_memory.memory_path("", "<persona>").as_posix(),
+                   evidence_pack.pack_rel("<version>")}
         self.assertIn("sdlc-studio/lessons.jsonl", expected)
         self.assertEqual(sdlc_md.META_TYPES["report"][0], report_dir.as_posix())
         tracked = _tracked("sdlc-studio")
         for pattern in sorted(expected):
             with self.subTest(record=pattern):
-                self.assertTrue(fnmatch.filter(tracked, pattern), f"git tracks no {pattern}")
+                self.assertTrue(fnmatch.filter(tracked, _glob(pattern)), f"git tracks no {pattern}")
+                self.assertIn(pattern, listed)
+        for pattern in sorted(pending):
+            with self.subTest(record=pattern):
                 self.assertIn(pattern, listed)
         # The reports directory's `_index.md` is an index registry, which the Storage Strategy
         # table gives its own row.
         self.assertIn("`_index.md`", _section(_trd_body(), "Storage Strategy"))
-        swept = [f for f in _tracked(telemetry.EVIDENCE.as_posix(), report_dir.as_posix())
-                 if Path(f).name != "_index.md"]
+        swept = _tracked(*committed_trees())
         self.assertTrue(fnmatch.filter(swept, telemetry.actuals_path("", "*").as_posix()))
-        for f in swept:
+        self.assertTrue(fnmatch.filter(swept, f"{critic.VERDICTS_DIR_REL.as_posix()}/*"))
+        for f in unlisted(swept, listed):
             with self.subTest(tracked=f):
-                self.assertTrue(any(fnmatch.fnmatchcase(f, p) for p in listed),
-                                f"{f} is committed and no listed path matches it")
-        for p in sorted(listed):
+                self.fail(f"{f} is committed and no listed path matches it")
+        for p in sorted(listed - pending):
             with self.subTest(listed=p):
-                self.assertTrue(fnmatch.filter(tracked, p), f"the TRD lists {p}, which tracks nothing")
+                self.assertTrue(fnmatch.filter(tracked, _glob(p)),
+                                f"the TRD lists {p}, which tracks nothing")
 
     def test_the_run_lifecycle_reaches_sign(self) -> None:
         """Mutants: the run state shown as `.local` only (the tracked record dropped, or kept in
