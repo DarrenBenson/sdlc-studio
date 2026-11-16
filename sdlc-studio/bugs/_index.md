@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 369 |
+| Open | 376 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 52 |
+| Won't Fix | 53 |
 | Superseded | 52 |
-| **Total** | **1506** |
+| **Total** | **1514** |
 
 ## All Bugs
 
@@ -582,6 +582,14 @@
 | [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1505](BG1505-6-4-0-s-changelog-says-a-fragment.md) | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1506](BG1506-us0996-s-ac3-test-fails-whenever-test-sprint.md) | US0996's AC3 test fails whenever test_sprint_report's CloseReportTests ran first in the same pytest process, so the release gate and CI's corpus check read it red | Fixed | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1507](BG1507-a-reviewer-that-sets-a-throwaway-home-and.md) | A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1508](BG1508-bg1506-s-tests-catch-only-the-unstamped-writer.md) | BG1506's tests catch only the unstamped writer's stale patch: pointing the at_close or at_sign patch back at the load-time module leaves its criteria green | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1509](BG1509-release-cut-never-restamps-the-releasing-repository-s.md) | release_cut never restamps the releasing repository's own sdlc-studio/.version, so each release needs a hand migrate --apply and CI's corpus check reds on US0926::AC1 until it gets one | Won't Fix | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
