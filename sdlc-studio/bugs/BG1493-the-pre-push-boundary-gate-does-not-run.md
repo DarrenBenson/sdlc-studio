@@ -1,6 +1,6 @@
 # BG1493: The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 5
 > **Affects:** tools/run-suite.sh, tools/remote-gate.sh, .githooks/pre-push, tools/tests/test_run_suite.py, changelog.d/BG1493.md
@@ -28,10 +28,13 @@ Have the boundary push suite run the skill suite through tools/skill-tests.sh's 
 
 - [ ] **AC1** Given a fixture tree whose passing skill test prints more diagnostic lines than its module's budget in tools/test-noise-baseline.json, when the push boundary gate the pre-push hook runs judges it on this machine (`SDLC_GATE_LOCAL=1`), then the push is refused, naming the noise gate and the module over its budget. Fails on: the gate passing it, as it passed 7c64bf26 while GitHub Lint counted 112 diagnostic lines against a budget of 104 (BG1489).
   - **Verify:** pytest tools/tests/test_run_suite.py::PushNoiseGateTests::test_a_passing_test_leaking_above_budget_refuses_a_local_push
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC2** Given the same fixture, when the push is judged on the gate host that `sdlc.gateHost` names (`tools/remote-gate.sh push`), then the host applies the same noise gate and refuses it the same way. Fails on: a host run that passes what a local run refuses.
   - **Verify:** pytest tools/tests/test_run_suite.py::PushNoiseGateTests::test_the_gate_host_applies_the_same_noise_gate
+  - **Verified:** yes (2026-11-16)
 - [ ] **AC3** Given the fixture within its budget, then the push gate passes it on both routes. Fails on: a refusal of a tree within its budget, or a check that reads the test runner's own output as noise and refuses every push.
   - **Verify:** pytest tools/tests/test_run_suite.py::PushNoiseGateTests::test_a_suite_within_budget_passes_the_push
+  - **Verified:** yes (2026-11-16)
 
 ## Notes
 

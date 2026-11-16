@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 364 |
+| Open | 365 |
 | In Progress | 0 |
-| Fixed | 941 |
+| Fixed | 942 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1496** |
+| **Total** | **1498** |
 
 ## All Bugs
 
@@ -568,10 +568,12 @@
 | [BG1490](BG1490-test-critic-rejoinder-from-ledger-and-test-critic.md) | test_critic_rejoinder_from_ledger and test_critic_verdict_file_binding fail when run inside an agent session, because the harness session id reaches the verdict's source field | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1495](BG1495-sprint-plan-warns-a-wave-is-not-safely.md) | sprint plan warns a wave is not safely parallel when its units share no file, because the cluster joins them through a unit in a later wave | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1496](BG1496-bg1487-s-readme-opening-guard-lets-a-reworded.md) | BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1497](BG1497-two-config-keys-the-code-reads-are-undocumented.md) | Two config keys the code reads are undocumented: sprint.fresh_session is missing from reference-config.md and pricing.copilot_billing from config-defaults.yaml | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1498](BG1498-the-push-gate-s-noise-check-holds-each.md) | The push gate's noise check holds each module to its own budget, which CI's full run does not, so one leaked line in any of 16 modules at their budget refuses a push CI would pass; and its report counts modules that leaked nothing | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
