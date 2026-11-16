@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 38 |
+| Proposed | 39 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 557 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **712** |
+| **Total** | **713** |
 
 ## All Changes
 
@@ -124,6 +124,7 @@
 | [CR-0710](CR0710-cr0699-remainder-the-bench-runner-takes-a-builder.md) | CR0699 remainder: the bench runner takes a builder-effort arm and reports priced tokens per point, review rounds and the held-back score per arm | Proposed | Medium | Feature | 2026-11-15 | -- |
 | [CR-0711](CR0711-show-each-open-lane-s-liveness-so-a.md) | Show each open lane's liveness, so a stalled builder is caught in minutes rather than hours | Proposed | Medium | Feature | 2026-11-16 | -- |
 | [CR-0712](CR0712-prevent-or-retire-lesson-lc-010-the-push.md) | Prevent or retire lesson LC-010 (the push gate and CI disagree on the runner) | Proposed | Medium | Improvement | 2026-11-16 | -- |
+| [CR-0713](CR0713-prevent-or-retire-lesson-lc-019-a-push.md) | Prevent or retire lesson LC-019 (a push-gate guard the per-commit run skips) | Proposed | Medium | Improvement | 2026-11-16 | -- |
 
 ## Archived Releases
 
