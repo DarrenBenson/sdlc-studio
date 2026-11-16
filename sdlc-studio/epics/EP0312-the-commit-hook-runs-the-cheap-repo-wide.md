@@ -14,7 +14,7 @@ Decomposed from CR0671. Delivers the work CR0671 requested.
 
 ## Story Breakdown
 
-- [ ] [US1167: A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget](../stories/US1167-a-test-module-or-class-marked-test-selection.md)
+- [x] [US1167: A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget](../stories/US1167-a-test-module-or-class-marked-test-selection.md)
 - [ ] [US1168: The commit hook refuses a staged new test module with no `test-census-subject` marker](../stories/US1168-the-commit-hook-refuses-a-staged-new-test.md)
 
 ## Acceptance Criteria (Epic Level)

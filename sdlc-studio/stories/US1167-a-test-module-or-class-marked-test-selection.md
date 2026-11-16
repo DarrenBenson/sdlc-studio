@@ -1,6 +1,6 @@
 # US1167: A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0671
 > **Created:** 2026-11-15
@@ -21,10 +21,13 @@
 
 - **AC1:** Given a repository with a module carrying `# test-selection: sweep` that imports nothing changed, when `gate.select_tests` answers for a change to scripts/sprint.py, and again for a docs-only change, then the sweep is selected in both beside whatever the change reaches, and the reason names it as a sweep.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py::SweepSelectionTests::test_a_sweep_joins_every_commits_selection
+  - **Verified:** yes (2026-11-16)
 - **AC2:** Given a module where only one class is the sweep, when the marker names that class, then the selection carries that class's node id and not the whole module.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py::SweepSelectionTests::test_a_class_marker_selects_only_that_class
+  - **Verified:** yes (2026-11-16)
 - **AC3:** Given this repository's markers, when they are read, then test_doc_claims, test_precommit_floor_pending, test_root_census, the test_skill_tests_env scrub sweep, the test_gitutil raw-git sweep (UnconfinedRawGitCallSweepTests) and the commit-hook hermeticity tests (HookInvocationHermeticityTests) are marked, tools/tests/test_test_census.py is not, and the marked set's recorded run times total at most 30 seconds, an unrecorded time being named rather than counted as zero.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sweep_selection.py::SweepSelectionTests::test_the_repositorys_sweeps_are_marked_and_fit_the_budget
+  - **Verified:** yes (2026-11-16)
 
 ## Notes
 

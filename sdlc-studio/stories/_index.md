@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 56 |
+| Draft | 55 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 929 |
+| Done | 930 |
 | Won't Implement | 92 |
 | Deferred | 0 |
 | Superseded | 91 |
@@ -204,7 +204,7 @@
 | [US1164](US1164-readme-md-is-about-1-500-words-and.md) | README.md is about 1,500 words and opens with three routes in: evaluate, try and upgrade | Done | EP0310 | 2026-11-15 | 2026-11-15 |
 | [US1165](US1165-a-project-sets-builder-and-reviewer-reasoning-effort.md) | A project sets builder and reviewer reasoning effort; the plan stamps it on each unit, the lane brief names it, and a reviewer below its builder is refused without a recorded decision | Done | EP0311 | 2026-11-15 | 2026-11-15 |
 | [US1166](US1166-each-run-s-report-of-record-states-the.md) | Each run's report of record states the effort each builder and reviewer was dispatched at, read from the run record | Done | EP0311 | 2026-11-15 | 2026-11-15 |
-| [US1167](US1167-a-test-module-or-class-marked-test-selection.md) | A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget | Draft | EP0312 | 2026-11-15 | 2026-11-15 |
+| [US1167](US1167-a-test-module-or-class-marked-test-selection.md) | A test module or class marked `# test-selection: sweep` joins every commit's selection, within a 30-second budget | Done | EP0312 | 2026-11-15 | 2026-11-15 |
 | [US1168](US1168-the-commit-hook-refuses-a-staged-new-test.md) | The commit hook refuses a staged new test module with no `test-census-subject` marker | Draft | EP0312 | 2026-11-15 | 2026-11-15 |
 | [US1169](US1169-sprint-plan-reports-per-unit-every-registry-file.md) | sprint plan reports, per unit, every registry file its new script, verb or flag implies, and every page threshold it nears, that its Affects omits | Done | EP0313 | 2026-11-15 | 2026-11-15 |
 
