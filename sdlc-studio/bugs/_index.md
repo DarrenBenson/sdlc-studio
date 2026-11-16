@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 368 |
+| Open | 369 |
 | In Progress | 0 |
 | Fixed | 942 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 52 |
 | Superseded | 52 |
-| **Total** | **1501** |
+| **Total** | **1502** |
 
 ## All Bugs
 
@@ -577,6 +577,7 @@
 | [BG1499](BG1499-us1058-still-reads-status-ready-though-run-thirteen.md) | US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1500](BG1500-help-retro-md-says-an-escaped-defect-is.md) | help/retro.md says an escaped defect is charged to the seat whose latest verdict approved, in any run, leaving out the code's limit to verdicts on or before the bug's Created day | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1501](BG1501-test-lean-release-notes-v64-fails-in-a.md) | test_lean_release_notes_v64 fails in a tree that is not a git clone: its text checks read v6.3.0 through git, so FrozenNotesTests' copy goes red and the push gate refuses | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1502](BG1502-critic-py-self-check-record-refuses-a-unit.md) | critic.py self-check record refuses a unit until it claims its changelog.d fragment, though the release cut has already merged that fragment into CHANGELOG.md | Open | Low | 2026-11-16 | 2026-11-16 |
 
 ## Archived Releases
 
