@@ -1873,8 +1873,11 @@ class SprintChecklistReviewRowTests(ChecklistBase):
 
     def _verdict(self, unit: str, verdict: str, reviewer: str) -> None:
         import critic
-        critic.record_verdict(self.root, unit, verdict, reviewer=reviewer, author="builder",
-                              issues="probed")
+        import quiet
+        # A test that declares a seat card draws the author-form advisory for the bare author.
+        with quiet.diagnostics():
+            critic.record_verdict(self.root, unit, verdict, reviewer=reviewer, author="builder",
+                                  issues="probed")
 
     def test_the_review_row_names_the_units_the_reviewer_and_the_seat(self) -> None:
         seats = self.root / "sdlc-studio" / "personas" / "seats"

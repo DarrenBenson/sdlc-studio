@@ -16,7 +16,9 @@ from pathlib import Path
 SCRIPT = Path(__file__).resolve().parent.parent / "critic.py"
 REPO_ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(SCRIPT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.sdlc_md import norm_id as sdlc_md_norm  # noqa: E402
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 
 def _load():
@@ -478,8 +480,10 @@ class BriefTierTests(unittest.TestCase):
                           "--root", str(root)])
             self.assertIn("Full adversarial pass", out.getvalue())
             self.assertIn("chosen", err.getvalue())
-            mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
-                               tier="full", tier_explicit=True)
+            # The fixture declares a seat card, so the bare author draws the author-form advisory.
+            with quiet.diagnostics():
+                mod.record_verdict(root, "US0001", "approve", reviewer="qa", author="dev",
+                                   tier="full", tier_explicit=True)
             self.assertIn("explicit", mod.verdict_for(root, "US0001")["tier"])
 
     def test_the_shipped_brief_verb_derives_the_tier_and_prints_it(self) -> None:
@@ -907,7 +911,7 @@ class RejoinderTests(unittest.TestCase):
             f = root / "prior.txt"
             f.write_text(self.PRIOR, encoding="utf-8")
             out = io.StringIO()
-            with contextlib.redirect_stdout(out):
+            with contextlib.redirect_stdout(out), quiet.diagnostics():
                 rc = mod.main(["brief", "--unit", "US0101", "--seat", "qa",
                                "--rejoinder", str(f), "--root", str(root)])
             self.assertEqual(rc, 0)
@@ -2765,8 +2769,9 @@ class BriefProvenanceTests(unittest.TestCase):
             root = Path(d)
             self._unit(root)
             fp = critic.brief_fingerprint(critic.brief(root, "US0001", "engineering"))
-            critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
-                                  author="the author", brief=fp)
+            with quiet.diagnostics():
+                critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
+                                      author="the author", brief=fp)
             row = critic.verdict_for(root, "US0001")
         self.assertTrue(row, "no verdict was recorded")
         self.assertEqual(fp, row.get("brief"), "the verdict does not carry its brief")
@@ -2792,8 +2797,9 @@ class BriefProvenanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             self._unit(root)
-            critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
-                                  author="the author")
+            with quiet.diagnostics():
+                critic.record_verdict(root, "US0001", "APPROVE", reviewer="a seat",
+                                      author="the author")
             row = critic.verdict_for(root, "US0001")
         self.assertFalse(row.get("brief") and row["brief"] != "-",
                          "an unbriefed verdict records a fingerprint it never had")
@@ -2832,8 +2838,9 @@ class BriefProvenanceTests(unittest.TestCase):
                 "| --- | --- | --- | --- | --- | --- |\n"
                 "| US0001 | APPROVE | ada | grace | 2026-01-01 | none |\n",
                 encoding="utf-8")
-            critic.record_verdict(root, "US0002", "REJECT", "ada", "grace",
-                                  issues="one", brief="abc123def456")
+            with quiet.diagnostics():
+                critic.record_verdict(root, "US0002", "REJECT", "ada", "grace",
+                                      issues="one", brief="abc123def456")
             lines = [l for l in path.read_text(encoding="utf-8").splitlines()
                      if l.startswith("| ") and not set(l.strip()) <= set("|-: ")]
         header = table_cells(lines[0])

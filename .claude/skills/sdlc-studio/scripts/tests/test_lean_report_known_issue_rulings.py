@@ -23,6 +23,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import test_lean_close as lean  # noqa: E402 - the close fixture, shared
+import quiet  # noqa: E402 - the shared console-diagnostics capture
 
 REPO = HERE.parents[4]
 #: The instant the close runs at, for every clock it reads: the close files and derives at once.
@@ -63,9 +64,11 @@ class KnownIssueRulingTests(unittest.TestCase):
         root = self.root
         lean._fixture(root, batch=["US0101", "US0102"])
         critic = lean._live("critic")
-        for issues in ("[new] the widget drops a row", "[new] the widget still drops it"):
-            critic.record_verdict(root, "US0101", "REJECT", reviewer="rev-a", author="builder",
-                                  issues=issues)
+        # Recording the two REJECTs prints two unjudged-Verify-selector notes.
+        with quiet.diagnostics():
+            for issues in ("[new] the widget drops a row", "[new] the widget still drops it"):
+                critic.record_verdict(root, "US0101", "REJECT", reviewer="rev-a",
+                                      author="builder", issues=issues)
         carried = next(c["reason"].split(":", 1)[1].strip()
                        for c in lean._read(root)["batch_changes"]
                        if c["id"] == "US0101")
