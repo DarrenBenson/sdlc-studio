@@ -131,6 +131,89 @@ class ComposeTests(unittest.TestCase):
             self.assertIn("Sparkles", str(ctx.exception))
 
 
+def _unreleased_section(root, heading):
+    """The body of `heading` inside [Unreleased], from the line after it to the next heading."""
+    text = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+    unreleased = text.split("## [Unreleased]", 1)[1].split("\n## [", 1)[0]
+    return unreleased.split(heading + "\n", 1)[1].split("\n### ", 1)[0]
+
+
+class ComposeBulletTests(unittest.TestCase):
+    """Every fragment starts its own top-level bullet. A fragment written as prose used to fold
+    as written, so a bullet folded above it absorbed it as a lazy continuation line and the
+    released section held fewer bullets than it had entries."""
+
+    def test_a_prose_fragment_lands_as_its_own_bullet_with_its_lines_indented(self):
+        prose = ("<!-- section: Added -->\n\nA prose entry with no bullet,\n"
+                 "wrapped onto a second line (US0003).\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[("US0003.md", prose)])
+            changelog.compose(root, apply=True)
+            self.assertEqual(_unreleased_section(root, "### Added"),
+                             "\n- A prose entry with no bullet,\n"
+                             "  wrapped onto a second line (US0003).\n- an existing entry\n")
+
+    def test_no_bullet_runs_into_a_prose_neighbour_above_or_below_it(self):
+        # the prose fragments sort first and last, so one creates the section and one lands
+        # above the bullet: the old fold read the first as a lazy continuation of the bullet
+        # and left the last a bare paragraph under the heading
+        frags = [("a-prose.md", "<!-- section: Fixed -->\n\nFirst prose fix\nthat wraps (BG0001).\n"),
+                 ("b-bullet.md", "<!-- section: Fixed -->\n\n- Bullet fix (BG0002).\n"),
+                 ("c-prose.md", "<!-- section: Fixed -->\n\nSecond prose fix (BG0003).\n")]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=frags)
+            changelog.compose(root, apply=True)
+            fixed = _unreleased_section(root, "### Fixed")
+            self.assertEqual(fixed, "\n- Second prose fix (BG0003).\n- Bullet fix (BG0002).\n"
+                                    "- First prose fix\n  that wraps (BG0001).\n")
+            self.assertEqual(len(re.findall(r"^- ", fixed, re.M)), len(frags))
+
+    def test_a_fragment_that_opens_with_a_bullet_folds_byte_for_byte_unchanged(self):
+        for marker in ("-", "*", "+"):
+            entry = (f"{marker} **Bold lead (US0004).** A first line\n"
+                     "lazy continuation at column zero\n  - a nested item\n\n"
+                     "  A second paragraph.")
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as tmp:
+                root = _repo(tmp, fragments=[
+                    ("US0004.md", f"<!-- section: Added -->\n\n{entry}\n")])
+                changelog.compose(root, apply=True)
+                self.assertEqual(_unreleased_section(root, "### Added"),
+                                 f"\n{entry}\n- an existing entry\n")
+
+    def test_a_first_line_that_only_looks_like_a_bullet_still_gets_one(self):
+        for first in ("**Bold lead.** It reads as prose", "-not a list item", "`--flag` now"):
+            with self.subTest(first=first), tempfile.TemporaryDirectory() as tmp:
+                root = _repo(tmp, fragments=[
+                    ("US0005.md", f"<!-- section: Added -->\n\n{first}\nand wraps.\n")])
+                changelog.compose(root, apply=True)
+                self.assertEqual(_unreleased_section(root, "### Added"),
+                                 f"\n- {first}\n  and wraps.\n- an existing entry\n")
+
+    def test_a_prose_paragraph_break_is_indented_under_its_bullet_with_no_trailing_space(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, fragments=[(
+                "US0006.md",
+                "<!-- section: Added -->\n\nPara one\nwraps.\n  \nPara two.\n    indented code\n")])
+            changelog.compose(root, apply=True)
+            self.assertEqual(_unreleased_section(root, "### Added"),
+                             "\n- Para one\n  wraps.\n\n  Para two.\n      indented code\n"
+                             "- an existing entry\n")
+
+    def test_a_prose_bullet_keeps_its_retired_flags_block_at_the_section_end(self):
+        clog = ("# Changelog\n\n## [Unreleased]\n\n### Fixed\n\n- existing fixed\n\n"
+                "## [4.1.0] - 2026-07-14\n\n- x\n")
+        block = ("#### Retired flags\n\n| Flag | Replacement |\n| --- | --- |\n"
+                 "| `--old` | `--new` |")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = _repo(tmp, changelog_text=clog, fragments=[(
+                "BG0005.md", f"<!-- section: Fixed -->\n\nA prose fix that\nretires a flag.\n\n"
+                             f"{block}\n")])
+            changelog.compose(root, apply=True)
+            self.assertEqual(_unreleased_section(root, "### Fixed"),
+                             "\n- A prose fix that\n  retires a flag.\n- existing fixed\n\n"
+                             f"{block}\n")
+
+
 class ComposeReleaseGateTests(unittest.TestCase):
     """BG0295: compose is the RELEASE-time action, and folding CONSUMES the whole pending set. Run
     out of habit while adding one fragment it destroyed 115 others, silently. So it is dry-run by

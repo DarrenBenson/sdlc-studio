@@ -166,7 +166,8 @@ def compose(root, *, apply: bool = False) -> dict:
     opt-in: only `apply=True`, which the release cut passes.
 
     All fragments are parsed BEFORE anything is written (a bad one refuses the whole run - no
-    partial compose). Entries land at the TOP of their section's list, except a fragment's `####`
+    partial compose). Each entry starts its own top-level bullet, one written as prose gaining a
+    `- ` marker. Entries land at the TOP of their section's list, except a fragment's `####`
     block (a retired-flags table), which lands at the END of its section; a missing section heading
     is created at the head of [Unreleased] (most recently composed first - a hand-edit may reorder
     headings freely)."""
@@ -196,6 +197,9 @@ def compose(root, *, apply: bool = False) -> dict:
         # a fragment's `####` block (a retired-flags table, say) goes after the section's
         # bullets, never between them: folded at the top, it ran into the next fragment's bullet
         bullets, block = _split_block(entry)
+        # an entry written as prose gets its own bullet: folded as written, the bullet above
+        # it read it as a lazy continuation line and the two entries became one
+        bullets = _as_bullet(bullets)
         # line-anchored: the heading must BE a line, not a substring of one
         pattern = re.compile(rf"(^{re.escape(heading)}[ \t]*\n\n?)", re.M)
         if pattern.search(unreleased):
@@ -221,6 +225,19 @@ def compose(root, *, apply: bool = False) -> dict:
         p.unlink()
     return {"composed": len(parsed), "would_compose": len(parsed), "applied": True,
             "sections": sorted({s for _p, s, _e in parsed})}
+
+
+_LIST_ITEM = re.compile(r"^[-*+][ \t]")
+
+
+def _as_bullet(entry: str) -> str:
+    """`entry` as one top-level list item. An entry that already opens with a `-`, `*` or `+`
+    list item comes back byte for byte; any other gets a `- ` marker on its first line and every
+    later line indented two spaces under it, a blank line left empty."""
+    if not entry or _LIST_ITEM.match(entry):
+        return entry
+    first, *rest = entry.split("\n")
+    return "\n".join(["- " + first] + ["  " + ln if ln.strip() else "" for ln in rest])
 
 
 def _split_block(entry: str) -> tuple[str, str]:
