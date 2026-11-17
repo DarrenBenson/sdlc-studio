@@ -8,10 +8,10 @@
 | --- | --- |
 | Draft | 0 |
 | In Review | 0 |
-| Accepted | 61 |
+| Accepted | 62 |
 | Superseded | 2 |
 | Withdrawn | 3 |
-| **Total** | **66** |
+| **Total** | **67** |
 
 ## All RFCs
 
@@ -28,6 +28,7 @@
 | [RFC-0064](RFC0064-production-learning-and-risk-proportionate-review.md) | Production learning and risk-proportionate review | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-10 | CR0695, CR0696 |
 | [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Accepted | sdlc-studio | 2026-11-17 | CR0729, CR0730 |
 | [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0731 |
+| [RFC-0067](RFC0067-what-the-skill-should-learn-from-estate-scale.md) | What the skill should learn from estate-scale autonomous delivery: impact analysis before refine, tests before brownfield change, runtime inputs and running-app evidence | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0735, CR0736, CR0737, CR0738 |
 
 ## Archived Releases
 

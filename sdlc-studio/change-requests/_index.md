@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 75 |
+| In Progress | 82 |
 | Complete | 557 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **731** |
+| **Total** | **738** |
 
 ## All Changes
 
@@ -143,6 +143,13 @@
 | [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | In Progress | High | Improvement | 2026-11-17 | EP0366 |
 | [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | In Progress | Medium | Improvement | 2026-11-17 | EP0367 |
 | [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | In Progress | High | Improvement | 2026-11-17 | EP0368 |
+| [CR-0732](CR0732-a-high-risk-unit-s-review-records-the.md) | A high-risk unit's review records the model family of its author and its reviewer, and a project can require the two to differ | In Progress | Medium | Feature | 2026-11-17 | EP0369 |
+| [CR-0733](CR0733-the-handoff-states-each-remaining-item-s-points.md) | The handoff states each remaining item's points and the seat it needs, and totals them | In Progress | Low | Improvement | 2026-11-17 | EP0370 |
+| [CR-0734](CR0734-the-sprint-report-states-priced-cost-per-delivered.md) | The sprint report states priced cost per delivered line beside cost per point | In Progress | Low | Improvement | 2026-11-17 | EP0371 |
+| [CR-0735](CR0735-refine-reports-each-proposed-story-s-uncovered-dependants.md) | Refine reports each proposed story's uncovered dependants and near-duplicate symbols before it decomposes | In Progress | Medium | Feature | 2026-11-17 | EP0372 |
+| [CR-0736](CR0736-sprint-plan-names-the-files-a-story-will.md) | Sprint plan names the files a story will change that no test reaches, and the brownfield runbook gains a pin-behaviour stage | In Progress | Medium | Feature | 2026-11-17 | EP0373 |
+| [CR-0737](CR0737-generate-mode-reads-schema-dumps-stored-procedure-source.md) | Generate mode reads schema dumps, stored-procedure source and trace exports from a declared folder | In Progress | Low | Feature | 2026-11-17 | EP0374 |
+| [CR-0738](CR0738-a-criterion-can-name-a-project-supplied-app.md) | A criterion can name a project-supplied app command, and the review records the evidence it produced | In Progress | Low | Feature | 2026-11-17 | EP0375 |
 
 ## Archived Releases
 

@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 64 |
+| Draft | 71 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 271 |
 | Superseded | 33 |
-| **Total** | **368** |
+| **Total** | **375** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -119,6 +119,13 @@
 | [EP0366](EP0366-a-run-awaiting-the-operator-signature-no-longer.md) | A run awaiting the operator signature no longer blocks the next, and a delegated signature is disclosed | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0367](EP0367-the-reports-signed-under-a-per-trip-authorisation.md) | The reports signed under a per-trip authorisation disclose the decision that authorised each signature | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0368](EP0368-pyyaml-is-a-required-dependency-refused-at-install.md) | PyYAML is a required dependency, refused at install and at every gate, and the specs say so | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0369](EP0369-a-high-risk-unit-s-review-records-who.md) | A high-risk unit's review records who wrote and who judged it by model family, and a project can require the two to differ | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0370](EP0370-the-handoff-says-how-much-work-remains-and.md) | The handoff says how much work remains and which seat it needs | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0371](EP0371-the-sprint-report-prices-a-run-per-delivered.md) | The sprint report prices a run per delivered line as well as per point | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0372](EP0372-refine-shows-what-a-request-touches-before-it.md) | Refine shows what a request touches before it becomes stories | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0373](EP0373-existing-behaviour-is-pinned-by-a-test-before.md) | Existing behaviour is pinned by a test before a story changes it | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0374](EP0374-a-generated-spec-can-draw-on-what-the.md) | A generated spec can draw on what the system does at run time | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0375](EP0375-a-review-can-see-the-running-application.md) | A review can see the running application | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

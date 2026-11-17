@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 178 |
+| Draft | 191 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 93 |
 | Blocked | 0 |
-| **Total** | **1299** |
+| **Total** | **1312** |
 
 ## All Stories
 
@@ -337,6 +337,19 @@
 | [US1297](US1297-the-config-reader-refuses-without-pyyaml-so-no.md) | The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1298](US1298-the-gate-prerequisite-check-and-every-gate-bearing.md) | The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1299](US1299-the-prd-trd-and-readme-drop-the-standard.md) | The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
+| [US1300](US1300-critic-py-record-stores-the-author-s-and.md) | `critic.py record` stores the author's and reviewer's model ids on the verdict and derives each family from one shipped table, reporting an unknown id as unknown | Draft | EP0369 | 2026-11-17 | 2026-11-17 |
+| [US1301](US1301-review-cross-family-off-by-default-warn-block.md) | `review.cross_family` (off by default, warn, block) decides whether a same-family verdict counts as a high-risk unit's independent review | Draft | EP0369 | 2026-11-17 | 2026-11-17 |
+| [US1302](US1302-the-sprint-report-counts-the-high-risk-units.md) | The sprint report counts the high-risk units reviewed by a different model family, out of how many | Draft | EP0369 | 2026-11-17 | 2026-11-17 |
+| [US1303](US1303-handoff-show-prints-each-remaining-item-s-points.md) | `handoff show` prints each remaining item's Points and seat, and totals remaining points by suitability tag and by seat | Draft | EP0370 | 2026-11-17 | 2026-11-17 |
+| [US1304](US1304-the-sprint-report-counts-lines-added-and-removed.md) | The sprint report counts lines added and removed in the batch's declared files over a named commit range, and states priced cost per delivered line beside cost per point | Draft | EP0371 | 2026-11-17 | 2026-11-17 |
+| [US1305](US1305-the-repo-map-answers-which-files-import-a.md) | The repo map answers which files import a given file and which symbols closely match a given symbol, by a stated rule | Draft | EP0372 | 2026-11-17 | 2026-11-17 |
+| [US1306](US1306-refine-apply-reports-each-story-s-uncovered-dependants.md) | `refine apply` reports each story's uncovered dependants and near-duplicate symbols without changing its exit code or output, and says when the map is absent or stale | Draft | EP0372 | 2026-11-17 | 2026-11-17 |
+| [US1307](US1307-sprint-plan-names-each-source-file-in-a.md) | `sprint plan` names each source file in a unit's Affects that no test reaches within one hop, never reporting a file the unit creates | Draft | EP0373 | 2026-11-17 | 2026-11-17 |
+| [US1308](US1308-plan-unpinned-code-warn-by-default-refuse-decides.md) | `plan.unpinned_code` (warn by default, refuse) decides whether a batch with unpinned files is planned | Draft | EP0373 | 2026-11-17 | 2026-11-17 |
+| [US1309](US1309-the-brownfield-runbook-has-a-pin-behaviour-stage.md) | The brownfield runbook has a pin-behaviour stage before the first code change, with its done test | Draft | EP0373 | 2026-11-17 | 2026-11-17 |
+| [US1310](US1310-prd-and-trd-generate-read-a-declared-generate.md) | PRD and TRD generate read a declared `generate.runtime_inputs` folder of schema dumps, stored-procedure source and trace exports, cite each file used, and state that the skill never connects to a running system | Draft | EP0374 | 2026-11-17 | 2026-11-17 |
+| [US1311](US1311-verify-ac-runs-a-verify-app-command-line.md) | `verify_ac` runs a `Verify: app <command>` line and records the evidence files it wrote, failing a command that exits 0 with no evidence | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
+| [US1312](US1312-critic-py-brief-lists-a-unit-s-recorded.md) | `critic.py brief` lists a unit's recorded app evidence paths, and none without failing when it has no app criterion | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 
