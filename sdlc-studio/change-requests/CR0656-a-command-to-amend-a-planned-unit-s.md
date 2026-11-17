@@ -1,6 +1,7 @@
 # CR-0656: A command to amend a planned unit's Affects or a criterion in flight, recording why, so a builder's scope finding is not a hand edit
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0323
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/help/sprint.md

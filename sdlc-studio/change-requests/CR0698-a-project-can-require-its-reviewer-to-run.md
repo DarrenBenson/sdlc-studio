@@ -1,6 +1,7 @@
 # CR-0698: A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0341
 > **Priority:** Medium
 > **Type:** enhancement
 > **Size:** M

@@ -1,6 +1,7 @@
 # CR-0701: A consolidation unit's builder brief can carry an ownership line scoped to its Affects, kept only if a measured trial earns it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0343
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** M

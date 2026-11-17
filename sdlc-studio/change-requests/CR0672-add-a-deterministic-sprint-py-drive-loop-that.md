@@ -1,6 +1,7 @@
 # CR-0672: Add a deterministic `sprint.py drive` loop that advances each unit's lane through land, brief, review, accept, price and paperwork, lands several staged worktrees as one commit, and wakes the model only at a refusal, a REJECT, a conflict or a wave end
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0326
 > **Parent:** RFC0062
 > **Priority:** High
 > **Type:** Feature

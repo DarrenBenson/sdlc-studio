@@ -1,6 +1,7 @@
 # CR-0712: Prevent or retire lesson LC-010 (the push gate and CI disagree on the runner)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0352
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

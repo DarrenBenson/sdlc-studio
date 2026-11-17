@@ -1,6 +1,7 @@
 # CR-0636: A project-declared story status such as `Partially Done` is always read by the release gate as a completion claim, and no config can declare it non-terminal, so a project must misdescribe a partly-built story as `In Progress` to get its unbuilt criteria out of the red count
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0317
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

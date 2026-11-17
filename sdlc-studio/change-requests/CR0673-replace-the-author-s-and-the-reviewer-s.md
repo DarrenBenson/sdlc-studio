@@ -1,6 +1,7 @@
 # CR-0673: Replace the author's and the reviewer's hand-rolled mutation passes with one shipped runner (`mutation.py` with drop-conjunct and prose-polarity operators, plus arbitrary file, old and new edits), and have `critic.py self-check record` take its report and refuse unanswered survivors
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0327
 > **Parent:** RFC0062
 > **Priority:** High
 > **Type:** Improvement

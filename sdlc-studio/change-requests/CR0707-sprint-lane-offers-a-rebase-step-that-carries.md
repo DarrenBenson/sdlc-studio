@@ -1,6 +1,7 @@
 # CR-0707: sprint lane offers a rebase step that carries a waiting lane's staged work onto a moved main
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0347
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

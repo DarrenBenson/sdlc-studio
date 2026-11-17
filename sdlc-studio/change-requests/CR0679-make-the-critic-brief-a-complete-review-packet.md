@@ -1,6 +1,7 @@
 # CR-0679: Make the critic brief a complete review packet: claim surfaces first in the capped diff with the full diff written beside it, a one-line `--out` delivery read in one call, verifier and selected-test results computed at brief time against a current verify stamp, and a round-2 rejoinder scoped to the repair
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0331
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Improvement

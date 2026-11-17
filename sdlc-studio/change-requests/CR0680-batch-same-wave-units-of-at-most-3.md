@@ -1,6 +1,7 @@
 # CR-0680: Batch same-wave units of at most 3 points into one reviewer, up to three units with one brief and one verdict file each, and let `critic.py record` accept a round-2 verdict from a fresh reviewer under its own name
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0332
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Improvement

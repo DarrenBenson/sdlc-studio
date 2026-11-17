@@ -1,6 +1,7 @@
 # CR-0675: Ship a hostile-runtime fixture kit that every change to the verifier core runs: a group SIGTERM and SIGINT to the caller, nested `run_verifier` callers, a consumer pytest.ini with addopts -m and filterwarnings = error beside a pytest11 plugin, a shallow clone, a non-Claude harness environment and an over-long Verify token
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0328
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Improvement

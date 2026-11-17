@@ -1,6 +1,7 @@
 # CR-0711: Show each open lane's liveness, so a stalled builder is caught in minutes rather than hours
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0351
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_lane.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, changelog.d/CR0711.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

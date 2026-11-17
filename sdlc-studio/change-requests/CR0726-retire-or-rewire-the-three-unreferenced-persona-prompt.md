@@ -1,6 +1,7 @@
 # CR-0726: Retire or rewire the three unreferenced persona prompt templates that teach the pre-Cooper persona model
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0364
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

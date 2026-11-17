@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 10 |
+| Draft | 64 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 271 |
 | Superseded | 33 |
-| **Total** | **314** |
+| **Total** | **368** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -65,6 +65,60 @@
 | [EP0312](EP0312-the-commit-hook-runs-the-cheap-repo-wide.md) | The commit hook runs the cheap repo-wide sweeps on every commit and refuses a new test module with no census marker | Draft | 2 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0313](EP0313-sprint-plan-names-the-registry-files-a-unit.md) | sprint plan names the registry files a unit's new script, verb, flag or page growth implies, before the build | Done | 1 | -- | 2026-11-15 | 2026-11-15 |
 | [EP0314](EP0314-v6-4-0-ships-with-paperwork-that-matches.md) | v6.4.0 ships with paperwork that matches the code | Done | 4 | -- | 2026-11-16 | 2026-11-16 |
+| [EP0315](EP0315-the-superseded-review-seat-charter-pointer-no-longer.md) | The superseded review seat charter pointer no longer ships with the skill | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0316](EP0316-the-yield-of-revert-check-over-the-last.md) | The yield of revert-check over the last signed runs is counted before doctrine rule 21 is ruled on | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0317](EP0317-a-project-can-declare-an-extended-story-status.md) | A project can declare an extended story status that does not claim completion at the release gate | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0318](EP0318-the-test-suite-keeps-its-private-temp-root.md) | The test suite keeps its private temp root on disk when the system temp is RAM, and clears stale roots | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0319](EP0319-the-release-verify-lane-answers-a-vitest-project.md) | The release verify lane answers a vitest project's criteria from one batched vitest run | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0320](EP0320-a-rejecting-reviewer-stays-resumable-for-round-2.md) | A rejecting reviewer stays resumable for round 2, and the record command says it is needed | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0321](EP0321-a-documentation-unit-s-self-check-records-each.md) | A documentation unit's self-check records each claim against the prose file that makes it | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0322](EP0322-a-delegated-total-for-an-agent-the-meter.md) | A delegated total for an agent the meter cannot see is added to the run's spend, whatever else the session ran | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0323](EP0323-a-planned-unit-s-affects-or-criterion-is.md) | A planned unit's Affects or criterion is amended in flight by a command that records why | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0324](EP0324-a-lesson-s-revalidated-citations-are-checked-against.md) | A lesson's Revalidated citations are checked against the tree and re-anchored when code moves | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0325](EP0325-a-commit-s-selected-test-suites-run-on.md) | A commit's selected test suites run on the gate host when one is named, as the push gate does | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0326](EP0326-a-sprint-drives-each-unit-s-lane-to.md) | A sprint drives each unit's lane to its paperwork and wakes the model only for judgement | Draft | 7 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0327](EP0327-authors-and-reviewers-run-one-shipped-mutation-runner.md) | Authors and reviewers run one shipped mutation runner and the self-check records its report | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0328](EP0328-every-change-to-the-verifier-core-runs-a.md) | Every change to the verifier core runs a kit of the hostile runtimes consuming projects have | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0329](EP0329-one-command-writes-a-unit-s-changelog-fragment.md) | One command writes a unit's changelog fragment from its title and acceptance criteria | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0330](EP0330-agents-find-a-symbol-s-line-range-from.md) | Agents find a symbol's line range from the repo map and from their brief, without searching | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0331](EP0331-a-reviewer-works-from-one-complete-brief-and.md) | A reviewer works from one complete brief and no longer re-fetches what the brief could carry | Draft | 6 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0332](EP0332-one-reviewer-takes-up-to-three-small-units.md) | One reviewer takes up to three small units of a wave, and a fresh round two reviewer is named | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0333](EP0333-an-author-s-self-check-proves-each-criterion.md) | An author's self-check proves each criterion at its observable before a reviewer is briefed | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0334](EP0334-three-shipped-steps-stop-leaving-state-that-the.md) | Three shipped steps stop leaving state that the next step refuses | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0335](EP0335-a-project-s-own-seat-cards-and-the.md) | A project's own seat cards and the card template carry the hand-back contract | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0336](EP0336-the-gate-host-doctor-reports-the-release-gate.md) | The gate host doctor reports the release gate's prerequisites before the release cut | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0337](EP0337-a-project-that-lost-its-lessons-log-rebuilds.md) | A project that lost its lessons log rebuilds it from the committed digest with one command | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0338](EP0338-an-engineering-review-checks-a-change-s-failure.md) | An engineering review checks a change's failure behaviour and signals against what the TRD declares | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0339](EP0339-a-head-of-engineering-reads-change-failure-rate.md) | A head of engineering reads change failure rate per release beside escapes per 100 points | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0340](EP0340-after-a-push-the-agent-waits-on-ci.md) | After a push the agent waits on CI once and handles a red run by a recorded policy | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0341](EP0341-a-project-can-require-a-reviewer-from-a.md) | A project can require a reviewer from a different model family, and reads what that buys | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0342](EP0342-the-instruction-text-every-agent-loads-is-cut.md) | The instruction text every agent loads is cut to what current models need, every gated rule kept | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0343](EP0343-a-consolidation-unit-can-opt-in-to-an.md) | A consolidation unit can opt in to an ownership line, kept only if a measured trial earns it | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0344](EP0344-the-plan-s-dollar-forecast-matches-what-the.md) | The plan's dollar forecast matches what the report measures | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0345](EP0345-a-change-board-approves-a-release-from-one.md) | A change board approves a release from one evidence pack grouped by risk | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0346](EP0346-an-incident-is-traced-to-its-escaped-bugs.md) | An incident is traced to its escaped bugs, counted per 100 points, and fed only to matching briefs | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0347](EP0347-a-waiting-lane-s-staged-work-is-carried.md) | A waiting lane's staged work is carried onto a moved main by one command that cannot lose it | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0348](EP0348-a-bug-filed-with-tool-derived-criteria-says.md) | A bug filed with tool-derived criteria says on its face that it is not yet groomed | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0349](EP0349-a-retired-lesson-class-is-put-back-in.md) | A retired lesson class is put back in force by a command that records the run and the reason | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0350](EP0350-the-benchmark-compares-two-builder-effort-arms-on.md) | The benchmark compares two builder-effort arms on one fixture and reports each arm's cost and quality | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0351](EP0351-a-stalled-lane-builder-is-visible-within-minutes.md) | A stalled lane builder is visible within minutes from one command | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0352](EP0352-ci-and-the-push-gate-give-one-verdict.md) | CI and the push gate give one verdict on the skill suite because both run it the same way | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0353](EP0353-a-commit-that-changes-a-test-module-also.md) | A commit that changes a test module also runs the tests that execute that module by path | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0354](EP0354-rfc0062-s-cost-bar-can-be-judged-because.md) | RFC0062's cost bar can be judged because its baseline, its re-measure and its owed decision each have a unit | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0355](EP0355-a-team-declares-a-monthly-budget-and-sees.md) | A team declares a monthly budget and sees its spend against it | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0356](EP0356-the-trd-describes-the-sequential-id-era-this.md) | The TRD describes the sequential id era this repository is pinned to | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0357](EP0357-the-eval-scenarios-have-a-stated-place-in.md) | The eval scenarios have a stated place in the release steps | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0358](EP0358-windows-support-for-the-script-tier-is-stated.md) | Windows support for the script tier is stated, tested and safe in its cleanup paths | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0359](EP0359-one-definition-of-a-high-risk-unit-and.md) | One definition of a high-risk unit and its second seat stands in the backlog | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0360](EP0360-the-sprint-plan-and-report-state-the-machinery.md) | The sprint plan and report state the machinery share by theme and by path | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0361](EP0361-rfc0060-and-d0236-show-the-decisions-that-cancelled.md) | RFC0060 and D0236 show the decisions that cancelled the dark factory plan | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0362](EP0362-adr-006-states-how-far-its-five-run.md) | ADR-006 states how far its five-run evidence reaches and counts its instances correctly | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0363](EP0363-the-disclosure-lint-lane-fails-when-a-finding.md) | The disclosure lint lane fails when a finding appears that its committed baseline does not hold | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0364](EP0364-no-persona-prompt-template-ships-that-nothing-loads.md) | No persona prompt template ships that nothing loads or that teaches the retired persona model | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0365](EP0365-every-composed-changelog-entry-names-the-unit-its.md) | Every composed CHANGELOG entry names the unit its fragment was filed for | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0366](EP0366-a-run-awaiting-the-operator-signature-no-longer.md) | A run awaiting the operator signature no longer blocks the next, and a delegated signature is disclosed | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0367](EP0367-the-reports-signed-under-a-per-trip-authorisation.md) | The reports signed under a per-trip authorisation disclose the decision that authorised each signature | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0368](EP0368-pyyaml-is-a-required-dependency-refused-at-install.md) | PyYAML is a required dependency, refused at install and at every gate, and the specs say so | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

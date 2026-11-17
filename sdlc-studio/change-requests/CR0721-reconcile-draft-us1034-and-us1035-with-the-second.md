@@ -1,6 +1,7 @@
 # CR-0721: Reconcile Draft US1034 and US1035 with the second seat that 6.4 delivered from the risk class under CR0696
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0359
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

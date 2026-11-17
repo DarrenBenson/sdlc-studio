@@ -1,6 +1,7 @@
 # CR-0630: Count revert-check's yield over the last several signed runs before doctrine rule 21 is ruled on
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0316
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

@@ -1,6 +1,7 @@
 # CR-0709: Add lessons.py reinstate: put a retired class back in force with a recorded run and reason
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0349
 > **Priority:** Low
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/help/lessons.md, sdlc-studio/reviews/command-audit.md, changelog.d/CR0709.md

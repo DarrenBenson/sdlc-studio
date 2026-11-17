@@ -1,6 +1,7 @@
 # CR-0637: The test suite's private temp root follows TMPDIR, so on a tmpfs /tmp every fixture repository copy is held in RAM and a killed run's tree is never freed
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0318
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

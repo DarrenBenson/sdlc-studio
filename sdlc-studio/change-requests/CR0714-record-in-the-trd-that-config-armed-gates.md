@@ -1,6 +1,7 @@
 # CR-0714: Record in the TRD that config-armed gates stand down without PyYAML, and correct the sentences that deny it
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** CR0731
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** S
@@ -31,3 +32,4 @@ Anyone reading the TRD as the migration blueprint, and any operator running the 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Raised |
+| 2026-11-17 | Claude Fable 5.2 | Closed as superseded by CR0731 at the discovery breakdown the operator asked for: D0505 (sdlc-studio/decisions.md line 519, RFC0066) makes PyYAML a required dependency refused at install and at the prerequisite check, so the stand-down this request asked the TRD to record as settled behaviour is being removed, not documented. CR0731's third criterion has the TRD drop the standard-library-only claim and record the ruling as an ADR, and its Affects names sdlc-studio/trd.md; D0505's own text says CR0714 is reconciled with it at refine. The threat-model row for a missing or tampered PyYAML and the tools/tests pin on the TRD's wording are not named in CR0731 and should be carried by its TRD story. |

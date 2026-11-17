@@ -1,6 +1,7 @@
 # CR-0700: The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0342
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

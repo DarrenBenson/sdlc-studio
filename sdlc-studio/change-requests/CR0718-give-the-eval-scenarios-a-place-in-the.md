@@ -1,6 +1,7 @@
 # CR-0718: Give the eval scenarios a place in the release steps, or stop the TSD presenting them as a gated test level
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0357
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

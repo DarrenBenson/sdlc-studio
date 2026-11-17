@@ -1,6 +1,7 @@
 # CR-0691: The engineering seat's brief carries reliability and observability checks drawn from the TRD
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0338
 > **Parent:** RFC0063
 > **Related:** RFC0062, RFC0064, D0463
 > **Priority:** Medium

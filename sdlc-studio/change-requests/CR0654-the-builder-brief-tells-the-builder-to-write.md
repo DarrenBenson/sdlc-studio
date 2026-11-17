@@ -1,6 +1,7 @@
 # CR-0654: The builder brief tells the builder to write its story file and the self-check log, then commit only its Affects, without saying who commits those two
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** US1118
 > **Priority:** Low
 > **Type:** Feature
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -31,3 +32,4 @@ Name the hand-off in the brief: either a second step committing the story file a
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-26 | Claude Opus 5.5 | Raised |
+| 2026-11-17 | Claude Fable 5.2 | Closed as superseded by US1118 at the discovery breakdown the operator asked for: The builder brief no longer leaves the two files unowned. Since US1118 (931f849c) and BG1336 (35b9a788), sprint.py _lane_builder_commands (sprint.py:3278-3314) tells the builder to run its criteria with verify_ac.py run --dry-run, which writes nothing into the unit's own file, and prints 'Do not commit and do not record the self-check: sprint lane land commits', or for a main checkout lane that the orchestrator commits and records it. The hand-off the request asks the brief to name is therefore named, and sprint lane land records the self-check and commits. |

@@ -1,6 +1,7 @@
 # CR-0697: After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0340
 > **Priority:** High
 > **Type:** enhancement
 > **Size:** M

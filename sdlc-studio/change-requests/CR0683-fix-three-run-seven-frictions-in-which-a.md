@@ -1,6 +1,7 @@
 # CR-0683: Fix three run-seven frictions in which a shipped step leaves state the next step refuses: `lane land` checks the self-check hand-in only after it commits, `verify_ac run` in a builder worktree stamps the story file outside the unit's Affects, and `file_finding --parent` leaves the parent RFC's spawned-work cell unsynced
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0334
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Bug

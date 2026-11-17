@@ -1,6 +1,7 @@
 # CR-0652: critic.py self-check record has no surface for a documentation unit's own prose, so the claims a doc unit makes in the file it changes cannot be recorded under that file
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0321
 > **Supersedes:** CR0658
 > **Priority:** Low
 > **Type:** Feature

@@ -1,6 +1,7 @@
 # CR-0687: `remote-gate.sh doctor` never checks the release gate's prerequisites, so a host reads ready and then refuses at the release cut
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0336
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Size:** S

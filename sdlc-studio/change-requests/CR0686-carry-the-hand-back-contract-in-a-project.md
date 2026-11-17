@@ -1,6 +1,7 @@
 # CR-0686: Carry the hand-back contract in a project's own seat cards and in `amigo-template.md`, not only in the shipped default seats
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0335
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

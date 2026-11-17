@@ -1,6 +1,7 @@
 # CR-0729: A run closed while the operator is away waits for signature, and a delegated signature is disclosed
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0366
 > **Parent:** RFC0065
 > **Priority:** High
 > **Type:** Improvement

@@ -1,6 +1,7 @@
 # CR-0682: Make the author self-check prove each acceptance criterion at the observable it names through the shipped entry point, list the docs outside Affects that name what the diff changed, require a captured producer sample for a unit that parses another tool's output, and tag each blocking finding with its defect class
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0333
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Improvement

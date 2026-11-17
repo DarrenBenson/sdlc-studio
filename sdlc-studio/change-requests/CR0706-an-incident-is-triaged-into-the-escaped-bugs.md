@@ -1,6 +1,7 @@
 # CR-0706: An incident is triaged into the escaped bugs it caused, the report states escapes per 100 points, and an escape's class reaches only the briefs whose files it matches
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0346
 > **Parent:** RFC0063
 > **Priority:** Medium
 > **Type:** feature

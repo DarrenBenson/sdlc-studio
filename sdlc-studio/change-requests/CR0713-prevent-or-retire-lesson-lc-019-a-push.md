@@ -1,6 +1,7 @@
 # CR-0713: Prevent or retire lesson LC-019 (a push-gate guard the per-commit run skips)
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0353
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

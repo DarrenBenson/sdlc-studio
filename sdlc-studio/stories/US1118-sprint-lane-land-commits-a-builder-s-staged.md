@@ -1,6 +1,7 @@
 # US1118: sprint lane land commits a builder's staged lane through the hooks, lands it on main and records each unit's self-check and review brief
 
 > **Status:** Done
+> **Supersedes:** CR0654
 > **Delivers:** CR0661
 > **Created:** 2026-11-05
 > **Created-by:** sdlc-studio new

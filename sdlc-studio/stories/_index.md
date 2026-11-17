@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 55 |
+| Draft | 181 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 91 |
 | Blocked | 0 |
-| **Total** | **1173** |
+| **Total** | **1299** |
 
 ## All Stories
 
@@ -211,6 +211,132 @@
 | [US1171](US1171-the-help-reference-and-public-pages-describe-what.md) | The help, reference and public pages describe what 6.4 ships | Done | EP0314 | 2026-11-16 | 2026-11-16 |
 | [US1172](US1172-the-prd-trd-and-tsd-describe-what-6.md) | The PRD, TRD and TSD describe what 6.4 ships | Done | EP0314 | 2026-11-16 | 2026-11-16 |
 | [US1173](US1173-v6-4-0-is-cut-version-changelog-known.md) | v6.4.0 is cut: version, changelog, known issues, install pins and the specs' baseline | Done | EP0314 | 2026-11-16 | 2026-11-16 |
+| [US1174](US1174-the-review-seat-charter-pointer-template-is-removed.md) | The review seat charter pointer template is removed and the persona template reference test covers pointer files | Draft | EP0315 | 2026-11-17 | 2026-11-17 |
+| [US1175](US1175-a-committed-review-page-counts-revert-check-s.md) | A committed review page counts revert-check's verdict per unit over at least five signed runs, with re-totalled sums | Draft | EP0316 | 2026-11-17 | 2026-11-17 |
+| [US1176](US1176-the-release-gate-lists-a-declared-non-completing.md) | The release gate lists a declared non-completing status's failing criteria as unbuilt, and an undeclared one still fails | Draft | EP0317 | 2026-11-17 | 2026-11-17 |
+| [US1177](US1177-with-tmpdir-unset-on-a-tmpfs-the-suite.md) | With TMPDIR unset on a tmpfs the suite's private root is made on disk and named, and an explicit TMPDIR is honoured | Draft | EP0318 | 2026-11-17 | 2026-11-17 |
+| [US1178](US1178-a-stale-private-root-left-by-a-killed.md) | A stale private root left by a killed run and owned by no live process is removed and named when the next run starts | Draft | EP0318 | 2026-11-17 | 2026-11-17 |
+| [US1179](US1179-verify-ac-resolves-file-scoped-vitest-criteria-from.md) | verify_ac resolves file-scoped vitest criteria from one batched vitest JSON run, with vitest stubbed in the test | Draft | EP0319 | 2026-11-17 | 2026-11-17 |
+| [US1180](US1180-the-release-verify-lane-reads-the-vitest-batch.md) | The release verify lane reads the vitest batch, falls back per criterion where it cannot answer, and the two agree | Draft | EP0319 | 2026-11-17 | 2026-11-17 |
+| [US1181](US1181-recording-a-reject-says-the-rejecting-reviewer-is.md) | Recording a REJECT says the rejecting reviewer is needed for round 2, and the runbook row says how to keep it resumable | Draft | EP0320 | 2026-11-17 | 2026-11-17 |
+| [US1182](US1182-the-self-check-record-accepts-each-non-test.md) | The self-check record accepts each non-test file in the unit's Affects as an optional surface and still requires the rest | Draft | EP0321 | 2026-11-17 | 2026-11-17 |
+| [US1183](US1183-a-delegated-token-record-says-whether-the-meter.md) | A delegated token record says whether the meter can see its agent, by transcript or by the harness that ran it | Draft | EP0322 | 2026-11-17 | 2026-11-17 |
+| [US1184](US1184-the-sprint-report-and-the-retro-add-only.md) | The sprint report and the retro add only the delegated totals the meter cannot see, and name what they added | Draft | EP0322 | 2026-11-17 | 2026-11-17 |
+| [US1185](US1185-sprint-batch-amend-widens-a-batch-unit-s.md) | sprint batch amend widens a batch unit's Affects with a reason, writes its revision row and records it on the run | Draft | EP0323 | 2026-11-17 | 2026-11-17 |
+| [US1186](US1186-sprint-batch-amend-rewords-a-batch-unit-s.md) | sprint batch amend rewords a batch unit's criterion with a reason, and refuses a unit already reviewed in the run | Draft | EP0323 | 2026-11-17 | 2026-11-17 |
+| [US1187](US1187-the-sprint-report-of-a-closed-run-lists.md) | The sprint report of a closed run lists each in-flight amendment with its unit and its reason | Draft | EP0323 | 2026-11-17 | 2026-11-17 |
+| [US1188](US1188-lessons-revalidate-with-a-citation-check-reports-each.md) | lessons revalidate with a citation check reports each Revalidated citation past the file's end or away from its symbol | Draft | EP0324 | 2026-11-17 | 2026-11-17 |
+| [US1189](US1189-the-project-lessons-log-s-critic-py-citations.md) | The project lessons log's critic.py citations are re-anchored to the current tree and the reason on L-0370 is corrected | Draft | EP0324 | 2026-11-17 | 2026-11-17 |
+| [US1190](US1190-remote-gate-judges-a-staged-tree-s-selected.md) | remote-gate judges a staged tree's selected test modules on the gate host and returns their verdict | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
+| [US1191](US1191-the-commit-hook-sends-its-selected-suites-to.md) | The commit hook sends its selected suites to the named gate host, and runs them locally when the host cannot be reached | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
+| [US1192](US1192-lane-land-takes-several-worktrees-and-lands-them.md) | Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1193](US1193-lane-land-resumes-a-landing-whose-commit-was.md) | Lane land resumes a landing whose commit was refused without repeating the steps already done | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1194](US1194-sprint-close-names-each-unit-that-reached-main.md) | Sprint close names each unit that reached main with no lane land record | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1195](US1195-a-refused-landing-or-a-reject-yields-a.md) | A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1196](US1196-sprint-drive-walks-one-unit-s-lane-from.md) | Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1197](US1197-sprint-drive-runs-a-wave-s-independent-units.md) | Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1198](US1198-sprint-drive-step-performs-the-whole-chain-after.md) | Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1199](US1199-the-mutation-probe-drops-each-conjunct-of-a.md) | The mutation probe drops each conjunct of a guard and flips polarity words in a document a test reads | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1200](US1200-a-mutation-runner-applies-a-list-of-file.md) | A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1201](US1201-self-check-record-takes-the-runner-s-report.md) | Self-check record takes the runner's report and mutant list, and the author brief names the runner command | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1202](US1202-the-critic-brief-prints-the-author-s-recorded.md) | The critic brief prints the author's recorded mutants and their replay, labelled as the author's | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1203](US1203-the-hostile-kit-proves-the-verifier-dies-with.md) | The hostile kit proves the verifier dies with its caller, exits on an interrupt and leaves no orphan | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
+| [US1204](US1204-the-hostile-kit-proves-a-batch-obeys-a.md) | The hostile kit proves a batch obeys a consumer's pytest addopts and collects under warnings as errors | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
+| [US1205](US1205-the-hostile-kit-proves-a-shallow-clone-a.md) | The hostile kit proves a shallow clone, a non-Claude harness and an over-long token change no result | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
+| [US1206](US1206-an-artifact-changelog-command-writes-a-unit-s.md) | An artifact changelog command writes a unit's fragment in the shape the changelog-shape lane passes | Draft | EP0329 | 2026-11-17 | 2026-11-17 |
+| [US1207](US1207-lane-land-writes-the-fragment-when-the-hand.md) | Lane land writes the fragment when the hand-in has none, keeps a hand edit, and the brief names the command | Draft | EP0329 | 2026-11-17 | 2026-11-17 |
+| [US1208](US1208-repo-map-outline-and-where-print-each-symbol.md) | Repo map outline and where print each symbol's line range from the index and refuse a stale index | Draft | EP0330 | 2026-11-17 | 2026-11-17 |
+| [US1209](US1209-the-lane-brief-lists-the-symbols-the-unit.md) | The lane brief lists the symbols the unit's criteria name in each Affects file, with line ranges | Draft | EP0330 | 2026-11-17 | 2026-11-17 |
+| [US1210](US1210-the-critic-brief-names-the-enclosing-symbol-and.md) | The critic brief names the enclosing symbol and its line range for each diff hunk | Draft | EP0330 | 2026-11-17 | 2026-11-17 |
+| [US1211](US1211-the-capped-unit-diff-puts-claim-surfaces-first.md) | The capped unit diff puts claim surfaces first and the full diff is written beside the brief | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1212](US1212-critic-brief-writes-the-brief-to-a-named.md) | Critic brief writes the brief to a named path and prints one line, and the dispatch says to read it whole | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1213](US1213-the-brief-carries-the-red-lines-of-the.md) | The brief carries the red lines of the verifier dry run and the selected tests, stamped with its HEAD | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1214](US1214-a-verify-stamp-records-the-affects-digest-and.md) | A verify stamp records the Affects digest, and a transition accepts a current stamp without a re-run | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1215](US1215-a-rejoinder-brief-diffs-from-the-round-one.md) | A rejoinder brief diffs from the round one verdict's commit and leaves out the file history | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1216](US1216-each-recorded-verdict-says-whether-it-cites-the.md) | Each recorded verdict says whether it cites the file history | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
+| [US1217](US1217-critic-record-accepts-a-round-two-verdict-from.md) | Critic record accepts a round two verdict from a fresh reviewer and records it under its own name | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
+| [US1218](US1218-critic-brief-given-several-units-prints-the-stable.md) | Critic brief given several units prints the stable blocks once and each unit's scope, criteria and diff apart | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
+| [US1219](US1219-the-review-dispatch-groups-a-wave-s-units.md) | The review dispatch groups a wave's units of at most 3 points into reviewer batches of at most three | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
+| [US1220](US1220-self-check-record-runs-one-shipped-command-for.md) | Self-check record runs one shipped command for each criterion and stores its exit and an output digest | Draft | EP0333 | 2026-11-17 | 2026-11-17 |
+| [US1221](US1221-the-self-check-lists-the-documents-outside-affects.md) | The self-check lists the documents outside Affects that name what the diff changed and needs a ruling on each | Draft | EP0333 | 2026-11-17 | 2026-11-17 |
+| [US1222](US1222-story-and-bug-templates-take-a-capture-line.md) | Story and bug templates take a Capture line, and a lint flags a reader of another tool's output without one | Draft | EP0333 | 2026-11-17 | 2026-11-17 |
+| [US1223](US1223-critic-record-takes-a-defect-class-on-each.md) | Critic record takes a defect class on each blocking finding and the sprint report counts blockers by class | Draft | EP0333 | 2026-11-17 | 2026-11-17 |
+| [US1224](US1224-lane-land-checks-the-handed-in-self-check.md) | Lane land checks the handed-in self-check claims before it commits, and the brief names one fragment label | Draft | EP0334 | 2026-11-17 | 2026-11-17 |
+| [US1225](US1225-a-verify-run-in-a-lane-worktree-changes.md) | A verify run in a lane worktree changes no file outside the unit's Affects | Draft | EP0334 | 2026-11-17 | 2026-11-17 |
+| [US1226](US1226-filing-a-child-under-a-parent-request-updates.md) | Filing a child under a parent request updates the parent's spawned work cell in the same write | Draft | EP0334 | 2026-11-17 | 2026-11-17 |
+| [US1227](US1227-the-amigo-template-and-the-project-s-seat.md) | The amigo template and the project's seat cards carry the hand-back section, and validate seats warns if not | Draft | EP0335 | 2026-11-17 | 2026-11-17 |
+| [US1228](US1228-remote-gate-doctor-reports-a-missing-release-prerequisite.md) | Remote gate doctor reports a missing release prerequisite under the gate's own environment and names the fix | Draft | EP0336 | 2026-11-17 | 2026-11-17 |
+| [US1229](US1229-lessons-py-restore-rebuilds-a-lost-log-from.md) | lessons.py restore rebuilds a lost log from the digest and refuses to overwrite an existing log | Draft | EP0337 | 2026-11-17 | 2026-11-17 |
+| [US1230](US1230-the-trd-template-gains-a-reliability-and-observability.md) | The TRD template gains a Reliability and Observability section for dependency failure and required signals | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
+| [US1231](US1231-the-engineering-brief-carries-the-trd-s-failure.md) | The engineering brief carries the TRD's failure and observability checks for touched components, under a cap | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
+| [US1232](US1232-the-engineering-seat-charter-asks-for-a-finding.md) | The engineering seat charter asks for a finding on an undeclared failure path and a note on a missing section | Draft | EP0338 | 2026-11-17 | 2026-11-17 |
+| [US1233](US1233-the-release-cut-writes-a-committed-record-of.md) | The release cut writes a committed record of each release, with its date and the reports it shipped | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
+| [US1236](US1236-the-trunk-guidance-tells-the-agent-to-wait.md) | The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1237](US1237-a-project-sets-the-ci-wait-timeout-and.md) | A project sets the CI wait timeout and the rerun limit in config, with the defaults documented | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1238](US1238-a-red-ci-run-is-recorded-against-its.md) | A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1239](US1239-each-recorded-verdict-states-the-reviewer-s-model.md) | Each recorded verdict states the reviewer's model and harness, or unknown where the store gives neither | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
+| [US1240](US1240-with-review-reviewer-family-set-to-different-a.md) | With review.reviewer_family set to different, a same-family verdict is refused and an unknown needs a waiver | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
+| [US1241](US1241-the-review-brief-names-the-harness-and-model.md) | The review brief names the harness and model to dispatch the reviewer to when the family setting is on | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
+| [US1242](US1242-the-sprint-report-states-reviews-upheld-rejections-and.md) | The sprint report states reviews, upheld rejections and traced escapes for each reviewer model family | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
+| [US1243](US1243-the-prompt-audit-of-the-instruction-files-is.md) | The prompt audit of the instruction files is committed, each finding dispositioned and each kept gate named | Draft | EP0342 | 2026-11-17 | 2026-11-17 |
+| [US1244](US1244-this-repository-s-always-loaded-instruction-files-take.md) | This repository's always-loaded instruction files take the accepted cuts, sizes reported before and after | Draft | EP0342 | 2026-11-17 | 2026-11-17 |
+| [US1245](US1245-the-shipped-instruction-templates-and-skill-md-take.md) | The shipped instruction templates and SKILL.md take the accepted cuts and reach projects on project upgrade | Draft | EP0342 | 2026-11-17 | 2026-11-17 |
+| [US1246](US1246-the-rendered-lane-brief-and-review-brief-take.md) | The rendered lane brief and review brief take the accepted cuts, with every gated rule's text still present | Draft | EP0342 | 2026-11-17 | 2026-11-17 |
+| [US1247](US1247-a-unit-that-opts-in-gets-the-ownership.md) | A unit that opts in gets the ownership line naming its Affects in its lane brief, and nothing else carries it | Draft | EP0343 | 2026-11-17 | 2026-11-17 |
+| [US1248](US1248-the-bench-runs-an-ownership-arm-on-the.md) | The bench runs an ownership arm on the brownfield fixtures, reporting priced tokens, score and duplication | Draft | EP0343 | 2026-11-17 | 2026-11-17 |
+| [US1249](US1249-the-sprint-report-sets-each-opted-in-unit.md) | The sprint report sets each opted-in unit against comparable units, so the keep-or-drop rule can be judged | Draft | EP0343 | 2026-11-17 | 2026-11-17 |
+| [US1250](US1250-the-plan-forecasts-dollars-from-measured-dollars-per.md) | The plan forecasts dollars from measured dollars per point, naming its runs, with a stated fallback | Draft | EP0344 | 2026-11-17 | 2026-11-17 |
+| [US1251](US1251-the-evidence-pack-groups-changes-by-risk-class.md) | The evidence pack groups changes by risk class, high-risk first, each with its second seat verdict | Draft | EP0345 | 2026-11-17 | 2026-11-17 |
+| [US1252](US1252-the-evidence-pack-is-described-in-the-versioned.md) | The evidence pack is described in the versioned evidence annex, so a consumer reads it without the tool | Draft | EP0345 | 2026-11-17 | 2026-11-17 |
+| [US1253](US1253-an-incident-is-recorded-as-an-issue-with.md) | An incident is recorded as an issue with a root-cause section and triaged into escaped bugs linked back to it | Draft | EP0346 | 2026-11-17 | 2026-11-17 |
+| [US1254](US1254-the-sprint-report-and-the-seat-scorecard-state.md) | The sprint report and the seat scorecard state escapes per 100 points delivered, from the linked records | Draft | EP0346 | 2026-11-17 | 2026-11-17 |
+| [US1255](US1255-at-plan-time-a-unit-s-files-are.md) | At plan time a unit's files are matched to the failure classes, and only matches reach its briefs, capped | Draft | EP0346 | 2026-11-17 | 2026-11-17 |
+| [US1256](US1256-sprint-lane-rebase-replays-a-lane-s-staged.md) | sprint lane rebase replays a lane's staged work onto main and stops on a conflict with the work intact and the files named | Draft | EP0347 | 2026-11-17 | 2026-11-17 |
+| [US1257](US1257-after-a-clean-replay-lane-rebase-regenerates-the.md) | After a clean replay, lane rebase regenerates the script surface page and re-stages it, naming any derived page left stale | Draft | EP0347 | 2026-11-17 | 2026-11-17 |
+| [US1258](US1258-a-finding-filed-without-authored-criteria-is-marked.md) | A finding filed without authored criteria is marked ungroomed in its file and at filing, naming the flags that supply criteria | Draft | EP0348 | 2026-11-17 | 2026-11-17 |
+| [US1259](US1259-lessons-reinstate-returns-a-retired-class-to-active.md) | lessons reinstate returns a retired class to active with the open run and a reason, refusing a class that is not retired | Draft | EP0349 | 2026-11-17 | 2026-11-17 |
+| [US1260](US1260-the-bench-runner-passes-a-builder-effort-level.md) | The bench runner passes a builder effort level to the harness CLI and records it on each run's result row | Draft | EP0350 | 2026-11-17 | 2026-11-17 |
+| [US1261](US1261-the-bench-summary-reports-priced-tokens-per-point.md) | The bench summary reports priced tokens per point, review rounds, rejections and the held-back score for each effort arm | Draft | EP0350 | 2026-11-17 | 2026-11-17 |
+| [US1262](US1262-sprint-lane-status-lists-each-open-lane-with.md) | sprint lane status lists each open lane with its worktree, newest change age and elapsed time against its estimate, marking a stall | Draft | EP0351 | 2026-11-17 | 2026-11-17 |
+| [US1263](US1263-ci-runs-the-skill-suite-through-the-push.md) | CI runs the skill suite through the push gate's own pytest plan, under coverage, so a test green at push is green in CI | Draft | EP0352 | 2026-11-17 | 2026-11-17 |
+| [US1264](US1264-the-green-run-noise-gate-has-one-implementation.md) | The green-run noise gate has one implementation that CI and the push both read, and the second copy is retired | Draft | EP0352 | 2026-11-17 | 2026-11-17 |
+| [US1265](US1265-the-commit-s-selection-includes-a-test-that.md) | The commit's selection includes a test that runs other test modules by path when one of those modules is staged | Draft | EP0353 | 2026-11-17 | 2026-11-17 |
+| [US1266](US1266-the-phase-2-baseline-runs-the-benchmark-at.md) | The Phase 2 baseline runs the benchmark at the pinned skill commit in each installed harness and commits the result | Draft | EP0354 | 2026-11-17 | 2026-11-17 |
+| [US1267](US1267-the-phase-5-re-measure-publishes-cost-per.md) | The Phase 5 re-measure publishes cost per point by harness and states plainly whether the 40 per cent bar was met | Draft | EP0354 | 2026-11-17 | 2026-11-17 |
+| [US1268](US1268-a-decision-amends-d0416-and-names-the-owner.md) | A decision amends D0416 and names the owner of the models and effort review, and the review page lists what RFC0062 still owes | Draft | EP0354 | 2026-11-17 | 2026-11-17 |
+| [US1269](US1269-the-sprint-report-shows-month-to-date-spend.md) | The sprint report shows month-to-date spend against a declared monthly budget across every harness | Draft | EP0355 | 2026-11-17 | 2026-11-17 |
+| [US1270](US1270-the-prd-the-primary-persona-card-and-rfc0063.md) | The PRD, the Primary persona card and RFC0063 state the monthly budget's true status | Draft | EP0355 | 2026-11-17 | 2026-11-17 |
+| [US1271](US1271-the-trd-states-the-schema-version-2-pin.md) | The TRD states the schema version 2 pin and the sequential era's remote scan and fetch-first defence | Draft | EP0356 | 2026-11-17 | 2026-11-17 |
+| [US1272](US1272-the-release-check-names-a-missing-eval-report.md) | The release check names a missing eval report for the version being cut | Draft | EP0357 | 2026-11-17 | 2026-11-17 |
+| [US1273](US1273-a-release-s-recorded-eval-result-is-kept.md) | A release's recorded eval result is kept as committed evidence | Draft | EP0357 | 2026-11-17 | 2026-11-17 |
+| [US1274](US1274-the-tsd-names-the-eval-step-in-its.md) | The TSD names the eval step in its release stage and its coverage row matches the scenarios on disk | Draft | EP0357 | 2026-11-17 | 2026-11-17 |
+| [US1275](US1275-the-phase-runner-s-group-kill-in-verify.md) | The phase runner's group kill in verify_ac does not raise where killpg or SIGKILL is absent | Draft | EP0358 | 2026-11-17 | 2026-11-17 |
+| [US1276](US1276-the-reap-in-the-mutation-runner-does-not.md) | The reap in the mutation runner does not raise where killpg or SIGKILL is absent | Draft | EP0358 | 2026-11-17 | 2026-11-17 |
+| [US1277](US1277-the-windows-smoke-job-runs-a-named-subset.md) | The Windows smoke job runs a named subset of the script tests and fails when one fails | Draft | EP0358 | 2026-11-17 | 2026-11-17 |
+| [US1278](US1278-the-tsd-states-the-script-tier-s-supported.md) | The TSD states the script tier's supported platforms and the id lock's limit on Windows | Draft | EP0358 | 2026-11-17 | 2026-11-17 |
+| [US1279](US1279-a-decision-rules-the-high-risk-trigger-and.md) | A decision rules the high-risk trigger, and US1034, US1035, EP0284 and CR0622 are reconciled with it | Draft | EP0359 | 2026-11-17 | 2026-11-17 |
+| [US1280](US1280-sprint-plan-prints-points-by-area-from-the.md) | Sprint plan prints points by area from the tags and from a path map, naming any unit whose tag disagrees | Draft | EP0360 | 2026-11-17 | 2026-11-17 |
+| [US1281](US1281-sprint-plan-reports-a-missing-maintenance-declaration-over.md) | Sprint plan reports a missing maintenance declaration over one third machinery and still exits 0 | Draft | EP0360 | 2026-11-17 | 2026-11-17 |
+| [US1282](US1282-the-sprint-report-carries-the-same-two-machinery.md) | The sprint report carries the same two machinery shares as the plan printed | Draft | EP0360 | 2026-11-17 | 2026-11-17 |
+| [US1283](US1283-rfc0060-reads-partially-superseded-and-names-d0253-d0254.md) | RFC0060 reads partially superseded and names D0253, D0254 and D0290, and D0236 is superseded in the log | Draft | EP0361 | 2026-11-17 | 2026-11-17 |
+| [US1284](US1284-adr-006-states-the-strength-of-its-five.md) | ADR-006 states the strength of its five-run evidence, names bad-plan propagation, and its instance count is tested | Draft | EP0362 | 2026-11-17 | 2026-11-17 |
+| [US1285](US1285-the-disclosure-lane-reads-a-committed-baseline-fails.md) | The disclosure lane reads a committed baseline, fails on a new finding and prints one line when nothing is new | Draft | EP0363 | 2026-11-17 | 2026-11-17 |
+| [US1286](US1286-the-disclosure-baseline-may-only-shrink-and-the.md) | The disclosure baseline may only shrink, and the TSD rows say the lane fails on a rise against it | Draft | EP0363 | 2026-11-17 | 2026-11-17 |
+| [US1287](US1287-the-three-unreferenced-persona-prompt-templates-are-retired.md) | The three unreferenced persona prompt templates are retired or rewired, and a test fails on an unnamed persona template | Draft | EP0364 | 2026-11-17 | 2026-11-17 |
+| [US1288](US1288-compose-writes-each-fragment-s-unit-id-into.md) | Compose writes each fragment's unit id into its entry exactly once, and the dry run reports the same ids | Draft | EP0365 | 2026-11-17 | 2026-11-17 |
+| [US1289](US1289-the-release-cut-reports-every-fragment-folded-without.md) | The release cut reports every fragment folded without a unit id, and the script catalogue describes the id carry | Draft | EP0365 | 2026-11-17 | 2026-11-17 |
+| [US1290](US1290-a-new-run-can-be-planned-and-opened.md) | A new run can be planned and opened while a closed run awaits signature, and status names each one waiting | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1291](US1291-sprint-sign-under-delegation-requires-an-accepted-authorising.md) | Sprint sign under delegation requires an accepted authorising decision id and records it in the signature block | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
+| [US1295](US1295-rpt0030-to-rpt0034-and-the-6-4-0.md) | RPT0030 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
+| [US1296](US1296-both-installers-refuse-on-a-machine-that-cannot.md) | Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
+| [US1297](US1297-the-config-reader-refuses-without-pyyaml-so-no.md) | The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
+| [US1298](US1298-the-gate-prerequisite-check-and-every-gate-bearing.md) | The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
+| [US1299](US1299-the-prd-trd-and-readme-drop-the-standard.md) | The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

@@ -1,6 +1,7 @@
 # CR-0728: Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0365
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** M

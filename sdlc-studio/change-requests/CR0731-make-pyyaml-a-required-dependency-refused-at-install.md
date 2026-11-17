@@ -1,6 +1,8 @@
 # CR-0731: Make PyYAML a required dependency, refused at install and at the prerequisite check
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Supersedes:** CR0714
+> **Decomposed-into:** EP0368
 > **Parent:** RFC0066
 > **Priority:** High
 > **Type:** Improvement
@@ -25,6 +27,7 @@ A consuming project on a machine without PyYAML runs with its opted-in gates dis
 - [ ] The installer refuses, naming PyYAML and how to install it, on a machine where it cannot be imported
 - [ ] The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent, and no command reads a present config as defaults
 - [ ] The PRD and TRD no longer claim a standard-library-only runtime, and the TRD records the ruling as an ADR
+- [ ] The TRD threat model carries a row for a missing or tampered PyYAML, and a test under tools/tests pins the TRD wording (carried from CR0714, closed as superseded by this request)
 - [ ] The release notes for the next version name the new requirement as a breaking change for machines without PyYAML
 
 ## Revision History

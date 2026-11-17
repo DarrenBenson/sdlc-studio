@@ -1,6 +1,7 @@
 # CR-0704: The change evidence pack groups changes by risk and compliance class, lists high-risk changes first with their second seat's verdict, and reads through the evidence annex
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0345
 > **Parent:** RFC0063
 > **Priority:** High
 > **Type:** feature

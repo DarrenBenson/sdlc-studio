@@ -1,6 +1,7 @@
 # CR-0657: Lesson Revalidated reasons cite file:line evidence that drifts as code lands; check and re-anchor it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0324
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lesson_lifecycle.py, .claude/skills/sdlc-studio/help/lessons.md, sdlc-studio/retros/LESSONS.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py

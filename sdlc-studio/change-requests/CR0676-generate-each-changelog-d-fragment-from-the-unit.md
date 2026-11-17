@@ -1,6 +1,7 @@
 # CR-0676: Generate each changelog.d fragment from the unit's title and acceptance criteria with one command instead of hand-writing it, so builders stop learning the format and the fragment stops over-claiming
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0329
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Improvement

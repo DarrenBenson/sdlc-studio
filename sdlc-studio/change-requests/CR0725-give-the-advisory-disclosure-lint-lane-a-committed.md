@@ -1,6 +1,7 @@
 # CR-0725: Give the advisory disclosure lint lane a committed baseline that fails on a rise
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0363
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** M

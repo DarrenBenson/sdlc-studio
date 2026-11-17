@@ -1,6 +1,7 @@
 # CR-0710: CR0699 remainder: the bench runner takes a builder-effort arm and reports priced tokens per point, review rounds and the held-back score per arm
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0350
 > **Priority:** Medium
 > **Type:** Feature
 > **Affects:** tools/bench/runner.py, tools/tests/test_bench_effort_arm.py, changelog.d/CR0710.md

@@ -1,6 +1,7 @@
 # CR-0703: Fit the plan's dollar forecast from measured dollars per point, not priced tokens times the input price
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0344
 > **Parent:** CR0694
 > **Priority:** Medium
 > **Type:** enhancement

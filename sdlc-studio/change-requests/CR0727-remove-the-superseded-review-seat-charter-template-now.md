@@ -1,6 +1,7 @@
 # CR-0727: Remove the superseded review-seat-charter template now that nothing references it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0315
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

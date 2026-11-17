@@ -1,6 +1,7 @@
 # CR-0717: Document the sequential id era's concurrency story in the TRD, since this repository is pinned to it
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0356
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

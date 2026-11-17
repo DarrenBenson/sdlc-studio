@@ -1,6 +1,7 @@
 # CR-0723: Mark RFC0060 partially superseded and link D0236 to the decisions that cancelled its plan
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0361
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** S

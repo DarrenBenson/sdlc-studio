@@ -1,6 +1,7 @@
 # CR-0708: file_finding writes criteria a plan can take, or marks a bug ungroomed, instead of truncated stubs with no Verify line
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0348
 > **Priority:** Medium
 > **Type:** Enhancement
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

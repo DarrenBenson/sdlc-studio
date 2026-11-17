@@ -1,6 +1,7 @@
 # CR-0722: Tool the machinery share so the sprint plan and report state it by theme and by path, as RFC0063 WS7 rules
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0360
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

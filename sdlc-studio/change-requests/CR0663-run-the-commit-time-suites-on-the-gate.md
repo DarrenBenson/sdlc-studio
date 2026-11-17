@@ -1,6 +1,7 @@
 # CR-0663: Run the commit-time suites on the gate host, as the push already does
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0325
 > **Priority:** High
 > **Type:** Feature
 > **Affects:** .githooks/commit-msg, tools/remote-gate.sh, tools/tests/test_commit_suites_remote.py

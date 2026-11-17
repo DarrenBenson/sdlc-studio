@@ -1,6 +1,7 @@
 # CR-0720: Deliver the monthly team budget the Primary persona's End goal 3 promises, or take it out of the card
 
-> **Status:** Proposed
+> **Status:** Superseded
+> **Superseded by:** CR0716
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
@@ -31,3 +32,4 @@ The head of engineering the product is designed for is told the close reports co
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Raised |
+| 2026-11-17 | Claude Fable 5.2 | Closed as superseded by CR0716 at the discovery breakdown the operator asked for: CR0716 asks for the same config key and the same sprint report row for a monthly money budget, and both are still unbuilt: grep for monthly finds no shipped script, reference page or config default, and sprint_report.py has no budget row. The CR0716 breakdown carries this request's remainder, the Primary persona card's End goal 3 evidence and Scenario, in its second story, so one request delivers the budget and the other would mint a duplicate key and row. |

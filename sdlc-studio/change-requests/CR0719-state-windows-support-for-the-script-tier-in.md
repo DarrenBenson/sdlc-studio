@@ -1,6 +1,7 @@
 # CR-0719: State Windows support for the script tier in the TSD and either test it or declare it out of scope
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0358
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

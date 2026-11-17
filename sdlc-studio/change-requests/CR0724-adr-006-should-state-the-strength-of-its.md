@@ -1,6 +1,7 @@
 # CR-0724: ADR-006 should state the strength of its N=5 evidence, its source's failure mode and the right instance count
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0362
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

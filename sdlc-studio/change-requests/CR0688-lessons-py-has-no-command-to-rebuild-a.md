@@ -1,6 +1,7 @@
 # CR-0688: `lessons.py` has no command to rebuild a lost project log from the committed digest, so a project whose `.local/lessons.md` was never migrated must hand-script one `add` per lesson to close a run
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0337
 > **Priority:** Low
 > **Type:** Enhancement
 > **Size:** S

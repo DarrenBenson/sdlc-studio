@@ -1,6 +1,7 @@
 # CR-0715: Decompose RFC0062 Phases 2 and 5 and its models and effort review so its cost bar can be judged
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0354
 > **Priority:** High
 > **Type:** Improvement
 > **Size:** M

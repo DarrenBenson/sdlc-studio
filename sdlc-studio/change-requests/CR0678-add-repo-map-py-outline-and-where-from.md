@@ -1,6 +1,7 @@
 # CR-0678: Add `repo_map.py outline` and `where` from the existing symbol index, and have the lane and critic briefs name each target symbol with its line range, so agents stop spending a fifth of their calls locating code
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0330
 > **Parent:** RFC0062
 > **Priority:** Medium
 > **Type:** Feature

@@ -1,6 +1,7 @@
 # CR-0639: A worktree-isolated reviewer that REJECTs cannot be resumed for its round 2 once its worktree is removed, and nothing says to keep it until the review converges
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0320
 > **Priority:** Low
 > **Type:** Improvement
 > **Size:** S

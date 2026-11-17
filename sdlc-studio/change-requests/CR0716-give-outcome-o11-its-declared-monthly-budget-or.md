@@ -1,6 +1,8 @@
 # CR-0716: Give outcome O11 its declared monthly budget, or mark the outcome partial until it exists
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Supersedes:** CR0720
+> **Decomposed-into:** EP0355
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M

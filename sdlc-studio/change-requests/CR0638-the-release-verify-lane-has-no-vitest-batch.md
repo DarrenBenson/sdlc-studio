@@ -1,6 +1,7 @@
 # CR-0638: The release verify lane has no vitest batch path, so in a vitest project every criterion is a cold `npx vitest run` spawn and the lane runs at three times its declared 600 s budget
 
-> **Status:** Proposed
+> **Status:** In Progress
+> **Decomposed-into:** EP0319
 > **Priority:** Medium
 > **Type:** Improvement
 > **Size:** M
