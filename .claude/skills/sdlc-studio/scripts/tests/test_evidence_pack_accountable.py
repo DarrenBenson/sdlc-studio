@@ -8,6 +8,7 @@ Every test drives `release_cut.py evidence-pack` in a throwaway git repository o
 # test-census-subject: .claude/skills/sdlc-studio/scripts/evidence_pack.py
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -16,7 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 from test_evidence_pack_build import (  # noqa: E402
-    LEDGER_HEAD, PACK_REL, project, run_pack, section, signature, snapshot, verdict_row, write)
+    LEDGER_HEAD, PACK_REL, project, run_pack, run_record_rel, section, signature, snapshot,
+    sprint_report, verdict_row, write)
 
 RPT1_KNOWN = (
     ("BG0010", "High", "US0001's colour fades after a restart"),
@@ -65,6 +67,17 @@ def record_identities(root: Path) -> None:
                    + verdict_row("US0096", "APPROVE", "Darren Benson", "builder-c",
                                  "2026-11-05"),
                    self_check_ledger(("US0002", "Claude Sonnet 5.5 (builder)")))
+
+
+def held_fingerprint(root: Path, rid: str) -> str:
+    """The fingerprint the committed run record of `rid` signed."""
+    return json.loads((root / run_record_rel(rid)).read_text(encoding="utf-8"))[
+        "signature"]["fingerprint"]
+
+
+def accountable(pack: str, unit: str) -> list[str]:
+    """The Accountable lines of one unit's entry."""
+    return [ln for ln in section(pack, unit) if ln.startswith("- Accountable:")]
 
 
 def known_lines(entry: list[str]) -> list[str]:
@@ -150,15 +163,36 @@ class AccountableTests(unittest.TestCase):
             proc = run_pack(root, "RPT0001", "RPT0002")
             self.assertEqual(proc.returncode, 0, proc.stderr)
             pack = (root / PACK_REL).read_text(encoding="utf-8")
-            one = [ln for ln in section(pack, "US0001") if ln.startswith("- Accountable:")]
-            two = [ln for ln in section(pack, "US0002") if ln.startswith("- Accountable:")]
+            one, two = accountable(pack, "US0001"), accountable(pack, "US0002")
+            fp1, fp2 = held_fingerprint(root, "RPT0001"), held_fingerprint(root, "RPT0002")
             self.assertEqual(one, ["- Accountable: Dana Reviewer, who signed its report on "
-                                   "2026-11-10."])
+                                   f"2026-11-10 over fingerprint {fp1}."])
             self.assertEqual(two, ["- Accountable: Lee Operator, who signed its report on "
-                                   "2026-11-12."])
+                                   f"2026-11-12 over fingerprint {fp2}."])
             for ln in one + two:
                 self.assertNotIn("builder-a", ln, "the author is never the accountable person")
                 self.assertNotIn("seat", ln, "a reviewer is never the accountable person")
+
+    def test_the_accountable_line_carries_the_verified_fingerprint(self) -> None:
+        """BG1524 AC4: an untouched signed report whose committed run record agrees with it is
+        packed, and each Accountable line names the run record's principal beside the
+        fingerprint the run record signed, which the report's own figures re-derive."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            pack = (root / PACK_REL).read_text(encoding="utf-8")
+            for unit, rid in (("US0001", "RPT0001"), ("US0002", "RPT0002")):
+                held = json.loads((root / run_record_rel(rid)).read_text(encoding="utf-8"))[
+                    "signature"]
+                figures = json.loads((root / f"sdlc-studio/reports/{rid}.json")
+                                     .read_text(encoding="utf-8"))
+                self.assertEqual(sprint_report.fingerprint(figures), held["fingerprint"],
+                                 "the control: the report's figures re-derive what was signed")
+                self.assertEqual(accountable(pack, unit), [
+                    f"- Accountable: {held['principal']}, who signed its report on "
+                    f"{held['signed_at'][:10]} over fingerprint {held['fingerprint']}."])
 
     def test_agent_or_blank_principal_is_refused(self) -> None:
         # The listed spellings, any principal holding the word agent, and an id the project's
@@ -190,8 +224,9 @@ class AccountableTests(unittest.TestCase):
                 proc = run_pack(root, "RPT0001", "RPT0002")
                 self.assertEqual(proc.returncode, 0, proc.stderr)
                 pack = (root / PACK_REL).read_text(encoding="utf-8")
-                self.assertIn(f"- Accountable: {person}, who signed its report on 2026-11-12.",
-                              section(pack, "US0002"))
+                self.assertEqual(accountable(pack, "US0002"), [
+                    f"- Accountable: {person}, who signed its report on 2026-11-12 over "
+                    f"fingerprint {held_fingerprint(root, 'RPT0002')}."])
 
 
 
@@ -225,8 +260,9 @@ class OwnUnitAuthorTests(unittest.TestCase):
         proc, pack = self.pack(self.ELSEWHERE + self.SUPERSEDED,
                                self_check_ledger(("US0001", "Lee Operator")))
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("- Accountable: Lee Operator, who signed its report on 2026-11-12.",
-                      section(pack, "US0002"))
+        self.assertEqual(len(accountable(pack, "US0002")), 1)
+        self.assertTrue(accountable(pack, "US0002")[0].startswith(
+            "- Accountable: Lee Operator, who signed its report on 2026-11-12 over fingerprint "))
 
     def test_a_live_author_of_the_reports_own_unit_is_refused(self) -> None:
         # The positive control beside the acceptance: the superseded row left live, a

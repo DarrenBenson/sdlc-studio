@@ -5141,5 +5141,68 @@ class HarnessBasisReportTests(ReportOfRecordBase):
                 self.assertFalse(check["valid"], "the control moved no compared figure")
 
 
+class DelegatedSignatureTests(ReportOfRecordBase):
+    """US1292: a signature entered under delegation says so in the page's signature block and
+    names the decision that authorised it; one the operator entered carries no delegation."""
+
+    SIGNED_AT = "2026-09-16T09:00:00Z"
+
+    def _sealed(self, **delegation) -> tuple[Path, str, str]:
+        """A committed run whose page carries the signature block `delegation` extends, written
+        through the seal's own writer, which re-renders the twin with it."""
+        root = Path(tempfile.mkdtemp(dir=self.tmp.name))
+        fixture_run(root)
+        rid = sr.file_report(root, sr.build_report(root, FIX_RETRO))
+        data = sr.read_report(root, rid)
+        data["signature"] = {"principal": "the operator", "signed_at": self.SIGNED_AT,
+                             "report": rid, "fingerprint": data["fingerprint"], **delegation}
+        sr.write_report(root, data)
+        for cmd in (["init", "-q", "."], ["add", "-A"],
+                    ["-c", "user.name=t", "-c", "user.email=t@example.com",
+                     "-c", "commit.gpgsign=false", "commit", "-qm", "the sealed run"]):
+            gitutil.git(cmd, root, check=False)
+        return root, rid, data["fingerprint"]
+
+    def _checked(self, root: Path, rid: str) -> tuple[list[str], str]:
+        """`check` reads the page VALID; returns the twin's signature rows and the HTML
+        rendering's sign-off block."""
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = sr.main(["--root", str(root), "check", "--report", rid])
+        printed = out.getvalue() + err.getvalue()
+        self.assertEqual(rc, 0, printed)
+        self.assertTrue(printed.startswith(f"VALID: {rid}"), printed)
+        rep = sr.read_report(root, rid)
+        twin = sr._twin_path(root, rep).read_text(encoding="utf-8")
+        block = twin.split("\n## Sign-off\n", 1)[1].split("\n## ", 1)[0]
+        rows = [ln for ln in block.splitlines() if ln.startswith("| ")][2:]
+        html = sr.render_html(rep).split('<section class="signoff">', 1)[1]
+        return rows, html.split("</section>", 1)[0]
+
+    def test_the_report_page_names_the_decision_behind_a_delegated_signature(self) -> None:
+        root, rid, fp = self._sealed(delegated=True, decision="D0123")
+        rows, html = self._checked(root, rid)
+        self.assertEqual(rows, [
+            "| the operator (entered under delegation, authorised by decision D0123) | "
+            f"{self.SIGNED_AT} | {fp} |"])
+        self.assertIn("the operator (entered under delegation, authorised by decision D0123)",
+                      html)
+        # A delegated block naming no decision is still disclosed, and says it names none.
+        self.assertEqual(sr.signed_by({"principal": "the operator", "delegated": True}),
+                         "the operator (entered under delegation, authorised by no recorded "
+                         "decision)")
+
+    def test_an_undelegated_signature_carries_no_delegation_line(self) -> None:
+        for label, delegation in (("no delegation option", {}),
+                                  ("delegated false", {"delegated": False})):
+            with self.subTest(label):
+                root, rid, fp = self._sealed(**delegation)
+                rows, html = self._checked(root, rid)
+                self.assertEqual(rows, [f"| the operator | {self.SIGNED_AT} | {fp} |"])
+                for text in (rows[0], html):
+                    self.assertNotIn("delegation", text)
+                    self.assertNotIn("decision", text)
+
+
 if __name__ == "__main__":
     unittest.main()

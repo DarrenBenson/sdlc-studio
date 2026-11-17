@@ -19,6 +19,16 @@ one that reads as an agent, or one the committed review ledgers record as a live
 the report's own units refuses the whole build and no pack is written: the text is composed in
 full before the one write. A typed `human` author is not refused on that record, and an author
 of any other unit is still accepted as a person.
+
+A signature on the report is not taken on its word. `sprint sign` writes one signature to the
+report and to the run's tracked record under `sdlc-studio/reports/runs`, so the committed run
+record is the signature of record: a report whose run record holds no signature, signs another
+report, or disagrees with the report's own signature on principal, date or fingerprint refuses
+the build, and so does a report whose figures no longer re-derive (`sprint_report.fingerprint`) the
+fingerprint the run record signed. Each change's accountable line names the run record's
+principal and that verified fingerprint. A signature entered under delegation
+(`sprint_report.delegation`) is said to be so on the line, with the decision that authorised
+it; the report and the run record must agree on it, and one that names no decision refuses.
 """
 from __future__ import annotations
 
@@ -31,10 +41,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
+import sprint_report  # noqa: E402
 import verify_ac  # noqa: E402
-from lib import sdlc_md  # noqa: E402
+from lib import run_state, sdlc_md  # noqa: E402
 
 REPORTS_REL = "sdlc-studio/reports"
+#: The tracked run records `sprint sign` writes the signature of record into.
+RUNS_REL = run_state.TRACKED_REL.as_posix()
+#: A run id as a report names it; it names a file, so nothing that could leave the folder.
+_RUN_RE = re.compile(r"^RUN-[0-9A-Za-z]+$")
 LEDGER_REL = "sdlc-studio/reviews/critic-verdicts.md"
 SELF_CHECKS_REL = f"sdlc-studio/reviews/{critic.SELF_CHECK_FILE}"
 #: A release version: semantic, with an optional pre-release or build suffix. It names the
@@ -152,10 +167,65 @@ def principal_refusal(signature: dict, authors: list[str] | tuple[str, ...] = ()
     return None
 
 
+def _verified_signature(root: Path, sha: str, rid: str, report: dict) -> tuple[dict, str]:
+    """`(signature, "")`: the signature the report's run record holds at `sha`, when the report's
+    figures still re-derive the fingerprint it signed and the report's own signature agrees with
+    it on principal, date, fingerprint, report and delegation; `({}, why)` otherwise. A
+    signature only the report carries is unsigned in the run record, however its `signed_at`
+    reads."""
+    run_id = str(report.get("run_id") or "").strip()
+    if not _RUN_RE.match(run_id):
+        return {}, (f"the report names no run ({run_id!r}), so no run record holds its "
+                    "signature and it is unsigned in the run record")
+    rel = f"{RUNS_REL}/{run_id}.json"
+    text = _show(root, sha, rel)
+    try:
+        record = json.loads(text) if text is not None else None
+    except ValueError:
+        record = None
+    held = record.get("signature") if isinstance(record, dict) else None
+    if not isinstance(held, dict) or not str(held.get("fingerprint") or "").strip():
+        state = ("holds no signature" if isinstance(record, dict) else
+                 "is not committed" if text is None else "could not be read")
+        return {}, f"its run record {rel} {state}, so the report is unsigned in the run record"
+    signs = str(held.get("report") or "").strip().upper()
+    if signs != rid:
+        return {}, f"its run record {rel} signs {signs or 'no report'}, not {rid}"
+    want = str(held["fingerprint"]).strip()
+    derived = sprint_report.fingerprint(report)
+    if derived != want:
+        return {}, (f"the report no longer re-derives its signed fingerprint: its figures digest "
+                    f"to {derived}, but its run record {rel} signed {want}")
+    sig = report.get("signature") or {}
+    for key in ("principal", "signed_at", "fingerprint", "report"):
+        on_report, in_record = str(sig.get(key) or "").strip(), str(held.get(key) or "").strip()
+        if on_report != in_record:
+            return {}, (f"the report's signature and its run record {rel} disagree on {key}: "
+                        f"the report names {on_report!r}, the run record {in_record!r}")
+    on_report, in_record = sprint_report.delegation(sig), sprint_report.delegation(held)
+    if on_report != in_record:
+        return {}, (f"the report's signature and its run record {rel} disagree on delegation: "
+                    f"the report names {_delegated(on_report)}, the run record "
+                    f"{_delegated(in_record)}")
+    if in_record == "":
+        return {}, ("its signature was entered under delegation but names no authorising "
+                    "decision, so no decision accounts for it")
+    return held, ""
+
+
+def _delegated(decision: str | None) -> str:
+    """How a refusal names one side's delegation (`sprint_report.delegation`)."""
+    if decision is None:
+        return "no delegation"
+    return (f"a delegation under decision {decision}" if decision
+            else "a delegation with no decision")
+
+
 def _read_reports(root: Path, sha: str, ids: list[str], ledger_root: Path) -> list[dict]:
-    """Each named report as committed; every refusal is collected before one is raised. A
-    report's own units are every unit row its delivered section records, delivered or not, as
-    `sprint sign` judges every unit of the run."""
+    """Each named report as committed, its signature replaced by the run record's it was
+    verified against; every refusal is collected before one is raised. A report's own units are
+    every unit row its delivered section records, delivered or not, as `sprint sign` judges
+    every unit of the run."""
     out, refusals = [], []
     for rid in ids:
         if not _REPORT_RE.match(rid):
@@ -174,11 +244,13 @@ def _read_reports(root: Path, sha: str, ids: list[str], ledger_root: Path) -> li
             refusals.append(f"{rid}: the committed file does not hold report {rid}")
         elif not _signed(data):
             refusals.append(f"{rid}: the report is not signed, so it is not evidence")
-        elif reason := principal_refusal(data["signature"], unit_authors(
+        elif (held := _verified_signature(root, sha, rid, data))[1]:
+            refusals.append(f"{rid}: {held[1]}")
+        elif reason := principal_refusal(held[0], unit_authors(
                 ledger_root, [str(_val(r, "unit_id") or "") for r in _section(data, "delivered")])):
             refusals.append(f"{rid}: {reason}")
         else:
-            out.append(data)
+            out.append({**data, "signature": held[0]})
     if refusals:
         raise PackError("; ".join(refusals))
     return out
@@ -295,8 +367,13 @@ def _entry(unit: str, rid: str, row: dict, text: str | None, reviews: list[dict]
     else:
         out.append("- Known issues: none recorded.")
     signed_on = str(signature.get("signed_at") or "").strip()[:10]
-    out.append(f"- Accountable: {str(signature.get('principal')).strip()}, who signed its report "
-               f"on {signed_on}.")
+    principal = str(signature.get("principal")).strip()
+    signed = f"on {signed_on} over fingerprint {str(signature.get('fingerprint')).strip()}."
+    if decision := sprint_report.delegation(signature):
+        out.append(f"- Accountable: {principal}, whose signature on its report was entered under "
+                   f"delegation, authorised by decision {decision}, {signed}")
+    else:
+        out.append(f"- Accountable: {principal}, who signed its report {signed}")
     out.append(f"- Report: {rid}.")
     return out + [""]
 
@@ -346,8 +423,12 @@ def build_pack(root: Path | str, version: str, reports: list[str], rev: str = "H
             *rest, "",
             "## Accountability", "",
             "Each change names the principal recorded on its report's signature, with the signing "
-            "date. No record names an accountable person per unit, so every change of a report "
-            "names that report's signer; a blank principal, one that reads as an agent or one the "
+            "date and the fingerprint signed. The signature is the one the run's committed record "
+            "holds, and the report's figures re-derive that fingerprint; a report they no longer "
+            "re-derive, or whose own signature the run record does not hold, refuses the pack. "
+            "A signature entered under delegation says so and names the decision that "
+            "authorised it. No record names an accountable person per unit, so every change of a "
+            "report names that report's signer; a blank principal, one that reads as an agent or one the "
             "review ledgers record as an author of that report's own units refuses the pack.",
             ""]
     return "\n".join(head + body + tail).rstrip("\n") + "\n"

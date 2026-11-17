@@ -5573,6 +5573,28 @@ def _signoff_section(state_rel: str) -> dict:
     })
 
 
+def delegation(signature: dict | None) -> str | None:
+    """The decision behind a signature entered under delegation: a delegated block holds
+    `delegated` true and the authorising decision's id in `decision`. Returns that id, "" for a
+    delegated block that names none, and None for a signature the principal entered."""
+    sig = signature if isinstance(signature, dict) else {}
+    if sig.get("delegated") is not True:
+        return None
+    return str(sig.get("decision") or "").strip()
+
+
+def signed_by(signature: dict) -> str:
+    """The signature block's Signed by cell: the principal, followed for a delegated signature by
+    the statement that it was entered under delegation and the decision that authorised it. The
+    signature is outside the fingerprint, so the statement never moves a figure."""
+    principal = str(signature.get("principal") or "")
+    decision = delegation(signature)
+    if decision is None:
+        return principal
+    return (f"{principal} (entered under delegation, authorised by "
+            f"{f'decision {decision}' if decision else 'no recorded decision'})")
+
+
 # --- the template engine ------------------------------------------------------------------
 #
 # The LAYOUT comes from the shipped template, never from format strings in this module. Build
@@ -5686,7 +5708,7 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
     scope["report_fingerprint"] = report.get("fingerprint") or "unsigned"
     sig = report.get("signature") or {}
     if sig.get("principal"):
-        scope["principal"] = sig["principal"]
+        scope["principal"] = signed_by(sig)
         scope["signed_at"] = sig.get("signed_at") or "not recorded"
         scope["signed_fingerprint"] = sig.get("fingerprint") or "not recorded"
     rows["invalidation"] = []

@@ -17,8 +17,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(SCRIPTS))
+import sprint_report  # noqa: E402 - the fingerprint `sprint sign` stamps, the one digest
+
 RELEASE_CUT = SCRIPTS / "release_cut.py"
 PACK_REL = "sdlc-studio/reports/evidence-pack-6.4.0.md"
+RUNS_REL = "sdlc-studio/reports/runs"
 
 LEDGER_HEAD = ("# Critic Verdicts\n\n"
                "| Unit | Verdict | Reviewer | Author | Date | Brief | Tier | Source | Issues |\n"
@@ -70,25 +74,37 @@ def fig(key: str, value, source: str = "sdlc-studio/reports/runs/RUN-X.json") ->
 
 
 def signature(rid: str, principal: str = "Dana Reviewer",
-              signed_at: str = "2026-11-10T09:00:00Z") -> dict:
+              signed_at: str = "2026-11-10T09:00:00Z", **extra) -> dict:
+    """A signature block; `report` stamps the report's own fingerprint on it, as `sprint sign`
+    does, unless one is given."""
     return {"principal": principal, "signed_at": signed_at, "report": rid,
-            "fingerprint": "0123456789abcdef"}
+            "fingerprint": "", **extra}
+
+
+def run_of(rid: str) -> str:
+    """The run a fixture report belongs to: one run per report."""
+    return f"RUN-{rid}"
 
 
 def report(rid: str, units, sig, known=()) -> dict:
     """A schema-2 report: `units` as (unit, path, points, outcome), `known` as (id, priority,
-    detail)."""
+    detail). Its fingerprint is the digest of its figures, and a signature that carries none
+    is stamped with it, as `sprint sign` stamps the report it signs."""
     delivered = [{"unit_id": fig("unit_id", u, path), "unit_points": fig("unit_points", pts, path),
                   "unit_outcome": fig("unit_outcome", outcome), "unit_rounds": fig("unit_rounds", 1)}
                  for u, path, pts, outcome in units]
     issues = [{"issue_id": fig("issue_id", i), "issue_priority": fig("issue_priority", p),
                "issue_detail": fig("issue_detail", d)} for i, p, d in known]
-    return {"schema": 2, "report_id": rid, "run_id": "RUN-X", "signature": sig,
+    data = {"schema": 2, "report_id": rid, "run_id": run_of(rid), "signature": sig,
             "sections": [
                 {"key": "delivered", "title": "Delivered to plan", "figures": {},
                  "not_measured": None, "rows": delivered},
                 {"key": "known_issues", "title": "Known issues handed over", "figures": {},
                  "not_measured": None, "rows": issues}]}
+    data["fingerprint"] = sprint_report.fingerprint(data)
+    if isinstance(sig, dict) and not sig.get("fingerprint"):
+        data["signature"] = {**sig, "fingerprint": data["fingerprint"]}
+    return data
 
 
 def write(root: Path, rel: str, body: str) -> None:
@@ -99,6 +115,27 @@ def write(root: Path, rel: str, body: str) -> None:
 
 def write_report(root: Path, data: dict) -> None:
     write(root, f"sdlc-studio/reports/{data['report_id']}.json", json.dumps(data, indent=2) + "\n")
+
+
+def run_record_rel(rid: str) -> str:
+    return f"{RUNS_REL}/{run_of(rid)}.json"
+
+
+def seal(root: Path, data: dict) -> None:
+    """Write a report and the tracked run record `sprint sign` leaves beside it: the record holds
+    the same signature, or none for an unsigned report."""
+    write_report(root, data)
+    record = {"run_id": data["run_id"]}
+    if data.get("signature"):
+        record["signature"] = dict(data["signature"])
+    write(root, run_record_rel(data["report_id"]), json.dumps(record, indent=2) + "\n")
+
+
+def edit_json(root: Path, rel: str, change) -> None:
+    """Apply `change` to the JSON file at `rel` in place."""
+    data = json.loads((root / rel).read_text(encoding="utf-8"))
+    change(data)
+    write(root, rel, json.dumps(data, indent=2) + "\n")
 
 
 S1 = "sdlc-studio/stories/US0001-widgets-carry-a-colour.md"
@@ -123,15 +160,15 @@ def project(root: Path, rpt1_known=(), rpt2_known=(), rpt1_sig=None, rpt2_sig=No
           + verdict_row("US0001", "APPROVE", "builder-a", "builder-a", "2026-11-02")
           + verdict_row("US0001", "APPROVE", "qa-seat", "builder-a", "2026-11-03")
           + verdict_row("US0005", "APPROVE", "eng-seat", "builder-b", "2026-11-04"))
-    write_report(root, report("RPT0001", [
+    seal(root, report("RPT0001", [
         ("US0001", S1, 3, "delivered"),
         ("BG0003", B3, 2, "dropped - carried at the review cap: BG0009")],
         rpt1_sig or signature("RPT0001"), rpt1_known))
-    write_report(root, report("RPT0002", [("US0002", S2, 2, "delivered")],
-                              rpt2_sig or signature("RPT0002", "Lee Operator",
-                                                    "2026-11-12T16:30:00Z"), rpt2_known))
-    write_report(root, report("RPT0003", [("US0004", S4, 1, "delivered")], None))
-    write_report(root, report("RPT0004", [("US0005", S5, 1, "delivered")], signature("RPT0004")))
+    seal(root, report("RPT0002", [("US0002", S2, 2, "delivered")],
+                      rpt2_sig or signature("RPT0002", "Lee Operator", "2026-11-12T16:30:00Z"),
+                      rpt2_known))
+    seal(root, report("RPT0003", [("US0004", S4, 1, "delivered")], None))
+    seal(root, report("RPT0004", [("US0005", S5, 1, "delivered")], signature("RPT0004")))
     gitutil.git(["add", "-A"], root)
     gitutil.git(["commit", "-q", "-m", "fixture"], root)
 
@@ -201,6 +238,146 @@ class BuildPackTests(unittest.TestCase):
                 self.assertNotIn("RPT0001", proc.stderr, "only the refused report is named")
                 self.assertEqual(snapshot(root), before, "a refusal writes no pack")
                 self.assertFalse((root / PACK_REL).exists())
+
+    def test_a_delegated_signature_is_disclosed_with_its_decision(self) -> None:
+        """US1292 AC2: a change from a report signed under delegation says so on its Accountable
+        line and names the decision; a change from the report the operator signed says nothing
+        of delegation."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root, rpt1_sig=signature("RPT0001", delegated=True, decision="D0123"))
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            pack = (root / PACK_REL).read_text(encoding="utf-8")
+            held = {rid: json.loads((root / run_record_rel(rid)).read_text(encoding="utf-8"))[
+                "signature"]["fingerprint"] for rid in ("RPT0001", "RPT0002")}
+            lines = {unit: [ln for ln in section(pack, unit) if ln.startswith("- Accountable:")]
+                     for unit in ("US0001", "US0002")}
+            self.assertEqual(lines["US0001"], [
+                "- Accountable: Dana Reviewer, whose signature on its report was entered under "
+                "delegation, authorised by decision D0123, on 2026-11-10 over fingerprint "
+                f"{held['RPT0001']}."])
+            self.assertEqual(lines["US0002"], [
+                "- Accountable: Lee Operator, who signed its report on 2026-11-12 over "
+                f"fingerprint {held['RPT0002']}."])
+
+    def test_a_delegation_the_run_record_does_not_hold_refuses_the_pack(self) -> None:
+        """US1292: the disclosure is the run record's, so a report whose own signature drops or
+        changes the delegation, or a delegated signature naming no decision, is no evidence."""
+        for label, rpt1_sig, rel, change, says in (
+                ("dropped from the report", signature("RPT0001", delegated=True,
+                                                      decision="D0123"),
+                 "sdlc-studio/reports/RPT0001.json",
+                 lambda data: [data["signature"].pop(k) for k in ("delegated", "decision")],
+                 "disagree on delegation"),
+                ("another decision on the report", signature("RPT0001", delegated=True,
+                                                             decision="D0123"),
+                 "sdlc-studio/reports/RPT0001.json",
+                 lambda data: data["signature"].update(decision="D0999"),
+                 "disagree on delegation"),
+                ("no decision", signature("RPT0001", delegated=True), None, None,
+                 "names no authorising decision")):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                project(root, rpt1_sig=rpt1_sig)
+                if rel:
+                    edit_json(root, rel, change)
+                    gitutil.git(["commit", "-qam", "edited after signing"], root)
+                before = snapshot(root)
+                proc = run_pack(root, "RPT0001", "RPT0002")
+                self.assertNotEqual(proc.returncode, 0, proc.stdout)
+                self.assertIn("RPT0001", proc.stderr)
+                self.assertIn(says, proc.stderr)
+                self.assertNotIn("RPT0002", proc.stderr, "only the refused report is named")
+                self.assertEqual(snapshot(root), before, "a refusal writes no pack")
+
+
+class SignedReportIsVerifiedTests(unittest.TestCase):
+    """BG1524: a report is evidence only when its figures still re-derive the fingerprint its
+    committed run record signed, and that run record holds a signature that agrees with the
+    report's on who signed. The untouched project is the passing control beside each refusal."""
+
+    def refused(self, edit, *named: str) -> subprocess.CompletedProcess:
+        """Commit `edit` over a signed project, build over both signed reports, and assert the
+        build refuses, writes nothing and names each of `named`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            project(root)
+            self.assertEqual(run_pack(root, "RPT0001", "RPT0002").returncode, 0,
+                             "the untouched project builds")
+            (root / PACK_REL).unlink()
+            edit(root)
+            gitutil.git(["add", "-A"], root)
+            gitutil.git(["commit", "-qm", "edited after signing"], root)
+            before = snapshot(root)
+            proc = run_pack(root, "RPT0001", "RPT0002")
+            self.assertNotEqual(proc.returncode, 0, proc.stdout)
+            self.assertEqual(snapshot(root), before, "a refusal writes no pack")
+            self.assertFalse((root / PACK_REL).exists())
+            for text in named:
+                self.assertIn(text, proc.stderr)
+            return proc
+
+    def test_a_report_edited_after_signing_refuses_the_pack(self) -> None:
+        def figure(data: dict) -> None:
+            data["sections"][0]["rows"][0]["unit_points"]["value"] = 9
+
+        def restamped(data: dict) -> None:
+            # The figure moved and both fingerprints on the report were re-stamped to match it:
+            # only the run record still holds what was signed.
+            figure(data)
+            data["fingerprint"] = data["signature"]["fingerprint"] = (
+                sprint_report.fingerprint(data))
+
+        for label, change in (("a figure", figure), ("a figure, re-stamped", restamped)):
+            with self.subTest(label):
+                proc = self.refused(
+                    lambda root, change=change: edit_json(
+                        root, "sdlc-studio/reports/RPT0001.json", change),
+                    "RPT0001", "no longer re-derives its signed fingerprint")
+                self.assertNotIn("RPT0002", proc.stderr, "only the edited report is named")
+
+    def test_an_edited_principal_refuses_the_pack(self) -> None:
+        proc = self.refused(
+            lambda root: edit_json(root, "sdlc-studio/reports/RPT0002.json",
+                                   lambda data: data["signature"].update(principal="Kim Other")),
+            "RPT0002", "disagree on principal", "'Kim Other'", "'Lee Operator'")
+        self.assertNotIn("RPT0001", proc.stderr, "only the edited report is named")
+
+    def test_a_signature_the_run_record_does_not_hold_refuses_the_pack(self) -> None:
+        """The report's own signature re-pointed at another fingerprint, its figures untouched,
+        and a run record that signs another report: neither is the run's signature of it."""
+        for label, rel, change, says in (
+                ("re-pointed fingerprint", "sdlc-studio/reports/RPT0002.json",
+                 lambda data: data["signature"].update(fingerprint="feedfacefeedface"),
+                 "disagree on fingerprint"),
+                ("re-dated", "sdlc-studio/reports/RPT0002.json",
+                 lambda data: data["signature"].update(signed_at="2026-11-30T09:00:00Z"),
+                 "disagree on signed_at"),
+                ("another report signed", run_record_rel("RPT0002"),
+                 lambda rec: rec["signature"].update(report="RPT0009"),
+                 "signs RPT0009, not RPT0002")):
+            with self.subTest(label):
+                proc = self.refused(lambda root, rel=rel, change=change: edit_json(
+                    root, rel, change), "RPT0002", says)
+                self.assertNotIn("RPT0001", proc.stderr, "only the edited report is named")
+
+    def test_a_report_with_no_signature_in_the_run_record_refuses_the_pack(self) -> None:
+        rel = run_record_rel("RPT0002")
+        for label, edit in (
+                ("no signature", lambda root: edit_json(root, rel,
+                                                        lambda rec: rec.pop("signature"))),
+                ("an empty signature", lambda root: edit_json(
+                    root, rel, lambda rec: rec.update(signature={}))),
+                ("no run record", lambda root: (root / rel).unlink()),
+                # The report itself, reached through a run id that leaves the runs folder,
+                # would carry the very signature it is checked against.
+                ("a run id outside the runs folder", lambda root: edit_json(
+                    root, "sdlc-studio/reports/RPT0002.json",
+                    lambda data: data.update(run_id="../RPT0002")))):
+            with self.subTest(label):
+                proc = self.refused(edit, "RPT0002", "unsigned in the run record")
+                self.assertNotIn("RPT0001", proc.stderr, "only the unsigned report is named")
 
 
 class CommittedOnlyTests(unittest.TestCase):
