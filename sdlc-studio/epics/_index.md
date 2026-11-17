@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 71 |
+| Draft | 72 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 271 |
 | Superseded | 33 |
-| **Total** | **375** |
+| **Total** | **376** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -126,6 +126,7 @@
 | [EP0373](EP0373-existing-behaviour-is-pinned-by-a-test-before.md) | Existing behaviour is pinned by a test before a story changes it | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0374](EP0374-a-generated-spec-can-draw-on-what-the.md) | A generated spec can draw on what the system does at run time | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0375](EP0375-a-review-can-see-the-running-application.md) | A review can see the running application | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0376](EP0376-review-in-this-repository-treats-a-change-to.md) | Review in this repository treats a change to a gate as high risk | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

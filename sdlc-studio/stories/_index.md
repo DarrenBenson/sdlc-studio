@@ -7,7 +7,7 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 191 |
+| Draft | 193 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 93 |
 | Blocked | 0 |
-| **Total** | **1312** |
+| **Total** | **1314** |
 
 ## All Stories
 
@@ -350,6 +350,8 @@
 | [US1310](US1310-prd-and-trd-generate-read-a-declared-generate.md) | PRD and TRD generate read a declared `generate.runtime_inputs` folder of schema dumps, stored-procedure source and trace exports, cite each file used, and state that the skill never connects to a running system | Draft | EP0374 | 2026-11-17 | 2026-11-17 |
 | [US1311](US1311-verify-ac-runs-a-verify-app-command-line.md) | `verify_ac` runs a `Verify: app <command>` line and records the evidence files it wrote, failing a command that exits 0 with no evidence | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
 | [US1312](US1312-critic-py-brief-lists-a-unit-s-recorded.md) | `critic.py brief` lists a unit's recorded app evidence paths, and none without failing when it has no app criterion | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
+| [US1313](US1313-this-repository-s-config-declares-the-d0520-component.md) | This repository's config declares the D0520 component map, and a test pins each gate script to high | Draft | EP0376 | 2026-11-17 | 2026-11-17 |
+| [US1314](US1314-reconcile-reports-a-story-whose-stamped-risk-class.md) | Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it | Draft | EP0376 | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

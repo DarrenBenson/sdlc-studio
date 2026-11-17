@@ -8,13 +8,13 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 82 |
+| In Progress | 83 |
 | Complete | 557 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **738** |
+| **Total** | **739** |
 
 ## All Changes
 
@@ -150,6 +150,7 @@
 | [CR-0736](CR0736-sprint-plan-names-the-files-a-story-will.md) | Sprint plan names the files a story will change that no test reaches, and the brownfield runbook gains a pin-behaviour stage | In Progress | Medium | Feature | 2026-11-17 | EP0373 |
 | [CR-0737](CR0737-generate-mode-reads-schema-dumps-stored-procedure-source.md) | Generate mode reads schema dumps, stored-procedure source and trace exports from a declared folder | In Progress | Low | Feature | 2026-11-17 | EP0374 |
 | [CR-0738](CR0738-a-criterion-can-name-a-project-supplied-app.md) | A criterion can name a project-supplied app command, and the review records the evidence it produced | In Progress | Low | Feature | 2026-11-17 | EP0375 |
+| [CR-0739](CR0739-this-repository-declares-a-component-map-so-its.md) | This repository declares a component map so its gate scripts are classed high risk | In Progress | High | Improvement | 2026-11-17 | EP0376 |
 
 ## Archived Releases
 
