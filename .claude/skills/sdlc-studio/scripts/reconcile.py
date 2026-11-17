@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import conventions, sdlc_md  # noqa: E402
+from lib import conventions, risk_class, sdlc_md  # noqa: E402
 
 # The default sweep, DERIVED from `sdlc_md.ARTIFACT_TYPES` - never hand-listed. A type
 # missing from this list is a type NO reconcile path can census: detect, apply,
@@ -94,6 +94,7 @@ DRIFT_KINDS = (
     "spawned-column",
     "supersession-asymmetry",
     "epic-index-derivable",
+    "risk-class",
 )
 
 # Statuses that do NOT imply a backing file yet. An UNLINKED index row in one of
@@ -1593,6 +1594,73 @@ def apply_epic_points(repo_root: Path | str, dry_run: bool = False) -> dict:
     return {"synced": synced}
 
 
+#: A story's `Risk-class` stamp at an anchor `extract_field` reads it from: its own line, or a
+#: `·` run sharing a line with other fields. Group 1 runs up to the value; group 2 is the value.
+_RISK_CLASS_STAMP_RE = re.compile(
+    r"((?:^>?[^\S\n]*|·[^\S\n]*)\*\*" + re.escape(risk_class.FIELD) + r":\*\*[^\S\n]*)"
+    r"([A-Za-z]+)", re.M)
+
+
+def _risk_class_raises(repo_root: Path) -> list[dict]:
+    """Each open story whose stamped `Risk-class` ranks below the class its Affects get from the
+    component map now: {id, path, stamped, mapped, components}. The one reading `detect` and
+    `apply` share, so they cannot disagree on what drifts. A stamp wins over the map
+    (`critic.unit_risk_class`), so a map declared or widened after refine leaves every earlier
+    story at its old class. Empty with no map declared (every story is then the default class).
+    A closed story is history, an unstamped story or a stamp outside the vocabulary is already
+    read from the map, and a stamp ABOVE the map may be an operator's raise, which nothing here
+    can tell from a class an older map gave: none of them drifts."""
+    rmap = risk_class.load_map(repo_root)
+    if not rmap.declared:
+        return []
+    vocab = sdlc_md.status_vocab("story", repo_root)
+    raises: list[dict] = []
+    for path in sdlc_md.artifact_files("story", repo_root):
+        text = sdlc_md.read_text_safe(path)
+        stamped = (sdlc_md.extract_field(text, risk_class.FIELD) or "").strip().lower()
+        if stamped not in risk_class.CLASSES:
+            continue
+        status = (sdlc_md.extract_field(text, "Status") or "").strip()
+        if sdlc_md.is_terminal_status("story", _canonical_status(status, vocab) or status):
+            continue
+        mapped, components = rmap.classify(sdlc_md.affects_files(text))
+        if risk_class.rank(stamped) < risk_class.rank(mapped):
+            raises.append({"id": sdlc_md.extract_record_id(path.stem) or path.stem,
+                           "path": path, "stamped": stamped, "mapped": mapped,
+                           "components": components})
+    return raises
+
+
+def risk_class_drift(repo_root: Path | str) -> list[dict]:
+    """An open story stamped below the class the map gives its Affects (`_risk_class_raises`)."""
+    return [{"type": "story", "id": r["id"], "kind": "risk-class",
+             "stamped": r["stamped"], "mapped": r["mapped"],
+             "file_status": None, "index_status": None,
+             "fix": (f"raise {r['id']} {risk_class.FIELD} from {r['stamped']} to {r['mapped']} "
+                     f"(its Affects touch {', '.join(r['components'])})")}
+            for r in _risk_class_raises(Path(repo_root))]
+
+
+def apply_risk_class(repo_root: Path | str, dry_run: bool = False) -> dict:
+    """Raise each drifting story's `Risk-class` stamp to the class the map gives its Affects,
+    rewriting only the stamp's value. It never lowers one: the planner reports no stamp above the
+    map, since it may be an operator's deliberate raise. Idempotent.
+    Returns {synced: [ids], raised: [{id, from, to}]}."""
+    synced: list[str] = []
+    raised: list[dict] = []
+    for r in _risk_class_raises(Path(repo_root)):
+        original = sdlc_md.read_text_safe(r["path"])
+        updated, n = _RISK_CLASS_STAMP_RE.subn(lambda m, to=r["mapped"]: m.group(1) + to,
+                                               original, count=1)
+        if not n:
+            continue
+        synced.append(r["id"])
+        raised.append({"id": r["id"], "from": r["stamped"], "to": r["mapped"]})
+        if not dry_run:
+            sdlc_md.atomic_write(r["path"], updated)
+    return {"synced": synced, "raised": raised}
+
+
 def _artefact_index(repo_root: Path) -> dict[str, tuple[str, str, str]]:
     """{normalised id -> (display id, type, text)} across every artefact type - the one census
     the link checks read, so a child and its parent are looked up the same way whatever their
@@ -2476,6 +2544,9 @@ def _detect_all(repo_root: Path, scope: str | None) -> tuple[dict, list[dict]]:
         all_drift.extend(epic_status_stale_drift(repo_root))
         all_drift.extend(epic_points_drift(repo_root))
         all_drift.extend(epic_index_derivable_drift(repo_root))
+    # A story's risk-class stamp belongs to the story files: the default sweep and 'stories'.
+    if scope in (None, "stories"):
+        all_drift.extend(risk_class_drift(repo_root))
     # The request<->child link check and the undecomposed check are cross-type (a CR under an RFC,
     # an epic under a CR), so they run on the default full sweep like the meta indexes, not under a
     # single pipeline scope. link-asymmetry is always on (it only fires on links a project chose to
@@ -3740,6 +3811,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
     spawned_types = [t for t in sdlc_md.DISCOVERY_TYPES
                      if args.scope is None or t in SCOPE_TYPES.get(args.scope, [])]
     do_spawned = bool(spawned_types)
+    do_risk = args.scope in (None, "stories")   # gated exactly as the detector is
     if getattr(args, "format", "text") == "json":
         by_type = {t: apply_type(t, repo_root, dry_run=args.dry_run, prune_orphans=prune)
                    for t in types}
@@ -3754,6 +3826,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
         if do_spawned:
             by_type["spawned_column"] = apply_spawned_column(
                 repo_root, dry_run=args.dry_run, types=spawned_types)
+        if do_risk:
+            by_type["risk_class"] = apply_risk_class(repo_root, dry_run=args.dry_run)
         if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
             by_type["derivable_requests"] = apply_derivable_requests(
                 repo_root, dry_run=args.dry_run)
@@ -3875,6 +3949,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
             print(f"could NOT sync spawned-work cell for {h['id']}: {h['reason']}",
                   file=sys.stderr)
             unapplied += 1
+    if do_risk:
+        for r in apply_risk_class(repo_root, dry_run=args.dry_run)["raised"]:
+            print(f"{'WOULD raise' if args.dry_run else 'raised'} {r['id']} "
+                  f"{risk_class.FIELD}: {r['from']} -> {r['to']}")
+            n += 1
     # Full-sweep only, and gated exactly as the detector is: an unenforced project closes its
     # requests by assertion, so nothing here may move them.
     if args.scope is None and sdlc_md.two_backlog_enforced(repo_root):
