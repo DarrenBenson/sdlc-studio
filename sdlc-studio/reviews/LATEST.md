@@ -43,6 +43,12 @@ SIGNED over RPT0007).
   through XDG_CONFIG_HOME; restored by hand, backup beside it), BG1514 (the module-alone flake
   that refused the tag push), BG1508, BG1510 to BG1513, and BG1301 (the .version restamp, its
   fourth recurrence; BG1509 closed as its duplicate).
+- **The audit** (AUDIT-2026-11-17, project profile, after the tag): 68 survivors of 76 candidates,
+  filed as BG1516 to BG1566, CR0714 to CR0728, RFC0065 and RFC0066, with BG1567 and BG1568 for
+  two frictions met filing them. Twelve are High, among them gates that pass work they never
+  judged (BG1519, BG1521, BG1522, BG1524). D0502 plans runs sixteen to twenty to deliver them,
+  about 225 points; RFC0065 (who signs when the operator is away) and RFC0066 (what a gate does
+  without PyYAML) need the operator's ruling before run twenty.
 - **Headroom**: the green-run noise total sits at 104 of 104, so one more leaked line reddens
   both CI and the push.
 
