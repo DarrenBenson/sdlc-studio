@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 377 |
+| Open | 430 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 53 |
 | Superseded | 52 |
-| **Total** | **1515** |
+| **Total** | **1568** |
 
 ## All Bugs
 
@@ -591,6 +591,59 @@
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Open | Low | 2026-11-16 | 2026-11-16 |
+| [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1518](BG1518-no-gate-reads-the-weekly-corpus-verify-run.md) | No gate reads the weekly corpus-verify run, the only automated run of every Verify line | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1519](BG1519-the-push-gate-s-full-suite-lane-and.md) | The push gate's full-suite lane and gate.py --run-tests pass a run in which no test ran | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1521](BG1521-the-tag-gate-checks-the-known-issues-page.md) | The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1524](BG1524-the-evidence-pack-accepts-an-edited-report-as.md) | The evidence pack accepts an edited report as signed because it never checks the fingerprint or the run record | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1525](BG1525-prd-section-9-says-every-gate-bearing-key.md) | PRD section 9 says every gate-bearing key defaults on with one exception, but several shipped gate keys default off | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1526](BG1526-the-prd-flags-table-gives-wrong-defaults-for.md) | The PRD flags table gives wrong defaults for lessons.loop and schema_version | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1527](BG1527-the-prd-section-3-status-note-still-calls.md) | The PRD section 3 status note still calls the shipped token forecast a falsified hypothesis | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1528](BG1528-the-prd-context-section-still-calls-the-installed.md) | The PRD Context section still calls the installed copy the back-port source and cites CLAUDE.md for it | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1529](BG1529-the-trd-promises-sub-second-reconcile-and-status.md) | The TRD promises sub-second reconcile and status, which this repository misses by more than tenfold | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1530](BG1530-adr-012-says-persona-learning-approval-close-listing.md) | ADR-012 says persona learning approval, close listing and signature are unbuilt while they are Done and shipped | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1555](BG1555-the-prd-gives-three-different-accounts-of-what.md) | The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1556](BG1556-the-trd-storage-inventory-omits-both-committed-decision.md) | The TRD storage inventory omits both committed decision stores and does not tell the two decisions ledgers apart | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1557](BG1557-stale-summary-sentences-and-tables-in-the-trd.md) | Stale summary sentences and tables in the TRD contradict its own detailed sections and the code | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1558](BG1558-ts0001-is-recorded-complete-while-its-own-check.md) | TS0001 is recorded Complete while its own check reports 28 findings and nothing runs that check | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1559](BG1559-the-skill-maintainer-persona-card-states-two-frustrations.md) | The skill maintainer persona card states two Frustrations as current that were fixed weeks ago | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1560](BG1560-the-superseded-personas-md-says-do-not-update.md) | The superseded personas.md says do not update it, has been edited on three later dates and keeps a false date | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1561](BG1561-three-6-4-epics-read-done-while-their.md) | Three 6.4 epics read Done while their own completion-bar criteria are undelivered, unticked and point nowhere | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1562](BG1562-archive-py-builds-its-output-path-from-an.md) | archive.py builds its output path from an unvalidated release label and can write outside the workspace | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1563](BG1563-the-action-pin-guard-passes-a-workflow-step.md) | The action-pin guard passes a workflow step that uses a mutable docker image tag | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1564](BG1564-plan-py-archive-accepts-a-slug-with-parent.md) | plan.py archive accepts a slug with parent segments and moves a file from outside the plans directory | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1565](BG1565-the-trd-stamped-6-4-0-still-says.md) | The TRD stamped 6.4.0 still says persona-learning approval and signing are open stories and no learning is live | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1566](BG1566-the-generated-reference-catalogue-in-help-references-md.md) | The generated reference catalogue in help/references.md links all 58 references to paths that do not exist | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

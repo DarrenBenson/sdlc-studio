@@ -1,17 +1,17 @@
 # RFC Registry Index
 
-**Last Updated:** 2026-11-10
+**Last Updated:** 2026-11-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 2 |
 | In Review | 0 |
 | Accepted | 59 |
 | Superseded | 2 |
 | Withdrawn | 3 |
-| **Total** | **64** |
+| **Total** | **66** |
 
 ## All RFCs
 
@@ -26,6 +26,8 @@
 | [RFC-0062](RFC0062-token-efficient-delivery-a-sprint-costs-at-most.md) | Token-efficient delivery: a sprint costs at most 0.6M priced tokens per point, measured the same way in every supported harness | High | Accepted | Claude Opus 5.5 | 2026-11-06 | CR0665, CR0666, CR0667, CR0668, CR0669, CR0670, CR0671, CR0672, CR0673, CR0674, CR0675, CR0676, CR0677, CR0678, CR0679, CR0680, CR0681, CR0682, CR0683 |
 | [RFC-0063](RFC0063-human-in-the-lead-the-accountable-engineering-lead.md) | Human in the lead: the accountable engineering lead becomes the Primary, and every change carries evidence a change board accepts and a cost a team can read | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-09 | CR0689, CR0690, CR0691, CR0692, CR0693, CR0694, CR0702, CR0704, CR0706 |
 | [RFC-0064](RFC0064-production-learning-and-risk-proportionate-review.md) | Production learning and risk-proportionate review | High | Accepted | Darren Benson (operator); drafted with Claude Opus 5.5 | 2026-11-10 | CR0695, CR0696 |
+| [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Draft | sdlc-studio | 2026-11-17 | -- |
+| [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Draft | sdlc-studio | 2026-11-17 | -- |
 
 ## Archived Releases
 

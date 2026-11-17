@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-17
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 39 |
+| Proposed | 54 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 557 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **713** |
+| **Total** | **728** |
 
 ## All Changes
 
@@ -125,6 +125,21 @@
 | [CR-0711](CR0711-show-each-open-lane-s-liveness-so-a.md) | Show each open lane's liveness, so a stalled builder is caught in minutes rather than hours | Proposed | Medium | Feature | 2026-11-16 | -- |
 | [CR-0712](CR0712-prevent-or-retire-lesson-lc-010-the-push.md) | Prevent or retire lesson LC-010 (the push gate and CI disagree on the runner) | Proposed | Medium | Improvement | 2026-11-16 | -- |
 | [CR-0713](CR0713-prevent-or-retire-lesson-lc-019-a-push.md) | Prevent or retire lesson LC-019 (a push-gate guard the per-commit run skips) | Proposed | Medium | Improvement | 2026-11-16 | -- |
+| [CR-0714](CR0714-record-in-the-trd-that-config-armed-gates.md) | Record in the TRD that config-armed gates stand down without PyYAML, and correct the sentences that deny it | Proposed | High | Improvement | 2026-11-17 | -- |
+| [CR-0715](CR0715-decompose-rfc0062-phases-2-and-5-and-its.md) | Decompose RFC0062 Phases 2 and 5 and its models and effort review so its cost bar can be judged | Proposed | High | Improvement | 2026-11-17 | -- |
+| [CR-0716](CR0716-give-outcome-o11-its-declared-monthly-budget-or.md) | Give outcome O11 its declared monthly budget, or mark the outcome partial until it exists | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0717](CR0717-document-the-sequential-id-era-s-concurrency-story.md) | Document the sequential id era's concurrency story in the TRD, since this repository is pinned to it | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0718](CR0718-give-the-eval-scenarios-a-place-in-the.md) | Give the eval scenarios a place in the release steps, or stop the TSD presenting them as a gated test level | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0719](CR0719-state-windows-support-for-the-script-tier-in.md) | State Windows support for the script tier in the TSD and either test it or declare it out of scope | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0720](CR0720-deliver-the-monthly-team-budget-the-primary-persona.md) | Deliver the monthly team budget the Primary persona's End goal 3 promises, or take it out of the card | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0721](CR0721-reconcile-draft-us1034-and-us1035-with-the-second.md) | Reconcile Draft US1034 and US1035 with the second seat that 6.4 delivered from the risk class under CR0696 | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0722](CR0722-tool-the-machinery-share-so-the-sprint-plan.md) | Tool the machinery share so the sprint plan and report state it by theme and by path, as RFC0063 WS7 rules | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0723](CR0723-mark-rfc0060-partially-superseded-and-link-d0236-to.md) | Mark RFC0060 partially superseded and link D0236 to the decisions that cancelled its plan | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0724](CR0724-adr-006-should-state-the-strength-of-its.md) | ADR-006 should state the strength of its N=5 evidence, its source's failure mode and the right instance count | Proposed | Low | Improvement | 2026-11-17 | -- |
+| [CR-0725](CR0725-give-the-advisory-disclosure-lint-lane-a-committed.md) | Give the advisory disclosure lint lane a committed baseline that fails on a rise | Proposed | Low | Improvement | 2026-11-17 | -- |
+| [CR-0726](CR0726-retire-or-rewire-the-three-unreferenced-persona-prompt.md) | Retire or rewire the three unreferenced persona prompt templates that teach the pre-Cooper persona model | Proposed | Low | Improvement | 2026-11-17 | -- |
+| [CR-0727](CR0727-remove-the-superseded-review-seat-charter-template-now.md) | Remove the superseded review-seat-charter template now that nothing references it | Proposed | Low | Improvement | 2026-11-17 | -- |
+| [CR-0728](CR0728-carry-each-changelog-fragment-s-unit-id-into.md) | Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut | Proposed | Low | Improvement | 2026-11-17 | -- |
 
 ## Archived Releases
 
