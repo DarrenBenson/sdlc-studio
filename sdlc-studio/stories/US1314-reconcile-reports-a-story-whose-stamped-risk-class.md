@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py, changelog.d/US1314.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/reference-reconcile.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py, changelog.d/US1314.md
 > **Epic:** EP0376
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -51,3 +51,4 @@
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-11-17 | Claude Opus 5.5 (grooming) | Groomed: authored criteria with Verify lines and notes |
+| 2026-11-17 | Claude Opus 5.5 (run sixteen) | Affects widened in run: lib/sdlc_md.py, whose REMEDIATION registry must name every drift kind reconcile emits (test_sdlc_md RemediationTests) |
