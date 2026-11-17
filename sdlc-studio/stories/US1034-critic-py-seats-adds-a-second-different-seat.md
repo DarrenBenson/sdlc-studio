@@ -1,6 +1,7 @@
 # US1034: critic.py seats adds a second, different seat to a high-risk unit
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US1152
 > **Delivers:** CR0622
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new

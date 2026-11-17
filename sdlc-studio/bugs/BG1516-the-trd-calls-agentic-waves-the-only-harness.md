@@ -27,8 +27,12 @@ Add a subsection to the TRD's execution architecture describing the lane runner:
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The TRD's Agentic execution section and its third open question both say the Agent-tool wave fan-out is the one part of the skill that is not harness-neutral.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a subsection to the TRD's execution architecture describing the lane runner: what `sprint.py lane run` starts, in which worktree, for which harnesses and...
+- [ ] **AC1** Given `sdlc-studio/trd.md`, when its execution architecture section is read, then it has a subsection for the headless lane runner that says what `sprint.py lane run` starts and in which worktree, and names every harness `headless_command` in `lib/lanes.py` builds a command for, with the permission flags each is given. Fails on: a harness the code drives that the TRD does not name, or a TRD with no lane runner subsection.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_every_headless_harness_is_named_with_its_flags
+- [ ] **AC2** Given the Agentic execution subsection and open question 3 of the TRD, when they are read, then neither calls the Agent-tool wave fan-out the one or only harness-specific part of the skill, and open question 3 is closed or says which harnesses the lane runner already drives. Fails on: either passage still calling agentic waves the only part that is not harness-neutral.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_agentic_waves_are_not_called_the_only_harness_specific_part
+- [ ] **AC3** Given the Network paths table in section 5 and the Threat Model table in section 9, when they are read, then each has a row for the agent CLI the lane runner spawns (a networked process holding write tools), and each row names the control that bounds it. Fails on: either table without the row, or a row whose control cell is empty.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_the_spawned_agent_has_a_network_row_and_a_threat_row
 
 ## Revision History
 

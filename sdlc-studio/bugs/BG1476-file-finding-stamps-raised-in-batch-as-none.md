@@ -26,8 +26,10 @@ Stamp the open run's id when a run is open, falling back to 'none open' only whe
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Every finding filed during run thirteen (BG1455 to BG1473, while RUN-01M7EYR3 was open) carries `Raised-in-batch: none open - raised outside a delivery batch...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Stamp the open run's id when a run is open, falling back to 'none open' only when no run is.
+- [ ] **AC1** Given a run opened with `sprint.py plan --write`, when `file_finding.py file --type bug` files a finding, then its Raised-in-batch line names that run's id and ends with the moment of filing. Fails on: the stamp reading none open while a run is open, or the moment no longer being the stamp's last token.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_a_finding_filed_in_an_open_run_names_the_run
+- [ ] **AC2** Given no open run, when a finding is filed, then the stamp reads none open with the moment of filing; and given a caller that names its own batch, that value is stamped unchanged. Fails on: a closed or absent run named as open, or the close's own stamp overwritten.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::RaisedInBatchStampTests::test_no_open_run_still_reads_none_open
 
 ## Revision History
 

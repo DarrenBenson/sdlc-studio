@@ -28,8 +28,11 @@ Extend `ts_check` in `verify_ac.py` so that a matrix row marked with a pass word
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The AC Coverage Matrix of `sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md` marks every row Pass.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Extend `ts_check` in `verify_ac.py` so that a matrix row marked with a pass word whose Test Cases cell names a test file and test title is resolved against the...
+- [ ] **AC1** Given a test spec whose AC Coverage Matrix marks a row Pass and whose Test Cases cell names a test file and test title that nothing in the tree defines, when `verify_ac.py ts-check --spec` reads it, then the check reports a finding naming that row and does not print `ts-check: 0 finding(s)`. Fails on: a Pass row over a test nobody can run reading as clean.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding
+- [ ] **AC2** Given the same spec with one Pass row naming a test that exists in the tree and one whose Test Cases cell names no test file (a manual check), when `ts-check` reads it, then neither row is reported. Fails on: a finding against a resolvable row, or against a cell that names no file.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings
+- [ ] **AC3** Given `sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md` after the fix, when `ts-check --spec` reads it with the new resolution, then it reports no finding: the rows for US0052 AC4 and US0054 AC1, AC2 and AC4 match the stories' manual Verify lines after US0921 and the spec no longer describes a gate mutation lane as live. Fails on: a row still naming `MutationLaneTests` or `test_runner_error_not_a_kill`.
 
 ## Revision History
 

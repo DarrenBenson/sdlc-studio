@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: Each effort arm is summarised on its own
+
+- **Given** a results log holding measured rows for one fixture, arm and harness at two effort levels, each row carrying its points, review rounds, rejections and held-back result, and one older row that names no effort
+- **When** `runner.py summary` is run
+- **Then** the two effort levels are separate groups, each stating its effort, mean priced tokens per point, mean review rounds, rejections and held-back pass rate, and the row naming no effort keeps the group key it has today. Fails on: rows of two effort levels pooled into one mean, or an older log whose keys change
+- **Verify:** pytest tools/tests/test_bench_effort_summary.py::BenchEffortSummaryTests::test_each_effort_arm_reports_cost_per_point_rounds_rejections_and_score
+
+### AC2: A figure no row can supply reads as absent, never zero
+
+- **Given** a group whose rows carry no points, and a group whose rows carry no review rounds or rejections
+- **When** `runner.py summary` is run
+- **Then** the first group's priced tokens per point is null with the reason that its rows name no points, and the second group's review rounds and rejections are null; a group with a genuine zero rejections reads 0. Fails on: a missing count printed as 0, which would read as an arm that was never rejected
+- **Verify:** pytest tools/tests/test_bench_effort_summary.py::BenchEffortSummaryTests::test_an_absent_figure_is_null_and_a_real_zero_is_zero
+
+### AC3: A run records what the summary needs from the finished workspace
+
+- **Given** a finished workspace whose review ledger holds two rounds on one unit, one of them a rejection, and a second workspace that holds no review ledger
+- **When** `runner.py run` records each
+- **Then** the first row carries the fixture's points, 2 review rounds and 1 rejection read from that ledger; the second row carries no review rounds or rejections. Fails on: counts typed by hand that the workspace does not hold, or an arm with no ledger recorded as zero rounds
+- **Verify:** pytest tools/tests/test_bench_effort_summary.py::BenchEffortSummaryTests::test_a_run_reads_rounds_and_rejections_from_the_workspace_ledger
 
 ## Revision History
 

@@ -26,8 +26,12 @@ Refuse an `--agent` whose unit is not in the batch, naming it; read the run stat
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1141's QA review (qa-seat-US1141-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Refuse an `--agent` whose unit is not in the batch, naming it; read the run state through the guarded loader and refuse with exit 2 when it cannot be read...
+- [ ] **AC1** Given an open run whose batch has no US9999, when `sprint.py handoff --agent US9999=abc` is run, then it exits 2 naming US9999 and writes no brief; an `--agent` for a unit in the batch is still carried into the brief. Fails on: exit 0 with the agent id dropped.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::HandoffCliTests::test_an_agent_for_a_unit_outside_the_batch_is_refused_by_name
+- [ ] **AC2** Given a `run-state.json` that cannot be read, when `sprint.py handoff` and `sprint.py resume` are each run, then each exits 2 with a one-line refusal naming the file and no traceback. Fails on: a traceback and exit 1.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::ResumeCliTests::test_an_unreadable_run_state_is_refused_with_exit_2_by_both_verbs
+- [ ] **AC3** Given `sprint.py plan --write` in text mode, when its stdout and stderr are captured apart, then the next-step line is on stdout and not on stderr. Fails on: the line moved to stderr passing a test that merges the two streams.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::PlanNextStepTests::test_the_next_step_line_is_printed_to_stdout
 
 ## Revision History
 

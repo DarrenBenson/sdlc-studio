@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: The record takes the runner's report and keeps the mutant list
+
+- **Given** a unit and the report the mutation runner wrote for it: three mutants, all killed
+- **When** `critic.py self-check record --unit <id> --claims <file> --mutants-from <report>` is run
+- **Then** the row's mutant counts equal the report's, and the full list (each mutant's file, old, new, test and verdict) is kept with the row where `critic.py brief` can read it; a record made with `--mutants` and no report still succeeds. Fails on: a record that keeps only the counts, so the brief cannot say which mutants the author ran
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_the_runners_report_is_recorded_with_its_full_mutant_list
+
+### AC2: A survivor with no answer is refused
+
+- **Given** a runner report with one survivor, handed in once with no answer for it and once with one
+- **When** `critic.py self-check record --mutants-from <report>` is run for each
+- **Then** the first is refused, naming the survivor, and writes nothing; the second is recorded with the answer beside the survivor; a report whose mutant names a test outside the unit's Affects is refused as `--mutants` refuses it. Fails on: an unanswered survivor recorded and so reaching review as though the author had ruled on it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_report_with_an_unanswered_survivor_is_refused
+
+### AC3: The author's brief prints the runner command for the unit's Verify selectors
+
+- **Given** a unit whose criteria carry two pytest Verify selectors
+- **When** its author self-check section is printed by `sprint.py lane brief`, and `reference-sprint-toolchain.md` and `reference-agent-prompt-template.md` are read
+- **Then** the section prints the runner command with the unit's id and its Verify selectors and the `--mutants-from` record command, and no longer asks for hand-chosen mutants as the only route; the runbook's mutation row and the prompt template name the same command, which the `mutation.py` parser accepts. Fails on: a brief that still tells the author to choose and apply mutants by hand, or pages naming a command the parser refuses
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_the_author_brief_names_the_runner_command_for_the_units_selectors
 
 ## Revision History
 

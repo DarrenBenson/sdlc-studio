@@ -27,8 +27,12 @@ Collect every `uses:` value, not only those containing an at sign. Skip local re
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The guard tools/`check_action_pins.sh` exists to ensure every Action in a workflow is pinned to an immutable reference.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Collect every `uses:` value, not only those containing an at sign.
+- [ ] **AC1** Given a workflow with a step whose `uses:` value is a docker reference by tag, or a docker reference with no tag, when tools/`check_action_pins.sh` runs over it, then it exits non-zero and names the step. Fails on: the guard printing that all Actions are pinned while a mutable image tag is in use.
+  - **Verify:** pytest tools/tests/test_check_action_pins.py::ActionPinTests::test_docker_tag_ref_flagged
+- [ ] **AC2** Given a workflow with a docker reference pinned by a 64-hex sha256 digest and a local reference beginning with a dot and a slash, when the guard runs, then it exits 0. Fails on: a digest-pinned image or a local reference reported as unpinned.
+  - **Verify:** pytest tools/tests/test_check_action_pins.py::ActionPinTests::test_docker_digest_and_local_ref_pass
+- [ ] **AC3** Given a reusable workflow or repository Action referenced with no at sign and no leading dot and slash, when the guard runs, then it is reported, while the existing SHA-pinned, tag, branch and short-SHA cases behave as before. Fails on: a `uses:` value escaping collection because it holds no at sign.
+  - **Verify:** pytest tools/tests/test_check_action_pins.py::ActionPinTests::test_ref_without_an_at_sign_flagged
 
 ## Revision History
 

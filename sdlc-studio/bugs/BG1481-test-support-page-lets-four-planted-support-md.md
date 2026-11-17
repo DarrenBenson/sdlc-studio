@@ -24,9 +24,12 @@ Assert SUPPORT.md names no install command anywhere (code block or prose) and no
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: US1163's QA review (verdict 7dee924166ea-2b0da0ce) killed six of ten mutants against tools/tests/`test_support_page.py.` Survivors: a `gh skills install` line...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Plant each of the four edits in SUPPORT.md and run pytest tools/tests/`test_support_page.py`: each passes.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Assert SUPPORT.md names no install command anywhere (code block or prose) and no channel outside the repository's issues and security policy; extend...
+- [ ] **AC1** Given a copy of SUPPORT.md with a `gh skills install` line planted in a code block, and another with an install command written in plain prose, when the support page check reads each copy, then each is reported as an install command the page must not give. Fails on: either planted copy passing.
+  - **Verify:** pytest tools/tests/test_support_page.py::SupportPageTests::test_an_install_command_anywhere_is_reported
+- [ ] **AC2** Given a copy of SUPPORT.md naming Stack Overflow, and another naming IRC, as a channel in prose, when the check reads each copy, then each is reported as a channel outside the repository's issues and security policy; the page as committed reports nothing. Fails on: a channel named in prose passing, or the real page reported.
+  - **Verify:** pytest tools/tests/test_support_page.py::SupportPageTests::test_a_channel_named_in_prose_is_reported
+- [ ] **AC3** Given a root doc with a relative link to a .py or .yml file that does not exist, and one to such a file that does, when `check_root_docs` runs, then the first is reported as file missing and the second is not. Fails on: only Markdown link targets being checked.
+  - **Verify:** pytest tools/tests/test_check_links.py::RootDocsTests::test_a_missing_non_markdown_link_is_reported
 
 ## Revision History
 

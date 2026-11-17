@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_persona_coherence.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
+> **Affects:** tools/tests/test_persona_coherence.py, tools/tests/test_lean_prd_refresh.py, sdlc-studio/personas/jonah-reyes-team-lead.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
 > **Evidence:** US1146-verdict-r1 (RUN-01M7061X) and its mutant log
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -25,8 +25,14 @@ Pin each Primary to its own interface by name in both checks, and have validate.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1146's QA review (qa-seat-US1146-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Pin each Primary to its own interface by name in both checks, and have validate.py compare the cast role per interface rather than the cell as a whole; add the...
+- [ ] **AC1** Given scratch copies of the cards in which the two Primaries' interfaces are swapped in Trevor Hale's Boundaries, and in Jonah Reyes's cast line, when the persona coherence checks read each copy, then each swap is reported, and the cards as committed pass. Fails on: a check that accepts either Primary beside either interface.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::TwoPrimaryCastTests::test_a_primary_swapped_to_the_other_interface_fails_trevors_boundaries_and_jonahs_cast_line
+- [ ] **AC2** Given two Primary cards whose Interface cells name the same interface in different words, when `validate.py personas` runs, then it reports the second Primary for that interface and exits 1; two Primaries on different interfaces still pass. Fails on: comparing the cell as a whole, so a card reverted to Primary passes.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_two_primaries_naming_one_interface_in_different_words_are_reported
+- [ ] **AC3** Given Jonah Reyes's card and Trevor Hale's card, when Jonah's Negative persona line is read, then it describes Trevor's wants as Trevor's own card now does, with no 'central governance held by a bureaucracy'. Fails on: Jonah's card describing a negative persona Trevor's card no longer describes.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedAndNegativeTests::test_jonahs_negative_persona_line_agrees_with_trevors_card
+- [ ] **AC4** Given a PRD copy whose O5 is reworded with its two citations kept, and a `sprint.py plan --serves O10` output carrying two `goal serves: O10 -` lines, when the outcome checks read each, then each is reported. Fails on: O5 pinned by its citations alone, or `o10_trace_problems` loosened to 'at least one' line.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::OutcomeCitationTests::test_a_reworded_o5_and_a_second_o10_line_are_each_reported
 
 ## Revision History
 

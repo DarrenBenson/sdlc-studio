@@ -27,8 +27,10 @@ Correct both TRD sentences to say the host allow-list is unset by default, appli
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The TRD says twice that a project's Verify-line tools are bounded to the hosts `SDLC_VERIFY_HTTP_HOSTS` names, and uses that as the mitigation in the Network...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Correct both TRD sentences to say the host allow-list is unset by default, applies to the `http` verb only, and bounds nothing until a project sets it.
+- [ ] **AC1** Given the Network paths prose and the Network exfiltration row of `sdlc-studio/trd.md`, when they are read beside `_restricted_http_hosts` in `verify_ac.py`, then both say the `SDLC_VERIFY_HTTP_HOSTS` allow-list is unset by default, applies to the `http` verb only and bounds nothing until a project sets it. Fails on: a sentence still saying a project's Verify-line tools are bounded to the hosts the variable names.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_http_allow_list_is_described_as_unset_and_http_only
+- [ ] **AC2** Given the Threat Model table in section 9, when it is read, then it has a row for the verifier running artefact text through a shell, naming the `Provenance: external` stamp, `--no-shell` and `--allow-external` as the control and stating the limit: the stamp is self-declared and an absent stamp permits shell. Fails on: no row for Verify-line execution, or a row that names the control without its limit.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_threat_model_has_a_verify_line_execution_row
 
 ## Revision History
 

@@ -25,8 +25,10 @@ Read a decision row that names a unit as a waiver for it as attribution for that
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1264's QA review (qa-seat-BG1264-r1, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Read a decision row that names a unit as a waiver for it as attribution for that unit's `Refs:`, or rule that such a commit carries a `Mentions:` line; pin the...
+- [ ] **AC1** Given a commit whose subject names several ids, whose staged `sdlc-studio/decisions.md` adds a waiver row for one of them, and whose `Refs:` line names that unit (commit 089008d5's message and paths, replayed), when the commit-msg hook runs, then the commit is accepted and the line is kept. Fails on: `Refs: US1090` refused as naming a unit that owns no staged file.
+  - **Verify:** pytest tools/tests/test_commit_msg_mentions.py::DerivedMentionsTests::test_a_waiver_row_added_for_a_unit_attributes_its_refs_line
+- [ ] **AC2** Given a commit that adds a decision row which only mentions a unit in its prose, or stages `decisions.md` with that unit's waiver row already in it and untouched, when `derive_trailers` judges a `Refs:` line naming the unit, then the line is still listed as contradicted. Fails on: any mention of an id in the decisions log counting as ownership.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::RefsTrailerAttributionTests::test_a_decision_row_that_only_mentions_a_unit_owns_nothing
 
 ## Revision History
 

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_lane.py, changelog.d/BG1491.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1491.md
 > **Evidence:** Run fourteen (RUN-01M7GEHM), BG1479 accept, 2026-11-15.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -26,8 +26,12 @@ Check every criterion has a Verify line before moving the unit, so accept either
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: In run fourteen, `sprint.py lane accept --unit BG1479` on an APPROVE printed that BG1479 moved to Fixed, then that the lane return was blocked because AC3 had...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Check every criterion has a Verify line before moving the unit, so accept either completes or refuses with nothing moved; and have `sprint.py batch add` and...
+- [ ] **AC1** Given a landed bug in a batch with one criterion that has no Verify line, when `sprint.py lane accept` records an APPROVE for it, then accept refuses before any move, names the criterion, exits non-zero, and the bug's Status and the lane record are as they were. Fails on: the unit moved to Fixed and its return then reported blocked.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing
+- [ ] **AC2** Given the same bug with every criterion carrying a Verify line that passes, when `lane accept` records an APPROVE, then the unit moves to Fixed and its lane is returned in the one command. Fails on: the new check refusing a fully specified unit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_with_every_criterion_specified_transitions_and_returns
+- [ ] **AC3** Given a unit with one criterion that has no Verify line, when `sprint.py batch add` or `sprint plan` takes it, then the output names the unit and the criterion that has no Verify line. Fails on: the gap first surfacing at accept, after the build.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_batch_add_and_plan_name_a_criterion_with_no_verify_line
 
 ## Revision History
 

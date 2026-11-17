@@ -25,8 +25,12 @@ A hygiene test that scans the skill's tests for an assignment to sys.modules[...
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1506: `CloseReportTests._mod` put a fresh `sprint_report` into sys.modules and left it there, so a later test's patch on its load-time import missed the...
-- [ ] **AC2** The proposed fix lands, pinned by a test: A hygiene test that scans the skill's tests for an assignment to sys.modules[...] with no addCleanup, patch.dict or finally that restores it, refusing each one...
+- [ ] **AC1** Given a test source that assigns to `sys.modules[...]` with no restoring `addCleanup`, `patch.dict` or `finally`, when the hygiene scanner reads it, then it reports the assignment by file and line. Fails on: an unrestored module swap passing the scan.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_an_unrestored_assignment_is_reported_by_file_and_line
+- [ ] **AC2** Given three sources that make the same assignment and restore it, one with `addCleanup`, one inside `patch.dict(sys.modules, ...)` and one in a `try` with a restoring `finally`, when the scanner reads them, then it reports none. Fails on: a scanner that refuses every assignment and so gets silenced.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_a_restored_assignment_is_not_reported
+- [ ] **AC3** Given the skill's own test tree at HEAD, when the hygiene test scans every test module, then it finds no unrestored assignment, each earlier offender having been given its restore and none merely exempted by name. Fails on: the shipped tests still holding a swap that reads red only in the batched release gate.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py::SysModulesRestoreTests::test_the_skill_s_tests_restore_every_module_they_swap
 
 ## Impact
 

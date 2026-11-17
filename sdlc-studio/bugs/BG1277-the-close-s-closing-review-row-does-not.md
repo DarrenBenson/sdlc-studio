@@ -24,9 +24,12 @@ Read a carried unit as answered when its carrying bug is terminal on an independ
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: At RUN-01M6RZQZ's close the closing-review checklist row named US1130 and US1133 as unresolved, because it reads each unit's latest verdict and both end on a...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Carry a unit at the review cap, add its carrying bug to the batch, fix it on an independent APPROVE, then run `sprint.py close --dry-run`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Read a carried unit as answered when its carrying bug is terminal on an independent APPROVE inside the run, in the closing-review row and in...
+- [ ] **AC1** Given a unit carried at the review cap whose carrying bug is in the batch and Fixed on an independent APPROVE inside the run, when `sprint.py close --dry-run` prints the closing-review row, then the carried unit is not named as unresolved. Fails on: the row reading only the carried unit's latest REJECT, so a waiver is the only way through.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_a_carried_unit_whose_carrying_bug_was_approved_is_answered
+- [ ] **AC2** Given the same run, when the report lists its discharged carries, then the carried unit is among them once it is terminal. Fails on: `_discharged_carry` crediting only an APPROVE on the carried unit itself.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_a_carry_answered_through_its_carrying_bug_is_discharged
+- [ ] **AC3** Given a carrying bug that is not terminal, or whose only APPROVE is its author's or falls outside the run, when the closing-review row is printed, then the carried unit is still named as unresolved. Fails on: any carrying bug, whatever its state, clearing the carried unit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ClosingReviewVerdictTests::test_an_unanswered_carrying_bug_leaves_the_carry_unresolved
 
 ## Revision History
 

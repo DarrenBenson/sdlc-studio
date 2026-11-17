@@ -24,9 +24,8 @@ Clear the full repo-locating set in `lib/lanes.py`, or derive it from the shared
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_GIT_ENV` in `lib/lanes.py` (from US1126) does not clear `GIT_INDEX_VERSION`, `GIT_NAMESPACE`, `GIT_CEILING_DIRECTORIES` or `GIT_DISCOVERY_ACROSS_FILESYSTEM`...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Compare `lib/lanes.py` `_GIT_ENV` with `REPO_LOCATING` in `tools/tests/test_skill_tests_env.py`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Clear the full repo-locating set in `lib/lanes.py`, or derive it from the shared list, and move its `SCRUB_SITES` entry from PARTIAL to full.
+- [ ] **AC1** Given an environment with every variable of `REPO_LOCATING` set, when `lib/lanes.py` builds a lane's child environment, then none of them remains, and the module's `SCRUB_SITES` entry no longer begins PARTIAL. Fails on: `GIT_INDEX_VERSION`, `GIT_NAMESPACE`, `GIT_CEILING_DIRECTORIES` or `GIT_DISCOVERY_ACROSS_FILESYSTEM` reaching the lane.
+  - **Verify:** pytest tools/tests/test_skill_tests_env.py::ScrubListsAgreeTests::test_the_lane_runner_scrub_clears_every_repo_locating_variable
 
 ## Revision History
 

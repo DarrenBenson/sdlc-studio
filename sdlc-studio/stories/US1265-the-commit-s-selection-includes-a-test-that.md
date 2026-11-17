@@ -19,32 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: The code path each recorded hit names (its finding is under Hits above) is fixed, so the failure
+### AC1: A staged module selects the test that runs it by path
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** a throwaway repository with a test module `test_runner.py` that executes other test modules by path, and a test module `test_reader.py` that is one of them
+- **When** `gate.select_tests` is asked what a commit staging only `test_reader.py` runs
+- **Then** the selectors hold both `test_reader.py` and `test_runner.py`. Fails on: a selection that runs the staged module alone and leaves its runner to the push gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SelectionTests::test_a_staged_module_selects_the_test_that_runs_it_by_path
 
-> Transcribed from the request: The code path each recorded hit names (its finding is under Hits above) is fixed, so the failure LC-019 describes cannot recur there: RUN-01M7GEHM on BG1395; RUN-01M7HA6R on US1170.
+### AC2: A module no runner executes selects no runner
 
-### AC2: Any check this CR proposes names the lane, refusal, baseline or pin it retires, and ships only in
+- **Given** the same repository and a third test module the runner does not execute
+- **When** a commit stages only that module
+- **Then** the selectors hold that module and not `test_runner.py`, and the selection adds no new lane, sweep or baseline. Fails on: every commit that touches a test paying for every runner, which is a new check that retires nothing
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SelectionTests::test_a_module_no_runner_executes_selects_no_runner
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: The recorded hit no longer reproduces in this repository
 
-> Transcribed from the request: Any check this CR proposes names the lane, refusal, baseline or pin it retires, and ships only in exchange for it; a check that retires nothing is not added.
-
-### AC3: Once the path is fixed and this CR closes Complete, LC-019 reads `graduated` in
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: Once the path is fixed and this CR closes Complete, LC-019 reads `graduated` in sdlc-studio/lessons.jsonl; a class that no longer describes a live failure is Rejected here instead, and the close then retires it until it recurs.
+- **Given** this repository, where `FrozenNotesTests` in `tools/tests/test_lean_release_notes.py` runs every notes reader by path
+- **When** the selection is asked what staging `tools/tests/test_lean_release_notes_v64.py` alone runs
+- **Then** the selectors include `tools/tests/test_lean_release_notes.py`. Fails on: the selection at grooming, which returns the v64 module and not the runner that went red at the push boundary on US1170
+- **Verify:** pytest tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_staging_a_notes_reader_selects_this_module
 
 ## Revision History
 

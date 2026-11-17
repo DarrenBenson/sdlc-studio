@@ -28,8 +28,12 @@ Give both scripts one resolver. Add a function that turns a release name into th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The two halves of the escape record define a release differently.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Give both scripts one resolver.
+- [ ] **AC1** Given a project tagged v6.4.0 whose CHANGELOG.md carries a [6.4.0] heading, when a bug is filed with `--escaped --shipped-in 6.4.0` and `escape.py trace` is then run on it, then the bug's Shipped-in holds the tag spelling v6.4.0 and the trace reads the release instead of exiting 2. Fails on: filing storing a release name the trace refuses as not a git tag.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py::EscapeTraceTests::test_a_bug_filed_by_the_changelog_spelling_of_a_tag_is_traced
+- [ ] **AC2** Given a version that has a CHANGELOG.md heading and no git tag in either spelling, when a bug is filed with `--escaped --shipped-in` naming it, then filing refuses, saying the trace needs a tag, and writes nothing; the same filing against a tagged version is accepted. Fails on: an escape record stored that can never be traced.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py::BugEscapeFieldTests::test_a_changelog_heading_with_no_tag_behind_it_is_refused
+- [ ] **AC3** Given `--escaped-via` naming a story or bug on disk that the commits of the named release do not ship, when the bug is filed, then the filer prints a note naming the unit and the release, or its help and `reference-scripts-review.md` state that the trace's confirm step accepts only a unit that release shipped. Fails on: filing accepting silently a unit the confirm step will refuse, with the rule written nowhere.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::EscapedViaOutsideTheReleaseTests::test_a_unit_the_release_did_not_ship_is_not_accepted_silently
 
 ## Revision History
 

@@ -24,9 +24,12 @@ Skip and count a thread whose rollout is missing and which has not changed since
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Every Codex reading folds every workspace thread ever recorded.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: by reading: `_usage` returns 'is missing' and read() returns none(...) for any thread with `tokens_used` truthy (not executed).
-- [ ] **AC3** The proposed fix lands, pinned by a test: Skip and count a thread whose rollout is missing and which has not changed since the run opened (or since the previous stamp), and name it in the basis.
+- [ ] **AC1** Given a Codex store whose workspace holds one live thread and one old thread that spent tokens, whose rollout file has since been removed and which has not changed since the run opened, when the Codex meter reads the workspace, then the reading carries the live thread's tokens and components, not tokens None. Fails on: one pruned rollout making every later reading in the workspace unmetered.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_an_old_thread_whose_rollout_is_gone_is_skipped_and_the_rest_is_read
+- [ ] **AC2** Given that same store, when the meter reads it, then the reading's basis says how many threads were skipped for a missing rollout and names each by its thread id, and its `threads` count leaves them out. Fails on: a thread dropped from the sum with nothing on the page saying so.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_the_basis_names_each_thread_skipped_for_a_missing_rollout
+- [ ] **AC3** Given a thread that spent tokens after the run opened and whose rollout file is missing, when the meter reads the workspace, then the reading is tokens None with a reason naming that thread and its rollout, as it is today. Fails on: this run's own spend skipped as if it were an old thread's.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_thread_that_spent_in_this_run_with_no_rollout_is_still_unmetered
 
 ## Revision History
 

@@ -25,8 +25,12 @@ Add a replay test of a pre-basis page that the :3867 mutant fails; carry the bil
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1145's QA review (qa-seat-US1145-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a replay test of a pre-basis page that the :3867 mutant fails; carry the billing reason through `_usd_reach` for a mixed run; run the lane-return case...
+- [ ] **AC1** Given a sprint page with premium requests, filed before `pricing.copilot_billing` existed, when it is re-derived today, then its dollar and premium-request rows are the ones it was filed with. Fails on: a page with no recorded basis read as request-billed, the mutant US1145's review found alive.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_page_filed_before_the_copilot_billing_basis_re_derives_unchanged
+- [ ] **AC2** Given a run with a priced orchestrator and Copilot lanes under request billing, when its page is rendered, then the dollar row's reach names the Copilot share with the 'plan bills by request' reason. Fails on: a mixed run's page not saying why part of it carries no token price.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_mixed_runs_page_says_its_copilot_share_is_billed_by_request
+- [ ] **AC3** Given a Copilot lane under request billing, when its return is recorded through `sprint.py lane return`, then the recorded reason is the request-billing one. Fails on: a test that copies the call it exercises staying green while the shipped verb is wrong.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_lane_return_run_through_the_verb_records_the_request_billing_reason
 
 ## Revision History
 

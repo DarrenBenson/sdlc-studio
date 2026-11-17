@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/handoff.py, .claude/skills/sdlc-studio/help/handoff.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py
 > **Evidence:** US1142-verdict-r1 (RUN-01M7061X)
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -25,8 +25,12 @@ Have `sprint.py handoff` refuse (or, under a flag, warn) when `at_wave_boundary`
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1142's QA review (qa-seat-US1142-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have `sprint.py handoff` refuse (or, under a flag, warn) when `at_wave_boundary` is false, naming the blocking unit; correct the four stale sentences to name...
+- [ ] **AC1** Given an open run with a lane in flight, when `sprint.py handoff` is run, then it exits 2 naming the unit that holds the wave open and its state, and writes no brief; at a wave boundary it writes the brief as before. Fails on: a brief written mid-wave with nothing said.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::HandoffCliTests::test_handoff_off_a_wave_boundary_is_refused_naming_the_blocking_unit
+- [ ] **AC2** Given the same run, when `sprint.py handoff` is run with its flag for handing off away from a boundary, then it writes the brief and warns on stderr naming the blocking unit. Fails on: no route for a session that must stop mid-wave, or an override that says nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_handoff.py::HandoffCliTests::test_the_off_boundary_flag_writes_the_brief_and_warns
+- [ ] **AC3** Given `help/handoff.md`, `reference-scripts-domain.md` and `handoff.py`'s docstring and parser description, when each sentence saying no command writes a handoff is read, then it names `sprint.py handoff` and the resume brief beside the retired handoff record. Fails on: a page telling a reader nothing writes a handoff while `sprint.py handoff` does.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_wave_boundary_docs.py::WaveBoundaryDocTests::test_no_page_says_no_command_writes_a_handoff_without_naming_the_resume_brief
 
 ## Revision History
 

@@ -28,8 +28,12 @@ Give the `bar` mode an `--at` flag that judges the bug corpus at a commit, as `c
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The tag path of `.githooks/pre-push` runs only the `check` mode of `tools/known_issues.py` at each tagged commit.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Give the `bar` mode an `--at` flag that judges the bug corpus at a commit, as `check` already does, and call it from the pre-push tag loop beside `check`...
+- [ ] **AC1** Given a repository where one commit's bug corpus holds an Open Critical bug and the working tree no longer does, when `tools/known_issues.py bar --at <that commit>` runs, then it reports the release bar is not met and exits 1; `bar --at` a commit with no barred finding open exits 0. Fails on: `bar` rejecting `--at`, or judging the working tree in place of the commit.
+  - **Verify:** pytest tools/tests/test_known_issues.py::ReleaseBarTests::test_bar_at_judges_the_corpus_at_the_commit
+- [ ] **AC2** Given a tag on a commit that holds an Open High bug and a known-issues page agreeing with its corpus, when the tag is pushed through `.githooks/pre-push`, then the push is refused, naming the release bar and the tagged commit; a tag on a commit with no barred finding open passes the tag loop. Fails on: a tag that passes with a Critical or High finding open at its commit.
+  - **Verify:** pytest tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_a_tag_with_an_open_high_finding_is_refused
+- [ ] **AC3** Given a tagged commit at which the bar cannot run (an exit status other than 0 or 1), when the tag is pushed, then the hook refuses saying the release bar could not run on that commit, in wording distinct from the bar-not-met refusal. Fails on: a could-not-run reported as an open finding, or let through.
+  - **Verify:** pytest tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_a_bar_that_could_not_run_is_not_reported_as_a_refusal
 
 ## Revision History
 

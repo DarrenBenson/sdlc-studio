@@ -24,9 +24,10 @@ Name a remedy that works for an out-of-band repair: either re-record the self-ch
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1290's round-2 review (qa-seat-BG1290-r1, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a throwaway repo: land US0101 through `sprint lane land` with its self-check, then commit a repair to its Affects as `fix(US0101)` with no `lane land`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Name a remedy that works for an out-of-band repair: either re-record the self-check with `critic.py self-check record` and re-brief with `critic.py brief`, or...
+- [ ] **AC1** Given US0101 landed through `sprint lane land` with its self-check, then repaired by a commit to its Affects that reached the root's branch with no `lane land`, under `review.author_self_check: block`, when `sprint lane accept --unit US0101` refuses the stale self-check and the remedy its message names is followed as printed, then the next `lane accept` records the verdict. Fails on: advice to land the unit again, which `lane land` refuses with nothing to land.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_the_stale_self_check_remedy_works_after_an_out_of_band_repair
+- [ ] **AC2** Given a unit whose latest landing wrote no brief and whose no-brief note ends in a full stop, when `lane accept` refuses it, then the refusal holds no doubled full stop. Fails on: 'Nothing was written.. A verdict is recorded only'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_no_brief_refusal_prints_no_doubled_full_stop
 
 ## Revision History
 

@@ -24,9 +24,12 @@ Have the selection's census also read a module's repo-relative path literals for
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The commit-time selection (`gate.py --suite-decision`) reaches a module that is staged, is named for a staged file, imports or loads one, or names it in a...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run `python3 .claude/skills/sdlc-studio/scripts/gate.py --root .
-- [ ] **AC3** The proposed fix lands, pinned by a test: Have the selection's census also read a module's repo-relative path literals for tracked documents (the spec files under sdlc-studio/ and docs/), so a module...
+- [ ] **AC1** Given a fixture tree with a test module that reads a tracked spec by a repo-relative path (`REPO / "sdlc-studio" / "trd.md"`), neither importing it nor naming it in a census header, when `gate.py --suite-decision --changed sdlc-studio/trd.md` runs, then that module is selected. Fails on: a module that reads a document by path left out of the commit's selection.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py::SelectionReachesLoadersTests::test_a_module_that_reads_a_spec_by_path_is_selected_when_it_changes
+- [ ] **AC2** Given this repository, when `gate.py --root . --suite-decision --changed sdlc-studio/trd.md` runs, then `tools/tests/test_token_premise.py` is among the selected modules. Fails on: the recorded reproduction, 2 modules selected and the reader that refused the push not among them.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py::SelectionReachesLoadersTests::test_the_trd_reproduction_selects_its_readers
+- [ ] **AC3** Given the same fixture tree with a second module that reads a different spec, when only `sdlc-studio/trd.md` changes, then the second module is not selected and the selection is not the full suite. Fails on: every document change selecting every document reader.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py::SelectionReachesLoadersTests::test_a_spec_change_selects_only_its_readers
 
 ## Revision History
 

@@ -1,6 +1,7 @@
 # US1152: A declared component map gives each story a risk and compliance class at refine
 
 > **Status:** Done
+> **Supersedes:** US1034, US1035
 > **Delivers:** CR0696
 > **Created:** 2026-11-14
 > **Created-by:** sdlc-studio new

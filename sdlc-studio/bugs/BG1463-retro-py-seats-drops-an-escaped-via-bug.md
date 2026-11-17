@@ -26,8 +26,12 @@ Name every Escaped-via bug in the window that is not charged to a seat in unchar
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: US1064's seat record names an Escaped-via bug as charged to no seat only when its unit has no live ledger row (the uncharged list, retro.py near line 1663).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Name every Escaped-via bug in the window that is not charged to a seat in uncharged, with its reason (no seat on the approval, no approval, approval after the...
+- [ ] **AC1** Given a bug in the retro's window whose Escaped-via unit has only a live REJECT, when `retro.py seats` runs, then the bug is named in uncharged with a reason saying no review approved the unit. Fails on: the bug appearing on no line of the record.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_an_escaped_via_unit_with_only_a_reject_is_named_uncharged
+- [ ] **AC2** Given a bug whose Escaped-via unit's live APPROVE names no seat, when `retro.py seats` runs, then the bug is named in uncharged with a reason saying the approval names no seat. Fails on: an approval with no seat dropping the bug silently.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_an_escaped_via_unit_whose_approval_names_no_seat_is_named_uncharged
+- [ ] **AC3** Given one bug whose Escaped-via unit was approved only after the bug's Created day, and beside it a bug whose unit a seat approved before it, when `retro.py seats` runs, then the first is named in uncharged with a reason saying the approval post-dates the bug, and the second is charged to the seat and absent from uncharged. Fails on: the late approval dropping the bug, or a charged bug also listed as uncharged.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_an_approval_after_the_bug_is_named_uncharged_and_a_charged_bug_is_not
 
 ## Revision History
 

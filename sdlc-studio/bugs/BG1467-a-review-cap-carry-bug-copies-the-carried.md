@@ -26,8 +26,10 @@ When copying the carried unit's Affects, replace its changelog.d/<unit>.md entry
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: When a unit is rejected at the review cap, critic.py (`carry_at_cap`, near line 2043) files the carrying bug with the carried unit's Affects copied verbatim.
-- [ ] **AC2** The proposed fix lands, pinned by a test: When copying the carried unit's Affects, replace its changelog.d/<unit>.md entry with changelog.d/<bug id>.md.
+- [ ] **AC1** Given a unit whose Affects names changelog.d/<unit>.md, rejected at the review cap, when critic.py files its carry bug, then the bug's Affects names changelog.d/<bug id>.md in that entry's place and does not name the unit's fragment. Fails on: the carried unit's fragment copied verbatim into the bug.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarryBugAffectsTests::test_the_carry_bug_declares_its_own_fragment
+- [ ] **AC2** Given the same carry, when the bug is read, then every other Affects entry of the carried unit is present unchanged and in order. Fails on: the rewrite dropping or altering a source or test path.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::CarryBugAffectsTests::test_the_other_affects_entries_are_carried_unchanged
 
 ## Revision History
 

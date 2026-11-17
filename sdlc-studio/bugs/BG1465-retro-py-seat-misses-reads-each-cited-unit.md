@@ -25,8 +25,10 @@ Resolve each unit id once per call (a dict of id to path, or one directory scan)
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `seat_misses` calls `sdlc_md.find_by_id`, uncached, for every cited ledger unit of every bug in the window (retro.py near line 1604).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Resolve each unit id once per call (a dict of id to path, or one directory scan), and add a test that bounds the lookups per unit.
+- [ ] **AC1** Given a window of many bugs that each cite the same reviewed units, when `seat_misses` runs, then each distinct unit id is resolved to its file at most once in the call, however many bugs cite it. Fails on: one `sdlc_md.find_by_id` lookup per bug per cited unit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_each_cited_unit_is_resolved_once_per_call
+- [ ] **AC2** Given the same window, when `retro.py seats` runs, then the seats charged, the shared Affects files named and the uncharged list equal those of a lookup made per bug. Fails on: a cached lookup that returns a stale or wrong unit file, or drops a charge.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_charges_are_unchanged_by_the_single_lookup
 
 ## Revision History
 

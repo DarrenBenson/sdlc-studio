@@ -29,8 +29,12 @@ Regroom US1168 in its story file: add `tools/check_census_marker.py` and `tools/
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Decision D0495 dropped US1168 (the census-marker commit lane) from run fourteen because it cannot land within its Affects.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Regroom US1168 in its story file: add `tools/check_census_marker.py` and `tools/tests/test_lean_commit_lanes.py` to Affects, cite D0495 in the Notes with the...
+- [ ] **AC1** Given US1168 as dropped from 6.4 under D0495, when it is regroomed under D0507, then its criteria have the census-marker check run inside an existing commit-hook lane's script, the lane count stays at 31, and its `Depends on` line no longer names a finished unit. Fails on: a criterion that adds a 32nd lane, or the story still reading as it did when it was dropped.
+  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
+- [ ] **AC2** Given EP0312's completion criteria, when the epic is corrected under D0512, then the run-six replay and the before-and-after report reading are marked retired with the decision named, and the epic's bar is US1168 alone. Fails on: either criterion left open with no owner.
+  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
+- [ ] **AC3** Given the corrected story, when the planner's readiness report is run over US1168, then it lists US1168 as groomed. Fails on: US1168 refused as ungroomed or blocked.
+  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
 ## Revision History
 

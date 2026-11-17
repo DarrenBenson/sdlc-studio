@@ -26,8 +26,12 @@ Read every artefact's last commit time in one `git log --name-only --format=%cI`
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: On run thirteen, `sprint.py close --dry-run` ran 1,730 seconds with no output before its verdict, and the real close took 1,869 seconds.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Read every artefact's last commit time in one `git log --name-only --format=%cI` pass (or one `git log` per directory) and reuse the result for both gate runs...
+- [ ] **AC1** Given a repository of many tracked artefacts, when `review_prep.staleness` runs, then the number of git processes it starts does not grow with the number of artefacts. Fails on: one `git log -1` per artefact.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_git_calls_do_not_grow_with_the_artefacts
+- [ ] **AC2** Given tracked artefacts committed at different times and one untracked artefact, when `review_prep.staleness` runs, then each tracked record carries its own last commit time with method git and the untracked one its file time with method mtime. Fails on: the single pass giving a file another file's time, or losing the untracked fallback.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_review_prep.py::StalenessTests::test_the_single_pass_reads_each_files_own_commit_time
+- [ ] **AC3** Given an open run, when `sprint.py close --dry-run` runs, then it prints a line naming each close step as that step starts, before the step's result. Fails on: no output until the verdict, so a slow close cannot be told from a hung one.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CloseProgressTests::test_the_close_names_each_step_as_it_starts
 
 ## Revision History
 

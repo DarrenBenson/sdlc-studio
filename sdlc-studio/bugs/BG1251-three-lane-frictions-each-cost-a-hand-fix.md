@@ -24,8 +24,12 @@ Print one line naming the units in flight, with the full restart warning only fo
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, the orchestrator's friction log (F8, F9 and the part of F14 no open item covers).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Print one line naming the units in flight, with the full restart warning only for the unit being briefed; have `lane land` run markdownlint over the hand-in's...
+- [ ] **AC1** Given two lanes in flight, when `sprint.py lane brief` briefs a third unit, then one line names the units in flight, and the full restart warning is printed only for the briefed unit when it is itself in flight. Fails on: one WARNING per sibling lane.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_brief_names_sibling_lanes_in_one_line
+- [ ] **AC2** Given a hand-in whose changelog fragment has a wrapped line opening `+ 3`, when `sprint.py lane land` runs, then it refuses before the commit, naming the file and the markdown rule, and a clean hand-in beside it lands. Fails on: the refusal arriving from the commit hook, or an absent linter read as a pass without saying so.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_fragment_that_fails_markdownlint_is_refused_before_the_commit
+- [ ] **AC3** Given a unit whose Affects declares test files, when its lane brief is printed, then the hand-in line names the accepted rulings TRUE, FALSE and UNVERIFIABLE, written bare, and says each mutant's test is a `path::name` in one of those test files, naming them. Fails on: a line naming only the field names.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_hand_in_line_names_the_accepted_rulings_and_test_files
 
 ## Revision History
 

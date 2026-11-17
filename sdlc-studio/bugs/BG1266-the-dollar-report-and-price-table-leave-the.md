@@ -24,9 +24,14 @@ Add the end-date probe (a run ended two days after an old table), a signed-page 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1242's review: (1) AC4's Verify test cannot tell the run's end date from the day it is read, because the fixture's run ends now...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Apply each mutant named above and run `test_report_usd.py` and `test_prices.py`: each survives.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Add the end-date probe (a run ended two days after an old table), a signed-page table-edit test asserting `envelope.price_table`, and one test per US1135...
+- [ ] **AC1** Given a run that ended two days after a table's effective date, read on a day when that table is stale, when the report builds its dollar row, then staleness is judged at the run's end date. Fails on: today's date or the run's `started_at` used in its place.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_staleness_is_judged_at_the_runs_end_not_today
+- [ ] **AC2** Given a signed page and an unsigned marked page whose price table is edited on disk with the tree unmoved, when `sprint_report.py check` runs on each, then the signed page names `envelope.price_table` and the unsigned page names the moved figures as a price-table edit. Fails on: the signed page naming only a fingerprint, or the unsigned page saying the tree re-derives.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_a_table_edit_is_named_as_one_signed_or_unsigned
+- [ ] **AC3** Given a `pricing.premium_request` override, a negative one, a `gpt-5.3-codex` usage with a nonzero 1-hour write, and a usage on each of `gpt-6-astra`, `gpt-6.1-terra` and `gpt-6-luna`, when `prices.load` and `cost()` run, then the override applies, the negative price is refused, and each figure matches the table's typed rate. Fails on: any of the four mutants the summary names passing the module.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_the_request_override_and_every_shipped_rate_are_pinned
+- [ ] **AC4** Given an OpenCode store that records the session's model, when the session meter reads it, then the reading names the model and is priced; given a store that records none, the reading says it is not priced and `reference-config.md` says when that happens. Fails on: a session-metered OpenCode run reading not priced although the store names its model.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_a_session_reading_names_the_model_the_store_records
 
 ## Revision History
 

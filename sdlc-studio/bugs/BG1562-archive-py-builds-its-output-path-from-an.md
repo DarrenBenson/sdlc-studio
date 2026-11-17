@@ -28,8 +28,12 @@ Validate the release label before any path is built: accept only a single path s
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The archive command of `archive.py` interpolates its `--release` label straight into the sub-index path at line 91, with no check for path separators or...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Validate the release label before any path is built: accept only a single path segment (letters, digits, dot, underscore and hyphen), refuse the bare dot and...
+- [ ] **AC1** Given a fixture workspace with one Closed bug in the live index, when `archive.py archive` runs with a `--release` label made of parent-directory segments, then it exits non-zero with a message naming the label, creates no file or directory inside or outside the workspace, and leaves the live index byte-identical. Fails on: the sub-index written outside the type's archive folder and the row removed from the live table.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_label_with_parent_segments_is_refused_and_nothing_is_written
+- [ ] **AC2** Given the same fixture, when the label holds a path separator, is absolute, or is a bare dot or double-dot, then each is refused the same way with nothing written. Fails on: a traversal that survives by a spelling the first check missed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_separator_an_absolute_label_and_a_dot_segment_are_refused
+- [ ] **AC3** Given the same fixture, when the label is a plain single segment such as r2.5, then the row is archived under the type's archive folder and the census still counts it. Fails on: the validation refusing a legitimate release label.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_archive.py::ReleaseLabelTraversalTests::test_a_plain_label_still_archives
 
 ## Revision History
 

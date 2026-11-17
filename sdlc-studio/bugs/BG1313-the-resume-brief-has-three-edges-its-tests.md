@@ -26,8 +26,14 @@ Add a fixture whose batch order differs from its plan, read a `-qa.none` marker 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1140's QA review (qa-seat-US1140-r1, non-blocking findings 3-5, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a fixture whose batch order differs from its plan, read a `-qa.none` marker as landed with no brief, and fold or refuse a newline in the goal before...
+- [ ] **AC1** Given an open run whose batch lists its units in a different order from its plan's waves, when the resume brief is built, then its unit rows and its next action follow the plan's wave order. Fails on: rows in batch order, the ordering mutant US1140's review found alive.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::NextActionTests::test_a_batch_listed_out_of_plan_order_is_briefed_in_plan_order
+- [ ] **AC2** Given a unit marked in flight whose landing left `<unit>-qa.none` and no QA brief, when the brief is built, then the unit reads as landed with no brief, and the next action does not await its lane. Fails on: rung 1 awaiting a lane that has already landed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::NextActionTests::test_a_landing_that_left_a_qa_none_marker_is_not_in_flight
+- [ ] **AC3** Given a run whose Sprint Goal holds a newline, when `sprint.py handoff` builds the brief and `resume_brief.parse` reads it back, then the goal is returned whole with the newline folded to a space. Fails on: the parse returning only the goal's first line, or none.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::ResumeBriefTests::test_a_goal_holding_a_newline_survives_the_round_trip
+- [ ] **AC4** Given a run with a recorded start, and an open finding stamped with a run id that only begins with the open run's id, when the brief is built, then that finding is left out and no 'cannot be placed' note is printed. Fails on: a prefix match listing another run's finding, or the note shown for a run that has a start.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_resume_brief.py::KnownIssuesTests::test_a_longer_run_id_is_not_matched_and_a_started_run_prints_no_placement_note
 
 ## Revision History
 

@@ -25,8 +25,12 @@ Run the same shell-hazard detector over each field at filing and refuse, naming 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1507's Steps carried a `$(` command substitution and BG1514's Summary a quoted assertion with a space before a colon.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Run the same shell-hazard detector over each field at filing and refuse, naming the field and the hazard, as the sweep would.
+- [ ] **AC1** Given a fields file whose steps field holds a dollar sign followed by an opening parenthesis, when `file_finding.py file` reads it, then filing is refused naming the field and the hazard as the sweep in `test_shell_hazard_rate.py` would, no artefact is written and no id is allocated. Fails on: a finding filed that the push gate's full suite then refuses.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FilingRefusesShellHazardTests::test_a_hazardous_field_in_a_fields_file_is_refused_and_nothing_is_written
+- [ ] **AC2** Given the same text inside a fenced code block, or in a field that carries the quotes-shell-hazard marker, when it is filed, then the finding is filed and the field lands byte for byte. Fails on: a filer that refuses a hazard the sweep exempts.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FilingRefusesShellHazardTests::test_a_field_the_sweep_exempts_is_filed
+- [ ] **AC3** Given each field the sweep judges (`HAZARD_FIELDS`) and each hazard its detector names, when a finding carrying one is filed by flag or by fields file, then filing refuses it through the same `shell_hazards` detector the sweep calls. Fails on: a second detector at filing that drifts from the sweep, or a field or input path the filer leaves unchecked.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::FilingRefusesShellHazardTests::test_filing_and_the_sweep_refuse_the_same_fields_and_hazards
 
 ## Impact
 

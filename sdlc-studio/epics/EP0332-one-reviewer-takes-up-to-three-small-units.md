@@ -14,7 +14,7 @@ Decomposed from CR0680. Delivers the work CR0680 requested.
 
 ## Story Breakdown
 
-- [ ] [US1217: Critic record accepts a round two verdict from a fresh reviewer and records it under its own name](../stories/US1217-critic-record-accepts-a-round-two-verdict-from.md)
+- [x] [US1217: Critic record accepts a round two verdict from a fresh reviewer and records it under its own name](../stories/US1217-critic-record-accepts-a-round-two-verdict-from.md)
 - [ ] [US1218: Critic brief given several units prints the stable blocks once and each unit's scope, criteria and diff apart](../stories/US1218-critic-brief-given-several-units-prints-the-stable.md)
 - [ ] [US1219: The review dispatch groups a wave's units of at most 3 points into reviewer batches of at most three](../stories/US1219-the-review-dispatch-groups-a-wave-s-units.md)
 

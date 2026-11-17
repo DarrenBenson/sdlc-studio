@@ -24,9 +24,12 @@ Read each claimed flag, verb, trailer and harness name from the notes and check 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1136's round-1 and round-2 reviews (qa-seat-US1136-r1, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Apply any one of the mutants above to docs/release-notes-v6.3.0.md and run `python3 -m pytest -q tools/tests/test_lean_release_notes_v63.py`: 4 passed.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Read each claimed flag, verb, trailer and harness name from the notes and check it against the shipped CLI (`--help`, the trailer writer, the HARNESSES tuple)...
+- [ ] **AC1** Given the 6.3.0 notes with one flag changed to a name the shipped CLI does not take (an invented `--no-refs`, or `--force` written `--overwrite`), when the notes test reads the flags the notes name and asks the shipped `--help` for each, then it fails naming the flag. Fails on: a wrong flag in the notes passing because the expectation is typed into the test.
+  - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_a_flag_the_notes_name_is_checked_against_the_shipped_help
+- [ ] **AC2** Given the notes with a trailer, a verb or a harness name changed (`Closes:` for `Mentions:`, `lane approve` for `lane accept`, `gemini` for `copilot`), when the notes test reads each from the notes and checks it against the trailer writer, the subcommands and the HARNESSES tuple, then each change alone fails naming what the CLI does not have. Fails on: any of those mutants leaving the module green.
+  - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_a_trailer_verb_or_harness_the_notes_name_is_checked_against_the_cli
+- [ ] **AC3** Given the notes as released, when the same reader runs over them, then it reports no problem, and it takes the notes text as an argument so a later release's notes test can call it. Fails on: a reader so strict the true notes fail, or one bound to the 6.3.0 file alone.
+  - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_the_released_notes_pass_the_claim_reader
 
 ## Revision History
 

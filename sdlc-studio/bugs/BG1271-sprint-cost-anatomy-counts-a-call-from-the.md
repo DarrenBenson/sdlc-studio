@@ -24,9 +24,14 @@ Record `started_at` with the precision the transcripts carry, or attribute a cal
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1254's review: (1) `started_at` is whole-second (`.claude/skills/sdlc-studio/scripts/lib/sdlc_md.py:395`) while transcript timestamps carry...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: (1) Open a run at `12:00:00.700` (recorded `started_at` `12:00:00`) over a transcript holding a call stamped `12:00:00.400`: the anatomy counts it, and its...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Record `started_at` with the precision the transcripts carry, or attribute a call in the run's opening second to the opening reading, and say which in...
+- [ ] **AC1** Given a run opened at `12:00:00.700` over a transcript holding a call stamped `12:00:00.400`, when the anatomy is built over the run, then that call is not counted and the whole equals the meter's delta over the run, and `reference-sprint.md` says how the opening second is attributed. Fails on: a call the opening reading already holds counted again.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_call_before_the_run_in_its_opening_second_is_not_counted
+- [ ] **AC2** Given a tool output stamped exactly at the run's start, a run whose start cannot be parsed, and an agent whose first call's context equals the start budget, when the anatomy is built, then the output is outside the window, the unparsable start is named and never read as the whole session under the run's window, and the agent at the budget is not flagged. Fails on: any of the three boundary mutants the summary names passing the module.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_the_window_and_budget_boundaries_are_pinned
+- [ ] **AC3** Given `cost.agent_start_budget` set to 0, a negative number or a quoted number, when `sprint cost --anatomy` runs, then the value is named as neither a positive integer nor `off`, as `reference-config.md` documents, while `off` and a positive integer behave as before. Fails on: such a value rendered as 'no budget is configured'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_a_start_budget_neither_positive_nor_off_is_named
+- [ ] **AC4** Given `reference-epic.md`'s wave prose, when the spawn-site test reads it, then it holds the sentence that launches the first agent alone and the rest once it has started. Fails on: that sentence replaced with 'Launch every agent of the wave together.' passing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::SpawnSiteTests::test_the_epic_prose_launches_the_first_agent_alone
 
 ## Revision History
 

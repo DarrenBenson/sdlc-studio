@@ -26,8 +26,10 @@ Have `signed_record` return a distinct damaged state, and have the brief and the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `run_state.signed_record` turns RunStateError into None (near line 698), so a learning whose run's tracked record cannot be parsed reads on a seat's brief as...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have `signed_record` return a distinct damaged state, and have the brief and the close name the record as unreadable, with its path.
+- [ ] **AC1** Given a signed run whose listed learning is live, and its tracked record then corrupted so it no longer parses, when the seat is briefed, then the brief says the run's record is unreadable and names its path, and the learning is not carried. Fails on: the damaged record reading as awaits its run's signature.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_damaged_run_record_is_named_as_unreadable_on_the_brief
+- [ ] **AC2** Given a learning whose run's record is readable and unsigned, or absent, when the seat is briefed, then it still reads as awaiting its run's signature and names no damage. Fails on: the damaged state reported for a record that is only unsigned or absent.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_an_unsigned_or_absent_record_still_awaits_its_signature
 
 ## Revision History
 

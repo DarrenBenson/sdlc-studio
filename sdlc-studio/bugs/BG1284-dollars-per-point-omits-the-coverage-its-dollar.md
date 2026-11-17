@@ -24,8 +24,10 @@ Append `_usd_reach(got)` to the Dollars per point basis. Phrase the Priced cost 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Dollars per point divides a dollar figure that may cover only part of the priced tokens, but its basis omits the coverage the Dollar cost row states.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Append `_usd_reach(got)` to the Dollars per point basis.
+- [ ] **AC1** Given a closed run in which two models spent and the price table lists only one, when the sprint report renders its Estimates, then the Dollars per point basis carries the same coverage clause as the Dollar cost row: the share of the priced tokens it covers and the model left unpriced. Fails on: a per-point figure that reads as covering every priced token when its dollars cover part of them.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_dollars_per_point_states_the_coverage_its_dollar_figure_has
+- [ ] **AC2** Given a run a harness other than Claude metered (a Codex reading), when the report renders the Priced cost row, then its reach is phrased from that harness's meter and does not say a subagent's transcript was not read, while a run Claude alone metered keeps the wording it has. Fails on: Claude-transcript wording on a Copilot, OpenCode, Codex or Cursor run.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_usd.py::ReportUsdTests::test_the_priced_cost_reach_names_the_harness_that_metered_the_run
 
 ## Revision History
 

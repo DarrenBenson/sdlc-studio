@@ -25,8 +25,12 @@ Have the mutation guidance and any shipped mutation runner set PYTHONDONTWRITEBY
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Hit twice in run nine (2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have the mutation guidance and any shipped mutation runner set PYTHONDONTWRITEBYTECODE=1 (or a throwaway PYTHONPYCACHEPREFIX), and have the commit hook's...
+- [ ] **AC1** Given a test whose source was changed to a same-size mutant, run, and restored within the same second, when the commit hook's unit-test lane runs it, then it is judged on the restored source and passes. Fails on: the mutant's cached bytecode reused, so a commit is refused by a number its source no longer holds.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::StaleBytecodeTests::test_a_same_size_same_second_restore_is_judged_on_its_source
+- [ ] **AC2** Given a worktree with no `__pycache__`, when the commit hook's unit-test lane has run, then it has written no bytecode into the worktree. Fails on: the lane leaving a `.pyc` a later hand run trusts.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::StaleBytecodeTests::test_the_unit_test_lane_writes_no_bytecode_into_the_worktree
+- [ ] **AC3** Given a unit's author self-check as `critic.py brief` prints it, when its mutation pass is read, then it tells the author to run each mutant with `PYTHONDONTWRITEBYTECODE=1`. Fails on: guidance that lets a hand-run mutant leave bytecode behind.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefTests::test_the_mutation_pass_names_the_bytecode_guard
 
 ## Revision History
 

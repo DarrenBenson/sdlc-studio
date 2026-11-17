@@ -24,9 +24,12 @@ Run the commit through Popen with `start_new_session`=True. On timeout, send the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: When the commit's hooks run past `COMMIT_TIMEOUT`, subprocess.run kills only `git commit`.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: bash rel63/legs/scratch-b/`land_timeout.sh` <scratch-b> (`COMMIT_TIMEOUT` patched to 3, pre-commit hook `sleep 40`).
-- [ ] **AC3** The proposed fix lands, pinned by a test: Run the commit through Popen with `start_new_session`=True.
+- [ ] **AC1** Given a lane whose pre-commit hook starts a child process and outlasts a shortened `COMMIT_TIMEOUT`, when `sprint lane land` runs, then it exits non-zero with nothing committed and the root's branch as it was, and neither the hook nor its child is alive once the command has returned. Fails on: the hook and the suite it started running on in the worktree after the refusal says they were stopped.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_commit_that_times_out_stops_the_hook_and_its_children
+- [ ] **AC2** Given a worktree holding a staged change and an unstaged edit to a file that is not a unit's own story or bug, when `sprint lane land` runs, then it exits 2 before anything is committed, names the unstaged file as the reason, keeps the edit, and says nothing of a conflict or an aborted rebase. Fails on: the lane committed and then stopped with 'the rebase was aborted' and 'Conflicting files: none reported by git'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_an_unstaged_edit_to_any_other_file_is_refused_by_name_before_the_commit
+- [ ] **AC3** Given a lane whose commit conflicts with the root's branch, when `sprint lane land` runs, then the rebase is aborted and the refusal names the conflicting file, as it does today. Fails on: the dirty-tree check or the reworded message swallowing a true conflict.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_rebase_conflict_is_aborted_and_named
 
 ## Revision History
 

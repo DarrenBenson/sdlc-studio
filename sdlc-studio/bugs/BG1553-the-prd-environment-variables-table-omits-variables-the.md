@@ -28,8 +28,12 @@ Add a row to the Section 9 table for each variable the shipped scripts read and 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Section 9 of sdlc-studio/prd.md lists six environment variables at lines 643 to 650.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a row to the Section 9 table for each variable the shipped scripts read and an operator may set, starting with the four the PRD already names, and mark...
+- [ ] **AC1** Given the Section 9 Environment Variables table of sdlc-studio/prd.md, when the test collects every environment variable name the shipped scripts and their lib folder read, then each one has a row in the table, including `SDLC_STUDIO_HARNESS`, `CURSOR_API_KEY`, `SDLC_STUDIO_CURSOR_AGENT_ID` and `SDLC_STUDIO_CURSOR_API`. Fails on: a variable a shipped script reads having no row, which is how the table fell behind the Cursor meter.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row
+- [ ] **AC2** Given the same table, when the rows for `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_API` are read, then the first is marked as a secret and the second as a network endpoint override, and the `CLAUDE_SKILL_DIR` row says the harness sets it and no script reads it. Fails on: the one secret the skill sends being listed as an ordinary setting, or a row claiming a script reads a variable none does.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_the_secret_and_the_endpoint_override_are_marked
+- [ ] **AC3** Given a copy of the PRD with one variable's row removed, when the same collector runs over it, then it names the missing variable; and a row naming a variable no script reads and the PRD does not mark as harness-set is reported too. Fails on: a collector that passes whatever the table holds.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_a_dropped_row_is_named
 
 ## Revision History
 

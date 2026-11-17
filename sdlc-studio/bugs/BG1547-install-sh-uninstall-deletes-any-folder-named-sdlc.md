@@ -29,8 +29,14 @@ Gate the removal in `uninstall_from` on `is_skill_copy`, allowing an empty folde
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `uninstall_from` in install.sh checks only that the target directory exists and then removes it recursively, reporting it as removed.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Gate the removal in `uninstall_from` on `is_skill_copy`, allowing an empty folder as `install_to` does.
+- [ ] **AC1** Given a scratch HOME whose .claude/skills/sdlc-studio holds only notes.txt and no SKILL.md, when install.sh runs with `--uninstall --target claude`, then it warns that the folder is not an sdlc-studio copy, leaves the folder and notes.txt in place and its closing line says nothing was removed. Fails on: the folder deleted and reported as removed.
+  - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_foreign_folder_is_left_alone_and_said_so
+- [ ] **AC2** Given a real installed copy, and separately an empty folder of that name, when the same uninstall runs, then each is removed and reported as removed. Fails on: the guard refusing the installer's own copy or an empty folder.
+  - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_real_copy_and_an_empty_folder_are_removed
+- [ ] **AC3** Given the target path is a symbolic link to a skill copy elsewhere, when the uninstall runs, then the link is removed and the directory it pointed at is intact. Fails on: the uninstall following the link and deleting its target.
+  - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_symbolic_link_is_removed_and_its_target_kept
+- [ ] **AC4** Given docs/INSTALL.md, when its uninstall section is read, then it states that uninstall removes only a folder that is an sdlc-studio copy or is empty. Fails on: the page silent on the guard.
+  - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_the_install_page_states_the_uninstall_guard
 
 ## Revision History
 

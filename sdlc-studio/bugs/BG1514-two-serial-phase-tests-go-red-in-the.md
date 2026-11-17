@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, tools/remote-gate.sh, tools/tests/test_remote_gate_release.py
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -25,8 +25,12 @@ Make each test wait on the event it asserts (the sibling's write, the parallel p
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The v6.4.0 tag push's release boundary (gate on devserver1, f5317b26) failed only the module-alone lane, on two of its fourteen serial-phase modules...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make each test wait on the event it asserts (the sibling's write, the parallel phase's output) with a bounded deadline rather than a fixed window, or move them...
+- [ ] **AC1** Given a sibling process that starts late, as it does when the module-alone lane loads every worker, when the leak check's test runs, then it waits on the sibling's write up to a bounded deadline before judging, and passes. Fails on: a fixed window the sibling outlasts, read as 'the sibling never wrote'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py::SchedulingTests::test_the_leak_check_waits_for_a_sibling_that_writes_late
+- [ ] **AC2** Given a parallel phase slowed the same way, when the serial-only mark's test runs, then it waits on the phase's output up to a bounded deadline, and a phase that never produces one fails with its whole message rather than a clipped one. Fails on: the test reading red under load and green alone on the same host.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py::ProjectConfigurationTests::test_a_serial_only_mark_is_judged_once_a_slow_parallel_phase_has_reported
+- [ ] **AC3** Given a boundary run the gate host refuses, when the refusal names its full log, then that log exists at the named path and is still there until the next boundary run for the clone replaces it. Fails on: a refusal naming a log that is gone minutes later, so a flake cannot be told from a fault.
+  - **Verify:** pytest tools/tests/test_remote_gate_release.py::RemoteReleaseGateTests::test_the_log_a_refusal_names_is_kept_until_the_next_run
 
 ## Impact
 

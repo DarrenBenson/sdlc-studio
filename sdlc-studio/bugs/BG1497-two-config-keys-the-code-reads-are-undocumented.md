@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, changelog.d/BG1497.md
+> **Affects:** .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py, changelog.d/BG1497.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) US1170 builder hand-back, 2026-11-16.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,12 @@ Document `sprint.fresh_session` in reference-config.md and add `pricing.copilot_
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run fifteen's US1170 builder found that sprint.py reads `sprint.fresh_session` (default warn) but reference-config.md does not document it, and lib/prices.py...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: grep -c `fresh_session` .claude/skills/sdlc-studio/reference-config.md (0); grep -c `copilot_billing` .claude/skills/sdlc-studio/templates/config-defaults.yaml...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Document `sprint.fresh_session` in reference-config.md and add `pricing.copilot_billing` to config-defaults.yaml, each with the default the code uses; extend...
+- [ ] **AC1** Given the shipped reference-config.md, when it is searched for `sprint.fresh_session`, then the key is documented with its values and the default `sprint.py` uses (warn). Fails on: the key absent, or documented with a default the code does not use.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_fresh_session_is_documented_with_the_default_the_code_uses
+- [ ] **AC2** Given the shipped templates/config-defaults.yaml, when it is loaded, then `pricing.copilot_billing` is present with the value `lib/prices.py` falls back to when the key is unset. Fails on: the key absent from the defaults, or a shipped value that changes what an unconfigured project is billed as.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_copilot_billing_ships_with_the_default_the_code_uses
+- [ ] **AC3** Given a config key the scripts read that is missing from either reference-config.md or config-defaults.yaml, when the config-documentation test runs, then it fails naming the key and the file that lacks it; a key present in both passes. Fails on: the next undocumented key going unnoticed because the test checks only the two named here.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_config_keys_read.py::ConfigKeysReadTests::test_a_key_the_code_reads_must_be_in_the_reference_and_the_defaults
 
 ## Revision History
 

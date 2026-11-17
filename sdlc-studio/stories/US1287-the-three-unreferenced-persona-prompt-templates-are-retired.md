@@ -19,32 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: Each of the three files is either removed from the shipped skill or named by
+### AC1: Each of the three prompts is removed or named for a step
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** `code-analysis-prompt.md`, `discovery-presentation.md` and `enrichment-questions.md` under `templates/personas/prompts/`, and `reference-persona-generate.md`
+- **When** the directory and the reference page are read
+- **Then** each file is either absent from the shipped skill, or named by its path in `reference-persona-generate.md` as the prompt loaded for a stated step of persona generation; a section that merely shares a file's name does not count. Fails on: a prompt that still ships and that no step loads
+- **Verify:** pytest tools/tests/test_persona_templates_referenced.py::PersonaPromptTests::test_each_persona_prompt_is_removed_or_named_for_a_step
 
-> Transcribed from the request: Each of the three files is either removed from the shipped skill or named by reference-persona-generate.md as the prompt it loads for a stated step
+### AC2: A prompt that is kept follows the current persona model
 
-### AC2: Any file that is kept asks for a Cast role and End Goals and no longer classifies a persona as Team
+- **Given** every file still under `templates/personas/prompts/`, and `persona-template.md`
+- **When** each kept file is read, and the same check is run on a fixture prompt that classifies a persona as Team
+- **Then** each kept file asks for the Cast role and the End Goals `persona-template.md` requires and does not classify a persona as Team to be assigned to an amigo, and the fixture fails the check. Fails on: a kept prompt that still produces a card the persona template would reject
+- **Verify:** pytest tools/tests/test_persona_templates_referenced.py::PersonaPromptTests::test_a_kept_prompt_asks_for_cast_role_and_end_goals
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: A persona template nothing names fails the reference test
 
-> Transcribed from the request: Any file that is kept asks for a Cast role and End Goals and no longer classifies a persona as Team to be assigned to an amigo, in agreement with persona-template.md
-
-### AC3: A test in tools/tests/`test_persona_templates_referenced.py` fails when a file under
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: A test in tools/tests/`test_persona_templates_referenced.py` fails when a file under templates/personas/ is named by no shipped reference page, help page or script
+- **Given** a throwaway copy of the skill with one extra file added under `templates/personas/prompts/` that no reference page, help page or script names, and the live skill tree
+- **When** the reference check is run over each
+- **Then** it names the extra file in the copy and passes on the live tree with no exemption for a file under `templates/personas/prompts/`; the only exemption allowed is one naming `review-seat-charter.md` while US1174 is not yet Done. Fails on: a check that skips the prompts directory, or one that passes a file nothing loads
+- **Verify:** pytest tools/tests/test_persona_templates_referenced.py::PersonaPromptTests::test_an_unnamed_file_under_prompts_is_caught
 
 ## Revision History
 

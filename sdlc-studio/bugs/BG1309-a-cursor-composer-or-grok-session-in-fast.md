@@ -26,8 +26,12 @@ Carry the speed with the reading where a harness exposes it (a `--fast` flag, a 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Found building US1143 on 2026-11-09.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Carry the speed with the reading where a harness exposes it (a `--fast` flag, a model suffix or the ledger), price Fast rows from their own dated entries, and...
+- [ ] **AC1** Given a reading under a Cursor slug whose Fast variant bills higher and cannot be told apart from standard (`composer-2.5`, `grok-4.7`), when `lib/prices.py` prices it, then the cost carries a `lower_bound` saying a Fast session bills more than the figure, so the report's Dollar cost row says a lower bound. Fails on: a Fast session's dollars stated as a price when they may fall short several times over.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_a_cursor_slug_with_a_fast_variant_is_priced_as_a_lower_bound
+- [ ] **AC2** Given a reading that does carry the speed (the id or recorded speed names Fast), when it is priced, then it is priced from the Fast entry's own dated and sourced rates (Composer 2.5 Fast at 3.00, 0.50 and 15.00 dollars per million input, cached and output tokens) and carries no Fast lower bound. Fails on: a known Fast session priced at the standard rate.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_a_reading_that_carries_fast_is_priced_from_the_fast_entry
+- [ ] **AC3** Given the shipped price table, when its notes are read, then the Cursor Fast caveat sits on the Cursor slugs alone and no `xai/` entry carries it. Fails on: the caveat left on `xai/grok-4.7`, `xai/grok-4.6` and `xai/grok-4.5`, whose provider offers no Fast on its public API.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::NonClaudePriceTests::test_the_fast_caveat_sits_on_the_cursor_slugs_alone
 
 ## Revision History
 

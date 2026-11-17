@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_brief_derived_seat.py, changelog.d/US1030.md
 > **Epic:** EP0284
 > **Points:** 3
-> **Depends on:** US1029, US1011
+> **Depends on:** US1029
 > **Persona:** Maya Okafor
 
 ## User Story

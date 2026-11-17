@@ -1,6 +1,7 @@
 # US1035: The sprint report names a high-risk unit only one seat reviewed
 
-> **Status:** Draft
+> **Status:** Superseded
+> **Superseded by:** US1152
 > **Delivers:** CR0622
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new

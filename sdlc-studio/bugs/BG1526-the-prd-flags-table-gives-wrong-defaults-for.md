@@ -28,8 +28,8 @@ Change the `lessons.loop` row's default to enforce. Change the `schema_version` 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The Feature Flags table in the PRD is introduced as showing the defaults in `templates/config-defaults.yaml`, and two of its rows do not match that file.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Change the `lessons.loop` row's default to enforce.
+- [ ] **AC1** Given the Feature Flags table of `sdlc-studio/prd.md` and `templates/config-defaults.yaml`, when the `lessons.loop` and `schema_version` rows are compared with the defaults file, then `lessons.loop` gives enforce, and `schema_version` gives the fallback default 2 and says `init` stamps 3 on a new project. Fails on: either row giving a default the defaults file does not hold.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file
 
 ## Revision History
 

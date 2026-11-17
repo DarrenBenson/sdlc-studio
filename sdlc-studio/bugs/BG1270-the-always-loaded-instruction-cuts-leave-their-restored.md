@@ -24,9 +24,14 @@ Pin each restored or load-bearing sentence by its text in the budget tests; give
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1129's review rounds 1 and 2: (1) the restored sentence 'A reviewer the author controls does not satisfy this.' (`AGENTS.md:44-47`) and the corrected...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Delete the restored sentence from `AGENTS.md` and run `tools/tests/test_agents_md_budget.py` and `tools/tests/test_check_budgets.py`: green.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Pin each restored or load-bearing sentence by its text in the budget tests; give the dropped sentences a home in `CONTRIBUTING.md` where no gate already prints...
+- [ ] **AC1** Given `AGENTS.md` and `CONTRIBUTING.md`, when the budget test reads them, then it holds by text the sentence 'A reviewer the author controls does not satisfy this.' and the corrected hooks line, and each rule the summary's item 2 lists is stated in one of the two pages. Fails on: deleting the sentence, reverting the line to 'Each hook lists its lanes', or a listed rule with no home, each passing.
+  - **Verify:** pytest tools/tests/test_agents_md_budget.py::AgentsMdBudgetTests::test_the_restored_rules_are_held_by_their_text
+- [ ] **AC2** Given a `SKILL.md` whose description is a 650-char block under `>+`, `|+`, `>-` or `|`, when `tools/check_budgets.py` runs, then each is refused as the same text under `>` is, and a 600-char block of each style passes. Fails on: the block indicator itself measured as the description.
+  - **Verify:** pytest tools/tests/test_check_budgets.py::AlwaysLoadedBudgetTests::test_a_block_description_is_measured_whatever_its_indicator
+- [ ] **AC3** Given `tools/check_budgets.py`, when the test reads `SKILL_MD_TOKEN_BUDGET`, then it is 8,000. Fails on: the budget raised to 80,000 with both modules green.
+  - **Verify:** pytest tools/tests/test_check_budgets.py::AlwaysLoadedBudgetTests::test_the_skill_md_budget_is_8000_tokens
+- [ ] **AC4** Given `templates/agent-instructions.md`, when the template pin reads it, then each gate is held by its rule sentence. Fails on: cutting the engagement floor's rule while keeping its opt-out, cutting the CR or RFC to Epic to Story sentence, or rewording 'The CODE leg is not optional' to 'optional', each passing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_instructions_budget.py::AgentInstructionsBudgetTests::test_each_gate_is_held_by_its_rule_sentence
 
 ## Revision History
 

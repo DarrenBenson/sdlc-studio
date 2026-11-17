@@ -24,9 +24,10 @@ Phrase the obligation as 'the lane is landed by `sprint lane land` onto the root
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The new standing obligation in every lane brief hard-codes `main` and tells the builder to land by 'fast-forwarding a local worktree onto `main` within the...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Static: the `LANE_OBLIGATIONS` string at sprint.py:2520 next to the 'Do not commit and do not record the self-check' line in `_lane_builder_commands.` Both...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Phrase the obligation as 'the lane is landed by `sprint lane land` onto the root's branch: open no PR and push no branch', and drop the instruction to...
+- [ ] **AC1** Given any batch unit, when `sprint lane brief` prints its standing obligations, then the landing obligation says the lane is landed by `sprint lane land` onto the root's branch, with no PR opened and no branch pushed, and no obligation holds the literal `main` or tells the builder to fast-forward. Fails on: a brief that tells the builder to fast-forward onto `main` beside its own 'Do not commit', or names `main` in a project whose trunk is called something else.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_names_lane_land_and_no_branch
+- [ ] **AC2** Given the reworded obligation, when the brief is printed, then it still excepts a project whose `release_strategy` is `pr-required`. Fails on: the rewording dropping the exception, so a PR project's builder is told to open no PR.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_landing_obligation_keeps_the_pr_required_exception
 
 ## Revision History
 

@@ -24,8 +24,14 @@ Add one test per surviving branch. Refuse any effective date that is not literal
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1122 round 1 (APPROVE, non-blocking).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add one test per surviving branch.
+- [ ] **AC1** Given a table entry whose `effective` is `20261106`, `2026-W45-5` or the YAML integer 20261106, when `prices.load` reads it, then each is refused naming the entry and the YYYY-MM-DD form, while `2026-11-06` still loads. Fails on: any date that is not literally YYYY-MM-DD being accepted.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_an_effective_date_not_literally_yyyy_mm_dd_is_refused
+- [ ] **AC2** Given each defensive branch the summary's item 1 names (an empty table, a blank model id, a datetime effective, a config entry whose model differs from its key, a non-text note, a pricing block or `pricing.models` that is not a mapping, a table with no models list, an unreadable table file, a model id with surrounding space passed to `cost()`), when the table is loaded or priced, then each gives the outcome its docstring states. Fails on: any of the ten named mutants passing the module.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_each_defensive_branch_is_exercised
+- [ ] **AC3** Given a project whose config overrides a model's price, when `cost()` is called with no table, then the figure is the project's overridden price or the call is refused for want of a table, and the docstring says which. Fails on: the shipped price returned silently.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_cost_without_a_table_never_ignores_the_project_overrides
+- [ ] **AC4** Given the shipped table, when it is loaded, then Claude Mythos 5, Opus 4.5 and Sonnet 4.5 each price with a source and an effective date, the `claude-opus-5-5` note names its 0.05x cache read, and a `claude-haiku-5-5` total priced without a prompt size is marked a lower bound. Fails on: a reading on any of the three reporting not priced, or a long-prompt haiku figure shown as exact.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_the_shipped_table_prices_the_older_models_and_bounds_long_prompt_haiku
 
 ## Revision History
 

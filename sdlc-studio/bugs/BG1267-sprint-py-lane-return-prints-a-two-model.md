@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, changelog.d/BG1244.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** run eight (RUN-01M6RZQZ) BG1252 review round 1 ([pre-existing]) and BG1244 review round 1 ([new]), and the orchestrator's friction log (R8-F7)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,11 @@ Price the printed line from the reading's `by_model` when present, through the s
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.py lane return` prices its printed line with `prices.cost(reading["model"], reading["components"], prices.load(root))`...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Return a lane whose fake CLI reports usage for two models (BG1252's fixture) and compare the `lane run cost` line with the unit's dollars on the sprint report...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Price the printed line from the reading's `by_model` when present, through the same call the report uses, naming each model or 'mixed', and assert in...
+- [ ] **AC1** Given a lane whose CLI reports usage for two models, when `sprint.py lane return` prints its `lane run cost` line, then the figure equals the unit's dollars on the sprint report and the line names each model or 'mixed'. Fails on: every token priced at the largest model's rate (US$0.0047 where the report says US$0.0501).
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_the_printed_cost_of_a_two_model_session_equals_the_report
+- [ ] **AC2** Given a lane whose record carries one model and no split, when `sprint.py lane return` prints the line, then it names that model and the figure it printed before. Fails on: a one-model line losing its model name or changing its figure.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_one_model_session_prints_its_model_and_figure
+- [ ] **AC3** Given the BG1244 entry in `CHANGELOG.md`, when it is read, then it says an empty `modelUsage` array was read as absent and a non-empty one raised. Fails on: the entry still saying every `modelUsage` array was formerly read as absent.
 
 ## Revision History
 

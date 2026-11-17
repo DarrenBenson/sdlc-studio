@@ -24,9 +24,12 @@ Split on commas outside brackets, the way `declared_keys` does, and pin the thre
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `_declared_tokens` in `engagement_floor.py` splits the Affects field on every comma before it strips a trailing note, so a declaration such as `a.py (with...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Count the footprint of CR0155 with `engagement_floor.py` and compare it with the files its Affects names.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Split on commas outside brackets, the way `declared_keys` does, and pin the three shapes in `test_engagement_floor.py`.
+- [ ] **AC1** Given an Affects field `a.py (with b.py, c.py)`, when the footprint is counted, then it reads the field as `declared_keys` does, split on the commas outside the brackets, and no fragment of the note is lost or miscounted. Fails on: the field split on the comma inside the note.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::DeclarationIsCheckableTests::test_a_comma_inside_a_bracketed_note_does_not_split_the_field
+- [ ] **AC2** Given the three shapes in this tree (a note holding one comma, a note holding several, and a note followed by further paths), when `_declared_tokens` reads each, then its tokens equal those `sdlc_md.affects_files` returns for the same field. Fails on: the footprint counter and the ownership reader disagreeing on any shape.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::DeclarationIsCheckableTests::test_the_footprint_and_ownership_readers_agree_on_bracketed_notes
+- [ ] **AC3** Given an Affects field with no bracketed note, when the footprint is counted, then the count is what it was before. Fails on: a plain comma-separated declaration counted differently.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::DeclarationIsCheckableTests::test_a_plain_declaration_counts_as_before
 
 ## Revision History
 

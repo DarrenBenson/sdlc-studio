@@ -28,8 +28,10 @@ In `sdlc-studio/trd.md`, replace the sub-second claims in sections 8 and 10 with
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The Scaling Strategy in section 8 of `sdlc-studio/trd.md` (lines 735 to 742) says read-only scripts run in well under a second, and the Performance...
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `sdlc-studio/trd.md`, replace the sub-second claims in sections 8 and 10 with a statement of how the census cost scales with artefact count, the measured...
+- [ ] **AC1** Given sections 8 and 10 of `sdlc-studio/trd.md`, when they are read, then neither states a sub-second target for reconcile or status; in its place they say how the census cost scales with artefact count, give the measured figures for this corpus with the date taken and the command that prints the live figure, and name the pre-commit `settle` cost. Fails on: a sub-second claim for reconcile or status with no measuring command beside it.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_no_unmeasured_sub_second_target_for_reconcile_or_status
+- [ ] **AC2** Given the cost-model paragraph of section 10, when it is read, then the sentence that ended 'is never a gate: a script' and the one that began 'the meter reads the store of the harness' are two complete sentences. Fails on: the spliced fragment still present.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_the_spliced_cost_model_sentence_is_repaired
 
 ## Revision History
 

@@ -25,8 +25,10 @@ Never cap a build class out of the lane brief (carry every live build class, as 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1474's QA review (verdict 8dc244746ca5-ede8b0eb) found the build exemption unbounded.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Never cap a build class out of the lane brief (carry every live build class, as the test demands), or refuse a sixth live build class at class-add with a...
+- [ ] **AC1** Given a lessons store holding six live build-injected classes, the oldest three with zero hits, when the lane brief's lessons block is built, then no live build class is missing from it: either all six are carried, or the sixth was refused at class-add with a message to graduate one first. Fails on: the INJECT_MAX cap dropping the oldest zero-hit builder trap from the lane brief.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::QuietBuildClassTests::test_no_live_build_class_falls_out_of_the_lane_brief
+- [ ] **AC2** Given more than INJECT_MAX live classes injected at plan, when the plan digest is built, then it still carries INJECT_MAX of them and says how many it dropped. Fails on: the cap lifted for every phase, not only for build.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::QuietBuildClassTests::test_a_phase_other_than_build_is_still_capped
 
 ## Revision History
 

@@ -28,8 +28,14 @@ Count the tests that ran across all phases in `_full_suite` and in the `--run-te
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: In `gate.py`, both `_full_suite` and the `--run-tests` loop accept pytest exit code 5, nothing collected, as a pass for every phase including the main one.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Count the tests that ran across all phases in `_full_suite` and in the `--run-tests` loop, and refuse when the total is zero or when every test was skipped...
+- [ ] **AC1** Given a fixture root whose only test module defines no test, when `gate.py --root <fixture> --boundary push --only full-suite` runs, then the full-suite lane fails saying no test ran and the gate exits non-zero; the same fixture with one passing test passes. Fails on: a PASS line printed over a suite that collected nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::FullSuiteCountFloorTests::test_an_empty_suite_fails_the_full_suite_lane
+- [ ] **AC2** Given a fixture whose every test is skipped, when the same lane runs, then it fails saying every test was skipped; a fixture with one passing and one skipped test passes, and a secondary phase that collects nothing still passes while another phase ran at least one test. Fails on: an all-skipped suite reading as green, or exit 5 from a secondary phase refusing a suite that did run tests.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::FullSuiteCountFloorTests::test_an_all_skipped_suite_fails_and_an_empty_secondary_phase_does_not
+- [ ] **AC3** Given a test module that defines no test, and one whose only tests are skipped, when `gate.py --run-tests` runs over each, then it exits non-zero naming the zero count; a module with one passing test exits 0. Fails on: `--run-tests` printing no tests ran and exiting 0.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::FullSuiteCountFloorTests::test_run_tests_refuses_a_run_in_which_no_test_ran
+- [ ] **AC4** Given a clone with pytest installed, when `.githooks/commit-msg --list` is read against what the hook runs, then every lane it prints either runs on the pytest path or is marked as running only without pytest (`suite-collapse`, `skill-tests` and `tool-tests` today), and `sdlc-studio/tsd.md` states the count floor the gate now holds. Fails on: a lane listed without qualification that does not run on a prepared clone, or a TSD silent on the floor.
+  - **Verify:** pytest tools/tests/test_commit_msg_hook.py::ACollapsedSuiteLeavesNoReusableGreenTests::test_the_lane_list_marks_lanes_that_run_only_without_pytest
 
 ## Revision History
 

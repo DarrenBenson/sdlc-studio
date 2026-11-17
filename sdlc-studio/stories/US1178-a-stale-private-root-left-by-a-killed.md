@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A root whose owning process is gone is removed and named
+
+- **Given** a `sdlc-tests-` root beside the place the new run's root is made, left by a run that was killed: the process recorded as its owner is no longer alive
+- **When** the next pytest session starts through `conftest.py`
+- **Then** the stale root is removed before the session's tests run and one line of output names the directory removed. Fails on: the stale root left in place, or removed with no line naming it
+- **Verify:** pytest tools/tests/test_suite_stale_root.py::SuiteStaleRootTests::test_a_root_whose_owner_is_dead_is_removed_and_named
+
+### AC2: A live run's root and an unrelated directory are left alone
+
+- **Given** beside the new run's root, a `sdlc-tests-` root whose recorded owner is a live process (a concurrent run), and a directory that is not a suite root
+- **When** a pytest session starts
+- **Then** both are still present with their content afterwards and neither is named as removed. Fails on: a sweep by name prefix or by age alone that deletes a concurrent run's fixtures under it
+- **Verify:** pytest tools/tests/test_suite_stale_root.py::SuiteStaleRootTests::test_a_live_runs_root_and_an_unrelated_directory_are_kept
+
+### AC3: The shell runner sweeps its own stale roots by the same rule
+
+- **Given** a stale `sdlc-tests.` run directory made by `tools/skill-tests.sh` whose owner is dead, beside one whose owner is alive
+- **When** `tools/skill-tests.sh` starts
+- **Then** the dead run's directory is removed and named on stderr and the live one is kept. Fails on: only the roots pytest made being swept, so a killed shell run still leaks its tree
+- **Verify:** pytest tools/tests/test_suite_stale_root.py::SuiteStaleRootTests::test_the_shell_runner_sweeps_its_own_stale_roots
 
 ## Revision History
 

@@ -19,7 +19,12 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A recorded verdict says whether it cites the file history
+
+- **Given** a full-tier verdict file one of whose findings cites the brief's FILE HISTORY section, a second that cites nothing from it, and a light-tier verdict whose brief carried no FILE HISTORY
+- **When** each is recorded with `critic.py record --from-verdict` and read back with `critic.py show`
+- **Then** the first row says it cites the file history, the second says it does not, and the third says the brief carried none. Fails on: a row that records nothing either way, or a light-tier row counted as a full-tier review that did not cite it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::FileHistoryCitationTests::test_each_recorded_verdict_says_whether_it_cites_the_file_history
 
 ## Revision History
 

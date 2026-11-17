@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/tests/test_commit_msg_hook.py, changelog.d/BG1264.md, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, tools/tests/test_commit_msg_hook.py, changelog.d/BG1323.md, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
 > **Evidence:** US1133-verdict-r2 and BG1264-verdict-r1 (RUN-01M7061X)
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -25,8 +25,12 @@ Read the comment character from git config in `_scissors_cut`, apply the cut bef
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From the QA reviews of US1133 (round 2) and BG1264 (qa-seat-US1133-r1, qa-seat-BG1264-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Read the comment character from git config in `_scissors_cut`, apply the cut before the multi-id rule reads trailers, and correct the docstring and fragment to...
+- [ ] **AC1** Given a clone with `core.commentChar` set to `;`, when `git commit -v` commits a message naming two ids, then the hook reads nothing below git's scissors line and writes its trailers above it. Fails on: the scissors line found only under the default `#`, so the diff is read as the author's text.
+  - **Verify:** pytest tools/tests/test_commit_msg_hook.py::DerivedTrailerTests::test_the_scissors_line_is_found_under_a_non_default_comment_character
+- [ ] **AC2** Given a verbose commit message whose subject names two ids and whose diff, below the scissors line, carries a `Refs:` line naming one of them, when the multi-id rule (`check_commit_message`) judges it, then that line accounts for no subject id. Fails on: a trailer in git's diff satisfying the rule.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_a_refs_line_below_the_scissors_accounts_for_no_subject_id
+- [ ] **AC3** Given a commit that edits one existing row of `critic-verdicts.md` and leaves another unit's row untouched, when `_ledger_rows` is read, then the edited row's unit owns the ledger and the untouched row's unit does not, as the docstring then says. Fails on: the docstring or the behaviour saying only an added row owns.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::RefsTrailerAttributionTests::test_an_edited_ledger_row_owns_and_an_untouched_one_does_not
 
 ## Revision History
 

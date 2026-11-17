@@ -6,12 +6,12 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 431 |
+| Open | 430 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 53 |
+| Won't Fix | 54 |
 | Superseded | 52 |
 | **Total** | **1569** |
 
@@ -402,7 +402,7 @@
 | [BG1324](BG1324-no-test-replays-a-page-filed-before-the.md) | No test replays a page filed before the Copilot billing basis existed, a mixed run's page drops the 'plan bills by request' reason, and US1145's lane-return test copies the call instead of running it | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1325](BG1325-a-hand-run-mutation-pass-can-leave-a.md) | A hand-run mutation pass can leave a stale `.pyc` that Python reuses after the source is restored, so a later test run, the commit hook's among them, judges the mutant rather than the code | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1326](BG1326-sprint-py-handoff-writes-a-resume-brief-while.md) | `sprint.py handoff` writes a resume brief while a lane is still in flight, so the wave boundary reference-sprint.md defines is stated but not enforced, and four files still say no command writes a handoff | Open | Low | 2026-11-09 | 2026-11-09 |
-| [BG1327](BG1327-a-verdict-file-s-escape-which-the-review.md) | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1327](BG1327-a-verdict-file-s-escape-which-the-review.md) | A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses | Won't Fix | Low | 2026-11-09 | 2026-11-09 |
 | [BG1328](BG1328-artifact-py-new-type-story-epic-a-done.md) | `artifact.py new --type story --epic <a Done epic>` leaves the epic Done, so its parent request derives Complete although the new story is Draft, and `refine apply` refuses to add the deferred slice of an already-decomposed request | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1329](BG1329-run-nine-s-close-push-is-refused-by.md) | Run nine's close push is refused by two test regressions: US1142's reflow split the wsjf-inputs.json writer line its pin reads, and BG1312's known-issues test patches a sprint_report object resume_brief may not use | Fixed | High | 2026-11-09 | 2026-11-09 |
 | [BG1330](BG1330-15-of-rpt0028-s-19-units-have-no.md) | 15 of RPT0028's 19 units have no priced cost of their own, because only a hand-run `lane return --agent` prices a unit, and the close counts no gap | Fixed | Medium | 2026-11-10 | 2026-11-10 |

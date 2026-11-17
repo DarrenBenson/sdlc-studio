@@ -26,8 +26,12 @@ Before the commit, have lane land check for unstaged or untracked changes in the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: A builder runs `critic.py self-check record` in its worktree, as the brief asks, which appends rows to sdlc-studio/reviews/author-self-checks.md, and it leaves...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Before the commit, have lane land check for unstaged or untracked changes in the worktree.
+- [ ] **AC1** Given a lane worktree whose builder recorded a self-check, leaving sdlc-studio/reviews/author-self-checks.md modified and unstaged beside a staged change, when `sprint.py lane land` runs, then it restores that file before the commit, the lane commits, rebases and fast-forwards in one pass, and the self-check is recorded on the root. Fails on: the rebase refused over unstaged changes after the hooks have already run.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_self_check_ledger_left_unstaged_does_not_stop_the_land
+- [ ] **AC2** Given a worktree holding any other unstaged or untracked file outside the hand-in path, when `sprint.py lane land` runs, then it refuses before the commit, naming the file, and no commit is made and no hook runs. Fails on: the hooks running first and the refusal coming only at the rebase, or the leftover file silently discarded.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_leftover_file_is_refused_before_the_hooks_run
+- [ ] **AC3** Given a worktree holding only its staged change, the hand-in files and the unstaged verify edit to the unit's own artefact, when `sprint.py lane land` runs, then it lands as before. Fails on: the new check refusing a clean lane, the hand-in, or the edit the land already discards.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_clean_lane_still_lands
 
 ## Revision History
 

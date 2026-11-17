@@ -19,32 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: `templates/personas/amigo-template.md` carries the hand-back section, worded as in the shipped
+### AC1: The amigo template carries the hand-back section the shipped seats carry
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** `templates/personas/amigo-template.md` and the three shipped seats under `templates/personas/amigos/`
+- **When** their `## Hand-back` sections are compared
+- **Then** the template has the section, and its contract lines (commands in the foreground, at most three lines naming the unit, the outcome and the hand-in path, no progress message unless blocked) are the ones the shipped seats carry; the test fails when the template or any shipped seat loses the section. Fails on: a template from which a project writes a seat card with no hand-back contract
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_amigo_template_and_shipped_seats_carry_the_hand_back_section
 
-> Transcribed from the request: `templates/personas/amigo-template.md` carries the hand-back section, worded as in the shipped amigo seats
+### AC2: validate seats warns on an overriding card with no hand-back section
 
-### AC2: `validate seats` warns when a project seat card that overrides a shipped seat has no hand-back
+- **Given** a project with two seat cards under `sdlc-studio/personas/seats/` that each override a shipped seat, one with a hand-back section and one without
+- **When** `validate.py seats` is run
+- **Then** it prints a warning naming the card without the section, prints none for the other, and the warning alone does not change the exit code. Fails on: silence for the card that lacks it, a warning on the card that has it, or the warning raised to an error that blocks an existing project
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::SeatCheckTests::test_an_overriding_card_without_a_hand_back_section_is_warned
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: This repository's seat cards carry the section
 
-> Transcribed from the request: `validate seats` warns when a project seat card that overrides a shipped seat has no hand-back section, naming the card
-
-### AC3: This repository's seat cards under `sdlc-studio/personas/seats/` carry the section, and a test
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: This repository's seat cards under `sdlc-studio/personas/seats/` carry the section, and a test fails when the template or a shipped seat loses it
+- **Given** `sdlc-studio/personas/seats/qa.md`, `engineering.md` and `product.md`
+- **When** `validate.py seats` is run over this repository
+- **Then** each card has the hand-back section and the run prints no hand-back warning. Fails on: a card that review briefs name still lacking the contract
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_this_repository_s_seat_cards_carry_the_hand_back_section
 
 ## Revision History
 

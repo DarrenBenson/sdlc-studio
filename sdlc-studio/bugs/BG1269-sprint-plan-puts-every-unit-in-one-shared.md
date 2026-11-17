@@ -24,9 +24,12 @@ Rank each cluster's files by kind and print the pairs sharing a code file on a l
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run eight's plan printed one shared-file cluster holding all 13 units of lane 2, joined by `reference-config.md` and `reference-sprint.md`, with...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run `sprint.py plan` on a batch whose units all declare a shared reference doc and two of which also declare one code file: one cluster names every unit and...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Rank each cluster's files by kind and print the pairs sharing a code file on a line of their own (for example 'BG1254, US1132 share `lib/cost_anatomy.py`')...
+- [ ] **AC1** Given a batch whose units all declare one reference doc and two of which also declare one code file, when `sprint.py plan` prints its shared-file report, then a line of its own names that pair and the code file they share. Fails on: the code file listed only inside the batch-wide cluster.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_pair_sharing_a_code_file_is_named_on_its_own_line
+- [ ] **AC2** Given the same batch, when the lane partition is computed, then the two units sharing the code file sit in one lane or in strictly sequential waves. Fails on: both units placed in parallel lanes of one wave.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LanePartitionTests::test_units_sharing_a_code_file_are_never_parallel
+- [ ] **AC3** Given units that share only a prose file, when the batch is planned, then the share is reported as advisory and the partition is unchanged. Fails on: a shared reference doc forcing the units sequential.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::SharedFileClusterTests::test_a_shared_prose_file_stays_advisory
 
 ## Revision History
 

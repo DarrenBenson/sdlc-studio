@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/github_sync.py, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/github_sync.py, sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_github_sync.py, tools/tests/test_lean_trd_refresh.py
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §3 Component Overview, `scripts/` Constraints cell (line 128); §5 Script CLI contract rule 5 (lines 299-306)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -28,8 +28,14 @@ Move the whole-file rewrites of committed files in `sprint_report.py` (report JS
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Rule 5 of the script contract in `sdlc-studio/trd.md` (lines 299 to 306) and the scripts row of the component table (line 128) say shared-file writes go...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Move the whole-file rewrites of committed files in `sprint_report.py` (report JSON and Markdown twin), `verify_ac.py` (the story Verified rewrite)...
+- [ ] **AC1** Given a signed run report on disk, when `sprint_report.py` rewrites the report JSON and its Markdown twin and the write is interrupted before it completes, then both files still hold their previous content in full. Fails on: a truncated or half-written report left where a signature is recorded.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::ReportWriteIsAtomicTests::test_an_interrupted_write_leaves_the_previous_report_whole
+- [ ] **AC2** Given the scripts under `.claude/skills/sdlc-studio/scripts`, when they are scanned for `write_text` calls on tracked workspace paths, then every site is on an explicit allowlist of scratch or untracked targets, and the story Verified rewrite in `verify_ac.py`, `write_project_file` in `lessons.py`, the epic rewrite in `artifact.py` and the artefact stamp in `github_sync.py` are not on it because each now goes through `sdlc_md.atomic_write`. Fails on: a whole-file rewrite of a committed file that bypasses the atomic helper.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_no_tracked_workspace_file_is_rewritten_with_write_text
+- [ ] **AC3** Given a script fixture with a planted truncating `write_text` on a tracked workspace path, when the same scan runs over it, then it names that site; the same write to a scratch path on the allowlist is not named. Fails on: a scan that cannot see the defect it exists to catch.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::SharedFileWriteSweepTests::test_the_sweep_catches_a_planted_truncating_write
+- [ ] **AC4** Given rule 5 of the script contract and the scripts row of the component table in `sdlc-studio/trd.md`, when they are read, then a shared file is defined as any tracked workspace file a script rewrites whole, and every writer left outside the guarantee is listed with its reason. Fails on: the guarantee stated with no definition of a shared file, or the ledgers still called the one exception while others exist.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_a_shared_file_is_defined_and_every_exception_is_listed
 
 ## Revision History
 

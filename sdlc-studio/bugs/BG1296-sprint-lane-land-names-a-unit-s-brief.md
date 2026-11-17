@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py
 > **Evidence:** BG1290 round-1 verdict (critic-verdicts.md, probe P3) and round-2 verdict (probe P3)
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,10 @@ Normalise the unit id with `sdlc_md.norm_id` before naming `briefs/<unit>-qa.txt
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1290's round-1 and round-2 reviews (qa-seat-BG1290-r1, pre-existing, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Land US0101 once with its self-check (writing `US0101-qa.txt`), then run `sprint lane land --units us0101` for a repair with no self-check under...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Normalise the unit id with `sdlc_md.norm_id` before naming `briefs/<unit>-qa.txt` and `<unit>-qa.none`, in both `lane land` and `_brief_of`, and pin it with a...
+- [ ] **AC1** Given `US0101-qa.txt` left by an earlier landing, when `sprint lane land --units us0101` lands a repair with no self-check, then `US0101-qa.txt` is removed, the note is written as `US0101-qa.none`, and no file named for the lower-case spelling exists under the briefs directory. Fails on: `us0101-qa.none` written beside the earlier round's `US0101-qa.txt`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_lower_case_unit_id_names_the_canonical_brief_and_note
+- [ ] **AC2** Given that landing, under `review.author_self_check: report`, when `sprint lane accept --unit US0101` is given an APPROVE, then it is refused for want of a brief and nothing is recorded, and `--unit us0101` is refused the same way. Fails on: the verdict recorded against the earlier round's brief.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_accept_reads_the_brief_by_the_normalised_unit_id
 
 ## Revision History
 

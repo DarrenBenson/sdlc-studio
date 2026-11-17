@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/conftest.py, tools/tests/test_bench_headless.py, tools/tests/test_corpus_verify_env.py, tools/tests/test_lean_docs_v61.py, tools/tests/test_lean_gate_docs.py, tools/tests/test_lean_one_runner.py, tools/tests/test_lean_push.py, tools/tests/test_lean_release_cut_v62.py, tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v61.py, tools/tests/test_lean_upgrade_page_docs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_run_suite_remote.py, tools/tests/test_skill_tests_env.py, tools/tests/test_git_env_keeps_maintenance_pin.py
+> **Affects:** tools/tests/conftest.py, tools/tests/test_bench_headless.py, tools/tests/test_check_budgets.py, tools/tests/test_corpus_verify_env.py, tools/tests/test_lean_docs_v61.py, tools/tests/test_lean_docs_v63.py, tools/tests/test_lean_gate_docs.py, tools/tests/test_lean_one_runner.py, tools/tests/test_lean_push.py, tools/tests/test_lean_release_cut_v62.py, tools/tests/test_lean_release_cut_v63.py, tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v61.py, tools/tests/test_lean_upgrade_page_docs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_run_suite_remote.py, tools/tests/test_skill_tests_env.py, tools/tests/test_git_env_keeps_maintenance_pin.py
 > **Evidence:** run seven (RUN-01M6RAP7) US1128 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,10 @@ Add one helper to `tools/tests/conftest.py` that drops the repository-locating v
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US1128 review round 1 (non-blocking; the reviewer asked for one bug for the class).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Under pytest, in any of those modules, run `git config --get maintenance.auto` with the environment the module builds: it prints nothing, where the session's...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Add one helper to `tools/tests/conftest.py` that drops the repository-locating variables (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`...
+- [ ] **AC1** Given the pytest session's `maintenance.auto` pin, when a module builds a child's environment through the shared `tools/tests/conftest.py` helper, then `git config --get maintenance.auto` prints false in that environment and no repository-locating variable (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`, `GIT_COMMON_DIR`) remains. Fails on: a helper that drops `GIT_CONFIG_COUNT` or its key and value pairs, or keeps a repository-locating variable.
+  - **Verify:** pytest tools/tests/test_git_env_keeps_maintenance_pin.py::GitEnvKeepsMaintenancePinTests::test_the_helper_keeps_the_config_pin_and_drops_the_repo_locating_variables
+- [ ] **AC2** Given the modules under `tools/tests`, when the guard sweeps them, then none holds a bare `startswith("GIT_")` environment filter, and a filter planted in a temporary directory is named by the same sweep. Fails on: a module keeping its own filter, or a sweep that passes the planted one.
+  - **Verify:** pytest tools/tests/test_git_env_keeps_maintenance_pin.py::GitEnvKeepsMaintenancePinTests::test_no_module_filters_every_git_variable
 
 ## Revision History
 

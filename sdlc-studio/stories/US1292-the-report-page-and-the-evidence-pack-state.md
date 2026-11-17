@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: The report page names the decision behind a delegated signature
+
+- **Given** a run sealed by a delegated signature that names an accepted decision (US1291's signature block)
+- **When** its report page is written by the seal and then read by `sprint_report.py check`
+- **Then** the page's signature block states that the signature was entered under delegation and names the authorising decision id, and the check reads the page VALID. Fails on: a bare signature row for a delegated signature, or a page the disclosure turns INVALIDATED
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::DelegatedSignatureTests::test_the_report_page_names_the_decision_behind_a_delegated_signature
+
+### AC2: The evidence pack discloses a delegated signature on each change it accounts for
+
+- **Given** two committed signed reports, one signed under delegation and one signed by the operator
+- **When** `evidence_pack.py` builds a pack over both
+- **Then** each change from the delegated report says, on its Accountable line, that the signature was entered under delegation and names the decision, and each change from the other report says nothing of delegation. Fails on: a pack that names the principal of a delegated signature as though they signed in person
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::BuildPackTests::test_a_delegated_signature_is_disclosed_with_its_decision
+
+### AC3: A report signed by the operator carries no delegation line
+
+- **Given** a run sealed with no delegation option
+- **When** its report page is written and checked
+- **Then** the signature block holds no delegation statement and no decision id, and the page reads VALID. Fails on: a delegation line printed on every signature, or an empty decision cell where none applies
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::DelegatedSignatureTests::test_an_undelegated_signature_carries_no_delegation_line
 
 ## Revision History
 

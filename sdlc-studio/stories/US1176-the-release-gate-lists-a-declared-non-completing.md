@@ -19,14 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: A project can declare an extended status as not claiming completion in .config.yaml; the release
+### AC1: A declared non-completing status lists its failing criteria as unbuilt
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** a project whose `.config.yaml` declares the extended story status `Partially Done` and declares it as not claiming completion, and a story at that status with one failing executable criterion
+- **When** the release gate is run
+- **Then** the criterion is listed as unbuilt, it is not in the red count, and the gate does not fail on it. Fails on: the criterion counted red, so a part-delivered story fails the release gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_declared_status.py::DeclaredStatusTests::test_declared_non_completing_status_is_unbuilt
 
-> Transcribed from the request: A project can declare an extended status as not claiming completion in .config.yaml; the release gate then lists that story's failing criteria as unbuilt, and an undeclared extended status still fails. The stories refine writes carry the executable checks.
+### AC2: An undeclared extended status still fails closed
+
+- **Given** the same story at an extended status the project added to its vocabulary but did not declare as non-completing, and again at a misspelt status
+- **When** the release gate is run
+- **Then** the failing criterion is counted red in both. Fails on: any status the base vocabulary cannot classify dropping out of the red count without a declaration
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_declared_status.py::DeclaredStatusTests::test_undeclared_extended_status_fails_closed
+
+### AC3: A status that claims completion cannot be declared out of the count
+
+- **Given** a project that declares `Done`, or another base terminal status, as not claiming completion
+- **When** the release gate is run over a Done story with a failing criterion
+- **Then** the criterion is still counted red and the gate names the declaration it ignored; the shipped default declares no status, and `reference-config.md` documents the key with that default. Fails on: one config line that takes every finished story's red criteria out of the release gate
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_declared_status.py::DeclaredStatusTests::test_a_base_terminal_status_cannot_be_declared_non_completing
 
 ## Revision History
 

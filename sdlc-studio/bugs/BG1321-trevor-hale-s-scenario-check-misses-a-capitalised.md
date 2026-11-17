@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_persona_coherence.py, changelog.d/US1147.md
+> **Affects:** tools/tests/test_persona_coherence.py, changelog.d/BG1321.md
 > **Evidence:** BG1318-verdict-r1 (RUN-01M7061X), findings 1 and 3
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -25,8 +25,10 @@ Match the wants case-insensitively in the outside check, and require the declini
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1318's QA review (qa-seat-BG1318-r1, non-blocking findings 1 and 3, 2026-11-09; both present before BG1318).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Match the wants case-insensitively in the outside check, and require the declining verb to stand with no qualifier rather than listing negations; reword the...
+- [ ] **AC1** Given a copy of Trevor Hale's Scenario with 'Sync to an enterprise tracker is offered.' appended, when the AC7 check reads it, then the check fails naming the want outside the clause that declines it. Fails on: a case-sensitive match passing a capitalised offer.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedAndNegativeTests::test_a_capitalised_offer_outside_the_declining_clause_fails_the_scenario_check
+- [ ] **AC2** Given copies of the Scenario whose declining sentence reads 'seldom declines', 'used to decline' and 'Nobody declines', when the AC7 check reads each, then each fails, and the card as committed passes. Fails on: a list of negations that misses a qualifier outside it.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedAndNegativeTests::test_a_qualified_declining_verb_fails_the_scenario_check
 
 ## Further evidence
 

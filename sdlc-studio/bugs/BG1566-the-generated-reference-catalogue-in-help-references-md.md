@@ -28,8 +28,12 @@ In `render_references`, write each link target relative to the page that holds i
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The references verb of `docgen.py` renders each catalogue row as a link whose target is the bare file name, at line 213 in `render_references`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `render_references`, write each link target relative to the page that holds it, so a row links to the reference file in the parent directory, and regenerate...
+- [ ] **AC1** Given the skill directory, when `docgen.py references` renders the catalogue, then every link target resolves to an existing file relative to the help directory that holds the page, and the committed help/references.md matches the regenerated output. Fails on: a row linking the bare file name, which resolves under help/ to nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_docgen.py::ReferenceIndexTests::test_every_rendered_target_exists_relative_to_the_help_page
+- [ ] **AC2** Given a fixture skill tree whose help page links a sibling file that does not exist, when `tools/check_links.py` runs, then it reports the link with the linking file and exits non-zero. Fails on: the links lane printing that all markdown links resolve over a plain relative link to a missing file.
+  - **Verify:** pytest tools/tests/test_check_links.py::HelpPageFileLinkTests::test_a_help_page_linking_a_missing_sibling_is_reported
+- [ ] **AC3** Given the same fixture with a help page linking an existing file in the parent directory, and an artefact body outside the skill tree linking a missing file the workspace-scoped pass already exempts, when the checker runs, then neither is reported by the new pass. Fails on: the new pass refusing a correct parent-directory link, or widening the artefact-body pass beyond its stated scope.
+  - **Verify:** pytest tools/tests/test_check_links.py::HelpPageFileLinkTests::test_a_parent_directory_link_passes_and_the_body_pass_scope_is_kept
 
 ## Revision History
 

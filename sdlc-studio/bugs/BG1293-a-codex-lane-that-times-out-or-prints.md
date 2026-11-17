@@ -25,9 +25,10 @@ When a lane-worktree thread spent in the run and no delegated record names its l
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1288's round-2 review (qa-seat-BG1288-r1, round 2, non-blocking [regression]): VERDICT: APPROVE leaving every lane-worktree thread out of the reading...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Probe S7 of rel63/qa/BG1288-r2/tools/probe7.py: a workspace-root Codex thread growing 11,000 and a lane-worktree thread spending 44,000 with no delegated...
-- [ ] **AC3** The proposed fix lands, pinned by a test: When a lane-worktree thread spent in the run and no delegated record names its lane, count that thread in the reading (and say so in the basis), so an...
+- [ ] **AC1** Given a Codex-metered run whose workspace-root thread grows 11,000 tokens and whose lane-worktree thread spends 44,000 with no delegated record naming its lane, when the Codex meter reads the workspace, then the reading counts both threads (55,000) and its basis says the lane thread was counted from the store because no delegated record carries it. Fails on: an unmetered lane's spend reaching the run zero times.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_an_unmetered_lane_thread_is_counted_from_the_store
+- [ ] **AC2** Given a lane-worktree thread whose lane does have a delegated record, when the meter reads the workspace, then that thread is left out of the reading and its spend reaches the run once, through the record. Fails on: the fix counting a metered lane twice, the defect BG1288 closed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py::CodexMeterTests::test_a_lane_worktree_thread_is_counted_once
 
 ## Revision History
 

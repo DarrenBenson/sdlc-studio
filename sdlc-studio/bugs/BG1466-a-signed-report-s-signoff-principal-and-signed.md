@@ -26,8 +26,10 @@ Either have the record's reader (and the evidence verb) fill the signoff figures
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Every signed sprint report (29 of them, RPT0031 included) carries the figures signoff.principal, `signoff.signed_at` and `signoff.signed_fingerprint` with the...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Either have the record's reader (and the evidence verb) fill the signoff figures from the signature block when they render, as the schema says for...
+- [ ] **AC1** Given a run closed and then signed with `sprint sign`, when the signed report of record is read beside reference-evidence-schema.md, then every `signoff` figure holds what the schema's row says a signed record holds: either the signer, the time and the fingerprint of the `signature` block, or the value frozen at the close with the row naming `signature` as the block to read. Fails on: the schema describing `signoff.principal` or `signoff.signed_at` as who signed and when while a signed record reads not yet signed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SignoffFiguresMatchTheSchemaTests::test_a_signed_records_signoff_figures_read_as_the_schema_says
+- [ ] **AC2** Given a report built and not yet signed, when its record is read, then its `signoff` figures read not yet signed and it carries no `signature` block, as the schema says. Fails on: the fix stamping a signer into a report nobody signed, or changing the page a signature's fingerprint covers.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py::SignoffFiguresMatchTheSchemaTests::test_an_unsigned_report_reads_not_yet_signed
 
 ## Revision History
 

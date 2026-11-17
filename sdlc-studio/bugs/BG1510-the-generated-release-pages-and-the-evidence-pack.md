@@ -24,8 +24,14 @@ Add a pre-tag step to the release-gate workflow, or a tag-check refusal, that co
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: docs/evidence.md, docs/known-issues.md and the release notes' disclosed-defect line are generated at the cut, but the release run's own report is always signed...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a pre-tag step to the release-gate workflow, or a tag-check refusal, that compares the generated pages and the evidence pack with the records at the tagged...
+- [ ] **AC1** Given a release cut whose generated evidence page was written before a later run report was signed, when `release_cut.py tag-check` judges the commit, then it refuses, names the page and the report it does not carry, and prints the command that regenerates it. Fails on: a tag whose evidence page names an earlier last report.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_an_evidence_page_that_lags_a_later_signature
+- [ ] **AC2** Given a cut whose version has no evidence pack, or one built before the records it summarises last changed, when `tag-check` runs, then it refuses naming the pack and the `evidence-pack` command. Fails on: a release tagged with no pack written, as 6.4 nearly was.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_refuses_a_missing_or_stale_evidence_pack
+- [ ] **AC3** Given the pages and the pack regenerated from the records at the commit, with the gate green on it, when `tag-check` runs, then it passes. Fails on: the freshness check refusing a correctly regenerated release.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_tag_check_passes_once_the_pages_and_pack_are_regenerated
+- [ ] **AC4** Given the shipped release-gate workflow template, when it is read, then it carries a pre-tag step to regenerate the evidence page, the known-issues page and the evidence pack after the last signature and filing, naming `tag-check` as what refuses a stale one. Fails on: the refusal existing with no step in the workflow that tells the operator when to regenerate.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::GeneratedPagesFreshTests::test_the_release_gate_workflow_names_the_pre_tag_regeneration_step
 
 ## Impact
 

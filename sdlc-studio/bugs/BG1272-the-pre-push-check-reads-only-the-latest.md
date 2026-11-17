@@ -24,9 +24,12 @@ When the latest run on main is in progress, read the most recent concluded run a
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The forge's Lint job failed on main at 8a00d2cc, fb93b20d and fd1c2b5b (BG1259) and the pre-push hook let each later push through, because every push left...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Push, then push again within the CI run's duration while it is failing; the second push is not refused.
-- [ ] **AC3** The proposed fix lands, pinned by a test: When the latest run on main is in progress, read the most recent concluded run as well, or name the in-progress run and the parent commit it judges, so a red...
+- [ ] **AC1** Given the newest push-triggered Lint run on main still in progress and the most recent concluded run a success, when the pre-push hook runs, then it names the in-progress run by id and the commit it judges, and says its result is not yet read. Fails on: an unfinished run over the parent commit passing in silence.
+  - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_an_in_progress_run_is_named_with_the_commit_it_judges
+- [ ] **AC2** Given the newest run in progress and the most recent concluded run a failure nobody acknowledged, when the pre-push hook runs, then the push is refused naming the concluded run. Fails on: the in-progress run masking the red before it.
+  - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_red_concluded_run_behind_an_in_progress_one_refuses
+- [ ] **AC3** Given no run in progress and the latest concluded run a success, when the pre-push hook runs, then it prints no in-progress line and does not refuse. Fails on: the new notice printed on every push.
+  - **Verify:** pytest tools/tests/test_pre_push_red_main.py::PrePushRedMainTests::test_a_green_main_with_nothing_in_progress_says_nothing
 
 ## Revision History
 

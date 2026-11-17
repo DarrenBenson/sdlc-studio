@@ -25,8 +25,10 @@ Refuse a `credit_usd` that is not greater than 0 at load, naming the key, with a
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1144's QA review (qa-seat-US1144-r1, non-blocking, 2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Refuse a `credit_usd` that is not greater than 0 at load, naming the key, with a test beside a positive control; name the newer price sources at...
+- [ ] **AC1** Given a Copilot billing block, shipped or a project override, whose `credit_usd` is 0, when the price table is loaded, then the load is refused naming `credit_usd`; a `credit_usd` of 0.01 loads and prices a Copilot reading above $0. Fails on: every Copilot reading priced at $0.00 from a typo.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::CopilotTokenPriceTests::test_a_credit_usd_of_zero_is_refused_by_name
+- [ ] **AC2** Given `templates/model-prices.json` and the sentence of `reference-sprint.md` that lists the table's sources, when the providers the table cites are compared with the sentence, then xAI, Cursor and GitHub Copilot are named with the rest. Fails on: a provider whose page the table cites being absent from the reference.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_prices.py::PriceTableTests::test_the_reference_names_every_provider_the_shipped_table_cites
 
 ## Revision History
 

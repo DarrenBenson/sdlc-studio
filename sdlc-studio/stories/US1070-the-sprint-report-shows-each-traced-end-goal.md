@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_report_end_goal_results.py, changelog.d/US1070.md
 > **Epic:** EP0287
 > **Points:** 3
-> **Depends on:** US1069, US0992
+> **Depends on:** US1069
 > **Persona:** Maya Okafor
 
 ## User Story

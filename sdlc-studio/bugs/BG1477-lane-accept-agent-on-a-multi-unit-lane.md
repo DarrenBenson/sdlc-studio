@@ -26,8 +26,10 @@ When the unit's return was already priced by the land from the same agent, have 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.py lane land` prices a multi-unit lane's return from the builder's transcript split by points (US1065 3 of 9, US1066 5 of 9, BG1459 1 of 9 in run...
-- [ ] **AC2** The proposed fix lands, pinned by a test: When the unit's return was already priced by the land from the same agent, have accept keep that split (or refuse --agent with a note); otherwise split a...
+- [ ] **AC1** Given a two-unit lane landed with `sprint.py lane land`, which priced each unit's return from the builder's transcript split by points, when each unit is accepted with `lane accept --agent <builder id>`, then each unit's recorded return keeps its share and the shares sum to the builder's total. Fails on: each unit re-priced with the builder's whole total.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_naming_the_builder_keeps_the_lands_split
+- [ ] **AC2** Given a unit the land did not price, when it is accepted with `lane accept --agent <id>`, then its return is priced from that agent's transcript as before. Fails on: the fix dropping the price of a unit only the accept prices.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_still_prices_a_unit_the_land_did_not
 
 ## Revision History
 

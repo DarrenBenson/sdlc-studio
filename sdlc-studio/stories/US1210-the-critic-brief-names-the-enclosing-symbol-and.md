@@ -19,7 +19,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: Each diff hunk names its enclosing symbol and range
+
+- **Given** a unit whose committed change edits the body of one function and one method in an Affects Python file
+- **When** `critic.py brief --unit <id> --seat qa` is run
+- **Then** each hunk of the UNIT DIFF names the function or method that encloses it and that symbol's start-end line range as the file stands at HEAD. Fails on: a hunk carrying only git's own hunk header, or a range taken from the lines the symbol held before the change
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefHunkSymbolTests::test_each_hunk_names_its_enclosing_symbol_and_line_range
+
+### AC2: A hunk outside any symbol names none and the brief still prints
+
+- **Given** a unit whose diff holds one hunk at module level above the first definition and one hunk in a Markdown file
+- **When** `critic.py brief --unit <id> --seat qa` is run twice
+- **Then** neither hunk names a symbol, the brief exits 0, and both runs print the same brief with the same fingerprint. Fails on: the nearest unrelated symbol named for a module-level hunk, an error on a file the repo map cannot parse, or a fingerprint that changes between two runs on one tree
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefHunkSymbolTests::test_a_hunk_outside_any_symbol_names_none
 
 ## Revision History
 

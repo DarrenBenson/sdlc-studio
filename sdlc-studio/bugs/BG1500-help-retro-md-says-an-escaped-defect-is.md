@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/help/retro.md, changelog.d/BG1500.md
+> **Affects:** .claude/skills/sdlc-studio/help/retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py, changelog.d/BG1500.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) US1171 QA verdict 204ec71c3de6-bdf90726, 2026-11-16.
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,8 @@ Add the on-or-before-Created limit to the help sentence, matching reference-retr
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run fifteen's US1171 QA seat found that help/retro.md (near line 68) says an escaped defect's charge goes to every seat whose latest verdict on the unit...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read help/retro.md near line 68 against the seat-evidence charge in retro.py.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Add the on-or-before-Created limit to the help sentence, matching reference-retro.md's seat-evidence section and the code.
+- [ ] **AC1** Given the shipped help/retro.md, when its sentence on charging an escaped defect is read, then it says the charge goes to each seat whose latest verdict on the unit recorded on or before the bug's `Created` day approved, as reference-retro.md's seat-evidence section and `retro.py` do, and it no longer says 'in any run' without that limit. Fails on: help text that lets a reader expect a later approval to be charged with an earlier escape.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_evidence.py::HelpStatesTheChargeLimitTests::test_the_help_limits_the_charge_to_verdicts_on_or_before_the_created_day
 
 ## Revision History
 

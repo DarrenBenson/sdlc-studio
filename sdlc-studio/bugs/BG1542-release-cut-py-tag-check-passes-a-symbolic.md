@@ -30,8 +30,12 @@ Resolve both sides to a full commit sha before storing or comparing. In `record_
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The release gate stamp in `release_cut.py` is compared as a literal string.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Resolve both sides to a full commit sha before storing or comparing.
+- [ ] **AC1** Given a throwaway repository with no remote where the gate was recorded green with `--commit HEAD` and a second commit was then made, when `release_cut.py tag-check --commit HEAD` runs, then it refuses, naming the first commit as the one the gate ran on. Fails on: 'green on HEAD' matching a tree the gate never ran on.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_a_symbolic_ref_recorded_at_one_commit_is_refused_at_another
+- [ ] **AC2** Given `record-green` called with a symbolic ref or an abbreviated sha, when the stamp is read, then it holds the full commit sha; and `tag-check` given an abbreviated sha of that same commit is allowed. Fails on: an unresolved name stored in the stamp, or a false refusal of the same commit spelt differently.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_both_sides_are_compared_as_full_shas
+- [ ] **AC3** Given an argument git cannot resolve to a commit, when `record-green` or `tag-check` is run with it, then the verb refuses naming the argument and `record-green` writes no stamp. Fails on: a stamp holding a name that is not a commit.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::TagCheckResolvesCommitsTests::test_an_unresolvable_commit_is_refused_and_stamps_nothing
 
 ## Revision History
 

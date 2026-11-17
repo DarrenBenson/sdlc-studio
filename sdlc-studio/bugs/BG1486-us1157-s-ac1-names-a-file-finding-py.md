@@ -24,9 +24,8 @@ Correct the AC1 text to `file_finding.py file --type bug --escaped ...`, and che
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: US1157 (Done) states its AC1 through `file_finding.py bug --escaped ...`, but `file_finding.py`'s verbs are `file` and `rebuild` (a bug is `file --type bug`).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read sdlc-studio/stories/US1157-*.md AC1 and run `file_finding.py --help`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Correct the AC1 text to `file_finding.py file --type bug --escaped ...`, and check the escaped-bug flags are documented on that form.
+- [ ] **AC1** Given US1157's AC1, when it is read beside `file_finding.py --help` and `file_finding.py file --help`, then it states the second creator as `file_finding.py file --type bug --escaped ...`, a command that runs, and `--escaped`, `--shipped-in` and `--escaped-via` are documented on that form. Fails on: the criterion naming a `file_finding.py bug` verb that does not exist, which the plan's registry advice reads as a new verb.
+  - **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
 ## Revision History
 

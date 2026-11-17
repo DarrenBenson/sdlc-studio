@@ -29,8 +29,14 @@ Have `install_to` report three outcomes distinctly: installed, skipped and faile
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `install_to` in install.sh returns 0 both when it skips a folder that is not a copy of the skill and when it refuses a downgrade of a newer local copy.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have `install_to` report three outcomes distinctly: installed, skipped and failed.
+- [ ] **AC1** Given a scratch HOME whose .claude/skills/sdlc-studio holds only notes.txt, when install.sh runs with `--from` this repository's skill folder, `--no-sweep` and `--target claude`, then no installed banner is printed, the closing line says nothing was installed and why, the exit status is non-zero and notes.txt is untouched. Fails on: 'SDLC Studio installed for: claude' and exit 0 over a skipped foreign folder.
+  - **Verify:** pytest tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_skipped_foreign_folder_ends_with_no_banner_and_a_failing_exit
+- [ ] **AC2** Given an existing copy whose version.yaml is stamped 99.0.0, when the same install runs, then the downgrade is refused, no installed banner is printed, the closing line names the refusal, the exit status is non-zero and version.yaml still reads 99.0.0. Fails on: the banner and exit 0 after a refused downgrade.
+  - **Verify:** pytest tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_refused_downgrade_ends_with_no_banner_and_a_failing_exit
+- [ ] **AC3** Given two targets of which one is written and one is skipped, when install.sh finishes, then it exits 0, the banner and next steps name only the target written, the skipped target is named with its reason, and the list handed to the sweep holds only the written one. Fails on: a skipped target named as installed or trusted by the sweep.
+  - **Verify:** pytest tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote
+- [ ] **AC4** Given an empty scratch HOME, when the same install runs, then the banner names the target and the exit status is 0. Fails on: a clean install reported as nothing installed.
+  - **Verify:** pytest tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_clean_install_still_prints_the_banner_and_exits_zero
 
 ## Revision History
 

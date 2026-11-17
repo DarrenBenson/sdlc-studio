@@ -28,8 +28,12 @@ Make the filer's lens lookup include the project profile that readiness.py alrea
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The audit help tells the operator to stamp each finding with its lens and its audit run, and the default profile is project.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make the filer's lens lookup include the project profile that readiness.py already resolves from reference-audit.md, so a lens the default profile declares is...
+- [ ] **AC1** Given a recorded audit run and a bug fields file carrying the lens PRD and that run, when `file_finding.py file` runs with `--fields-file`, then the finding is filed with its Audit-lens, Audit-profile (project) and Audit-run fields stamped. Fails on: the refusal that no pack declares the lens PRD.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_a_project_profile_lens_is_accepted_and_stamped
+- [ ] **AC2** Given the lenses `readiness.py profile --name project` lists, when a finding is filed under each one, then every one is accepted and stamped with the project profile. Fails on: the filer and the profile resolver disagreeing on any lens of the default profile.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_every_lens_the_project_profile_lists_is_accepted
+- [ ] **AC3** Given a lens no profile or pack declares, and a lens that the project profile and a pack both declare filed with no profile, when each is filed, then the first is refused naming the lens and listing the project profile among what exists, and the second is refused as ambiguous as two packs already are. Fails on: an unknown lens stamped, or an ambiguous lens resolved silently to one owner.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::ProjectProfileLensTests::test_an_unknown_lens_is_still_refused_and_an_ambiguous_one_is_not_guessed
 
 ## Revision History
 

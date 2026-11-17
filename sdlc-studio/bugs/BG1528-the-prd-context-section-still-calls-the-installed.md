@@ -28,8 +28,8 @@ Rewrite the Context sentence in `sdlc-studio/prd.md` to say this repository is t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Section 2 of `sdlc-studio/prd.md` (Problem Statement, Context, lines 210 to 212) says the installed copy under the home directory is the back-port source for...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Rewrite the Context sentence in `sdlc-studio/prd.md` to say this repository is the source, that fixes land here and are mirrored to the installed copy by...
+- [ ] **AC1** Given the Context paragraph of section 2 of `sdlc-studio/prd.md`, when it is read, then it says this repository is the source, that fixes land here and are mirrored to the installed copy by `tools/forward-port.sh`, and cites the Forward-porting section of `AGENTS.md`. Fails on: the phrase back-port source, or a PRD that does not name `forward-port.sh`.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_context_names_forward_port_as_the_direction_of_flow
 
 ## Revision History
 

@@ -27,8 +27,8 @@ Rewrite the note so it keeps the distinction between Complete and calibrated but
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The note in section 3 of the PRD that explains how to read every Status cell says that Complete is not the same as calibrated, and that the token forecast...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Rewrite the note so it keeps the distinction between Complete and calibrated but describes the present state: the earlier token predictor was falsified and...
+- [ ] **AC1** Given the Complete versus calibrated note in section 3 of `sdlc-studio/prd.md`, when it is read, then it keeps that distinction and describes the present state: the earlier token predictor was falsified and replaced, the points-based forecast cleared the pre-registered bar, and the section 10 reference stays. Fails on: the phrase falsified hypothesis describing the shipped forecast.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_status_note_does_not_call_the_shipped_forecast_falsified
 
 ## Revision History
 

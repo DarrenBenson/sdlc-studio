@@ -28,8 +28,13 @@ Record one decision that states how D0341, D0356 and D0460 relate, names the int
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Three accepted decisions disagree and none cites or supersedes another.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Record one decision that states how D0341, D0356 and D0460 relate, names the interim behaviour of the second seat on the single-sequence ledger, and marks...
+- [ ] **AC1** Given `sdlc-studio/decisions.md`, when its newest rows are read, then one decision states how D0341, D0356 and D0460 relate, names the interim behaviour of the second seat on the single-sequence round ledger and marks which earlier rows it supersedes, and CR0622 and CR0696 each cite it. Fails on: the three decisions still standing with none citing or superseding another.
+- [ ] **AC2** Given the second-seat section of `reference-sprint.md`, when it is read, then it states the limitation: rounds are one sequence per unit, so at the default cap a second seat's REJECT after a first-seat APPROVE is carried and not repaired, until per-seat rounds (US1032, US1033) land. Fails on: a second-seat section silent on the round ledger.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_the_reference_states_the_single_sequence_limit
+- [ ] **AC3** Given a unit with `max_rounds` at its default of 2, when a first-seat APPROVE and then a second-seat REJECT are recorded with `critic.py record`, then the REJECT is round 2 and the unit reads as carried, exactly as the reference states. Fails on: shipped behaviour that differs from the stated interim behaviour.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_a_second_seat_reject_after_an_approve_is_carried
+- [ ] **AC4** Given a unit holding a REJECT then an APPROVE, when a second seat's verdict is recorded, then it is refused with a plain message naming the round cap and the single-sequence ledger as the cause; a second-seat verdict that fits within the cap is recorded. Fails on: the generic round refusal that gives an operator no sign the second seat is what hit the cap.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_a_second_seat_verdict_past_the_cap_is_refused_in_plain_words
 
 ## Revision History
 

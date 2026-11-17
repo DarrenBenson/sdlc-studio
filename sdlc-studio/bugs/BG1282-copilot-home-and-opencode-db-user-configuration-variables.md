@@ -24,9 +24,10 @@ Treat config variables as weaker than a running-process signal: when CLAUDECODE,
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `COPILOT_HOME` and `OPENCODE_DB` are user configuration variables, yet they count as harness signals.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: `token_meters.select(repo`, None, {CLAUDECODE:1, `COPILOT_HOME`:<tmp>}) -> {'harness': None, 'candidates': ['claude','copilot'], ...}; the same with...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Treat config variables as weaker than a running-process signal: when CLAUDECODE, `CURSOR_AGENT`, OPENCODE or `CODEX_THREAD_ID` is set, ignore `COPILOT_HOME`...
+- [ ] **AC1** Given an environment with `CLAUDECODE` set beside `COPILOT_HOME`, or beside `OPENCODE_DB`, when `token_meters.select` runs, then it selects Claude and takes a reading. Fails on: `harness: None` with two candidates and no token reading.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_yields_to_a_running_process_signal
+- [ ] **AC2** Given an environment where `COPILOT_HOME` or `OPENCODE_DB` is the only harness variable set, when `token_meters.select` runs, then it still selects Copilot or OpenCode. Fails on: a configuration variable ignored outright.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py::HarnessSelectionTests::test_a_config_variable_alone_still_selects_its_harness
 
 ## Revision History
 

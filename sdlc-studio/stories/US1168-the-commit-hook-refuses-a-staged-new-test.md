@@ -9,7 +9,6 @@
 > **Affects:** .githooks/pre-commit, tools/tests/test_precommit_lane_order.py, tools/tests/test_census_marker_lane.py, changelog.d/US1168.md
 > **Epic:** EP0312
 > **Points:** 2
-> **Depends on:** US1167
 > **Persona:** Rowan Achterberg
 
 ## User Story

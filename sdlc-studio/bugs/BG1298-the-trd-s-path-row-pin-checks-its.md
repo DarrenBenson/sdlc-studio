@@ -24,9 +24,10 @@ Make the directory-alone fixture write with `write_text` to the directory's own 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From US1138's round-2 review (qa-seat-US1138-r1, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Change `>` to `>=` in `_matches`'s slash-span branch, or `==` to `>=` in its file-span branch, and run `python3 -m pytest -q...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Make the directory-alone fixture write with `write_text` to the directory's own path (so `_written` reads it as a write), and add a fixture writing a file one...
+- [ ] **AC1** Given a fixture module that writes with `write_text` to the directory's own path under a span ending in `/`, when the path-row pin judges it, then the write is not that span's. Fails on: `_matches` loosened from `>` to `>=` in its slash-span branch with the module still green.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_write_to_the_directory_itself_is_not_a_slash_spans
+- [ ] **AC2** Given a fixture module that writes a file one level deeper than a file span names, when the path-row pin judges it, then the write is not that span's, while a write at the span's own depth still is. Fails on: `_matches` loosened from `==` to `>=` in its file-span branch with the module still green.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_file_one_level_deeper_is_not_a_file_spans
 
 ## Revision History
 

@@ -8,7 +8,6 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/workspace.py, pytest.ini, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/scripts/tests/test_gate_corpus_selection.py, changelog.d/US1021.md
 > **Epic:** EP0282
 > **Points:** 3
-> **Depends on:** BG1000
 > **Persona:** Maya Okafor
 
 ## User Story

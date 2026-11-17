@@ -24,9 +24,10 @@ Have the cut restamp this repository's sdlc-studio/.version as part of the relea
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `release_cut.py changelog-cut` and the cut's version bump move the skill's version (templates/version.yaml, SKILL.md, CHANGELOG), and tools/`check_versions.py`...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: At a724f953 (the 6.3.0 cut), run `python3 .claude/skills/sdlc-studio/scripts/migrate.py`: "1 deterministic upgrade(s) would apply ...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Have the cut restamp this repository's sdlc-studio/.version as part of the release commit (through `migrate.py --apply`'s conventions step, not a hand edit)...
+- [ ] **AC1** Given a project whose `sdlc-studio/.version` names the previous release while the shipped skill is at the version being cut, so `migrate.py` reports one deterministic upgrade, when `release_cut.py changelog-cut --version <that version>` runs, then it does not exit 0 with the stamp still stale: either the stamp is rewritten by migrate's own step and `migrate.py` then reports none, or the cut exits 2 with the changelog untouched, naming the `migrate.py --apply` to run. Fails on: a finished cut after which `migrate.py` still reports 'sdlc-studio/.version stale'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_cut_never_finishes_over_a_stale_project_stamp
+- [ ] **AC2** Given a project whose stamp already names the shipped skill version, when `changelog-cut` runs, then the section is cut as today and `sdlc-studio/.version` is byte-identical. Fails on: a cut that rewrites or refuses over a current stamp.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_cut.py::ChangelogCutTests::test_a_current_stamp_is_left_as_it_was_and_the_cut_succeeds
 
 ## Revision History
 

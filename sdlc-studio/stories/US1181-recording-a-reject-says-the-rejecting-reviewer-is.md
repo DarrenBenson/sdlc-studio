@@ -19,23 +19,19 @@
 
 ## Acceptance Criteria
 
-### AC1: Given the toolchain runbook's review step, when an orchestrator reads it, then it says a REJECTing
+### AC1: Recording a REJECT says the rejecting reviewer is needed for round 2
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** a unit in an open run and a reviewer's REJECT verdict for it
+- **When** the verdict is recorded with `critic.py record`, and an APPROVE is recorded for a second unit
+- **Then** the REJECT's output carries a line saying the reviewer who rejected is needed for round 2 and to keep that reviewer resumable until round 2 is recorded, and the APPROVE's output carries no such line. Fails on: a REJECT recorded with nothing said about round 2, or the line printed on every verdict
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_reject_round2.py::RejectRoundTwoTests::test_reject_names_the_reviewer_needed_for_round_two
 
-> Transcribed from the request: Given the toolchain runbook's review step, when an orchestrator reads it, then it says a REJECTing reviewer's worktree is kept until that unit's round 2 is recorded, and names what to do when it is gone (a fresh instance of the same seat on `critic.py brief --rejoinder`)
+### AC2: The runbook's review step has a row for keeping the rejecting reviewer
 
-### AC2: Given a REJECT recorded through `critic.py record`, when it is written, then the command's output
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: Given a REJECT recorded through `critic.py record`, when it is written, then the command's output says the rejecting reviewer is needed for round 2
+- **Given** the table under 'Review a unit' in `reference-sprint-toolchain.md`
+- **When** its rows are read as cells
+- **Then** one row's step cell is about keeping a rejecting reviewer until round 2 is recorded, its command cell carries `critic.py brief --unit <id> --seat <seat> --rejoinder` as what to run on a fresh instance of the same seat when the reviewer's worktree is gone, and its last cell names removing the worktree between rounds as what the row replaces. Fails on: a review step with no such row, or the rule stated only in prose outside the table
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_reject_round2.py::RejectRoundTwoTests::test_the_runbook_row_says_how_to_keep_the_reviewer_resumable
 
 ## Revision History
 

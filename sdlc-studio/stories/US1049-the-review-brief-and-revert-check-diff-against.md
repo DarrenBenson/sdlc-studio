@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_small_change_base_ref.py, changelog.d/US1049.md
 > **Epic:** EP0286
 > **Points:** 3
-> **Depends on:** US1047, BG1009
+> **Depends on:** US1047
 > **Persona:** Jonah Reyes
 
 ## User Story

@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A delegated signature with no accepted decision is refused
+
+- **Given** a closed run awaiting signature, and a decisions log holding one accepted decision and one superseded decision
+- **When** `sprint.py sign --report <id> --principal <operator>` is entered as a delegated signature with no decision id, with an id the log does not hold, and with the superseded one
+- **Then** each exits non-zero with a `sign REFUSED:` line naming the decision it needs, the run stays open and its record holds no signature. Fails on: a delegated signature sealed with no decision, or with one the log does not show as accepted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::DelegatedSignatureTests::test_a_delegated_signature_without_an_accepted_decision_is_refused
+
+### AC2: The signature block records the delegation and its decision
+
+- **Given** the same closed run and the accepted decision
+- **When** the delegated signature is entered naming that decision's id
+- **Then** the command exits 0, the run is sealed, the run record's `signature` block states that the signature was delegated and holds the decision id beside the principal, and the `sealed` line names the decision. Fails on: a delegated seal whose signature block reads as one the operator entered
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::DelegatedSignatureTests::test_a_delegated_signature_records_its_decision_in_the_signature_block
+
+### AC3: A signature the operator enters needs no decision
+
+- **Given** a closed run awaiting signature
+- **When** `sprint.py sign` is entered with no delegation option
+- **Then** the run is sealed as it is today and its signature block carries no delegation and no decision id. Fails on: every signature being asked for a decision id, or an undelegated signature recorded as delegated
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py::DelegatedSignatureTests::test_an_undelegated_signature_seals_without_a_decision
 
 ## Revision History
 

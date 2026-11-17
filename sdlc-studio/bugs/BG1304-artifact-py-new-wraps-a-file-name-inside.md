@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/artifact.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Evidence:** CR0689 as first written on 2026-11-09 (Impact and AC2, AC5 and AC6), corrected by hand before commit
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file
@@ -26,8 +26,10 @@ Treat a slash-joined path as one token: wrap the whole path, or leave it unwrapp
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Filing CR0689 on 2026-11-09 with `artifact.py new --type cr --fields-file`, the Impact and three acceptance criteria named...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Treat a slash-joined path as one token: wrap the whole path, or leave it unwrapped, never its last segment alone.
+- [ ] **AC1** Given a fields file whose impact, summary and one criterion each name a path with a directory in prose (the tools/tests path of a test module), when `artifact.py new --type cr --fields-file` writes the request in a scratch root, then each section holds the path whole, inside one code span or untouched, and nowhere a directory followed by a backticked file name. Fails on: one path split into prose and a code span, which breaks a reader's copy of it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_artifact.py::SuppliedContentLandsTests::test_a_path_with_a_directory_is_never_split_by_a_code_span
+- [ ] **AC2** Given the one prose escaper, `file_finding._md_safe`, when it is given a slash-joined path, a bare underscored identifier and a path already inside a code span, then the path comes back as one token, the identifier is still wrapped and the spanned path is unchanged. Fails on: the fix switching off the identifier pass, or re-wrapping a span.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::MdSafeProseTests::test_a_slash_joined_path_is_one_token
 
 ## Revision History
 

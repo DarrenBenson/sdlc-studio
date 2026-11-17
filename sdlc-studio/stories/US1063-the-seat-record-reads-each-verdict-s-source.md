@@ -8,7 +8,6 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-retro.md, .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_rulings.py, changelog.d/US1063.md
 > **Epic:** EP0287
 > **Points:** 3
-> **Depends on:** US1062, US1012
 > **Persona:** Maya Okafor
 
 ## User Story

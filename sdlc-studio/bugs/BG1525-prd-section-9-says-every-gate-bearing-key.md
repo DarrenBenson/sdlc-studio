@@ -27,8 +27,10 @@ Reword the section 9 introduction to say which gate-bearing keys default on and 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The introduction to the Feature Flags section of the PRD states a universal rule: for gate-bearing keys the default is ON, the opt-out is a recorded value, an...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Reword the section 9 introduction to say which gate-bearing keys default on and to list every key that ships off or advisory, with the incremental-adoption...
+- [ ] **AC1** Given the Feature Flags introduction in section 9 of `sdlc-studio/prd.md` and `templates/config-defaults.yaml`, when the two are compared, then the introduction names every gate-bearing key the defaults file ships off or advisory (`review.line_coverage`, `review.author_self_check`, `require_ac_verification`, `constitution.enforce`, `two_backlog.enforce` and `quality.require_full_sections` today), each with its incremental-adoption reason, and no longer calls `two_backlog.enforce` the one exception. Fails on: a PRD that names fewer default-off gate keys than the defaults file holds.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off
+- [ ] **AC2** Given `reference-config.md`, when its statement of the gate-key default rule is read, then it carries the same correction and no single-exception sentence. Fails on: the reference still saying every gate-bearing key defaults on with one exception.
+  - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_reference_config_does_not_claim_a_single_exception
 
 ## Revision History
 

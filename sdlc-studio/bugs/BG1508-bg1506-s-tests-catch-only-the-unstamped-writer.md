@@ -24,8 +24,10 @@ Add a forced-swap case that fails when either `at_close` or `at_sign` patches th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1506's round-one QA review (APPROVE, non-blocking).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a forced-swap case that fails when either `at_close` or `at_sign` patches the load-time module, narrow the comment to the call-time re-import, and correct...
+- [ ] **AC1** Given the stamp tests' `at_close` patch pointed at the `sprint_report` module imported at load time while a fresh module sits in sys.modules, when the forced-swap case runs, then it detects that the close read an unpatched module and fails. Fails on: a stale-module patch on the close step leaving every stamp criterion green.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_a_close_patch_on_the_load_time_module_is_caught_under_a_forced_swap
+- [ ] **AC2** Given the `at_sign` patch pointed at the load-time module under the same forced swap, when the forced-swap case runs, then it fails the same way, and with both patches on the live module it passes. Fails on: the sign step covered only by the unstamped writer's test, or a forced-swap case that fails whatever is patched.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py::EvidenceSchemaStampTests::test_a_sign_patch_on_the_load_time_module_is_caught_under_a_forced_swap
 
 ## Impact
 

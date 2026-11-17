@@ -26,8 +26,10 @@ Treat a unit `lane land` committed as returned for this warning (or word it as '
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.py lane brief --units BG1460` printed a 'was briefed ...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Treat a unit `lane land` committed as returned for this warning (or word it as 'landed, awaiting review'), and keep the warning for a unit dispatched with no...
+- [ ] **AC1** Given a unit landed with `sprint.py lane land` and awaiting its review, when `sprint.py lane brief --units <another unit>` is run, then no warning says the landed unit never returned or tells the operator to check the diff for it. Fails on: a landed unit, whose work is committed, reported as a lane that died.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_landed_unit_awaiting_review_is_not_warned_as_never_returned
+- [ ] **AC2** Given a unit briefed with no land and no return, when another unit is briefed, then the 'never returned' warning still names it. Fails on: the fix silencing the warning for a lane that did die.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::LaneInFlightTests::test_a_lane_with_no_land_and_no_return_is_still_warned
 
 ## Revision History
 

@@ -19,30 +19,19 @@
 
 ## Acceptance Criteria
 
-### AC1: templates/personas/review-seat-charter.md is no longer in the shipped skill
+### AC1: The pointer template is gone and nothing expects it
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** the shipped skill, `install.sh`, `install.ps1` and `tools/`
+- **When** the tree is searched for `review-seat-charter.md`
+- **Then** `templates/personas/review-seat-charter.md` does not exist, and no file names its path as one to read, copy or link (the fixture string in `tools/tests/test_check_neutrality.py`, which does not need the file, is the one mention left). Fails on: the pointer still shipped, or an installer or reference line that would break on its absence
+- **Verify:** pytest tools/tests/test_persona_templates_referenced.py::PersonaTemplatesReferencedTests::test_the_review_seat_charter_pointer_is_gone_and_nothing_expects_it
 
-### AC2: A search of the shipped skill, install.sh, install.ps1 and tools/ finds no path reference to
+### AC2: A persona template nothing names fails the reference test
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: A search of the shipped skill, install.sh, install.ps1 and tools/ finds no path reference to review-seat-charter.md that expects the file to exist
-
-### AC3: A test in tools/tests/`test_persona_templates_referenced.py` fails when a file under
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: A test in tools/tests/`test_persona_templates_referenced.py` fails when a file under templates/personas/ is named by no shipped reference page, help page or script, so a pointer kept for references that no longer exist is caught
+- **Given** a throwaway copy of the skill with one extra file added under `templates/personas/` that no reference page, help page or script names, and the live skill tree
+- **When** the reference check is run over each
+- **Then** it names the extra file in the copy and passes on the live tree, with no exemption for `review-seat-charter.md`; the only exemption allowed is one naming the three files under `templates/personas/prompts/` while US1287 is not yet Done. Fails on: a check that passes a pointer kept for references that no longer exist, or one that matches a bare file name inside the file itself
+- **Verify:** pytest tools/tests/test_persona_templates_referenced.py::PersonaTemplatesReferencedTests::test_a_persona_template_nothing_names_is_caught
 
 ## Revision History
 

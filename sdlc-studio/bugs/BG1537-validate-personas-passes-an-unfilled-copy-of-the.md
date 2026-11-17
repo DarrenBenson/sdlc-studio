@@ -29,8 +29,12 @@ In `check_personas` in `validate.py`, apply the existing placeholder check to ea
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `persona-template.md` states its own bar on line 3: a persona is well-formed when every section is filled.
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `check_personas` in `validate.py`, apply the existing placeholder check to each persona card and warn, naming the file and section, when a required section...
+- [ ] **AC1** Given a scratch root whose only persona card is a byte-for-byte copy of `persona-template.md`, when `validate.py --root <root> personas` runs, then it warns naming the file and each section that holds only template placeholders, and does not print 'personas look well-formed.'. Fails on: a clean pass over an unfilled template.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_verbatim_template_copy_warns_on_each_unfilled_section
+- [ ] **AC2** Given the same card, whose cast-role cell is still the template's list of all six roles, when the personas check runs, then the missing-cast-role warning fires and the card is not counted as a declared Primary. Fails on: `_persona_cast_role` reading the unfilled list as Primary.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_the_template_role_list_is_not_a_declared_cast_role
+- [ ] **AC3** Given a filled persona card beside the template copy, when the personas check runs, then the filled card draws no warning and the findings on the copy are warnings, not errors. Fails on: a placeholder warning on a filled card, or the advisory check turned blocking.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate.py::PersonaWellFormedTests::test_a_filled_card_beside_it_passes_clean_and_the_check_stays_advisory
 
 ## Revision History
 

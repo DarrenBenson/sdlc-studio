@@ -19,7 +19,12 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: The mutation runner's reap does not raise where the group kill is unavailable
+
+- **Given** `os.killpg` and `signal.SIGKILL` both removed from their modules, as on Windows
+- **When** the mutation runner's test run (`_run_tests`) runs a passing command, a failing command and one that outlives its time limit
+- **Then** each returns the verdict it returns today with the attributes present, no AttributeError escapes, and the timed-out command's child is no longer running afterwards. Fails on: the reap as it stands, whose suppression names only OS errors, so every mutant's test run raises on that platform
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_mutation.py::ReapWithoutGroupKillTests::test_the_reap_does_not_raise_and_the_verdict_is_unchanged
 
 ## Revision History
 

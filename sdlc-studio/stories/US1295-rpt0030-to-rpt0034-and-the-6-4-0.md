@@ -19,7 +19,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: Each of RPT0030 to RPT0034 names the decision behind its signature and checks VALID
+
+- **Given** the committed reports RPT0030 to RPT0034, each signed by the orchestrator in the operator's name, and the accepted decisions in `sdlc-studio/decisions.md` that authorised those signatures
+- **When** each report is read and `sprint_report.py check` is run on it
+- **Then** each page and its JSON record carry the disclosure line US1294's command writes, naming the accepted decision whose text authorises that run's delegated signature, and each report reads VALID. Fails on: one of the five without its line, a line naming a decision that does not cover that run, or a report the amendment left INVALIDATED
+- **Verify:** pytest tools/tests/test_evidence_page_committed.py::CommittedEvidencePageTests::test_each_delegated_report_names_its_decision_and_checks_valid
+
+### AC2: The 6.4.0 evidence pack and the evidence page say which signatures were delegated
+
+- **Given** `sdlc-studio/reports/evidence-pack-6.4.0.md` and `docs/evidence.md` after the five reports are amended
+- **When** each is read, and `sprint_report.py evidence --out docs/evidence.md --check` is run
+- **Then** both name RPT0030 to RPT0034 as signed under delegation, each with its decision id, name no other report so, and the evidence page still matches what the command regenerates. Fails on: a pack or page that shows the five signatures as entered by the operator, or an evidence page edited by hand away from its generator
+- **Verify:** pytest tools/tests/test_evidence_page_committed.py::CommittedEvidencePageTests::test_the_evidence_pack_and_page_name_the_delegated_signatures
 
 ## Revision History
 

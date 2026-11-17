@@ -19,41 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: ADR-006's Context states that the benchmark ran five times per cell and that the escape difference
+### AC1: ADR-006's Context states how far its five-run evidence reaches
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** ADR-006 in `sdlc-studio/trd.md`, D0014 in `sdlc-studio/decisions.md` and `docs/benchmarks/2026-07-08-n5-run.md`
+- **When** the ADR's Context is read
+- **Then** it says the benchmark ran five times per cell and that the difference in escapes is reportable but below conventional significance, and its run count and escape figures are the ones D0014 and the write-up give. Fails on: a Context that presents the five-run result as a settled measurement, or a figure that differs from the write-up's
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdAdr006Tests::test_adr_006_states_the_strength_of_its_evidence
 
-> Transcribed from the request: ADR-006's Context states that the benchmark ran five times per cell and that the escape difference is reportable but below conventional significance, in words that agree with D0014 in sdlc-studio/decisions.md and with docs/benchmarks/2026-07-08-n5-run.md
+### AC2: ADR-006's Consequences name bad-plan propagation as a negative
 
-### AC2: ADR-006's Consequences name the bad-plan propagation failure mode recorded in D0014 as a negative
+- **Given** ADR-006's Consequences
+- **When** its Negative bullets are read
+- **Then** there are at least two: over-firing, and the mandated arm's own failure mode recorded in D0014, a bad plan that propagates because the critic approves against the wrong oracle. Fails on: a Consequences list whose only negative is over-firing
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdAdr006Tests::test_adr_006_names_bad_plan_propagation_as_a_negative
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: The Key Decisions bullet counts the instances it lists
 
-> Transcribed from the request: ADR-006's Consequences name the bad-plan propagation failure mode recorded in D0014 as a negative, beside over-firing
-
-### AC3: The Key Decisions bullet for ADR-006 gives a count of instances equal to the number of ADRs it then
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: The Key Decisions bullet for ADR-006 gives a count of instances equal to the number of ADRs it then lists
-
-### AC4: A test in tools/tests/`test_lean_trd_refresh.py` fails when the instance count in that bullet
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: A test in tools/tests/`test_lean_trd_refresh.py` fails when the instance count in that bullet differs from the number of ADR ids listed after it
+- **Given** the Key Decisions bullet for ADR-006, and a copy of it with the count changed
+- **When** the stated number of instances is compared with the ADR ids listed after it
+- **Then** the two are equal in the TRD, and the test fails on the changed copy. Fails on: the bullet at grooming, which says four instances and lists three
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdAdr006Tests::test_the_adr_006_instance_count_equals_the_adrs_listed
 
 ## Revision History
 

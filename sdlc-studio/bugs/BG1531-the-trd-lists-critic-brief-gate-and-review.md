@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py
+> **Affects:** sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, tools/tests/test_lean_trd_refresh.py
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §3 Markdown / Python split (lines 155-161); §5 rule 5 (283-284); §2 Pattern Used (85-86); §9 Threat Model row 1 (763); against §3 gate tier (180-187), §6 rows at 556, 601 and 602, and scripts/critic.py:217-228 and 3471-3484
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -28,8 +28,12 @@ In `sdlc-studio/trd.md`, remove `critic brief`, `gate` and `review_prep` from th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Section 3 of `sdlc-studio/trd.md` (lines 155 to 161) and rule 5 of section 5 (lines 283 and 284) list `critic brief`, `gate` and `review_prep` among the...
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `sdlc-studio/trd.md`, remove `critic brief`, `gate` and `review_prep` from the read-only lists in sections 3 and 5, describe each as a helper that writes...
+- [ ] **AC1** Given sections 2, 3, 5 and 9 of `sdlc-studio/trd.md`, when they are read, then `critic brief`, `gate` and `review_prep` are in no read-only list, each is described as writing only its named state with the files and whether each is tracked, section 2 does not call the script layer read-only, and the section 9 mitigation cites the corrected lists. Fails on: any of the three still listed as never mutating the workspace.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only
+- [ ] **AC2** Given a snapshot of a fixture workspace, when `critic.py brief`, `gate.py` and `review_prep.py` are each run through their CLI, then each changes only the paths the TRD names for it (the verdict folder, `briefs.jsonl` and the brief note; state under `.local/`; `review-state.json`). Fails on: a write outside the named paths, or a named path the helper does not write.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_confinement.py::WritingHelperConfinementTests::test_each_writing_helper_writes_only_its_named_state
+- [ ] **AC3** Given the helpers the TRD still calls read-only, when the list is compared with the read-only assertions in `test_confinement.py`, then every one has an assertion there. Fails on: a helper claimed read-only that no confinement test runs.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_every_helper_called_read_only_has_a_confinement_assertion
 
 ## Revision History
 

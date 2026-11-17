@@ -26,8 +26,12 @@ Treat a bug as the approval's own finding only when the approving row's finding 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: In US1064's seat record, `_own_finding` decides whether a later bug was the approving review's own finding.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Treat a bug as the approval's own finding only when the approving row's finding text names the bug's defect (its file:line or id), and add a test that kills...
+- [ ] **AC1** Given an Escaped-via bug whose Evidence reads 'production log after US0001 was reviewed', over an APPROVE carrying a finding that names neither the bug nor its defect, when `retro.py seats` runs, then the bug is charged to the approving seat as missed. Fails on: a review word anywhere in Evidence reading as approved over its own finding.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_review_word_in_evidence_over_an_unrelated_finding_is_a_miss
+- [ ] **AC2** Given a bug whose Evidence names the unit's review and the approving row's finding names the bug's defect (its file and line, or its id), when `retro.py seats` runs, then the bug is listed as approved over the seat's own finding, with that finding's text. Fails on: the tightened rule charging a seat for a defect it raised and passed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_a_finding_naming_the_bugs_defect_reads_approved_over_its_own_finding
+- [ ] **AC3** Given a bug whose Evidence names a review but not the charged unit, and one whose Evidence names the unit but no review, when `retro.py seats` runs, then each is charged as missed. Fails on: either guard of `_own_finding` removed with every test still green.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_evidence_missing_the_unit_or_the_review_is_a_miss
 
 ## Revision History
 

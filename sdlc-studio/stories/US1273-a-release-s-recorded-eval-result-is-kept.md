@@ -19,7 +19,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A results file is not ignored by git
+
+- **Given** the repository's `.gitignore` and the results directory `tools/eval_run.py` writes to (`evals/.results/`)
+- **When** `git check-ignore` is asked about a results file for a new run label in that directory
+- **Then** git reports the file as not ignored, so a plain `git add` stages it, and the two results files already tracked stay tracked. Fails on: the `evals/.results/` ignore line still standing, which leaves a new run's result out of every commit unless someone remembers `git add -f`
+- **Verify:** pytest tools/tests/test_eval_results_committed.py::EvalResultsCommittedTests::test_a_new_results_file_is_not_ignored
+
+### AC2: The eval README says the release's result is committed under its version
+
+- **Given** `evals/README.md`
+- **When** its record step is read
+- **Then** it says the run for a release is recorded under the version being cut as its label, that the results file is committed with the release, and it no longer tells the reader to force the add past an ignore rule. Fails on: a README that still instructs `git add -f`, or names no label a release check could look for
+- **Verify:** pytest tools/tests/test_eval_results_committed.py::EvalResultsCommittedTests::test_the_readme_names_the_committed_result_and_its_label
 
 ## Revision History
 

@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: The cut writes a record naming the release, its date and its reports
+
+- **Given** a project with a previous release tag, two sprint reports signed since it and one signed before it
+- **When** the release is cut for a new version through `release_cut.py`
+- **Then** a release record is written in the committed tree, outside `.local`, naming the version, the date of the cut and the two reports signed since the previous release, and not the earlier one. Fails on: every report on disk listed, a record with no date, or a record written where git ignores it
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_the_cut_records_the_version_date_and_reports_since_the_last_release
+
+### AC2: Cutting the same version again leaves one unchanged record
+
+- **Given** a project whose release record for a version already exists
+- **When** the cut is run again for that version on a later date
+- **Then** there is still one record for the version and its date and report list are unchanged. Fails on: a second record for one release, or the date moved, either of which changes the count a failure rate divides by
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_second_cut_of_one_version_leaves_one_unchanged_record
+
+### AC3: A release that shipped no signed report is still recorded
+
+- **Given** a project with no earlier release and no signed sprint report
+- **When** the first release is cut
+- **Then** its record is written and states that it shipped no report, and the cut exits 0. Fails on: a crash or a skipped record, which would leave that release uncounted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_release_record.py::ReleaseRecordTests::test_a_release_with_no_signed_report_is_still_recorded
 
 ## Revision History
 

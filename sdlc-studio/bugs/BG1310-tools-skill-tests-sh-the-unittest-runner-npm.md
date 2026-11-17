@@ -26,8 +26,12 @@ Have the unittest runner apply the same harness-variable scrub the conftest appl
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Found rebuilding US0986 with BG1205 in run nine (2026-11-09).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have the unittest runner apply the same harness-variable scrub the conftest applies before it loads any test module (one shared helper both call), and add a...
+- [ ] **AC1** Given a shell that exports `CURSOR_AGENT=1`, when a meter-reaching test module is run through `tools/skill-tests.sh`, then it passes as it does under pytest. Fails on: the runner handing the caller's harness variable to the tests, so a Claude transcript fixture is read by the Cursor meter.
+  - **Verify:** pytest tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_a_meter_module_passes_through_the_runner_with_cursor_agent_set
+- [ ] **AC2** Given a shell that exports `CLAUDECODE=1` and one variable the fixtures own, when the runner starts its child, then the child sees none of the names `token_meters.selection_variables()` lists and still sees the fixture's variable. Fails on: a scrub that omits a harness, or one that clears a variable the tests set for themselves.
+  - **Verify:** pytest tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_clears_every_selection_variable_and_nothing_else
+- [ ] **AC3** Given the root `conftest.py` and `tools/skill-tests.sh`, when the names each clears are read, then both come from one helper, so a harness added to the meter is cleared by both runners. Fails on: a second hand-written list in the runner that drifts from the conftest's.
+  - **Verify:** pytest tools/tests/test_skill_tests_env.py::HarnessScrubTests::test_the_runner_and_the_conftest_clear_the_same_names_from_one_helper
 
 ## Further evidence
 

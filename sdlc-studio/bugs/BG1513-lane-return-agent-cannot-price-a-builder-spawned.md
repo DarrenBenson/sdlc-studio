@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
@@ -24,8 +24,12 @@ Search every projects directory for the agent's transcript when the lane reposit
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The website run's builders were spawned from the skill repository's session, so their transcripts live under that project's ~/.claude/projects directory.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Search every projects directory for the agent's transcript when the lane repository's own has none, or take an explicit --transcript path.
+- [ ] **AC1** Given a builder whose transcript lies under another project's directory in the harness's projects store, and none under the lane repository's own, when `sprint.py lane return --agent` names it, then the lane is priced from that transcript and the output names the directory it was read from. Fails on: a cross-repository lane left unpriced with a warning that no transcript exists.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_agent_spawned_from_another_project_s_session_is_priced
+- [ ] **AC2** Given a transcript for the agent under the lane repository's own project directory and another of the same name under a second project, when `lane return --agent` runs, then the lane repository's own is the one read. Fails on: the wider search preferring a foreign transcript over the local one.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_the_lane_repository_s_own_transcript_wins_over_another_project_s
+- [ ] **AC3** Given an agent id with no transcript under any project directory, when `lane return --agent` runs, then it warns naming the agent and every directory searched and records no priced cost. Fails on: a missing agent priced as nought, or a warning that still names only the lane repository's directory.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_priced.py::LanePricedTests::test_an_unknown_agent_warns_and_records_no_priced_cost
 
 ## Impact
 

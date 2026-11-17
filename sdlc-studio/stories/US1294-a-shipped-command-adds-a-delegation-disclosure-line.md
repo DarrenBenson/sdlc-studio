@@ -19,7 +19,26 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A shipped command adds the disclosure and the report still checks VALID
+
+- **Given** a filed, signed report in a throwaway project that `sprint_report.py check` reads VALID, and a decisions log holding an accepted decision
+- **When** the shipped `sprint_report.py` command that adds a delegation disclosure is run naming the report and that decision
+- **Then** the page's signature block and the report's JSON record each carry a line saying the signature was entered under delegation and naming the decision, the fingerprint is unchanged, and `sprint_report.py check` still reads the report VALID. Fails on: a disclosure that can only be made by editing the sealed page by hand, or one that turns the report INVALIDATED
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_delegation_disclosure_leaves_the_signed_report_valid
+
+### AC2: A disclosure is refused for an unsigned report or an unaccepted decision
+
+- **Given** an unsigned report, and a signed report beside a decisions log in which the named decision is absent or superseded
+- **When** the command is run on each
+- **Then** each run exits non-zero naming why, and the page and its JSON record are byte-identical to what they were. Fails on: a disclosure written onto a page nobody signed, or one citing a decision the log does not show as accepted
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_a_disclosure_is_refused_for_an_unsigned_report_or_an_unaccepted_decision
+
+### AC3: Repeating a disclosure writes it once
+
+- **Given** a signed report that already carries a disclosure naming a decision
+- **When** the command is run again with the same decision
+- **Then** the page carries one disclosure line, the second run changes no byte, and the report still reads VALID. Fails on: a second line for the same decision, or a re-run that moves the page
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_signed_report_stable.py::SignedReportStableTests::test_repeating_a_disclosure_writes_it_once
 
 ## Revision History
 

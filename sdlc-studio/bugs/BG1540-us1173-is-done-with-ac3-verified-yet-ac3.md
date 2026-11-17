@@ -28,8 +28,11 @@ Give the `bar` subcommand of `tools/known_issues.py` an `--at` option that judge
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: AC3 of `sdlc-studio/stories/US1173-v6-4-0-is-cut-version-changelog-known.md` (lines 28 to 30) is verified by running the `bar` subcommand of...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Give the `bar` subcommand of `tools/known_issues.py` an `--at` option that judges the corpus as it stood at a named commit, matching what the `check`...
+- [ ] **AC1** Given a corpus in which a High bug was filed after commit C and none was open at C, when `tools/known_issues.py bar --at C` runs, then the bar is met and the exit status is 0. Fails on: a finding filed after a release turning that release's bar red.
+  - **Verify:** pytest tools/tests/test_known_issues.py::ReleaseBarTests::test_a_high_filed_after_the_named_commit_does_not_break_the_bar_at_it
+- [ ] **AC2** Given a corpus with a High bug open at commit C, when `bar --at C` runs, then the bar is not met, the bug is named and the exit status is non-zero; and `bar` with no `--at` still judges the working tree. Fails on: `--at` passing a finding that was open at the commit, or changing what the plain verb reads.
+  - **Verify:** pytest tools/tests/test_known_issues.py::ReleaseBarTests::test_a_high_open_at_the_named_commit_still_breaks_the_bar
+- [ ] **AC3** Given the US1173 story file after the fix, when AC3 is read, then its Verify line judges the bar at the commit that cut 6.4.0, the Notes line defending the live read is corrected, the Revision History records the change, and each earlier release-cut story found with the same live Verify line is filed. Fails on: a Done story whose criterion reddens when a High is filed between releases.
 
 ## Revision History
 

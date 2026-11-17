@@ -29,8 +29,10 @@ Update ADR-012 in `sdlc-studio/trd.md`: change the Status line to say what is bu
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: ADR-012 in `sdlc-studio/trd.md` is headed Accepted, not yet built (line 1228), and its Built so far paragraph (lines 1260 to 1266) says approval, the close's...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Update ADR-012 in `sdlc-studio/trd.md`: change the Status line to say what is built and what remains, rewrite the Built so far paragraph to include approval...
+- [ ] **AC1** Given ADR-012 in `sdlc-studio/trd.md`, when its Status line and Built so far paragraph are read, then they name approval (US1066), the close's listing (US1067) and the signed-close gate (US1068) as built, Not yet built holds only what is absent from the tree, and a revision row records the change. Fails on: a Status line ending not yet built, or the sentence saying no learning is live yet.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built
+- [ ] **AC2** Given an ADR text that calls a story open, when the ADR-012 check reads that story's Status line under `sdlc-studio/stories/`, then it fails for a story whose Status is Done and passes for one still open. Fails on: a check that stays green while the ADR calls a Done story open.
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_a_done_story_called_open_fails_the_check
 
 ## Revision History
 

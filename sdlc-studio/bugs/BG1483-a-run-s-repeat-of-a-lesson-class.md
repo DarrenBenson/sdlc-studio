@@ -24,9 +24,12 @@ Count a hit when a bug filed in the run cites the class (an `LC-xxx` token in it
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run thirteen repeated LC-019 (BG1468: two boundary-only reds the lanes' selections skipped) and LC-021 (markdownlint refusals at the land), yet both rows show...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read LC-019 and LC-021 in sdlc-studio/lessons.jsonl: 0 hits, though BG1468 and run thirteen's land refusals repeated both.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Count a hit when a bug filed in the run cites the class (an `LC-xxx` token in its summary) and when the retro's Stop or Keep section cites it, not only Try...
+- [ ] **AC1** Given an open run in which a bug is filed whose summary cites a recorded class by its code, when the run closes, then that class gains one hit for the run, naming the bug. Fails on: a repeat caught by the land or the push gate, and filed as a bug, leaving the class at the hits it had.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_bug_filed_in_the_run_citing_a_class_is_a_hit
+- [ ] **AC2** Given a retro whose Stop or Keep section cites a class code, when the run closes, then the class gains one hit for the run. Fails on: only Try items and cited REJECTs being counted.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_stop_or_keep_item_citing_a_class_is_a_hit
+- [ ] **AC3** Given one repeat cited by a bug of the run and by the retro, and a bug citing the class that was filed before the run opened, when the run closes and then closes again, then the class holds one repeat for the run and the earlier bug adds none. Fails on: the same repeat counted twice, a re-run close adding a hit, or a bug from outside the run counted.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_repeat_is_counted_once_and_only_from_this_run
 
 ## Revision History
 

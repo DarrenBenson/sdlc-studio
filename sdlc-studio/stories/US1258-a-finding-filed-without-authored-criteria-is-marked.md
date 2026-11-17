@@ -19,7 +19,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: A finding filed without criteria carries the ungroomed mark and is told so
+
+- **Given** a bug filed through `file_finding.py file` with no `--ac`, whose evidence is long enough for criteria to be derived
+- **When** the file is written
+- **Then** its `## Acceptance Criteria` section opens with the ungroomed mark `sdlc_md.UNGROOMED_AC_TOKEN` above the derived checkboxes, and the filing output says the finding is ungroomed and names `--ac` and `--verify` as the flags that supply authored criteria. Fails on: derived stubs written with no mark, so the bug reads as groomed until a grooming pass opens it, or a notice that names no flag
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::UngroomedMarkTests::test_a_finding_without_ac_is_marked_ungroomed_and_names_the_flags
+
+### AC2: A finding filed with authored criteria carries no mark
+
+- **Given** the same bug filed with `--ac` and a paired `--verify`
+- **When** the file is written
+- **Then** the section holds the authored criterion with its Verify line and no ungroomed mark, and the filing output carries no ungroomed notice. Fails on: the mark stamped on authored criteria, which would have `sprint plan` refuse a groomed bug
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::UngroomedMarkTests::test_a_finding_with_authored_criteria_carries_no_mark
 
 ## Revision History
 

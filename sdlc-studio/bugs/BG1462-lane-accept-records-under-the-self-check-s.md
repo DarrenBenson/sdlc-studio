@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py
 > **Evidence:** Run thirteen, US1058 round-2 accept, 2026-11-15.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -26,8 +26,10 @@ Have `lane land` record the self-check under the builder seat `lane brief --seat
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.py lane accept` records a verdict under the author of the unit's latest self-check unless `--author` is given.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Have `lane land` record the self-check under the builder seat `lane brief --seat` recorded, in the holder (role) form, keeping the agent id as a separate...
+- [ ] **AC1** Given a lane whose brief recorded its builder seat with `lane brief --seat`, landed from an `agent-<id>` worktree, when `sprint.py lane land` records the unit's self-check, then the self-check's author is that seat in the `<holder> (<role>)` form and the agent id is kept in a field of its own. Fails on: the agent id recorded as the author, or the agent id lost.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_the_land_records_the_self_check_under_the_builder_seat
+- [ ] **AC2** Given that landed unit, when `sprint.py lane accept --unit <id> --verdict <file> --reviewer <name>` runs with no `--author`, then the verdict is recorded against the builder seat and the output carries no warning that the author lacks the `<holder> (<role>)` form. Fails on: the default author still producing the warning on every accept.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_an_accept_after_the_land_prints_no_author_form_warning
 
 ## Revision History
 

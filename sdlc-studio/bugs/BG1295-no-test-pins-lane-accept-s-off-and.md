@@ -24,9 +24,10 @@ Add two tests to `test_lane_accept.py`: under `off`, a stale self-check is neith
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: From BG1290's round-2 review (qa-seat-BG1290-r1, non-blocking).
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Apply either mutant to lib/lanes.py and run `python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py -q`: all pass.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Add two tests to `test_lane_accept.py`: under `off`, a stale self-check is neither refused nor warned about and nothing on stderr names it; under an...
+- [ ] **AC1** Given a landed unit whose Affects changed after its self-check, under `review.author_self_check: off`, when `sprint lane accept` records an APPROVE, then it exits 0, the verdict is recorded and nothing on stderr names the self-check. Fails on: the self-check gap being asked for, and warned about, under `off`.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_off_neither_refuses_nor_warns_about_a_stale_self_check
+- [ ] **AC2** Given the same unit with the mode mistyped as `blok` after the landing, when `sprint lane accept` runs, then it exits 2, records no verdict, leaves the unit's status as it was and says the mode is refused rather than read as off. Fails on: an unrecognised mode read as `off`, moving the unit to Done.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_unrecognised_mode_is_refused_not_read_as_off
 
 ## Revision History
 

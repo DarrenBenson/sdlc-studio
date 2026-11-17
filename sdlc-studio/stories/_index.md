@@ -7,15 +7,15 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 181 |
+| Draft | 178 |
 | Ready | 1 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 934 |
-| Won't Implement | 92 |
+| Won't Implement | 93 |
 | Deferred | 0 |
-| Superseded | 91 |
+| Superseded | 93 |
 | Blocked | 0 |
 | **Total** | **1299** |
 
@@ -71,8 +71,8 @@
 | [US1031](US1031-sprint-plan-names-the-seats-that-have-not.md) | sprint plan names the seats that have not read the Sprint Goal | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1032](US1032-a-second-seat-s-verdict-is-its-own.md) | A second seat's verdict is its own round, so its REJECT is repaired rather than carried | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1033](US1033-two-seats-each-rejecting-once-is-two-repair.md) | Two seats each rejecting once is two repair rounds, not a non-converging unit | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
-| [US1034](US1034-critic-py-seats-adds-a-second-different-seat.md) | critic.py seats adds a second, different seat to a high-risk unit | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
-| [US1035](US1035-the-sprint-report-names-a-high-risk-unit.md) | The sprint report names a high-risk unit only one seat reviewed | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
+| [US1034](US1034-critic-py-seats-adds-a-second-different-seat.md) | critic.py seats adds a second, different seat to a high-risk unit | Superseded | EP0284 | 2026-10-09 | 2026-10-09 |
+| [US1035](US1035-the-sprint-report-names-a-high-risk-unit.md) | The sprint report names a high-risk unit only one seat reviewed | Superseded | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1036](US1036-goal-review-brief-seat-briefs-each-seat-through.md) | goal-review brief --seat briefs each seat through its own review card | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1037](US1037-each-seat-s-goal-review-brief-carries-that.md) | Each seat's goal-review brief carries that seat's own questions | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1038](US1038-the-qa-seat-s-goal-review-brief-lists.md) | The QA seat's goal-review brief lists the batch criteria no executable check covers | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
@@ -254,7 +254,7 @@
 | [US1214](US1214-a-verify-stamp-records-the-affects-digest-and.md) | A verify stamp records the Affects digest, and a transition accepts a current stamp without a re-run | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
 | [US1215](US1215-a-rejoinder-brief-diffs-from-the-round-one.md) | A rejoinder brief diffs from the round one verdict's commit and leaves out the file history | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
 | [US1216](US1216-each-recorded-verdict-says-whether-it-cites-the.md) | Each recorded verdict says whether it cites the file history | Draft | EP0331 | 2026-11-17 | 2026-11-17 |
-| [US1217](US1217-critic-record-accepts-a-round-two-verdict-from.md) | Critic record accepts a round two verdict from a fresh reviewer and records it under its own name | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
+| [US1217](US1217-critic-record-accepts-a-round-two-verdict-from.md) | Critic record accepts a round two verdict from a fresh reviewer and records it under its own name | Won't Implement | EP0332 | 2026-11-17 | 2026-11-17 |
 | [US1218](US1218-critic-brief-given-several-units-prints-the-stable.md) | Critic brief given several units prints the stable blocks once and each unit's scope, criteria and diff apart | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
 | [US1219](US1219-the-review-dispatch-groups-a-wave-s-units.md) | The review dispatch groups a wave's units of at most 3 points into reviewer batches of at most three | Draft | EP0332 | 2026-11-17 | 2026-11-17 |
 | [US1220](US1220-self-check-record-runs-one-shipped-command-for.md) | Self-check record runs one shipped command for each criterion and stores its exit and an output digest | Draft | EP0333 | 2026-11-17 | 2026-11-17 |

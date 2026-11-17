@@ -24,8 +24,10 @@ Catch ValueError beside OSError in messages() and refuse naming the message. Giv
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: In the legacy OpenCode tree, a non-UTF-8 message file raises UnicodeDecodeError, which only `token_meters`' catch-all turns into a refusal.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Catch ValueError beside OSError in messages() and refuse naming the message.
+- [ ] **AC1** Given a legacy OpenCode storage tree in which one message file of this repository's session is not UTF-8, when the OpenCode meter reads it, then the reading is tokens None with a reason naming that message file, and the same tree with the file re-saved as UTF-8 reads its tokens. Fails on: the refusal reaching the page as 'raised UnicodeDecodeError' from the catch-all, naming no file.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_opencode.py::OpenCodeReaderTests::test_a_non_utf8_legacy_message_is_refused_by_name
+- [ ] **AC2** Given a run whose stamps come from a harness reading that carries no components (a Cursor cloud reading), when the run total is formed, then `priced` is None and `priced_reason` says the harness's reading carries no components, while a stamp written before the meter priced each component keeps the reason it has. Fails on: a current harness reading reported as a stamp 'written before the meter priced each component'.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::RunTokenStampTests::test_a_reading_without_components_is_not_called_a_legacy_stamp
 
 ## Revision History
 

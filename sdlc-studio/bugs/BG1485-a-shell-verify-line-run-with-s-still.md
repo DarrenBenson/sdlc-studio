@@ -25,8 +25,11 @@ Apply the closing-summary read to a shell line whose command runs pytest, and co
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Left by the run fourteen fixes lane, outside its criteria.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Apply the closing-summary read to a shell line whose command runs pytest, and correct the docstring to say `verify_ac` prints and records the count.
+- [ ] **AC1** Given a shell Verify line that runs pytest with -s over a passing test that prints '1 skipped in 0.01s', when `verify_ac.py run` runs it, then the criterion passes. Fails on: the printed line read from the whole output as an all-skipped or no-tests run.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::AllSkippedReadUnderSTests::test_a_shell_line_running_pytest_reads_the_closing_summary
+- [ ] **AC2** Given a shell Verify line that runs pytest over a target whose every test is skipped, when `verify_ac.py run` runs it, then it still reads as all-skipped. Fails on: the closing-summary read hiding a real all-skipped run on a shell line.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::AllSkippedReadUnderSTests::test_a_shell_line_whose_run_is_all_skipped_is_still_caught
+- [ ] **AC3** Given the module docstring of `test_partial_skip_release_gate_count.py`, when it is read, then it says `verify_ac` prints and records the partial-skip count and does not say the release gate counts it. Fails on: the overclaim BG1479 removed from BG1395's fragment standing in the docstring.
 
 ## Revision History
 

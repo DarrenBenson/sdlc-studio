@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/help/bug.md, .claude/skills/sdlc-studio/SKILL.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_small_change_runbook.py, changelog.d/US1051.md
 > **Epic:** EP0286
 > **Points:** 5
-> **Depends on:** US1047, US1048, US1049, US1050, BG1009
+> **Depends on:** US1047, US1048, US1049, US1050
 > **Persona:** Maya Okafor
 
 ## User Story

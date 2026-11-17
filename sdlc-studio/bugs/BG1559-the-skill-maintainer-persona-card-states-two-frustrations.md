@@ -28,8 +28,10 @@ Rewrite the two bullets so the card states what is true now: either replace each
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The Frustrations section of the skill maintainer persona card describes what trips the persona up with the current tools, and a unit on the repository-tooling...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Rewrite the two bullets so the card states what is true now: either replace each with a frustration that still holds, or keep the history in the past tense as...
+- [ ] **AC1** Given the Frustrations section of the skill maintainer persona card, when the test resolves every Bug or CR id a bullet cites, then no bullet states as current a condition whose cited id is at a terminal status: the BG1065 and BG1054 bullets are replaced by frustrations that still hold or are marked as resolved history in the past tense. Fails on: a present-tense frustration citing a Fixed bug.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::FrustrationsCurrencyTests::test_no_current_frustration_cites_a_terminal_id
+- [ ] **AC2** Given a fixture card with one bullet citing a Fixed bug unmarked, one citing a Fixed bug marked as resolved history and one citing an Open bug, when the same check runs, then only the unmarked bullet is reported. Fails on: a check that reports every cited id, or one that passes the stale bullet.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::FrustrationsCurrencyTests::test_a_stale_bullet_is_reported_and_an_open_or_marked_one_passes
 
 ## Revision History
 

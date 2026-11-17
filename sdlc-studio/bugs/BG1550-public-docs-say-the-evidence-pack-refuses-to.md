@@ -28,8 +28,10 @@ Reword the sentence in docs/engineering-leaders.md and the matching one in refer
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: docs/engineering-leaders.md lines 15 to 17 state without qualification that the evidence pack refuses to name an agent as the accountable person, and...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Reword the sentence in docs/engineering-leaders.md and the matching one in reference-scripts-domain.md to state what is enforced: the pack refuses a blank...
+- [ ] **AC1** Given docs/engineering-leaders.md, when its account of the evidence pack's signer check is read, then it states the three refusals that are enforced (a blank principal, one that reads as an agent by name, one recorded as an author of the report's own units) and that the pack cannot tell a person from an agent session signing under another name, so the named person is the operator's responsibility. Fails on: the page stating without qualification that the pack refuses to name an agent as accountable.
+  - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_agent_refusal_is_not_stated_as_absolute
+- [ ] **AC2** Given `reference-scripts-domain.md`, when its evidence-pack entry is read, then it states the same three refusals and the same limit as the public page. Fails on: the reference still claiming an absolute refusal, or the two pages disagreeing on what is enforced.
+  - **Verify:** pytest tools/tests/test_engineering_leaders_page.py::FactualWordingTests::test_the_reference_states_the_same_refusals_and_limit
 
 ## Revision History
 

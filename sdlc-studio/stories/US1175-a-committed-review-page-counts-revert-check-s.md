@@ -19,23 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: A committed review page lists each run counted, with its base and verified refs, and per unit the
+### AC1: Each counted run matches its run record
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** the committed page `sdlc-studio/reviews/revert-check-yield.md` and the run records under `sdlc-studio/reports/runs/`
+- **When** the page's table of runs is read
+- **Then** it lists at least five signed runs, each with the `base_ref` and `verified_sha` its run record holds and the seconds its pass took. Fails on: fewer than five runs, a ref that differs from the run record, or a run with no seconds
+- **Verify:** pytest tools/tests/test_revert_check_yield_page.py::RevertCheckYieldPageTests::test_each_counted_run_matches_its_run_record
 
-> Transcribed from the request: A committed review page lists each run counted, with its base and verified refs, and per unit the verdict and cause, as the shipped CLI printed them
+### AC2: Every unit of a counted run has a verdict row
 
-### AC2: The page states the totals (refused, passed, not judged, per-pass seconds), and a decision row
+- **Given** the page's per-unit table and each counted run's batch
+- **When** the two are compared
+- **Then** every unit of each batch has one row whose verdict is passed, refused or not judged, a refused row names the criteria and a not judged row names its cause, as `verify_ac.py revert-check` printed them. Fails on: a unit left off the page, a verdict outside the three, or a not judged row with no cause
+- **Verify:** pytest tools/tests/test_revert_check_yield_page.py::RevertCheckYieldPageTests::test_every_unit_of_a_counted_run_has_a_verdict_row
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: The stated totals equal the rows re-totalled
 
-> Transcribed from the request: The page states the totals (refused, passed, not judged, per-pass seconds), and a decision row cites them when rule 21 is ruled on
+- **Given** the page's stated totals of refused, passed and not judged units and of seconds
+- **When** the per-unit and per-run rows are re-totalled
+- **Then** each stated total equals its re-total. Fails on: a total that is off by one from its rows, or a totals line with a figure the rows cannot produce
+- **Verify:** pytest tools/tests/test_revert_check_yield_page.py::RevertCheckYieldPageTests::test_the_stated_totals_equal_the_rows_re_totalled
 
 ## Revision History
 

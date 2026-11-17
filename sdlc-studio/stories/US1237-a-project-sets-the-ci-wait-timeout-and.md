@@ -19,7 +19,19 @@
 
 ## Acceptance Criteria
 
-> **Ungroomed - acceptance criteria are a grooming placeholder** - author each criterion and its Verify check against this story's slice while grooming, before it is planned to Done. Shape: `templates/core/story.md`. Verifier guidance: `reference-verify.md`.
+### AC1: The defaults carry a wait timeout and a rerun limit of one
+
+- **Given** a project with no override, and one whose config sets both keys
+- **When** the CI wait timeout and the rerun limit are read through the shipped config loader
+- **Then** the first project gets the timeout `config-defaults.yaml` states and a rerun limit of one, and the second gets its own two values. Fails on: a key documented and absent from the defaults, or a project's override ignored
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_wait_config.py::CiWaitConfigTests::test_the_defaults_and_a_project_override_are_read
+
+### AC2: The config reference documents both keys with the defaults the file holds
+
+- **Given** `reference-config.md` and `config-defaults.yaml`
+- **When** the reference's entry for the two keys is read
+- **Then** it names each key by the spelling the defaults file uses, states the same default for each, and says what the timeout bounds and what the limit counts. Fails on: a default in the reference that differs from the file, or a key name the code does not read
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_wait_config.py::CiWaitConfigTests::test_the_reference_states_the_defaults_the_file_holds
 
 ## Revision History
 

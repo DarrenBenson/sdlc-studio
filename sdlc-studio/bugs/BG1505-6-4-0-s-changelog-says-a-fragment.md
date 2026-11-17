@@ -25,8 +25,10 @@ Say in the CHANGELOG sentence that a dash, star or plus item folds unchanged (or
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1503's QA seat (verdict 27cc2b82706d-6d2ea24b) found two gaps.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Say in the CHANGELOG sentence that a dash, star or plus item folds unchanged (or treat an ordered item the same way), and add a bullet test whose prose entry...
+- [ ] **AC1** Given a fragment whose entry opens `1. An ordered first item`, when `changelog.py compose --apply` folds it, then the entry lands exactly as written, with no dash added before the number, so the 6.4.0 sentence that an entry opening with a list item folds unchanged is true of an ordered item too. Fails on: the entry folded as a dash followed by the ordered marker.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::ComposeBulletTests::test_a_fragment_that_opens_with_an_ordered_item_folds_unchanged
+- [ ] **AC2** Given a prose fragment whose first line is prose and whose later lines carry a list item at column 0, when compose folds it, then the entry opens with one dash and every later line, the list item included, is indented under it. Fails on: a matcher that searches every line for a list item and so leaves the prose entry without its bullet.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_changelog.py::ComposeBulletTests::test_a_prose_entry_with_a_later_column_0_list_item_still_gets_its_bullet
 
 ## Revision History
 

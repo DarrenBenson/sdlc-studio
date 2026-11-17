@@ -28,8 +28,10 @@ In each of the three epics, tick the epic-level criteria that were delivered, ma
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: EP0308, EP0309 and EP0311 each copy their parent request's criteria under a line saying these are the epic's completion bar, not any single story's, and each...
-- [ ] **AC2** The proposed fix lands, pinned by a test: In each of the three epics, tick the epic-level criteria that were delivered, mark each undelivered criterion as carried and name the request that carries it...
+- [ ] **AC1** Given EP0308, EP0309 and EP0311, when their epic-level criteria are read, then each delivered criterion is ticked, each undelivered one is marked as carried and names its carrying request (CR0704 for EP0308, CR0706 for EP0309, CR0710 for EP0311), and each file has a revision row recording the deferral. Fails on: an epic at Done with an unticked completion-bar criterion that points nowhere.
+  - **Verify:** pytest tools/tests/test_epic_completion_bar_carried.py::EpicCompletionBarTests::test_no_done_epic_has_an_unticked_criterion_without_a_carrier
+- [ ] **AC2** Given a fixture epic at Done with an unticked epic-level criterion and no carrying id, a second with the criterion marked carried by an existing request, and a third with every box ticked, when the same check runs, then only the first is reported; a carrying id that resolves to no artefact is reported as well. Fails on: a check that passes the unticked bar, or one that accepts a carrier that does not exist.
+  - **Verify:** pytest tools/tests/test_epic_completion_bar_carried.py::EpicCompletionBarTests::test_an_uncarried_criterion_is_reported_and_a_carried_or_ticked_one_passes
 
 ## Revision History
 

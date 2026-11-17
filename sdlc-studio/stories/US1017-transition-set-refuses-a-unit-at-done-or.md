@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/templates/config-defaults.yaml, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-verify.md, .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/help/verify.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, sdlc-studio/.config.yaml, .claude/skills/sdlc-studio/scripts/tests/test_transition_revert_gate.py, changelog.d/US1017.md
 > **Epic:** EP0281
 > **Points:** 5
-> **Depends on:** BG1009, BG1014, US1049
+> **Depends on:** BG1014, US1049
 > **Persona:** Maya Okafor
 
 ## User Story

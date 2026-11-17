@@ -28,8 +28,12 @@ Cut `persona-index-template.md` down to what is read: the cast headings the regi
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `init.py` seeds `sdlc-studio/personas/index.md` in every consuming project from `persona-index-template.md`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Cut `persona-index-template.md` down to what is read: the cast headings the registry and `persona-template.md` agree on, plus a short pointer to where seats...
+- [ ] **AC1** Given an empty scratch project, when `init.py` seeds `sdlc-studio/personas/index.md`, then the seeded file holds no unfilled double-brace placeholder. Fails on: any literal placeholder left in a consuming project's index.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_the_seeded_index_holds_no_placeholder
+- [ ] **AC2** Given the same seeded index, when its headings are read, then every one is a cast heading that `sdlc_md.persona_registry` recognises and `persona-template.md` declares, and the Team Personas, Stakeholder Personas, Consultation Defaults, Custom Personas and Persona Sources tables are absent. Fails on: a seeded section no script or reference page reads, or a cast role the template declares that the index cannot hold.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_every_seeded_heading_is_one_the_registry_reads
+- [ ] **AC3** Given the same seeded index, when each Markdown link in it is resolved from the seeded location, then it reaches an existing file, or the page is named in plain text with no link. Fails on: the relative link to `reference-persona.md` resolving to the project root, where no such file exists.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_no_seeded_link_resolves_to_a_missing_file
 
 ## Revision History
 

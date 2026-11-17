@@ -19,41 +19,33 @@
 
 ## Acceptance Criteria
 
-### AC1: A decision row in sdlc-studio/decisions.md states which trigger defines a high-risk unit (the
+### AC1: A decision row rules which trigger defines a high-risk unit
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** `sdlc-studio/decisions.md`
+- **When** the newest rows are read
+- **Then** one accepted row states which trigger defines a high-risk unit (the `Risk-class` derived from `risk.components`, the points and paths thresholds, or a named combination), cites CR0622 and CR0696, and says what becomes of the trigger it does not keep. Fails on: a row that cites one side only, or reconciled stories with no ruling behind them
+- **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
-> Transcribed from the request: A decision row in sdlc-studio/decisions.md states which trigger defines a high-risk unit (the Risk-class derived from risk.components, the points and paths thresholds, or a named combination) and cites CR0622 and CR0696
+### AC2: US1034 no longer specifies a second derivation of the seat
 
-### AC2: US1034 is either closed as Superseded naming US1152 to US1154, or rewritten so that no criterion
+- **Given** US1034 and the decision row
+- **When** the story is read
+- **Then** it is either closed as Superseded naming US1152 to US1154, moved by the transition tool, or rewritten so that no criterion names `critic.py seats` or a `review.second_seat` key unless the decision keeps them; its 2026-10-21 triage items are each resolved or struck with the reason. Fails on: a Draft US1034 that would still add a second config surface if built as written
+- **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: US1035's criteria are written against the delivered Risk-class
 
-> Transcribed from the request: US1034 is either closed as Superseded naming US1152 to US1154, or rewritten so that no criterion names critic.py seats or a `review.second_seat` key unless the decision keeps them, with its 2026-10-21 triage items resolved
+- **Given** US1035 and the delivered stories US1152 to US1154
+- **When** its acceptance criteria are read
+- **Then** each names the delivered `Risk-class` and the seat `sprint plan` names, none names `review.second_seat`, and the criterion for a high-class unit reviewed by one seat carries a `pytest` Verify line whose test file is in the story's Affects. Fails on: a criterion whose Verify names a verb or key that does not exist at HEAD
+- **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
-### AC3: US1035 has criteria written against the delivered Risk-class and the seat that sprint plan names
+### AC4: CR0622 and EP0284 point at what was delivered
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: US1035 has criteria written against the delivered Risk-class and the seat that sprint plan names, so the sprint report row for a high-class unit reviewed by one seat has a Verify line that can run at HEAD
-
-### AC4: CR0622 and EP0284 each name CR0696 and the delivered stories, so a reader of either side finds the
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: CR0622 and EP0284 each name CR0696 and the delivered stories, so a reader of either side finds the other
+- **Given** CR0622 and EP0284
+- **When** each is read
+- **Then** each names CR0696 and US1152 to US1154 as the delivered design and names the decision row, so a reader of either side finds the other. Fails on: either page still presenting the points and paths thresholds as the only design
+- **Verify:** manual read the records the criterion names and confirm each reads as stated; paperwork only, no test can pin it
 
 ## Revision History
 

@@ -24,9 +24,10 @@ Narrow the docstring to the shapes it holds for, and either add a test that `--w
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1274's round-2 review: the `_declared_tokens` docstring says a bracketed note holding a comma yields fragments `_is_file_token` then drops, but a note...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Read `engagement_floor.py` near line 445 and the `engagement_floor.py` entry in `CONFINEMENT_ALLOWLIST`, then run each against a fixture: a note listing two...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Narrow the docstring to the shapes it holds for, and either add a test that `--write-trailers` writes only the message file or drop that clause from the...
+- [ ] **AC1** Given an Affects field whose bracketed note lists two paths, when `_declared_tokens` reads it, then the tokens it returns are the ones its docstring says that shape yields. Fails on: the docstring saying the note's fragments are dropped while one is counted.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::DeclarationIsCheckableTests::test_the_declared_tokens_docstring_holds_for_a_note_listing_two_paths
+- [ ] **AC2** Given a fixture repository and a commit message, when `engagement_floor.py` runs with `--write-trailers`, then the message file is the only file whose content changes, as the allowlist reason in `test_confinement.py` says. Fails on: any other file written, or the reason citing a pin that does not exist.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_write_trailers_writes_only_the_message_file
 
 ## Revision History
 

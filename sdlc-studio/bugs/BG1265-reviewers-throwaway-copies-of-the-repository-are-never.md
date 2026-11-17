@@ -24,9 +24,12 @@ Tell the reviewer, in the shipped `sdlc-reviewer` definition and in the brief's 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Reviewers mutate and run suites in throwaway archive copies of the tree (200 MB to 2 GB each) under the session scratchpad, and nothing removes them: after...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run a wave of reviews with mutation passes and `du -sh` the session scratchpad after each: it grows by a tree per review and never shrinks.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Tell the reviewer, in the shipped `sdlc-reviewer` definition and in the brief's mutation-pass text, to mutate in a detached `git worktree add` under the...
+- [ ] **AC1** Given the shipped `sdlc-reviewer` definition and this repository's copy, when each is read, then it tells the reviewer to mutate in a detached `git worktree add` under the scratchpad, to run suites the way the project's gate runs them, and to remove the worktree with `git worktree remove --force` before handing back. Fails on: any of the three instructions absent, or the two copies differing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_the_reviewer_mutates_in_a_worktree_and_removes_it
+- [ ] **AC2** Given a unit briefed with `critic.py brief`, when the mutation-pass text is read, then it names the detached worktree as the place to mutate and its removal before the verdict. Fails on: a brief that leaves the clean-up unstated or still allows an archive copy.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefStatesTheIsolatedCheckoutRuleTests::test_the_brief_tells_the_reviewer_to_remove_its_worktree
+- [ ] **AC3** Given a detached worktree under the scratchpad still registered with the repository, when `critic.py record` records a verdict, then it names that worktree, and with none registered it says nothing. Fails on: a leftover worktree passing in silence, or the record being refused over it.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::RecordTests::test_record_names_a_leftover_scratch_worktree
 
 ## Revision History
 

@@ -29,8 +29,14 @@ In `_read_reports`, re-derive each report's fingerprint the way the report check
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The 6.4 release notes and the engineering leaders page say the evidence pack is built from signed reports, that an unsigned report refuses the pack, and that...
-- [ ] **AC2** The proposed fix lands, pinned by a test: In `_read_reports`, re-derive each report's fingerprint the way the report check does, and compare the fingerprint and principal with the signature held in the...
+- [ ] **AC1** Given a fixture clone whose signed report has a figure changed after signing, when `release_cut.py evidence-pack` is run over that report, then it refuses, naming the report as no longer re-deriving its signed fingerprint, and writes no pack. Fails on: a pack written from a report edited after its signature.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SignedReportIsVerifiedTests::test_a_report_edited_after_signing_refuses_the_pack
+- [ ] **AC2** Given a signed report whose `signature.principal` was edited while the committed run record under `sdlc-studio/reports/runs` still holds the original, when the pack is built, then it refuses, naming the report and the disagreement on principal. Fails on: the edited principal printed as the accountable person.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SignedReportIsVerifiedTests::test_an_edited_principal_refuses_the_pack
+- [ ] **AC3** Given a report whose JSON carries a non-empty `signature.signed_at` while its run record holds no signature, when the pack is built, then it refuses, naming the report as unsigned in the run record. Fails on: `signed_at` alone accepted as proof of a signature.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py::SignedReportIsVerifiedTests::test_a_report_with_no_signature_in_the_run_record_refuses_the_pack
+- [ ] **AC4** Given an untouched signed report whose run record agrees with it, when the pack is built, then it is written, exits 0, and each accountable line names the run record's principal with the verified fingerprint beside it. Fails on: a valid report refused, or an accountable line with no fingerprint to compare.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_accountable.py::AccountableTests::test_the_accountable_line_carries_the_verified_fingerprint
 
 ## Revision History
 

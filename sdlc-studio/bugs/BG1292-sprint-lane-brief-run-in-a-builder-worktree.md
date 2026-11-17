@@ -24,9 +24,10 @@ When `lane brief` runs in a linked worktree whose HEAD is not a descendant of th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: A builder spawned with the harness's worktree isolation gets a worktree cut from the remote's default branch, not the local HEAD.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Commit a change to a unit's criteria on local main without pushing.
-- [ ] **AC3** The proposed fix lands, pinned by a test: When `lane brief` runs in a linked worktree whose HEAD is not a descendant of the main worktree's branch tip, print a WARNING naming both commits and the `git...
+- [ ] **AC1** Given a linked worktree whose HEAD is not a descendant of the main worktree's branch tip, where that tip holds a newer commit to the unit's criteria, when `sprint.py lane brief --units <unit>` runs in the worktree, then stderr carries a WARNING naming both commits and the `git merge --ff-only <branch>` that brings the unit up to date. Fails on: the worktree's stale copy of the unit briefed with no warning.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward
+- [ ] **AC2** Given a linked worktree at or ahead of the main worktree's branch tip, and the main worktree itself, when `lane brief` runs in each, then no such warning is printed and the brief is the one printed today. Fails on: a warning on every brief, which a builder learns to ignore.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_an_up_to_date_worktree_and_the_root_are_not_warned
 
 ## Revision History
 

@@ -29,8 +29,12 @@ Record the selectors that ran with a selected verdict in `record_suite_verdict`,
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: In `gate.py`, a green verdict earned by a selected run is keyed only on `surface_hash`, which hashes the working-tree content of every tracked file, and the...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Record the selectors that ran with a selected verdict in `record_suite_verdict`, and in the off-boundary reuse branch of `suite_decision` reuse a selected...
+- [ ] **AC1** Given a throwaway repository with edits to a.py and b.py, a selected green verdict recorded after a.py alone was staged and committed, when b.py is staged and `gate.py --suite-decision --staged` runs, then it decides to run and selects `test_b.py`. Fails on: a skip with suite-mode reuse because the tracked surface is unchanged.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SuiteVerdictReuseTests::test_a_selected_green_is_not_reused_for_a_different_selection
+- [ ] **AC2** Given a selected green verdict whose recorded selectors include the current selection and an unchanged surface, when `--suite-decision` runs off a boundary, then it reuses the verdict, and a full-mode green keeps its present reuse. Fails on: a fix that ends reuse altogether, so every commit pays the suite again.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SuiteVerdictReuseTests::test_a_selected_green_is_reused_for_a_subset_of_its_selectors
+- [ ] **AC3** Given a selected green verdict that records no selectors, as every record written before this fix does, when `--suite-decision` runs with a non-empty selection, then it decides to run. Fails on: an old record with no selectors read as covering any selection.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate.py::SuiteVerdictReuseTests::test_a_selected_green_with_no_recorded_selectors_is_never_reused
 
 ## Revision History
 

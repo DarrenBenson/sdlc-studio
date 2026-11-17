@@ -24,9 +24,12 @@ Pass `gitutil.git_env()` to both calls (the fake script's environment included),
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1255's reviewer found two unconfined git calls in `.claude/skills/sdlc-studio/scripts/tests/test_lane_run.py` (from US1126, 2c8d0c40): one at about line 286...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Set `GIT_INDEX_FILE` to a scratch file and run `python3 -m pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py -q`.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Pass `gitutil.git_env()` to both calls (the fake script's environment included), and widen the sweep's detector to see git called through a local alias or...
+- [ ] **AC1** Given `GIT_INDEX_FILE` set to a scratch file, as a git hook sets it, when a lane run and its fake CLI stage a file in the timeout case, then the case passes and the scratch index is never written. Fails on: `src/lane.py` staged into the caller's index.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::LaneRunTests::test_a_callers_git_index_is_never_written_by_a_lane_or_its_fake_cli
+- [ ] **AC2** Given a module that runs git with no `env` through a local name bound to a subprocess runner, when the unconfined-git detector reads it, then the call is counted, and the same call passing an `env` is not. Fails on: a count of zero for the aliased call.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_a_call_through_a_local_name
+- [ ] **AC3** Given a module holding a generated script whose text runs git with no `env`, when the detector reads it, then the script's call is counted, while a string that only mentions git is not. Fails on: git inside a generated script staying invisible to the sweep.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::UnconfinedRawGitCallSweepTests::test_the_detector_counts_git_run_inside_a_generated_script
 
 ## Revision History
 

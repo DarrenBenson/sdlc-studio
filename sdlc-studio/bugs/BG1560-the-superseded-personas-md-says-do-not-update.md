@@ -28,8 +28,12 @@ Freeze the file for real. Move any post-June operating detail that the skill mai
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The flat file sdlc-studio/personas.md opens with a banner declaring everything below it a historical record of a 2026-06-20 extraction and telling readers not...
-- [ ] **AC2** The proposed fix lands, pinned by a test: Freeze the file for real.
+- [ ] **AC1** Given sdlc-studio/personas.md, when it is read, then it holds its legacy banner and a pointer to the registry and no persona section below them, and its header carries no Last Updated date earlier than its latest content change. Fails on: persona sections surviving under a banner that says the file is frozen, or the 2026-06-20 date kept over later edits.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_the_frozen_flat_file_holds_no_persona_sections
+- [ ] **AC2** Given the operating detail the flat file's Skill Maintainer section gained after the supersession, the forward-port mirror and its check flag among it, when the skill maintainer's card is read, then the card states that detail, and the registry's Superseded note describes the flat file as the banner and pointer it now is. Fails on: detail deleted from the flat file and present nowhere, or a registry note describing a file that no longer exists in that form.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_the_card_carries_the_detail_the_flat_file_dropped
+- [ ] **AC3** Given a fixture flat personas file carrying the legacy banner with a persona section added below it, when the same check runs, then the section is reported; a fixture holding the banner and pointer alone passes. Fails on: a frozen claim that can drift again unnoticed.
+  - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_a_persona_section_under_the_banner_is_reported
 
 ## Revision History
 

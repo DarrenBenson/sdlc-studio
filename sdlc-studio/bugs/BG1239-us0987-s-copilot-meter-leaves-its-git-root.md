@@ -24,8 +24,10 @@ Add a fixture session whose `cwd` sits below its `gitRoot` and assert it is book
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run seven, US0987 round 1 (APPROVE, two non-blocking findings).
-- [ ] **AC2** The proposed fix lands, pinned by a test: Add a fixture session whose `cwd` sits below its `gitRoot` and assert it is booked to the repo, so the mutant fails.
+- [ ] **AC1** Given a Copilot session whose recorded `cwd` is a subdirectory of its `gitRoot`, when the meter reads the repository's sessions, then that session's tokens are booked to the repository. Fails on: a reader preferring `cwd` over `gitRoot`, which loses the session.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_a_session_started_below_its_git_root_is_booked_to_the_repo
+- [ ] **AC2** Given that no captured Copilot session delegated to a subagent, when the `meter_copilot.py` docstring and `reference-sprint.md` describe the reading, then both state `includes_subagents: False` as an assumption no capture has settled. Fails on: either page presenting the value as observed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_meter_copilot.py::CopilotReaderTests::test_the_subagent_exclusion_is_stated_as_an_assumption
 
 ## Revision History
 

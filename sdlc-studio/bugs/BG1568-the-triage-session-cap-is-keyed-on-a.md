@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
 > **Evidence:** audit AUDIT-2026-11-17, filing step; refusal printed on the 30th filing of the batch
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -27,8 +27,12 @@ When the latest run is closed, key the counter on a session that is not that run
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `file_finding.py` caps a session at 50 filings and keys the counter on the current run.
-- [ ] **AC2** The proposed fix lands, pinned by a test: When the latest run is closed, key the counter on a session that is not that run, for example the calendar day, and say so in the refusal.
+- [ ] **AC1** Given a workspace whose latest run is closed and signed and no run is open, with the session counter at the cap under that run's id, when `file_finding.py file` files a finding with `SDLC_TRIAGE_SESSION` unset, then the finding is filed and the counter is keyed on a session that is not the signed run. Fails on: a new day's filing refused against a finished run.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py::SessionCapAfterASignedRunTests::test_a_filing_after_a_signed_run_is_not_counted_against_it
+- [ ] **AC2** Given a closed run in the run state, when the session key is read, then it is the calendar-day key; given an open run, it is still that run's id; given `SDLC_TRIAGE_SESSION` set, it is still the stated name. Fails on: a closed run's id returned as the key, or the open-run and stated-name sources changing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionKeyTests::test_a_closed_run_keys_on_the_day_and_an_open_run_on_its_id
+- [ ] **AC3** Given the cap reached under the calendar-day key, when a further filing is refused, then the refusal names the key in use and says it is the day because no run is open, and no id is minted. Fails on: a refusal telling the operator to close a run that is already closed.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py::SessionCapTests::test_the_refusal_names_the_day_key_when_no_run_is_open
 
 ## Revision History
 

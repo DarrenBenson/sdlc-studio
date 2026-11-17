@@ -1,6 +1,6 @@
 # BG1327: A verdict file's `\;` escape, which the review brief prescribes for a semicolon inside a finding, still splits the finding when `critic.py record --from-verdict` reads it, leaving an untagged piece the record refuses
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -33,3 +33,7 @@ Honour `\;` as a literal semicolon in the --from-verdict parser, as the brief pr
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+
+## Resolution
+
+Won't Fix (2026-11-17, at the backlog grooming the operator asked for). The reproduction does not reproduce at HEAD: a verdict file whose ISSUES line holds a backslash-escaped semicolon inside one tagged finding (the bug's own example, and the fuller US1142 finding) parses through critic.parse_verdict_block and critic.unclassified_findings, the two calls `record --from-verdict` makes, as one whole finding with no untagged piece, and the same replay against critic.py at ecb06498 (the filing commit) also keeps it whole. The escape is honoured by \_tag_led_segments (31784932, BG1032) and pinned by scripts/tests/test_critic.py::ClosureChannelTests::test_the_issues_channel_carries_a_semicolon_too, so the refusal of 2026-11-09 was most likely a verdict file that no longer held the backslash when it was read.

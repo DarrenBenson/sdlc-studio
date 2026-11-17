@@ -28,8 +28,14 @@ Make the lane path attribute a seat. Have lane accept write the Reviewer cell in
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The persona learning loop keys each learning to a seat through the parenthesised role in a ledger Reviewer cell, read by `recorded_seat` in `critic.py`.
-- [ ] **AC2** The proposed fix lands, pinned by a test: Make the lane path attribute a seat.
+- [ ] **AC1** Given a lane whose reviewer was briefed with a seat, when `sprint.py lane accept --reviewer` records the verdict with a value such as qa-seat-UNIT-r1, then the ledger's Reviewer cell is written in the holder and role form and `recorded_seat` in `critic.py` returns the briefed seat for that row. Fails on: a row recorded through lane accept for which `recorded_seat` returns nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_the_recorded_reviewer_cell_names_the_briefed_seat
+- [ ] **AC2** Given a lane whose brief named a seat, when `lane accept` is given a `--reviewer` value that carries no known seat, then it refuses, naming the known seats, and writes no ledger row; a value carrying the briefed seat is recorded. Fails on: an unattributable reviewer accepted in silence, or a well-formed one refused.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_a_reviewer_naming_no_known_seat_is_refused
+- [ ] **AC3** Given a closed run whose verdict rows all name no seat, when the retro's learnings review runs, then it reports the run's learnings as owed, giving the count of unattributed rows, and not as a clean result; a run with every row attributed and no learning owed still reads clean. Fails on: a wholly unattributed run listed as owing nothing.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_a_wholly_unattributed_run_is_owed_not_clean
+- [ ] **AC4** Given `reference-sprint-toolchain.md`, when its lane accept row is read, then it documents the `--reviewer` value in the holder and role form the `critic.py record` row gives. Fails on: a lane accept row that still documents free text with no seat.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_the_runbook_row_documents_the_seat_form
 
 ## Revision History
 

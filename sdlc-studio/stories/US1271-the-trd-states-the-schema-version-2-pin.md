@@ -19,41 +19,26 @@
 
 ## Acceptance Criteria
 
-### AC1: Section 6 or ADR-008 of the TRD states that this repository is pinned to schema version 2, with the
+### AC1: The TRD states this repository's schema pin and why
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+- **Given** section 6 and ADR-008 of `sdlc-studio/trd.md`, and `schema_version` in `sdlc-studio/.config.yaml`
+- **When** the TRD's statement of the pin is read
+- **Then** it gives the pinned schema version as the number the config holds, cites `sdlc-studio/.config.yaml` as where it is set, and gives the reason this repository stays on the sequential era. Fails on: a TRD that names no pin, or one whose number differs from the config's
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSequentialEraTests::test_the_pinned_schema_version_matches_the_config
 
-> Transcribed from the request: Section 6 or ADR-008 of the TRD states that this repository is pinned to schema version 2, with the reason, citing the pin in `sdlc-studio/.config.yaml`.
+### AC2: The TRD describes the sequential era's remote scan and fetch-first defence
 
-### AC2: The TRD describes the sequential era's concurrency defence: the remote scan by `next_id.py` with
+- **Given** the TRD and `next_id.py`
+- **When** the TRD's account of sequential allocation is read against the script
+- **Then** it names `next_id.py --remote` reading `origin/main` without fetching, names every scan state the script defines, says allocation falls back to local ids with a warning when the remote cannot be read, and states the fetch-first precondition. Fails on: a TRD that omits the remote scan, or names a scan state the script does not have
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSequentialEraTests::test_the_remote_scan_states_match_next_id
 
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
+### AC3: The seeded version and the unstamped fallback are told apart
 
-> Transcribed from the request: The TRD describes the sequential era's concurrency defence: the remote scan by `next_id.py` with `--remote`, its scan states, the local-only fallback warning and the fetch-first precondition, each matching the script's behaviour.
-
-### AC3: The TRD distinguishes the seeded schema version for a new project from the fallback an unstamped
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: The TRD distinguishes the seeded schema version for a new project from the fallback an unstamped workspace resolves to, naming both template files.
-
-### AC4: A test in `tools/tests/test_lean_trd_refresh.py` fails when the TRD omits the remote scan or states
-
-- **Given** {{context}}
-- **When** {{action}}
-- **Then** {{observable outcome}}
-- **Verify:** {{executable check}}
-
-> Transcribed from the request: A test in `tools/tests/test_lean_trd_refresh.py` fails when the TRD omits the remote scan or states a pinned schema version different from the one in `sdlc-studio/.config.yaml`.
+- **Given** the TRD, `templates/config.yaml` and `templates/config-defaults.yaml`
+- **When** the TRD's statement of the default schema version is read
+- **Then** it names `templates/config.yaml` as the seed for a new project and `templates/config-defaults.yaml` as the fallback for an unstamped workspace, each with the version that file holds, and nowhere calls version 3 the default without saying which. Fails on: a TRD that states one default, or a version that differs from the template's
+- **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSequentialEraTests::test_the_seed_and_the_fallback_versions_match_their_templates
 
 ## Revision History
 

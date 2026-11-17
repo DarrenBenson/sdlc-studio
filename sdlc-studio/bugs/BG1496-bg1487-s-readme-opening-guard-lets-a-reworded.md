@@ -24,9 +24,10 @@ Pin the opening's signing sentence to what sprint sign enforces (one named princ
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: The QA seat approved BG1487 in run fifteen with a non-blocking finding: the test guarding the README's opening passes a reworded overclaim such as 'Each step...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Replace the README opening's signing sentence with 'Each step is approved by a person you name.' and run the BG1487 guard: it passes.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Pin the opening's signing sentence to what sprint sign enforces (one named principal signs each run over its report) and refuse any wording that says a person...
+- [ ] **AC1** Given the README opening with its signing sentence replaced by 'Each step is approved by a person you name.', when the opening guard judges it, then it refuses the wording, as it refuses any sentence saying a person approves, signs or reviews each step. Fails on: a reworded per-step approval claim passing because only one literal phrase is banned.
+  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_a_reworded_per_step_approval_claim_is_refused
+- [ ] **AC2** Given the README as shipped, when the guard runs, then it passes only while the opening says one named principal signs each run over its report and that each unit is reviewed by a context that did not write it, and the test's docstring lists exactly the mutations the test applies. Fails on: the signing or independence clause cut or weakened with the guard still green, or a docstring that claims a refusal no assertion makes.
+  - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_opening_claims_independent_review_and_one_signature_per_run
 
 ## Revision History
 

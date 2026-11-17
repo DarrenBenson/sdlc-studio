@@ -8,7 +8,7 @@
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_memory.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-persona-learning.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/scripts/tests/test_user_persona_learning.py, changelog.d/US1073.md
 > **Epic:** EP0287
 > **Points:** 3
-> **Depends on:** US1072, US1066, US1068, US1056, US1040
+> **Depends on:** US1072, US1056, US1040
 > **Persona:** Maya Okafor
 
 ## User Story
