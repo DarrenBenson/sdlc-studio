@@ -1,6 +1,7 @@
 # BG1020: transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1569
 > **Supersedes:** BG1426
 > **Severity:** Low
 > **Points:** 2

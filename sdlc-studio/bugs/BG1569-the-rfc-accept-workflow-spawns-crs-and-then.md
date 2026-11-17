@@ -1,6 +1,7 @@
 # BG1569: The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses
 
 > **Status:** Open
+> **Supersedes:** BG1020
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md

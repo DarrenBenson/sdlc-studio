@@ -6,13 +6,13 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 430 |
+| Open | 428 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 54 |
-| Superseded | 52 |
+| Superseded | 54 |
 | **Total** | **1569** |
 
 ## All Bugs
@@ -95,7 +95,7 @@
 | [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Fixed | Medium | 2026-10-09 | 2026-10-09 |
-| [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Open | Low | 2026-10-09 | 2026-10-09 |
+| [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Superseded | Low | 2026-10-09 | 2026-10-09 |
 | [BG1021](BG1021-a-cr-declared-size-l-is-not-flagged.md) | A CR declared Size L is not flagged for decomposition | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1023](BG1023-verify-ac-s-vitest-and-jest-verbs-fold.md) | verify_ac's vitest and jest verbs fold the whole tail into the -t pattern and call a bare binary, so `vitest <file> -t "name"` can never select its test | Open | Medium | 2026-10-11 | 2026-10-11 |
@@ -142,7 +142,7 @@
 | [BG1064](BG1064-15-of-69-shipped-scripts-are-tracked-without.md) | 15 of 69 shipped scripts are tracked without the executable bit the TRD's script contract requires, a regression of CR0064's fix | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1065](BG1065-the-gate-s-45-second-cost-budget-is.md) | The gate's 45-second cost budget is exceeded on every run (127 s locally, 143 s in CI, the conformance lane alone 121 s), so its OVER line carries no signal | Fixed | Medium | 2026-10-19 | 2026-10-19 |
 | [BG1066](BG1066-the-product-seat-approves-only-stories-that-serve.md) | The product seat approves only stories that serve a Primary persona's goal, so a declared Secondary's stories have no approving lens | Fixed | Medium | 2026-10-19 | 2026-10-19 |
-| [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1067](BG1067-the-triage-session-cap-keys-on-the-run.md) | The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings | Superseded | Low | 2026-10-19 | 2026-10-19 |
 | [BG1068](BG1068-artifact-py-retitle-rewrites-an-inbound-link-s.md) | artifact.py retitle rewrites an inbound link's target but leaves its link text naming the old title, so an epic's story breakdown reads the retired title | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1069](BG1069-critic-escalation-reads-verdicts-across-a-reopen-a.md) | critic escalation reads verdicts across a reopen: a reopened unit's first new-round REJECT is reported as a panel split against the previous delivery's APPROVE | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1070](BG1070-conformance-reads-us0357-and-us0358-as-missing-their.md) | conformance reads US0357 and US0358 as missing their verified stage wherever markdownlint is not installed, because their test modules raise at collection and a stamp on a file that will not collect is counted dead | Open | Low | 2026-10-19 | 2026-10-19 |

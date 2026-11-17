@@ -24,7 +24,7 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 - [ ] [US1055: A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy](../stories/US1055-a-persona-card-that-fails-the-standard-is.md)
 - [ ] [US1056: The goal review refuses to brief from a traced persona card that fails the standard](../stories/US1056-the-goal-review-refuses-to-brief-from-a.md)
 - [ ] [US1057: Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews](../stories/US1057-sprint-plan-names-each-blocked-persona-card-with.md)
-- [ ] [US1058: persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card](../stories/US1058-persona-memory-py-keeps-each-persona-s-evidenced.md)
+- [x] [US1058: persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card](../stories/US1058-persona-memory-py-keeps-each-persona-s-evidenced.md)
 - [x] [US1059: A persona's brief carries its own live learnings, capped and ranked, and never another persona's](../stories/US1059-a-persona-s-brief-carries-its-own-live.md)
 - [ ] [US1060: A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems](../stories/US1060-a-learning-past-its-horizon-is-reported-at.md)
 - [x] [US1061: A unit's review record names the seat that built it, so an author's repairs can be scored](../stories/US1061-a-unit-s-review-record-names-the-seat.md)

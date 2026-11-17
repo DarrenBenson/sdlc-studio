@@ -1,6 +1,7 @@
 # BG1568: The triage session cap is keyed on a run that is already closed and signed
 
 > **Status:** Open
+> **Supersedes:** BG1067
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py, .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py

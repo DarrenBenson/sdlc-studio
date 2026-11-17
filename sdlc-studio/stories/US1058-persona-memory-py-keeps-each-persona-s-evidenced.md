@@ -1,6 +1,7 @@
 # US1058: persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card
 
-> **Status:** Ready
+> **Status:** Superseded
+> **Superseded by:** BG1460
 > **Delivers:** CR0632
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new

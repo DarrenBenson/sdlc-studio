@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_quiet_hooks.py, changelog.d/BG1378.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py, changelog.d/BG1378.md
 > **Evidence:** RUN-01M77177, 2026-11-12: qa-seat-US1134-r1
 > **Created:** 2026-11-12
 > **Created-by:** sdlc-studio file
@@ -25,7 +25,7 @@ Add the pin.
 ## Acceptance Criteria
 
 - [ ] **AC1** Given the case the review named, a test fails when it is broken. Fails on: the surviving mutant.
-  - **Verify:** pytest tools/tests/test_quiet_hooks.py::QuietHooksTests::test_a_missing_markdownlint_is_named
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_success.py::QuietSuccessTests::test_a_missing_markdownlint_is_named
 
 ## Revision History
 

@@ -8,14 +8,14 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 193 |
-| Ready | 1 |
+| Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 934 |
 | Won't Implement | 93 |
 | Deferred | 0 |
-| Superseded | 93 |
+| Superseded | 94 |
 | Blocked | 0 |
 | **Total** | **1314** |
 
@@ -95,7 +95,7 @@
 | [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Ready | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Superseded | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1060](US1060-a-learning-past-its-horizon-is-reported-at.md) | A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1061](US1061-a-unit-s-review-record-names-the-seat.md) | A unit's review record names the seat that built it, so an author's repairs can be scored | Done | EP0287 | 2026-10-12 | 2026-10-12 |

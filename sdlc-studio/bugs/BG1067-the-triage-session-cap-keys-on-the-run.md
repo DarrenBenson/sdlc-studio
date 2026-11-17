@@ -1,6 +1,7 @@
 # BG1067: The triage session cap keys on the run state's id whether or not the run is sealed, so a signed run's counter keeps charging every later session's findings
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1568
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/triage_noise.py, .claude/skills/sdlc-studio/scripts/tests/test_triage_session_after_sign.py, changelog.d/BG1067.md, .claude/skills/sdlc-studio/scripts/tests/test_triage_noise.py

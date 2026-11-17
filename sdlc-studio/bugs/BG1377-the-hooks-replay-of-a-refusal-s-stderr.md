@@ -25,7 +25,7 @@ Add the pin.
 ## Acceptance Criteria
 
 - [ ] **AC1** Given the case the review named, a test fails when it is broken. Fails on: the surviving mutant.
-  - **Verify:** pytest tools/tests/test_quiet_hooks.py::QuietHooksTests::test_a_refusal_replays_its_stderr
+  - **Verify:** pytest tools/tests/test_quiet_hooks.py::QuietHookTests::test_a_refusal_replays_its_stderr
 
 ## Revision History
 
