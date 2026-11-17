@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 430 |
+| Open | 431 |
 | In Progress | 0 |
 | Fixed | 946 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 53 |
 | Superseded | 52 |
-| **Total** | **1568** |
+| **Total** | **1569** |
 
 ## All Bugs
 
@@ -644,6 +644,7 @@
 | [BG1566](BG1566-the-generated-reference-catalogue-in-help-references-md.md) | The generated reference catalogue in help/references.md links all 58 references to paths that do not exist | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1569](BG1569-the-rfc-accept-workflow-spawns-crs-and-then.md) | The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses | Open | Medium | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

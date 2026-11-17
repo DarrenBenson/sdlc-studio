@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 54 |
+| Proposed | 57 |
 | Approved | 0 |
 | In Progress | 21 |
 | Complete | 557 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 63 |
 | Blocked | 0 |
-| **Total** | **728** |
+| **Total** | **731** |
 
 ## All Changes
 
@@ -140,6 +140,9 @@
 | [CR-0726](CR0726-retire-or-rewire-the-three-unreferenced-persona-prompt.md) | Retire or rewire the three unreferenced persona prompt templates that teach the pre-Cooper persona model | Proposed | Low | Improvement | 2026-11-17 | -- |
 | [CR-0727](CR0727-remove-the-superseded-review-seat-charter-template-now.md) | Remove the superseded review-seat-charter template now that nothing references it | Proposed | Low | Improvement | 2026-11-17 | -- |
 | [CR-0728](CR0728-carry-each-changelog-fragment-s-unit-id-into.md) | Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut | Proposed | Low | Improvement | 2026-11-17 | -- |
+| [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | Proposed | High | Improvement | 2026-11-17 | -- |
+| [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | Proposed | Medium | Improvement | 2026-11-17 | -- |
+| [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | Proposed | High | Improvement | 2026-11-17 | -- |
 
 ## Archived Releases
 
