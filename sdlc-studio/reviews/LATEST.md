@@ -47,8 +47,14 @@ SIGNED over RPT0007).
   filed as BG1516 to BG1566, CR0714 to CR0728, RFC0065 and RFC0066, with BG1567 and BG1568 for
   two frictions met filing them. Twelve are High, among them gates that pass work they never
   judged (BG1519, BG1521, BG1522, BG1524). D0502 plans runs sixteen to twenty to deliver them,
-  about 225 points; RFC0065 (who signs when the operator is away) and RFC0066 (what a gate does
-  without PyYAML) need the operator's ruling before run twenty.
+  about 225 points. RFC0065 and RFC0066 are ruled (D0503 to D0505): a run closed while the
+  operator is away waits for signature, and PyYAML is required.
+- **The backlog is broken down and groomed** (D0506 to D0514): every Proposed CR is refined
+  into stories (EP0315 to EP0368) and every Draft story and Open bug passed the readiness
+  report on 2026-11-17. Only the audit's units are placed in runs (D0502); the older CRs'
+  stories are groomed but unplaced.
+- **Competitor review** (RFC0067, D0515 to D0518): CR0732 to CR0738, broken down into
+  EP0369 to EP0375 and US1300 to US1312 (35 points), groomed and unplaced.
 - **Headroom**: the green-run noise total sits at 104 of 104, so one more leaked line reddens
   both CI and the push.
 
