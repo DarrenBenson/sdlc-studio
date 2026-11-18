@@ -2,6 +2,7 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0481: At refine, read each criterion that prescribes public wording against the request's Constraints section, so a wording the CR forbids is…**
 - **L-0480: Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer…**
 - **L-0479: The plan-time registry check (CR0705, now in run fourteen as US1169), naming the prose-writer sweep and command-audit.md among the files a…**
 - **L-0478: A lane rebase step (CR0707) that carries a waiting lane's staged work onto a moved main, regenerates the derived pages, and drops the stash…**

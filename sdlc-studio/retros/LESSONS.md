@@ -1,10 +1,19 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-15
+**Last Updated:** 2026-11-18
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0481: At refine, read each criterion that prescribes public wording against the request's Constraints section, so a wording the CR forbids is…
+
+- **Added:** 2026-11-18
+- **Review-by:** 2027-02-16
+
+At refine, read each criterion that prescribes public wording against the request's Constraints section, so a wording the CR forbids is caught before the build, not by the review (US1319, BG1599).
+
+Recorded from retro RETRO0150.
 
 ## L-0480: Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer…
 
