@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-18
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 0 |
+| Proposed | 1 |
 | Approved | 0 |
 | In Progress | 81 |
 | Complete | 559 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **739** |
+| **Total** | **740** |
 
 ## All Changes
 
@@ -151,6 +151,7 @@
 | [CR-0737](CR0737-generate-mode-reads-schema-dumps-stored-procedure-source.md) | Generate mode reads schema dumps, stored-procedure source and trace exports from a declared folder | In Progress | Low | Feature | 2026-11-17 | EP0374 |
 | [CR-0738](CR0738-a-criterion-can-name-a-project-supplied-app.md) | A criterion can name a project-supplied app command, and the review records the evidence it produced | In Progress | Low | Feature | 2026-11-17 | EP0375 |
 | [CR-0739](CR0739-this-repository-declares-a-component-map-so-its.md) | This repository declares a component map so its gate scripts are classed high risk | Complete | High | Improvement | 2026-11-17 | EP0376 |
+| [CR-0740](CR0740-prevent-or-retire-lesson-lc-021-lane-paperwork.md) | Prevent or retire lesson LC-021 (lane paperwork the landing refuses) | Proposed | Medium | Improvement | 2026-11-18 | -- |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # BG1586: US1313's test lists the gate scripts by name without declaring the list HAND-MAINTAINED ON PURPOSE, so the hand-copied-list guard reddened the push
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_repo_risk_map.py, tools/tests/test_test_census.py
