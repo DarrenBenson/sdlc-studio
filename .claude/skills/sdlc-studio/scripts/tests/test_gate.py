@@ -5383,13 +5383,13 @@ class FullSuiteCountFloorTests(unittest.TestCase):
     # collects nothing (exit 5) and the serial phase runs it
     SERIAL = "import pytest\n\n\n@pytest.mark.serial_only\ndef test_serial():\n    assert True\n"
 
-    def _root(self, **modules: str) -> pathlib.Path:
+    def _root(self, addopts: str = "", **modules: str) -> pathlib.Path:
         root = pathlib.Path(tempfile.mkdtemp(prefix="count_floor_"))
         self.addCleanup(_shutil.rmtree, root, True)
         (root / "sdlc-studio").mkdir()
         # the markers registered, as the repository's own pytest.ini does, so a phase that
         # deselects every test ends on "no tests ran" rather than on a marker warning
-        (root / "pytest.ini").write_text("[pytest]\nmarkers =\n    serial_only: x\n"
+        (root / "pytest.ini").write_text(f"[pytest]\n{addopts}markers =\n    serial_only: x\n"
                                          "    boundary_only: x\n", encoding="utf-8")
         tests = root / "tools" / "tests"
         tests.mkdir(parents=True)
@@ -5403,14 +5403,14 @@ class FullSuiteCountFloorTests(unittest.TestCase):
                 if not k.startswith(("PYTEST_XDIST", "PYTEST_CURRENT_TEST", "GIT_"))
                 and k not in (gate.BOUNDARY_ENV, gate.BOUNDARY_SUITE_ENV)}
 
-    def _gate(self, root: pathlib.Path, *extra: str):
+    def _gate(self, root: pathlib.Path, *extra: str, env: dict | None = None):
         import subprocess  # noqa: PLC0415
         return subprocess.run([sys.executable, str(SCRIPT), "--root", str(root), *extra],
                               capture_output=True, text=True, timeout=600, check=False,
-                              env=self._env(), cwd=str(root))
+                              env=env or self._env(), cwd=str(root))
 
-    def _full_suite(self, root: pathlib.Path):
-        return self._gate(root, "--boundary", "push", "--only", "full-suite")
+    def _full_suite(self, root: pathlib.Path, env: dict | None = None):
+        return self._gate(root, "--boundary", "push", "--only", "full-suite", env=env)
 
     @staticmethod
     def _lane(out: str) -> str:
@@ -5492,6 +5492,91 @@ class FullSuiteCountFloorTests(unittest.TestCase):
         out = mixed.stdout + mixed.stderr
         self.assertNotEqual(0, mixed.returncode, "a deferred skip excused a switched-off one:\n" + out)
         self.assertIn("0 tests ran: every test was skipped", out, out)
+
+    #: How a developer or a project can present pytest's output: (name, environment, ini line).
+    #: Coloured, "1 passed" reads "\x1b[1m1 passed", with no word boundary before the digit;
+    #: doubly quiet (the plan's own `-q` on an inherited one), pytest prints no summary line.
+    PRESENTATIONS = (
+        ("PY_COLORS=1", {"PY_COLORS": "1"}, ""),
+        ("FORCE_COLOR=1", {"FORCE_COLOR": "1"}, ""),
+        ("PYTEST_ADDOPTS=--color=yes", {"PYTEST_ADDOPTS": "--color=yes"}, ""),
+        ("PYTEST_ADDOPTS=-q", {"PYTEST_ADDOPTS": "-q"}, ""),
+        ("addopts = -q", {}, "addopts = -q\n"),
+    )
+
+    def _present(self, case: tuple) -> dict:
+        """Every run `test_the_floor_reads_a_coloured_or_doubly_quiet_run` asserts on, for one
+        presentation. The gate runs pytest under pytest-xdist where it is installed, so the five
+        presentations run at once, two workers each: the fixture's worker count is not what is
+        under test."""
+        import subprocess  # noqa: PLC0415
+        _, extra, addopts = case
+        env = {k: v for k, v in self._env().items()
+               if k not in ("PY_COLORS", "FORCE_COLOR", "NO_COLOR", "PYTEST_ADDOPTS")}
+        env.update(extra, PYTEST_XDIST_AUTO_NUM_WORKERS="2")
+        root = self._root(addopts=addopts, test_empty=self.EMPTY, test_ok=self.PASSING)
+        tests = root / "tools" / "tests"
+        _shutil.copy(pathlib.Path(__file__).resolve().parent / "boundary.py", tests)
+        (tests / "test_deferred.py").write_text(
+            "import os, sys, unittest\nsys.path.insert(0, os.path.dirname(__file__))\n"
+            "from boundary import boundary_only\n\n\nclass T(unittest.TestCase):\n"
+            "    @boundary_only('deferred to the boundary, for this fixture only')\n"
+            "    def test_deferred(self):\n        pass\n", encoding="utf-8")
+        (tests / "test_marked.py").write_text(
+            "import pytest\n\n\n@pytest.mark.boundary_only\ndef test_marked():\n    pass\n",
+            encoding="utf-8")
+        at = "tools/tests/"
+        return {
+            "raw": subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                   at + "test_ok.py"], cwd=str(root), env=env,
+                                  capture_output=True, text=True, timeout=300, check=False),
+            "ok": self._gate(root, "--run-tests", at + "test_ok.py", env=env),
+            # the decorator's skip (read from the SKIPPED line) and the mark's deselection
+            # (counted by the deferral's own --collect-only): 2 only when both are read
+            "deferred": self._gate(root, "--run-tests", at + "test_deferred.py",
+                                   at + "test_marked.py", env=env),
+            "empty": self._gate(root, "--run-tests", at + "test_empty.py", env=env),
+            "lane": self._full_suite(root, env=env),
+            "empty lane": self._full_suite(self._root(addopts=addopts, test_empty=self.EMPTY),
+                                           env=env),
+        }
+
+    def test_the_floor_reads_a_coloured_or_doubly_quiet_run(self) -> None:
+        """Repair (QA REJECT): the floor read pytest's summary as plain text, so under each
+        presentation above a run that printed "1 passed" was refused as "0 tests ran". Each case
+        first checks that the fixture really presents that way, then holds a passing module, the
+        full-suite lane over it and a commit's deferred selection to a pass, beside a module that
+        defines no test, which both entry points still refuse for the right reason. MUTANTS: drop
+        `--color=no` (the three colour cases refuse); drop `--verbosity=-1` (the two quiet cases
+        refuse); force them on `--run-tests` only, on the full-suite lane only, or not on the
+        deferral's own `--collect-only` (it then counts 1 boundary-only test, not 2)."""
+        from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+        with ThreadPoolExecutor(max_workers=len(self.PRESENTATIONS)) as pool:
+            runs = list(pool.map(self._present, self.PRESENTATIONS))
+        for (name, _, _), r in zip(self.PRESENTATIONS, runs):
+            with self.subTest(name):
+                raw = r["raw"]
+                self.assertEqual(0, raw.returncode, raw.stdout + raw.stderr)
+                if "-q" in name:
+                    self.assertNotIn("passed", raw.stdout, "the fixture printed a summary:\n" + raw.stdout)
+                else:
+                    self.assertIn("\x1b[", raw.stdout, "the fixture is not coloured:\n" + raw.stdout)
+                out = r["ok"].stdout + r["ok"].stderr
+                self.assertEqual(0, r["ok"].returncode, "a run that passed a test was refused:\n" + out)
+                self.assertIn("1 passed", out, out)
+                self.assertNotIn("0 tests ran", out, out)
+                out = r["deferred"].stdout + r["deferred"].stderr
+                self.assertEqual(0, r["deferred"].returncode, "a deferred selection refused:\n" + out)
+                self.assertIn("deferred to the push (2 boundary-only)", out, out)
+                out = r["empty"].stdout + r["empty"].stderr
+                self.assertNotEqual(0, r["empty"].returncode, "a run of no test passed:\n" + out)
+                self.assertIn("0 tests ran: no test ran, pytest collected nothing", out, out)
+                out = r["lane"].stdout + r["lane"].stderr
+                self.assertEqual(0, r["lane"].returncode, "a suite that passed tests was refused:\n" + out)
+                self.assertIn("[PASS] full-suite", out, out)
+                out = r["empty lane"].stdout + r["empty lane"].stderr
+                self.assertNotEqual(0, r["empty lane"].returncode, "a suite of no test passed:\n" + out)
+                self.assertIn("no test ran, pytest collected nothing", self._lane(out), out)
 
 
 if __name__ == "__main__":

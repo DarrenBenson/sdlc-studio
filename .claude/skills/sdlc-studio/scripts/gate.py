@@ -880,6 +880,13 @@ _PYTEST_COUNT = re.compile(
     r"\b(\d+) (passed|failed|skipped|xfailed|xpassed|errors?|deselected|warnings?)\b")
 #: The outcomes counted as a test that ran. A skipped or deselected test is not counted.
 _PYTEST_RAN = ("passed", "failed", "xfailed", "xpassed", "error", "errors")
+#: Last on the command line of every pytest whose output the floor reads, so they win over an
+#: inherited `PYTEST_ADDOPTS` or ini `addopts`, which pytest puts before the command line.
+#: `--color=no` beats PY_COLORS, FORCE_COLOR and `--color=yes`, whose escape codes leave
+#: "1 passed" with no word boundary before the digit and colour the "SKIPPED" lines.
+#: `--verbosity=-1` sets the level that prints the summary line, which the plan's own `-q`
+#: on an inherited one suppresses.
+_PYTEST_PLAIN = ("--color=no", "--verbosity=-1")
 
 
 def pytest_counts(text: str) -> dict | None:
@@ -938,7 +945,8 @@ def deferred_to_boundary(texts: "list[str]", selectors: "list[str]", root: str) 
     if skips != skipped:
         return 0
     cp = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q",
-                         "-p", "no:cacheprovider", "-m", "boundary_only", *selectors],
+                         "-p", "no:cacheprovider", "-m", "boundary_only", *selectors,
+                         *_PYTEST_PLAIN],
                         cwd=root, capture_output=True, text=True, check=False)
     marked = re.search(r"\b(\d+)(?:/\d+)? tests? collected", cp.stdout)
     return skips + (int(marked[1]) if marked else 0)
@@ -970,7 +978,8 @@ def _full_suite(root: str) -> dict:
     parallel = importlib.util.find_spec("xdist") is not None
     outputs, failed, summaries, counts = [], [], [], []
     for argv in run_tests_plan(modules, parallel, root):
-        cp = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False)
+        cp = subprocess.run([*argv, *_PYTEST_PLAIN], cwd=root, capture_output=True, text=True,
+                            check=False)
         text = cp.stdout + cp.stderr
         outputs.append(text)
         counts.append(pytest_counts(text))
@@ -2899,8 +2908,11 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     with boundary_suite_env(boundary):
         for argv in run_tests_plan(selectors, parallel, args.root, commit=boundary is None):
             # Echoed line by line as it arrives, and kept, so the summary's count can be read;
-            # `-rfEs` adds each skip's reason to pytest's own failure and error summary.
-            proc = subprocess.Popen([*argv, "-rfEs"], cwd=args.root, stdout=subprocess.PIPE,
+            # `-rfEs` adds each skip's reason to pytest's own failure and error summary, and
+            # `_PYTEST_PLAIN` keeps the output uncoloured and its summary line printed, under
+            # any colour or quiet setting the environment or the project's addopts asks for.
+            proc = subprocess.Popen([*argv, "-rfEs", *_PYTEST_PLAIN], cwd=args.root,
+                                    stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT, text=True, encoding="utf-8",
                                     errors="replace", bufsize=1)
             seen = []
