@@ -96,11 +96,10 @@ Raise separately if needed:
 
 ## Applied
 
-Pending as of 2026-11-18: the GitHub About description and the ten topics under Requested
-changes item 1 are not yet applied. They are repository settings, so the builder does not change
-them; the orchestrator applies them with `gh repo edit` after review, replacing the current
-topics (including `claude-code-skill`), and records the date it did so here. `package.json`
-already carries the same description and the ten topics as its keywords (US1315).
+Applied on 2026-11-18 with `gh repo edit`, after US1315's review: the GitHub About description
+is the text under Requested changes item 1, and the topics are exactly its ten, replacing the
+previous ones (including `claude-code-skill`). `package.json` carries the same description and
+the ten topics as its keywords (US1315).
 
 ## Revision History
 

@@ -1,0 +1,6 @@
+UNIT: US1315
+BRIEF: 2a329773a083-2506a2fb
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac run --id US1315 --dry-run gives ac=2 pass=2 fail=0, and tools/tests/test_package_metadata.py gives 2 passed at 3b7af362. package.json's description matches CR0742 Requested changes item 1 word for word, and its keywords are the ten topics in the CR's order. I mutated the files on disk in an isolated git archive export: the old description, a dropped ai-governance keyword, a paraphrased CR description, the Applied section removed, and the note with its status words removed. Each one turns the matching test red, and the restored copy is green again. The Applied note is true: read-only gh repo view still shows the old "Claude Code skill" description and a topic list that includes claude-code-skill, so "pending" and "replacing the current topics (including claude-code-skill)" both hold. Pending is by design, per the story Notes. The CR0742 Status and Decomposed-into lines in the run-base diff came from eae2ee74 (refine), not this unit. markdownlint is clean on changelog.d/US1315.md and CR0742, and lint-style is clean on the export.

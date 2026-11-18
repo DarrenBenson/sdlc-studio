@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 442 |
+| Open | 444 |
 | In Progress | 0 |
 | Fixed | 957 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1596** |
+| **Total** | **1598** |
 
 ## All Bugs
 
@@ -672,6 +672,8 @@
 | [BG1594](BG1594-sprint-lane-land-records-the-builder-s-agent.md) | sprint lane land records the builder's agent id as the self-check author instead of the building seat, so lane accept writes a verdict row the retro cannot score as a seat's | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1595](BG1595-sprint-lane-brief-units-joins-comma-separated-ids.md) | sprint lane brief --units joins comma-separated ids into one id and refuses it, instead of splitting on commas or saying the ids are space-separated | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1596](BG1596-critic-py-record-calls-a-repair-builder-whose.md) | critic.py record calls a repair builder whose prompt names the verdict path the agent 'briefed with' the verdict, and reports the verdict's provenance as unknown | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1597](BG1597-docs-harnesses-md-s-install-path-check-accepts.md) | docs/harnesses.md's install-path check accepts the global and project folders in either order, its Claude Code live-reload cell rests on one CLAUDE.md sentence, and two cells cite a file that does not hold the claim | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1598](BG1598-readme-install-table-labels-the-github-copilot-row.md) | README install table labels the GitHub Copilot row 'Copilot' because test_install_copilot_global.py pins that exact label, so the README and docs/harnesses.md name the harness differently | Open | Low | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 

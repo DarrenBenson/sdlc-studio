@@ -379,3 +379,9 @@
 | US1321 | Dani Okafor (engineering) | 2026-11-18 | TRUE 26, FALSE 0, UNVERIFIABLE 0 | killed 15, survived 1 | c3c0a276808202f6 at 42fc6eb5dd31 |
 | US1316 | agent-a7cf0178c200b9e9b | 2026-11-18 | TRUE 29, FALSE 0, UNVERIFIABLE 0 | killed 20, survived 1 | c705af597cb91a5f at fd0f3357d2e4 |
 | US1317 | agent-adf464901f9fa8e86 | 2026-11-18 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 45, survived 1 | 78998838835940d3 at fbdb7b10ea2a |
+| US1321 | agent-a8e45ac39c9be34f6 | 2026-11-18 | TRUE 33, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 1 | 3795437481d75113 at f1454a8436c4 |
+| US1316 | agent-a77dab0c350fa2fb0 | 2026-11-18 | TRUE 17, FALSE 0, UNVERIFIABLE 0 | killed 21, survived 3 | e556b21a63595994 at 3efaa33a27b5 |
+| US1318 | agent-a93e747b84dcf86c1 | 2026-11-18 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 21, survived 1 | a032f2aa09b18f32 at fbcd29836829 |
+| US1315 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 0 | 355bc3a9c5981bfa at 3b7af36260df |
+| US1319 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 12, FALSE 0, UNVERIFIABLE 1 | killed 14, survived 0 | b3f3ef45674cba75 at 3b7af36260df |
+| US1320 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | a168833d2dcf7a7d at 3b7af36260df |

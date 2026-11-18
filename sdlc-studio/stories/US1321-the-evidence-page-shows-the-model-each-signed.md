@@ -1,6 +1,6 @@
 # US1321: The evidence page shows the model each signed run used, regenerated through RPT0035
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0742
 > **Created:** 2026-11-18
@@ -25,6 +25,7 @@
 - **When** `sprint_report.py evidence` writes the table
 - **Then** each row has a Model column naming the models its report priced, and "not recorded" for a report that records none. Fails on: a model the report does not carry, or a blank cell
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py::EvidencePageTests::test_each_row_names_the_model_its_report_priced
+- **Verified:** yes (2026-11-18)
 
 ### AC2: The committed page is regenerated through RPT0035
 
@@ -32,6 +33,7 @@
 - **When** the committed-page check re-derives it from the signed reports
 - **Then** it matches, its newest report is RPT0035, and it says the reports do not record the harness, naming the CR that adds it. Fails on: a stale page, or the harness gap unstated
 - **Verify:** pytest tools/tests/test_evidence_page_committed.py
+- **Verified:** yes (2026-11-18)
 
 ## Notes
 
