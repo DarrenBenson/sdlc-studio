@@ -3,8 +3,13 @@
 Harnesses show the SKILL.md `description` when they list skills, `compatibility` says what the
 skill needs, and llms.txt is what an agent evaluating the repository reads first. None of them
 may say one harness is required: the skill runs in six. `epic implement --agentic` runs its waves
-in parallel where the harness has sub-agents; elsewhere the same stories run one at a time, which
-is the fallback docs/harnesses.md states, so the compatibility line and the epic help say so too.
+in parallel where the harness has sub-agents with worktree isolation; elsewhere the same stories
+run one at a time in dependency order, which is the fallback docs/harnesses.md states, so the
+compatibility line and the epic help say so too.
+
+BG1599: docs/harnesses.md marks in-session sub-agents untested outside Claude Code, so a parallel
+claim must name worktree isolation, and reference-epic.md's Agentic mode, the procedure an agent
+follows, must carry the one-at-a-time step in the words the other two surfaces use.
 
 Every test also runs its check on a broken copy, so a check that cannot fail is caught by the
 test that relies on it.
@@ -20,6 +25,7 @@ REPO = Path(__file__).resolve().parents[2]
 SKILL_MD = REPO / ".claude" / "skills" / "sdlc-studio" / "SKILL.md"
 EPIC_HELP = REPO / ".claude" / "skills" / "sdlc-studio" / "help" / "epic.md"
 LLMS = REPO / "llms.txt"
+REFERENCE_EPIC = REPO / ".claude" / "skills" / "sdlc-studio" / "reference-epic.md"
 
 #: The six harnesses, alphabetical without regard to case: the order llms.txt names them in.
 HARNESSES = ("Claude Code", "Codex", "Cursor", "Gemini CLI", "GitHub Copilot", "opencode")
@@ -38,6 +44,19 @@ KEPT_FACTS = ("Python 3.10+", "gh CLI")
 #: The agentskills.io limit on `compatibility`.
 COMPATIBILITY_LIMIT = 500
 NEW_PAGES = ("docs/harnesses.md", "docs/enterprise.md")
+#: BG1599: the capability parallel waves need, and the words the fallback is stated in, the same
+#: on all three surfaces.
+WORKTREE_SUBAGENTS = r"(?i)\bsub-?agents with worktree isolation\b"
+_BARE_SUBAGENTS = re.compile(r"(?i)\bsub-?agents\b(?! with worktree isolation)")
+FALLBACK_WORDS = r"(?i)\bone at a time in dependency order\b"
+#: The no-sub-agent step, found by its condition, and what it must say once found.
+_NO_SUBAGENTS = re.compile(r"(?i)\b(no|without)\s+sub-?agents with worktree isolation\b")
+FALLBACK_STEP = {"one at a time in dependency order": FALLBACK_WORDS,
+                 "as plain `epic implement` does": r"as plain `epic implement` does",
+                 "that the prior `epic plan --agentic` does not apply":
+                     r"`epic plan --agentic`[^.]*\bnot apply\b"}
+#: A fallback denied rather than given: "never run the stories one at a time".
+_DENIED = re.compile(r"(?i)\b(never|not|rather than|instead of)\b[^.;]*\bone at a time\b")
 
 
 def front_matter_field(text: str, key: str) -> str:
@@ -105,6 +124,45 @@ def epic_faults(text: str) -> list[str]:
             if not re.search(p, row)]
 
 
+def parallel_claim_faults(label: str, claim: str) -> list[str]:
+    """BG1599. What keeps `claim` from naming worktree isolation wherever it names sub-agents."""
+    faults = [] if re.search(WORKTREE_SUBAGENTS, claim) else [
+        f"{label} does not say sub-agents with worktree isolation"]
+    if _BARE_SUBAGENTS.search(claim):
+        faults.append(f"{label} names sub-agents without worktree isolation")
+    return faults
+
+
+def agentic_mode(text: str) -> str:
+    """Step 4's Agentic mode in reference-epic.md, up to step 5; "" when there is none."""
+    head = "**Agentic mode (`--agentic`):**"
+    return text.split(head, 1)[1].split("\n5. **", 1)[0] if head in text else ""
+
+
+def reference_fallback_faults(text: str) -> list[str]:
+    """BG1599. What keeps the Agentic mode from giving the step for a harness without sub-agents."""
+    mode = agentic_mode(text)
+    if not mode:
+        return ["reference-epic.md has no Agentic mode"]
+    step = next((p for p in mode.split("\n\n") if _NO_SUBAGENTS.search(p)), "")
+    if not step:
+        return ["the Agentic mode has no step for a harness without sub-agents with worktree "
+                "isolation"]
+    faults = [f"the no-sub-agent step does not say {label}" for label, p in FALLBACK_STEP.items()
+              if not re.search(p, step)]
+    if _DENIED.search(step):
+        faults.append("the no-sub-agent step denies the one-at-a-time run")
+    return faults
+
+
+def shared_words_faults(surfaces: dict[str, str]) -> list[str]:
+    """BG1599. Each surface that does not state the fallback in the shared words."""
+    return [f"{label} does not say {words}" for label, text in surfaces.items()
+            for words, p in (("sub-agents with worktree isolation", WORKTREE_SUBAGENTS),
+                             ("one at a time in dependency order", FALLBACK_WORDS))
+            if not re.search(p, text)]
+
+
 class SkillMetadataNeutralTests(unittest.TestCase):
     def test_skill_md_requires_no_single_harness(self) -> None:
         """AC1. Mutants: the old "Claude-Code-only" line, a harness named as required in the
@@ -162,6 +220,72 @@ class SkillMetadataNeutralTests(unittest.TestCase):
         self.assertEqual(len(epic_faults(decoy)), 3, "a row outside implement was read")
         self.assertEqual(epic_faults(text.replace(row, "", 1)),
                          ["help/epic.md's implement table has no --agentic row"])
+
+    def test_the_parallel_claim_names_worktree_isolation(self) -> None:
+        """BG1599 AC1. Mutants: each surface back to the bare "where the harness has sub-agents",
+        and a second, bare mention beside the qualified one."""
+        compatibility = front_matter_field(SKILL_MD.read_text(encoding="utf-8"), "compatibility")
+        row = agentic_row(EPIC_HELP.read_text(encoding="utf-8"))
+        for label, claim in (("compatibility", compatibility), ("the --agentic row", row)):
+            with self.subTest(label):
+                self.assertEqual(parallel_claim_faults(label, claim), [])
+                bare = re.sub(WORKTREE_SUBAGENTS, "sub-agents", claim)
+                self.assertEqual(parallel_claim_faults(label, bare),
+                                 [f"{label} does not say sub-agents with worktree isolation",
+                                  f"{label} names sub-agents without worktree isolation"])
+                self.assertEqual(parallel_claim_faults(label, claim + " Uses sub-agents."),
+                                 [f"{label} names sub-agents without worktree isolation"])
+
+    def test_reference_epic_states_the_no_subagent_fallback(self) -> None:
+        """BG1599 AC2. Mutants: the step removed, moved into Sequential mode, its condition
+        flipped, denied, keeping the prerequisite, or missing dependency order (also with the
+        words moved to another paragraph), the plain-`epic implement` link or the prerequisite it
+        waives; and either other surface losing the shared words."""
+        text = REFERENCE_EPIC.read_text(encoding="utf-8")
+        self.assertEqual(reference_fallback_faults(text), [])
+        step = next(p for p in agentic_mode(text).split("\n\n") if _NO_SUBAGENTS.search(p))
+        none = ["the Agentic mode has no step for a harness without sub-agents with worktree "
+                "isolation"]
+        self.assertEqual(reference_fallback_faults(text.replace(step, "", 1)), none)
+        moved = text.replace(step, "", 1).replace(
+            "**Sequential mode (default):**", f"**Sequential mode (default):**\n\n{step}", 1)
+        self.assertEqual(reference_fallback_faults(moved), none)
+        flipped = text.replace(step, step.replace("has no sub-agents", "has sub-agents", 1), 1)
+        self.assertEqual(reference_fallback_faults(flipped), none)
+        denied = text.replace(step, step.replace("run the stories", "never run the stories", 1), 1)
+        self.assertEqual(reference_fallback_faults(denied),
+                         ["the no-sub-agent step denies the one-at-a-time run"])
+        kept = text.replace(step, step.replace("then do not apply", "still apply", 1), 1)
+        self.assertEqual(reference_fallback_faults(kept), [
+            "the no-sub-agent step does not say that the prior `epic plan --agentic` does not apply"])
+        scattered = text.replace(step, step.replace(" in dependency order", "", 1), 1).replace(
+            "   d. **Wait for All Stories", "   Run them one at a time in dependency order.\n\n"
+            "   d. **Wait for All Stories", 1)
+        self.assertEqual(reference_fallback_faults(scattered), [
+            "the no-sub-agent step does not say one at a time in dependency order"])
+        for label, cut in (("one at a time in dependency order", " in dependency order"),
+                           ("as plain `epic implement` does", "as plain `epic implement` does"),
+                           ("that the prior `epic plan --agentic` does not apply",
+                            "`epic plan --agentic`")):
+            with self.subTest(label):
+                self.assertIn(cut, step)
+                self.assertEqual(reference_fallback_faults(
+                    text.replace(step, step.replace(cut, "", 1), 1)),
+                    [f"the no-sub-agent step does not say {label}"])
+        self.assertEqual(reference_fallback_faults(text.replace("**Agentic mode", "**Wave mode")),
+                         ["reference-epic.md has no Agentic mode"])
+
+        compatibility = front_matter_field(SKILL_MD.read_text(encoding="utf-8"), "compatibility")
+        row = agentic_row(EPIC_HELP.read_text(encoding="utf-8"))
+        surfaces = {"compatibility": compatibility, "the --agentic row": row,
+                    "the no-sub-agent step": step}
+        self.assertEqual(shared_words_faults(surfaces), [])
+        for label in ("compatibility", "the --agentic row"):
+            for words, drop in (("one at a time in dependency order", " in dependency order"),
+                                ("sub-agents with worktree isolation", " with worktree isolation")):
+                with self.subTest(label, words=words):
+                    cut = dict(surfaces, **{label: surfaces[label].replace(drop, "")})
+                    self.assertEqual(shared_words_faults(cut), [f"{label} does not say {words}"])
 
 
 if __name__ == "__main__":

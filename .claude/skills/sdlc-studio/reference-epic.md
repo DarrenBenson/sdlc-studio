@@ -695,8 +695,8 @@ Automated workflows for implementing all stories in an epic.
    - Has stories in Ready status
    - No circular dependencies
    - If `--story` flag, validate that story is in epic
-   - If `--agentic` flag, validate agentic wave analysis was done (run `epic plan --agentic` first if not)
-   - If `--agentic` flag, verify clean git state:
+   - If `--agentic` flag and the harness has sub-agents with worktree isolation (without them, see Agentic mode in step 4), validate agentic wave analysis was done (run `epic plan --agentic` first if not)
+   - If `--agentic` flag and the harness has them, verify clean git state:
      1. Run `git status --short` -- if modified/untracked source files exist, **STOP**
      2. Prompt: "Uncommitted changes detected. Agentic waves use git worktrees that branch from HEAD -- uncommitted work will not be visible to agents. Commit or stash before proceeding."
      3. Only proceed when `git status` shows no modified source files (sdlc-studio/ changes are acceptable)
@@ -727,7 +727,7 @@ Automated workflows for implementing all stories in an epic.
 
    **Agentic mode (`--agentic`):**
 
-   For each wave in the agentic plan:
+   Where the harness has no sub-agents with worktree isolation, run the stories one at a time in dependency order, as plain `epic implement` does (Sequential mode above); the prior `epic plan --agentic` and step 2's clean-tree stop then do not apply. Otherwise, for each wave in the agentic plan:
 
    a. **Check Wave Prerequisites**
       - All prior waves must be complete
@@ -944,7 +944,7 @@ Enable autonomous concurrent execution for stories that share no hub files.
 
 - Stories in the same wave must modify zero files in common
 - Full test suite runs after each wave completes
-- Falls back to sequential if hub file conflict detected at runtime
+- Falls back to sequential if hub file conflict detected at runtime, or where the harness has no sub-agents with worktree isolation
 - `--agentic` on `epic plan` shows the analysis; `--agentic` on `epic implement` executes it
 
 **Agentic mode has two artifact modes:**

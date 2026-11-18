@@ -240,7 +240,7 @@ Execute the full implementation workflow for all stories in an epic.
 | `--epic EP000X` | Target epic (required) |
 | `--story US000X` | Start from specific story |
 | `--skip US000X` | Skip specific story |
-| `--agentic` | Autonomous concurrent execution with wave analysis (cross-layer only), where the harness has sub-agents. Without them, the same stories run one at a time in dependency order, through the same gates, as plain `epic implement` runs them |
+| `--agentic` | Autonomous concurrent execution with wave analysis (cross-layer only), where the harness has sub-agents with worktree isolation. Without them, the same stories run one at a time in dependency order, through the same gates, as plain `epic implement` runs them |
 
 **What happens:**
 

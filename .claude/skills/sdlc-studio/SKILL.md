@@ -2,7 +2,7 @@
 name: sdlc-studio
 description: "The antidote to vibe coding: a full software engineering team. Create or reverse-engineer PRDs, TRDs, personas, epics and user stories with acceptance criteria; plan, implement, test and verify code against them; run an autonomous Goal-Driven sprint; audit, status, reconcile, change requests, RFCs, test specs, test automation, bugs. Use for requirements or lifecycle work and any /sdlc-studio [type] [action] command; /sdlc-studio help lists all. NOT for: one-off code questions, quick lint fixes, or repos wanting no lifecycle - for a zero-setup taster, start with audit --profile repo."
 license: MIT
-compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Needs no particular harness: --agentic runs its waves in parallel where the harness has sub-agents, and the same stories one at a time elsewhere."
+compatibility: "Requires Python 3.10+ for bundled scripts; gh CLI (authenticated) for GitHub sync commands. Needs no particular harness: --agentic runs its waves in parallel where the harness has sub-agents with worktree isolation, and the same stories one at a time in dependency order elsewhere."
 metadata:
   version: "6.4.0"
   openclaw: { "emoji": "📋", "requires": { "bins": ["python3"] } }
