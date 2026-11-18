@@ -1,18 +1,20 @@
 # SDLC Studio
 
-> An open Agent Skill (agentskills.io format) that runs the full software development
-> lifecycle - PRD, epics, stories with executable acceptance criteria, implementation,
-> testing, verification, reconciliation - with deterministic gates that hold the agent to
-> what the files actually say. Installs into Claude Code, Cursor, Codex, Gemini CLI, opencode
-> and GitHub Copilot, and meters a run's token cost on Claude Code, Codex, Copilot CLI,
-> opencode and Cursor; invoked as /sdlc-studio [type] [action] or model-invoked from plain
-> language.
+> An open, harness-agnostic Agent Skill (agentskills.io format) that runs the full software
+> development lifecycle - PRD, epics, stories with executable acceptance criteria,
+> implementation, testing, verification, reconciliation - with deterministic gates that hold the
+> agent to what the files actually say, and people in the lead on intent and sign-off. Installs
+> into Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and opencode, and meters a run's
+> token cost on Claude Code, Codex, Copilot CLI, Cursor and opencode; invoked as
+> /sdlc-studio [type] [action] or model-invoked from plain language.
 
 ## Docs
 
 - [README](README.md): install, quick start, capability catalogue
 - [Why SDLC Studio](docs/why-sdlc-studio.md): the value argument, evidence and economics
 - [For engineering leaders](docs/engineering-leaders.md): what a run's record proves at a change board, and who answers for each part
+- [Harness compatibility](docs/harnesses.md): what each of the six harnesses gives, and the fallback where one lacks a feature
+- [Adopting SDLC Studio in an enterprise](docs/enterprise.md): harness and models, data, adopting without forking, controls and cost
 - [SKILL.md](.claude/skills/sdlc-studio/SKILL.md): the skill entry point and router
 - [AGENTS.md](AGENTS.md): guidance for coding agents working on this repository
 - [Install reference](docs/INSTALL.md): all tools, scopes and flags

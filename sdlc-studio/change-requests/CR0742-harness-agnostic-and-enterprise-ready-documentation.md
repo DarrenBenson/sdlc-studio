@@ -94,6 +94,14 @@ Raise separately if needed:
 - Keep wording consistent with human in the lead and the persona registry decisions of 2026-11-09.
 - British English.
 
+## Applied
+
+Pending as of 2026-11-18: the GitHub About description and the ten topics under Requested
+changes item 1 are not yet applied. They are repository settings, so the builder does not change
+them; the orchestrator applies them with `gh repo edit` after review, replacing the current
+topics (including `claude-code-skill`), and records the date it did so here. `package.json`
+already carries the same description and the ten topics as its keywords (US1315).
+
 ## Revision History
 
 | Date | Author | Change |

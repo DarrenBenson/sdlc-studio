@@ -24,7 +24,8 @@ folder - which the installer scripts do for you.
 
 ## Quick start
 
-macOS / Linux (installs the Claude Code skill, globally):
+macOS / Linux (installs the skill globally, into the default `claude` target's
+`~/.claude/skills`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
@@ -37,7 +38,8 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 ```
 
 To install into every coding agent you have, add `--target auto` (PowerShell:
-`-Target auto`). See below.
+`-Target auto`). See below. [Harness compatibility](harnesses.md) shows what each
+harness gives once installed, and the fallback where one lacks a feature.
 
 ## Requirements
 

@@ -529,7 +529,7 @@ The test spec maps every AC to a named test case, so coverage is by construction
 - **Determinism in scripts, judgement in the model.** Standard-library-only Python helpers (census, status, validation, ID allocation, repo indexing, AC verification, the portable quality gate, deterministic artifact create/close, GitHub sync), each under its own unit tests, do the mechanical work.
 - **Status that polices itself.** `reconcile` detects and fixes index drift from a file census; acceptance criteria can carry executable `Verify:` lines that `reconcile --verify` actually runs.
 - **Tests that prove they can fail.** `mutation run`, on demand, injects declared faults into the changed surface and reports **killed vs survived** per mutation - a test that stays green over broken code is a finding, not a pass. Honest by construction: un-mutatable surfaces read un-checked, stale reports read STALE, truncated budgets are counted. Every unit close feeds a local, no-upload telemetry log (`telemetry show --summary`) so estimates calibrate against reality.
-- **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents (Claude Code), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last.
+- **Agentic execution.** `epic implement --agentic` runs safe waves of parallel implementation agents where the harness has sub-agents (Claude Code, through its Agent tool), with quality gates at every wave boundary and a lessons file that makes each wave smarter than the last. In a harness without sub-agents the same stories run one at a time in dependency order, through the same gates ([fallbacks](harnesses.md#fallbacks)).
 
 ## Try it in ten minutes
 
