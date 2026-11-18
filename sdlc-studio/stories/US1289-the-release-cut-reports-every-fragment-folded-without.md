@@ -1,7 +1,7 @@
 # US1289: The release cut reports every fragment folded without a unit id, and the script catalogue describes the id carry
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0728
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

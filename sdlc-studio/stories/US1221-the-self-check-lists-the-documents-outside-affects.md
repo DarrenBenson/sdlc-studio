@@ -1,7 +1,7 @@
 # US1221: The self-check lists the documents outside Affects that name what the diff changed and needs a ruling on each
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0682
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1207: Lane land writes the fragment when the hand-in has none, keeps a hand edit, and the brief names the command
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0676
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

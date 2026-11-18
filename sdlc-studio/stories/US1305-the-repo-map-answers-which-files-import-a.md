@@ -1,7 +1,7 @@
 # US1305: The repo map answers which files import a given file and which symbols closely match a given symbol, by a stated rule
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0735
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1254: The sprint report and the seat scorecard state escapes per 100 points delivered, from the linked records
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0706
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

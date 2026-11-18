@@ -1,7 +1,7 @@
 # US1249: The sprint report sets each opted-in unit against comparable units, so the keep-or-drop rule can be judged
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0701
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

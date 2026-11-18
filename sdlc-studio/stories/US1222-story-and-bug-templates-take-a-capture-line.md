@@ -1,7 +1,7 @@
 # US1222: Story and bug templates take a Capture line, and a lint flags a reader of another tool's output without one
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0682
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

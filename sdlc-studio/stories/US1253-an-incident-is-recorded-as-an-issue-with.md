@@ -1,7 +1,7 @@
 # US1253: An incident is recorded as an issue with a root-cause section and triaged into escaped bugs linked back to it
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0706
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

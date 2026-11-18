@@ -1,7 +1,7 @@
 # US1300: `critic.py record` stores the author's and reviewer's model ids on the verdict and derives each family from one shipped table, reporting an unknown id as unknown
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0732
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

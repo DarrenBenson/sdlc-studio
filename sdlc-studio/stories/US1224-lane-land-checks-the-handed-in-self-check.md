@@ -1,7 +1,7 @@
 # US1224: Lane land checks the handed-in self-check claims before it commits, and the brief names one fragment label
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0683
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

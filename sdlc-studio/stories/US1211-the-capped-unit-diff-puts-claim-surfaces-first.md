@@ -1,7 +1,7 @@
 # US1211: The capped unit diff puts claim surfaces first and the full diff is written beside the brief
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0679
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1238: A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0697
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

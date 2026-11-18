@@ -1,7 +1,7 @@
 # US1250: The plan forecasts dollars from measured dollars per point, naming its runs, with a stated fallback
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0703
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

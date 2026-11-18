@@ -1,7 +1,7 @@
 # US1220: Self-check record runs one shipped command for each criterion and stores its exit and an output digest
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0682
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

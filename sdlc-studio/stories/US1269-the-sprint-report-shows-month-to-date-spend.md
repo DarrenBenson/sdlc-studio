@@ -1,7 +1,7 @@
 # US1269: The sprint report shows month-to-date spend against a declared monthly budget across every harness
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0716
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

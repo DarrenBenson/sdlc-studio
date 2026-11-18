@@ -1,7 +1,7 @@
 # US1195: A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1242: The sprint report states reviews, upheld rejections and traced escapes for each reviewer model family
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0698
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

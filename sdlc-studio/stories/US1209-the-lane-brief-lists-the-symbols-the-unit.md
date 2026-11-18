@@ -1,7 +1,7 @@
 # US1209: The lane brief lists the symbols the unit's criteria name in each Affects file, with line ranges
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0678
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

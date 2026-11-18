@@ -1,7 +1,7 @@
 # US1297: The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0731
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

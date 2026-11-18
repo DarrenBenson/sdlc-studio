@@ -1,7 +1,7 @@
 # US1298: The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0731
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

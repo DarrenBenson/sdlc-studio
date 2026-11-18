@@ -1,7 +1,7 @@
 # US1239: Each recorded verdict states the reviewer's model and harness, or unknown where the store gives neither
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0698
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

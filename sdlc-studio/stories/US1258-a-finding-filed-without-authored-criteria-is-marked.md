@@ -1,7 +1,7 @@
 # US1258: A finding filed without authored criteria is marked ungroomed in its file and at filing, naming the flags that supply criteria
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0708
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

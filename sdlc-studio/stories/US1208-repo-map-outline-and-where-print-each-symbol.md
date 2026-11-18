@@ -1,7 +1,7 @@
 # US1208: Repo map outline and where print each symbol's line range from the index and refuse a stale index
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0678
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

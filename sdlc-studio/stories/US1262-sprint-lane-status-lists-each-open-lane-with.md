@@ -1,7 +1,7 @@
 # US1262: sprint lane status lists each open lane with its worktree, newest change age and elapsed time against its estimate, marking a stall
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0711
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

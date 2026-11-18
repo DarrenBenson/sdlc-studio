@@ -2,7 +2,7 @@
 
 > **Status:** Draft
 > **Depends on:** US1300
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0732
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1245: The shipped instruction templates and SKILL.md take the accepted cuts and reach projects on project upgrade
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0700
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

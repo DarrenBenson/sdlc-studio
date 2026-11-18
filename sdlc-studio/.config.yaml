@@ -99,6 +99,26 @@ review:
   # whose author has recorded no self-check (`critic.py self-check record`) of its current diff,
   # so no reviewer here is briefed on work its author has not checked first.
   author_self_check: block
+
+# The component map (D0520, US1313): a path prefix to its risk class, standard < elevated < high.
+# The gates are high: a defect in one passes work it never judged. The rest of the skill's
+# scripts are elevated, and everything the map does not name is standard. Prefixes are the
+# repository-relative paths a unit's Affects names, matched on whole segments, and every prefix
+# a path lies under counts, so the gate files keep high inside the elevated scripts directory
+# and sprint_report.py stays elevated beside sprint.py. A bug's class is the highest its Affects
+# touch; a story's is its Risk-class stamp, which refine sets from this map and reconcile.py
+# apply raises to it. A high unit is what D0511 calls high-risk, so without this map no unit
+# here was. tools/tests/test_repo_risk_map.py pins each class.
+risk:
+  components:
+    .claude/skills/sdlc-studio/scripts: elevated
+    .claude/skills/sdlc-studio/scripts/gate.py: high
+    .claude/skills/sdlc-studio/scripts/critic.py: high
+    .claude/skills/sdlc-studio/scripts/transition.py: high
+    .claude/skills/sdlc-studio/scripts/sprint.py: high
+    .claude/skills/sdlc-studio/scripts/verify_ac.py: high
+    .githooks: high
+
 engagement_floor:
   # The mechanical engagement floor is grandfathered forward-only, like conformance/provenance.
   # This repo's early bugs/CRs shipped multi-file fixes with no per-unit AC (the delivery gate

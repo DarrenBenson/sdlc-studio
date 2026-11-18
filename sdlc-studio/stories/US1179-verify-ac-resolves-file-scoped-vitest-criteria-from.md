@@ -1,7 +1,7 @@
 # US1179: verify_ac resolves file-scoped vitest criteria from one batched vitest JSON run, with vitest stubbed in the test
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0638
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

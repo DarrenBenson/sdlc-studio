@@ -1,7 +1,7 @@
 # US1184: The sprint report and the retro add only the delegated totals the meter cannot see, and name what they added
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0653
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

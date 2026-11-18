@@ -1,7 +1,7 @@
 # US1259: lessons reinstate returns a retired class to active with the open run and a reason, refusing a class that is not retired
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0709
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

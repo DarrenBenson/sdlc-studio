@@ -1,7 +1,7 @@
 # US1281: Sprint plan reports a missing maintenance declaration over one third machinery and still exits 0
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0722
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

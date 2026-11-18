@@ -1,7 +1,7 @@
 # US1237: A project sets the CI wait timeout and the rerun limit in config, with the defaults documented
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0697
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

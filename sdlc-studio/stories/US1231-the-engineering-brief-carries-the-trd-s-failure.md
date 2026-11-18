@@ -1,7 +1,7 @@
 # US1231: The engineering brief carries the TRD's failure and observability checks for touched components, under a cap
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0691
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

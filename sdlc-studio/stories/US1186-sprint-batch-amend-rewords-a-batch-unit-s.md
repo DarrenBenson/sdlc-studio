@@ -1,7 +1,7 @@
 # US1186: sprint batch amend rewords a batch unit's criterion with a reason, and refuses a unit already reviewed in the run
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0656
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

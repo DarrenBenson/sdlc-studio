@@ -1,7 +1,7 @@
 # US1230: The TRD template gains a Reliability and Observability section for dependency failure and required signals
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0691
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

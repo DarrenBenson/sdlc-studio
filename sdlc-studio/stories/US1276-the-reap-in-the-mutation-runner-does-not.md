@@ -1,7 +1,7 @@
 # US1276: The reap in the mutation runner does not raise where killpg or SIGKILL is absent
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0719
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

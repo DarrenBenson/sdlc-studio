@@ -1,7 +1,7 @@
 # US1294: A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0730
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1246: The rendered lane brief and review brief take the accepted cuts, with every gated rule's text still present
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0700
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

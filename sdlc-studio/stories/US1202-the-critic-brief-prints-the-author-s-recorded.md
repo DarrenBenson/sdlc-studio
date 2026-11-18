@@ -1,7 +1,7 @@
 # US1202: The critic brief prints the author's recorded mutants and their replay, labelled as the author's
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0673
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

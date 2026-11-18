@@ -1,7 +1,7 @@
 # US1168: The commit hook refuses a staged new test module with no `test-census-subject` marker
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0671
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1200: A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0673
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

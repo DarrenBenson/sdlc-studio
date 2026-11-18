@@ -1,7 +1,7 @@
 # US1199: The mutation probe drops each conjunct of a guard and flips polarity words in a document a test reads
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0673
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

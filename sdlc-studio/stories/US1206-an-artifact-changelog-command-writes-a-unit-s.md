@@ -1,7 +1,7 @@
 # US1206: An artifact changelog command writes a unit's fragment in the shape the changelog-shape lane passes
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0676
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

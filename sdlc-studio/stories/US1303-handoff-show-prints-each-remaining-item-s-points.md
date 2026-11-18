@@ -1,7 +1,7 @@
 # US1303: `handoff show` prints each remaining item's Points and seat, and totals remaining points by suitability tag and by seat
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0733
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

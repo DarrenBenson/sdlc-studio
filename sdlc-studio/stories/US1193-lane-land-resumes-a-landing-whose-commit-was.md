@@ -1,7 +1,7 @@
 # US1193: Lane land resumes a landing whose commit was refused without repeating the steps already done
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

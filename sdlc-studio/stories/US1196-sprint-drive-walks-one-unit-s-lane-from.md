@@ -1,7 +1,7 @@
 # US1196: Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

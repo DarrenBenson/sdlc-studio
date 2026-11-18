@@ -1,7 +1,7 @@
 # US1203: The hostile kit proves the verifier dies with its caller, exits on an interrupt and leaves no orphan
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0675
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

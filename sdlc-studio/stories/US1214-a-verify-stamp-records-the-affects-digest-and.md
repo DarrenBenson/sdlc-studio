@@ -1,7 +1,7 @@
 # US1214: A verify stamp records the Affects digest, and a transition accepts a current stamp without a re-run
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0679
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

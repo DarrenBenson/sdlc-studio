@@ -1,7 +1,7 @@
 # US1191: The commit hook sends its selected suites to the named gate host, and runs them locally when the host cannot be reached
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0663
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

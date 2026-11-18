@@ -1,7 +1,7 @@
 # US1219: The review dispatch groups a wave's units of at most 3 points into reviewer batches of at most three
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0680
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

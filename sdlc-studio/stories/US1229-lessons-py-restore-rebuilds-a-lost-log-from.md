@@ -1,7 +1,7 @@
 # US1229: lessons.py restore rebuilds a lost log from the digest and refuses to overwrite an existing log
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0688
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

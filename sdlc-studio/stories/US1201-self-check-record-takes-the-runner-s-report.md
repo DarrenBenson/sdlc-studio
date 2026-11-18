@@ -1,7 +1,7 @@
 # US1201: Self-check record takes the runner's report and mutant list, and the author brief names the runner command
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0673
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

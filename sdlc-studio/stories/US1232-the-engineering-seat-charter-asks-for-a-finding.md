@@ -1,7 +1,7 @@
 # US1232: The engineering seat charter asks for a finding on an undeclared failure path and a note on a missing section
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0691
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1255: At plan time a unit's files are matched to the failure classes, and only matches reach its briefs, capped
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0706
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

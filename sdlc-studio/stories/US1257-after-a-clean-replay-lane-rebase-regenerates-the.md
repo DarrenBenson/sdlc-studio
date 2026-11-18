@@ -1,7 +1,7 @@
 # US1257: After a clean replay, lane rebase regenerates the script surface page and re-stages it, naming any derived page left stale
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0707
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

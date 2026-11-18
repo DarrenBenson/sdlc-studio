@@ -1,7 +1,7 @@
 # US1235: The sprint report and the seat scorecard show the release change failure rate, naming its source records
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0695
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

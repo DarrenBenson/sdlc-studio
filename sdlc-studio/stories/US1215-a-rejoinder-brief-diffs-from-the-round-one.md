@@ -1,7 +1,7 @@
 # US1215: A rejoinder brief diffs from the round one verdict's commit and leaves out the file history
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0679
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

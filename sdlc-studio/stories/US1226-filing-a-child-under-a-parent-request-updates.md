@@ -1,7 +1,7 @@
 # US1226: Filing a child under a parent request updates the parent's spawned work cell in the same write
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0683
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

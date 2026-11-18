@@ -1,7 +1,7 @@
 # US1183: A delegated token record says whether the meter can see its agent, by transcript or by the harness that ran it
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0653
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

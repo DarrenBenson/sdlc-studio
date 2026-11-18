@@ -1,7 +1,7 @@
 # US1194: Sprint close names each unit that reached main with no lane land record
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

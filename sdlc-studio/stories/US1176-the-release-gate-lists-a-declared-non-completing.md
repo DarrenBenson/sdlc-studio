@@ -1,7 +1,7 @@
 # US1176: The release gate lists a declared non-completing status's failing criteria as unbuilt, and an undeclared one still fails
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0636
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

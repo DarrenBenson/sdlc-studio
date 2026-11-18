@@ -1,7 +1,7 @@
 # US1233: The release cut writes a committed record of each release, with its date and the reports it shipped
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0695
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

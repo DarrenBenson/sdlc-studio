@@ -1,7 +1,7 @@
 # US1205: The hostile kit proves a shallow clone, a non-Claude harness and an over-long token change no result
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0675
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

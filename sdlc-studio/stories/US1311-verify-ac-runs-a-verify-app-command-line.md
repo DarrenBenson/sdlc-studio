@@ -1,7 +1,7 @@
 # US1311: `verify_ac` runs a `Verify: app <command>` line and records the evidence files it wrote, failing a command that exits 0 with no evidence
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0738
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

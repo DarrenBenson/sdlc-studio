@@ -1,7 +1,7 @@
 # US1197: Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

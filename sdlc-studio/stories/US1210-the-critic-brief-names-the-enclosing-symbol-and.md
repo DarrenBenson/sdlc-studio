@@ -1,7 +1,7 @@
 # US1210: The critic brief names the enclosing symbol and its line range for each diff hunk
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0678
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

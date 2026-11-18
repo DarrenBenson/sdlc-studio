@@ -1,7 +1,7 @@
 # US1236: The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0697
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1251: The evidence pack groups changes by risk class, high-risk first, each with its second seat verdict
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0704
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

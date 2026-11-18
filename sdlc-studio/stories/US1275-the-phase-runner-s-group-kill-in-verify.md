@@ -1,7 +1,7 @@
 # US1275: The phase runner's group kill in verify_ac does not raise where killpg or SIGKILL is absent
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0719
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

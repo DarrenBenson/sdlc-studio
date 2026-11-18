@@ -1,7 +1,7 @@
 # US1212: Critic brief writes the brief to a named path and prints one line, and the dispatch says to read it whole
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0679
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

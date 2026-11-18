@@ -1,7 +1,7 @@
 # US1252: The evidence pack is described in the versioned evidence annex, so a consumer reads it without the tool
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0704
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1240: With review.reviewer_family set to different, a same-family verdict is refused and an unknown needs a waiver
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0698
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

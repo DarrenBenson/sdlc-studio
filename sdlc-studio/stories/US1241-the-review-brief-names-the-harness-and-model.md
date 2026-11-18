@@ -1,7 +1,7 @@
 # US1241: The review brief names the harness and model to dispatch the reviewer to when the family setting is on
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0698
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

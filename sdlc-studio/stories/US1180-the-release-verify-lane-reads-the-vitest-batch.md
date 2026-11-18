@@ -1,7 +1,7 @@
 # US1180: The release verify lane reads the vitest batch, falls back per criterion where it cannot answer, and the two agree
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0638
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

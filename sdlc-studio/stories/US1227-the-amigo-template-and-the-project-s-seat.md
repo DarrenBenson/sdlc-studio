@@ -1,7 +1,7 @@
 # US1227: The amigo template and the project's seat cards carry the hand-back section, and validate seats warns if not
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0686
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

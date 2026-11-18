@@ -1,7 +1,7 @@
 # US1272: The release check names a missing eval report for the version being cut
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0718
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

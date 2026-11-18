@@ -1,7 +1,7 @@
 # US1182: The self-check record accepts each non-test file in the unit's Affects as an optional surface and still requires the rest
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0652
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

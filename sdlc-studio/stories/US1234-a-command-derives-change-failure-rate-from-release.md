@@ -1,7 +1,7 @@
 # US1234: A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0695
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

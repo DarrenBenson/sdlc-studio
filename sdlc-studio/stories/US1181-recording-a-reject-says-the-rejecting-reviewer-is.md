@@ -1,7 +1,7 @@
 # US1181: Recording a REJECT says the rejecting reviewer is needed for round 2, and the runbook row says how to keep it resumable
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0639
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

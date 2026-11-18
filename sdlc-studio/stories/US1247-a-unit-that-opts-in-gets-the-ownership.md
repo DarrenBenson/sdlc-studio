@@ -1,7 +1,7 @@
 # US1247: A unit that opts in gets the ownership line naming its Affects in its lane brief, and nothing else carries it
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0701
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

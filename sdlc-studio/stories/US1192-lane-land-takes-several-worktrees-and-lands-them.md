@@ -1,7 +1,7 @@
 # US1192: Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

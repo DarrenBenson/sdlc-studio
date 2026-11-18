@@ -1,7 +1,7 @@
 # US1280: Sprint plan prints points by area from the tags and from a path map, naming any unit whose tag disagrees
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0722
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

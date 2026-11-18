@@ -1,7 +1,7 @@
 # US1198: Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

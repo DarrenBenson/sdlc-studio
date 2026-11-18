@@ -1,7 +1,7 @@
 # US1265: The commit's selection includes a test that runs other test modules by path when one of those modules is staged
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0713
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

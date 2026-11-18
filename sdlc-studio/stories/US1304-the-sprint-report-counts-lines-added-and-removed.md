@@ -1,7 +1,7 @@
 # US1304: The sprint report counts lines added and removed in the batch's declared files over a named commit range, and states priced cost per delivered line beside cost per point
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0734
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

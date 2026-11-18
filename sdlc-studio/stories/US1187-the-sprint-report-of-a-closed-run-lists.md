@@ -1,7 +1,7 @@
 # US1187: The sprint report of a closed run lists each in-flight amendment with its unit and its reason
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0656
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

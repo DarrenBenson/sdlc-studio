@@ -1,7 +1,7 @@
 # US1185: sprint batch amend widens a batch unit's Affects with a reason, writes its revision row and records it on the run
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0656
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

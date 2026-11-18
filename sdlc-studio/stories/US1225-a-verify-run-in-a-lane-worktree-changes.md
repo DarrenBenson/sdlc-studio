@@ -1,7 +1,7 @@
 # US1225: A verify run in a lane worktree changes no file outside the unit's Affects
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0683
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

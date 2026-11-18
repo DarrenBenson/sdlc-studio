@@ -1,7 +1,7 @@
 # US1223: Critic record takes a defect class on each blocking finding and the sprint report counts blockers by class
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0682
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

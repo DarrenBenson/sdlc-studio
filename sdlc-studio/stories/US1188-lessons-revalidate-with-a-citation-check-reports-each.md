@@ -1,7 +1,7 @@
 # US1188: lessons revalidate with a citation check reports each Revalidated citation past the file's end or away from its symbol
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0657
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

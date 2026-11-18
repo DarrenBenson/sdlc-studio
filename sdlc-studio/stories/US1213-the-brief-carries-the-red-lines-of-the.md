@@ -1,7 +1,7 @@
 # US1213: The brief carries the red lines of the verifier dry run and the selected tests, stamped with its HEAD
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0679
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

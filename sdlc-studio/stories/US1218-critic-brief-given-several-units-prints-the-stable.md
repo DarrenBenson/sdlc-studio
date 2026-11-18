@@ -1,7 +1,7 @@
 # US1218: Critic brief given several units prints the stable blocks once and each unit's scope, criteria and diff apart
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0680
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

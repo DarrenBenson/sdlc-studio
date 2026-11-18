@@ -1,7 +1,7 @@
 # US1256: sprint lane rebase replays a lane's staged work onto main and stops on a conflict with the work intact and the files named
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** high
 > **Delivers:** CR0707
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

@@ -1,7 +1,7 @@
 # US1282: The sprint report carries the same two machinery shares as the plan printed
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0722
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

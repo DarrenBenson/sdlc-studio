@@ -1,7 +1,7 @@
 # US1288: Compose writes each fragment's unit id into its entry exactly once, and the dry run reports the same ids
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0728
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

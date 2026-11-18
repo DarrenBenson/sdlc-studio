@@ -1,7 +1,7 @@
 # US1285: The disclosure lane reads a committed baseline, fails on a new finding and prints one line when nothing is new
 
 > **Status:** Draft
-> **Risk-class:** standard
+> **Risk-class:** elevated
 > **Delivers:** CR0725
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
