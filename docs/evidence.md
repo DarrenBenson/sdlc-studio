@@ -5,9 +5,10 @@ latest signed report of record in `sdlc-studio/reports/`. Nothing in the table i
 the table is written by the command under [Regenerating this page](#regenerating-this-page), and
 the same command checks that it still matches the reports. A report nobody signed is left out.
 Dollars per point reads not recorded for a run whose report predates that figure, and NOT
-MEASURED where the report itself recorded that the cost could not be priced. Model names the
-models the report priced or, where it priced none, the models its token count names, and reads
-not recorded where the report names neither. The reports do not yet record the harness each run
+MEASURED where the report itself recorded that the cost could not be priced. Model names each
+`price_model` the report priced or, where it priced none, each `model_name` its tokens-by-model
+rows give, or, where it has neither, the `model` figure of its cost section, and reads not
+recorded where none of these names a model. The reports do not yet record the harness each run
 ran in, so the table cannot show it; CR0743 adds that record.
 
 ## The runs
@@ -22,7 +23,7 @@ Each column reads one field of the report its row names:
 - Goal verdict: `goal_verdict` in the `goal` section.
 - Verdict note: `goal_verdict_note` in the `goal` section, shown when the verdict is not Judged achieved and `-` when it is, or not recorded where the report holds no note.
 - Dollars per point: `est_actual` of the `estimates` row whose `est_measure` is Dollars per point, or not recorded where the report holds no such row.
-- Model: `price_model` of each `cost_prices` row, or, where the report priced no model, `model_name` of each `cost` row that names one rather than mixed or unrecorded, or not recorded where neither names a model.
+- Model: `price_model` of each `cost_prices` row, or, where the report priced no model, `model_name` of each `cost` row that names one rather than mixed or unrecorded, or, where it has neither, the `model` figure of the `cost` section when that names one, or not recorded where none of these names a model.
 - Hours to signature: the hours from `generated_at` to `signature.signed_at`.
 
 | Run | Report | Goal verdict | Verdict note | Dollars per point | Model | Hours to signature |
@@ -56,9 +57,9 @@ Each column reads one field of the report its row names:
 | RUN-01M39MC0 | RPT0008 | Judged partial | Half one missed by 3s: a one-line gate.py commit measured 93s end to end against 90 (229s at the start), with its suites down to 43s; code commits this run cleared in 60-75s. The rest is the sequential pre-commit, as US0891 was carried (BG0759). Half two not delivered: US0904's lane-yield log was carried at the review cap on a one-character defect (BG0761). Deleted: the warning ratchet, verify ratchet, boundary roster and release-notes count pin, plus eight advisory lanes off the commit. | not recorded | not recorded | 1.7 |
 | RUN-01M3891F | RPT0007 | Judged partial | The sprint learns from repeated mistakes without being told: lessons are failure classes that count repeats from retros and cited REJECTs, reach the plan, build and review briefs, graduate to a CR on a second repeat and retire when quiet, with a bundled seed for new projects (US0887, US0888). Commits do not yet clear in about a minute: a paperwork commit clears in seconds and a push fell from about 750s to 284s, but a code commit that reaches a widely imported script still took 165-258s under this machine's load against the 90s budget (BG0754). | not recorded | not recorded | 1.5 |
 | RUN-01M36R3D | RPT0006 | Judged achieved | - | not recorded | not recorded | 5.2 |
-| RUN-01M33WJ3 | RPT0005 | Judged partial | Clauses 1-3 delivered in full; Clause 4 - a goal authored as checked clauses with a derived verdict - NOT attempted, dropped to the next run with EP0258 intact under D0250. This verdict is ASSERTED by its author because nothing yet derives it, which is exactly what Clause 4 exists to end. | not recorded | not recorded | 7.6 |
-| RUN-01M306PY | RPT0003 | Judged achieved | - | not recorded | not recorded | 1.3 |
-| RUN-01M2SPNS | RPT0002 | Judged achieved | - | not recorded | not recorded | 21.1 |
+| RUN-01M33WJ3 | RPT0005 | Judged partial | Clauses 1-3 delivered in full; Clause 4 - a goal authored as checked clauses with a derived verdict - NOT attempted, dropped to the next run with EP0258 intact under D0250. This verdict is ASSERTED by its author because nothing yet derives it, which is exactly what Clause 4 exists to end. | not recorded | claude-opus-5 | 7.6 |
+| RUN-01M306PY | RPT0003 | Judged achieved | - | not recorded | claude-opus-5 | 1.3 |
+| RUN-01M2SPNS | RPT0002 | Judged achieved | - | not recorded | claude-opus-5 | 21.1 |
 <!-- END GENERATED -->
 
 ## What Judged partial means

@@ -56,10 +56,14 @@ def _report(rid: str, run: str, generated: str, signed: str | None, verdict: str
                  "figures": {"signed_at": _figure("signed_at", "not yet signed")}}]}
 
 
-def _models(rep: dict, priced: tuple[str, ...] = (), tokens: tuple[str, ...] = ()) -> dict:
+def _models(rep: dict, priced: tuple[str, ...] = (), tokens: tuple[str, ...] = (),
+            figure: str | None = None) -> dict:
     """`rep` with a `cost` section of tokens-by-model rows named `tokens` and, when `priced`
-    names any, a `cost_prices` section with one row per priced model, as a report files them."""
-    rep["sections"].append({"key": "cost", "title": "Tokens by model", "figures": {},
+    names any, a `cost_prices` section with one row per priced model, as a report files them.
+    `figure` is the `model` figure the older Cost section carried instead of those rows, as
+    RPT0002, RPT0003 and RPT0005 hold it."""
+    figures = {"model": _figure("model", figure)} if figure is not None else {}
+    rep["sections"].append({"key": "cost", "title": "Tokens by model", "figures": figures,
                             "not_measured": None,
                             "rows": [{"model_name": _figure("model_name", m),
                                       "model_tokens": _figure("model_tokens", 1000)}
@@ -185,45 +189,57 @@ class EvidencePageTests(unittest.TestCase):
     def test_each_row_names_the_model_its_report_priced(self) -> None:
         """The Model cell reads the models the row's own report priced: each `price_model` of
         its `cost_prices` rows, or, where it priced none, each `model_name` of its tokens-by-model
-        rows that names a model. A report recording neither reads not recorded, never a blank,
-        never mixed, and never a model from the catalogue of prices it carries or from another
-        report."""
+        rows that names a model, or, where it has neither, the `model` figure of its Cost section
+        that names one. A report recording none reads not recorded, never a blank, never mixed,
+        and never a model from the catalogue of prices it carries or from another report."""
         catalogue = {"models": {m: {"input": 1.0} for m in
                                 ("claude-fable-5", "gpt-6-luna", "claude-opus-5-5",
                                  "claude-sonnet-5-5", "claude-haiku-5-5")}}
+        # Priced out of alphabetical order, so the cell keeps the order the report holds them.
         priced = _models(_report("RPT0106", "RUN-EEE", "2026-02-01T00:00:00Z",
                                  "2026-02-01T01:00:00Z", "Judged achieved", "", "$2.00"),
-                         priced=("claude-opus-5-5", "claude-sonnet-5-5"), tokens=("mixed",))
+                         priced=("claude-sonnet-5-5", "claude-opus-5-5"), tokens=("mixed",))
         priced["price_table"] = catalogue
+        # A token row beside the older figure: the token row is the record, the figure the last
+        # fallback.
         tokens_only = _models(_report("RPT0107", "RUN-FFF", "2026-02-02T00:00:00Z",
                                       "2026-02-02T01:00:00Z", "Judged achieved", "", None),
-                              tokens=("claude-haiku-5-5",))
+                              tokens=("claude-haiku-5-5",), figure="claude-opus-5")
         mixed_only = _models(_report("RPT0108", "RUN-GGG", "2026-02-03T00:00:00Z",
                                      "2026-02-03T01:00:00Z", "Judged achieved", "", None),
-                             tokens=("mixed",))
+                             tokens=("mixed",), figure="mixed")
         mixed_only["price_table"] = catalogue
+        # The older figure read UNMEASURED where the stamps recorded no model.
         unrecorded = _models(_report("RPT0109", "RUN-HHH", "2026-02-04T00:00:00Z",
                                      "2026-02-04T01:00:00Z", "Judged achieved", "", None),
-                             tokens=("unrecorded",))
+                             tokens=("unrecorded",), figure="UNMEASURED")
         # Tokens counted for a model the report did not price: the priced one is the record.
         partly = _models(_report("RPT0110", "RUN-III", "2026-02-05T00:00:00Z",
                                  "2026-02-05T01:00:00Z", "Judged achieved", "", "$1.50"),
                          priced=("claude-opus-5-5",),
                          tokens=("claude-haiku-5-5", "claude-opus-5-5"))
-        for rep in (priced, tokens_only, mixed_only, unrecorded, partly):
+        # The shape of RPT0002, RPT0003 and RPT0005: a Cost section with no rows, whose `model`
+        # figure is the only record of the model.
+        figure_only = _models(_report("RPT0111", "RUN-JJJ", "2026-02-06T00:00:00Z",
+                                      "2026-02-06T01:00:00Z", "Judged achieved", "", None),
+                              figure="claude-opus-5")
+        for rep in (priced, tokens_only, mixed_only, unrecorded, partly, figure_only):
             self._file(rep)
         code, out = self._run()
         self.assertEqual(0, code, out)
         region = self._region()
         # Every cell exactly, so a model from another row's report, the catalogue, a token row
-        # beside a priced one, mixed, unrecorded or a blank each fails here.
-        self.assertEqual({"RUN-EEE": "claude-opus-5-5, claude-sonnet-5-5",
+        # beside a priced one, the figure beside a token row, mixed, unrecorded, UNMEASURED, a
+        # reordered list or a blank each fails here.
+        self.assertEqual({"RUN-EEE": "claude-sonnet-5-5, claude-opus-5-5",
                           "RUN-FFF": "claude-haiku-5-5", "RUN-III": "claude-opus-5-5",
+                          "RUN-JJJ": "claude-opus-5",
                           "RUN-GGG": "not recorded", "RUN-HHH": "not recorded",
                           "RUN-AAA": "not recorded", "RUN-BBB": "not recorded",
                           "RUN-CCC": "not recorded"},
                          {r["Run"]: r.get("Model") for r in _table(region)})
-        self.assertRegex(region, r"(?m)^- Model: .*`price_model`.*`cost_prices`.*`model_name`")
+        self.assertRegex(region, r"(?m)^- Model: .*`price_model`.*`cost_prices`.*`model_name`"
+                                 r".*`model` figure")
         self.assertEqual(0, self._run("--check")[0], "the page the verb wrote checks clean")
 
     def test_hand_text_is_kept_and_every_figure_is_a_report_field(self) -> None:
@@ -297,7 +313,7 @@ class EvidencePageTests(unittest.TestCase):
                                            "| $1.00 | not recorded |"), encoding="utf-8")
         code, out = self._run("--check")
         self.assertEqual(1, code, out)
-        differs =[line for line in out.splitlines() if "differs" in line]
+        differs = [line for line in out.splitlines() if "differs" in line]
         self.assertEqual(1, len(differs), out)
         self.assertIn("RUN-BBB", differs[0])
 

@@ -6668,13 +6668,16 @@ EVIDENCE_COLUMNS = (
                           "per point, or not recorded where the report holds no such row"),
     ("Model", "`price_model` of each `cost_prices` row, or, where the report priced no model, "
               "`model_name` of each `cost` row that names one rather than mixed or unrecorded, "
-              "or not recorded where neither names a model"),
+              "or, where it has neither, the `model` figure of the `cost` section when that "
+              "names one, or not recorded where none of these names a model"),
     ("Hours to signature", "the hours from `generated_at` to `signature.signed_at`"),
 )
 _ACHIEVED = "Judged achieved"
-#: The tokens-by-model names that name no model: tokens from more than one model, or a run
-#: recorded before the model was captured.
-_NO_MODEL = (retro.MODEL_MIXED, retro.MODEL_UNRECORDED)
+#: The values that name no model: mixed and unrecorded, the tokens-by-model names for tokens
+#: from more than one model and for a run recorded before the model was captured; UNMEASURED,
+#: which the older Cost section's `model` figure reads where the stamps recorded none; and
+#: NOT MEASURED, the word any other unmeasured figure reads.
+_NO_MODEL = (retro.MODEL_MIXED, retro.MODEL_UNRECORDED, UNMEASURED, NOT_MEASURED)
 
 
 def _signed_reports(root) -> list[dict]:
@@ -6710,13 +6713,17 @@ def _evidence_cell(value) -> str:
 
 def _evidence_models(rep: dict) -> str:
     """The models `rep` priced, in the order it holds them: its `cost_prices` rows, else its
-    tokens-by-model rows that name a model. The `price_table` it carries is the catalogue it
-    priced from, not a model it priced, so it is never read. Empty when neither names one, which
-    the cell reads as not recorded."""
+    tokens-by-model rows that name a model, else the `model` figure of its Cost section, which
+    the oldest reports (RPT0002 to RPT0005) carry in place of those rows. The
+    `price_table` it carries is the catalogue it priced from, not a model it priced, so it is
+    never read. Empty when none names one, which the cell reads as not recorded."""
     def names(key: str, field: str) -> list[str]:
         return [str(v) for row in _section_of(rep, key).get("rows") or []
                 if (v := (row.get(field) or {}).get("value")) and v not in _NO_MODEL]
-    return ", ".join(names("cost_prices", "price_model") or names("cost", "model_name"))
+    figure = (((_section_of(rep, "cost").get("figures") or {}).get("model") or {})
+              .get("value"))
+    older = [str(figure)] if figure and figure not in _NO_MODEL else []
+    return ", ".join(names("cost_prices", "price_model") or names("cost", "model_name") or older)
 
 
 def _evidence_row(rep: dict) -> tuple[str, str]:
