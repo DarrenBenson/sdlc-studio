@@ -33,13 +33,26 @@ PER_COMMIT_INVOKERS = (REPO / ".githooks" / "pre-commit", REPO / ".githooks" / "
                        REPO / "tools" / "skill-tests.sh")
 
 
-def _marked() -> list[tuple[str, str]]:
-    """(module, reason) for every `boundary_only(...)` in the shipped test tree."""
+def _marked(tests: pathlib.Path = TESTS) -> list[tuple[str, str]]:
+    """(module, reason) for every `@boundary_only(...)` decorating a function in the shipped
+    test tree, read from each module's AST: decorator text inside a string literal, such as a
+    fixture module a test writes to disk, is not a marked test (BG1579)."""
     out = []
-    for path in sorted(TESTS.glob("test_*.py")):
-        text = path.read_text(encoding="utf-8", errors="replace")
-        for m in re.finditer(r"@boundary_only\(\s*(.*?)\)\s*\n", text, re.S):
-            out.append((path.name, m.group(1)))
+    for path in sorted(tests.glob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+        found = []
+        for fn in ast.walk(tree):
+            if not isinstance(fn, ast.FunctionDef):
+                continue
+            for dec in fn.decorator_list:
+                if not (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Name)
+                        and dec.func.id == "boundary_only"):
+                    continue
+                arg = dec.args[0] if dec.args else None
+                reason = arg.value if isinstance(arg, ast.Constant) and isinstance(arg.value, str) \
+                    else (ast.unparse(arg) if arg is not None else "")
+                found.append((dec.lineno, reason))
+        out.extend((path.name, reason) for _, reason in sorted(found))
     return out
 
 
@@ -122,6 +135,37 @@ class TheMarkerIsHonoured(unittest.TestCase):
         self.assertLessEqual(len(marked), 6,
                              f"{len(marked)} boundary-only tests: the per-commit gate is drifting "
                              f"into a subset nobody chose - profile first, then argue for it")
+
+    def test_a_fixture_string_naming_the_decorator_is_not_a_marked_test(self) -> None:
+        """BG1579. A test that writes a fixture module to disk spells `@boundary_only(...)`
+        inside a string literal; only a decorator applied to a real function is a marked test.
+
+        MUTANTS: (1) scan the text by regex again - the fixture string is counted;
+        (2) skip the module's real decorator - the decorated test is missed; (3) count any
+        called decorator - the stacked `skipIf` is counted as a second marked test."""
+        real = "a real deferral, measured and named, long enough to audit"
+        module = textwrap.dedent('''\
+            import unittest
+            from unittest import skipIf
+            from boundary import boundary_only
+
+            FIXTURE = (
+                "class T(unittest.TestCase):\\n"
+                "    @boundary_only('a fixture deferral that only lives in this string')\\n"
+                "    def test_fake(self):\\n"
+                "        pass\\n"
+            )
+
+
+            class Real(unittest.TestCase):
+                @skipIf(False, "a second decorator, which marks nothing")
+                @boundary_only("%s")
+                def test_real(self):
+                    pass
+            ''') % real
+        with tempfile.TemporaryDirectory() as tmp:
+            (pathlib.Path(tmp) / "test_fixture_strings.py").write_text(module, encoding="utf-8")
+            self.assertEqual(_marked(pathlib.Path(tmp)), [("test_fixture_strings.py", real)])
 
 
 def _commands(text: str) -> list[str]:

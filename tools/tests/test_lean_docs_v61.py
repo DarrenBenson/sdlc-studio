@@ -125,15 +125,24 @@ def _code_strings(path: Path) -> set[str]:
 
 
 def _local_readers() -> str:
-    """What the shipped scripts and the tools/ scripts hold as code: every non-docstring string
-    constant of each `.py` (tests excluded) and every non-comment line of each tools/ shell."""
+    """What the shipped scripts, the tools/ scripts and the tracked hooks hold as code: every
+    non-docstring string constant of each `.py` (tests excluded), and every non-comment line of
+    each tools/ shell and each `.githooks` hook (BG1580: pre-push reads and writes
+    `.local/push-ack.json`)."""
     out: list[str] = []
     for py in [*SCRIPTS.glob("*.py"), *(SCRIPTS / "lib").glob("*.py"), *(REPO / "tools").glob("*.py")]:
         out += _code_strings(py)
-    for sh in (REPO / "tools").glob("*.sh"):
+    hooks = sorted(p for p in (REPO / ".githooks").iterdir() if p.is_file())
+    for sh in [*(REPO / "tools").glob("*.sh"), *hooks]:
         out += [ln for ln in sh.read_text(encoding="utf-8").splitlines()
                 if not ln.lstrip().startswith("#")]
     return "\n".join(out)
+
+
+def _unread_locals(spec: str, code: str) -> list[str]:
+    """The `.local` files `spec` names that nothing in `code` (`_local_readers()`) reads or
+    writes."""
+    return [local for local in _spec_locals(spec) if local not in code]
 
 
 def _local_table_files(text: str) -> set[str]:
@@ -282,10 +291,23 @@ class Docs61Tests(unittest.TestCase):
 
         code = _local_readers()
         for name, path in SPECS.items():
-            for local in _spec_locals(_current(path)):
-                with self.subTest(spec=name, local=local):
-                    self.assertTrue(local in code, f"{name}.md names .local/{local}, which no "
-                                                   f"shipped or tools/ script reads or writes")
+            with self.subTest(spec=name):
+                self.assertEqual([], _unread_locals(_current(path), code),
+                                 f"{name}.md names these .local files, which no shipped script, "
+                                 f"tools/ file or tracked hook reads or writes")
+
+    def test_an_unread_local_file_is_still_refused(self) -> None:
+        """BG1580 AC2. Counting the tracked hooks as readers widens the corpus, not the check:
+        a spec naming a `.local` file nothing reads is still refused by name, beside a positive
+        control naming the file only .githooks/pre-push reads.
+
+        MUTANTS: (1) `_unread_locals` returning [] - the unread name passes;
+        (2) the hooks dropped from `_local_readers` - `push-ack.json` is refused."""
+        code = _local_readers()
+        spec = ("The hook keeps its answer in `sdlc-studio/.local/push-ack.json`, and the run "
+                "keeps its ledger in `sdlc-studio/.local/no-reader-bg1580.json`.\n")
+        self.assertEqual(["no-reader-bg1580.json"], _unread_locals(spec, code))
+        self.assertEqual([], _unread_locals("Only `.local/push-ack.json` here.\n", code))
 
     def test_a_local_row_whose_writer_runs_a_command_is_read(self) -> None:
         """AC2's .local clause, pinned (BG0938 AC4). MUTANT: a writer cell read only when it is a
