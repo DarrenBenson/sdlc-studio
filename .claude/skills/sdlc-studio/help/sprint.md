@@ -49,6 +49,7 @@ sign -> learn. Each step, and the one command that performs it, is in
 /sdlc-studio sprint close --retro RETRO0001 --file-and-close  # bounded exit: file the ceremony debt, close honestly (refused while a hard gate is red or a batch unit is unanswered)
 python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You"   # SEAL: sign the prepared run - the last thing that happens
 python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You" --strike M-0001 --strike-reason "loosens the bar"   # seal, striking a learning the close listed
+python3 <skill>/scripts/sprint.py sign --report RPT0001 --principal "You" --delegated --decision D0001   # seal on your behalf, under the accepted decision that delegates it
 /sdlc-studio sprint plan --cycles 3 --goal done      # a standing policy: roll 3 cycles, regenerating the plan each time
 /sdlc-studio sprint boundary --retro RETRO0001       # close this cycle down and open the next from the live backlog
 /sdlc-studio sprint report --id RETRO0001             # the end-of-sprint report (the close draws it too)
@@ -151,6 +152,13 @@ ruled not-stop-ship and left Open stays Open. Once the run
 is sealed, `sprint.py reopen --reason` is the only way to change a batch unit's status.
 `--strike M-NNNN --strike-reason "..."` strikes a persona learning the close listed on the retro,
 so it never reaches a brief; a strike the close did not list refuses the seal.
+`--delegated --decision Dnnnn` marks a signature entered on the principal's behalf. The
+decision must be one `sdlc-studio/decisions.md` holds as accepted: no `--decision`, an id the
+log does not hold and a decision that is not accepted are each refused before anything is
+written, as is `--decision` without `--delegated`. The signature block records `delegated: true`
+and the decision id, the sealed line names it, the report's Signed by cell says the signature
+was entered under delegation and names the decision, and the release evidence pack says the
+same on its Accountable line. A signature the principal enters carries neither key.
 A unit with no independent delivery APPROVE stops it before anything moves, naming the unit. The
 close names the same units first - one short of its terminal as a known issue, one already moved
 to Done in the pre-flight's blocking `review-coverage` row - so the page you sign already shows
@@ -225,6 +233,14 @@ does depends on whether it overlaps the open run:
   the same run under its unchanged id and start time. This needs no flag; it is the normal way a
   run's batch grows.
 
+A run **closed and awaiting its signature** is the exception: it does not hold the slot and does
+not block the next run (D0503). `sprint plan --write` names each such run on stderr, with the
+`sign` command for it, and opens the next run on top of it, in the checkout that closed it or in
+a fresh clone, leaving the waiting run's tracked record untouched. `sign` seals a waiting run
+while a later run is open in the same checkout, setting that run's state aside and putting it
+back byte for byte, and `status.py` names every run awaiting its signature. A run open and not
+yet closed still holds the slot.
+
 When a disjoint batch is refused there are **two ways forward**, and the refusal prints them as
 runnable commands:
 
@@ -244,14 +260,14 @@ the page reads from the record cites that path, and a DORA figure read from the 
 close froze cites it before the forge reading, so the page's sources open in a fresh clone. A
 page filed citing `.local/run-state.json` still checks, as `check` never compares sources.
 
-- In a clone that does not hold the run open, `sprint plan --write` refuses while a tracked
-  record names a report and is still running, naming the run, its report and the `sign`
-  command. The checkout that closed the run holds it open, so it gives the one-run refusal
-  above.
+- In any clone, `sprint plan --write` names each run whose tracked record awaits its signature,
+  with its report and the `sign` command, and opens the next run, as the closed-run exception
+  above says. A live state or tracked record it cannot read is refused
+  by name, with nothing written.
 - `sign --report <id>` takes the run up from that record in a clone that does not hold it. Every
   check reads the record as it stands, and only a sign that passes them all writes it into the
-  clone. An older, closed run held there is archived first; a different run still open there is
-  refused, never discarded.
+  clone. An older, closed run held there is archived first; a later run still open there is set
+  aside while the waiting run is sealed and put back byte for byte, never discarded.
 - The tree check still holds there: the digest leaves the run records out, so a clone at the
   close's commit matches the tree the close recorded.
 - A checkout whose copy of the run is older than its record - signed elsewhere, or reopened and

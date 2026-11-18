@@ -191,8 +191,8 @@ managed while it is only visible by reading a decisions log after the fact.
 
 ## Open Decisions
 
-> Six of seven were ruled by the operator on 2026-09-21 and are recorded in the decisions log.
-> D6 remains open and blocks nothing in the first two workstreams.
+> Six of seven were ruled by the operator on 2026-09-21. D6 was ruled on 2026-11-17 through
+> RFC0065. All seven are recorded in the decisions log.
 
 | # | Decision | Ruling | Recorded |
 | --- | --- | --- | --- |
@@ -201,7 +201,7 @@ managed while it is only visible by reading a decisions log after the fact.
 | D3 | Is a persona ruling binding? | Binding inside the ODD, advisory at its edge - so a seat can never ratify an ODD exit | D0232 |
 | D4 | What is on the andon cord? | Exactly two conditions: an irreversible action (push, tag, release, delete) and an ODD exit | D0233 |
 | D5 | Is there an escalation budget? | Not yet. The count is measured and reported every run; the budget is set at the second sprint on that number | D0234 |
-| D6 | Who signs when the human is away for days? | Open | - |
+| D6 | Who signs when the human is away for days? | Closed by RFC0065: a closed run waits for the operator's signature and the next run may open on top of it; a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack | D0503 |
 | D7 | Do persona rulings need author-independence? | No. The seat, the rationale and the rejected alternative are the audit trail | D0235 |
 
 **The guard on D1.** A persona-judged predicate is the shape closest to today's `--goal-verdict`,
@@ -310,3 +310,4 @@ unattended line with no real inspection at the end is the failure this RFC is na
 | 2026-09-21 | sdlc-studio | Created via `new` (deterministic) |
 | 2026-09-21 | agent | Drafted: problem, four options, Option C recommended, 7 open decisions, 4 workstreams |
 | 2026-09-21 | operator | Accepted. D1-D5 and D7 ruled (D0230-D0235); D6 left open. WS1+WS2 folded into the five-Highs run (D0236) |
+| 2026-11-18 | agent | US1293: D6 closed with a pointer to RFC0065, whose ruling D0503 answers it |

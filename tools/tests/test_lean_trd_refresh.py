@@ -928,5 +928,134 @@ class TrdRegistryNetworkTests(unittest.TestCase):
                     self.assertFalse(card.exists(), f"persona_gen.py {verb} wrote a card")
 
 
+# --- US1293: the deferred signature ruling (D0503, RFC0065) -----------------------------------
+
+RFC0060 = REPO / "sdlc-studio" / "rfcs" / "RFC0060-the-dark-factory-a-sprint-that-decides-for.md"
+SPRINT_PAGES = (SCRIPTS.parent / "reference-sprint.md", SCRIPTS.parent / "help" / "sprint.md")
+#: The ruling, the RFC it answers and the ADR that records it: ADR-012 was the last before it.
+RULING, RULED_RFC, RULING_ADR = "D0503", "RFC0065", "013"
+
+#: A sentence or cell saying a run awaiting its signature, or still running, holds the next one
+#: back: something refusing while one awaits, or one that blocks or holds the slot with no
+#: `not`, `never` or `longer` directly before the verb.
+_WAITING = r"(?:awaits?|awaiting|still running|unsigned)"
+_WAITING_BLOCKS_RE = re.compile(
+    rf"\brefus\w*\b[^.;|]*?\b(?:while|when|until)\b[^.;|]*?\b{_WAITING}\b"
+    rf"|\b{_WAITING}\b[^.;|]*?(?<!not )(?<!never )(?<!longer )"
+    rf"\b(?:blocks?|holds the (?:run )?slot)\b", re.I)
+#: A backticked `sprint.py sign ...` command, or one on a fenced line, up to a comment.
+_SIGN_RE = re.compile(r"sprint\.py (sign\b[^`#\n]*)")
+
+
+def _waiting_blocks(text: str) -> list[str]:
+    """Each sentence or table cell of `text` that says a waiting run holds the next one back."""
+    return [u for u in _units(text) if _WAITING_BLOCKS_RE.search(u)]
+
+
+def _sign_options() -> set[str]:
+    """Every option string the shipped `sprint.py sign` parser defines."""
+    return {o for a in _sprint_verbs()["sign"]._actions for o in a.option_strings}
+
+
+def _parsed_signs(text: str) -> list[tuple[str, argparse.Namespace]]:
+    """`(invocation, namespace)` for each `sprint.py sign` command `text` gives, parsed by the
+    shipped parser, so an option it does not define fails the parse (SystemExit). Each option is
+    first held to the parser's own spelling, since argparse would take `--delegate` for
+    `--delegated`."""
+    import shlex
+    out, options = [], _sign_options()
+    for words in _SIGN_RE.findall(text):
+        argv = shlex.split(words.strip())
+        unknown = [w for w in argv if w.startswith("--") and w not in options]
+        if unknown:
+            raise AssertionError(f"sprint.py {words.strip()!r} names {unknown}, which the "
+                                 f"sign parser does not define")
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            try:
+                out.append((words, sprint.build_parser().parse_args(argv)))
+            except SystemExit:
+                raise AssertionError(f"sprint.py {words.strip()!r} does not parse: "
+                                     f"{err.getvalue().strip()}") from None
+    return out
+
+
+def _accepted(did: str) -> bool:
+    """Whether `sdlc-studio/decisions.md` holds `did` as accepted."""
+    import decisions  # noqa: PLC0415 - the log's own reader
+    return any(r["id"] == did and r["status"].lower() == "accepted"
+               for r in decisions.list_decisions(REPO))
+
+
+class TrdSignatureRulingTests(unittest.TestCase):
+    """US1293 (CR0729): D0503 recorded as an ADR, the sprint pages naming the delegation option
+    `sign` accepts, and RFC0060's D6 closed. Each name is held to the parser or log it names."""
+
+    def test_the_trd_records_the_deferred_signature_ruling_as_an_adr(self) -> None:
+        """AC1. Mutants: no ADR citing D0503, or two; one numbered other than next after
+        ADR-012; Status not Accepted; RFC0065 not cited; either half of the ruling left out,
+        or one of the three places the delegation is disclosed; an option the `sign` parser
+        does not define; the lifecycle's plan row still refusing while a record awaits."""
+        self.assertTrue(_accepted(RULING), f"premise: {RULING} is accepted in the log")
+        self.assertTrue(list((REPO / "sdlc-studio" / "rfcs").glob(f"{RULED_RFC}-*.md")))
+        body = _trd_body()
+        numbers = re.findall(r"^###\s+ADR-(\d+):", body, re.M)
+        self.assertEqual(list(range(1, len(numbers) + 1)), [int(n) for n in numbers])
+        citing = [n for n in numbers if re.search(rf"\b{RULING}\b", _adr(body, n))]
+        self.assertEqual([RULING_ADR], citing, f"one ADR cites {RULING}, ADR-{RULING_ADR}")
+        adr = _adr(body, RULING_ADR)
+        self.assertRegex(adr, r"(?m)^\*\*Status:\*\*\s*Accepted\b")
+        self.assertRegex(adr, rf"\b{RULED_RFC}\b")
+        units = _units(adr)
+        waits = [u for u in units if re.search(r"\b(?:await\w*|waits?)\b", u)
+                 and re.search(r"\bsignature\b", u) and re.search(r"\bnext run\b", u)
+                 and re.search(r"\bopens?\b", u)]
+        self.assertTrue(waits, "no sentence says a closed run waits and the next run opens")
+        disclosed = [u for u in units if re.search(r"\bdelegat\w*\b", u)
+                     and re.search(r"\bdecision\b", u)
+                     and all(re.search(rf"\b{p}\b", u)
+                             for p in ("signature block", "report", "evidence pack"))]
+        self.assertTrue(disclosed, "no sentence discloses a delegated signature in the "
+                                   "signature block, the report and the evidence pack")
+        self.assertLessEqual({"--delegated", "--decision"}, _sign_options())
+        signs = _parsed_signs(adr)
+        self.assertTrue([w for w, ns in signs if ns.delegated and ns.decision], signs)
+        self.assertEqual([], _waiting_blocks(body))
+
+    def test_the_sprint_pages_name_the_delegation_option_sign_accepts(self) -> None:
+        """AC2. Mutants: a page with no delegated `sign` invocation, or one naming an option
+        the parser does not define (`--delegate`, `--decision-id`); a page with no sentence
+        saying a waiting run does not block the next; a page still saying `plan` refuses while a
+        record awaits or is still running."""
+        options = _sign_options()
+        self.assertLessEqual({"--delegated", "--decision"}, options, "premise: US1291's options")
+        for page in SPRINT_PAGES:
+            text = _read(page)
+            with self.subTest(page=page.name):
+                signs = _parsed_signs(text)
+                self.assertTrue(signs, "premise: the page gives a sign command")
+                self.assertTrue([w for w, ns in signs if ns.delegated and ns.decision],
+                                "no runnable sign command uses --delegated with --decision")
+                frees = [u for u in _units(text) if re.search(r"\bawait\w*\b", u)
+                         and re.search(r"\b(?:not|no longer|never)\b[^.;]*?\b(?:block|hold)", u)
+                         and re.search(r"\bnext\b", u)]
+                self.assertTrue(frees, "no sentence says a waiting run does not block the next")
+                self.assertEqual([], _waiting_blocks(text))
+
+    def test_rfc0060_d6_is_closed_with_a_pointer_to_rfc0065(self) -> None:
+        """AC3. Mutants: the D6 ruling still Open; RFC0065 not named; the Recorded cell
+        empty or naming another decision; the note still saying D6 remains open."""
+        self.assertTrue(_accepted(RULING), f"premise: {RULING} is accepted in the log")
+        section = _section(_read(RFC0060), "Open Decisions")
+        table = _one_table(section, "#")
+        ruling, recorded = table[0].index("Ruling"), table[0].index("Recorded")
+        d6 = next(r for r in table[1:] if r[0] == "D6")
+        self.assertNotRegex(d6[ruling], r"\bOpen\b")
+        self.assertRegex(d6[ruling], rf"\b{RULED_RFC}\b")
+        self.assertRegex(d6[recorded], rf"\b{RULING}\b")
+        note = "\n".join(line for line in section.splitlines() if line.startswith(">"))
+        self.assertTrue(note, "premise: the note above the table")
+        self.assertNotRegex(note, r"\bD6\b[^.]*\b(?:remains|is|left|stays)\s+open\b")
+
+
 if __name__ == "__main__":
     unittest.main()

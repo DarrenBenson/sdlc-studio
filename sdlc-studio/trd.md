@@ -3,7 +3,7 @@
 **Project:** SDLC Studio
 **Version:** 6.4.0
 **Status:** Draft
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-18
 **PRD Reference:** [PRD](./prd.md)
 
 > Generated in **Generate mode** by reverse-engineering the skill's own source.
@@ -578,7 +578,7 @@ is closed and awaits its signature, and what lets any full clone re-derive the s
 
 | Step | Command | Run state |
 | --- | --- | --- |
-| plan | `sprint.py plan --write` | Opens the live record, `sdlc-studio/.local/run-state.json`, with the run id and the approved batch. It refuses while a tracked record awaits its signature for a run this clone does not hold open. |
+| plan | `sprint.py plan --write` | Opens the live record, `sdlc-studio/.local/run-state.json`, with the run id and the approved batch. A run closed and awaiting its signature does not hold it back (ADR-013): the plan names each one, with the command that signs it, and opens the next run on top of it. |
 | deliver | `critic.py record`, `transition.py` | Record each unit's review base and actuals on the live record. |
 | stop | `sprint.py stop` | Ends an open run without a signature: the live record closes `stopped` and is archived. It files no run report and creates no tracked record; one a close already filed is filed again with the stopped outcome, so a clone that pulls it no longer reads the run as awaiting its signature. |
 | close | `sprint.py close` | Files the run report and the tracked record, `sdlc-studio/reports/runs/*.json`, still running: a clone that pulls it sees the run awaits its signature, and `sign` takes it up from there. |
@@ -1277,6 +1277,58 @@ and `persona_review.py` (US1052).
 - Depends on verdicts recorded as the reviewer wrote them (CR0619) and authorised rounds being
   recordable (BG1003); until then the learning loop would read transcriptions.
 
+---
+
+### ADR-013: A closed run waits for its signature without holding up the next, and a delegated signature is disclosed
+
+**Status:** Accepted (RFC0065, D0503, 2026-11-17)
+
+**Context:** RFC0060 left its decision D6, who signs when the operator is away for days, open
+from 2026-09-21. A project held one run at a time, and a closed run that had not been signed
+held that slot, so `sprint.py plan --write` refused the next run until the operator returned.
+Decisions D0467, D0472, D0475 and D0479 each authorised a signature for one absence, and a
+signed page did not say that its signature had been entered on the operator's behalf.
+
+**Alternatives considered:**
+
+- *Deferred signature alone:* the orchestrator never enters a principal and the operator signs
+  each waiting report on return. Taken as the default.
+- *Standing delegation with disclosure:* the operator authorises signing for a named span and
+  the signature names the authorising decision. Taken only beside the deferred default.
+- *A second human principal*, a named deputy outside the authoring session, and *out-of-band
+  proof*, a signed tag or commit only the operator holds. Not taken.
+
+**Decision:** A closed run waits for the operator's signature, and the next run opens on top of
+it (D0503). A run closed and awaiting its signature no longer holds the run slot:
+`sprint.py plan --write` names each one on stderr, with the command that signs it, and opens the
+next run, in a fresh clone or in the checkout that closed it, leaving the waiting run's tracked
+record untouched (US1290). A run open and not yet closed still refuses a batch that shares no
+unit with it. `sprint.py sign` seals a waiting run while a later run is open in the same
+checkout, setting the later run's state aside and putting it back byte for byte, and
+`status.py` names every run awaiting its signature.
+
+The operator may still delegate signing (US1291, US1292). A delegated signature,
+`sprint.py sign --report RPTxxxx --principal "<operator>" --delegated --decision Dnnnn`, records
+the accepted decision in `sdlc-studio/decisions.md` that authorises it and is disclosed in the
+signature block, the report and the evidence pack: the block holds `delegated: true` and the
+decision id, the report's Signed by cell says the signature was entered under delegation and
+names the decision (`sprint_report.signed_by`), and the evidence pack's Accountable line says
+the same. `sign` refuses a delegated signature with no `--decision`, one naming an id the log
+does not hold and one naming a decision that is not accepted, and a `--decision` given without
+`--delegated`, each before anything is written. A signature the operator enters carries neither
+key.
+
+**Consequences:**
+
+- Positive: a run is no longer held up for days by an absent operator, which removes the
+  pressure behind the per-absence authorisations.
+- Positive: a delegated signature is visible on the page and in the evidence pack, with the
+  decision behind it, so a change board can see who authorised it.
+- Negative: several runs can wait for signatures at once, and a later run builds on work no one
+  has signed yet; `status.py` lists each waiting run so none is forgotten.
+- RFC0060's D6 is closed by this ruling. D0504 keeps the signatures already on RPT0030 to
+  RPT0034, each with a line naming the decision that authorised it (CR0730).
+
 ## 12. Open Technical Questions
 
 - [ ] **Q:** Should the markdown command flows get executable conformance tests, or
@@ -1371,6 +1423,7 @@ touches the component. The constraints below span components.
 | 2026-11-15 | 6.3.0 | US1058, US1059: ADR-012's Built so far names `persona_memory.py` and the brief's learnings block; Not yet built keeps the memory directory and `persona_review.py` |
 | 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): §6's committed records gain the verdict files `critic.py brief` issues and `critic.py record` binds, the persona memory files and a release's evidence pack, each held to its writer's code, and the scan of tracked records reads the verdict and persona memory trees too; §6 names `reference-evidence-schema.md` at annex version 1.0 as the report's contract, and the `.local` table gains `resume-brief.md` from `sprint.py handoff` |
 | 2026-11-16 | 6.4.0 | US1173: the release cut. The Coverage line reads v6.4.0 as cut, plus the 6.5 work on `main` |
+| 2026-11-18 | 6.4.0 | US1293: ADR-013 records D0503 (RFC0065): a closed run waits for the operator's signature and the next run opens on top of it, and a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack. §6's run lifecycle plan row no longer says the plan refuses while a record awaits its signature |
 
 ---
 

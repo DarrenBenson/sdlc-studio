@@ -136,13 +136,13 @@ links here rather than listing its own.
    then draws the sprint report and files it: the one page you sign. A failing step is printed with its remedy and handed
    over as a known issue on the report; the close does not refuse over it. What still stops it:
    no sprint goal, no goal verdict, no retro, and an uncommitted change to a file a batch unit
-   declares. The run stays open for the signature.
+   declares. The run stays open for the signature, and a run awaiting its signature does not block the next run: `sprint.py plan --write` names it and opens the next run on top of it (D0503).
 5. **Sign.** `sprint.py sign --report RPTxxxx --principal "<you>"` is the operator's one
    signature, given after reading the report. It moves each batch unit to its terminal status
    (Done for a story, Fixed for a bug) through that unit's own gate, writes the run's signature
    and stops; no per-unit sign-off row is written. A principal who authored a unit or reviewed
    one is refused before anything is written, and a unit with no independent APPROVE stops it
-   before anything moves. `--strike M-NNNN --strike-reason "..."` strikes a persona learning the close listed, so it never goes live. The signature is over the page's fingerprint, a digest of each figure's value; the signature block, the generation time and each figure's source are not signed ([how to recompute it](reference-evidence-schema.md#report-fingerprint)).
+   before anything moves. `--strike M-NNNN --strike-reason "..."` strikes a persona learning the close listed, so it never goes live. `sprint.py sign --report RPTxxxx --principal "<you>" --delegated --decision Dnnnn` enters a signature on the principal's behalf under an accepted decision in `sdlc-studio/decisions.md`; the signature block records the decision, and the report and the evidence pack say the signature was entered under delegation. The signature is over the page's fingerprint, a digest of each figure's value; the signature block, the generation time and each figure's source are not signed ([how to recompute it](reference-evidence-schema.md#report-fingerprint)).
 6. **Learn.** The retro is three lines - Keep, Stop and Try, with a capped number of Try items
    (`help/retro.md`) - and the close's `retro.py extract` turns each Try item into a lesson. A
    Try item tagged with a failure class counts a repeat on that class in
