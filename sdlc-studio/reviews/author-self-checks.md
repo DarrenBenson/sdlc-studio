@@ -376,3 +376,6 @@
 | BG1580 | agent-ae9d2789730bc5c77 | 2026-11-18 | TRUE 9, FALSE 0, UNVERIFIABLE 0 | killed 3, survived 1 | 1a3390a782ace836 at d45984d26ca5 |
 | US1313 | agent-af36c11ffbc879c26 | 2026-11-18 | TRUE 22, FALSE 0, UNVERIFIABLE 1 | killed 11, survived 4 | 8257364d70e2fb0e at 4ed7d225516c |
 | BG1586 | agent-a9d7ae4ddac135dd5 | 2026-11-18 | TRUE 7, FALSE 0, UNVERIFIABLE 0 | killed 4, survived 3 | 89a316a6904427d8 at 9925e144c49e |
+| US1321 | Dani Okafor (engineering) | 2026-11-18 | TRUE 26, FALSE 0, UNVERIFIABLE 0 | killed 15, survived 1 | c3c0a276808202f6 at 42fc6eb5dd31 |
+| US1316 | agent-a7cf0178c200b9e9b | 2026-11-18 | TRUE 29, FALSE 0, UNVERIFIABLE 0 | killed 20, survived 1 | c705af597cb91a5f at fd0f3357d2e4 |
+| US1317 | agent-adf464901f9fa8e86 | 2026-11-18 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 45, survived 1 | 78998838835940d3 at fbdb7b10ea2a |

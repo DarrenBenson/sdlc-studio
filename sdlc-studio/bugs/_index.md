@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 436 |
+| Open | 442 |
 | In Progress | 0 |
 | Fixed | 957 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1590** |
+| **Total** | **1596** |
 
 ## All Bugs
 
@@ -666,6 +666,12 @@
 | [BG1588](BG1588-the-hand-copied-list-guard-misses-known-mirrors.md) | The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1589](BG1589-a-run-closed-to-await-the-operator-s.md) | A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1591](BG1591-the-author-self-check-refuses-a-documentation-page.md) | The author self-check refuses a documentation page the unit's Affects declares as a claim surface, so a docs unit's claims in its own page cannot be recorded and the land refuses its self-check | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1592](BG1592-us1317-s-enterprise-page-tests-cannot-tell-a.md) | US1317's enterprise-page tests cannot tell a forecast figure from an actual, miss four network-call shapes, plant no failure for the http address check, and pin no link or key outside the controls section | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1593](BG1593-tools-check-links-py-does-not-read-docs.md) | tools/check_links.py does not read docs/enterprise.md, so a broken link or anchor on the page exits 0 | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1594](BG1594-sprint-lane-land-records-the-builder-s-agent.md) | sprint lane land records the builder's agent id as the self-check author instead of the building seat, so lane accept writes a verdict row the retro cannot score as a seat's | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1595](BG1595-sprint-lane-brief-units-joins-comma-separated-ids.md) | sprint lane brief --units joins comma-separated ids into one id and refuses it, instead of splitting on commas or saying the ids are space-separated | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1596](BG1596-critic-py-record-calls-a-repair-builder-whose.md) | critic.py record calls a repair builder whose prompt names the verdict path the agent 'briefed with' the verdict, and reports the verdict's provenance as unknown | Open | Low | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 

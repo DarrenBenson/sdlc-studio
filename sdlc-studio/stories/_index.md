@@ -8,11 +8,11 @@
 | --- | --- |
 | Proposed | 0 |
 | Draft | 187 |
-| Ready | 7 |
+| Ready | 6 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 940 |
+| Done | 941 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -354,7 +354,7 @@
 | [US1314](US1314-reconcile-reports-a-story-whose-stamped-risk-class.md) | Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it | Done | EP0376 | 2026-11-17 | 2026-11-17 |
 | [US1315](US1315-the-github-about-description-topics-and-package-json.md) | The GitHub About description, topics and package.json description name SDLC Studio a harness-agnostic Agent Skill, not a Claude Code skill | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1316](US1316-docs-harnesses-md-gives-a-capability-matrix-for.md) | docs/harnesses.md gives a capability matrix for the six harnesses, every cell verified against the installers and scripts or marked untested, with a fallback for every harness-specific feature | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
-| [US1317](US1317-docs-enterprise-md-answers-an-enterprise-reviewer-harness.md) | docs/enterprise.md answers an enterprise reviewer: harness and models, data, adopting without forking, fitting existing controls, cost, and verification for less experienced engineers, each claim checked against the code | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
+| [US1317](US1317-docs-enterprise-md-answers-an-enterprise-reviewer-harness.md) | docs/enterprise.md answers an enterprise reviewer: harness and models, data, adopting without forking, fitting existing controls, cost, and verification for less experienced engineers, each claim checked against the code | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1318](US1318-the-readme-first-screen-leads-with-harness-agnostic.md) | The README first screen leads with harness-agnostic and human in the lead, names the six harnesses in one alphabetical table, links the harness and enterprise pages, and moves the sponsorship line to Acknowledgements, no longer than today | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1319](US1319-the-skill-md-description-and-compatibility-line-and.md) | The SKILL.md description and compatibility line and llms.txt are harness-neutral, and --agentic states its fallback outside Claude Code | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1320](US1320-a-sweep-of-the-public-docs-leaves-no.md) | A sweep of the public docs leaves no generic Claude Code or Anthropic requirement, INSTALL.md links the harness page, and a guard keeps the public docs that way | Ready | EP0377 | 2026-11-18 | 2026-11-18 |
