@@ -148,9 +148,9 @@ class LaneAcceptTests(unittest.TestCase):
                                            "transition.py set", "sprint.py lane"])
         row = self._rows(GREEN)[-1]
         # verdict, reviewer, author (the self-check's), date, brief fingerprint, tier
-        # BG1520: the free-text `qa-seat` is recorded as the briefed seat's holder and role
+        # BG1520: the free-text `qa-seat` is kept and given the briefed seat's role group
         self.assertEqual([row[1], row[2], row[3], row[5], row[6]],
-                         ["APPROVE", "Sam (qa)", AUTHOR, self.fp[GREEN], "full"])
+                         ["APPROVE", "qa-seat (qa)", AUTHOR, self.fp[GREEN], "full"])
         self.assertEqual(_status(self.root, GREEN), "Done")
         back = self.calls[-1][1]
         self.assertEqual(back[:3], ("lane", "return", "--units"))
@@ -247,12 +247,14 @@ class LaneAcceptTests(unittest.TestCase):
 
     def test_the_recorded_reviewer_cell_names_the_briefed_seat(self) -> None:
         """BG1520 AC1. MUTANTS: the value recorded as given, so `recorded_seat` reads nothing;
-        the role written without the holder; the role read only through a declared card, so a
-        project with no qa card records nothing attributable."""
+        the role group left off; the value replaced by the seat's bare holder, which drops the
+        reviewer's instance; the role read only through a declared card, so a project with no
+        qa card records nothing attributable."""
         rc, out, err = self._accept(GREEN, APPROVE, reviewer=f"qa-seat-{GREEN}-r1")
         self.assertEqual(rc, 0, out + err)
         cell = self._rows(GREEN)[-1][2]
-        self.assertEqual("Sam (qa)", cell, "the cell is not in the holder and role form")
+        self.assertEqual(f"qa-seat-{GREEN}-r1 (qa)", cell,
+                         "the cell is not the reviewer's own value in the holder and role form")
         self.assertEqual("qa", critic.recorded_seat(cell))
         # a project declaring no qa card: the shipped seat's role is still read from the value
         (self.root / "sdlc-studio/personas/seats/qa.md").unlink()
@@ -264,8 +266,9 @@ class LaneAcceptTests(unittest.TestCase):
     def test_a_reviewer_naming_no_known_seat_is_refused(self) -> None:
         """BG1520 AC2. MUTANTS: the refusal dropped, so the value is recorded unattributed; the
         known seats left out of the refusal; the refusal written after the record; a value in the
-        holder and role form, or naming the holder alone, refused."""
-        for value in ("reviewer-r1", "engineering-seat-r1"):
+        holder and role form, or naming the holder alone, refused; a value whose `(<role>)`
+        group names an unbriefed seat accepted on a word, recorded under the group's seat."""
+        for value in ("reviewer-r1", "engineering-seat-r1", "qa-seat-r1 (engineering)"):
             with self.subTest(refused=value):
                 rc, out, err = self._accept(GREEN, APPROVE, reviewer=value)
                 self.assertEqual(rc, 2, out + err)
@@ -279,6 +282,47 @@ class LaneAcceptTests(unittest.TestCase):
                 rc, out, err = self._accept(uid, APPROVE, *named, reviewer=value)
                 self.assertEqual(rc, 0, out + err)
                 self.assertEqual("Sam (qa)", self._rows(uid)[-1][2])
+
+    def test_a_build_seat_review_stays_independent_of_its_build_seat_author(self) -> None:
+        """BG1520, the round-one regression. A second review by the build seat, accepted
+        against the build seat's own `<holder> (<role>)` author, is recorded independent, as the
+        base recorded it, and lane accept's claim agrees with the ledger; a reviewer that reads
+        as the author is refused before anything is recorded. MUTANTS: the cell rewritten to
+        the seat's bare signature (reviewer == author, a self-review the lane reports as
+        independent); the self-review check dropped; the author the check reads not the one
+        recorded; every unit's brief notes read, so a seat briefed for another unit passes."""
+        _write(self.root, "sdlc-studio/personas/seats/engineering.md",
+               "<!-- role: engineering -->\n# Dani\n\ncharter\n")
+        notes = self.root / "sdlc-studio/.local/briefs.jsonl"
+        notes.write_text(notes.read_text(encoding="utf-8") + json.dumps(
+            {"fp": "fedcba987654", "unit": BUG, "seat": "engineering", "tier": "full"}) + "\n",
+            encoding="utf-8")
+        builder = critic.seat_signature(self.root, "engineering")
+        self.assertEqual("Dani (engineering)", builder)
+        for value in ("Dani", builder):
+            with self.subTest(refused=value):
+                rc, out, err = self._accept(BUG, APPROVE, "--author", builder, reviewer=value)
+                self.assertEqual(rc, 2, out + err)
+                self.assertIn("would be recorded as a self-review", err)
+                self.assertEqual(self.calls, [], "lane accept ran a script on a self-review")
+                self.assertFalse(critic.verdicts_path(self.root).exists(), "a row was written")
+                self.assertEqual("In Progress", _status(self.root, BUG))
+        with self.subTest("a seat briefed only for another unit"):
+            rc, out, err = self._accept(GREEN, APPROVE, reviewer=f"engineering-seat-{GREEN}-r1")
+            self.assertEqual(rc, 2, out + err)
+            self.assertIn("the brief named qa,", err)
+        with self.subTest("the build seat's own review instance"):
+            value = f"engineering-seat-{BUG}-r1"
+            rc, out, err = self._accept(BUG, APPROVE, "--author", builder, reviewer=value)
+            self.assertEqual(rc, 0, out + err)
+            row = self._rows(BUG)[-1]
+            self.assertEqual([f"{value} (engineering)", builder], [row[2], row[3]])
+            self.assertEqual("engineering", critic.recorded_seat(row[2]))
+            self.assertEqual((True, ""), critic.independence(row[2], row[3]))
+            self.assertNotIn("self-review", out + err)
+            self.assertEqual("Fixed", _status(self.root, BUG))
+            claimed = self.calls[-1][1]
+            self.assertIn("Fixed on an independent APPROVE (round 1)", claimed)
 
     def test_the_runbook_row_documents_the_seat_form(self) -> None:
         """BG1520 AC4. MUTANTS: the lane accept row back to a bare `--reviewer <name>`; the

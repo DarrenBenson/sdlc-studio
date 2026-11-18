@@ -2223,8 +2223,10 @@ GIT_IDENTITY = "git_identity"
 
 
 def _global_config_route() -> list[str]:
-    """The files `git config --global` consults, in git's order, whether or not each exists:
-    `GIT_CONFIG_GLOBAL` alone when it is set, otherwise the XDG file and then ~/.gitconfig."""
+    """The files a commit reads its global configuration from, in git's order, whether or not
+    each exists: `GIT_CONFIG_GLOBAL` alone when it is set, otherwise the XDG file and then
+    ~/.gitconfig, a value in the later file winning. `git config --global --get` is not that
+    read: it consults ~/.gitconfig alone whenever that file exists."""
     if os.environ.get("GIT_CONFIG_GLOBAL"):
         return [os.environ["GIT_CONFIG_GLOBAL"]]
     home = Path(os.environ.get("HOME") or Path.home())
@@ -2233,26 +2235,30 @@ def _global_config_route() -> list[str]:
 
 
 def git_identity() -> dict | None:
-    """The global git identity git reads now, as {"name", "email", "file", "route"}: "" for a key
-    that is unset; `file` the file each set value came from (both, joined, when they differ), or
-    the route's existing files when neither is set; `route` is `_global_config_route()`. None
-    when git cannot answer at all, so a reader can tell "no identity" from "not read"."""
+    """The global git identity a commit carries now, as {"name", "email", "file", "route"}:
+    each key read from every existing file of `_global_config_route()` in turn, the last value
+    set winning, as a commit's own read does; "" for a key no file sets. `file` is the file each
+    set value came from (both, joined, when they differ), or the route's existing files when
+    neither is set; `route` is the route. None when git cannot be run at all, so a reader can
+    tell "no identity" from "not read"."""
     import subprocess  # noqa: PLC0415 - only this path shells out
     route = _global_config_route()
     found: dict = {"route": route}
     origins: list[str] = []
-    for key in ("name", "email"):
-        try:
-            out = subprocess.run(["git", "config", "--global", "--show-origin", "--get",
-                                  f"user.{key}"], capture_output=True, text=True, timeout=10)
-        except (OSError, subprocess.SubprocessError):
-            return None
-        origin, _, value = out.stdout.rstrip("\n").partition("\t")
-        found[key] = value if out.returncode == 0 else ""
-        origin = origin.removeprefix("file:")
-        if out.returncode == 0 and origin and origin not in origins:
-            origins.append(origin)
     existing = [p for p in route if Path(p).is_file()]
+    for key in ("name", "email"):
+        value, origin = "", ""
+        for f in existing:
+            try:
+                out = subprocess.run(["git", "config", "--file", f, "--includes", "--get",
+                                      f"user.{key}"], capture_output=True, text=True, timeout=10)
+            except (OSError, subprocess.SubprocessError):
+                return None
+            if out.returncode == 0:
+                value, origin = out.stdout.rstrip("\n"), f
+        found[key] = value
+        if origin and origin not in origins:
+            origins.append(origin)
     found["file"] = " and ".join(origins or existing) or "no global git config file"
     return found
 
@@ -2269,10 +2275,11 @@ def identity_drift(repo_root: Path | str) -> dict | None:
     run recorded none (it opened before the record existed, or git could not answer) or when git
     cannot answer now: the guard refuses only on a change it has seen.
 
-    Also None when this process consults other files than the opening one did (another
-    `GIT_CONFIG_GLOBAL`, HOME or `XDG_CONFIG_HOME`): that reads a different configuration, not a
-    rewritten one. A file an agent writes is still caught, because the operator's own processes
-    keep their route and git reads the written file through it."""
+    Also None when this process's route shares no file with the opening one's (another
+    `GIT_CONFIG_GLOBAL`, or both the XDG file and ~/.gitconfig moved by HOME or
+    `XDG_CONFIG_HOME`): that reads a different configuration, not a rewritten one. A route that
+    shares a file is compared, so a process run under an agent's own HOME, still reading the XDG
+    file the agent wrote, is caught as the operator's own processes are."""
     try:
         state = read(repo_root) or {}
     except RunStateError:
@@ -2281,7 +2288,7 @@ def identity_drift(repo_root: Path | str) -> dict | None:
     if _is_spent(state) or not isinstance(recorded, dict):
         return None
     found = git_identity()
-    if found is None or recorded.get("route") != found["route"]:
+    if found is None or not set(recorded.get("route") or []) & set(found["route"]):
         return None
     if all((recorded.get(k) or "") == found[k] for k in ("name", "email")):
         return None

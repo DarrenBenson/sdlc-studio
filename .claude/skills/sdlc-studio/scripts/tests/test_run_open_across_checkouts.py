@@ -4,9 +4,11 @@
 run up from that record in a clone that never held it; and a signed record blocks no plan
 anywhere. Since US1290 a record awaiting its signature blocks no plan either: `sprint plan
 --write` names it and opens the next run beside it, the closing checkout archives its closed run
-for a disjoint batch, and `sprint sign` seals the waiting run while a later one stays open. Driven
-through the shipped `sprint` entry points across real clones, with only the terminal
-transitions stubbed (the shared sign fixture). `gh` is a stub that answers nothing.
+for a disjoint batch, and `sprint sign` seals the waiting run from a checkout holding a later run
+open, or from any clone once HEAD has moved past the commit that filed its record, judging it
+against that commit (D0524). Driven through the shipped `sprint` entry points across real clones,
+with only the terminal transitions stubbed (the shared sign fixture). `gh` is a stub that answers
+nothing.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -26,6 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 import test_lean_close as lean  # noqa: E402 - the close fixture, shared
 import test_lean_sign as signing  # noqa: E402 - the stubbed seal, shared
+
+import telemetry  # noqa: E402 - the forecast log's own path, so the fixture tracks the real one
 
 RUN = "RUN-LEAN0001"
 REPORT = "RPT0001"
@@ -63,14 +67,27 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self._git(root, "add", "-A")
         self._git(root, "commit", "-q", "--allow-empty", "-m", message)
 
-    def _close(self) -> None:
+    def _close(self, root: Path | None = None, *, forecasts: bool = False,
+               commit: bool = True) -> Path:
         """A run closed through the shipped `sprint close` in one checkout, and its paperwork
-        committed there."""
-        lean._fixture(self.closer)
-        signing._git_repo(self.closer)
-        rc, _out, err = lean._close(self.closer)
+        committed there unless `commit` is False. With `forecasts`, the day's forecast log is
+        tracked before the close, as a project's evidence logs are, so a later plan appending
+        to it changes a tracked file."""
+        root = root or self.closer
+        root.mkdir(exist_ok=True)
+        lean._fixture(root)
+        if forecasts:
+            shard = telemetry.forecasts_path(root)
+            shard.parent.mkdir(parents=True, exist_ok=True)
+            shard.write_text(json.dumps({"id": "US0001", "tokens": 1000, "points": 1,
+                                         "planned_at": "2026-01-01T00:00:00Z"}) + "\n",
+                             encoding="utf-8")
+        signing._git_repo(root)
+        rc, _out, err = lean._close(root)
         self.assertEqual(0, rc, err)
-        self._commit(self.closer, "close paperwork")
+        if commit:
+            self._commit(root, "close paperwork")
+        return root
 
     def _clone(self, name: str, source: Path | None = None) -> Path:
         dest = self.base / name
@@ -117,8 +134,7 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
 
     @staticmethod
     def _ready(root: Path, uid: str, status: str = "Ready") -> None:
-        """A plannable story at `status`, left untracked: a file added since the close and not
-        staged is no change to the tree the waiting run's report describes."""
+        """A plannable story at `status`, written and left for the caller to commit or not."""
         (root / "sdlc-studio" / "stories" / f"{uid}-next.md").write_text(
             f"# {uid}: next\n\n> **Status:** {status}\n> **Points:** 2\n> **Epic:** EP0001\n"
             f"> **Affects:** src/{uid.lower()}.py\n\n## Acceptance Criteria\n\n### AC1: works\n"
@@ -171,29 +187,98 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertIn(f"{live['run_id']} is already open", err)
         self.assertEqual(live, self._live(self.closer), "the refused plan changed the open run")
 
-    def test_sign_seals_a_waiting_run_without_disturbing_the_open_one(self) -> None:
-        """US1290 AC3. MUTANTS: the 'cannot be taken up here without discarding it' refusal
-        kept; the waiting run taken up over the open run's live state and never put back; the
-        open run's state put back before the seal's last write, so the sealed record misses it."""
-        self._close()
-        self._ready(self.closer, "US0102")
-        rc, out, err = self._plan(self.closer)
+    def _open_later(self, root: Path) -> tuple[Path, dict, bytes]:
+        """A later run opened in `root` through `sprint plan --write` over a disjoint story:
+        the open run's live-state path, its state and its bytes."""
+        self._ready(root, "US0102")
+        rc, out, err = self._plan(root)
         self.assertEqual(0, rc, out + err)
-        live_path = self.closer / "sdlc-studio" / ".local" / "run-state.json"
-        opened, opened_bytes = self._live(self.closer), live_path.read_bytes()
-        rc, out, err = signing._sign(self.closer, REPORT)
+        live = root / "sdlc-studio" / ".local" / "run-state.json"
+        return live, self._live(root), live.read_bytes()
+
+    def _sign_refused(self, root: Path, live: Path, opened: bytes, *needles: str) -> None:
+        """A sign refused with each of `needles` named, and nothing written: the waiting record
+        still running and unsigned, the open run's state byte for byte as it was."""
+        rc, out, err = signing._sign(root, REPORT)
+        self.assertEqual(2, rc, out + err)
+        for needle in needles:
+            self.assertIn(needle, err)
+        self.assertEqual(("running", None), (self._record(root)["outcome"],
+                                             self._record(root).get("signature")))
+        self.assertEqual(opened, live.read_bytes(), "a refused sign changed the open run")
+
+    def _sign_sealed(self, root: Path, live: Path, opened: dict, opened_bytes: bytes) -> None:
+        """A sign that seals the waiting run in its tracked record and leaves the later run
+        open in this checkout exactly as it was."""
+        rc, out, err = signing._sign(root, REPORT)
         self.assertEqual(0, rc, out + err)
-        record = self._record(self.closer)
+        record = self._record(root)
         self.assertEqual("goal-reached", record["outcome"])
         self.assertEqual(REPORT, record["signature"]["report"])
         self.assertEqual("Darren", record["signature"]["principal"])
         self.assertTrue(record.get("close_tree"), "the sealed record lost its tree")
-        self.assertEqual(opened_bytes, live_path.read_bytes(), "the open run's state changed")
-        after = self._live(self.closer)
+        self.assertEqual(opened_bytes, live.read_bytes(), "the open run's state changed")
+        after = self._live(root)
         self.assertEqual([opened[k] for k in ("run_id", "batch", "started_at", "outcome")],
                          [after[k] for k in ("run_id", "batch", "started_at", "outcome")])
-        archived = self.closer / "sdlc-studio" / ".local" / "run-archive" / f"{RUN}.json"
+        archived = root / "sdlc-studio" / ".local" / "run-archive" / f"{RUN}.json"
         self.assertEqual("goal-reached", json.loads(archived.read_text())["outcome"])
+
+    def test_sign_seals_a_waiting_run_without_disturbing_the_open_one(self) -> None:
+        """US1290 AC3 (D0524), over a realistic later run, each shape beside a refusal.
+
+        A later plan appends to the tracked forecast log; the later run commits; a fresh clone
+        opens the later run. In each the waiting run is judged against the commit that filed
+        its record, not the working tree. MUTANTS: the whole-tree check kept with a later run
+        open (A, B, C refused); the committed-close check used at the close commit with no
+        later run (A's first control seals); the record, the page or its twin not compared with that commit, or
+        compared with HEAD instead (each control seals); an uncommitted close accepted (B's
+        control seals); the 'cannot be taken up here without discarding it' refusal kept; the
+        open run's state never put back, or put back before the seal's last write."""
+        with self.subTest("A: the later plan appends to the tracked forecast log"):
+            root = self._close(self.base / "closer-a", forecasts=True)
+            shard = telemetry.forecasts_path(root).relative_to(root).as_posix()
+            page = root / "sdlc-studio" / "reports" / f"{REPORT}.json"
+            filed = page.read_bytes()
+            # No later run open: the whole-tree check stands, and refuses a changed log.
+            log = root / shard
+            kept = log.read_bytes()
+            log.write_bytes(kept + b'{"id": "US0009", "tokens": 1, "points": 1}\n')
+            rc, out, err = signing._sign(root, REPORT)
+            self.assertEqual(2, rc, out + err)
+            self.assertIn("changed since the close", err)
+            self.assertIn(shard, err)
+            log.write_bytes(kept)
+            live, opened, opened_bytes = self._open_later(root)
+            self.assertIn(shard, self._git(root, "diff", "--name-only").stdout.splitlines(),
+                          "the later plan appended nothing to the tracked forecast log")
+            page.write_bytes(filed.replace(b"\n", b"\n ", 1))
+            self._sign_refused(root, live, opened_bytes, f"sdlc-studio/reports/{REPORT}.json",
+                               "differ from the commit that filed")
+            page.write_bytes(filed)
+            self._sign_sealed(root, live, opened, opened_bytes)
+        with self.subTest("B: the later run commits, over a close committed late"):
+            root = self._close(self.base / "closer-b", forecasts=True, commit=False)
+            live, opened, opened_bytes = self._open_later(root)
+            self._sign_refused(root, live, opened_bytes, "commit the close first")
+            self._commit(root, "close paperwork, and the later run's plan")
+            (root / "src" / "widget.py").write_text("x = 2\n", encoding="utf-8")
+            self._commit(root, "the later run delivers")
+            self._sign_sealed(root, live, opened, opened_bytes)
+        with self.subTest("C: a fresh clone opens the later run and commits"):
+            source = self._close(self.base / "closer-c", forecasts=True)
+            clone = self._clone("fresh-c", source)
+            live, opened, opened_bytes = self._open_later(clone)
+            self._commit(clone, "the later run's plan")
+            twin = next((clone / "sdlc-studio" / "reports").glob(f"{REPORT}-*.md"))
+            filed = twin.read_bytes()
+            twin.write_bytes(filed + b"\nedited after the close\n")
+            self._commit(clone, "the later run edits the waiting run's page")
+            self._sign_refused(clone, live, opened_bytes,
+                               twin.relative_to(clone).as_posix())
+            twin.write_bytes(filed)
+            self._commit(clone, "the later run restores the page")
+            self._sign_sealed(clone, live, opened, opened_bytes)
 
     def test_sign_from_a_fresh_clone(self) -> None:
         """AC3. Mutants: `sign` reads only `.local`, so a clone that never held the run cannot
@@ -214,6 +299,50 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertEqual(2, rc, err)
         self.assertIn("since the close", err)
         self.assertEqual("running", self._record(other)["outcome"])
+
+    def test_a_fresh_clone_past_the_close_commit_signs_against_it(self) -> None:
+        """US1290, D0524 as amended, the reviewer's P1b: a fresh clone holding no run, signing
+        after later commits, is judged against the commit that filed the record and seals. At
+        the close commit itself the whole-tree check stands, and the report pair edited after
+        the close is refused. MUTANTS: the committed-close check only with a later run open
+        here (P1b refused, the close's tree cannot be read); the check used at the close commit
+        too (the control's edited file seals); the pair not compared (the edited page seals)."""
+        self._close()
+        judged = "the commit that filed its close"
+        with self.subTest("control: a fresh clone at the close commit, whole-tree"):
+            at_close = self._clone("at-close")
+            rc, out, err = signing._sign(at_close, REPORT)
+            self.assertEqual(0, rc, out + err)
+            self.assertNotIn(judged, err)
+            edited = self._clone("at-close-edited")
+            (edited / "src" / "widget.py").write_text("x = 2\n", encoding="utf-8")
+            rc, out, err = signing._sign(edited, REPORT)
+            self.assertEqual(2, rc, out + err)
+            self.assertIn("changed since the close", err)
+        filed = self._git(self.closer, "rev-parse", "HEAD").stdout.strip()
+        (self.closer / "src" / "widget.py").write_text("x = 3\n", encoding="utf-8")
+        self._commit(self.closer, "later work")
+        with self.subTest("P1b: a fresh clone after later commits"):
+            clone = self._clone("past-close")
+            rc, out, err = signing._sign(clone, REPORT)
+            self.assertEqual(0, rc, out + err)
+            self.assertIn(f"judged against {filed[:12]}, {judged}", err)
+            record = self._record(clone)
+            self.assertEqual("goal-reached", record["outcome"])
+            self.assertEqual(REPORT, record["signature"]["report"])
+        with self.subTest("refusal: the report pair edited after the close"):
+            page_rel = f"sdlc-studio/reports/{REPORT}.json"
+            page = self.closer / page_rel
+            page.write_bytes(page.read_bytes().replace(b"\n", b"\n ", 1))
+            self._commit(self.closer, "the page edited after the close")
+            edited = self._clone("page-edited")
+            rc, out, err = signing._sign(edited, REPORT)
+            self.assertEqual(2, rc, out + err)
+            self.assertIn("differ from the commit that filed", err)
+            self.assertIn(page_rel, err)
+            self.assertEqual(("running", None), (self._record(edited)["outcome"],
+                                                 self._record(edited).get("signature")))
+            self.assertEqual({}, self._live(edited), "a refused sign wrote a live state")
 
     def test_sign_from_a_clone_holding_an_older_sealed_run(self) -> None:
         """AC3, the observed shape. Mutant: refuse as 'already sealed' on the older run."""
@@ -282,7 +411,10 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         old = self.closer / "sdlc-studio" / "reports" / "runs" / "RUN-OLDER001.json"
         old.write_text(json.dumps({"run_id": "RUN-OLDER001", "outcome": "goal-reached"}),
                        encoding="utf-8")
-        self._commit(self.closer, "an older run's record")
+        # Into the close commit itself, so HEAD stays the commit that filed the record and the
+        # whole-tree check, not the committed-close one, judges the sign (D0524).
+        self._git(self.closer, "add", "-A")
+        self._git(self.closer, "commit", "-q", "--amend", "--no-edit")
         idx = self.base / "index"
         env = {"GIT_INDEX_FILE": str(idx)}
         for argv in (["read-tree", "HEAD"], ["add", "-A"],
@@ -296,6 +428,7 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
             json.dumps(state), encoding="utf-8")
         rc, _out, err = signing._sign(self.closer, REPORT)
         self.assertEqual(0, rc, err)
+        self.assertNotIn("the commit that filed its close", err, "not the whole-tree check")
 
     # --- round 2: a checkout's own newer state is never overwritten by its record ------------
 

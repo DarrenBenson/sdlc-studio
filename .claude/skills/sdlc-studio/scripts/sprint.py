@@ -9803,13 +9803,15 @@ def _briefed_seats(root, unit: str) -> list[str]:
 def _lane_reviewer_cell(root, unit: str | None, reviewer: str | None) -> tuple:
     """The Reviewer cell `lane accept` records, as (cell, None), or (None, refusal).
 
-    When a brief of the unit named a seat, the cell is that seat's `<holder> (<role>)`
-    (`critic.seat_signature`), the form `critic.recorded_seat` reads, so a lane's verdict is
-    attributed to a seat as a `critic.py record` one is. The value must carry a seat the unit was
-    briefed for: as a `(<role>)` group, as the role spelled as a word (`qa-seat-US0101-r1`), or
-    as a word of the seat holder's name. A value carrying none, or only a seat the unit was not
-    briefed for, is refused, naming the known seats. With no seat noted, or no value, the value
-    passes as given and `lanes.accept` judges it."""
+    When a brief of the unit named a seat, the value is kept and given the seat's `(<role>)`
+    group, the form `critic.recorded_seat` reads (`qa-seat-US0101-r1 (qa)`), so a lane's
+    verdict is attributed to a seat as a `critic.py record` one is, and stays distinct from the
+    build seat's own `<holder> (<role>)` author cell and from another round of the same seat. A
+    value already carrying a `(<role>)` group is kept as given, and that group must name a seat
+    the unit was briefed for. Otherwise the value must carry one: as the role spelled as a word,
+    or as a word of the seat holder's name. A value carrying none, or only a seat the unit was
+    not briefed for, is refused, naming the known seats. With no seat noted, or no value, the
+    value passes as given and `lanes.accept` judges it."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
     briefed = _briefed_seats(root, unit) if unit and reviewer and reviewer.strip() else []
@@ -9818,18 +9820,45 @@ def _lane_reviewer_cell(root, unit: str | None, reviewer: str | None) -> tuple:
     value = reviewer.strip()
     declared = critic._declared_reviewers(root)  # noqa: SLF001 - the project's seat cards
     known = sorted({*briefed, *persona_resolve.SEATS, *(role for role, _ in declared)})
-    carried = [critic.recorded_seat(value)]
-    carried += [s for s in known
-                if re.search(rf"(?<![a-z0-9]){re.escape(s)}(?![a-z0-9])", value.lower())]
-    carried.append(critic.seat_for(root, value))
+    if group := critic.recorded_seat(value):
+        carried = [group]
+    else:
+        carried = [s for s in known
+                   if re.search(rf"(?<![a-z0-9]){re.escape(s)}(?![a-z0-9])", value.lower())]
+        carried.append(critic.seat_for(root, value))
     seat = next((s for s in reversed(briefed) if s in carried), None)
     if seat:
-        return critic.seat_signature(root, seat), None
+        return (value if group else f"{value} ({seat})"), None
     return None, (f"sprint lane accept refused: --reviewer {value!r} carries no seat {unit} was "
                   f"briefed for, so its verdict would be attributed to no seat and nothing was "
                   f"recorded; the brief named {', '.join(briefed)}, and the known seats: "
-                  f"{', '.join(known)}. Name the seat, as in --reviewer "
-                  f"\"{critic.seat_signature(root, briefed[-1])}\".")
+                  f"{', '.join(known)}. Name the seat and the reviewer's own instance, as in "
+                  f"--reviewer \"{briefed[-1]}-seat-{unit}-r1 ({briefed[-1]})\".")
+
+
+def _lane_author(root, unit: str | None, author: str | None) -> str | None:
+    """The author `lane accept` records a verdict against: `--author` as given, or else the
+    author of the unit's latest recorded self-check, as `lanes.accept` would read it."""
+    if author or not unit:
+        return author
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    uid = sdlc_md.norm_id(unit)
+    return next((row["author"] for row in reversed(critic.read_self_checks(root))
+                 if sdlc_md.norm_id(row["unit"]) == uid
+                 and row["author"].strip() not in ("", "-")), None)
+
+
+def _lane_self_review(root, unit: str | None, cell: str | None, author: str | None) -> str | None:
+    """The refusal when the Reviewer cell `lane accept` would record reads as the same identity
+    as the author (`critic.same_identity`): `critic.py record` would write a self-review, while
+    an APPROVE moves the unit as independently reviewed. None otherwise."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    if not cell or not author or not critic.same_identity(cell, author):
+        return None
+    return (f"sprint lane accept refused: the reviewer {cell!r} reads as the author of {unit}, "
+            f"{author!r}, so the verdict would be recorded as a self-review and nothing was "
+            f"recorded. Name the reviewer's own instance, as in --reviewer "
+            f"\"<seat>-seat-{unit}-r1 (<seat>)\".")
 
 
 def cmd_lane(args: argparse.Namespace) -> int:
@@ -9861,14 +9890,18 @@ def cmd_lane(args: argparse.Namespace) -> int:
                        if value is not None for arg in (flag, str(value))]
         for flag, values in (("--proof", args.proof), ("--gap", args.gap)):
             passthrough += [arg for value in values or [] for arg in (flag, value)]
-        reviewer, refusal = _lane_reviewer_cell(args.root, getattr(args, "unit", None),
-                                                getattr(args, "reviewer", None))
+        unit = getattr(args, "unit", None)
+        reviewer, refusal = _lane_reviewer_cell(args.root, unit, getattr(args, "reviewer", None))
+        # The author is read once, here, and handed on, so the self-review check and the row
+        # `lanes.accept` records judge the same pair.
+        author = _lane_author(args.root, unit, getattr(args, "author", None))
+        refusal = refusal or _lane_self_review(args.root, unit, reviewer, author)
         if refusal:
             print(refusal, file=sys.stderr)
             return 2
-        return lanes.accept(args.root, getattr(args, "unit", None),
+        return lanes.accept(args.root, unit,
                             getattr(args, "verdict", None), reviewer,
-                            _SIGNOFF_TERMINAL, author=getattr(args, "author", None),
+                            _SIGNOFF_TERMINAL, author=author,
                             timeout=args.timeout or LANE_VERIFY_TIMEOUT,
                             passthrough=passthrough)
     root = Path(args.root)
@@ -11103,6 +11136,74 @@ def tree_moved_since_close(root, state: dict) -> list[str] | None:
                   and not p.startswith(records))
 
 
+def _later_run_here(live: dict, state: dict, take_up: bool) -> str:
+    """The id of another run this checkout holds open while `state`, a run awaiting its
+    signature, is taken up from its tracked record to be signed; "" when there is none. That
+    later run is the one `run_state.set_aside_open` sets aside for the seal (D0503, D0524)."""
+    held = live.get("run_id") or ""
+    if not take_up or live.get("outcome") != run_state.RUNNING:
+        return ""
+    return held if held and held != state.get("run_id") else ""
+
+
+def _committed_close(root, state: dict, report_id: str, later: str) -> tuple[str, str, str]:
+    """`(commit, why, refusal)`: whether `sign` judges `state`, a run awaiting its signature,
+    against its committed close rather than the working tree (D0524), and why it cannot be
+    signed so, or "". `later` is another run open in this checkout (`_later_run_here`), or "".
+
+    The committed close is the last commit in HEAD's history to change the run's tracked record,
+    so an ancestor of HEAD; it is committed when the record here is byte for byte what that
+    commit holds. It is judged against once HEAD has moved past that commit, in any clone, or
+    while `later` is open here, whose changes the working tree then holds: the record and the
+    report pair (the page and its Markdown twin) must then be byte for byte what that commit
+    holds, and no other path is read. `commit` is "" where the whole-tree check stands: HEAD is
+    that commit, or the close is not committed, with no later run open. A close not committed
+    while `later` is open is refused, "commit the close first"."""
+    import sprint_report  # noqa: PLC0415 - deferred, like the other sign-path siblings
+    rid = str(state.get("run_id") or "")
+    page_id = sdlc_md.norm_id(report_id)
+    rec = run_state.tracked_path(root, rid).relative_to(root).as_posix()
+    pair = [(sprint_report.report_dir(root) / f"{page_id}.json"),
+            sprint_report._twin_path(root, {"report_id": page_id, "run_id": rid})]
+    paths = [rec, *(p.relative_to(root).as_posix() for p in pair)]
+
+    def git(*argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(root), *argv], capture_output=True, timeout=30)
+
+    try:
+        log = git("log", "-1", "--format=%H", "HEAD", "--", rec)
+        commit = log.stdout.decode().strip() if log.returncode == 0 else ""
+        head = git("rev-parse", "HEAD").stdout.decode().strip() if commit else ""
+        differ = []
+        for rel in paths if commit else []:
+            blob, here = git("show", f"{commit}:{rel}"), Path(root) / rel
+            if blob.returncode != 0 or not here.is_file() or here.read_bytes() != blob.stdout:
+                differ.append(rel)
+    except (OSError, subprocess.SubprocessError) as exc:
+        if not later:
+            return "", "", ""
+        return "", "", (f"git could not read the commit that filed {rec} ({exc}), so {rid} "
+                         f"cannot be judged while {later} is open here")
+    if not commit or rec in differ:
+        if not later:
+            return "", "", ""
+        where = (f"{rec} differs from {commit[:12]}, the last commit to file it" if commit
+                 else f"no commit on this branch holds {rec}")
+        return "", "", (f"{rid}'s close is not committed ({where}), and {later} is open in "
+                        f"this checkout, so {report_id} can only be judged against its "
+                        f"committed close - commit the close first")
+    if not later and head == commit:
+        return "", "", ""
+    why = (f"{later} is open in this checkout" if later
+           else f"HEAD ({head[:12]}) has moved past it")
+    if differ:
+        return commit, why, (f"{len(differ)} file(s) of {rid}'s close differ from the commit "
+                             f"that filed its record, {commit[:12]}, so {report_id} is not the "
+                             f"page that close filed: {', '.join(differ)}. Restore them, or "
+                             f"re-run the close and commit the close first.")
+    return commit, why, ""
+
+
 def cmd_sign(args: argparse.Namespace) -> int:
     """SEAL. One command, one principal, one signature, and only what the signature entails.
 
@@ -11138,13 +11239,25 @@ def cmd_sign(args: argparse.Namespace) -> int:
               f"records {recorded or 'no report'}. Sign the page the close filed.",
               file=sys.stderr)
         return 2
-    moved = tree_moved_since_close(root, state)
-    if moved:
+    # ONCE HEAD HAS MOVED PAST THE CLOSE COMMIT, or a later run open here goes on changing the
+    # tree, the waiting run is judged against its committed close instead (D0524). While HEAD
+    # is that commit, or the close is not committed, with no later run open, the whole-tree
+    # check stands.
+    commit, why, refusal = _committed_close(root, state, report_id,
+                                            _later_run_here(live, state, take_up))
+    if refusal:
+        print(f"sign REFUSED: {refusal}", file=sys.stderr)
+        return 2
+    moved = None if commit else tree_moved_since_close(root, state)
+    if commit:
+        print(f"sign: {why}, so {state.get('run_id')} is judged against {commit[:12]}, the "
+              f"commit that filed its close, not the working tree", file=sys.stderr)
+    elif moved:
         print(f"sign REFUSED: {len(moved)} file(s) changed since the close, so "
               f"{report_id} no longer describes this tree: {', '.join(moved)}. Re-run the "
               f"close, or restore the files.", file=sys.stderr)
         return 2
-    if moved is None:
+    elif moved is None:
         print("sign: the close recorded no tree to compare with - signing on the report alone",
               file=sys.stderr)
     # THE PAGE IS JUDGED BEFORE THE SEAL IS WRITTEN, by `sprint_report check`'s own reading: an
