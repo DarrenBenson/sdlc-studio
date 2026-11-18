@@ -1,6 +1,6 @@
 # BG1521: The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** tools/known_issues.py, .githooks/pre-push, tools/tests/test_known_issues.py, tools/tests/test_pre_push_hook.py
@@ -30,10 +30,13 @@ Give the `bar` mode an `--at` flag that judges the bug corpus at a commit, as `c
 
 - [ ] **AC1** Given a repository where one commit's bug corpus holds an Open Critical bug and the working tree no longer does, when `tools/known_issues.py bar --at <that commit>` runs, then it reports the release bar is not met and exits 1; `bar --at` a commit with no barred finding open exits 0. Fails on: `bar` rejecting `--at`, or judging the working tree in place of the commit.
   - **Verify:** pytest tools/tests/test_known_issues.py::ReleaseBarTests::test_bar_at_judges_the_corpus_at_the_commit
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC2** Given a tag on a commit that holds an Open High bug and a known-issues page agreeing with its corpus, when the tag is pushed through `.githooks/pre-push`, then the push is refused, naming the release bar and the tagged commit; a tag on a commit with no barred finding open passes the tag loop. Fails on: a tag that passes with a Critical or High finding open at its commit.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_a_tag_with_an_open_high_finding_is_refused
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC3** Given a tagged commit at which the bar cannot run (an exit status other than 0 or 1), when the tag is pushed, then the hook refuses saying the release bar could not run on that commit, in wording distinct from the bar-not-met refusal. Fails on: a could-not-run reported as an open finding, or let through.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::TheTagPathReadsTheReleaseBarTests::test_a_bar_that_could_not_run_is_not_reported_as_a_refusal
+  - **Verified:** yes (2026-11-18)
 
 ## Revision History
 

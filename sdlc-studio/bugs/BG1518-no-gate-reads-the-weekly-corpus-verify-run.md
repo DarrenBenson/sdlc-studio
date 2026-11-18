@@ -1,6 +1,6 @@
 # BG1518: No gate reads the weekly corpus-verify run, the only automated run of every Verify line
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .githooks/pre-push, sdlc-studio/tsd.md, tools/tests/test_pre_push_hook.py, tools/tests/test_lean_push.py, changelog.d/BG1518.md, CONTRIBUTING.md
@@ -29,12 +29,16 @@ Give the scheduled conclusion a reader in the command people run. Extend the pre
 
 - [ ] **AC1** Given a clone whose stubbed `gh` reports green push runs and a latest completed scheduled Lint run on main that concluded failure, when a push goes through `.githooks/pre-push`, then the push is refused, naming the scheduled run's id and how to acknowledge it. Fails on: a push that passes while the latest scheduled run is red and unacknowledged.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::ARedMainIsReadBeforeTheNextPushTests::test_a_red_scheduled_run_refuses_the_push
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC2** Given the same clone, when that run's id is acknowledged in the existing acknowledgement file, then the next push proceeds, and a later red scheduled run with a different id refuses again. Fails on: an acknowledgement that silences a later red run, or one that is not remembered.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::ARedMainIsReadBeforeTheNextPushTests::test_an_acknowledged_scheduled_red_is_remembered_and_a_new_one_refuses
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC3** Given a clone whose latest scheduled run concluded success, and separately a clone with no `gh` or no network, when a push goes through the hook, then the first proceeds with no acknowledgement and the second behaves exactly as the push-run read does offline today. Fails on: a green scheduled run refused, or an offline push newly refused.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::ARedMainIsReadBeforeTheNextPushTests::test_a_green_scheduled_run_proceeds_and_offline_is_unchanged
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC4** Given `sdlc-studio/tsd.md`, when its quality-gate table and Pipeline Stages item for the weekly `corpus-verify` job are read, then a row names the pre-push red-main read as the reader of the scheduled run's conclusion. Fails on: the weekly job described with no reader named.
   - **Verify:** pytest tools/tests/test_pre_push_hook.py::ARedMainIsReadBeforeTheNextPushTests::test_the_tsd_names_the_reader_of_the_scheduled_run
+  - **Verified:** yes (2026-11-18)
 
 ## Revision History
 

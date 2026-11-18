@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 431 |
+| Open | 434 |
 | In Progress | 0 |
-| Fixed | 948 |
+| Fixed | 952 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 54 |
 | Superseded | 54 |
-| **Total** | **1574** |
+| **Total** | **1581** |
 
 ## All Bugs
 
@@ -593,11 +593,11 @@
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Open | High | 2026-11-17 | 2026-11-17 |
 | [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1518](BG1518-no-gate-reads-the-weekly-corpus-verify-run.md) | No gate reads the weekly corpus-verify run, the only automated run of every Verify line | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1519](BG1519-the-push-gate-s-full-suite-lane-and.md) | The push gate's full-suite lane and gate.py --run-tests pass a run in which no test ran | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1518](BG1518-no-gate-reads-the-weekly-corpus-verify-run.md) | No gate reads the weekly corpus-verify run, the only automated run of every Verify line | Fixed | High | 2026-11-17 | 2026-11-17 |
+| [BG1519](BG1519-the-push-gate-s-full-suite-lane-and.md) | The push gate's full-suite lane and gate.py --run-tests pass a run in which no test ran | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1521](BG1521-the-tag-gate-checks-the-known-issues-page.md) | The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1521](BG1521-the-tag-gate-checks-the-known-issues-page.md) | The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding | Fixed | High | 2026-11-17 | 2026-11-17 |
+| [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1524](BG1524-the-evidence-pack-accepts-an-edited-report-as.md) | The evidence pack accepts an edited report as signed because it never checks the fingerprint or the run record | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1525](BG1525-prd-section-9-says-every-gate-bearing-key.md) | PRD section 9 says every gate-bearing key defaults on with one exception, but several shipped gate keys default off | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -650,6 +650,13 @@
 | [BG1572](BG1572-the-evidence-pack-crashes-with-a-traceback-on.md) | The evidence pack crashes with a traceback on a malformed report instead of refusing it by name | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1573](BG1573-the-second-seat-refusal-past-the-round-cap.md) | The second-seat refusal past the round cap names a seat that does not exist when the reviewer id carries no seat word | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1574](BG1574-no-gate-refuses-a-unit-s-commit-that.md) | No gate refuses a unit's commit that ships no changelog fragment, so run sixteen landed twelve of fourteen units without one | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1575](BG1575-bg0660-s-unscoped-boundary-guard-flags-a-run.md) | BG0660's unscoped-boundary guard flags a --run-tests call that runs no other lane, and is satisfied by an --only that call ignores | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1576](BG1576-the-skill-tests-lane-s-serial-only-collection.md) | The skill-tests lane's serial_only collection may read empty under an inherited -q, so serial tests could be skipped unseen | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1577](BG1577-the-tsd-s-full-suite-row-states-bg1519.md) | The TSD's full-suite row states BG1519's count floor but not that a commit whose selection holds only push-deferred tests is exempt | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1578](BG1578-the-weekly-corpus-verify-of-2026-11-16.md) | The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Open | Medium | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 
