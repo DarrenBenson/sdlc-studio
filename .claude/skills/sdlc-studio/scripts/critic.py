@@ -1946,7 +1946,9 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
     carried - is refused, and on a carried unit the refusal names who can discharge it, unless
     `ruling` names an accepted decision authorising this unit one more round
     (`ruling_refusal`); the round is then judged by the same rejecting-reviewer rule as any
-    other. Every writer of a delivery verdict asks here, so the rules cannot differ between
+    other. With no carry to discharge, a reviewer in a seat other than the unit's first is told
+    the cause: rounds are one sequence per unit, so a second seat shares the first's cap.
+    Every writer of a delivery verdict asks here, so the rules cannot differ between
     them; only `critic.py record` passes a ruling, so a round past the cap is written there."""
     prior = delivery_rounds(repo_root, unit)
     cap = review_ceiling(repo_root)
@@ -1969,6 +1971,12 @@ def round_refusal(repo_root: Path | str, unit: str, reviewer: str,
                     f"one verdict past the cap it accepts is an APPROVE from {names}, whose "
                     f"REJECT it carried: that APPROVE answers the REJECT and discharges the "
                     f"carry. No other reviewer's verdict, and no further REJECT, is recorded")
+        first, seat = first_review_seat(repo_root, uid), verdict_seat(repo_root, reviewer)
+        if seat and seat != first:
+            return (f"{at_cap}. The round ledger numbers every seat's verdicts on a unit as one "
+                    f"sequence, so the {seat} seat, second after the {first} seat, has no round "
+                    f"left: the cap counts both seats' rounds together until per-seat rounds "
+                    f"(US1032, US1033) land")
         return (f"{at_cap}. A unit still rejected at the cap is carried as a known issue, not "
                 f"reviewed again")
     last = prior[-1] if prior else None

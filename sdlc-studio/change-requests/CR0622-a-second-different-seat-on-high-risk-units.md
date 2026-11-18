@@ -25,6 +25,7 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 
 - Confirmed: every round of every unit can be briefed for one seat. Corrected on 2026-10-09 by the G10 breakdown (D0355): recording a second seat DOES need a new ledger shape. The ledger numbers every verdict on a unit as one sequence of rounds, so an engineering APPROVE then an SRE REJECT records the REJECT as round 2 and carries the unit at the cap, and the opposite order is refused. D0341 and US0872 chose one reviewer per unit for this reason; this CR reverses them for high-risk units.
 - Priority Medium stands; Size M. Related: CR-0620 (choose seats by what a change touches); refine together.
+- 2026-11-17 (BG1523): D0523 relates D0341, D0356 and D0460. The second seat shipped in v6.4.0 through CR0696 without this CR's per-seat rounds, so until US1032 and US1033 land it runs on the single-sequence ledger: at the default cap of 2 its REJECT after a first-seat APPROVE is round 2 and the unit is carried, and after a REJECT then an APPROVE its verdict is refused in plain words. Per-seat rounds remain this CR's work.
 
 ## Revision History
 
@@ -35,6 +36,7 @@ _None yet: add them here, or on the stories `refine` decomposes this into._
 | 2026-10-09 | Claude Opus 5.5 (triage) | Triage corrected: a second seat needs per-seat rounds on the ledger (found by the G10 breakdown) |
 | 2026-10-21 | sdlc-studio | Retitled: was 'A second, different seat on high-risk units - or a different seat on round 2' |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-17 | Dani Okafor (engineering) | BG1523: cites D0523, which states the second seat's interim behaviour on the single-sequence ledger |
 
 ## Amigo Consult
 

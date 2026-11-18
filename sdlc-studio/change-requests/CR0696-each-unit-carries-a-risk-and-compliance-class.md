@@ -3,7 +3,7 @@
 > **Status:** Complete
 > **Decomposed-into:** EP0307
 > **Parent:** RFC0064
-> **Related:** CR0692, D0439
+> **Related:** CR0692, D0439, CR0622, D0523
 > **Priority:** High
 > **Type:** feature
 > **Size:** M
@@ -20,6 +20,8 @@ RFC0064 WS3. A declared component map proposes each unit's risk and compliance c
 
 Serves O10, Abena Osei's End goal 1 and Graham Doyle's End goal 1. Adds review cost on high-class units only.
 
+The second seat shipped without CR0622's per-seat rounds: D0523 states its interim behaviour on the single-sequence round ledger, where its verdicts share the first seat's `review.max_rounds` cap until US1032 and US1033 land.
+
 ## Acceptance Criteria
 
 - [ ] A project declares its component map (paths to a class, such as payments, personal data or standard) in one committed file, and refine sets each unit's class from it
@@ -32,3 +34,4 @@ Serves O10, Abena Osei's End goal 1 and Graham Doyle's End goal 1. Adds review c
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-10 | Darren Benson (operator) | Raised |
+| 2026-11-17 | Dani Okafor (engineering) | BG1523: cites D0523 and CR0622 for the second seat's interim behaviour on the single-sequence ledger |

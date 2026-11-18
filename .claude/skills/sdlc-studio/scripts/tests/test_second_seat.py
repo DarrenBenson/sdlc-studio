@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import sys
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
 import critic  # noqa: E402
 import retro  # noqa: E402
+from lib import run_state  # noqa: E402
 
 _MAP = "risk:\n  components:\n    src/pay: high\n"
 _AC = ("## Acceptance Criteria\n\n### AC1: the charge is taken once\n\n- **Given** x\n"
@@ -213,6 +215,132 @@ class RetroSecondSeatNothingTests(unittest.TestCase):
             _retro(root, units)
             _res, lines = _composed(root)
             self.assertEqual([], [ln for ln in lines if "second seat" in ln.lower()])
+
+
+_REFERENCE = SCRIPTS.parent / "reference-sprint.md"
+
+
+def _capped_root(d: str, max_rounds: int | None = None) -> Path:
+    """A `_root` workspace recording without brief provenance, at the default cap unless
+    `max_rounds` is given."""
+    root = _root(d)
+    cfg = _MAP + "review:\n  require_brief_provenance: false\n"
+    if max_rounds is not None:
+        cfg += f"  max_rounds: {max_rounds}\n"
+    (root / "sdlc-studio" / ".config.yaml").write_text(cfg, encoding="utf-8")
+    return root
+
+
+def _verdict(root: Path, unit: str, seat: str, verdict: str,
+             issues: str = "") -> tuple[int, str, str]:
+    """One delivery verdict through the shipped `critic.py record`, refusals returned, not
+    raised."""
+    argv = ["record", "--unit", unit, "--verdict", verdict, "--reviewer", seat,
+            "--author", "builder", "--root", str(root)]
+    if issues:
+        argv += ["--issues", issues]
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = critic.main(argv)
+    return rc, out.getvalue(), err.getvalue()
+
+
+def _rows(root: Path, unit: str) -> list[dict]:
+    """Every delivery verdict row the ledger holds for `unit`, oldest first."""
+    return [r for r in critic.read_verdicts(root) if r.get("unit") == unit]
+
+
+class SecondSeatLedgerLimitTests(unittest.TestCase):
+    """The second seat runs on the single-sequence round ledger until per-seat rounds land: the
+    reference states the limit, and `critic.py record` behaves as it states."""
+
+    def setUp(self) -> None:
+        # Opening a run reads the token meter; point it at nothing, never the operator's own.
+        self._env = os.environ.get(run_state.TRANSCRIPTS_ENV)
+        os.environ[run_state.TRANSCRIPTS_ENV] = "/nonexistent-transcripts-for-tests"
+
+    def tearDown(self) -> None:
+        if self._env is None:
+            os.environ.pop(run_state.TRANSCRIPTS_ENV, None)
+        else:
+            os.environ[run_state.TRANSCRIPTS_ENV] = self._env
+
+    def test_the_reference_states_the_single_sequence_limit(self) -> None:
+        """AC2. MUTANTS: drop the limit sentence; move it out of the second-seat text; state a cap
+        the code does not default to. Each leaves the second-seat line without the claim."""
+        lines = [ln for ln in _REFERENCE.read_text(encoding="utf-8").splitlines()
+                 if "second independent seat" in ln]
+        self.assertEqual(len(lines), 1, "premise: one second-seat line in reference-sprint.md")
+        text = " ".join(lines[0].split())
+        self.assertIn("rounds are one sequence per unit, whichever seat records them", text)
+        self.assertIn(f"at the default cap of {critic.DEFAULT_REVIEW_CEILING} a second seat's "
+                      f"REJECT after the first seat's APPROVE is round 2", text)
+        self.assertIn("so the unit is carried and not repaired", text)
+        self.assertIn("until per-seat rounds (US1032, US1033) land", text)
+
+    def test_a_second_seat_reject_after_an_approve_is_carried(self) -> None:
+        """AC3. MUTANTS: number rounds per seat; default the cap to 3; skip the carry. Each
+        leaves the REJECT at round 1 or the unit uncarried in the batch."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _capped_root(d)
+            unit = _story(root, 1, "high")
+            run_state.open_run(root, batch=[unit, "US0002"], goal="g")
+            self.assertEqual(_verdict(root, unit, "qa", "APPROVE")[0], 0)
+            rc, out, err = _verdict(root, unit, "engineering", "REJECT",
+                                    "[new] the charge is taken twice")
+            self.assertEqual(rc, 0, err)
+            # Numbered against the run's own record: the carry drops the unit from the batch.
+            rounds = critic.delivery_rounds(root, unit, run_state.read(root))
+            self.assertEqual([(r["round"], r["verdict"], r["reviewer"]) for r in rounds],
+                             [(1, "APPROVE", "qa"), (2, "REJECT", "engineering")])
+            self.assertEqual(critic.first_review_seat(root, unit), "qa",
+                             "premise: the REJECT is the second seat's")
+            bug = critic.carried_by(root, unit)
+            self.assertTrue(bug, f"the second seat's round-2 REJECT did not carry {unit}: {err}")
+            self.assertIn(bug, out)
+            self.assertEqual(run_state.read(root)["batch"], ["US0002"])
+        # Positive control: the same two verdicts below a cap of 3 are not carried, so the carry
+        # above is the cap counting both seats as one sequence.
+        with tempfile.TemporaryDirectory() as d:
+            root = _capped_root(d, max_rounds=3)
+            unit = _story(root, 1, "high")
+            run_state.open_run(root, batch=[unit, "US0002"], goal="g")
+            _verdict(root, unit, "qa", "APPROVE")
+            self.assertEqual(_verdict(root, unit, "engineering", "REJECT", "[new] twice")[0], 0)
+            self.assertIsNone(critic.carried_by(root, unit))
+            self.assertEqual(run_state.read(root)["batch"], [unit, "US0002"])
+
+    def test_a_second_seat_verdict_past_the_cap_is_refused_in_plain_words(self) -> None:
+        """AC4. MUTANTS: give every reviewer past the cap the second-seat message; give it to
+        none; compare the reviewer's name rather than its seat. Each fails one of the three
+        cases below."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _capped_root(d)
+            unit = _story(root, 1, "high")
+            _verdict(root, unit, "qa", "REJECT", "[new] the charge is taken twice")
+            self.assertEqual(_verdict(root, unit, "qa", "APPROVE")[0], 0)
+            rc, _out, err = _verdict(root, unit, "engineering", "APPROVE")
+            self.assertEqual(rc, 2, err)
+            said = " ".join(err.split())
+            self.assertIn("at the cap of 2 (`review.max_rounds`)", said)
+            self.assertIn("The round ledger numbers every seat's verdicts on a unit as one "
+                          "sequence", said)
+            self.assertIn("the engineering seat, second after the qa seat", said)
+            self.assertNotIn("still rejected at the cap", said)
+            self.assertEqual(len(_rows(root, unit)), 2, "the refused verdict wrote a row")
+            # Control: another reviewer in the first seat keeps the plain cap refusal.
+            rc, _out, err = _verdict(root, unit, "qa-2", "APPROVE")
+            self.assertEqual(rc, 2, err)
+            self.assertIn("still rejected at the cap", err)
+            self.assertNotIn("one sequence", err)
+        # Positive control: a second-seat verdict that fits within the cap is recorded.
+        with tempfile.TemporaryDirectory() as d:
+            root = _capped_root(d)
+            unit = _story(root, 1, "high")
+            _verdict(root, unit, "qa", "APPROVE")
+            rc, _out, err = _verdict(root, unit, "engineering", "APPROVE")
+            self.assertEqual(rc, 0, err)
+            self.assertEqual([r["reviewer"] for r in _rows(root, unit)], ["qa", "engineering"])
 
 
 if __name__ == "__main__":
