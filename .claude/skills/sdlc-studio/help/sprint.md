@@ -238,8 +238,12 @@ not block the next run (D0503). `sprint plan --write` names each such run on std
 `sign` command for it, and opens the next run on top of it, in the checkout that closed it or in
 a fresh clone, leaving the waiting run's tracked record untouched. `sign` seals a waiting run
 while a later run is open in the same checkout, setting that run's state aside and putting it
-back byte for byte, and `status.py` names every run awaiting its signature. A run open and not
-yet closed still holds the slot.
+back byte for byte. Once HEAD has moved past the commit that filed the waiting run's record, or
+while a later run is open in the checkout, `sign` judges the run against that commit, not the
+working tree (D0524): the record, the report page and its Markdown twin must match that commit
+byte for byte, and later changes elsewhere do not refuse it. A close not yet committed cannot be
+signed while a later run is open; the refusal says to commit the close first. `status.py` names
+every run awaiting its signature. A run open and not yet closed still holds the slot.
 
 When a disjoint batch is refused there are **two ways forward**, and the refusal prints them as
 runnable commands:
@@ -267,7 +271,10 @@ page filed citing `.local/run-state.json` still checks, as `check` never compare
 - `sign --report <id>` takes the run up from that record in a clone that does not hold it. Every
   check reads the record as it stands, and only a sign that passes them all writes it into the
   clone. An older, closed run held there is archived first; a later run still open there is set
-  aside while the waiting run is sealed and put back byte for byte, never discarded.
+  aside while the waiting run is sealed and put back byte for byte, never discarded. Once HEAD
+  there has moved past the commit that filed the record, or a later run is open there, the run
+  is judged against that commit, not the tree, as the closed-run exception above says, and a
+  close not yet committed beside a later run is refused until it is committed.
 - The tree check still holds there: the digest leaves the run records out, so a clone at the
   close's commit matches the tree the close recorded.
 - A checkout whose copy of the run is older than its record - signed elsewhere, or reopened and

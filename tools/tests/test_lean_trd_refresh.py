@@ -1056,6 +1056,37 @@ class TrdSignatureRulingTests(unittest.TestCase):
         self.assertTrue(note, "premise: the note above the table")
         self.assertNotRegex(note, r"\bD6\b[^.]*\b(?:remains|is|left|stays)\s+open\b")
 
+    def test_signing_beside_a_later_run_states_the_committed_close_rule(self) -> None:
+        """The QA REJECT of US1293's first build: ADR-013 and help/sprint.md say `sign` seals a
+        waiting run while a later run is open, which holds only as D0524 rules it. Each also
+        says that once HEAD has moved past the commit that filed the run's record, or while a
+        later run is open, the run is judged against that commit, and that a close not yet
+        committed beside a later run is refused in the words `sprint.py` prints. Mutants: either
+        rule left out of either page; the refusal quoted in words the script does not print."""
+        refusal = "commit the close first"
+        # The f-strings the script prints, not its docstrings, which quote the refusal too.
+        printed = ["".join(v.value for v in n.values if isinstance(v, ast.Constant))
+                   for n in ast.walk(ast.parse(_read(SCRIPTS / "sprint.py")))
+                   if isinstance(n, ast.JoinedStr)]
+        self.assertTrue([s for s in printed if refusal in s], "premise: the shipped refusal")
+        for name, text in (("ADR-013", _adr(_trd_body(), RULING_ADR)),
+                           ("help/sprint.md", _read(SPRINT_PAGES[1]))):
+            units = _units(text)
+            with self.subTest(page=name):
+                self.assertTrue([u for u in units if re.search(r"\blater run\b", u)
+                                 and re.search(r"\b(?:set|setting)\b[^.]*\baside\b", u)],
+                                "premise: the page seals a waiting run beside a later run")
+                self.assertTrue([u for u in units if re.search(r"\bD0524\b", u)
+                                 and re.search(r"\bHEAD\b[^.]*\bmoved past the commit that "
+                                               r"filed\b", u)
+                                 and re.search(r"\bjudge[sd]?\b[^.]*?\bagainst that commit\b",
+                                               u)],
+                                "no sentence says the run is judged against its committed close")
+                self.assertTrue([u for u in units if re.search(r"\bnot yet committed\b", u)
+                                 and re.search(r"\blater run\b", u) and refusal in u],
+                                "no sentence says an uncommitted close beside a later run is "
+                                "refused, in the refusal's own words")
+
 
 if __name__ == "__main__":
     unittest.main()

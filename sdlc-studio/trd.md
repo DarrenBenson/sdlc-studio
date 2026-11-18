@@ -1304,8 +1304,13 @@ it (D0503). A run closed and awaiting its signature no longer holds the run slot
 next run, in a fresh clone or in the checkout that closed it, leaving the waiting run's tracked
 record untouched (US1290). A run open and not yet closed still refuses a batch that shares no
 unit with it. `sprint.py sign` seals a waiting run while a later run is open in the same
-checkout, setting the later run's state aside and putting it back byte for byte, and
-`status.py` names every run awaiting its signature.
+checkout, setting the later run's state aside and putting it back byte for byte. Once HEAD has
+moved past the commit that filed the waiting run's record, or while a later run is open in the
+checkout, `sign` judges the run against that commit, not the working tree (D0524): the record,
+the report page and its Markdown twin must match that commit byte for byte, and later changes
+elsewhere do not refuse it. A close not yet committed cannot be signed while a later run is
+open; the refusal says to commit the close first. `status.py` names every run awaiting its
+signature.
 
 The operator may still delegate signing (US1291, US1292). A delegated signature,
 `sprint.py sign --report RPTxxxx --principal "<operator>" --delegated --decision Dnnnn`, records
