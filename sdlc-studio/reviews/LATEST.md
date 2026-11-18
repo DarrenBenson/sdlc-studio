@@ -3,10 +3,13 @@
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-**RUN-01M7QMZ0, run seventeen, closed awaiting your signature (2026-11-18).** It delivered
-CR0742 (harness-agnostic, enterprise-ready documentation) ahead of D0519's plan (D0529): EP0377's
-seven stories and BG1599, 25 points, all on independent APPROVEs. Run sixteen's delegation
-(D0528) covered that run only, so this one waits for you to sign or to delegate it again.
+**RUN-01M7QMZ0, run seventeen, is SIGNED (2026-11-18).** It delivered CR0742
+(harness-agnostic, enterprise-ready documentation) ahead of D0519's plan (D0529): EP0377's seven
+stories and BG1599, 25 points, all on independent APPROVEs, for $54.60 ($2.18 per point) against a
+$79.42 forecast. At the close the operator authorised an expired waiver of the goal's missed seat
+review (D0533, cause filed as BG1601) and delegated this run's signature (D0535), and the
+orchestrator signed over RPT0036 after a rehearsal in a throwaway clone. Next: the website run
+RUN-01M7R7KN in the website's repository delivers CR0742's change 5.
 
 > Goal: "A reviewer reading only the front door knows SDLC Studio runs in their own harness,
 > models and change process." Judged **partial**: the repository's front door is done, but
@@ -35,8 +38,7 @@ seven stories and BG1599, 25 points, all on independent APPROVEs. Run sixteen's 
 
 ## What is owed
 
-- **The signature** on RUN-01M7QMZ0.
-- **The website run:** a change request in the website's repository for the home page
+- **The website run** (RUN-01M7R7KN, opened 2026-11-18): the change request there covers the home page
   positioning, the agents list matching docs/harnesses.md, links to the two new pages, the footer
   sponsorship line and the site's evidence page (it stops at RPT0011).
 - **Runs eighteen onward** are replanned from D0519's backlog after the website run.
