@@ -10,6 +10,9 @@ Harness-specific lines are not generic requirements and pass: an install row nam
 AGENTS.md's line on how Claude Code imports it, a note that a step applies in Claude Code, and a
 statement that SDLC Studio does not require Anthropic products. The patterns name the phrase and
 the requirement verbs, not the README's wording, so a rewrite of any page is judged the same way.
+A requirement noun, a "must", a version before "is required" and a list item under a
+Requirements heading count as requirement statements; a negation excuses only its own clause,
+so a requirement after a comma, a spaced dash, "and" or "but" is refused.
 
 Every test also runs its check on a broken copy, so a check that cannot fail is caught by the
 test that relies on it.
@@ -32,25 +35,41 @@ ROOT_PAGES = ("README.md", "llms.txt", "package.json", "AGENTS.md", "CONTRIBUTIN
               "SUPPORT.md", "SECURITY.md")
 
 _VENDOR = r"(?:Claude(?:[ -]Code)?|Anthropic)\b"
+#: A version after the vendor, as in "2.0 or later", "2.1+" or "version 2.0".
+_VERSION = r"(?:\s+(?i:version\s+|v)?\d+(?:\.\d+)*\+?(?:\s+or\s+(?i:later|newer|higher))?)?"
+REQUIRES = "requires Claude Code, Claude or Anthropic"
 #: Each banned shape, by the name a finding reports. Names are case-sensitive, so `CLAUDE.md`
 #: and the `claude` install target are not the vendor; the verbs are matched in any case.
 PATTERNS = {
     "Claude Code skill": re.compile(r"\bClaude[ -]Code\s+[Ss]kill\b"),
     "Claude-Code-only": re.compile(r"\bClaude[ -]Code-only\b|\b(?:Claude|Anthropic)-only\b"),
-    "requires Claude Code, Claude or Anthropic": re.compile(
-        r"(?i:\b(?:requires?|required|needs?|needed|depends\s+on|prerequisites?)\b)[:\s]+"
-        r"(?:(?i:an?|the|your)\s+)?" + _VENDOR),
+    REQUIRES: re.compile(
+        r"(?i:\b(?:requires?|required|requirements?|needs?|needed|depends\s+on|prerequisites?"
+        r"|must\s+(?:have|use|install))\b)[:\s]+(?:(?i:an?|the|your)\s+)?" + _VENDOR),
+    # "must be installed" takes no plain word after the vendor, so "Claude Code hooks must be
+    # installed" is a step in that harness, not a requirement of it.
     "Claude Code, Claude or Anthropic is required": re.compile(
-        _VENDOR + r"(?:\s+[\w-]+){0,2}\s+(?:is|are)\s+"
-        r"(?i:required|needed|mandatory|a\s+prerequisite|a\s+requirement)\b"),
+        _VENDOR + _VERSION + r"(?:(?:\s+[\w-]+){0,2}\s+(?:is|are)\s+"
+        r"(?i:required|needed|mandatory|a\s+prerequisite|a\s+requirement)"
+        r"|\s+must\s+be\s+(?i:installed|present|available|running|used))\b"),
 }
-#: A requirement this close after a negation, in the same sentence and paragraph, is a denial
-#: ("does not require Anthropic", "no Claude subscription is needed").
-_NEGATION = re.compile(r"(?i)(?:\b(?:not|never|no|nor|without)\b|n't)[^.;:!?]{0,24}$")
+#: A list item that opens with the vendor, below a heading naming requirements or
+#: prerequisites, or a bare "Requirements:" or "Prerequisites:" line, and above the next
+#: heading. It is matched on the raw text, since a list needs its line breaks, and reported at
+#: the item.
+REQUIREMENT_LIST = re.compile(
+    r"(?m)^(?:#{1,6}[ \t][^\n]*\b(?i:requirements|prerequisites)\b[^\n]*"
+    r"|(?:\*\*)?(?i:requirements|prerequisites)(?:\*\*)?:(?:\*\*)?[ \t]*)\n"
+    r"(?:(?!#)[^\n]*\n)*?[ \t]*(?:[-*+]|\d+[.)])[ \t]+(?:\*\*)?(?P<hit>" + _VENDOR + ")")
+#: A requirement this close after a negation, in the same clause, is a denial ("does not
+#: require Anthropic", "no Claude subscription is needed"). A comma, a spaced dash, "and" or
+#: "but" ends the clause, so "without Copilot but requires Claude Code" is not one.
+_NEGATION = re.compile(r"(?i)(?:\b(?:not|never|no|nor|without)\b|n't)"
+                       r"(?:(?!\s-\s|\b(?:and|but)\b)[^.,;:!?]){0,24}$")
 
 
 def denied(text: str, start: int) -> bool:
-    """Whether the match at `start` follows a negation in its own sentence and paragraph."""
+    """Whether the match at `start` follows a negation in its own clause and paragraph."""
     window = text[max(0, start - 60):start].rsplit("\n\n", 1)[-1]
     return bool(_NEGATION.search(flatten(window)))
 
@@ -84,13 +103,15 @@ def flatten(text: str) -> str:
 def scan(name: str, text: str) -> list[str]:
     """`name:line: pattern: 'match'` for each banned phrase in `text`; [] when it has none."""
     flat = flatten(text)
+    hits = [(label, m.start(), m.group(0)) for label, pattern in PATTERNS.items()
+            for m in pattern.finditer(flat)]
+    hits += [(REQUIRES, m.start("hit"), m.group("hit")) for m in REQUIREMENT_LIST.finditer(text)]
     findings = []
-    for label, pattern in PATTERNS.items():
-        for match in pattern.finditer(flat):
-            if denied(text, match.start()):
-                continue
-            line = text.count("\n", 0, match.start()) + 1
-            findings.append(f"{name}:{line}: {label}: {' '.join(match.group(0).split())!r}")
+    for label, start, phrase in hits:
+        if denied(text, start):
+            continue
+        line = text.count("\n", 0, start) + 1
+        findings.append(f"{name}:{line}: {label}: {' '.join(phrase.split())!r}")
     return findings
 
 
@@ -132,8 +153,9 @@ def why_faults(text: str) -> list[str]:
 class HarnessNeutralDocsTests(unittest.TestCase):
     def test_no_public_document_says_claude_code_or_anthropic_is_required(self) -> None:
         """AC1. Every surface scans clean; each banned phrase planted in a copy of the README is
-        refused by file, line and name, including one wrapped across lines and one in bold; the
-        harness-specific lines and a denial pass."""
+        refused by file, line and name, including one wrapped across lines, one in bold, one in
+        a Requirements list and one after a negated earlier clause; the harness-specific lines
+        and a denial pass."""
         found = surfaces()
         for name in ("README.md", "llms.txt", "package.json", "AGENTS.md", "CONTRIBUTING.md",
                      "SUPPORT.md", "SECURITY.md"):
@@ -148,21 +170,44 @@ class HarnessNeutralDocsTests(unittest.TestCase):
 
         readme = found["README.md"] + "\n\n"
         at = readme.count("\n") + 1
+        requires = "requires Claude Code, Claude or Anthropic"
+        is_required = "Claude Code, Claude or Anthropic is required"
+        #: Each planted phrase, the name it is refused by, and its line below the README's end.
         planted = {
-            "SDLC Studio is a Claude Code skill.": "Claude Code skill",
-            "SDLC Studio is a Claude\nCode skill.": "Claude Code skill",
-            "Agentic waves are Claude-Code-only.": "Claude-Code-only",
-            "Running it requires\nClaude Code.": "requires Claude Code, Claude or Anthropic",
-            "You need an Anthropic subscription.": "requires Claude Code, Claude or Anthropic",
-            "Prerequisites: **Claude Code** and Python.": "requires Claude Code, Claude or Anthropic",
-            "An Anthropic API key is required.": "Claude Code, Claude or Anthropic is required",
-            "Claude Code is mandatory here.": "Claude Code, Claude or Anthropic is required",
+            "SDLC Studio is a Claude Code skill.": ("Claude Code skill", 0),
+            "SDLC Studio is a Claude\nCode skill.": ("Claude Code skill", 0),
+            "Agentic waves are Claude-Code-only.": ("Claude-Code-only", 0),
+            "Running it requires\nClaude Code.": (requires, 0),
+            "You need an Anthropic subscription.": (requires, 0),
+            "Prerequisites: **Claude Code** and Python.": (requires, 0),
+            "An Anthropic API key is required.": (is_required, 0),
+            "Claude Code is mandatory here.": (is_required, 0),
+            # A requirement noun, a "must" and a version before "is required".
+            "Requirements: Claude Code and Python 3.10+.": (requires, 0),
+            "You must have Claude Code installed.": (requires, 0),
+            "First you must install the Claude Code CLI.": (requires, 0),
+            "You must use Claude Code for the waves.": (requires, 0),
+            "Claude Code must be installed first.": (is_required, 0),
+            "Claude Code 2.0 or later is required.": (is_required, 0),
+            "Claude Code version 2.1+ must be present.": (is_required, 0),
+            "Claude Code 2.0 or newer must be running.": (is_required, 0),
+            # A list naming the vendor under a Requirements or Prerequisites heading or label.
+            "## Requirements\n\n- Claude Code\n- Python 3.10+": (requires, 2),
+            "## System requirements\n\nYou need:\n\n- Python 3.10+\n- **Claude Code**":
+                (requires, 5),
+            "**Prerequisites:**\n\n1. Anthropic API access": (requires, 2),
+            # A negation excuses only the vendor it denies, not a later clause.
+            "Works with or without Copilot but requires Claude Code.": (requires, 0),
+            "Runs in any harness, not just Copilot, and needs Claude Code.": (requires, 0),
+            "Runs without Copilot and needs Claude Code.": (requires, 0),
+            "Not tested on Copilot, it needs Claude Code.": (requires, 0),
+            "No GPU is needed - you need Claude Code.": (requires, 0),
         }
-        for phrase, label in planted.items():
+        for phrase, (label, offset) in planted.items():
             with self.subTest(phrase=phrase):
                 findings = scan("README.md", readme + phrase + "\n")
                 self.assertEqual(len(findings), 1, findings)
-                self.assertTrue(findings[0].startswith(f"README.md:{at}: {label}: "),
+                self.assertTrue(findings[0].startswith(f"README.md:{at + offset}: {label}: "),
                                 findings[0])
 
         harness_specific = (
@@ -172,9 +217,16 @@ class HarnessNeutralDocsTests(unittest.TestCase):
             "Claude Code does not read it - keep the `claude` target for Claude Code.",
             "Proudly supported by **Anthropic** through the **Claude for Open Source** programme.",
             "SDLC Studio does not require Anthropic products.",
+            "SDLC Studio does not need Claude Code.",
+            "No Claude subscription is needed.",
             "It doesn't need Claude Code; Claude Code is not required either.",
             "Install into the Claude Code skills folder, `~/.claude/skills`.",
             "The installer requires the `claude` target for that folder.",
+            "The default install (Claude Code\nonly) names each other tool.",
+            "Claude Code hooks must be installed once per clone.",
+            "Claude Code reads the file that is required.",
+            "## Install\n\n- Claude Code: the default target, no flag needed",
+            "## Requirements\n\n- Python 3.10+\n\n## Harnesses\n\n- Claude Code",
         )
         for line in harness_specific:
             with self.subTest(line=line):
