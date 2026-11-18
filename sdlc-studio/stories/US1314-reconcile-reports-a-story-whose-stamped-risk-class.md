@@ -1,6 +1,6 @@
 # US1314: Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0739
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** `reconcile.py detect` is run
 - **Then** it reports a risk-class drift item naming the story, its stamped class and the class the map gives. Fails on: the stamp read as authoritative and nothing reported, or a story with no map declared reported
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py::RiskClassDriftTests::test_a_stamp_below_the_map_is_reported
+- **Verified:** yes (2026-11-17)
 
 ### AC2: Apply raises the stamp and never lowers one
 
@@ -32,6 +33,7 @@
 - **When** `reconcile.py apply` is run
 - **Then** the first story's stamp becomes high, the second keeps high, the Done story is untouched, and a second apply changes nothing. Fails on: a stamp lowered (an operator's raise undone), a closed unit rewritten, or apply not idempotent
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py::RiskClassDriftTests::test_apply_raises_open_stamps_and_never_lowers_one
+- **Verified:** yes (2026-11-17)
 
 ### AC3: The drift kind is documented
 
@@ -39,6 +41,7 @@
 - **When** it is read
 - **Then** it names the risk-class drift kind, that apply only raises, and why. Fails on: an undocumented drift kind
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py::RiskClassDriftTests::test_the_reference_names_the_risk_class_kind
+- **Verified:** yes (2026-11-17)
 
 ## Notes
 

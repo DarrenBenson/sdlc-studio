@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-18
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 428 |
+| Open | 431 |
 | In Progress | 0 |
-| Fixed | 946 |
+| Fixed | 948 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 54 |
 | Superseded | 54 |
-| **Total** | **1569** |
+| **Total** | **1574** |
 
 ## All Bugs
 
@@ -598,8 +598,8 @@
 | [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Open | High | 2026-11-17 | 2026-11-17 |
 | [BG1521](BG1521-the-tag-gate-checks-the-known-issues-page.md) | The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding | Open | High | 2026-11-17 | 2026-11-17 |
 | [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1524](BG1524-the-evidence-pack-accepts-an-edited-report-as.md) | The evidence pack accepts an edited report as signed because it never checks the fingerprint or the run record | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Fixed | High | 2026-11-17 | 2026-11-17 |
+| [BG1524](BG1524-the-evidence-pack-accepts-an-edited-report-as.md) | The evidence pack accepts an edited report as signed because it never checks the fingerprint or the run record | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1525](BG1525-prd-section-9-says-every-gate-bearing-key.md) | PRD section 9 says every gate-bearing key defaults on with one exception, but several shipped gate keys default off | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1526](BG1526-the-prd-flags-table-gives-wrong-defaults-for.md) | The PRD flags table gives wrong defaults for lessons.loop and schema_version | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1527](BG1527-the-prd-section-3-status-note-still-calls.md) | The PRD section 3 status note still calls the shipped token forecast a falsified hypothesis | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -645,6 +645,11 @@
 | [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1569](BG1569-the-rfc-accept-workflow-spawns-crs-and-then.md) | The RFC accept workflow spawns CRs and then sets Accepted, which the transition gate refuses | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1570](BG1570-the-evidence-pack-trusts-the-run-record-as.md) | The evidence pack trusts the run record as committed at the build revision, so one commit that edits a report's figures, its signature and its run record together still passes | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1571](BG1571-us1314-s-tests-never-pin-a-raise-to.md) | US1314's tests never pin a raise to a middle class, a story with several Affects files, the open-status scope, or the silent skip of a stamp apply cannot rewrite | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1572](BG1572-the-evidence-pack-crashes-with-a-traceback-on.md) | The evidence pack crashes with a traceback on a malformed report instead of refusing it by name | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1573](BG1573-the-second-seat-refusal-past-the-round-cap.md) | The second-seat refusal past the round cap names a seat that does not exist when the reviewer id carries no seat word | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1574](BG1574-no-gate-refuses-a-unit-s-commit-that.md) | No gate refuses a unit's commit that ships no changelog fragment, so run sixteen landed twelve of fourteen units without one | Open | Medium | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 

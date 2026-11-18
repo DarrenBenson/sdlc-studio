@@ -16,7 +16,7 @@ Decomposed from CR0729. Delivers the work CR0729 requested.
 
 - [ ] [US1290: A new run can be planned and opened while a closed run awaits signature, and status names each one waiting](../stories/US1290-a-new-run-can-be-planned-and-opened.md)
 - [ ] [US1291: Sprint sign under delegation requires an accepted authorising decision id and records it in the signature block](../stories/US1291-sprint-sign-under-delegation-requires-an-accepted-authorising.md)
-- [ ] [US1292: The report page and the evidence pack state that a delegated signature was delegated and name its decision](../stories/US1292-the-report-page-and-the-evidence-pack-state.md)
+- [x] [US1292: The report page and the evidence pack state that a delegated signature was delegated and name its decision](../stories/US1292-the-report-page-and-the-evidence-pack-state.md)
 - [ ] [US1293: The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed](../stories/US1293-the-trd-records-the-deferred-signature-ruling-as.md)
 
 ## Acceptance Criteria (Epic Level)

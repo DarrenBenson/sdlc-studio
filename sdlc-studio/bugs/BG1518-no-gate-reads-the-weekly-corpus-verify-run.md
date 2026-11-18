@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** .githooks/pre-push, sdlc-studio/tsd.md, tools/tests/test_pre_push_hook.py
+> **Affects:** .githooks/pre-push, sdlc-studio/tsd.md, tools/tests/test_pre_push_hook.py, tools/tests/test_lean_push.py, changelog.d/BG1518.md, CONTRIBUTING.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, tsd lens, survived 3 of 3 refute votes; observed at .githooks/pre-push lines 135-146 (read_ci: `gh run list --workflow Lint --branch main --event push`); sdlc-studio/tsd.md Pipeline Stages item 6 (line 664) and the CI jobs table (line 685); .github/workflows/lint.yml job `corpus-verify` (lines 145-234)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -41,3 +41,6 @@ Give the scheduled conclusion a reader in the command people run. Extend the pre
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-17 | Claude Opus 5.5 (run sixteen) | Affects widened in run: tools/tests/test_lean_push.py, which pins the push hook's gh calls the fix must change (lines 312-315, 339) |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | Affects widened in run: its changelog fragment |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | Affects widened in run: CONTRIBUTING.md, whose red-main paragraph named only the push-triggered read |

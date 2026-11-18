@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 193 |
+| Draft | 191 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 934 |
+| Done | 936 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -329,7 +329,7 @@
 | [US1289](US1289-the-release-cut-reports-every-fragment-folded-without.md) | The release cut reports every fragment folded without a unit id, and the script catalogue describes the id carry | Draft | EP0365 | 2026-11-17 | 2026-11-17 |
 | [US1290](US1290-a-new-run-can-be-planned-and-opened.md) | A new run can be planned and opened while a closed run awaits signature, and status names each one waiting | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1291](US1291-sprint-sign-under-delegation-requires-an-accepted-authorising.md) | Sprint sign under delegation requires an accepted authorising decision id and records it in the signature block | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
-| [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
 | [US1295](US1295-rpt0030-to-rpt0034-and-the-6-4-0.md) | RPT0030 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
@@ -351,7 +351,7 @@
 | [US1311](US1311-verify-ac-runs-a-verify-app-command-line.md) | `verify_ac` runs a `Verify: app <command>` line and records the evidence files it wrote, failing a command that exits 0 with no evidence | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
 | [US1312](US1312-critic-py-brief-lists-a-unit-s-recorded.md) | `critic.py brief` lists a unit's recorded app evidence paths, and none without failing when it has no app criterion | Draft | EP0375 | 2026-11-17 | 2026-11-17 |
 | [US1313](US1313-this-repository-s-config-declares-the-d0520-component.md) | This repository's config declares the D0520 component map, and a test pins each gate script to high | Draft | EP0376 | 2026-11-17 | 2026-11-17 |
-| [US1314](US1314-reconcile-reports-a-story-whose-stamped-risk-class.md) | Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it | Draft | EP0376 | 2026-11-17 | 2026-11-17 |
+| [US1314](US1314-reconcile-reports-a-story-whose-stamped-risk-class.md) | Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it | Done | EP0376 | 2026-11-17 | 2026-11-17 |
 
 ## Archived Releases
 

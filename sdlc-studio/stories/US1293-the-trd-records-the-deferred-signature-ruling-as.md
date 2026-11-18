@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/trd.md, sdlc-studio/rfcs/RFC0060-the-dark-factory-a-sprint-that-decides-for.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, sdlc-studio/rfcs/RFC0060-the-dark-factory-a-sprint-that-decides-for.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, tools/tests/test_lean_trd_refresh.py, changelog.d/US1293.md
 > **Epic:** EP0366
 > **Points:** 2
 > **Persona:** Abena Osei
@@ -40,8 +40,15 @@
 - **Then** its ruling cell no longer reads Open, it names RFC0065, its decision cell names D0503, and the note no longer says D6 remains open. Fails on: a D6 row that still reads Open, or one closed with no decision id
 - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSignatureRulingTests::test_rfc0060_d6_is_closed_with_a_pointer_to_rfc0065
 
+## Notes from run sixteen
+
+- `reference-evidence-schema.md`'s awaiting rule was corrected in US1290's own commit (US0994's criterion required it). `help/sprint.md` has no closed-run exception under its one-run-slot paragraph and does not name `sign --delegated --decision` (US1291). Correct both against the landed code.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-17 | Claude Opus 5.5 (run sixteen) | Affects widened in run: reference-evidence-schema.md, whose run-slot sentence US1290 made false |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | reference-evidence-schema.md taken back out of Affects: corrected with US1290 |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | Affects widened in run: its changelog fragment |

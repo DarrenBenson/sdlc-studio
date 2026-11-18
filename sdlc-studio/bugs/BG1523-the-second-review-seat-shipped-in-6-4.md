@@ -1,6 +1,6 @@
 # BG1523: The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** sdlc-studio/decisions.md, sdlc-studio/change-requests/CR0622-a-second-different-seat-on-high-risk-units.md, sdlc-studio/change-requests/CR0696-each-unit-carries-a-risk-and-compliance-class.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -29,15 +29,20 @@ Record one decision that states how D0341, D0356 and D0460 relate, names the int
 ## Acceptance Criteria
 
 - [ ] **AC1** Given `sdlc-studio/decisions.md`, when its newest rows are read, then one decision states how D0341, D0356 and D0460 relate, names the interim behaviour of the second seat on the single-sequence round ledger and marks which earlier rows it supersedes, and CR0622 and CR0696 each cite it. Fails on: the three decisions still standing with none citing or superseding another.
+  - **Verify:** shell grep -q 'D0523 .*D0341.*D0356.*D0460' sdlc-studio/decisions.md && grep -q D0523 sdlc-studio/change-requests/CR0622-*.md && grep -q D0523 sdlc-studio/change-requests/CR0696-*.md
 - [ ] **AC2** Given the second-seat section of `reference-sprint.md`, when it is read, then it states the limitation: rounds are one sequence per unit, so at the default cap a second seat's REJECT after a first-seat APPROVE is carried and not repaired, until per-seat rounds (US1032, US1033) land. Fails on: a second-seat section silent on the round ledger.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_the_reference_states_the_single_sequence_limit
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC3** Given a unit with `max_rounds` at its default of 2, when a first-seat APPROVE and then a second-seat REJECT are recorded with `critic.py record`, then the REJECT is round 2 and the unit reads as carried, exactly as the reference states. Fails on: shipped behaviour that differs from the stated interim behaviour.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_a_second_seat_reject_after_an_approve_is_carried
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC4** Given a unit holding a REJECT then an APPROVE, when a second seat's verdict is recorded, then it is refused with a plain message naming the round cap and the single-sequence ledger as the cause; a second-seat verdict that fits within the cap is recorded. Fails on: the generic round refusal that gives an operator no sign the second seat is what hit the cap.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py::SecondSeatLedgerLimitTests::test_a_second_seat_verdict_past_the_cap_is_refused_in_plain_words
+  - **Verified:** yes (2026-11-18)
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | AC1 given a shell Verify line after review; the QA seat judged it by reading (APPROVE, round 1) |

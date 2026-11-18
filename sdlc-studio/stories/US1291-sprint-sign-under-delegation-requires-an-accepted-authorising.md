@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_principal.py, changelog.d/US1291.md
 > **Epic:** EP0366
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -45,3 +45,4 @@
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Created via `new` (deterministic) |
+| 2026-11-17 | Claude Opus 5.5 (run sixteen) | Affects widened in run: its changelog fragment, which the build did not write |

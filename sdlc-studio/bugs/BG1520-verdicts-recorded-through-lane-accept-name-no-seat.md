@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG1520.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/templates/personas/memory-template.md memory-template.md (whole file, the store `persona_memory.py` seeds) and sdlc-studio/personas/seats/*.md; observed in sdlc-studio/retros/RETRO0146 line 111, RETRO0147 line 119, RETRO0148 line 104
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -42,3 +42,4 @@ Make the lane path attribute a seat. Have lane accept write the Reviewer cell in
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-17 | Claude Opus 5.5 (run sixteen) | Affects widened in run: its changelog fragment, which the build did not write |
