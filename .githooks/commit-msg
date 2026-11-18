@@ -360,7 +360,7 @@ else
 
   t0=$SECONDS
   run "skill-tests" \
-    "every shipped skill script unit test passes, and a green run prints no stray diagnostics" \
+    "every shipped skill script unit test passes, and a green run prints no stray diagnostics (runs only without pytest, or for a full run with no selection)" \
     "fix the code or the test named above; re-run: bash tools/skill-tests.sh" \
     -- bash tools/skill-tests.sh "$skill" $skill_sel
   python3 tools/gate_timing.py record --suite skill-tests --seconds "$((SECONDS - t0))" 2>/dev/null
@@ -398,7 +398,7 @@ else
     set -- python3 -m unittest discover -s tools/tests
   fi
   run "tool-tests" \
-    "every repo-only tools/ checker unit test passes" \
+    "every repo-only tools/ checker unit test passes (runs only without pytest, or for a full run with no selection)" \
     "fix the code or the test named in the failure above; re-run: python3 -m unittest discover -s tools/tests" \
     -- "${scrub[@]}" "PYTHONPATH=tools/tests${PYTHONPATH:+:$PYTHONPATH}" "$@"
   python3 tools/gate_timing.py record --suite tool-tests --seconds "$((SECONDS - t0))" 2>/dev/null
@@ -440,7 +440,10 @@ if [ -r "$writes_snapshot" ]; then
   rm -f "$writes_snapshot" 2>/dev/null
 fi
 
-# THE COLLAPSE CHECK, on the unittest path only - the one whose output carries a test count. A
+# THE COLLAPSE CHECK, on the unittest path only - the one whose output carries a test count, so
+# its rule says it runs only off the pytest path, as the two lanes above do (BG1519): without
+# pytest, or for a full run with no selection handed over. On the pytest path `gate.py
+# --run-tests` holds the floor instead: a run in which no test ran is red. A
 # suite that has stopped running most of itself commits green, because a deleted test cannot
 # fail; this lane blocks that (BG0413). It reads the test COUNT and whether a module failed to
 # load, never the duration. A selected run is not held to the full-suite peak.
@@ -458,7 +461,7 @@ if [ "$ran_pytest" -eq 0 ]; then
   # missing script, and a verdict this lane blocks on must be able to say why.
   scope_lane() { printf '%s\n' "$scope_note"; [ "$scope_rc" -ne 3 ] || [ -z "$scope_note" ]; }
   run "suite-collapse" \
-    "a unittest run is not a collapsed suite: its test count is not far below what the surface demands" \
+    "a unittest run is not a collapsed suite: its test count is not far below what the surface demands (runs only without pytest, or for a full run with no selection; on the pytest path gate.py --run-tests refuses a run in which no test ran)" \
     "find why the suite stopped running most of itself - a deleted, renamed or unloadable test module - and restore it; the note above gives the count against the floor" \
     -- scope_lane
   # Any other note is advisory: printed, never refused.

@@ -10,7 +10,7 @@ cut shipped, and filing or closing a finding moves neither.
 
     python3 tools/known_issues.py write --release 5.2.0   # the cut: the page and the notes' count
     python3 tools/known_issues.py check [--at REV]        # 1 when page and corpus disagree
-    python3 tools/known_issues.py bar                     # non-zero while a barred finding is open
+    python3 tools/known_issues.py bar [--at REV]          # 1 while a barred finding is open
 
 Repo-only tooling: not shipped with the skill. Pure stdlib.
 """
@@ -411,50 +411,60 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--at", metavar="REV",
                        help="judge the page and the corpus as committed at REV (the pushed tag), "
                             "not as they stand in the working tree")
-    sub.add_parser("bar", help="exit non-zero when any finding at a barred severity is still "
-                               "open. A RELEASE-boundary check: an open High is ordinary "
-                               "mid-sprint and is only a defect at the tag")
+    bar = sub.add_parser("bar", help="exit 1 when any finding at a barred severity is still "
+                                     "open or a finding cannot be parsed, 2 when the corpus "
+                                     "cannot be read at REV. A RELEASE-boundary "
+                                     "check the pre-push hook runs at each tagged commit: an open "
+                                     "High is ordinary mid-sprint and is only a defect at the tag")
+    bar.add_argument("--at", metavar="REV",
+                     help="judge the bug corpus as committed at REV (the pushed tag), not as it "
+                          "stands in the working tree")
     for mode in sub.choices.values():
         mode.add_argument("--root", default=str(REPO))
     args = ap.parse_args(argv)
     root = Path(args.root).resolve()
 
-    if args.mode == "bar":
-        # Named on this path too, and BEFORE the verdict. A severity in neither set is
-        # dropped by both readers, so it does not hold the bar - but saying nothing about
-        # it is how it stayed invisible, and this is the surface a release is judged on.
-        _warn_unclassifiable(root)
-        open_barred = barred_open(root)
-        # A finding neither reader can parse is NOT evidence of a clean corpus. Reported before
-        # the verdict and it refuses, because the three guards this replaced each dropped such a
-        # file silently, and silence read exactly like "bar met".
-        blind = unparseable(root)
-        if blind:
-            print(f"release bar UNKNOWN: {len(blind)} finding(s) neither the bar nor the "
-                  f"disclosure page can parse, so their status and severity are invisible to "
-                  f"both - {', '.join(blind)}. Repair the heading, status or severity field; a "
-                  f"finding nobody can read must never count as a corpus with nothing in it")
-        if not open_barred and not blind:
-            print(f"release bar met: no open finding at {' or '.join(BARRED)} severity")
-            return 0
-        if not open_barred:
-            return 1
-        listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
-        print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
-              f"{listing}. Fix them or change the bar in a recorded decision, but do not tag "
-              f"against a bar the corpus contradicts.", file=sys.stderr)
-        return 1
-
     if args.mode == "write":
         _warn_unparseable(root)     # every path that reads the corpus, not the bar alone
         _warn_unclassifiable(root)  # ...and the severities neither reader recognises
         return _cut(root, args.release.removeprefix("v"))
+    judge = _bar if args.mode == "bar" else _check
     if args.at is None:
-        return _check(root)
+        return judge(root)
+    # A tag ships its COMMIT: the corpus (and the page) are read as committed at REV (BG1521).
     with tempfile.TemporaryDirectory(prefix="known_issues_at_") as tmp:
         if not _export(root, args.at, Path(tmp)):
             return 2
-        return _check(Path(tmp))
+        return judge(Path(tmp))
+
+
+def _bar(root: Path) -> int:
+    """0 when no finding at a barred severity is open under `root`, 1 when one is, or when a
+    finding cannot be parsed."""
+    # Named on this path too, and BEFORE the verdict. A severity in neither set is
+    # dropped by both readers, so it does not hold the bar - but saying nothing about
+    # it is how it stayed invisible, and this is the surface a release is judged on.
+    _warn_unclassifiable(root)
+    open_barred = barred_open(root)
+    # A finding neither reader can parse is NOT evidence of a clean corpus. Reported before
+    # the verdict and it refuses, because the three guards this replaced each dropped such a
+    # file silently, and silence read exactly like "bar met".
+    blind = unparseable(root)
+    if blind:
+        print(f"release bar UNKNOWN: {len(blind)} finding(s) neither the bar nor the "
+              f"disclosure page can parse, so their status and severity are invisible to "
+              f"both - {', '.join(blind)}. Repair the heading, status or severity field; a "
+              f"finding nobody can read must never count as a corpus with nothing in it")
+    if not open_barred and not blind:
+        print(f"release bar met: no open finding at {' or '.join(BARRED)} severity")
+        return 0
+    if not open_barred:
+        return 1
+    listing = ", ".join(f"{b} ({s})" for b, s in sorted(open_barred.items()))
+    print(f"release bar NOT met: {len(open_barred)} open finding(s) at a barred severity - "
+          f"{listing}. Fix them or change the bar in a recorded decision, but do not tag "
+          f"against a bar the corpus contradicts.", file=sys.stderr)
+    return 1
 
 
 def _export(root: Path, rev: str, dest: Path) -> bool:

@@ -499,6 +499,60 @@ class ACollapsedSuiteLeavesNoReusableGreenTests(_VerdictPlacementFixture, unitte
         self.assertIn("ok   tool-tests", out, f"the tool lane did not pass:\n{out}")
         self.assertIn("ok   skill-tests", out, f"the skill lane did not pass:\n{out}")
 
+    WITHOUT_PYTEST = "(runs only without pytest"
+
+    @staticmethod
+    def _lanes_by_path() -> tuple[set, set]:
+        """The lanes the hook's source calls on the pytest path and on the path taken only when
+        the selected run did not use pytest: the `else` of the pytest test, and the block guarded
+        by `ran_pytest` being 0. Read from the hook itself, so a lane moved between the two
+        moves its expected marking with it."""
+        on_pytest, without = set(), set()
+        region = None
+        for line in HOOK.read_text(encoding="utf-8").splitlines():
+            if line.startswith("if [ -n \"$selectors\" ] && python3 -c 'import pytest'"):
+                region = "pytest"
+            elif line.startswith('if [ "$ran_pytest" -eq 0 ]'):
+                region = "without"
+            elif line == "else" and region == "pytest":
+                region = "without"
+            elif line == "fi" and region:
+                region = None
+            m = re.match(r'\s*run "([^"]+)"', line)
+            if m:
+                (without if region == "without" else on_pytest).add(m.group(1))
+        return on_pytest, without
+
+    def test_the_lane_list_marks_lanes_that_run_only_without_pytest(self):
+        """BG1519 AC4. MUTANTS: drop the marking from one of the three lanes; mark a lane that
+        runs on the pytest path; move a lane into the no-pytest branch without marking it; a TSD
+        `full-suite` row silent on the count floor."""
+        listed = subprocess.run(["bash", str(HOOK), "--list"], cwd=REPO, capture_output=True,
+                                text=True, timeout=60,
+                                env={k: v for k, v in os.environ.items() if not k.startswith("GIT_")})
+        self.assertEqual(0, listed.returncode, listed.stderr)
+        rules = dict(line.split("\t", 1) for line in listed.stdout.splitlines() if "\t" in line)
+        on_pytest, without = self._lanes_by_path()
+        self.assertEqual({"suite-collapse", "skill-tests", "tool-tests"}, without,
+                         "the lanes the hook runs only without pytest are not the three named today")
+        self.assertIn("unit-tests", on_pytest, "the reader did not find the pytest path's lane")
+        for key, rule in rules.items():
+            with self.subTest(lane=key):
+                if key in without:
+                    self.assertIn(self.WITHOUT_PYTEST, rule,
+                                  f"{key} runs only without pytest and its listed rule does not say so")
+                else:
+                    self.assertIn(key, on_pytest, f"{key} is listed but not called by the hook")
+                    self.assertNotIn(self.WITHOUT_PYTEST, rule,
+                                     f"{key} runs on the pytest path and is marked as not")
+        for key in without:
+            self.assertIn(key, rules, f"{key} is called by the hook but not listed")
+        tsd = (REPO / "sdlc-studio" / "tsd.md").read_text(encoding="utf-8")
+        row = next((ln for ln in tsd.splitlines() if ln.startswith("| `full-suite` |")), "")
+        for phrase in ("count floor", "nothing was collected", "every test was skipped",
+                       "`gate.py --run-tests`"):
+            self.assertIn(phrase, row, f"the TSD full-suite row does not state the floor: {row}")
+
 
 class MessageAbsentTests(unittest.TestCase):
     """BG0595. An invocation with no message file has no commit to gate.

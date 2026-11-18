@@ -4064,6 +4064,113 @@ class SuiteVerdictReuseTests(unittest.TestCase):
             self.assertTrue(decision["run"])
             self.assertNotEqual("reuse", decision["mode"])
 
+    # BG1522: a selected green is keyed on the working-tree hash, which already covers an
+    # UNSTAGED edit, so committing a second file from the same tree reused a verdict whose run
+    # never selected that file's tests. MUTANTS: reuse any green whose hash matches, whatever
+    # its mode; record no selectors; compare the selections as equal rather than as a subset;
+    # read a record with no selectors as covering everything; decline a full-mode green too.
+
+    SCRIPTS = Path(".claude") / "skills" / "sdlc-studio" / "scripts"
+
+    def _two_file_repo(self, tmp: Path) -> Path:
+        scripts = tmp / self.SCRIPTS
+        (scripts / "tests").mkdir(parents=True)
+        for name in ("a", "b"):
+            (scripts / f"{name}.py").write_text(f"def {name}():\n    return 1\n", encoding="utf-8")
+            (scripts / "tests" / f"test_{name}.py").write_text(
+                f"import {name}\n\n\ndef test_{name}():\n    assert {name}.{name}() == 1\n",
+                encoding="utf-8")
+        (tmp / "sdlc-studio" / ".local").mkdir(parents=True)
+        gitutil.git(["init", "-q"], cwd=tmp)
+        gitutil.git(["add", "-A"], cwd=tmp)
+        gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c"], cwd=tmp)
+        for name in ("a", "b"):         # both edited in the working tree, neither staged yet
+            path = scripts / f"{name}.py"
+            path.write_text(path.read_text(encoding="utf-8") + "# edited\n", encoding="utf-8")
+        return tmp
+
+    def _cli(self, root: Path, *args: str):
+        import subprocess  # noqa: PLC0415
+        env = gitutil.git_env()
+        env.pop(gate.BOUNDARY_ENV, None)
+        return subprocess.run([sys.executable, str(SCRIPT), "--root", str(root), *args], cwd=str(root),
+                              capture_output=True, text=True, env=env, timeout=120, check=False)
+
+    def _stage(self, root: Path, name: str) -> None:
+        gitutil.git(["add", "--", str(self.SCRIPTS / f"{name}.py")], cwd=root)
+
+    def _record(self, root: Path, mode: str) -> None:
+        """As commit-msg records it, while the commit's paths are still staged."""
+        r = self._cli(root, "--record-suite-verdict", "HEAD", "--status", "green", "--verdict-mode", mode)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+
+    def _decide(self, root: Path) -> tuple[str, str, list[str]]:
+        r = self._cli(root, "--suite-decision", "--staged")
+        out = r.stdout
+        mode = next((ln.split(": ", 1)[1] for ln in out.splitlines() if ln.startswith("suite-mode: ")), "")
+        selectors = [ln.split(": ", 1)[1] for ln in out.splitlines() if ln.startswith("suite-selector: ")]
+        return out.splitlines()[0] if out else r.stderr, mode, selectors
+
+    def test_a_selected_green_is_not_reused_for_a_different_selection(self) -> None:
+        """BG1522 AC1."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_file_repo(Path(d))
+            self._stage(root, "a")
+            first, _, ran = self._decide(root)
+            self.assertTrue(first.startswith("suite-decision: run"), first)
+            self.assertEqual([str(self.SCRIPTS / "tests" / "test_a.py")], ran)
+            self._record(root, "selected")
+            gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "a"], cwd=root)
+            self._stage(root, "b")
+            line, mode, selectors = self._decide(root)
+            self.assertTrue(line.startswith("suite-decision: run"), "a selected green that never "
+                            "ran test_b.py was reused for the change that selects it: " + line)
+            self.assertNotEqual("reuse", mode)
+            self.assertEqual([str(self.SCRIPTS / "tests" / "test_b.py")], selectors)
+
+    def test_a_selected_green_is_reused_for_a_subset_of_its_selectors(self) -> None:
+        """BG1522 AC2."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_file_repo(Path(d))
+            self._stage(root, "a")
+            self._stage(root, "b")
+            self._record(root, "selected")            # the run selected test_a.py and test_b.py
+            recorded = gate.read_suite_verdict(str(root))
+            self.assertEqual(sorted(str(self.SCRIPTS / "tests" / f"test_{n}.py") for n in "ab"),
+                             sorted(recorded.get("selectors") or []), recorded)
+            gitutil.git(["reset", "-q", "--", str(self.SCRIPTS / "b.py")], cwd=root)
+            line, mode, _ = self._decide(root)        # test_a.py alone: a subset
+            self.assertTrue(line.startswith("suite-decision: skip"), line)
+            self.assertEqual("reuse", mode)
+            self._stage(root, "b")                     # the same selection: reused too
+            self.assertEqual("reuse", self._decide(root)[1])
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_file_repo(Path(d))
+            self._stage(root, "a")
+            self._record(root, "full")
+            gitutil.git(["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "a"], cwd=root)
+            self._stage(root, "b")
+            line, mode, _ = self._decide(root)
+            self.assertTrue(line.startswith("suite-decision: skip"), "a full green lost its reuse: " + line)
+            self.assertEqual("reuse", mode)
+
+    def test_a_selected_green_with_no_recorded_selectors_is_never_reused(self) -> None:
+        """BG1522 AC3: every record written before the fix carries no selectors."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._two_file_repo(Path(d))
+            self._stage(root, "a")
+            gate.record_suite_verdict(str(root), run="RUN-OLD", status="green", mode="selected")
+            path = Path(root) / gate.SUITE_VERDICT_REL
+            old = json.loads(path.read_text(encoding="utf-8"))
+            old.pop("selectors", None)
+            path.write_text(json.dumps(old), encoding="utf-8")
+            line, mode, selectors = self._decide(root)
+            self.assertTrue(line.startswith("suite-decision: run"), "a record with no selectors "
+                            "was read as covering the selection: " + line)
+            self.assertNotEqual("reuse", mode)
+            self.assertEqual([str(self.SCRIPTS / "tests" / "test_a.py")], selectors)
+            self.assertIn("RUN-OLD", line, "the reason does not name the verdict it declined")
+
 
 class LaneCheckLaneTests(unittest.TestCase):
     """`verify_ac.py lane-check` runs through its own command, with its yield recorded.
@@ -5257,6 +5364,134 @@ class BoundaryMarkerExportTests(unittest.TestCase):
             if before is not None:
                 os.environ[self.MARKER] = before
         self.assertEqual(seen, {None: None, "close": None, "push": "1", "release": "1"})
+
+
+@live_repository
+class FullSuiteCountFloorTests(unittest.TestCase):
+    """BG1519: the full-suite lane and `--run-tests` hold a count floor. pytest exits 5 when it
+    collects nothing and 0 when every test is skipped, and both read as a pass, so a suite that
+    ran nothing printed PASS. Each case drives the shipped CLI over a throwaway root, with a
+    passing control beside each refusal. MUTANTS: accept exit 5 for the only phase again; count
+    a skipped test as one that ran; refuse a run whose secondary phase collected nothing beside
+    one that ran a test; read the count from the first phase only; print the refusal and exit 0."""
+
+    EMPTY = "X = 1\n"
+    PASSING = "def test_ok():\n    assert True\n"
+    SKIPPED = ("import unittest\n\n\n@unittest.skip('switched off')\nclass T(unittest.TestCase):\n"
+               "    def test_a(self):\n        pass\n\n    def test_b(self):\n        pass\n")
+    # every test of this module is serial_only, so under pytest-xdist the parallel phase
+    # collects nothing (exit 5) and the serial phase runs it
+    SERIAL = "import pytest\n\n\n@pytest.mark.serial_only\ndef test_serial():\n    assert True\n"
+
+    def _root(self, **modules: str) -> pathlib.Path:
+        root = pathlib.Path(tempfile.mkdtemp(prefix="count_floor_"))
+        self.addCleanup(_shutil.rmtree, root, True)
+        (root / "sdlc-studio").mkdir()
+        # the markers registered, as the repository's own pytest.ini does, so a phase that
+        # deselects every test ends on "no tests ran" rather than on a marker warning
+        (root / "pytest.ini").write_text("[pytest]\nmarkers =\n    serial_only: x\n"
+                                         "    boundary_only: x\n", encoding="utf-8")
+        tests = root / "tools" / "tests"
+        tests.mkdir(parents=True)
+        for name, body in modules.items():
+            (tests / f"{name}.py").write_text(body, encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _env() -> dict:
+        return {k: v for k, v in os.environ.items()
+                if not k.startswith(("PYTEST_XDIST", "PYTEST_CURRENT_TEST", "GIT_"))
+                and k not in (gate.BOUNDARY_ENV, gate.BOUNDARY_SUITE_ENV)}
+
+    def _gate(self, root: pathlib.Path, *extra: str):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run([sys.executable, str(SCRIPT), "--root", str(root), *extra],
+                              capture_output=True, text=True, timeout=600, check=False,
+                              env=self._env(), cwd=str(root))
+
+    def _full_suite(self, root: pathlib.Path):
+        return self._gate(root, "--boundary", "push", "--only", "full-suite")
+
+    @staticmethod
+    def _lane(out: str) -> str:
+        return next((ln for ln in out.splitlines() if "full-suite" in ln), "")
+
+    def test_an_empty_suite_fails_the_full_suite_lane(self) -> None:
+        """AC1."""
+        empty = self._full_suite(self._root(test_empty=self.EMPTY))
+        out = empty.stdout + empty.stderr
+        self.assertNotEqual(0, empty.returncode, "a suite that collected nothing passed:\n" + out)
+        self.assertIn("[FAIL] full-suite", out, out)
+        self.assertNotIn("[PASS] full-suite", out, out)
+        self.assertIn("no test ran", self._lane(out), out)
+        control = self._full_suite(self._root(test_empty=self.EMPTY, test_ok=self.PASSING))
+        out = control.stdout + control.stderr
+        self.assertEqual(0, control.returncode, "one passing test did not pass the lane:\n" + out)
+        self.assertIn("[PASS] full-suite", out, out)
+
+    def test_an_all_skipped_suite_fails_and_an_empty_secondary_phase_does_not(self) -> None:
+        """AC2."""
+        skipped = self._full_suite(self._root(test_skip=self.SKIPPED))
+        out = skipped.stdout + skipped.stderr
+        self.assertNotEqual(0, skipped.returncode, "an all-skipped suite passed:\n" + out)
+        self.assertIn("[FAIL] full-suite", out, out)
+        self.assertIn("every test was skipped", self._lane(out), out)
+        mixed = self._full_suite(self._root(test_skip=self.SKIPPED, test_ok=self.PASSING))
+        out = mixed.stdout + mixed.stderr
+        self.assertEqual(0, mixed.returncode, "one passing beside skipped tests did not pass:\n" + out)
+        self.assertIn("[PASS] full-suite", out, out)
+        # a phase that collects nothing beside one that ran a test: the serial-only module leaves
+        # the parallel phase empty under xdist, and with no xdist the one phase runs it
+        serial = self._full_suite(self._root(test_serial=self.SERIAL))
+        out = serial.stdout + serial.stderr
+        self.assertEqual(0, serial.returncode, "an empty secondary phase refused a suite that ran:\n" + out)
+        self.assertIn("[PASS] full-suite", out, out)
+        if importlib.util.find_spec("xdist") is not None:
+            self.assertIn("no tests ran", self._lane(out),
+                          "the fixture never produced a phase that collected nothing:\n" + out)
+
+    def test_run_tests_refuses_a_run_in_which_no_test_ran(self) -> None:
+        """AC3."""
+        root = self._root(test_empty=self.EMPTY, test_skip=self.SKIPPED, test_ok=self.PASSING,
+                          test_serial=self.SERIAL)
+        for module, says in (("test_empty", "collected nothing"), ("test_skip", "skipped")):
+            r = self._gate(root, "--run-tests", f"tools/tests/{module}.py")
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, f"{module}: a run in which no test ran exited 0:\n" + out)
+            self.assertIn("0 tests ran", out, f"{module}: the zero count is not named:\n" + out)
+            self.assertIn(says, out, out)
+        for module in ("test_ok", "test_serial"):
+            r = self._gate(root, "--run-tests", f"tools/tests/{module}.py")
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, f"{module}: a run with a passing test refused:\n" + out)
+            self.assertNotIn("0 tests ran", out, out)
+        # A commit leaves the boundary_only tests to the push, so a selection made only of them
+        # is deferred, not collapsed: the decorator's skip and the mark's deselection both pass,
+        # and the same tests at the push boundary run. MUTANT: exempt every skip, not only the
+        # decorator's "boundary-only:" one (test_skip above then passes).
+        _shutil.copy(pathlib.Path(__file__).resolve().parent / "boundary.py", root / "tools" / "tests")
+        (root / "tools" / "tests" / "test_deferred.py").write_text(
+            "import os, sys, unittest\nsys.path.insert(0, os.path.dirname(__file__))\n"
+            "from boundary import boundary_only\n\n\nclass T(unittest.TestCase):\n"
+            "    @boundary_only('deferred to the boundary, for this fixture only')\n"
+            "    def test_deferred(self):\n        pass\n", encoding="utf-8")
+        (root / "tools" / "tests" / "test_marked.py").write_text(
+            "import pytest\n\n\n@pytest.mark.boundary_only\ndef test_marked():\n    pass\n",
+            encoding="utf-8")
+        for module in ("test_deferred", "test_marked"):
+            r = self._gate(root, "--run-tests", f"tools/tests/{module}.py")
+            out = r.stdout + r.stderr
+            self.assertEqual(0, r.returncode, f"{module}: a commit's deferred selection refused:\n" + out)
+            self.assertIn("deferred to the push (1 boundary-only)", out, out)
+            pushed = self._gate(root, "--run-tests", f"tools/tests/{module}.py", "--boundary", "push",
+                                "--only", "unit-tests")
+            self.assertEqual(0, pushed.returncode, pushed.stdout + pushed.stderr)
+            self.assertIn("1 passed", pushed.stdout, f"{module} did not run at the push:\n" + pushed.stdout)
+        # a deferred test does not excuse a switched-off one beside it
+        mixed = self._gate(root, "--run-tests", "tools/tests/test_skip.py", "tools/tests/test_deferred.py")
+        out = mixed.stdout + mixed.stderr
+        self.assertNotEqual(0, mixed.returncode, "a deferred skip excused a switched-off one:\n" + out)
+        self.assertIn("0 tests ran: every test was skipped", out, out)
 
 
 if __name__ == "__main__":

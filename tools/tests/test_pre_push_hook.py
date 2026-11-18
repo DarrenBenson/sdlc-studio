@@ -453,6 +453,81 @@ class ARedMainIsReadBeforeTheNextPushTests(unittest.TestCase):
             fx.cleanup()
 
 
+class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):
+    """BG1521: a tag is refused while a Critical or High finding is open at its commit. The tag
+    loop ran only `known_issues.py check`, which reads the disclosed severities and never the
+    barred ones, so a page agreeing with its corpus certified a tag over an open High."""
+
+    @staticmethod
+    def _tag_over_an_open_high(fx: _Clone, tag: str) -> str:
+        """Commit an open High finding and a page re-cut from that corpus, tag it, return the sha."""
+        bugs = fx.clone / known_issues.BUGS_REL
+        bugs.mkdir(parents=True, exist_ok=True)
+        (bugs / "BG0001-a-blocker.md").write_text(
+            "# BG0001: a blocker\n\n> **Status:** Open\n> **Severity:** High\n", encoding="utf-8")
+        (fx.clone / known_issues.PAGE_REL).write_text(known_issues.render(fx.clone, "6.0.0"),
+                                                      encoding="utf-8")
+        _git(fx.clone, "add", "-A")
+        _git(fx.clone, "commit", "-q", "-m", "an open High")
+        _git(fx.clone, "tag", tag)
+        return _git(fx.clone, "rev-parse", "HEAD").stdout.strip()
+
+    def test_a_tag_with_an_open_high_finding_is_refused(self) -> None:
+        """AC2. MUTANTS: the tag loop runs `check` alone; `bar` run without `--at`, so the
+        working tree is judged; the bar's exit 1 let through; the refusal naming neither the
+        bar nor the commit."""
+        fx = _Clone()
+        try:
+            self.assertEqual(0, fx.push().returncode)
+            fx.argv.unlink(missing_ok=True)
+            # the positive control first: a tag on a commit with no barred finding open
+            _git(fx.clone, "tag", "v0.0.1")
+            clean = fx.push("v0.0.1")
+            self.assertEqual(0, clean.returncode, clean.stderr)
+            self.assertNotIn("release bar", clean.stderr.replace("release bar met", ""), clean.stderr)
+            self.assertEqual(["--boundary release"], fx.gate_calls())
+            fx.argv.unlink(missing_ok=True)
+            sha = self._tag_over_an_open_high(fx, "v0.0.2")
+            check = subprocess.run([sys.executable, "tools/known_issues.py", "check", "--at", sha],
+                                   cwd=fx.clone, capture_output=True, text=True, timeout=60)
+            self.assertEqual(0, check.returncode, "the premise: the page agrees with its corpus\n"
+                             + check.stdout + check.stderr)
+            # the working tree no longer holds the finding, so only a read AT the commit refuses
+            (fx.clone / known_issues.BUGS_REL / "BG0001-a-blocker.md").write_text(
+                "# BG0001: a blocker\n\n> **Status:** Fixed\n> **Severity:** High\n", encoding="utf-8")
+            r = fx.push("v0.0.2")
+            self.assertNotEqual(0, r.returncode, "a tag over an open High finding was let through:\n" + r.stderr)
+            refusal = next((ln for ln in r.stderr.splitlines() if ln.startswith("pre-push:") and sha in ln), "")
+            self.assertIn("release bar is not met", refusal, r.stderr)
+            self.assertIn("BG0001 (High)", r.stderr, "the open finding is not named:\n" + r.stderr)
+            self.assertEqual([], fx.gate_calls(), "the gate ran past a refused tag")
+            self.assertNotIn("v0.0.2", _git(fx.remote, "tag", "-l").stdout, "the remote gained the tag")
+        finally:
+            fx.cleanup()
+
+    def test_a_bar_that_could_not_run_is_not_reported_as_a_refusal(self) -> None:
+        """AC3. MUTANTS: any non-zero exit reported as the bar not met; a could-not-run exit let
+        through; the could-not-run line naming no commit."""
+        fx = _Clone()
+        try:
+            sha = self._tag_over_an_open_high(fx, "v0.0.3")
+            real = fx.clone / "tools" / "known_issues_real.py"
+            (fx.clone / "tools" / "known_issues.py").rename(real)
+            # `check` is the real one; `bar` cannot run, as a crash or an unreadable corpus exits 2
+            (fx.clone / "tools" / "known_issues.py").write_text(
+                "import runpy, sys\n"
+                "if sys.argv[1:2] == ['bar']:\n"
+                "    sys.stderr.write('Traceback: the corpus reader crashed\\n'); raise SystemExit(2)\n"
+                f"runpy.run_path({str(real)!r}, run_name='__main__')\n", encoding="utf-8")
+            r = fx.push("v0.0.3")
+            self.assertNotEqual(0, r.returncode, "a bar that could not run let the tag through:\n" + r.stderr)
+            self.assertIn(f"the release bar could not run on tagged commit {sha}", r.stderr, r.stderr)
+            self.assertNotIn("release bar is not met", r.stderr, "a could-not-run was reported as an open finding")
+            self.assertEqual([], fx.gate_calls())
+        finally:
+            fx.cleanup()
+
+
 class EnableHooksNamesEveryHookTests(unittest.TestCase):
     """AC5. MUTANTS: (1) hard-code the three known hook names in the sentence the script prints;
     (2) print the names without their header lines."""

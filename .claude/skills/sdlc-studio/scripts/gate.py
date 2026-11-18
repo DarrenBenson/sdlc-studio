@@ -874,6 +874,76 @@ def _clip_reason(text: str, limit: int = 300) -> str:
     return (head.rsplit(" ", 1)[0] if " " in head else head) + " ..."
 
 
+#: pytest's closing summary line ends on its duration, "in 0.42s" or "in 65.43s (0:01:05)".
+_PYTEST_DURATION = re.compile(r"\bin \d+(?:\.\d+)?s\b")
+_PYTEST_COUNT = re.compile(
+    r"\b(\d+) (passed|failed|skipped|xfailed|xpassed|errors?|deselected|warnings?)\b")
+#: The outcomes counted as a test that ran. A skipped or deselected test is not counted.
+_PYTEST_RAN = ("passed", "failed", "xfailed", "xpassed", "error", "errors")
+
+
+def pytest_counts(text: str) -> dict | None:
+    """The counts on the last pytest summary line in `text`: `{"ran", "skipped", "deselected"}`,
+    or None when the text holds no summary line ("3 passed, 1 skipped in 0.42s", "no tests ran
+    in 0.01s")."""
+    for line in reversed(text.splitlines()):
+        if not _PYTEST_DURATION.search(line):
+            continue
+        counts = {word: int(n) for n, word in _PYTEST_COUNT.findall(line)}
+        if counts or "no tests ran" in line:
+            return {"ran": sum(counts.get(w, 0) for w in _PYTEST_RAN),
+                    "skipped": counts.get("skipped", 0),
+                    "deselected": counts.get("deselected", 0)}
+    return None
+
+
+def count_floor(phases: "list[dict | None]") -> str | None:
+    """Why a run whose phases printed these counts proves nothing, or None when a test ran.
+
+    The floor is one test executed across every phase: pytest exits 5 when it collects
+    nothing and 0 when every test is skipped, so neither exit code can say a run proved nothing.
+    A phase that collected nothing is fine beside a phase that ran a test, which is how a module
+    whose every test is `serial_only` runs under pytest-xdist."""
+    read = [p for p in phases if p is not None]
+    if any(p["ran"] for p in read):
+        return None
+    if not read:
+        return "0 tests ran by any count pytest printed: no phase ended on a summary line"
+    skipped = sum(p["skipped"] for p in read)
+    if skipped:
+        return f"0 tests ran: every test was skipped ({skipped} skipped)"
+    deselected = sum(p["deselected"] for p in read)
+    if deselected:
+        return f"0 tests ran: every collected test was deselected ({deselected} deselected)"
+    return "0 tests ran: no test ran, pytest collected nothing"
+
+
+#: A skip the `boundary_only` decorator (`scripts/tests/boundary.py`) makes, as `-rs` lists it.
+_DEFERRED_SKIP = re.compile(r"^SKIPPED \[(\d+)\] .*?: boundary-only: ", re.M)
+
+
+def deferred_to_boundary(texts: "list[str]", selectors: "list[str]", root: str) -> int:
+    """How many of a commit selection's tests are deferred to the push, when every test that did
+    not run was deferred; 0 when any other skip is among them.
+
+    A commit leaves the `boundary_only` tests to the push: the decorator skips them, naming
+    "boundary-only:" in the skip line, and the `boundary_only` mark deselects them, which
+    pytest-xdist reports as "no tests ran". So a selection made only of them runs nothing and is
+    not a collapsed suite. Read only when the count floor would refuse, so one `--collect-only`
+    is all it costs."""
+    import subprocess  # noqa: PLC0415
+    counts = [c for c in (pytest_counts(t) for t in texts) if c]
+    skipped = sum(c["skipped"] for c in counts)
+    skips = sum(int(n) for t in texts for n in _DEFERRED_SKIP.findall(t))
+    if skips != skipped:
+        return 0
+    cp = subprocess.run([sys.executable, "-m", "pytest", "--collect-only", "-q",
+                         "-p", "no:cacheprovider", "-m", "boundary_only", *selectors],
+                        cwd=root, capture_output=True, text=True, check=False)
+    marked = re.search(r"\b(\d+)(?:/\d+)? tests? collected", cp.stdout)
+    return skips + (int(marked[1]) if marked else 0)
+
+
 def _full_suite(root: str) -> dict:
     """PUSH-BOUNDARY lane: every test module of both suites, run ONCE.
 
@@ -886,6 +956,8 @@ def _full_suite(root: str) -> dict:
     Run as the commit hook runs a selection (`run_tests_plan`): across every core under
     pytest-xdist, the `serial_only` tests after. A red run names each failing test and keeps the
     whole output in `sdlc-studio/.local/boundary-suite-last.log`, since the gate prints one line.
+    A run in which no test executed across every phase, nothing collected or every test
+    skipped, is red too (`count_floor`).
     """
     import importlib.util  # noqa: PLC0415
     import subprocess  # noqa: PLC0415 - local: only this lane spawns the runner
@@ -896,14 +968,15 @@ def _full_suite(root: str) -> dict:
         return {"count": 1, "blocking": True,
                 "detail": "pytest is not installed, so the full suite cannot run here"}
     parallel = importlib.util.find_spec("xdist") is not None
-    outputs, failed, summaries = [], [], []
+    outputs, failed, summaries, counts = [], [], [], []
     for argv in run_tests_plan(modules, parallel, root):
         cp = subprocess.run(argv, cwd=root, capture_output=True, text=True, check=False)
         text = cp.stdout + cp.stderr
         outputs.append(text)
+        counts.append(pytest_counts(text))
         lines = [ln for ln in text.splitlines() if ln.strip()]
         summaries.append(lines[-1].strip("= ") if lines else "no output")
-        if cp.returncode not in (0, 5):     # 5: a phase that collected nothing
+        if cp.returncode not in (0, 5):     # 5: a phase that collected nothing, held to the floor below
             named = [ln.split(" - ")[0].removeprefix("FAILED ").removeprefix("ERROR ")
                      for ln in lines if ln.startswith(("FAILED ", "ERROR "))]
             # A usage error ends on pytest's rootdir line, so name the last line that says why.
@@ -915,7 +988,8 @@ def _full_suite(root: str) -> dict:
     failed = list(dict.fromkeys(failed))    # xdist reports a collection error once per worker
     how = f"{len(modules)} module(s){' in parallel' if parallel else ''}: {'; '.join(summaries)}"
     log = Path(root) / "sdlc-studio" / ".local" / "boundary-suite-last.log"
-    if not failed:
+    floor = None if failed else count_floor(counts)
+    if not failed and not floor:
         log.unlink(missing_ok=True)         # an earlier red's log must not outlive a green
         return {"count": 0, "blocking": True, "detail": how}
     try:
@@ -924,6 +998,8 @@ def _full_suite(root: str) -> dict:
         kept = f"; output in {log.relative_to(root)}"
     except OSError:
         kept = ""
+    if floor:
+        return {"count": 1, "blocking": True, "detail": f"{floor} - {how}{kept}"}
     return {"count": len(failed), "blocking": True,
             "detail": f"{len(failed)} red - {', '.join(failed)} - {how}{kept}"}
 
@@ -2392,13 +2468,19 @@ def read_suite_verdict(root: str = ".") -> dict | None:
 
 
 def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
-                         mode: str = "full", digest: str | None = None) -> Path:
+                         mode: str = "full", digest: str | None = None,
+                         selectors: "list[str] | None" = None) -> Path:
     """Record `status` for the current surface, attributed to the run that earned it.
 
     `mode` is how much of the suite earned it - `full` or `selected`. It is recorded because
     a green from a SELECTED run is evidence about the tests that ran, not about the suite, so
     a boundary must not reuse it (see `suite_decision`). A record with no mode is read as
-    UNKNOWN coverage, which a boundary also declines."""
+    UNKNOWN coverage, which a boundary also declines.
+
+    A selected record also carries `selectors`, the modules that ran: the surface hash
+    already covers an unstaged edit, so a later commit of that edit reuses the green only when
+    its own selection is among them. Absent, they are the selection the staged paths make, which
+    is what the commit hook ran, since it records while the commit's paths are still staged."""
     path = Path(root) / SUITE_VERDICT_REL
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -2408,6 +2490,12 @@ def record_suite_verdict(root: str = ".", *, run: str, status: str = "green",
         "surface_hash": digest if digest is not None else surface_hash(root),
         "recorded_at": datetime.now(timezone.utc).isoformat(),
     }
+    if str(mode) == "selected":
+        if selectors is None:
+            staged = staged_paths(root)
+            picked = select_tests(root, staged) if staged is not None else None
+            selectors = picked["selectors"] if picked and picked["resolved"] else []
+        payload["selectors"] = sorted(dict.fromkeys(str(s) for s in selectors))
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return path
 
@@ -2763,8 +2851,11 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     the push. With one (`--boundary push`, as CI and `run-suite.sh` run tools/tests) it is the
     push's own plan, so they run: CI and the push then give one verdict on the same tests.
 
-    pytest's exit 5 (nothing collected) is a pass here: a module whose every test is
-    `serial_only` leaves the parallel phase empty, and the serial phase then runs them. So a
+    pytest's exit 5 (nothing collected) is a pass for one phase: a module whose every test is
+    `serial_only` leaves the parallel phase empty, and the serial phase then runs them. The run
+    as a whole is held to `count_floor`: when no test executed across every phase,
+    nothing collected or every test skipped, it exits 1 naming the zero count, unless on a
+    commit every selected test was deferred to the push (`deferred_to_boundary`). So a
     selector whose path (the part before any `::`) names nothing under `--root` is refused by
     name, exit 2, before pytest starts: under pytest-xdist a missing path beside a real one
     exits 5 having run nothing, which read as a pass over a failing module. A node id whose
@@ -2804,12 +2895,36 @@ def cmd_run_tests(args: argparse.Namespace) -> int:
     print(f"unit-tests: {len(selectors)} selected module(s) {how}; {deferred}")
     started = time.monotonic()
     rc = 0
+    counts, texts = [], []
     with boundary_suite_env(boundary):
         for argv in run_tests_plan(selectors, parallel, args.root, commit=boundary is None):
-            code = subprocess.run(argv, cwd=args.root).returncode
+            # Echoed line by line as it arrives, and kept, so the summary's count can be read;
+            # `-rfEs` adds each skip's reason to pytest's own failure and error summary.
+            proc = subprocess.Popen([*argv, "-rfEs"], cwd=args.root, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+                                    errors="replace", bufsize=1)
+            seen = []
+            for line in proc.stdout:
+                sys.stdout.write(line)
+                sys.stdout.flush()
+                seen.append(line)
+            code = proc.wait()
+            texts.append("".join(seen))
+            counts.append(pytest_counts(texts[-1]))
             if code not in (0, 5):
                 rc = code
     print(f"unit-tests: finished in {time.monotonic() - started:.0f}s")
+    floor = None if rc else count_floor(counts)
+    if floor and boundary is None:
+        deferred = deferred_to_boundary(texts, selectors, args.root)
+        if deferred:
+            print(f"unit-tests: every selected test is deferred to the push ({deferred} "
+                  f"boundary-only), so this commit runs none of them")
+            floor = None
+    if floor:
+        print(f"unit-tests: refused - {floor}, so the run proves nothing about the "
+              f"{len(selectors)} selected module(s)", file=sys.stderr)
+        return 1
     return rc
 
 
@@ -2920,6 +3035,12 @@ def suite_decision(root: str = ".", changed: "list[str] | None" = None,
             # produced the earlier verdict.
             why = (f"boundary {boundary}: a boundary always runs in full - it is the backstop "
                    f"the per-commit selection relies on, so it never reuses a verdict")
+        elif recorded_mode == "selected" and not _selection_covered(verdict, selection):
+            # The hash covers the whole working tree, an unstaged edit included, so a selected
+            # green stands only for the modules that ran. A record with no selectors,
+            # as every one written before them is, covers no selection.
+            why = (f"the selected green verdict of {run_id} did not run every module this "
+                   f"change selects")
         else:
             return {"run": False, "mode": "reuse", "reused": run_id, "surface_hash": digest,
                     "selectors": [], "excluded": 0,
@@ -2933,6 +3054,16 @@ def suite_decision(root: str = ".", changed: "list[str] | None" = None,
             "reused": None, "surface_hash": digest,
             "selectors": selection["selectors"], "excluded": selection["excluded"],
             "reason": f"{why}; {selection['reason']}"}
+
+
+def _selection_covered(verdict: dict, selection: "dict | None") -> bool:
+    """True when a selected verdict's recorded `selectors` include every module `selection`
+    selects. An unresolved selection runs the full suite, which no selected run covers, and a
+    record without a list of selectors covers nothing."""
+    ran = verdict.get("selectors")
+    if not isinstance(ran, list) or not selection or not selection.get("resolved"):
+        return False
+    return set(selection["selectors"]) <= {str(s) for s in ran}
 
 
 def staged_paths(root: str) -> list[str] | None:

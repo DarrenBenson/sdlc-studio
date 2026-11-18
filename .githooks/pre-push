@@ -72,7 +72,8 @@ fi
 # the bug corpus there, and only there (US0898): between releases it states what the last cut
 # wrote, and filing or closing a finding does not redden anything. Judged at each pushed tag's
 # COMMIT, never the working tree: a page written and left uncommitted is not the page the tag
-# ships. Exit 1 is a disagreement; anything else means the check could not run. Cheap, so first.
+# ships. Exit 1 is a disagreement; anything else means the check could not run. Cheap, so first,
+# and so is the release bar read after it.
 for sha in $tag_shas; do
   python3 tools/known_issues.py check --at "$sha" 1>&2
   ki_rc=$?
@@ -81,6 +82,18 @@ for sha in $tag_shas; do
     exit 1
   elif [ "$ki_rc" -ne 0 ]; then
     echo "pre-push: the known-issues check could not run on tagged commit $sha (exit $ki_rc, see above) - the tag is refused until it can" >&2
+    exit 1
+  fi
+  # The page states zero open Critical or High, and `check` reads only the disclosed severities,
+  # so the release bar is read here too, at the same commit (BG1521). Exit 1 is an open barred
+  # finding (or one nobody can parse); anything else means the bar could not run, said apart.
+  python3 tools/known_issues.py bar --at "$sha" 1>&2
+  bar_rc=$?
+  if [ "$bar_rc" -eq 1 ]; then
+    echo "pre-push: the release bar is not met at tagged commit $sha: a Critical or High finding is open there, or one cannot be parsed (named above) - fix it, or change the bar in a recorded decision, then tag the commit that holds the fix" >&2
+    exit 1
+  elif [ "$bar_rc" -ne 0 ]; then
+    echo "pre-push: the release bar could not run on tagged commit $sha (exit $bar_rc, see above) - the tag is refused until it can" >&2
     exit 1
   fi
 done

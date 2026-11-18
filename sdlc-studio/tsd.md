@@ -481,7 +481,7 @@ gate tier names each file), so it is hook-safe.
 | `changelog-fragments` | A malformed CHANGELOG heading, or a hand edit of `[Unreleased]` while `changelog.d/` is live; at the release cut, also a stray fragment | Yes |
 | `constitution`, `provenance` | Project-rule and stamping findings | On demand and advisory, unless the project sets them to enforce |
 | `doc-surface`, `disclosure`, `doc-freshness`, `hook-enabled`, `batch-size` | A documented verb with no invocable form, progressive-disclosure hygiene, stale facts in `LATEST.md`, the tracked hook not installed, a delivered unit whose diff is an outlier for its size | No (on demand; `doc-freshness` also reports at the sprint close) |
-| `full-suite` | Any red test module of either suite, run once at a push or a tag | Yes (push and release boundaries) |
+| `full-suite` | Any red test module of either suite, run once at a push or a tag; and the count floor: a run in which no test executed across every phase, because nothing was collected or every test was skipped, is red, and `gate.py --run-tests` holds the same floor on a commit's selection | Yes (push and release boundaries) |
 | `release-rehearsal`, `module-alone` | A greenfield init or a v4 upgrade that fails end to end; a skill test module red when run alone | Yes (release boundary) |
 | `versions` | Version strings that disagree across their homes, CHANGELOG included | Yes (`--release`) |
 

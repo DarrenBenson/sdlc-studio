@@ -133,6 +133,55 @@ class ReleaseBarTests(unittest.TestCase):
         self.assertEqual({}, ki.corpus(root))
         self.assertEqual({"BG0001": "High"}, ki.barred_open(root))
 
+    def test_bar_at_judges_the_corpus_at_the_commit(self):
+        """BG1521 AC1: `bar --at REV` reads the corpus as committed at REV, as `check --at` does,
+        so the pre-push hook can judge a tagged commit. MUTANTS: `bar` refusing `--at`; `--at`
+        accepted and ignored, so the working tree is judged; the export's failure read as a
+        clean corpus."""
+        import os
+        import shutil
+        import subprocess
+        root = self._corpus(("BG0001", "Open", "Critical"))
+        self.addCleanup(shutil.rmtree, root, True)
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        env.update({"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+                    "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                    "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
+
+        def git(*args):
+            return subprocess.run(["git", "-C", str(root), *args], env=env, check=True,
+                                  capture_output=True, text=True).stdout.strip()
+
+        def bar(*extra):
+            return subprocess.run([sys.executable, str(Path(ki.__file__)), "bar", "--root", str(root),
+                                   *extra], env=env, capture_output=True, text=True, timeout=60)
+
+        git("init", "-q", "-b", "main")
+        git("add", "-A")
+        git("commit", "-q", "-m", "an open Critical")
+        barred = git("rev-parse", "HEAD")
+        bug = root / ki.BUGS_REL / "BG0001-x.md"
+        bug.write_text(bug.read_text(encoding="utf-8").replace("Open", "Fixed"), encoding="utf-8")
+        git("commit", "-q", "-am", "fixed")
+        clean = git("rev-parse", "HEAD")
+
+        at_barred = bar("--at", barred)
+        self.assertEqual(1, at_barred.returncode, at_barred.stdout + at_barred.stderr)
+        self.assertIn("release bar NOT met", at_barred.stderr)
+        self.assertIn("BG0001 (Critical)", at_barred.stderr)
+        self.assertEqual(0, bar().returncode, "the working tree holds no open barred finding")
+        at_clean = bar("--at", clean)
+        self.assertEqual(0, at_clean.returncode, at_clean.stdout + at_clean.stderr)
+        self.assertIn("release bar met", at_clean.stdout)
+        # the other direction: a working tree with an open High does not hold a clean commit
+        (root / ki.BUGS_REL / "BG0002-x.md").write_text(
+            "# BG0002: t\n\n> **Status:** Open\n> **Severity:** High\n", encoding="utf-8")
+        self.assertEqual(1, bar().returncode, "the fixture's working tree must fail the bar")
+        self.assertEqual(0, bar("--at", clean).returncode, "--at judged the working tree")
+        # a commit that cannot be read is neither met nor not met
+        unread = bar("--at", "no-such-rev")
+        self.assertEqual(2, unread.returncode, unread.stdout + unread.stderr)
+
 
 class BarPopulationTests(unittest.TestCase):
     """BG0621 - WHICH findings the bar and the page can see at all.
