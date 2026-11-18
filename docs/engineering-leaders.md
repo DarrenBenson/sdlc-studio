@@ -107,4 +107,6 @@ To hold a team to a monthly budget, add up the Dollar cost rows of that month's 
 ## Where to read more
 
 - [Why SDLC Studio](why-sdlc-studio.md) sets out the approach.
+- [Adopting SDLC Studio in an enterprise](enterprise.md) covers harnesses and models, data,
+  adopting without forking, existing controls and cost.
 - [Installing](INSTALL.md) is the one install guide.
