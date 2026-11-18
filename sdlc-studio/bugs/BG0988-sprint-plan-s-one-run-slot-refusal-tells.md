@@ -1,6 +1,6 @@
 # BG0988: sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_refusal_sign_owed.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG0988.md
@@ -40,3 +40,4 @@ In DisjointBatchError, when the run state carries a filed report and the latest 
 | --- | --- | --- |
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at e2090297 by the code path, not a regression; consuming-project name generalised; a misplaced code span corrected; changelog fragment added |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | Won't Fix: overtaken by US1290 (D0503), Done at af624011; `sprint plan --write` no longer refuses over a closed run awaiting its signature, in the closing checkout or a fresh clone, so the refusal this bug concerns no longer fires (held from the D0521 sweep until US1290 landed) |

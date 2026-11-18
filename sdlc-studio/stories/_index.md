@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 190 |
+| Draft | 188 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 937 |
+| Done | 939 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -327,10 +327,10 @@
 | [US1287](US1287-the-three-unreferenced-persona-prompt-templates-are-retired.md) | The three unreferenced persona prompt templates are retired or rewired, and a test fails on an unnamed persona template | Draft | EP0364 | 2026-11-17 | 2026-11-17 |
 | [US1288](US1288-compose-writes-each-fragment-s-unit-id-into.md) | Compose writes each fragment's unit id into its entry exactly once, and the dry run reports the same ids | Draft | EP0365 | 2026-11-17 | 2026-11-17 |
 | [US1289](US1289-the-release-cut-reports-every-fragment-folded-without.md) | The release cut reports every fragment folded without a unit id, and the script catalogue describes the id carry | Draft | EP0365 | 2026-11-17 | 2026-11-17 |
-| [US1290](US1290-a-new-run-can-be-planned-and-opened.md) | A new run can be planned and opened while a closed run awaits signature, and status names each one waiting | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1290](US1290-a-new-run-can-be-planned-and-opened.md) | A new run can be planned and opened while a closed run awaits signature, and status names each one waiting | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1291](US1291-sprint-sign-under-delegation-requires-an-accepted-authorising.md) | Sprint sign under delegation requires an accepted authorising decision id and records it in the signature block | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1292](US1292-the-report-page-and-the-evidence-pack-state.md) | The report page and the evidence pack state that a delegated signature was delegated and name its decision | Done | EP0366 | 2026-11-17 | 2026-11-17 |
-| [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Draft | EP0366 | 2026-11-17 | 2026-11-17 |
+| [US1293](US1293-the-trd-records-the-deferred-signature-ruling-as.md) | The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed | Done | EP0366 | 2026-11-17 | 2026-11-17 |
 | [US1294](US1294-a-shipped-command-adds-a-delegation-disclosure-line.md) | A shipped command adds a delegation disclosure line to a signed report, and the report check still reads it VALID | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
 | [US1295](US1295-rpt0030-to-rpt0034-and-the-6-4-0.md) | RPT0030 to RPT0034 and the 6.4.0 evidence pack name the decision behind each delegated signature | Draft | EP0367 | 2026-11-17 | 2026-11-17 |
 | [US1296](US1296-both-installers-refuse-on-a-machine-that-cannot.md) | Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it | Draft | EP0368 | 2026-11-17 | 2026-11-17 |

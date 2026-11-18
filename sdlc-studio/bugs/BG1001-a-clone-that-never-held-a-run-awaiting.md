@@ -1,6 +1,6 @@
 # BG1001: A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_stop_a_run_from_any_clone.py, changelog.d/BG1001.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -32,3 +32,4 @@ Let `stop` take up a tracked record awaiting its signature, as `sign` does, when
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-08 | sdlc-studio | Filed |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | Won't Fix: overtaken by US1290 (D0503), Done at af624011; `sprint plan --write` no longer refuses over a closed run awaiting its signature, in the closing checkout or a fresh clone, so the refusal this bug concerns no longer fires (held from the D0521 sweep until US1290 landed) |

@@ -1,6 +1,6 @@
 # BG1507: A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-reviewer.md, .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md, .claude/agents/sdlc-reviewer.md, .claude/agents/sdlc-builder.md, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, .claude/skills/sdlc-studio/scripts/tests/test_git_identity_guard.py, changelog.d/BG1507.md
@@ -26,12 +26,16 @@ Two parts. (1) The agent templates tell a builder or reviewer that needs a git i
 
 - [ ] **AC1** Given the shipped builder and reviewer cards and this repository's installed copies, when each is read, then it tells the agent to give a fixture its git identity with `-c user.name` and `-c user.email` or a `GIT_CONFIG_GLOBAL` file inside its throwaway directory, never to write the global git configuration, and that redirecting HOME alone does not isolate git. Fails on: either card or either copy silent on git isolation.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py::AgentDefinitionTests::test_both_cards_forbid_writing_the_global_git_identity
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC2** Given a run opened while the global git identity was one name and email, and that identity then rewritten in the file git reads, when `sprint.py lane land` runs, then it refuses before committing or moving main, naming the file git now reads, the identity recorded at open and the identity found. Fails on: a unit landed under an identity an agent wrote.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_git_identity_guard.py::GitIdentityGuardTests::test_lane_land_refuses_when_the_global_identity_changed_since_the_run_opened
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC3** Given the same changed identity, when `sprint.py sprint close` runs, then it refuses with the same three facts and the run stays open. Fails on: a run closing over commits made under the wrong identity.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_git_identity_guard.py::GitIdentityGuardTests::test_sprint_close_refuses_when_the_global_identity_changed_since_the_run_opened
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC4** Given a run whose recorded identity still matches the one git reads, and a second run opened where no global identity is set at all, when `lane land` and `sprint close` run, then neither is refused on identity; the fixtures point `GIT_CONFIG_GLOBAL` at a file of their own and never touch the host's. Fails on: the guard refusing an unchanged identity, or a test of the guard writing the operator's real configuration.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_git_identity_guard.py::GitIdentityGuardTests::test_an_unchanged_or_unset_identity_lands_and_closes
+  - **Verified:** yes (2026-11-18)
 
 ## Impact
 

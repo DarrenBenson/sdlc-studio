@@ -1,0 +1,6 @@
+UNIT: BG1579
+BRIEF: a5081059875d-22f4b94d
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: The diff stays inside the declared Affects (tools/tests/test_boundary_marker.py only, commit d45984d2). verify_ac run --id BG1579 --dry-run gives ac=2 pass=2 fail=0, and both affected modules pass (12 passed, 167 subtests). AC1 was checked by execution: at HEAD the AST scan lists exactly the four real decorators (test_cli_grammar.py x3, test_gate.py x1), and with the base regex scan put back in an isolated git-archive copy the cap test fails with "7 not less than or equal to 6", so the fix is what turns it green. AC2 was mutation-checked in the same copy. Restoring the regex scan, skipping the real decorator and counting any called decorator each fail test_a_fixture_string_naming_the_decorator_is_not_a_marked_test (they also fail the cap test, at 7, 0 and 52 marked), and the copy was restored byte for byte. Remark, not a finding: `_marked` reads only `ast.FunctionDef` (test_boundary_marker.py:45), so an async test or a class-level `@boundary_only` would not be counted. The shipped tree has neither, and `@pytest.mark.boundary_only` markers were outside `_marked` at the base as well.

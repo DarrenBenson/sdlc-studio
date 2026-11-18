@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 434 |
+| Open | 432 |
 | In Progress | 0 |
-| Fixed | 952 |
+| Fixed | 956 |
 | Verified | 0 |
 | Closed | 87 |
-| Won't Fix | 54 |
+| Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1581** |
+| **Total** | **1585** |
 
 ## All Bugs
 
@@ -63,7 +63,7 @@
 | [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0986](BG0986-tools-forward-port-sh-deletes-the-changelog-md.md) | `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port | Open | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Open | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Open | Low | 2026-10-07 | 2026-10-07 |
+| [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0991](BG0991-verify-ac-attaches-a-verify-line-from-a.md) | verify_ac attaches a **Verify:** line from a LATER section (history, update notes) to the last criterion and executes it, because a criterion block never closes at a ## heading | Fixed | Medium | 2026-10-07 | 2026-10-07 |
@@ -76,7 +76,7 @@
 | [BG0998](BG0998-the-story-template-ships-verified-no-which-verify.md) | The story template ships Verified no, which verify_ac treats as an authored miss | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
-| [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Open | Low | 2026-10-08 | 2026-10-08 |
+| [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Won't Fix | Low | 2026-10-08 | 2026-10-08 |
 | [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Won't Fix | Low | 2026-10-09 | 2026-10-09 |
@@ -582,7 +582,7 @@
 | [BG1504](BG1504-the-sdlc-builder-agent-card-does-not-confine.md) | The sdlc-builder agent card does not confine a builder's clean-up to paths it created, so a builder deleted every tmp.* directory in the shared test temp directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1505](BG1505-6-4-0-s-changelog-says-a-fragment.md) | 6.4.0's CHANGELOG says a fragment that opens with a list item folds byte for byte, but compose bullets an ordered item, and no test pins a later list item in a prose entry | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1506](BG1506-us0996-s-ac3-test-fails-whenever-test-sprint.md) | US0996's AC3 test fails whenever test_sprint_report's CloseReportTests ran first in the same pytest process, so the release gate and CI's corpus check read it red | Fixed | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1507](BG1507-a-reviewer-that-sets-a-throwaway-home-and.md) | A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config | Open | High | 2026-11-16 | 2026-11-16 |
+| [BG1507](BG1507-a-reviewer-that-sets-a-throwaway-home-and.md) | A reviewer that sets a throwaway HOME and runs git config --global rewrites the operator's real git identity, because XDG_CONFIG_HOME still points at the real ~/.config | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1508](BG1508-bg1506-s-tests-catch-only-the-unstamped-writer.md) | BG1506's tests catch only the unstamped writer's stale patch: pointing the at_close or at_sign patch back at the load-time module leaves its criteria green | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1509](BG1509-release-cut-never-restamps-the-releasing-repository-s.md) | release_cut never restamps the releasing repository's own sdlc-studio/.version, so each release needs a hand migrate --apply and CI's corpus check reds on US0926::AC1 until it gets one | Won't Fix | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Open | Medium | 2026-11-16 | 2026-11-16 |
@@ -595,7 +595,7 @@
 | [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Open | High | 2026-11-17 | 2026-11-17 |
 | [BG1518](BG1518-no-gate-reads-the-weekly-corpus-verify-run.md) | No gate reads the weekly corpus-verify run, the only automated run of every Verify line | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1519](BG1519-the-push-gate-s-full-suite-lane-and.md) | The push gate's full-suite lane and gate.py --run-tests pass a run in which no test ran | Fixed | High | 2026-11-17 | 2026-11-17 |
-| [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1521](BG1521-the-tag-gate-checks-the-known-issues-page.md) | The tag gate checks the known-issues page but never the release bar, so a tag passes with an open High finding | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Fixed | High | 2026-11-17 | 2026-11-17 |
@@ -654,9 +654,13 @@
 | [BG1576](BG1576-the-skill-tests-lane-s-serial-only-collection.md) | The skill-tests lane's serial_only collection may read empty under an inherited -q, so serial tests could be skipped unseen | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1577](BG1577-the-tsd-s-full-suite-row-states-bg1519.md) | The TSD's full-suite row states BG1519's count floor but not that a commit whose selection holds only push-deferred tests is exempt | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1578](BG1578-the-weekly-corpus-verify-of-2026-11-16.md) | The weekly corpus verify of 2026-11-16 read US0926 AC1 and US0996 AC3 red on CI, and both pass locally at HEAD | Open | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Open | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Fixed | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1582](BG1582-once-head-moves-past-the-close-commit-sprint.md) | Once HEAD moves past the close commit, sprint sign skips the whole-tree check, so an uncommitted edit to a unit's file seals with no later run open | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1583](BG1583-sprint-sign-names-the-wrong-page-when-the.md) | sprint sign names the wrong page when the later run has also closed, and three of US1290's guards have no test | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1584](BG1584-bg1507-and-bg1520-left-four-checks-with-no.md) | BG1507 and BG1520 left four checks with no test: --includes, includeIf identities, the self-check-author refusal and the retro's owed branches | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1585](BG1585-the-pre-commit-gate-lane-passes-the-whole.md) | The pre-commit gate lane passes the whole reconcile detect JSON through one environment variable, so on a large corpus it dies with Argument list too long and never prints the drift detail | Open | Low | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 

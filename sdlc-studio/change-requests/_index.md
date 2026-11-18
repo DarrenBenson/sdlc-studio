@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 0 |
 | Approved | 0 |
-| In Progress | 83 |
-| Complete | 557 |
+| In Progress | 82 |
+| Complete | 558 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 66 |
@@ -140,7 +140,7 @@
 | [CR-0726](CR0726-retire-or-rewire-the-three-unreferenced-persona-prompt.md) | Retire or rewire the three unreferenced persona prompt templates that teach the pre-Cooper persona model | In Progress | Low | Improvement | 2026-11-17 | EP0364 |
 | [CR-0727](CR0727-remove-the-superseded-review-seat-charter-template-now.md) | Remove the superseded review-seat-charter template now that nothing references it | In Progress | Low | Improvement | 2026-11-17 | EP0315 |
 | [CR-0728](CR0728-carry-each-changelog-fragment-s-unit-id-into.md) | Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut | In Progress | Low | Improvement | 2026-11-17 | EP0365 |
-| [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | In Progress | High | Improvement | 2026-11-17 | EP0366 |
+| [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | Complete | High | Improvement | 2026-11-17 | EP0366 |
 | [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | In Progress | Medium | Improvement | 2026-11-17 | EP0367 |
 | [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | In Progress | High | Improvement | 2026-11-17 | EP0368 |
 | [CR-0732](CR0732-a-high-risk-unit-s-review-records-the.md) | A high-risk unit's review records the model family of its author and its reviewer, and a project can require the two to differ | In Progress | Medium | Feature | 2026-11-17 | EP0369 |

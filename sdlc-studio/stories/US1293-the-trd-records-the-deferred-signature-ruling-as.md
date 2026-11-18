@@ -1,6 +1,6 @@
 # US1293: The TRD records the deferred signature ruling as an ADR, the sprint pages describe it and RFC0060 D6 is closed
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0729
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** its Architecture Decision Records are read
 - **Then** one ADR, numbered next after the last, has Status Accepted, cites D0503 and RFC0065, and states both halves of the ruling: a closed run waits for the operator's signature and the next run may open on top of it, and a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack. Fails on: a TRD with no ADR citing D0503, or one that still says an unsigned run blocks the next
 - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSignatureRulingTests::test_the_trd_records_the_deferred_signature_ruling_as_an_adr
+- **Verified:** yes (2026-11-18)
 
 ### AC2: The sprint pages name the delegation option that sign accepts
 
@@ -32,6 +33,7 @@
 - **When** each page is read against that parser
 - **Then** each page carries a runnable `sprint.py sign` invocation using the delegation option the parser defines, and says a run awaiting signature does not block the next. Fails on: a page that names an option the parser does not define, or that leaves delegation out
 - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSignatureRulingTests::test_the_sprint_pages_name_the_delegation_option_sign_accepts
+- **Verified:** yes (2026-11-18)
 
 ### AC3: RFC0060's open decision D6 is closed with a pointer to RFC0065
 
@@ -39,6 +41,7 @@
 - **When** the D6 row is read
 - **Then** its ruling cell no longer reads Open, it names RFC0065, its decision cell names D0503, and the note no longer says D6 remains open. Fails on: a D6 row that still reads Open, or one closed with no decision id
 - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSignatureRulingTests::test_rfc0060_d6_is_closed_with_a_pointer_to_rfc0065
+- **Verified:** yes (2026-11-18)
 
 ## Notes from run sixteen
 

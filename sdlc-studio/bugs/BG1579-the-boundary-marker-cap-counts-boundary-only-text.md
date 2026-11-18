@@ -1,6 +1,6 @@
 # BG1579: The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** tools/tests/test_boundary_marker.py
@@ -26,8 +26,10 @@ Read decorators from the AST of each module's functions, so only a real decorate
 
 - [ ] **AC1** Given test_gate.py's fixture modules that write `@boundary_only(...)` inside string literals, when `_marked()` scans the shipped test tree, then it lists only decorators applied to real test functions, so the marked-set cap test passes. Fails on: a decorator inside a string literal counted as a marked test.
   - **Verify:** pytest tools/tests/test_boundary_marker.py::TheMarkerIsHonoured::test_the_marked_set_stays_small_and_named
+  - **Verified:** yes (2026-11-18)
 - [ ] **AC2** Given a throwaway test module holding one decorated test and one string literal containing the decorator text, when `_marked()` scans it, then it returns exactly the decorated test. Fails on: the string counted, or the real decorator missed.
   - **Verify:** pytest tools/tests/test_boundary_marker.py -k fixture_string
+  - **Verified:** yes (2026-11-18)
 
 ## Impact
 
