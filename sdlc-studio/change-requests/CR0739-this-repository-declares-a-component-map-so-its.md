@@ -1,6 +1,6 @@
 # CR-0739: This repository declares a component map so its gate scripts are classed high risk
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0376
 > **Priority:** High
 > **Type:** Improvement

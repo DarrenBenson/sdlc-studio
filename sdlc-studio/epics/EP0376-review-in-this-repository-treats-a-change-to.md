@@ -1,6 +1,6 @@
 # EP0376: Review in this repository treats a change to a gate as high risk
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 5
 > **Parent:** CR0739
 > **Created:** 2026-11-17
@@ -14,7 +14,7 @@ Decomposed from CR0739. Delivers the work CR0739 requested.
 
 ## Story Breakdown
 
-- [ ] [US1313: This repository's config declares the D0520 component map, and a test pins each gate script to high](../stories/US1313-this-repository-s-config-declares-the-d0520-component.md)
+- [x] [US1313: This repository's config declares the D0520 component map, and a test pins each gate script to high](../stories/US1313-this-repository-s-config-declares-the-d0520-component.md)
 - [x] [US1314: Reconcile reports a story whose stamped risk class is below the class its Affects now get from the map, and apply raises it](../stories/US1314-reconcile-reports-a-story-whose-stamped-risk-class.md)
 
 ## Acceptance Criteria (Epic Level)

@@ -1,6 +1,6 @@
 # US1313: This repository's config declares the D0520 component map, and a test pins each gate script to high
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0739
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** `lib/risk_class.load_map` reads it and classifies `scripts/gate.py`, `scripts/critic.py`, `scripts/transition.py`, `scripts/sprint.py`, `scripts/verify_ac.py`, `.githooks/pre-push`, `scripts/refine.py` and `docs/evidence.md`
 - **Then** the first six are high, `refine.py` is elevated and the page is standard, and the map loads with no notes. Fails on: a gate script classed below high, a misspelt class kept as standard with a note, or a prefix that matches a sibling path
 - **Verify:** pytest tools/tests/test_repo_risk_map.py::RepoRiskMapTests::test_the_gate_scripts_are_high_and_the_other_scripts_elevated
+- **Verified:** yes (2026-11-18)
 
 ### AC2: A bug that changes a gate reads as high in review
 
@@ -32,6 +33,7 @@
 - **When** `critic.unit_risk_class` reads it in this repository
 - **Then** it returns high. Fails on: a bug touching a gate still read as standard
 - **Verify:** pytest tools/tests/test_repo_risk_map.py::RepoRiskMapTests::test_a_bug_touching_a_gate_reads_high
+- **Verified:** yes (2026-11-18)
 
 ## Notes
 

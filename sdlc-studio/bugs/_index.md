@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 432 |
+| Open | 434 |
 | In Progress | 0 |
 | Fixed | 956 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1585** |
+| **Total** | **1587** |
 
 ## All Bugs
 
@@ -661,6 +661,8 @@
 | [BG1583](BG1583-sprint-sign-names-the-wrong-page-when-the.md) | sprint sign names the wrong page when the later run has also closed, and three of US1290's guards have no test | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1584](BG1584-bg1507-and-bg1520-left-four-checks-with-no.md) | BG1507 and BG1520 left four checks with no test: --includes, includeIf identities, the self-check-author refusal and the retro's owed branches | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1585](BG1585-the-pre-commit-gate-lane-passes-the-whole.md) | The pre-commit gate lane passes the whole reconcile detect JSON through one environment variable, so on a large corpus it dies with Argument list too long and never prints the drift detail | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1586](BG1586-us1313-s-test-lists-the-gate-scripts-by.md) | US1313's test lists the gate scripts by name without declaring the list HAND-MAINTAINED ON PURPOSE, so the hand-copied-list guard reddened the push | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1587](BG1587-a-commit-that-adds-a-test-file-never.md) | A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push | Open | Low | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 
