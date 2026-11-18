@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 435 |
+| Open | 436 |
 | In Progress | 0 |
 | Fixed | 957 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1589** |
+| **Total** | **1590** |
 
 ## All Bugs
 
@@ -665,6 +665,7 @@
 | [BG1587](BG1587-a-commit-that-adds-a-test-file-never.md) | A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1588](BG1588-the-hand-copied-list-guard-misses-known-mirrors.md) | The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1589](BG1589-a-run-closed-to-await-the-operator-s.md) | A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Open | Medium | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 
