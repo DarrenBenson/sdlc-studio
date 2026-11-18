@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_skill_metadata_neutral.py, tools/tests/test_harness_neutral_docs.py
+> **Affects:** tools/tests/test_skill_metadata_neutral.py, tools/tests/test_harness_neutral_docs.py, docs/why-sdlc-studio.md
 > **Evidence:** sdlc-studio/reviews/verdicts/US1319/2f4c79618b69-47ae04d4.txt, findings 3 to 5.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -17,6 +17,8 @@ US1319's qa review found by mutation: 'Claude Code must be installed.' and 'Para
 US1320's round-one review (sdlc-studio/reviews/verdicts/US1320/1655779fbed9-73007d79.txt, finding 3) adds that tools/tests/test_harness_neutral_docs.py passes case and hyphen variants of its two named phrases, "a Claude code skill" and "a Claude Code only feature"; its repair left this because catching the spaced form in one line also flags INSTALL.md's "(Claude Code only)" scope note and adverb uses such as "Claude Code only reads".
 
 US1320's round-two review (sdlc-studio/reviews/verdicts/US1320/140b86634149-3f94a59e.txt) adds, in the same guard: a negation in an opening phrase with no comma, or one joined by "yet", still excuses a later requirement ("Runs without a GPU yet requires Claude Code."); "needs to be installed", "have to install", "should be installed" and "Claude Code 2.x is required" pass; and REQUIREMENT_LIST refuses a neutral alphabetical harness list under a Requirements heading, which puts Claude Code first, and the must-be ending refuses "must be used with care".
+
+BG1599's review (sdlc-studio/reviews/verdicts/BG1599/eb06f324afbd-1d9d1473.txt) adds: no test pins reference-epic.md's clean-tree waiver, the conditional step 2 checks, the "Otherwise, for each wave" branch or the safety guarantee's fallback, so each can revert with the suite green; _DENIED misses a refusal such as "stop and refuse to run the stories one at a time"; and docs/why-sdlc-studio.md still says waves run "where the harness has sub-agents (Claude Code, through its Agent tool)" with no worktree isolation, the bare condition BG1599 retired on SKILL.md and help/epic.md.
 
 ## Steps to Reproduce
 

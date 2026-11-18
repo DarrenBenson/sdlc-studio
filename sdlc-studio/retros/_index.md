@@ -159,3 +159,4 @@ lessons are promoted to the skill tier via `lessons add --global`. Template:
 | [RETRO-0147](RETRO0147-run-fourteen-the-front-door-the-evidence-page.md) | Run fourteen: the front door, the evidence page and the effort each seat ran at | 2026-11-16 | -- | -- |
 | [RETRO-0148](RETRO0148-run-fifteen-the-v6-4-0-cut-and.md) | Run fifteen: the v6.4.0 cut and a push gate that agrees with CI | 2026-11-16 | -- | -- |
 | [RETRO-0149](RETRO0149-no-gate-passes-work-it-never-judged-and.md) | No gate passes work it never judged, and a run closed in the operator's absence awaits a trustworthy signature | 2026-11-18 | -- | -- |
+| [RETRO-0150](RETRO0150-every-public-claim-about-a-harness-is-checked.md) | Every public claim about a harness is checked against the tree, and a guard written for a phrase misses its cousins | 2026-11-18 | -- | -- |

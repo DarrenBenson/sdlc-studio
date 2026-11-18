@@ -8,12 +8,12 @@
 | --- | --- |
 | Open | 446 |
 | In Progress | 0 |
-| Fixed | 957 |
+| Fixed | 958 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1600** |
+| **Total** | **1601** |
 
 ## All Bugs
 
@@ -674,8 +674,9 @@
 | [BG1596](BG1596-critic-py-record-calls-a-repair-builder-whose.md) | critic.py record calls a repair builder whose prompt names the verdict path the agent 'briefed with' the verdict, and reports the verdict's provenance as unknown | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1597](BG1597-docs-harnesses-md-s-install-path-check-accepts.md) | docs/harnesses.md's install-path check accepts the global and project folders in either order, its Claude Code live-reload cell rests on one CLAUDE.md sentence, and two cells cite a file that does not hold the claim | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1598](BG1598-readme-install-table-labels-the-github-copilot-row.md) | README install table labels the GitHub Copilot row 'Copilot' because test_install_copilot_global.py pins that exact label, so the README and docs/harnesses.md name the harness differently | Open | Low | 2026-11-18 | 2026-11-18 |
-| [BG1599](BG1599-skill-md-and-help-epic-md-say-agentic.md) | SKILL.md and help/epic.md say --agentic runs waves in parallel 'where the harness has sub-agents', an untested claim for four harnesses, and reference-epic.md has no step for the stated one-at-a-time fallback | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1599](BG1599-skill-md-and-help-epic-md-say-agentic.md) | SKILL.md and help/epic.md say --agentic runs waves in parallel 'where the harness has sub-agents', an untested claim for four harnesses, and reference-epic.md has no step for the stated one-at-a-time fallback | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1600](BG1600-test-skill-metadata-neutral-py-passes-must-be.md) | test_skill_metadata_neutral.py passes 'must be installed' and 'exclusive to' requirement wordings, cannot tell a fallback from its denial, and leaves four helper branches unpinned | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1601](BG1601-sprint-plan-opened-run-seventeen-although-its-goal.md) | sprint plan opened run seventeen although its goal had no seat review, the recorded one being an earlier run's goal, and the close then refuses goal-seat-reviewed past its window | Open | Low | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 

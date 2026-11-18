@@ -1,6 +1,6 @@
 # BG1599: SKILL.md and help/epic.md say --agentic runs waves in parallel 'where the harness has sub-agents', an untested claim for four harnesses, and reference-epic.md has no step for the stated one-at-a-time fallback
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/SKILL.md, .claude/skills/sdlc-studio/help/epic.md, .claude/skills/sdlc-studio/reference-epic.md, tools/tests/test_skill_metadata_neutral.py, changelog.d/BG1599.md
@@ -30,6 +30,7 @@ Say waves run in parallel where the harness has sub-agents with worktree isolati
 - **When** each is read
 - **Then** each says `--agentic` runs its waves in parallel where the harness has sub-agents with worktree isolation, so neither tells a reader of a harness that docs/harnesses.md marks untested that waves run in parallel there. Fails on: "where the harness has sub-agents" with no worktree isolation
 - **Verify:** pytest tools/tests/test_skill_metadata_neutral.py::SkillMetadataNeutralTests::test_the_parallel_claim_names_worktree_isolation
+- **Verified:** yes (2026-11-18)
 
 ### AC2: reference-epic.md gives the no-sub-agent branch
 
@@ -37,6 +38,7 @@ Say waves run in parallel where the harness has sub-agents with worktree isolati
 - **When** the harness has no sub-agents with worktree isolation
 - **Then** the procedure has a step telling the agent to run the stories one at a time in dependency order, as plain `epic implement` does, in the words SKILL.md and help/epic.md use. Fails on: an Agentic mode with no such step
 - **Verify:** pytest tools/tests/test_skill_metadata_neutral.py::SkillMetadataNeutralTests::test_reference_epic_states_the_no_subagent_fallback
+- **Verified:** yes (2026-11-18)
 
 ## Revision History
 
