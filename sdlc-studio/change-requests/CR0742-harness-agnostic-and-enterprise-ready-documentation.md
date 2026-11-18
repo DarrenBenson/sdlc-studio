@@ -1,6 +1,6 @@
 # CR-0742: Harness-agnostic and enterprise-ready documentation
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Decomposed-into:** EP0377
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio new
@@ -100,6 +100,11 @@ Applied on 2026-11-18 with `gh repo edit`, after US1315's review: the GitHub Abo
 is the text under Requested changes item 1, and the topics are exactly its ten, replacing the
 previous ones (including `claude-code-skill`). `package.json` carries the same description and
 the ten topics as its keywords (US1315).
+
+Requested change 5, the website, lives in the website's own repository, so EP0377 delivers the
+other nine here and a change request filed in that repository carries change 5, run after this
+one: the home page positioning, the agents list matching docs/harnesses.md, links to the two new
+pages, the footer sponsorship line, and the site's evidence page.
 
 ## Revision History
 

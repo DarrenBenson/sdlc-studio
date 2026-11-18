@@ -385,3 +385,5 @@
 | US1315 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 10, FALSE 0, UNVERIFIABLE 0 | killed 11, survived 0 | 355bc3a9c5981bfa at 3b7af36260df |
 | US1319 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 12, FALSE 0, UNVERIFIABLE 1 | killed 14, survived 0 | b3f3ef45674cba75 at 3b7af36260df |
 | US1320 | agent-ada1ca22b1cf79021 | 2026-11-18 | TRUE 13, FALSE 0, UNVERIFIABLE 0 | killed 18, survived 0 | a168833d2dcf7a7d at 3b7af36260df |
+| US1320 | agent-a9b3b498ad672b0eb | 2026-11-18 | TRUE 21, FALSE 0, UNVERIFIABLE 0 | killed 27, survived 0 | 3cf5de6688a6f52a at bcf94ac3f1fc |
+| BG1599 | agent-a97495638d9589aea | 2026-11-18 | TRUE 24, FALSE 0, UNVERIFIABLE 1 | killed 17, survived 0 | 0b44fd8ea691652e at ae7d826f3f40 |

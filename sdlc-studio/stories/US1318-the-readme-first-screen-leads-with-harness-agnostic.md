@@ -1,6 +1,6 @@
 # US1318: The README first screen leads with harness-agnostic and human in the lead, names the six harnesses in one alphabetical table, links the harness and enterprise pages, and moves the sponsorship line to Acknowledgements, no longer than today
 
-> **Status:** Ready
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0742
 > **Created:** 2026-11-18
@@ -25,6 +25,7 @@
 - **When** its first screen (the text before the second `##` heading) is read
 - **Then** it leads with harness-agnostic and human in the lead, names Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and opencode, and links `docs/harnesses.md` and `docs/enterprise.md`, both of which exist. Fails on: a harness missing, either link missing, or a link to a page that does not exist
 - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_first_screen_names_six_harnesses_and_links_the_two_pages
+- **Verified:** yes (2026-11-18)
 
 ### AC2: One alphabetical harness table gives install, invocation and a verification command
 
@@ -32,6 +33,7 @@
 - **When** its harness table is parsed
 - **Then** there is one table, its rows in alphabetical order, and each row, GitHub Copilot's included, gives the install location, the invocation and a command that verifies the install. Fails on: a second harness table, rows out of order, or a row with no verification command
 - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_harness_table_is_alphabetical_with_a_verification_command
+- **Verified:** yes (2026-11-18)
 
 ### AC3: Acknowledgements carries the sponsorship and says Anthropic products are not required
 
@@ -39,6 +41,7 @@
 - **When** it is searched for the sponsorship line
 - **Then** the line sits under an Acknowledgements heading that also says SDLC Studio does not require Anthropic products, and the README never says "Claude Code skill". Fails on: the sponsorship line outside Acknowledgements, or the statement missing
 - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_acknowledgements_carries_the_sponsorship_and_no_anthropic_requirement
+- **Verified:** yes (2026-11-18)
 
 ### AC4: The README is no longer than before
 
@@ -46,6 +49,7 @@
 - **When** it is compared with 1,500, the count at 59b649d4
 - **Then** it is at most 1,500 and the existing front-door tests still pass. Fails on: a README over 1,500 words
 - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_readme_is_no_longer_than_before_cr0742
+- **Verified:** yes (2026-11-18)
 
 ## Notes
 

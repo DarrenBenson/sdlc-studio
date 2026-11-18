@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 3 |
 | Approved | 0 |
-| In Progress | 82 |
-| Complete | 559 |
+| In Progress | 81 |
+| Complete | 560 |
 | Rejected | 33 |
 | Deferred | 0 |
 | Superseded | 66 |
@@ -153,7 +153,7 @@
 | [CR-0739](CR0739-this-repository-declares-a-component-map-so-its.md) | This repository declares a component map so its gate scripts are classed high risk | Complete | High | Improvement | 2026-11-17 | EP0376 |
 | [CR-0740](CR0740-prevent-or-retire-lesson-lc-021-lane-paperwork.md) | Prevent or retire lesson LC-021 (lane paperwork the landing refuses) | Proposed | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0741](CR0741-the-sprint-report-gives-no-one-line-actual.md) | The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost | Proposed | Medium | Enhancement | 2026-11-18 | -- |
-| [CR-0742](CR0742-harness-agnostic-and-enterprise-ready-documentation.md) | Harness-agnostic and enterprise-ready documentation | In Progress | High | Improvement | 2026-11-18 | EP0377 |
+| [CR-0742](CR0742-harness-agnostic-and-enterprise-ready-documentation.md) | Harness-agnostic and enterprise-ready documentation | Complete | High | Improvement | 2026-11-18 | EP0377 |
 | [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Proposed | Medium | Improvement | 2026-11-18 | -- |
 
 ## Archived Releases
