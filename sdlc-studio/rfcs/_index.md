@@ -1,17 +1,17 @@
 # RFC Registry Index
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-18
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 0 |
+| Draft | 1 |
 | In Review | 0 |
 | Accepted | 62 |
 | Superseded | 2 |
 | Withdrawn | 3 |
-| **Total** | **67** |
+| **Total** | **68** |
 
 ## All RFCs
 
@@ -29,6 +29,7 @@
 | [RFC-0065](RFC0065-who-signs-a-sprint-when-the-operator-is.md) | Who signs a sprint when the operator is away, and how a signed report discloses a delegated signature | High | Accepted | sdlc-studio | 2026-11-17 | CR0729, CR0730 |
 | [RFC-0066](RFC0066-what-a-gate-must-do-when-the-project.md) | What a gate must do when the project config exists but cannot be read because PyYAML is absent | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0731 |
 | [RFC-0067](RFC0067-what-the-skill-should-learn-from-estate-scale.md) | What the skill should learn from estate-scale autonomous delivery: impact analysis before refine, tests before brownfield change, runtime inputs and running-app evidence | Medium | Accepted | sdlc-studio | 2026-11-17 | CR0735, CR0736, CR0737, CR0738 |
+| [RFC-0068](RFC0068-should-the-canonical-skill-source-move-out-of.md) | Should the canonical skill source move out of .claude/skills/ to a harness-neutral path | Low | Draft | sdlc-studio | 2026-11-18 | -- |
 
 ## Archived Releases
 

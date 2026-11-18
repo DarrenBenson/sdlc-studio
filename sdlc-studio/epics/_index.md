@@ -1,18 +1,18 @@
 # Epic Index
 
-**Last Updated:** 2026-11-17
+**Last Updated:** 2026-11-18
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Draft | 70 |
+| Draft | 71 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
 | Done | 273 |
 | Superseded | 33 |
-| **Total** | **376** |
+| **Total** | **377** |
 
 > History: these epics were extracted in Generate mode as **Ready** (spec
 > reverse-engineered from the shipped implementation), then transitioned to **Done**
@@ -127,6 +127,7 @@
 | [EP0374](EP0374-a-generated-spec-can-draw-on-what-the.md) | A generated spec can draw on what the system does at run time | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0375](EP0375-a-review-can-see-the-running-application.md) | A review can see the running application | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0376](EP0376-review-in-this-repository-treats-a-change-to.md) | Review in this repository treats a change to a gate as high risk | Done | 2 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0377](EP0377-harness-agnostic-enterprise-ready-public-surfaces.md) | Harness-agnostic, enterprise-ready public surfaces | Draft | 7 | -- | 2026-11-18 | 2026-11-18 |
 
 ## Archived Releases
 
