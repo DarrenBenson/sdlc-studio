@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 1 |
+| Proposed | 2 |
 | Approved | 0 |
 | In Progress | 81 |
 | Complete | 559 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **740** |
+| **Total** | **741** |
 
 ## All Changes
 
@@ -152,6 +152,7 @@
 | [CR-0738](CR0738-a-criterion-can-name-a-project-supplied-app.md) | A criterion can name a project-supplied app command, and the review records the evidence it produced | In Progress | Low | Feature | 2026-11-17 | EP0375 |
 | [CR-0739](CR0739-this-repository-declares-a-component-map-so-its.md) | This repository declares a component map so its gate scripts are classed high risk | Complete | High | Improvement | 2026-11-17 | EP0376 |
 | [CR-0740](CR0740-prevent-or-retire-lesson-lc-021-lane-paperwork.md) | Prevent or retire lesson LC-021 (lane paperwork the landing refuses) | Proposed | Medium | Improvement | 2026-11-18 | -- |
+| [CR-0741](CR0741-the-sprint-report-gives-no-one-line-actual.md) | The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost | Proposed | Medium | Enhancement | 2026-11-18 | -- |
 
 ## Archived Releases
 

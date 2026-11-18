@@ -11,9 +11,11 @@ above says "closed running" because the record keeps that outcome until `sprint 
 > Goal: "No gate passes work it never judged, and a run closed in the operator's absence awaits
 > a trustworthy signature." Judged **partial**: 17 units, 51 points (48 planned; BG1579 and
 > BG1580 under D0525 and BG1586 under D0526 taken in-run to repair push reds), all delivered on
-> independent APPROVEs and pushed green at 9925e144 (9,219 passed). Cost 43.0M priced tokens,
-> 843k per point, $172.05 ($3.37 per point) against run fifteen's 761k and $2.08: five units
-> needed a second review round and three push repairs followed.
+> independent APPROVEs and pushed green at 9925e144 (9,219 passed). Cost 37.3M priced tokens,
+> 732k per point, $102.01 ($2.00 per point) against run fifteen's 761k and $2.08, and under the
+> plan's forecast of 43.0M and $172.05 ($3.37 per point), even with five units needing a second
+> review round and three push repairs. (This paragraph first quoted the forecast as the cost;
+> corrected from RPT0035's Actual column.)
 
 ## For the operator at signature
 
