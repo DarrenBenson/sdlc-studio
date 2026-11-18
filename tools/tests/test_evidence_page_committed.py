@@ -25,6 +25,12 @@ PAGE = REPO / "docs" / "evidence.md"
 SPRINT_REPORT = REPO / ".claude" / "skills" / "sdlc-studio" / "scripts" / "sprint_report.py"
 BEGIN, END = "<!-- BEGIN GENERATED -->", "<!-- END GENERATED -->"
 REGENERATE = "sprint_report.py evidence --out docs/evidence.md"
+#: The newest report the page must cover at least: run sixteen's, the newest signed when the
+#: page gained its Model column. A later regeneration moves the page past it and keeps this
+#: test green.
+COVERS_AT_LEAST = "RPT0035"
+#: The change request that adds the harness to the report, which the page names as the gap.
+HARNESS_CR = "CR0743"
 
 
 def _parts() -> tuple[str, str]:
@@ -79,6 +85,20 @@ class CommittedEvidencePageTests(unittest.TestCase):
         newest = max(named, key=lambda rid: (signed[rid], rid))
         self.assertIn(f"The newest report this page covers is {newest}, signed at "
                       f"{signed[newest]}.", region)
+        self.assertGreaterEqual(int(newest[3:]), int(COVERS_AT_LEAST[3:]),
+                                f"the page stops at {newest}; regenerate it with {REGENERATE}")
+
+    def test_the_page_states_the_reports_record_no_harness(self) -> None:
+        """The table shows the model each run's report priced but not the harness it ran in,
+        because no report records one yet; the hand-written text says so and names the change
+        request that adds it."""
+        hand, region = _parts()
+        self.assertIn("| Model |", region, "the generated table carries no Model column")
+        sentences = re.split(r"(?<=[.!?])\s+", " ".join(hand.split()))
+        gap = [s for s in sentences if "harness" in s.lower()]
+        self.assertTrue(any(HARNESS_CR in s and re.search(r"\bnot\b", s) for s in gap),
+                        f"no sentence outside the markers says the reports do not record the "
+                        f"harness and names {HARNESS_CR}: {gap}")
 
     def test_the_page_explains_partial_verdicts_waiting_and_regeneration(self) -> None:
         hand, _ = _parts()

@@ -56,6 +56,23 @@ def _report(rid: str, run: str, generated: str, signed: str | None, verdict: str
                  "figures": {"signed_at": _figure("signed_at", "not yet signed")}}]}
 
 
+def _models(rep: dict, priced: tuple[str, ...] = (), tokens: tuple[str, ...] = ()) -> dict:
+    """`rep` with a `cost` section of tokens-by-model rows named `tokens` and, when `priced`
+    names any, a `cost_prices` section with one row per priced model, as a report files them."""
+    rep["sections"].append({"key": "cost", "title": "Tokens by model", "figures": {},
+                            "not_measured": None,
+                            "rows": [{"model_name": _figure("model_name", m),
+                                      "model_tokens": _figure("model_tokens", 1000)}
+                                     for m in tokens]})
+    if priced:
+        rep["sections"].append({"key": "cost_prices", "title": "Prices", "figures": {},
+                                "not_measured": None,
+                                "rows": [{"price_model": _figure("price_model", m),
+                                          "price_usd": _figure("price_usd", "$1.00")}
+                                         for m in priced]})
+    return rep
+
+
 FIXTURE = (
     _report("RPT0101", "RUN-AAA", "2026-01-01T00:00:00Z", "2026-01-01T02:30:00Z",
             "Judged achieved", "everything planned shipped", "$2.50"),
@@ -165,6 +182,50 @@ class EvidencePageTests(unittest.TestCase):
             self.assertNotIn("", _cells(line), line)
         self.assertRegex(region, r"(?m)^- Verdict note: .*`-`")
 
+    def test_each_row_names_the_model_its_report_priced(self) -> None:
+        """The Model cell reads the models the row's own report priced: each `price_model` of
+        its `cost_prices` rows, or, where it priced none, each `model_name` of its tokens-by-model
+        rows that names a model. A report recording neither reads not recorded, never a blank,
+        never mixed, and never a model from the catalogue of prices it carries or from another
+        report."""
+        catalogue = {"models": {m: {"input": 1.0} for m in
+                                ("claude-fable-5", "gpt-6-luna", "claude-opus-5-5",
+                                 "claude-sonnet-5-5", "claude-haiku-5-5")}}
+        priced = _models(_report("RPT0106", "RUN-EEE", "2026-02-01T00:00:00Z",
+                                 "2026-02-01T01:00:00Z", "Judged achieved", "", "$2.00"),
+                         priced=("claude-opus-5-5", "claude-sonnet-5-5"), tokens=("mixed",))
+        priced["price_table"] = catalogue
+        tokens_only = _models(_report("RPT0107", "RUN-FFF", "2026-02-02T00:00:00Z",
+                                      "2026-02-02T01:00:00Z", "Judged achieved", "", None),
+                              tokens=("claude-haiku-5-5",))
+        mixed_only = _models(_report("RPT0108", "RUN-GGG", "2026-02-03T00:00:00Z",
+                                     "2026-02-03T01:00:00Z", "Judged achieved", "", None),
+                             tokens=("mixed",))
+        mixed_only["price_table"] = catalogue
+        unrecorded = _models(_report("RPT0109", "RUN-HHH", "2026-02-04T00:00:00Z",
+                                     "2026-02-04T01:00:00Z", "Judged achieved", "", None),
+                             tokens=("unrecorded",))
+        # Tokens counted for a model the report did not price: the priced one is the record.
+        partly = _models(_report("RPT0110", "RUN-III", "2026-02-05T00:00:00Z",
+                                 "2026-02-05T01:00:00Z", "Judged achieved", "", "$1.50"),
+                         priced=("claude-opus-5-5",),
+                         tokens=("claude-haiku-5-5", "claude-opus-5-5"))
+        for rep in (priced, tokens_only, mixed_only, unrecorded, partly):
+            self._file(rep)
+        code, out = self._run()
+        self.assertEqual(0, code, out)
+        region = self._region()
+        # Every cell exactly, so a model from another row's report, the catalogue, a token row
+        # beside a priced one, mixed, unrecorded or a blank each fails here.
+        self.assertEqual({"RUN-EEE": "claude-opus-5-5, claude-sonnet-5-5",
+                          "RUN-FFF": "claude-haiku-5-5", "RUN-III": "claude-opus-5-5",
+                          "RUN-GGG": "not recorded", "RUN-HHH": "not recorded",
+                          "RUN-AAA": "not recorded", "RUN-BBB": "not recorded",
+                          "RUN-CCC": "not recorded"},
+                         {r["Run"]: r.get("Model") for r in _table(region)})
+        self.assertRegex(region, r"(?m)^- Model: .*`price_model`.*`cost_prices`.*`model_name`")
+        self.assertEqual(0, self._run("--check")[0], "the page the verb wrote checks clean")
+
     def test_hand_text_is_kept_and_every_figure_is_a_report_field(self) -> None:
         self.assertEqual(0, self._run()[0])
         raw = self.page.read_bytes()
@@ -210,8 +271,11 @@ class EvidencePageTests(unittest.TestCase):
         self.assertNotIn("not yet on the page", out, "a fresh page prints no note")
         self.assertNotIn("differs", out)
         fresh = self.page.read_text(encoding="utf-8")
-        # A hand-edited cell is drift, named by its run.
-        self.page.write_text(fresh.replace("| not recorded |", "| $1.00 |"), encoding="utf-8")
+        # A hand-edited cell is drift, named by its run: RUN-BBB's Dollars per point, the one
+        # not recorded beside a Model cell that is not recorded too.
+        self.assertEqual(1, fresh.count("| not recorded | not recorded |"), fresh)
+        self.page.write_text(fresh.replace("| not recorded | not recorded |",
+                                           "| $1.00 | not recorded |"), encoding="utf-8")
         code, out = self._run("--check")
         self.assertEqual(1, code, out)
         self.assertIn("RUN-BBB", out)
@@ -229,10 +293,11 @@ class EvidencePageTests(unittest.TestCase):
         self.assertRegex(out, r"RUN-AAA.*not yet on the page")
         self.assertEqual(fresh, self.page.read_text(encoding="utf-8"), "--check writes nothing")
         # The note never masks drift beside it, and the newer reports are not called drift.
-        self.page.write_text(fresh.replace("| not recorded |", "| $1.00 |"), encoding="utf-8")
+        self.page.write_text(fresh.replace("| not recorded | not recorded |",
+                                           "| $1.00 | not recorded |"), encoding="utf-8")
         code, out = self._run("--check")
         self.assertEqual(1, code, out)
-        differs = [line for line in out.splitlines() if "differs" in line]
+        differs =[line for line in out.splitlines() if "differs" in line]
         self.assertEqual(1, len(differs), out)
         self.assertIn("RUN-BBB", differs[0])
 

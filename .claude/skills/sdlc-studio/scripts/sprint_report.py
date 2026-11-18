@@ -6666,9 +6666,15 @@ EVIDENCE_COLUMNS = (
                      "no note"),
     ("Dollars per point", "`est_actual` of the `estimates` row whose `est_measure` is Dollars "
                           "per point, or not recorded where the report holds no such row"),
+    ("Model", "`price_model` of each `cost_prices` row, or, where the report priced no model, "
+              "`model_name` of each `cost` row that names one rather than mixed or unrecorded, "
+              "or not recorded where neither names a model"),
     ("Hours to signature", "the hours from `generated_at` to `signature.signed_at`"),
 )
 _ACHIEVED = "Judged achieved"
+#: The tokens-by-model names that name no model: tokens from more than one model, or a run
+#: recorded before the model was captured.
+_NO_MODEL = (retro.MODEL_MIXED, retro.MODEL_UNRECORDED)
 
 
 def _signed_reports(root) -> list[dict]:
@@ -6702,6 +6708,17 @@ def _evidence_cell(value) -> str:
     return text or "not recorded"
 
 
+def _evidence_models(rep: dict) -> str:
+    """The models `rep` priced, in the order it holds them: its `cost_prices` rows, else its
+    tokens-by-model rows that name a model. The `price_table` it carries is the catalogue it
+    priced from, not a model it priced, so it is never read. Empty when neither names one, which
+    the cell reads as not recorded."""
+    def names(key: str, field: str) -> list[str]:
+        return [str(v) for row in _section_of(rep, key).get("rows") or []
+                if (v := (row.get(field) or {}).get("value")) and v not in _NO_MODEL]
+    return ", ".join(names("cost_prices", "price_model") or names("cost", "model_name"))
+
+
 def _evidence_row(rep: dict) -> tuple[str, str]:
     """`(run, table line)` for one report, each cell read from the field its column names."""
     goal = _section_of(rep, "goal")
@@ -6715,7 +6732,7 @@ def _evidence_row(rep: dict) -> tuple[str, str]:
     built, signed = _at(rep.get("generated_at")), _at(rep["signature"]["signed_at"])
     hours = f"{(signed - built).total_seconds() / 3600:.1f}" if built else "not recorded"
     cells = (rep.get("run_id"), rep.get("report_id"), verdict,
-             "-" if verdict == _ACHIEVED else note, dollars, hours)
+             "-" if verdict == _ACHIEVED else note, dollars, _evidence_models(rep), hours)
     return str(rep.get("run_id")), "| " + " | ".join(_evidence_cell(c) for c in cells) + " |"
 
 
