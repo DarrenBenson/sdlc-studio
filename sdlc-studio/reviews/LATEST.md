@@ -1,12 +1,15 @@
 <!-- close-status:begin -->
-> **RUN-01M7NTY5 closed running.** 17 unit(s) in the batch. **The run signature is OWED and is the operator's** - `sprint sign` seals the batch in one signature.
+> **RUN-01M7NTY5 closed partial.** 17 unit(s) in the batch. **The run is SIGNED** - nothing is owed on this run.
 > Stamped by `sprint close` - edit the prose below, not this block.
 <!-- close-status:end -->
 
-**RUN-01M7NTY5, run sixteen, is closed and awaits the operator's signature (D0503).** The stamp
-above says "closed running" because the record keeps that outcome until `sprint sign` seals it
-(BG1589). Read RPT0035 (fingerprint a9daaca50ef063ce) and its page, then sign it with
-`sprint.py sign --report RPT0035 --principal "<the operator>"`. The orchestrator did not sign.
+**RUN-01M7NTY5, run sixteen, is SIGNED (2026-11-18).** The operator read RPT0035 (fingerprint
+a9daaca50ef063ce) and its HTML page, ruled the eight findings the close left unruled
+not-stop-ship (D0527, recorded in the decision log because a retro row added after the close
+makes sign refuse, BG1590), and authorised the orchestrator to sign on their behalf (D0528):
+`sprint sign --principal "Darren Benson" --delegated --decision D0528`. The signature block
+records the delegation. Next: CR0742 (harness-agnostic, enterprise-ready documentation) goes
+first, ahead of D0519's run seventeen (D0529).
 
 > Goal: "No gate passes work it never judged, and a run closed in the operator's absence awaits
 > a trustworthy signature." Judged **partial**: 17 units, 51 points (48 planned; BG1579 and
@@ -17,7 +20,7 @@ above says "closed running" because the record keeps that outcome until `sprint 
 > review round and three push repairs. (This paragraph first quoted the forecast as the cost;
 > corrected from RPT0035's Actual column.)
 
-## For the operator at signature
+## Read at signature (kept for the record)
 
 - **BG1582 (Medium, High priority), deferred to you:** once HEAD has moved past the close
   commit with no later run open, `sprint sign` judges the run against that commit and skips the
