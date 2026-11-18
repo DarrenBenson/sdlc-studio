@@ -39,8 +39,17 @@ FEATURES = {"epic implement --agentic": r"epic implement --agentic",
 #: What the `--agentic` row's fallback must say a harness without it does instead.
 AGENTIC_FALLBACK = (r"`epic implement`", r"(?i)\bone at a time\b", r"(?i)\bdependency order\b",
                     r"(?i)\bsame gates\b")
-#: A "Without it" cell that states no fallback.
-NO_FALLBACK = {"", "-", "none", "n/a", "untested", "tbd"}
+#: A "Without it" cell that states no fallback: empty or a placeholder, or one that says in words
+#: there is none ("No fallback.", "Nothing.", "There is no fallback in other harnesses.", "not
+#: available"). It lists phrasings; it cannot read every way of saying none.
+NO_FALLBACK = re.compile(
+    r"(?i)^\W*(?:none|n/?a|untested|tbd)?\W*$|^\W*nothing\b"
+    r"|\bno\s+(?:fallback|alternative|equivalent|substitute|workaround)s?\b"
+    r"|\bnot\s+(?:available|supported|possible)\b|\bunavailable\b|\bunsupported\b")
+#: A cell the untested pass admits with no source: one that opens with Untested and makes no
+#: further claim after a `;`. A cell that claims one part and leaves another untested, such as
+#: "headless lanes ([source]); in-session sub-agents untested", still needs a source.
+UNTESTED = r"(?i)untested\b[^;]*$"
 
 MATRIX_HEADING = "## Capability matrix"
 FALLBACK_HEADING = "## Fallbacks"
@@ -151,16 +160,18 @@ def sources(cell: str, definitions: dict[str, str]) -> list[tuple[str, str | Non
 
 
 def source_problems(text: str) -> list[str]:
-    """Each capability cell that neither says untested nor names a file in this repository that
-    exists, and each link a cell holds that does not name such a file."""
+    """Each capability cell that neither opens with Untested (and claims nothing after a `;`)
+    nor names a file in this repository that exists, and each link a cell holds that does not
+    name such a file. A cell that only mentions untested further on is not admitted unsourced."""
     definitions = {ref.casefold(): target for ref, target in _DEFINITION.findall(text)}
     problems = []
     for harness, cells in matrix(text).items():
         for capability, cell in cells.items():
             where = f"{harness} / {capability}"
             linked = sources(cell, definitions)
-            if not linked and not re.search(r"(?i)\buntested\b", cell):
-                problems.append(f"{where}: {cell!r} names no source and does not say untested")
+            if not linked and not re.match(UNTESTED, cell):
+                problems.append(f"{where}: {cell!r} names no source and does not open with "
+                                f"Untested")
             for label, target in linked:
                 if target is None:
                     problems.append(f"{where}: [{label}] has no link definition")
@@ -188,7 +199,7 @@ def fallback_problems(text: str) -> list[str]:
             problems.append(f"no fallback row for {name}")
     for row in rows:
         without = row[2] if len(row) > 2 else ""
-        if without.strip().strip(".").casefold() in NO_FALLBACK:
+        if NO_FALLBACK.search(without):
             problems.append(f"{row[0]!r} states no fallback ({without!r})")
         if re.search(FEATURES["epic implement --agentic"], row[0]):
             for pattern in AGENTIC_FALLBACK:
@@ -285,12 +296,31 @@ class HarnessMatrixDocTests(unittest.TestCase):
 
     def test_every_cell_is_verified_or_marked_untested(self):
         self.assertEqual(source_problems(self.page), [])
+        bare = [cell for cells in matrix(self.page).values() for cell in cells.values()
+                if not sources(cell, {})]
+        self.assertTrue(bare and all(re.match(UNTESTED, cell) for cell in bare),
+                        "the page has no wholly untested cell for the untested pass to admit")
         row = _row_line(self.page, MATRIX_HEADING, "Codex")
-        token = row.split("|")[6]
+        token, agents = row.split("|")[6], row.split("|")[5]
         self.assertRegex(token, _REFERENCE.pattern, "the Codex token cell names no source")
+        self.assertIn(" ([harness_usage.py][usage])", agents, "the Codex sub-agents cell moved")
+        gemini = _row_line(self.page, MATRIX_HEADING, "Gemini CLI")
+        self.assertEqual(gemini.split("|")[5].strip(), "Untested", "the Gemini cell moved")
+        claimed = " Headless lanes, `sprint lane run --harness gemini` (harness_usage.py)"
+
+        def gemini_agents(cell: str) -> str:
+            cells = gemini.split("|")
+            return self.page.replace(gemini, "|".join(cells[:5] + [cell] + cells[6:]))
+
         cases = {
             "a claim with no source":
                 row.replace(token, " " + _REFERENCE.sub("", token).strip() + " "),
+            "a mixed cell whose claimed part lost its source":
+                row.replace(agents, agents.replace(" ([harness_usage.py][usage])", "")),
+            "a sourced-looking claim plus untested, with no link":
+                gemini_agents(claimed + "; in-session sub-agents untested "),
+            "an opening Untested followed by a claim":
+                gemini_agents(" Untested;" + claimed + " "),
             "a source path that does not exist":
                 self.page.replace("scripts/lib/meter_codex.py\n", "scripts/meter_codex.py\n"),
             "a label naming another file":
@@ -310,10 +340,17 @@ class HarnessMatrixDocTests(unittest.TestCase):
             line = _row_line(self.page, FALLBACK_HEADING, feature)
             cells = line.split("|")
             blank = "|".join(cells[:3] + [" - "] + cells[4:])
-            for case, copy in {
+            copies = {
                 f"{name} with no fallback stated": self.page.replace(line, blank),
                 f"{name} missing": _replace_row(self.page, FALLBACK_HEADING, feature, None),
-            }.items():
+            }
+            for words in ("No fallback.", "Nothing.", "There is no fallback in other harnesses.",
+                          "not available", "None.", "No equivalent elsewhere.", "Not supported.",
+                          "Unavailable.", "Unsupported in other harnesses.", "N/A", "TBD",
+                          "Untested."):
+                said = "|".join(cells[:3] + [f" {words} "] + cells[4:])
+                copies[f"{name} saying {words!r}"] = self.page.replace(line, said)
+            for case, copy in copies.items():
                 with self.subTest(case=case):
                     self.assertNotEqual(fallback_problems(copy), [], case)
         agentic = next(row for row in rows if re.search(FEATURES["epic implement --agentic"],
