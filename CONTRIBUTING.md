@@ -155,7 +155,9 @@ lanes. The gate prints each lane it runs and its cost.
 **Pushes go straight to main and a red main is read before the next push (D0181).** The
 pre-push hook asks the forge for the latest push-triggered Lint run on main before it runs the
 gate; on any conclusion but success it refuses until that run's id is acknowledged once per
-clone with `SDLC_PUSH_ACK_RED=<run id> git push`. A red answer is read once more before it
+clone with `SDLC_PUSH_ACK_RED=<run id> git push`. It then asks the same of the latest completed
+scheduled Lint run on main, which runs the weekly corpus verify no push triggers, and refuses on
+its red the same way, acknowledged by that run's own id (BG1518). A red answer is read once more before it
 refuses, and the second answer is judged: the forge's ordering is eventually consistent, and a
 stale first row once named a two-month-old red (BG0709). An unreadable or empty answer is named
 and never read as green, and it does not block an offline push. The required status check a

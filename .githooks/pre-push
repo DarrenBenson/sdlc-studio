@@ -145,18 +145,23 @@ keepalive_in_force() {
 keepalive_in_force "${2:-}" ||
   echo "pre-push: the connection must stay up across the gate; set it once with: bash tools/enable-hooks.sh (ssh ServerAliveInterval)" >&2
 
-# --- read the latest push-triggered Lint run on main BEFORE the gate (BG0642, D0181) -------
+# --- read the latest Lint runs on main BEFORE the gate (BG0642, D0181, BG1518) -------------
 # A red main must be READ before the next push, not discovered two days later in a tab. The
-# hook asks the forge for the latest COMPLETED push-triggered Lint run on main - never a
-# scheduled corpus run, never Dependabot's - and refuses on any conclusion but success until
-# that run's id is acknowledged, once, per clone. An unreadable or empty answer is named as
-# such and never rendered as green; it does not block an offline push. Written against bash
-# builtins, git, python3 and gh only, because the fixture PATH holds nothing else.
+# hook asks the forge for the latest COMPLETED push-triggered Lint run on main - never
+# Dependabot's - and refuses on any conclusion but success until that run's id is acknowledged,
+# once, per clone. Then it asks the same of the latest completed SCHEDULED Lint run on main: the
+# weekly run whose corpus-verify job is the only automated run of every Verify line, and whose
+# red was otherwise noticed only by someone opening the Actions tab (BG1518). Each read keeps its
+# own acknowledgement in the one record, so acknowledging one never silences the other. An
+# unreadable or empty answer is named as such and never rendered as green; it does not block an
+# offline push. Written against bash builtins, git, python3 and gh only, because the fixture PATH
+# holds nothing else.
 ack_file="sdlc-studio/.local/push-ack.json"
-# One read: sets ci_read to UNREAD, EMPTY, or `<run id>\t<conclusion>\t<url>`.
+# One read of one trigger event ($1: push or schedule): sets ci_read to UNREAD, EMPTY, or
+# `<run id>\t<conclusion>\t<url>`.
 read_ci() {
   local ci_json
-  if ! ci_json="$(gh run list --workflow Lint --branch main --event push --status completed --limit 1 --json databaseId,conclusion,url 2>/dev/null)"; then
+  if ! ci_json="$(gh run list --workflow Lint --branch main --event "$1" --status completed --limit 1 --json databaseId,conclusion,url 2>/dev/null)"; then
     ci_read="UNREAD"
     return
   fi
@@ -177,58 +182,75 @@ print("\t".join(str(r.get(k, "")) for k in ("databaseId", "conclusion", "url")))
 PY
 )"
 }
-read_ci
-# BG0709: the forge's ordering is eventually consistent, and a stale first row once named a
-# two-month-old red while the newest run was green. A red answer is read ONCE more before anything
-# is refused or acknowledged, and the second answer is the one judged - unless it could not be
-# read, which never clears a red.
-case "$ci_read" in
-  UNREAD|EMPTY) ;;
-  *)
-    first="$ci_read"; rest="${first#*	}"
-    if [ "${rest%%	*}" != "success" ]; then
-      read_ci
-      case "$ci_read" in
-        UNREAD|EMPTY) ci_read="$first" ;;
-        "$first") ;;
-        *) echo "pre-push: the first answer named run ${first%%	*} (${rest%%	*}); the re-read names run ${ci_read%%	*}, and that is judged" >&2 ;;
-      esac
-    fi ;;
-esac
-case "$ci_read" in
-  EMPTY)  echo "pre-push: no completed Lint run on main to read" >&2 ;;
-  UNREAD) echo "pre-push: CI state UNREAD: could not read the latest Lint run on main" >&2 ;;
-  *)
-    run_id="${ci_read%%	*}"; rest="${ci_read#*	}"; conclusion="${rest%%	*}"; run_url="${rest#*	}"
-    if [ "$conclusion" != "success" ]; then
-      acked="$(python3 - "$ack_file" <<'PY' 2>/dev/null
+# Read one event's latest run and judge it, exiting on an unacknowledged red. $1 is the event,
+# $2 the record's key for its acknowledgement, $3 the run's name in what is printed.
+judge_ci() {
+  local event="$1" key="$2" name="$3" first rest run_id conclusion run_url acked what
+  read_ci "$event"
+  # BG0709: the forge's ordering is eventually consistent, and a stale first row once named a
+  # two-month-old red while the newest run was green. A red answer is read ONCE more before
+  # anything is refused or acknowledged, and the second answer is the one judged - unless it
+  # could not be read, which never clears a red.
+  case "$ci_read" in
+    UNREAD|EMPTY) ;;
+    *)
+      first="$ci_read"; rest="${first#*	}"
+      if [ "${rest%%	*}" != "success" ]; then
+        read_ci "$event"
+        case "$ci_read" in
+          UNREAD|EMPTY) ci_read="$first" ;;
+          "$first") ;;
+          *) echo "pre-push: the first answer named run ${first%%	*} (${rest%%	*}); the re-read names run ${ci_read%%	*}, and that is judged" >&2 ;;
+        esac
+      fi ;;
+  esac
+  case "$ci_read" in
+    EMPTY)  echo "pre-push: no completed $name run on main to read" >&2 ;;
+    UNREAD) echo "pre-push: CI state UNREAD: could not read the latest $name run on main" >&2 ;;
+    *)
+      run_id="${ci_read%%	*}"; rest="${ci_read#*	}"; conclusion="${rest%%	*}"; run_url="${rest#*	}"
+      if [ "$conclusion" != "success" ]; then
+        acked="$(python3 - "$ack_file" "$key" <<'PY' 2>/dev/null
 import json, os, sys
 p = sys.argv[1]
-print(json.load(open(p)).get("acknowledged", "") if os.path.exists(p) else "")
+print(json.load(open(p)).get(sys.argv[2], "") if os.path.exists(p) else "")
 PY
 )"
-      if [ -n "${SDLC_PUSH_ACK_RED:-}" ] && [ "$SDLC_PUSH_ACK_RED" = "$run_id" ]; then
-        if python3 - "$ack_file" "$run_id" <<'PY' 2>/dev/null
+        if [ -n "${SDLC_PUSH_ACK_RED:-}" ] && [ "$SDLC_PUSH_ACK_RED" = "$run_id" ]; then
+          # merged into the record, never written whole, so the other read's acknowledgement stays
+          if python3 - "$ack_file" "$key" "$run_id" <<'PY' 2>/dev/null
 import json, os, sys
-p = sys.argv[1]
+p, key, run_id = sys.argv[1:4]
 os.makedirs(os.path.dirname(p), exist_ok=True)
-json.dump({"acknowledged": sys.argv[2]}, open(p, "w"))
+try:
+    record = json.load(open(p)) if os.path.exists(p) else {}
+except ValueError:
+    record = {}
+record = record if isinstance(record, dict) else {}
+record[key] = run_id
+json.dump(record, open(p, "w"))
 PY
-        then
-          echo "pre-push: red Lint run $run_id acknowledged and remembered for this clone" >&2
+          then
+            echo "pre-push: red $name run $run_id acknowledged and remembered for this clone" >&2
+          else
+            echo "pre-push: red $name run $run_id acknowledged but the record could not be written at $ack_file - fix the path and push again" >&2
+            exit 1
+          fi
+        elif [ "$acked" = "$run_id" ]; then
+          echo "pre-push: red $name run $run_id already acknowledged for this clone" >&2
         else
-          echo "pre-push: red Lint run $run_id acknowledged but the record could not be written at $ack_file - fix the path and push again" >&2
+          what="$name run"
+          [ "$event" = "push" ] && what="push-triggered $what"
+          echo "pre-push: the latest $what on main concluded $conclusion and has not been read: run $run_id ($run_url)" >&2
+          [ "$event" = "schedule" ] && echo "  it is the weekly run whose corpus-verify job executes every Verify line" >&2
+          echo "  read it, then acknowledge it by id: SDLC_PUSH_ACK_RED=$run_id git push" >&2
           exit 1
         fi
-      elif [ "$acked" = "$run_id" ]; then
-        echo "pre-push: red Lint run $run_id already acknowledged for this clone" >&2
-      else
-        echo "pre-push: the latest push-triggered Lint run on main concluded $conclusion and has not been read: run $run_id ($run_url)" >&2
-        echo "  read it, then acknowledge it by id: SDLC_PUSH_ACK_RED=$run_id git push" >&2
-        exit 1
-      fi
-    fi ;;
-esac
+      fi ;;
+  esac
+}
+judge_ci push acknowledged "Lint"
+judge_ci schedule acknowledged_scheduled "scheduled Lint"
 
 # --- announce the cost, then pay it -------------------------------------------------------
 suite="boundary-$boundary"

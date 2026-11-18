@@ -38,10 +38,15 @@ STUB_GH = textwrap.dedent('''
     from pathlib import Path
     Path(os.environ["STUB_GH_ARGV"]).open("a").write(" ".join(sys.argv[1:]) + "\\n")
     mode = os.environ.get("STUB_GH_MODE", "empty")
-    if mode == "fail":
+    if mode == "fail":                      # offline or logged out: every read fails, the scheduled one too
         sys.stderr.write("gh: not logged in\\n"); raise SystemExit(4)
     args = sys.argv[1:]
-    red = {"databaseId": 33731466380, "conclusion": "failure", "url": "https://example.test/runs/33731466380"}
+    event = args[args.index("--event") + 1] if "--event" in args[:-1] else ""
+    if event == "schedule":                 # BG1518: the scheduled read answers STUB_GH_SCHEDULE, green unless named
+        mode = os.environ.get("STUB_GH_SCHEDULE", "sched_green")
+        if mode == "sched_fail":
+            sys.stderr.write("gh: connection reset\\n"); raise SystemExit(1)
+    red ={"databaseId": 33731466380, "conclusion": "failure", "url": "https://example.test/runs/33731466380"}
     timed = {"databaseId": 33731466381, "conclusion": "timed_out", "url": "https://example.test/runs/33731466381"}
     green = {"databaseId": 33746859034, "conclusion": "success", "url": "https://example.test/runs/33746859034"}
     newer_other = {"databaseId": 33746859999, "conclusion": "success", "url": "https://example.test/runs/dependabot"}
@@ -53,8 +58,12 @@ STUB_GH = textwrap.dedent('''
         print("42"); raise SystemExit(0)
     cancelled = {"databaseId": 33731466382, "conclusion": "cancelled", "url": "https://example.test/runs/33731466382"}
     noid = {"conclusion": "failure", "url": "https://example.test/runs/unknown"}
+    sched_red = {"databaseId": 34100000001, "conclusion": "failure", "url": "https://example.test/runs/34100000001"}
+    sched_later = {"databaseId": 34100000002, "conclusion": "failure", "url": "https://example.test/runs/34100000002"}
+    sched_green = {"databaseId": 34100000003, "conclusion": "success", "url": "https://example.test/runs/34100000003"}
     answer = {"red": [red], "timed_out": [timed], "cancelled": [cancelled], "noid": [noid],
-              "green": [green], "empty": []}[mode]
+              "green": [green], "empty": [], "sched_red": [sched_red], "sched_later": [sched_later],
+              "sched_green": [sched_green], "sched_empty": []}[mode]
     print(json.dumps(answer))
 ''').lstrip()
 
@@ -162,10 +171,12 @@ class _Clone:
         return d
 
     def push(self, *refspec: str, rc: int = 0, gh_mode: str | None = None,
-             ack: str | None = None) -> subprocess.CompletedProcess:
+             ack: str | None = None, schedule: str | None = None) -> subprocess.CompletedProcess:
         path = self.stub_path(gh_mode or getattr(self, "gh_mode", "empty"))
         env = {"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
-               "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt")}
+               "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt"),
+               # the scheduled read's answer (BG1518), never the caller's: green unless named
+               "STUB_GH_SCHEDULE": schedule or "sched_green"}
         if ack is not None:
             env["SDLC_PUSH_ACK_RED"] = ack
         return _git(self.clone, "push", "-q", "origin", *(refspec or ("main",)), check=False, env=env)
@@ -188,6 +199,7 @@ class _Clone:
         path = self.stub_path(getattr(self, "gh_mode", "empty"))     # never the caller's PATH: no fixture reaches the live forge
         base.update({"STUB_ARGV": str(self.argv), "STUB_RC": str(rc), "PATH": str(path),
                      "STUB_GH_MODE": self.gh_mode, "STUB_GH_ARGV": str(self.tmp / "gh-argv.txt"),
+                     "STUB_GH_SCHEDULE": "sched_green",
                      # the pusher's own git config never reaches the fixture: a global
                      # `sdlc.gateHost` would otherwise send these hooks to a gate host (US1075)
                      "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_CONFIG_SYSTEM": "/dev/null"})
@@ -451,6 +463,154 @@ class ARedMainIsReadBeforeTheNextPushTests(unittest.TestCase):
                 self.assertNotIn("already acknowledged", odd.stderr, f"{mode}: an empty id matched an empty record")
         finally:
             fx.cleanup()
+
+    # --- BG1518: the weekly scheduled Lint run (corpus-verify) has a reader -------------------
+
+    @staticmethod
+    def _schedule_calls(fx: _Clone) -> list[str]:
+        return [c for c in fx.gh_calls() if "--event schedule" in c]
+
+    def test_a_red_scheduled_run_refuses_the_push(self) -> None:
+        """BG1518 AC1. MUTANTS: (1) no scheduled read at all; (2) the scheduled read asks for
+        `--event push`, so the green push run answers it; (3) drop `--workflow Lint` from the
+        scheduled read, so the newer green Dependabot run answers it; (4) compare the scheduled
+        conclusion to `failure` only, so `timed_out` reads as green; (5) no re-read of a red
+        scheduled answer."""
+        fx = _Clone()
+        try:
+            r = fx.push(gh_mode="green", schedule="sched_red", rc=0)
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, "a red scheduled run on main did not refuse the push:\n" + out)
+            self.assertIn("scheduled Lint run on main concluded failure", out, out)
+            self.assertIn("34100000001", out); self.assertIn("https://example.test/runs/34100000001", out)
+            self.assertIn("SDLC_PUSH_ACK_RED=34100000001 git push", out, "the acknowledgement command was not printed verbatim:\n" + out)
+            self.assertNotIn("--no-verify", out, "the CI refusal must never name the bypass - it names the acknowledgement:\n" + out)
+            self.assertEqual([], fx.gate_calls(), "the gate ran before the scheduled run was read")
+            self.assertEqual(0, fx.remote_count())
+            sched = self._schedule_calls(fx)
+            self.assertEqual(2, len(sched), f"a red scheduled answer is read once more before refusing (BG0709): {fx.gh_calls()}")
+            for flag in ("--workflow Lint", "--branch main", "--event schedule", "--status completed"):
+                self.assertIn(flag, sched[0], fx.gh_calls())
+            self.assertIn("--event push", fx.gh_calls()[0], "the push-triggered read is no longer the first:\n" + str(fx.gh_calls()))
+            # every non-success conclusion refuses, as the push read's does
+            (fx.tmp / "gh-argv.txt").unlink()
+            timed = fx.push(gh_mode="green", schedule="timed_out", rc=0)
+            self.assertNotEqual(0, timed.returncode, "a timed_out scheduled run did not refuse:\n" + timed.stderr)
+            self.assertIn("SDLC_PUSH_ACK_RED=33731466381 git push", timed.stderr, timed.stderr)
+        finally:
+            fx.cleanup()
+
+    def test_an_acknowledged_scheduled_red_is_remembered_and_a_new_one_refuses(self) -> None:
+        """BG1518 AC2. MUTANTS: (1) record the scheduled acknowledgement under the push key, so a
+        later push overwrites it; (2) write the record whole, so one acknowledgement drops the
+        other; (3) proceed whenever a scheduled acknowledgement exists without comparing its id;
+        (4) honour the variable and record nothing; (5) let a scheduled acknowledgement silence a
+        red push run."""
+        fx = _Clone(no_timings_file=True)
+        try:
+            # both red: acknowledging the push run records it, and the scheduled run still refuses
+            both = fx.push(gh_mode="red", schedule="sched_red", rc=0, ack="33731466380")
+            self.assertNotEqual(0, both.returncode, "the push run's acknowledgement silenced the scheduled red:\n" + both.stderr)
+            self.assertIn("SDLC_PUSH_ACK_RED=34100000001 git push", both.stderr, both.stderr)
+            self.assertIn("33731466380", fx.ack_file().read_text(encoding="utf-8"))
+            for wrong_id in ("3410000000", "134100000001"):        # a prefix, a superstring
+                wrong = fx.push(gh_mode="red", schedule="sched_red", rc=0, ack=wrong_id)
+                self.assertNotEqual(0, wrong.returncode, f"the WRONG acknowledgement id {wrong_id!r} let the push through")
+            self.assertNotIn("34100000001", fx.ack_file().read_text(encoding="utf-8"), "a wrong id recorded the scheduled run")
+            # acknowledging the scheduled run: the push proceeds, and both are remembered
+            acked = fx.push(gh_mode="red", schedule="sched_red", rc=0, ack="34100000001")
+            self.assertEqual(0, acked.returncode, acked.stdout + acked.stderr)
+            self.assertIn("red scheduled Lint run 34100000001 acknowledged and remembered", acked.stderr, acked.stderr)
+            self.assertEqual(1, fx.remote_count())
+            record = fx.ack_file().read_text(encoding="utf-8")
+            self.assertIn("33731466380", record, "the scheduled acknowledgement dropped the push run's")
+            self.assertIn("34100000001", record)
+            fx.commit_more()
+            again = fx.push(gh_mode="red", schedule="sched_red", rc=0)      # variable unset, the file remembers both
+            self.assertEqual(0, again.returncode, "the remembered acknowledgements were not honoured:\n" + again.stderr)
+            self.assertIn("red scheduled Lint run 34100000001 already acknowledged", again.stderr, again.stderr)
+            self.assertEqual(2, fx.remote_count())
+            # a later red scheduled run with a different id refuses again
+            fx.commit_more()
+            later = fx.push(gh_mode="green", schedule="sched_later", rc=0)
+            self.assertNotEqual(0, later.returncode, "an old acknowledgement silenced a later red scheduled run:\n" + later.stderr)
+            self.assertIn("SDLC_PUSH_ACK_RED=34100000002 git push", later.stderr, later.stderr)
+            self.assertEqual(2, fx.remote_count())
+            # and the scheduled acknowledgement never silences a red push run with that id's record
+            fx.ack_file().write_text('{"acknowledged_scheduled": "33731466380"}', encoding="utf-8")
+            pushred = fx.push(gh_mode="red", rc=0)
+            self.assertNotEqual(0, pushred.returncode, "a scheduled acknowledgement silenced a red push run")
+            self.assertIn("push-triggered Lint run on main concluded failure", pushred.stderr, pushred.stderr)
+        finally:
+            fx.cleanup()
+
+    def test_a_green_scheduled_run_proceeds_and_offline_is_unchanged(self) -> None:
+        """BG1518 AC3. MUTANTS: (1) invert the scheduled conclusion test so `success` refuses;
+        (2) refuse when the scheduled read fails; (3) refuse on an empty scheduled list; (4) an
+        offline push names nothing."""
+        fx = _Clone()
+        try:
+            green = fx.push(gh_mode="green", schedule="sched_green", rc=0)
+            self.assertEqual(0, green.returncode, green.stdout + green.stderr)
+            self.assertEqual(1, fx.remote_count())
+            self.assertEqual(["--boundary push"], fx.gate_calls())
+            self.assertNotIn("acknowledge", green.stderr, green.stderr)
+            self.assertFalse(fx.ack_file().exists(), "a green scheduled run wrote an acknowledgement")
+            self.assertEqual(1, len(self._schedule_calls(fx)), f"a green scheduled answer was read twice: {fx.gh_calls()}")
+            # offline: every read fails, the push proceeds as it does today, each read named unread
+            for label, step in (("gh fails", lambda: fx.push(gh_mode="fail", rc=0)),
+                                ("the scheduled read alone fails", lambda: fx.push(gh_mode="green", schedule="sched_fail", rc=0)),
+                                ("no scheduled run yet", lambda: fx.push(gh_mode="green", schedule="sched_empty", rc=0))):
+                fx.commit_more()
+                before = fx.remote_count()
+                r = step()
+                self.assertEqual(0, r.returncode, f"{label}: an offline push was newly refused:\n" + r.stderr)
+                self.assertEqual(before + 1, fx.remote_count(), label)
+                self.assertNotIn("acknowledge", r.stderr, f"{label}: {r.stderr}")
+            fx.commit_more()
+            offline = fx.push(gh_mode="fail", rc=0)
+            self.assertIn("CI state UNREAD: could not read the latest Lint run on main", offline.stderr, offline.stderr)
+            self.assertIn("CI state UNREAD: could not read the latest scheduled Lint run on main", offline.stderr, offline.stderr)
+            fx.commit_more()
+            nosched = fx.push(gh_mode="green", schedule="sched_empty", rc=0)
+            self.assertIn("no completed scheduled Lint run on main to read", nosched.stderr, nosched.stderr)
+            # no gh on the PATH at all: unread, and the push proceeds
+            (fx.stub_path() / "gh").unlink()
+            fx.commit_more()
+            before = fx.remote_count()
+            nogh = fx.push(gh_mode="green", rc=0)
+            self.assertEqual(0, nogh.returncode, "a clone with no gh was newly refused:\n" + nogh.stderr)
+            self.assertEqual(before + 1, fx.remote_count())
+            self.assertIn("could not read the latest scheduled Lint run on main", nogh.stderr, nogh.stderr)
+        finally:
+            fx.cleanup()
+
+    def test_the_tsd_names_the_reader_of_the_scheduled_run(self) -> None:
+        """BG1518 AC4. MUTANTS: (1) the quality-gate table has no row for the scheduled run; (2)
+        the row names no reader; (3) the Pipeline Stages item calls the weekly job the automated
+        run with no reader named."""
+        import re
+        text = (REPO / "sdlc-studio" / "tsd.md").read_text(encoding="utf-8")
+
+        def section(heading: str) -> str:
+            start = text.index(heading + "\n")
+            nxt = re.search(r"^#{2,3} ", text[start + len(heading):], re.M)
+            return text[start:start + len(heading) + (nxt.start() if nxt else len(text))]
+
+        gates = section("### Quality Gates")
+        rows = [ln for ln in gates.splitlines() if ln.startswith("|") and "corpus-verify" in ln]
+        self.assertTrue(rows, "the quality-gate table has no row for the weekly corpus-verify run")
+        self.assertTrue(any("`.githooks/pre-push`" in ln and "red-main read" in ln for ln in rows),
+                        "no quality-gate row names the pre-push red-main read as the reader:\n" + "\n".join(rows))
+        stages = section("### Pipeline Stages")
+        items = re.split(r"^(?=\d+\. )", stages, flags=re.M)
+        weekly = [it for it in items if "weekly corpus-verify" in it]
+        self.assertTrue(weekly, "no Pipeline Stages item names the weekly corpus-verify job")
+        for it in weekly:
+            flat = " ".join(it.split())
+            # "pre-push", not the hook's path: the push stage is the one stage that names the path
+            self.assertRegex(flat, r"weekly corpus-verify job[^.]*\. Its conclusion is read by the pre-push red-main read",
+                             "the Pipeline Stages item names the weekly job with no reader:\n" + flat)
 
 
 class TheTagPathReadsTheReleaseBarTests(unittest.TestCase):

@@ -626,6 +626,8 @@ the Node one from `package.json`.
    `docs/known-issues.md` agrees with the bug corpus at the tagged commit (`tools/known_issues.py
    check --at <sha>`). It reads the latest push-triggered Lint run on main and refuses while it
    is red until that run's id is acknowledged once with `SDLC_PUSH_ACK_RED=<run id>` (D0181).
+   It then reads the latest scheduled Lint run on main the same way, each acknowledgement kept
+   apart in `sdlc-studio/.local/push-ack.json`; an unreadable answer is named, never refused.
    Then the full suite runs once, at the push boundary, with the core gate lanes, inside the
    green-run noise gate CI's Lint run applies: here and on the gate host alike,
    `tools/run-suite.sh --noise-gate` holds what each passing test printed under pytest's capture
@@ -662,7 +664,9 @@ the Node one from `package.json`.
    `Verify:` DSL, as ONE exit code. `release_cut.py record-green --commit <sha>` stamps the
    commit the gate passed on, and `release_cut.py tag-check --commit <sha>` refuses a tag the
    gate never covered. The weekly corpus-verify job is the automated run of every `Verify:`
-   line. This exists because the previous
+   line. Its conclusion is read by the pre-push red-main read of stage 3: a push is refused
+   while the latest scheduled Lint run on main is red until its run id is acknowledged.
+   This exists because the previous
    arrangement (two exit codes an operator had to remember to read) let a rotted verify
    layer reach a release candidate: 43 acceptance criteria pointing at renamed test
    files, refactored test names and retired scripts, accumulated silently across months
@@ -709,6 +713,7 @@ the same commit.
 | Security scan (bandit) | `bandit -r .claude/skills/sdlc-studio/scripts -ll -x '*/tests/*' -q`: no medium-or-high severity finding | Yes |
 | Artefact gate (`gate.py`) | Every blocking lane PASSes | Yes |
 | Release gate (`gate.py --release`) | Every story `Verify:` expression executes green; no unspecified AC; no unexamined AC layer | Yes, as a manual pre-tag step (D0375): no hook or workflow runs it |
+| Weekly `corpus-verify` (the scheduled Lint run) | Every `Verify:` line in the corpus executes, within `tools/verify-corpus-baseline.txt` | Yes, at the next push: the `.githooks/pre-push` red-main read refuses while the latest scheduled Lint run on main is red, until its run id is acknowledged once with `SDLC_PUSH_ACK_RED=<run id>` |
 
 ---
 
@@ -845,6 +850,7 @@ is set; see Pipeline Stages), whose `full-suite` lane runs both suites once, ins
 | 2026-11-08 | US1139 | The release cut: the header's Coverage baseline moves to v6.3.0, and the work on `main` beside it to 6.4 |
 | 2026-11-16 | US1172 | The 6.4 work on `main`: the commit stage says a module or class marked `# test-selection: sweep` joins every commit's selection, held to a 30-second budget; the push stage, the test-noise paragraph and the hooks note say the push gate runs inside `tools/run-suite.sh --noise-gate`, CI's green-run noise budget; and the integration level says the evidence annex's tests hold every committed report to `reference-evidence-schema.md` |
 | 2026-11-16 | US1173 | The release cut: the header's Coverage baseline moves to v6.4.0, and the work on `main` beside it to 6.5 |
+| 2026-11-18 | BG1518 | The weekly `corpus-verify` run has a reader: the push stage and Pipeline Stages item 6 say the pre-push red-main read also reads the latest scheduled Lint run on main, and a quality-gate row names it |
 
 ---
 
