@@ -14,13 +14,15 @@ Ask for software in plain language. The team plans it, builds it, tests it, and 
 
 </div>
 
-SDLC Studio is an open [Agent Skill](https://agentskills.io), a plug-in for AI coding tools, that
-runs your software development lifecycle from first idea to tested, working code. You describe
-what you want in plain language and the agent does the work. Each step is reviewed independently
-of its author, often by another agent, and a person you name signs each run once, over the
-report it ends with. Every requirement, review and sign-off is a plain file committed beside the
-code, so the record the work leaves is the evidence. One install works in **Claude Code, Cursor,
-OpenAI Codex, Gemini CLI, opencode and GitHub Copilot**.
+SDLC Studio is an open, harness-agnostic [Agent Skill](https://agentskills.io) that runs your
+software development lifecycle from first idea to tested, working code, with a human in the lead:
+people own the intent and the sign-off, and the agent does the work in between. Each step is
+reviewed independently of its author, often by another agent, and a person you name signs each
+run once, over the report it ends with. Every requirement, review and sign-off is a plain file
+committed beside the code, so the record the work leaves is the evidence. It runs in **Claude
+Code, Codex, Cursor, Gemini CLI, GitHub Copilot and opencode**, on the models your harness
+provides under your own contract, and is tied to none of them
+([harness compatibility](docs/harnesses.md), [adopting it in an enterprise](docs/enterprise.md)).
 
 If you are a coding agent, [llms.txt](llms.txt) is a machine-readable index of this repository and [AGENTS.md](AGENTS.md) is the guidance for working in it.
 
@@ -77,46 +79,35 @@ in [Why SDLC Studio](docs/why-sdlc-studio.md#how-it-works).
 
 ## Quick start
 
-Install for Claude Code on macOS or Linux, for every project:
+Install for every harness this machine has, on macOS or Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash
-```
-
-<details>
-<summary>Other tools, Windows, and a verified install</summary>
-
-```bash
-# Every tool you have installed
 curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | bash -s -- --target auto
 ```
 
-```powershell
-# Windows
-irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 | iex
-```
+Or name harnesses, as in `--target claude,copilot`; `--local` installs into the current project.
+On Windows, use [install.ps1](docs/INSTALL.md#windows).
 
-| Tool | Global | Project-local | Invoke as |
-| --- | --- | --- | --- |
-| Claude Code | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio` (or model-invoked) |
-| Codex | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio`, `/skills` |
-| Gemini CLI | `~/.gemini/skills` | `.gemini/skills` | auto via description; `/skills` to confirm |
-| opencode | `~/.config/opencode/skills` | `.opencode/skills` | auto via skill tool |
-| Copilot | `~/.agents/skills` | `.github/skills` | from chat; `copilot skill list` to confirm |
-| `agents` (generic) | `~/.agents/skills` | `.agents/skills` | read by Codex, Gemini, Copilot, Cursor |
+| Harness | `--target` | Global | Project-local | Invoke as | Verify with |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code | `claude` | `~/.claude/skills` | `.claude/skills` | `/sdlc-studio`, or model-invoked | `/sdlc-studio status` |
+| Codex | `codex` | `~/.agents/skills` | `.agents/skills` | `$sdlc-studio` | `/skills` |
+| Copilot | `copilot` | `~/.agents/skills` | `.github/skills` | ask in chat | `copilot skill list` |
+| Cursor | `agents` | `~/.agents/skills` | `.agents/skills` | untested | `ls ~/.agents/skills/sdlc-studio/SKILL.md` |
+| Gemini CLI | `gemini` | `~/.gemini/skills` | `.gemini/skills` | automatic, from its description | `/skills` |
+| opencode | `opencode` | `~/.config/opencode/skills` | `.opencode/skills` | found by its skill tool | `ls ~/.config/opencode/skills/sdlc-studio/SKILL.md` |
 
-`--target claude,codex` picks tools; `--local` installs into the current project.
+Copilot here is GitHub Copilot CLI; Copilot in an editor is untested. What each harness gives,
+and the fallback where one lacks a feature: [harness compatibility](docs/harnesses.md).
 
 **Installing in a sensitive environment?** Pin a tagged release and make the checksum
 mandatory, so the installer refuses rather than proceed unverified:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.4.0
+curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.sh | SDLC_STUDIO_REQUIRE_CHECKSUM=1 bash -s -- --version v6.4.0 --target auto
 ```
 
-That pins the current release. What it verifies: [Verifying the download](docs/INSTALL.md#verifying-the-download).
-
-</details>
+What it verifies: [Verifying the download](docs/INSTALL.md#verifying-the-download).
 
 Then ask in plain language. Each phrase has a command if you prefer it, and Python 3.10 or later
 runs the bundled scripts ([requirements](docs/INSTALL.md#requirements)).
@@ -170,10 +161,7 @@ More answers: [what it needs and where it writes](docs/INSTALL.md#requirements),
 Release notes:
 
 - [docs/release-notes-v6.4.0.md](docs/release-notes-v6.4.0.md) - the current release: a release carries the evidence a change board accepts, a run's cost is forecast before it starts and set beside what it cost, and the 6.3 upgrade path
-- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md) - a run's cost is measured on whichever harness ran it and priced in dollars, a lane runs headless in any of five harnesses' CLIs, and the 6.2 upgrade path
-- [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md) - a review brief can require the author's own check first, a run states what it cost, and the 6.1 upgrade path
-- [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) - a run ends with its signed report, and the 6.0 upgrade path
-- [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - what v6 is, both upgrade paths and the known issues
+- [docs/release-notes-v6.3.0.md](docs/release-notes-v6.3.0.md), [docs/release-notes-v6.2.0.md](docs/release-notes-v6.2.0.md), [docs/release-notes-v6.1.0.md](docs/release-notes-v6.1.0.md) and [docs/release-notes-v6.0.0.md](docs/release-notes-v6.0.0.md) - the earlier v6 releases, each with its upgrade path
 - [docs/release-notes-v6.0.0-rc.1.md](docs/release-notes-v6.0.0-rc.1.md) - the release candidate, and every surface it retired
 - [docs/release-notes-v5.1.0.md](docs/release-notes-v5.1.0.md), [docs/release-notes-v5.0.1.md](docs/release-notes-v5.0.1.md) and [docs/release-notes-v5.0.0.md](docs/release-notes-v5.0.0.md) - the v5 releases
 
@@ -183,11 +171,12 @@ Dev instructions live in [AGENTS.md](AGENTS.md), read natively by Codex, Copilot
 Gemini; Claude Code imports it through CLAUDE.md. Behavioural eval scenarios live in
 [evals/](evals/README.md). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Sponsor
+## Acknowledgements
 
 Proudly supported by **Anthropic** through the **Claude for Open Source** programme. Sponsorship
 supports the project's development; it is not an endorsement of any claim made here, and the
-benchmark evidence is published whichever way it points.
+benchmark evidence is published whichever way it points. SDLC Studio does not require Anthropic
+products: it runs in any of the six harnesses above.
 
 ## Licence
 
