@@ -27,7 +27,8 @@ from lib import risk_class  # noqa: E402
 
 SKILL_SCRIPTS = ".claude/skills/sdlc-studio/scripts"
 
-#: The gates D0520 names, each a file the tree holds today.
+#: The gates D0520 names, each a file the tree holds today. HAND-MAINTAINED ON PURPOSE: this list
+#: is the assertion D0520 makes about which scripts are high, not a mirror of a set the tree owns.
 HIGH = tuple(f"{SKILL_SCRIPTS}/{name}" for name in
              ("gate.py", "critic.py", "transition.py", "sprint.py", "verify_ac.py")) + (
     ".githooks/pre-push", ".githooks/pre-commit", ".githooks/commit-msg")
