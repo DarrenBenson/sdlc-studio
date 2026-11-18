@@ -76,5 +76,92 @@ class SignPrincipalTests(unittest.TestCase):
             self.assertEqual("Darren Benson", state["signature"]["principal"])
 
 
+def _decisions(root: Path) -> tuple[str, str]:
+    """A decisions log written through `decisions.add`: one authority since superseded and the
+    accepted one that replaced it. Returns (accepted, superseded)."""
+    decisions = loader.load_script("decisions")
+    old = decisions.add(root, "the agent may sign RUN-BG0776", "an early authority")["id"]
+    new = decisions.add(root, "the agent may sign RUN-BG0776 for the operator", "replaces it",
+                        supersedes=old)["id"]
+    return new, old
+
+
+def _sign_as(root: Path, *extra: str) -> tuple[int, str, str]:
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        rc = sprint.main(["sign", "--report", "RPT0001", "--principal", "Darren Benson", *extra,
+                          "--root", str(root)])
+    return rc, out.getvalue(), err.getvalue()
+
+
+class DelegatedSignatureTests(unittest.TestCase):
+    """US1291: a signature entered under delegation names the accepted decision that authorises
+    it, and the signature block records both; one the operator enters needs neither."""
+
+    def test_a_delegated_signature_without_an_accepted_decision_is_refused(self) -> None:
+        """AC1. MUTANTS: `--delegated` sealed with no decision; any id accepted, so one the log
+        does not hold seals; any recorded id accepted, so the superseded one seals; the check
+        placed after the seal writes."""
+        for label, extra in (("no decision", ()), ("an id the log does not hold", ("D0099",)),
+                             ("the superseded decision", None)):
+            with self.subTest(label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _closed_run(root)
+                accepted, superseded = _decisions(root)
+                named = ("--decision", superseded) if extra is None else (
+                    ("--decision", *extra) if extra else ())
+                rc, out, err = _sign_as(root, "--delegated", *named)
+                self.assertNotEqual(0, rc, out + err)
+                self.assertIn("sign REFUSED:", err)
+                self.assertIn("accepted decision", err, "the refusal names no decision it needs")
+                state = _read(root)
+                self.assertEqual("running", state["outcome"])
+                self.assertIsNone(state.get("signature"))
+                self.assertNotIn("sealed", out)
+
+    def test_a_delegated_signature_records_its_decision_in_the_signature_block(self) -> None:
+        """AC2. MUTANTS: the block written without `delegated`, or without the decision id; the
+        sealed line silent on the decision; the id recorded as typed rather than as the log
+        spells it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _closed_run(root)
+            accepted, _ = _decisions(root)
+            rc, out, err = _sign_as(root, "--delegated", "--decision", accepted.lower())
+            self.assertEqual(0, rc, out + err)
+            state = _read(root)
+            self.assertEqual("goal-reached", state["outcome"])
+            signature = state["signature"]
+            self.assertEqual("Darren Benson", signature["principal"])
+            self.assertIs(True, signature.get("delegated"))
+            self.assertEqual(accepted, signature.get("decision"))
+            sealed = next(ln for ln in out.splitlines() if ln.startswith("sealed "))
+            self.assertIn(accepted, sealed, "the sealed line does not name the decision")
+            self.assertIn("delegated", sealed)
+
+    def test_an_undelegated_signature_seals_without_a_decision(self) -> None:
+        """AC3. MUTANTS: every signature asked for a decision; an undelegated signature written
+        with `delegated` or a `decision` key; a decision named without `--delegated` recorded
+        as a delegation instead of refused."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _closed_run(root)
+            rc, out, err = _sign_as(root)
+            self.assertEqual(0, rc, out + err)
+            signature = _read(root)["signature"]
+            self.assertEqual("Darren Benson", signature["principal"])
+            self.assertNotIn("delegated", signature)
+            self.assertNotIn("decision", signature)
+            self.assertNotIn("delegated", out)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _closed_run(root)
+            accepted, _ = _decisions(root)
+            rc, out, err = _sign_as(root, "--decision", accepted)
+            self.assertNotEqual(0, rc, out + err)
+            self.assertIn("sign REFUSED: --decision", err)
+            self.assertIsNone(_read(root).get("signature"))
+
+
 if __name__ == "__main__":
     unittest.main()

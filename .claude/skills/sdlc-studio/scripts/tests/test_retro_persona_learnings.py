@@ -229,6 +229,45 @@ class RetroLearningsTests(unittest.TestCase):
                 self.assertIn("2 of 5 verdict rows name no seat", text)
         self.assertNotIn("qa", block, "a quiet seat is named on the retro")
 
+    def test_a_wholly_unattributed_run_is_owed_not_clean(self) -> None:
+        """BG1520 AC3. A closed run whose every verdict row names no seat, as `lane accept`
+        recorded `qa-seat-UNIT-r1` before it wrote the seat, reads as owed on the close and the
+        retro, with the count; the positive control, every row attributed and nothing owed,
+        still reads clean. MUTANTS: the owed reading dropped, so the summary says no learning
+        awaits; owed on any unattributed row, so a partly attributed run reads owed; owed on a
+        run with every row attributed; the count left out."""
+        clean = "no approved learning awaits listing"
+        cases = {
+            "wholly unattributed": ([("US0101", "APPROVE", "qa-seat-US0101-r1", BUILDER, "none"),
+                                     ("US0102", "APPROVE", "qa-seat-US0102-r1", BUILDER, "none")],
+                                    True, "2 of 2 verdict rows name no seat"),
+            "partly unattributed": ([_APPROVALS[0],
+                                     ("US0102", "APPROVE", "qa-seat-US0102-r1", BUILDER, "none")],
+                                    False, "1 of 2 verdict rows name no seat"),
+            "every row attributed": (_APPROVALS, False, "0 of 2 verdict rows name no seat"),
+        }
+        for name, (rows, owed, count) in cases.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                _project(root, rows)
+                rc, out, err = _close(root)
+                self.assertEqual(0, rc, out + err)
+                summary = next(ln for ln in out.splitlines() if "persona-memory:" in ln)
+                block = _block(_retro(root))
+                for where, text in (("close summary", summary), ("block", block)):
+                    first = (text if where == "close summary"
+                             else block.split("-->", 1)[1].strip().splitlines()[0]).lower()
+                    if owed:
+                        self.assertIn("owed", first, f"{where} reads clean: {text}")
+                        self.assertNotIn(clean, first, f"{where} reads clean: {text}")
+                    else:
+                        self.assertIn(clean, first, f"{where} does not read clean: {text}")
+                        self.assertNotIn("owed", text, f"{where} reads owed: {text}")
+                self.assertIn(count, out)
+                self.assertIn(count, block)
+                if owed:
+                    self.assertIn("2 of 2 verdict rows name no seat", summary)
+
     def test_a_reclose_refreshes_the_block_in_place(self) -> None:
         """AC3. MUTANTS: a second block appended; the author's prose rewritten; the block kept
         from the first close, so the new learning is missing."""

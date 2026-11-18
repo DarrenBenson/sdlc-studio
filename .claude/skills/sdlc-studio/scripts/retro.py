@@ -2523,8 +2523,9 @@ def learnings_review(root, retro_id: str, run_id: str) -> dict:
     (`persona_memory.pending_listing`), each seat whose record holds adverse items and no
     learning in that listing, and how many verdict rows name no seat. The record is the one
     `retro.py seats` reports, `seat_record`: the batch's verdicts with the later bugs charged
-    over the retro's window. Raises ValueError for a retro that is not found or a memory file
-    that cannot be read."""
+    over the retro's window. `owed` is True when the run has verdict rows and every one names no
+    seat: no seat's record could be read, so an empty listing is not a clean one. Raises
+    ValueError for a retro that is not found or a memory file that cannot be read."""
     import persona_memory  # noqa: PLC0415 - sibling; only the close's listing reads memory
     path = find_retro(root, retro_id)
     if path is None:
@@ -2535,22 +2536,29 @@ def learnings_review(root, retro_id: str, run_id: str) -> dict:
     learned = {r["persona"] for r in listed}
     unlearned = [{"seat": role, "items": keys} for role, s in ev["seats"].items()
                  if (keys := adverse_keys(s)) and role not in learned]
+    unattributed = len(ev["unattributed"])
     return {"path": str(path), "run": run_id, "listed": listed, "unlearned": unlearned,
-            "rows": ev["rows"], "unattributed": len(ev["unattributed"])}
+            "rows": ev["rows"], "unattributed": unattributed,
+            "owed": bool(ev["rows"]) and unattributed == ev["rows"]}
 
 
 def learnings_lines(res: dict) -> list:
     """The listing as sentences, the first a summary; the close prints them and the retro block
-    carries them, so the two cannot say different things."""
+    carries them, so the two cannot say different things. A run whose every verdict row names
+    no seat (`owed`) is summarised as owing its learnings, with the count, never as clean."""
     n, run = len(res["listed"]), res["run"] or "this run"
+    owed = (f"learnings owed for {run}: {res['unattributed']} of {res['rows']} verdict rows name "
+            f"no seat, so no seat's record was read" if res.get("owed") else "")
     out = [f"{n} approved learning(s) listed for {run}, each live once the run is signed unless "
-           f"the signature strikes it" if n else
+           f"the signature strikes it" if n else owed or
            f"no approved learning awaits listing for {run}"]
     out += [f"{r['id']} ({r['persona'] or 'no persona'}) {r['title']}: approved by "
             f"{r['approved_by'] or 'nobody recorded'}; addresses "
             f"{r['addresses'] or 'nothing recorded'}" for r in res["listed"]]
     out += [f"{u['seat']} has adverse evidence ({', '.join(u['items'])}) and no learning listed"
             for u in res["unlearned"]]
+    if owed and n:
+        out.append(owed)
     if res["rows"]:
         out.append(f"{res['unattributed']} of {res['rows']} verdict rows name no seat")
     return out

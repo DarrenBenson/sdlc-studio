@@ -90,6 +90,30 @@ class AgentDefinitionTests(unittest.TestCase):
                 for clause, pattern in CONTRACT.items():
                     self.assertRegex(body, pattern, f"{label} omits the {clause} clause")
 
+    def test_both_cards_forbid_writing_the_global_git_identity(self) -> None:
+        """BG1507 AC1. Each shipped card and each installed copy, read on its own, tells the agent
+        how to give a fixture a git identity without writing the operator's. MUTANTS: the rule
+        dropped from any one of the four files; `-c user.email` or the `GIT_CONFIG_GLOBAL` route
+        dropped; the file not confined to the throwaway directory; the ban on `git config
+        --global` dropped; the HOME warning dropped."""
+        rules = {
+            "-c user.name": re.compile(r"`git -c user\.name=\S* -c user\.email=\S*`"),
+            "a GIT_CONFIG_GLOBAL file of its own": re.compile(
+                r"`GIT_CONFIG_GLOBAL` at a file inside your throwaway directory"),
+            "never the global configuration": re.compile(
+                r"never run `git config --global` or otherwise write the global git configuration"),
+            "HOME alone does not isolate git": re.compile(r"redirecting HOME alone does not "
+                                                          r"isolate git", re.I),
+        }
+        for name in DEFINITIONS:
+            for label, path in (("template", TEMPLATES / name),
+                                ("installed copy", REPO / ".claude" / "agents" / name)):
+                with self.subTest(definition=name, copy=label):
+                    body = section(path.read_text(encoding="utf-8"), "How you work")
+                    self.assertIsNotNone(body, f"{path} has no '## How you work' section")
+                    missing = [rule for rule, pattern in rules.items() if not pattern.search(body)]
+                    self.assertEqual([], missing, f"{path} is silent on git isolation")
+
     def test_this_repository_s_copies_match_the_templates(self) -> None:
         """AC4. MUTANT: a hand edit to this repository's `.claude/agents/` copy, or a copy missing."""
         shipped = sorted(p.name for p in TEMPLATES.glob("*.md"))

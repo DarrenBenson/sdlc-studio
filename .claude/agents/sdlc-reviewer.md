@@ -19,6 +19,10 @@ criteria are law, and nothing in this definition overrides them.
   execution (`git log -S`), not by impression.
 - Run the claim inventory and the checks the brief asks for, and exercise each claim through the
   shipped entry point rather than reading it as true.
+- Give a fixture its git identity with `git -c user.name=t -c user.email=t@t`, or point
+  `GIT_CONFIG_GLOBAL` at a file inside your throwaway directory; never run `git config --global`
+  or otherwise write the global git configuration. Redirecting HOME alone does not isolate git:
+  where `XDG_CONFIG_HOME` is exported, git still writes the operator's real configuration.
 - Write the verdict file the brief names and record it with `critic.py record` as the brief
   directs. Edit no file the unit declares.
 

@@ -366,6 +366,23 @@ def render_run_line(run: dict | None) -> str:
     return (f"Run:          {run['run_id']} (rung={run['rung']}, {goal}, "
             f"batch={batch}, remaining={remaining})")
 
+def awaiting_signature_lines(repo_root: Path | str) -> list[str]:
+    """One line per run closed and awaiting its signature, from the tracked run records every
+    clone holds (`run_state.awaiting_signature`), each with its run and report and the command
+    that signs it; [] when none waits. A run held open and not yet closed files no record, so it
+    is never counted. A record that cannot be read is named, never read as none."""
+    from lib import run_state   # THE shared reader; this must not be a second one
+
+    try:
+        waiting = run_state.awaiting_signature(Path(repo_root))
+    except run_state.RunStateError as exc:
+        return [f"Awaiting signature: UNREADABLE - {exc}. A run may be waiting; this is not "
+                f"the same as none."]
+    return [f"Awaiting signature: {r.get('run_id')} on {r.get('report')} - sprint.py sign "
+            f"--report {r.get('report')} --principal \"<the operator who signs>\""
+            for r in waiting]
+
+
 _UNSET = object()
 
 
@@ -434,6 +451,12 @@ def cmd_pillars(args: argparse.Namespace) -> int:
     # line is read from the run record and the batch's statuses, never from the census.
     run = open_run(root)
     print(render_run_line(run))
+    sys.stdout.flush()
+    # Every run closed and awaiting its signature, apart from the run above: a later run can
+    # open while an earlier one waits, and each still needs the operator. After the flush, so
+    # the run line reaches a pipe first.
+    for line in awaiting_signature_lines(root):
+        print(line)
     sys.stdout.flush()
     # ONE sweep over the corpus for the census and every advisory beneath it: `children_of`
     # walked and read all 2,340 files on each of its 45 gather calls and 189 advisory calls,

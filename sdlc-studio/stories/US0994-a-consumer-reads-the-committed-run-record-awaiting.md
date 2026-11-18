@@ -23,8 +23,8 @@
 - **AC1:** Given a run closed with `sprint close` and signed with `sprint sign` in a fixture, when the conformance test reads the tracked record after each command, then every key the annex contracts for that state is present with its documented type, and a key the annex does not contract is tolerated rather than failed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_tracked_record_holds_its_contracted_keys
   - **Verified:** yes (2026-11-15)
-- **AC2:** Given three tracked records from fixture runs, one closed, one closed and signed, and one closed and then ended with `sprint stop`, when the test evaluates the annex's own awaiting-signature predicate, extracted from the annex, on each record, then it agrees with `sprint plan --write` in a fresh clone, which is refused for the first and not refused for the other two.
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_annex_awaiting_rule_matches_the_plan_guard
+- **AC2:** Given three tracked records from fixture runs, one closed, one closed and signed, and one closed and then ended with `sprint stop`, when the test evaluates the annex's own awaiting-signature predicate, extracted from the annex, on each record, then it agrees with `sprint plan --write` in a fresh clone, which is refused for the first and not refused for the other two. (Restated in run sixteen: since D0503 and US1290 the plan opens the next run over every closed record, so the check is now that the annex's predicate reads only the awaiting record as awaiting and that the plan opens over all three.)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_evidence_annex_run_record.py::RunRecordAnnexTests::test_the_annex_awaiting_rule_reads_only_the_signable_record
   - **Verified:** yes (2026-11-15)
 
 ## Notes
@@ -55,3 +55,4 @@ Kept (D0387). To plan it:
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming, D0474) | Groomed for run twelve: Persona Abena Osei, the Primary since RFC0063 (End goal 1); Release 6.4 per D0474. Its Depends-on units are all Done |
 | 2026-11-14 | Claude Opus 5.5 (run twelve grooming) | Cleared the Depends-on entries already Done or Complete, as the plan's backlog triage asked |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | AC2 restated and repointed: US1290 (D0503) removed the plan refusal the agreement pinned; test renamed with it |

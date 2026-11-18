@@ -535,9 +535,10 @@ contracted in that state and may be absent.
 
 ### Run record awaiting rule
 
-A record awaits its signature when every row below holds. `sprint plan --write` applies the same
-rule in every clone, refusing to open a run while any record awaits. Carrying no signature is
-not enough: a run the close filed and `sprint stop` then ended carries none, and awaits nothing.
+A record awaits its signature when every row below holds; it keeps awaiting until `sprint sign`
+seals it. Since D0503 (US1290), `sprint plan --write` no longer refuses on this rule: it opens the
+next run over a closed run that awaits. Carrying no signature is not enough: a run the close filed
+and `sprint stop` then ended carries none, and awaits nothing.
 
 | Key | Holds |
 | --- | --- |
@@ -545,8 +546,7 @@ not enough: a run the close filed and `sprint stop` then ended carries none, and
 | `report` | any non-empty value |
 
 The rule reads the committed record alone, so it has one gap: between a `sprint reopen` and the
-next close the record still reads as it was last filed, sealed or stopped, and another clone is
-not refused a plan in that window.
+next close the record still reads as it was last filed, sealed or stopped.
 
 ## Lesson class store
 

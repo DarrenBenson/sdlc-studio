@@ -117,7 +117,7 @@ class LaneAcceptTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def _accept(self, uid: str, verdict: str, *extra: str, stub=None,
-                at: Path | None = None) -> tuple[int, str, str]:
+                at: Path | None = None, reviewer: str = "qa-seat") -> tuple[int, str, str]:
         path = _write(self.root, str(at or f"verdicts/{uid}.txt"), verdict)
         real = lanes._script
 
@@ -129,7 +129,7 @@ class LaneAcceptTests(unittest.TestCase):
         with unittest.mock.patch.object(lanes, "_script", spy), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = sprint.main(["lane", "accept", "--unit", uid, "--verdict", str(path),
-                              "--reviewer", "qa-seat", *extra, "--root", str(self.root)])
+                              "--reviewer", reviewer, *extra, "--root", str(self.root)])
         return rc, out.getvalue(), err.getvalue()
 
     def _rows(self, uid: str) -> list[list[str]]:
@@ -148,8 +148,9 @@ class LaneAcceptTests(unittest.TestCase):
                                            "transition.py set", "sprint.py lane"])
         row = self._rows(GREEN)[-1]
         # verdict, reviewer, author (the self-check's), date, brief fingerprint, tier
+        # BG1520: the free-text `qa-seat` is recorded as the briefed seat's holder and role
         self.assertEqual([row[1], row[2], row[3], row[5], row[6]],
-                         ["APPROVE", "qa-seat", AUTHOR, self.fp[GREEN], "full"])
+                         ["APPROVE", "Sam (qa)", AUTHOR, self.fp[GREEN], "full"])
         self.assertEqual(_status(self.root, GREEN), "Done")
         back = self.calls[-1][1]
         self.assertEqual(back[:3], ("lane", "return", "--units"))
@@ -241,6 +242,56 @@ class LaneAcceptTests(unittest.TestCase):
                 self.assertIn(said, err)
         self.assertEqual(self.calls, [])
         self.assertFalse(critic.verdicts_path(self.root).exists())
+
+    # -- BG1520: the Reviewer cell names the briefed seat ---------------------------------
+
+    def test_the_recorded_reviewer_cell_names_the_briefed_seat(self) -> None:
+        """BG1520 AC1. MUTANTS: the value recorded as given, so `recorded_seat` reads nothing;
+        the role written without the holder; the role read only through a declared card, so a
+        project with no qa card records nothing attributable."""
+        rc, out, err = self._accept(GREEN, APPROVE, reviewer=f"qa-seat-{GREEN}-r1")
+        self.assertEqual(rc, 0, out + err)
+        cell = self._rows(GREEN)[-1][2]
+        self.assertEqual("Sam (qa)", cell, "the cell is not in the holder and role form")
+        self.assertEqual("qa", critic.recorded_seat(cell))
+        # a project declaring no qa card: the shipped seat's role is still read from the value
+        (self.root / "sdlc-studio/personas/seats/qa.md").unlink()
+        rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder",
+                                    reviewer=f"qa-seat-{BUG}-r1")
+        self.assertEqual(rc, 0, out + err)
+        self.assertEqual("qa", critic.recorded_seat(self._rows(BUG)[-1][2]))
+
+    def test_a_reviewer_naming_no_known_seat_is_refused(self) -> None:
+        """BG1520 AC2. MUTANTS: the refusal dropped, so the value is recorded unattributed; the
+        known seats left out of the refusal; the refusal written after the record; a value in the
+        holder and role form, or naming the holder alone, refused."""
+        for value in ("reviewer-r1", "engineering-seat-r1"):
+            with self.subTest(refused=value):
+                rc, out, err = self._accept(GREEN, APPROVE, reviewer=value)
+                self.assertEqual(rc, 2, out + err)
+                self.assertIn("known seats: engineering, product, qa", err)
+                self.assertIn("the brief named qa", err)
+                self.assertEqual(self.calls, [], "lane accept ran a script on the refused value")
+                self.assertFalse(critic.verdicts_path(self.root).exists(), "a row was written")
+        for value, uid in (("Sam (qa)", GREEN), ("Sam", BUG)):
+            with self.subTest(recorded=value):
+                named = ("--author", "bug-builder") if uid == BUG else ()
+                rc, out, err = self._accept(uid, APPROVE, *named, reviewer=value)
+                self.assertEqual(rc, 0, out + err)
+                self.assertEqual("Sam (qa)", self._rows(uid)[-1][2])
+
+    def test_the_runbook_row_documents_the_seat_form(self) -> None:
+        """BG1520 AC4. MUTANTS: the lane accept row back to a bare `--reviewer <name>`; the
+        record row's form changed so the two differ."""
+        runbook = (SCRIPTS.parent / "reference-sprint-toolchain.md").read_text(encoding="utf-8")
+        rows = {verb: next(ln for ln in runbook.splitlines()
+                           if ln.startswith("|") and f"`{verb} " in ln)
+                for verb in ("sprint.py lane accept", "critic.py record")}
+        form = '--reviewer "<holder> (<role>)"'
+        for verb, row in rows.items():
+            with self.subTest(verb):
+                self.assertIn(form, row, f"the {verb} row does not document the seat form")
+        self.assertNotIn("--reviewer <name>", rows["sprint.py lane accept"])
 
     # -- BG1290: the brief a landing leaves -----------------------------------------------
 

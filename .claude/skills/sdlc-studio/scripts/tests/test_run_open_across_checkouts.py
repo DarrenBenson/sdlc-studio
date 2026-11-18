@@ -1,8 +1,10 @@
 """BG0993: whether a sprint run is open is committed, so every checkout sees it.
 
-`sprint close` files the run's record beside the report, still running; `sprint plan --write`
-refuses while any tracked record awaits its signature; `sprint sign` takes the run up from that
-record in a clone that never held it; and a signed record blocks no plan anywhere. Driven
+`sprint close` files the run's record beside the report, still running; `sprint sign` takes the
+run up from that record in a clone that never held it; and a signed record blocks no plan
+anywhere. Since US1290 a record awaiting its signature blocks no plan either: `sprint plan
+--write` names it and opens the next run beside it, the closing checkout archives its closed run
+for a disjoint batch, and `sprint sign` seals the waiting run while a later one stays open. Driven
 through the shipped `sprint` entry points across real clones, with only the terminal
 transitions stubbed (the shared sign fixture). `gh` is a stub that answers nothing.
 """
@@ -111,33 +113,87 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertTrue(record.get("close_tree"), "the record carries no tree to sign against")
         self.assertIsNone(record.get("signature"))
 
-    def test_plan_refused_by_an_unsigned_committed_run(self) -> None:
-        """AC2. Mutant: `plan --write` reads only this checkout's `.local`, so a fresh clone
-        opens a second run beside the one awaiting its signature."""
+    # --- US1290: a run awaiting its signature does not hold the next one back ----------------
+
+    @staticmethod
+    def _ready(root: Path, uid: str, status: str = "Ready") -> None:
+        """A plannable story at `status`, left untracked: a file added since the close and not
+        staged is no change to the tree the waiting run's report describes."""
+        (root / "sdlc-studio" / "stories" / f"{uid}-next.md").write_text(
+            f"# {uid}: next\n\n> **Status:** {status}\n> **Points:** 2\n> **Epic:** EP0001\n"
+            f"> **Affects:** src/{uid.lower()}.py\n\n## Acceptance Criteria\n\n### AC1: works\n"
+            "- **Verify:** shell true\n", encoding="utf-8")
+
+    def _assert_still_waiting(self, root: Path, before: bytes) -> None:
+        self.assertEqual(before, (root / RECORD).read_bytes(),
+                         "the waiting run's tracked record was changed")
+        record = self._record(root)
+        self.assertEqual(("running", REPORT), (record["outcome"], record["report"]))
+        self.assertIsNone(record.get("signature"))
+
+    def test_plan_opens_a_run_over_an_unsigned_committed_run(self) -> None:
+        """US1290 AC1. MUTANTS: the one-run refusal kept for a waiting record; the plan opening
+        the new run by sealing or rewriting the waiting record; the plan silent on the run
+        still waiting."""
         self._close()
         clone = self._clone("fresh")
-        rc, _out, err = self._plan(clone)
-        self.assertEqual(2, rc, err)
-        self.assertIn(RUN, err)
-        self.assertIn(REPORT, err)
-        self.assertIn(f"sprint.py sign --report {REPORT}", err)
-        self.assertEqual({}, self._live(clone), "a refused plan opened a run")
-        # A stale local record of an older, sealed run (the second machine's shape) is refused
-        # the same way.
-        stale = clone / "sdlc-studio" / ".local" / "run-state.json"
-        stale.parent.mkdir(parents=True)
-        stale.write_text(json.dumps({"schema": 1, "run_id": "RUN-OLDER001",
-                                     "outcome": "goal-reached", "batch": ["US0001"]}),
-                         encoding="utf-8")
-        rc, _out, err = self._plan(clone)
-        self.assertEqual(2, rc, err)
-        self.assertIn(RUN, err)
-        self.assertEqual("RUN-OLDER001", self._live(clone)["run_id"])
-        # The checkout that closed the run holds it open, so its refusal is the one-run
-        # refusal it has always given, not this one.
-        rc, _out, err = self._plan(self.closer)
-        self.assertEqual(2, rc, err)
-        self.assertIn(f"{RUN} is already open", err)
+        self._ready(clone, "US0102")
+        before = (clone / RECORD).read_bytes()
+        rc, out, err = self._plan(clone)
+        self.assertEqual(0, rc, out + err)
+        live = self._live(clone)
+        self.assertEqual("running", live.get("outcome"))
+        self.assertTrue(live.get("run_id"))
+        self.assertNotEqual(RUN, live["run_id"], "the new run took the waiting run's id")
+        self.assertEqual(["US0102"], live.get("batch"))
+        self._assert_still_waiting(clone, before)
+        self.assertIn(f"{RUN} awaits a signature on {REPORT}", out + err)
+        self.assertNotIn("REFUSED", out + err)
+
+    def test_the_closing_checkout_opens_the_next_run_and_an_unclosed_run_still_refuses(self) -> None:
+        """US1290 AC2. MUTANTS: the '<run> is already open' refusal kept for a closed run; every
+        run read as closed, so an open run with no report takes a disjoint batch; the closed run
+        archived without its record still awaiting."""
+        self._close()
+        self._ready(self.closer, "US0102")
+        before = (self.closer / RECORD).read_bytes()
+        rc, out, err = self._plan(self.closer)
+        self.assertEqual(0, rc, out + err)
+        live = self._live(self.closer)
+        self.assertNotEqual(RUN, live.get("run_id"), "no new run was opened")
+        self.assertEqual(["US0102"], live.get("batch"))
+        self._assert_still_waiting(self.closer, before)
+        # the new run is open and not yet closed: a disjoint batch is refused as it always was
+        self._ready(self.closer, "US0102", status="In Progress")
+        self._ready(self.closer, "US0103")
+        rc, out, err = self._plan(self.closer)
+        self.assertEqual(2, rc, out + err)
+        self.assertIn(f"{live['run_id']} is already open", err)
+        self.assertEqual(live, self._live(self.closer), "the refused plan changed the open run")
+
+    def test_sign_seals_a_waiting_run_without_disturbing_the_open_one(self) -> None:
+        """US1290 AC3. MUTANTS: the 'cannot be taken up here without discarding it' refusal
+        kept; the waiting run taken up over the open run's live state and never put back; the
+        open run's state put back before the seal's last write, so the sealed record misses it."""
+        self._close()
+        self._ready(self.closer, "US0102")
+        rc, out, err = self._plan(self.closer)
+        self.assertEqual(0, rc, out + err)
+        live_path = self.closer / "sdlc-studio" / ".local" / "run-state.json"
+        opened, opened_bytes = self._live(self.closer), live_path.read_bytes()
+        rc, out, err = signing._sign(self.closer, REPORT)
+        self.assertEqual(0, rc, out + err)
+        record = self._record(self.closer)
+        self.assertEqual("goal-reached", record["outcome"])
+        self.assertEqual(REPORT, record["signature"]["report"])
+        self.assertEqual("Darren", record["signature"]["principal"])
+        self.assertTrue(record.get("close_tree"), "the sealed record lost its tree")
+        self.assertEqual(opened_bytes, live_path.read_bytes(), "the open run's state changed")
+        after = self._live(self.closer)
+        self.assertEqual([opened[k] for k in ("run_id", "batch", "started_at", "outcome")],
+                         [after[k] for k in ("run_id", "batch", "started_at", "outcome")])
+        archived = self.closer / "sdlc-studio" / ".local" / "run-archive" / f"{RUN}.json"
+        self.assertEqual("goal-reached", json.loads(archived.read_text())["outcome"])
 
     def test_sign_from_a_fresh_clone(self) -> None:
         """AC3. Mutants: `sign` reads only `.local`, so a clone that never held the run cannot
@@ -173,16 +229,19 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
         self.assertEqual(RUN, self._live(clone)["run_id"])
         self.assertTrue((local / "run-archive" / "RUN-OLDER001.json").is_file(),
                         "the older run was overwritten, not archived")
-        # A run still OPEN in that checkout is never discarded to take another up.
+        # A run still OPEN in that checkout is never discarded to take another up: since
+        # US1290 the waiting run is sealed beside it, and the open run is put back unchanged.
         third = self._clone("busy")
         (third / "sdlc-studio" / ".local").mkdir(parents=True)
-        (third / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
-            {"schema": 1, "run_id": "RUN-BUSY0001", "outcome": "running",
-             "batch": ["US0002"]}), encoding="utf-8")
+        busy = third / "sdlc-studio" / ".local" / "run-state.json"
+        busy.write_text(json.dumps({"schema": 1, "run_id": "RUN-BUSY0001", "outcome": "running",
+                                    "batch": ["US0002"]}), encoding="utf-8")
+        before = busy.read_bytes()
         rc, _out, err = signing._sign(third, REPORT)
-        self.assertEqual(2, rc, err)
+        self.assertEqual(0, rc, err)
         self.assertIn("RUN-BUSY0001", err)
-        self.assertEqual("RUN-BUSY0001", self._live(third)["run_id"])
+        self.assertEqual(before, busy.read_bytes(), "the open run was discarded or changed")
+        self.assertEqual("goal-reached", self._record(third)["outcome"])
 
     def test_signed_record_does_not_block(self) -> None:
         """AC4. Mutants: a signed record still counted as awaiting; or the checkout that closed
@@ -404,9 +463,10 @@ class RunOpenAcrossCheckoutsTests(unittest.TestCase):
             sprint_report.main(["--root", str(self.closer), "check", "--report", REPORT])
         self.assertTrue(buf.getvalue().startswith(f"INVALIDATED: {REPORT}"), buf.getvalue())
         self.assertNotIn("never removed", buf.getvalue())
-        # Every clone still sees the run open, awaiting the re-closed page's signature.
+        # Every clone still sees the run awaiting the re-closed page's signature; since US1290
+        # its plan names it and goes on rather than refusing.
         rc, _out, err = self._plan(self._clone("after"))
-        self.assertEqual(2, rc, err)
+        self.assertEqual(0, rc, err)
         self.assertIn(f"awaits a signature on {record['report']}", err)
 
     def test_a_resignature_elsewhere_after_a_local_reopen_is_taken_up(self) -> None:

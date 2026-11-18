@@ -228,24 +228,20 @@ class RunRecordAnnexTests(unittest.TestCase):
                 self.assertIn(field, signature)
                 self.assertIn(type(signature[field]), documented_types(row["Type"]))
 
-    def test_the_annex_awaiting_rule_matches_the_plan_guard(self) -> None:
-        """AC2. MUTANT: the annex reads awaiting as carrying no signature, which reads the
-        stopped run as still open. MUTANT: the plan's guard changes with no annex change."""
-        verdicts = {}
+    def test_the_annex_awaiting_rule_reads_only_the_signable_record(self) -> None:
+        """AC2. The annex's awaiting rule picks out the one record `sprint sign` can still seal,
+        and since D0503 (US1290) `sprint plan --write` opens the next run over every closed
+        record, awaiting or not, as the annex now says. MUTANT: the annex reads awaiting as
+        carrying no signature, which reads the stopped run as awaiting. MUTANT: the plan
+        refuses an awaiting record again, against the annex."""
+        awaits = {}
         for state in STATES:
             rc, _out, err = self.planned[state]
-            refused = rc != 0
             with self.subTest(state=state):
-                if refused:
-                    self.assertIn(f"{RUN} awaits a signature on {REPORT}", err,
-                                  "the plan was refused, but not by the awaiting guard")
-                else:
-                    self.assertEqual(0, rc, err)
-                self.assertEqual(refused, annex_awaits(self.records[state]),
-                                 f"the annex's awaiting rule and `sprint plan --write` disagree "
-                                 f"on the {state.lower()} record")
-            verdicts[state] = refused
-        self.assertEqual({"Awaiting": True, "Sealed": False, "Stopped": False}, verdicts)
+                self.assertEqual(0, rc, f"`sprint plan --write` refused over the "
+                                        f"{state.lower()} record:\n{err}")
+            awaits[state] = annex_awaits(self.records[state])
+        self.assertEqual({"Awaiting": True, "Sealed": False, "Stopped": False}, awaits)
 
 
 if __name__ == "__main__":

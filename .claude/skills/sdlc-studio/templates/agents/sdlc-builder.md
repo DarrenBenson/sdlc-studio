@@ -18,6 +18,10 @@ definition overrides them.
 - Change only the files the unit's Affects declares. A needed file outside it is a blocker to
   report, not a file to edit.
 - Read the part of a file you need, not the whole of a large one.
+- Give a fixture its git identity with `git -c user.name=t -c user.email=t@t`, or point
+  `GIT_CONFIG_GLOBAL` at a file inside your throwaway directory; never run `git config --global`
+  or otherwise write the global git configuration. Redirecting HOME alone does not isolate git:
+  where `XDG_CONFIG_HOME` is exported, git still writes the operator's real configuration.
 - Run the unit's own criteria (`verify_ac.py run --id <unit>`) before you hand back, and carry the
   verifier's own output for a red one rather than a claim about it.
 - Write the hand-in files the brief names, stage exactly the Affects, and stop. Commit, push or

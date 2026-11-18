@@ -9766,6 +9766,72 @@ def cmd_cost(args: argparse.Namespace) -> int:
     return 0
 
 
+def _identity_refusal(root, verb: str) -> str | None:
+    """The refusal `lane land` and `close` print when the global git identity differs from the
+    one the open run recorded (`run_state.identity_drift`), naming the file git now reads, the
+    identity recorded and the identity found; None when it does not differ."""
+    drift = run_state.identity_drift(root)
+    if not drift:
+        return None
+    return (f"{verb} refused: the global git identity has changed since run {drift['run_id']} "
+            f"opened: recorded {run_state.identity_line(drift['recorded'])}, found "
+            f"{run_state.identity_line(drift['found'])} in {drift['file']}. An agent that "
+            f"redirects HOME and runs `git config --global` writes this file; restore the "
+            f"identity there, then re-run.")
+
+
+def _briefed_seats(root, unit: str) -> list[str]:
+    """The seats `critic.py brief` noted a brief of `unit` for, oldest first, each once."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    try:
+        lines = (Path(root) / critic.BRIEF_NOTES_REL).read_text(
+            encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    uid, seats = sdlc_md.norm_id(unit), []
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        seat = str(row.get("seat") or "").strip().lower() if isinstance(row, dict) else ""
+        if seat and row.get("unit") == uid and seat not in seats:
+            seats.append(seat)
+    return seats
+
+
+def _lane_reviewer_cell(root, unit: str | None, reviewer: str | None) -> tuple:
+    """The Reviewer cell `lane accept` records, as (cell, None), or (None, refusal).
+
+    When a brief of the unit named a seat, the cell is that seat's `<holder> (<role>)`
+    (`critic.seat_signature`), the form `critic.recorded_seat` reads, so a lane's verdict is
+    attributed to a seat as a `critic.py record` one is. The value must carry a seat the unit was
+    briefed for: as a `(<role>)` group, as the role spelled as a word (`qa-seat-US0101-r1`), or
+    as a word of the seat holder's name. A value carrying none, or only a seat the unit was not
+    briefed for, is refused, naming the known seats. With no seat noted, or no value, the value
+    passes as given and `lanes.accept` judges it."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    import persona_resolve  # noqa: PLC0415 - sibling; the shipped seat vocabulary
+    briefed = _briefed_seats(root, unit) if unit and reviewer and reviewer.strip() else []
+    if not briefed:
+        return reviewer, None
+    value = reviewer.strip()
+    declared = critic._declared_reviewers(root)  # noqa: SLF001 - the project's seat cards
+    known = sorted({*briefed, *persona_resolve.SEATS, *(role for role, _ in declared)})
+    carried = [critic.recorded_seat(value)]
+    carried += [s for s in known
+                if re.search(rf"(?<![a-z0-9]){re.escape(s)}(?![a-z0-9])", value.lower())]
+    carried.append(critic.seat_for(root, value))
+    seat = next((s for s in reversed(briefed) if s in carried), None)
+    if seat:
+        return critic.seat_signature(root, seat), None
+    return None, (f"sprint lane accept refused: --reviewer {value!r} carries no seat {unit} was "
+                  f"briefed for, so its verdict would be attributed to no seat and nothing was "
+                  f"recorded; the brief named {', '.join(briefed)}, and the known seats: "
+                  f"{', '.join(known)}. Name the seat, as in --reviewer "
+                  f"\"{critic.seat_signature(root, briefed[-1])}\".")
+
+
 def cmd_lane(args: argparse.Namespace) -> int:
     """`sprint lane brief|return|land`: the two ends of a delegated unit, and its landing.
 
@@ -9778,6 +9844,11 @@ def cmd_lane(args: argparse.Namespace) -> int:
     the steps and exit statuses of both are `lib/lanes.py`'s.
     """
     if args.action == "land":
+        # Before the landing commits anything or moves main: a commit made now would carry an
+        # identity an agent wrote, and pushed history cannot be re-attributed.
+        if refusal := _identity_refusal(args.root, "sprint lane land"):
+            print(refusal, file=sys.stderr)
+            return 2
         from lib import lanes  # noqa: PLC0415 - only the landing needs it
         return lanes.land(args.root, getattr(args, "worktree", None),
                           getattr(args, "units", None) or [], getattr(args, "author", None),
@@ -9790,8 +9861,13 @@ def cmd_lane(args: argparse.Namespace) -> int:
                        if value is not None for arg in (flag, str(value))]
         for flag, values in (("--proof", args.proof), ("--gap", args.gap)):
             passthrough += [arg for value in values or [] for arg in (flag, value)]
+        reviewer, refusal = _lane_reviewer_cell(args.root, getattr(args, "unit", None),
+                                                getattr(args, "reviewer", None))
+        if refusal:
+            print(refusal, file=sys.stderr)
+            return 2
         return lanes.accept(args.root, getattr(args, "unit", None),
-                            getattr(args, "verdict", None), getattr(args, "reviewer", None),
+                            getattr(args, "verdict", None), reviewer,
                             _SIGNOFF_TERMINAL, author=getattr(args, "author", None),
                             timeout=args.timeout or LANE_VERIFY_TIMEOUT,
                             passthrough=passthrough)
@@ -10118,32 +10194,29 @@ def _take_up_signature(root, state: dict, verb: str) -> dict | None:
 
 
 def _run_held_elsewhere(root) -> str:
-    """Why `plan --write` may not open a run here, or "": a tracked record awaits its
-    signature for a run this checkout does not hold open. A run this checkout holds open is
-    judged as before, by `open_run`, unless another checkout signed it and this copy has not
-    moved past that signature: then it is taken up sealed and no longer stands in the way. An
-    unreadable live state is refused here, by name, and nothing is written."""
+    """Why `plan --write` may not open a run here, or "": an unreadable live state or tracked
+    run record, refused by name with nothing written. A run closed and awaiting its signature,
+    here or in another checkout, holds nothing back: each is named on stderr (`plan:`) and the
+    plan goes on, `open_run` archiving one this checkout holds once the batch is disjoint from
+    it. A run this checkout holds open is judged as before, by `open_run`, unless another
+    checkout signed it and this copy has not moved past that signature: then it is taken up
+    sealed and no longer stands in the way."""
     try:
         state = run_state.read(root) or {}
         if (taken := _take_up_signature(root, state, "plan")) is not None:
             state = taken
     except run_state.RunStateError as exc:
         return f"plan REFUSED: {exc}"
-    held = state.get("run_id") if state.get("outcome") == run_state.RUNNING else None
     try:
-        waiting = [r for r in run_state.awaiting_signature(root) if r.get("run_id") != held]
+        waiting = run_state.awaiting_signature(root)
     except run_state.RunStateError as exc:
         return f"plan REFUSED: {exc}"
-    if not waiting:
-        return ""
-    lines = ["plan REFUSED: a project holds one run at a time, and the tracked run records "
-             "say a run is closed and awaits its signature:"]
     for r in waiting:
-        lines.append(f"  {r.get('run_id')} awaits a signature on {r.get('report')} "
-                     f"({run_state.tracked_path(root, r['run_id']).relative_to(root).as_posix()})"
-                     f" - sign it, from any checkout that holds the record: sprint.py sign "
-                     f"--report {r.get('report')} --principal \"<the operator who signs>\"")
-    return "\n".join(lines)
+        print(f"plan: {r.get('run_id')} awaits a signature on {r.get('report')} "
+              f"({run_state.tracked_path(root, r['run_id']).relative_to(root).as_posix()}) - "
+              f"sign it, from any checkout that holds the record: sprint.py sign --report "
+              f"{r.get('report')} --principal \"<the operator who signs>\"", file=sys.stderr)
+    return ""
 
 
 def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[dict, str, bool]:
@@ -10155,7 +10228,8 @@ def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[di
     still name the page the reopen broke. Otherwise the tracked record awaiting a signature
     (the one naming `report_id`, or the only one when none is named), judged as it stands and
     taken up only once every check has passed, so a refused sign writes nothing. A different
-    run this checkout holds open is refused, never discarded."""
+    run this checkout holds open is never discarded: it is set aside while the waiting run is
+    sealed and put back byte for byte (`run_state.set_aside_open`)."""
     held = state.get("run_id")
     held_open = state.get("outcome") == run_state.RUNNING
     if held_open and state.get("report"):
@@ -10170,12 +10244,7 @@ def _committed_run_to_sign(root, state: dict, report_id: str | None) -> tuple[di
     waiting = [r for r in waiting if r.get("run_id") != held]
     if len(waiting) != 1:
         return state, "", False
-    record = waiting[0]
-    if held_open:
-        return state, (f"sign REFUSED: this checkout holds {held}, still open, so "
-                       f"{record.get('run_id')} cannot be taken up here without discarding it - "
-                       f"close or stop {held} first"), False
-    return record, "", True
+    return waiting[0], "", True
 
 
 def record_close_tree(root) -> None:
@@ -10391,7 +10460,14 @@ def cmd_close(args: argparse.Namespace) -> int:
         print(dry_run_report(result))
         if refusal := _refuse_batch_repair(root, state, "close"):
             print(refusal)          # REPORTED on a preview, refused on the real thing
+        if refusal := _identity_refusal(root, "close"):
+            print(refusal)
         return 0 if result["clean"] else 1
+    # A CHANGED GIT IDENTITY, before anything is written: the run's commits since the change
+    # carry an identity an agent wrote, so the run stays open until the identity is restored.
+    if refusal := _identity_refusal(root, "close"):
+        print(refusal, file=sys.stderr)
+        return 2
     # THE FIXED POINT, before anything is written. A repair to a batch unit sitting in the tree
     # will land after this close's account and re-open the ledger it is about to satisfy, so the
     # ceremony refuses rather than producing an account with a known expiry.
@@ -11091,6 +11167,13 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print("  the run is untouched and still open - sign as an operator outside "
               "the authoring session's control", file=sys.stderr)
         return 2
+    # A DELEGATED SIGNATURE NAMES ITS AUTHORITY, judged before anything is written like the
+    # principal: an accepted decision in the log, recorded in the signature block beside them.
+    decision, refusal = _delegation(root, args)
+    if refusal:
+        print(f"sign REFUSED: {refusal}", file=sys.stderr)
+        print("  the run is untouched and still open", file=sys.stderr)
+        return 2
     strikes, refused = _sign_strikes(root, state, args)
     if refused:
         for line in refused:
@@ -11098,15 +11181,21 @@ def cmd_sign(args: argparse.Namespace) -> int:
         print("  nothing is sealed and no memory file is changed - strike only learnings this "
               "run's close listed on the retro", file=sys.stderr)
         return 2
+    beside = None   # a later run held open here, set aside while the waiting run is sealed
     if take_up:
         # Every check above read the record as it stands; only now does it become this
-        # checkout's run, so a refused sign leaves the live state as it found it.
+        # checkout's run, so a refused sign leaves the live state as it found it. A later run
+        # this checkout holds open is set aside first and put back after the seal's last write.
         try:
+            beside = run_state.set_aside_open(root, state)
             state = run_state.adopt_tracked(root, state)
         except run_state.RunStateError as exc:
+            run_state.put_back(root, beside)
             print(f"sign REFUSED: {exc}", file=sys.stderr)
             return 2
-        print(f"sign: {state.get('run_id')} was closed in another checkout - taken up from "
+        print(f"sign: {state.get('run_id')} was closed "
+              + (f"before {beside['run_id']} opened here" if beside else "in another checkout")
+              + f" - taken up from "
               f"{run_state.tracked_path(root, state['run_id']).relative_to(root).as_posix()}",
               file=sys.stderr)
     # A STOP-SHIP RULING DOES NOT REFUSE THE SEAL (D0257): the signer decides, and so is shown
@@ -11130,7 +11219,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
         else:
             run_state.update(root, **unanswered_record(ua))
         _apply_strikes(root, strikes, args.principal, getattr(args, "strike_reason", ""))
-        signature = _write_the_signature(root, report_id, args.principal)
+        signature = _write_the_signature(root, report_id, args.principal, decision)
         sealed = run_state.close_run(root, outcome, handoff=state.get("handoff"))
         try:
             # THE SEALED RECORD IS TRACKED, beside the page, so any full clone can re-derive
@@ -11151,10 +11240,41 @@ def cmd_sign(args: argparse.Namespace) -> int:
     finally:
         # What the signature wrote is its own, so a resumed sign is judged against this tree.
         record_close_tree(root)
+        # The later run set aside above goes back exactly as it was, whatever the seal did.
+        run_state.put_back(root, beside)
     print(f"sealed {state.get('run_id')} {outcome}: signed by {args.principal} over "
           f"{report_id}" + (f" (fingerprint {signature.get('fingerprint')})"
-                            if signature.get("fingerprint") else ""))
+                            if signature.get("fingerprint") else "")
+          + (f", delegated under {decision}" if decision else ""))
     return 0
+
+
+def _delegation(root, args) -> tuple[str | None, str]:
+    """`(decision, refusal)` for a signature: the decision id that authorises a `--delegated`
+    signature, as the log spells it, or None for one the operator enters; and why it cannot be
+    sealed, or "". A delegated signature needs `--decision` naming a decision
+    `sdlc-studio/decisions.md` holds as accepted: none, an id the log does not hold and a
+    superseded one are each refused. A `--decision` with no `--delegated` is refused too, so an
+    undelegated signature never carries one."""
+    delegated, named = bool(getattr(args, "delegated", False)), getattr(args, "decision", None)
+    if not delegated:
+        return None, ("" if named is None else
+                      f"--decision {named!r} authorises a delegated signature, and this one is "
+                      f"not marked --delegated: pass --delegated with it, or drop --decision")
+    need = ("a delegated signature needs --decision naming the accepted decision in "
+            "sdlc-studio/decisions.md that authorises it")
+    if not (named or "").strip():
+        return None, need
+    import decisions  # noqa: PLC0415 - deferred sibling; only a delegated signature reads it
+    did = decisions._norm_did(named)  # noqa: SLF001 - the log's own id grammar
+    row = next((r for r in decisions.list_decisions(root) if did and r["id"] == did), None)
+    if row is None:
+        return None, (f"--decision {named!r}: sdlc-studio/decisions.md holds no such decision; "
+                      f"{need}")
+    if row["status"] != "accepted":
+        return None, (f"--decision {did} is {row['status'] or 'of no status'}, not accepted; "
+                      f"{need}")
+    return did, ""
 
 
 def _sign_strikes(root, state: dict, args) -> tuple[list, list]:
@@ -11219,8 +11339,11 @@ def _page_no_longer_matches(root, report_id: str) -> str:
             f"{sprint_report._refile_remedy(state)}")
 
 
-def _write_the_signature(root, report_id: str, principal: str) -> dict:
+def _write_the_signature(root, report_id: str, principal: str,
+                         decision: str | None = None) -> dict:
     """The run's own signature: the principal, the date, the report and THAT report's fingerprint.
+    A delegated signature also carries `delegated: true` and the authorising `decision` id
+    (`_delegation`); one the operator enters carries neither key.
 
     The fingerprint is read back off the filed report rather than taken from the run state or
     recomputed here. "Signed RPT0001" says nothing about WHICH RPT0001 - PREPARE re-derives the
@@ -11236,6 +11359,8 @@ def _write_the_signature(root, report_id: str, principal: str) -> dict:
     import sprint_report  # noqa: PLC0415
     signature = {"principal": principal, "signed_at": sdlc_md.now_iso8601(),
                  "report": report_id, "fingerprint": ""}
+    if decision:
+        signature.update(delegated=True, decision=decision)
     try:
         report = sprint_report.read_report(root, report_id)
         signature["fingerprint"] = report.get("fingerprint") or ""
@@ -13352,6 +13477,12 @@ def build_parser() -> argparse.ArgumentParser:
     sg.add_argument("--strike-reason", dest="strike_reason", default=None,
                     help="why the learnings named by --strike are struck, recorded with the "
                          "principal and the date")
+    sg.add_argument("--delegated", action="store_true",
+                    help="the signature is entered on the principal's behalf, under delegation; "
+                         "needs --decision")
+    sg.add_argument("--decision", default=None, metavar="Dnnnn",
+                    help="the accepted decision in sdlc-studio/decisions.md that authorises a "
+                         "--delegated signature, recorded in the signature block")
     sg.add_argument("--retro", default=None, metavar="RETROxxxx")
     sg.add_argument("--root", default=".")
     sg.set_defaults(func=cmd_sign)

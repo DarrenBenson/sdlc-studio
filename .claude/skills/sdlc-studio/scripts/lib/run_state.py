@@ -775,6 +775,34 @@ def adopt_tracked(repo_root: Path | str, record: dict) -> dict:
     return adopted
 
 
+def set_aside_open(repo_root: Path | str, record: dict) -> dict | None:
+    """Set this checkout's live run aside so `record`, a different run awaiting its signature,
+    can be taken up and sealed: when the live state holds another run still `running`, its file
+    is removed and returned as {"run_id", "text"}, for `put_back` to restore exactly. None, and
+    nothing touched, when the live state is that same run, closed, or absent: `adopt_tracked`
+    handles those as it always has."""
+    p = path(repo_root)
+    try:
+        text = p.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise RunStateError(f"the run state at {p} cannot be read: {exc}") from exc
+    live = read(repo_root) or {}
+    held = live.get("run_id")
+    if not held or held == record.get("run_id") or live.get("outcome") != RUNNING:
+        return None
+    p.unlink()
+    return {"run_id": held, "text": text}
+
+
+def put_back(repo_root: Path | str, beside: dict | None) -> None:
+    """Restore the live run `set_aside_open` set aside, byte for byte; nothing when it set
+    none aside."""
+    if beside:
+        sdlc_md.atomic_write(path(repo_root), beside["text"])
+
+
 def is_open(repo_root: Path | str) -> bool:
     """True when a run is open (recorded and not yet closed)."""
     return read(repo_root).get("outcome") == RUNNING
@@ -912,13 +940,35 @@ def _disjoint(state: dict, batch) -> bool:
     return bool(existing) and not (existing & incoming)
 
 
+def closed_awaiting_signature(repo_root: Path | str, state: dict) -> bool:
+    """Whether `state`, this checkout's live run, is closed and awaits only its signature: still
+    `running`, its close filed a report, and its tracked record awaits a signature on that same
+    report. Such a run no longer holds the run slot: the next plan over a disjoint batch archives
+    it and opens a fresh run, and `sprint sign` seals it from its tracked record. A run reopened
+    here has had its report cleared, and a run whose record was never filed or cannot be read
+    is not one, so each still holds the slot as before."""
+    rid, report = state.get("run_id"), state.get("report")
+    if state.get("outcome") != RUNNING or not rid or not report:
+        return False
+    try:
+        rec = read_tracked(repo_root, rid)
+    except RunStateError:
+        return False
+    return rec.get("outcome") == RUNNING and rec.get("report") == report
+
+
+def _holds_the_slot(repo_root: Path | str, state: dict, batch) -> bool:
+    """`_disjoint`, except for a run closed and awaiting its signature, which holds no slot."""
+    return _disjoint(state, batch) and not closed_awaiting_signature(repo_root, state)
+
+
 def disjoint_refusal(repo_root: Path | str, batch) -> "DisjointBatchError | None":
     """The refusal `open_run` would raise for planning `batch` against the open run, or None
     when it would accept. PURE - reads the state, writes nothing - so a caller can refuse before
     writing any sibling artefact (the sprint plan, the forecast log) that the refusal should not
     leave behind. `open_run` enforces the same rule inside its lock; this only pre-empts it."""
     state = read(repo_root)
-    if not _disjoint(state, batch):
+    if not _holds_the_slot(repo_root, state, batch):
         return None
     return DisjointBatchError(state.get("run_id"), state.get("outcome"),
                               len({sdlc_md.norm_id(b) for b in (state.get("batch") or [])}),
@@ -2168,6 +2218,77 @@ def unit_run_base_ref(repo_root: Path | str, unit: str) -> str:
     return str(state.get(BASE_REF) or "")
 
 
+#: The operator's global git identity when the run opened: {"name", "email", "file", "route"}.
+GIT_IDENTITY = "git_identity"
+
+
+def _global_config_route() -> list[str]:
+    """The files `git config --global` consults, in git's order, whether or not each exists:
+    `GIT_CONFIG_GLOBAL` alone when it is set, otherwise the XDG file and then ~/.gitconfig."""
+    if os.environ.get("GIT_CONFIG_GLOBAL"):
+        return [os.environ["GIT_CONFIG_GLOBAL"]]
+    home = Path(os.environ.get("HOME") or Path.home())
+    xdg = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config") / "git" / "config"
+    return [str(xdg), str(home / ".gitconfig")]
+
+
+def git_identity() -> dict | None:
+    """The global git identity git reads now, as {"name", "email", "file", "route"}: "" for a key
+    that is unset; `file` the file each set value came from (both, joined, when they differ), or
+    the route's existing files when neither is set; `route` is `_global_config_route()`. None
+    when git cannot answer at all, so a reader can tell "no identity" from "not read"."""
+    import subprocess  # noqa: PLC0415 - only this path shells out
+    route = _global_config_route()
+    found: dict = {"route": route}
+    origins: list[str] = []
+    for key in ("name", "email"):
+        try:
+            out = subprocess.run(["git", "config", "--global", "--show-origin", "--get",
+                                  f"user.{key}"], capture_output=True, text=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        origin, _, value = out.stdout.rstrip("\n").partition("\t")
+        found[key] = value if out.returncode == 0 else ""
+        origin = origin.removeprefix("file:")
+        if out.returncode == 0 and origin and origin not in origins:
+            origins.append(origin)
+    existing = [p for p in route if Path(p).is_file()]
+    found["file"] = " and ".join(origins or existing) or "no global git config file"
+    return found
+
+
+def identity_line(identity: dict | None) -> str:
+    """`name <email>`, or "no global identity" when neither is set."""
+    name, email = (identity or {}).get("name") or "", (identity or {}).get("email") or ""
+    return f"{name} <{email}>" if name or email else "no global identity"
+
+
+def identity_drift(repo_root: Path | str) -> dict | None:
+    """The open run's recorded git identity beside the one git reads now, when they differ:
+    {"run_id", "recorded", "found", "file"}. None when they match, when no run is open, when the
+    run recorded none (it opened before the record existed, or git could not answer) or when git
+    cannot answer now: the guard refuses only on a change it has seen.
+
+    Also None when this process consults other files than the opening one did (another
+    `GIT_CONFIG_GLOBAL`, HOME or `XDG_CONFIG_HOME`): that reads a different configuration, not a
+    rewritten one. A file an agent writes is still caught, because the operator's own processes
+    keep their route and git reads the written file through it."""
+    try:
+        state = read(repo_root) or {}
+    except RunStateError:
+        return None     # the run's own readers report an unreadable record
+    recorded = state.get(GIT_IDENTITY)
+    if _is_spent(state) or not isinstance(recorded, dict):
+        return None
+    found = git_identity()
+    if found is None or recorded.get("route") != found["route"]:
+        return None
+    if all((recorded.get(k) or "") == found[k] for k in ("name", "email")):
+        return None
+    return {"run_id": state.get("run_id"), "recorded": recorded, "found": found,
+            "file": found["file"]}
+
+
 def has_state(repo_root: Path | str) -> bool:
     """Whether a run-state file exists at all - a project that never opened a run has none."""
     return path(repo_root).exists()
@@ -2194,7 +2315,10 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
     state file is byte-identical afterwards. An overlapping re-plan is unaffected.
     """
     def apply(state: dict) -> dict:
-        if _is_spent(state):
+        # A run CLOSED AND AWAITING ITS SIGNATURE is history to a disjoint batch, as a spent one
+        # is: archived here, signed later from its tracked record, which this never touches.
+        if _is_spent(state) or (_disjoint(state, batch)
+                                and closed_awaiting_signature(repo_root, state)):
             # ARCHIVE BEFORE BLANKING. This is the last moment the finished run exists: the
             # next statement replaces it. `close_run` normally archived it already and this
             # rewrites the same key, but a run judged and left `running` never reached a
@@ -2205,6 +2329,8 @@ def open_run(repo_root: Path | str, batch: list[str] | None = None, goal: str | 
             state = {**_blank(), "run_id": _mint_run_id(repo_root, state),
                      "started_at": sdlc_md.now_iso8601(),
                      BASE_REF: _head_sha(repo_root),
+                     # The identity `lane land` and `close` compare against (`identity_drift`).
+                     GIT_IDENTITY: git_identity(),
                      TOKEN_BASELINE: _session_baseline(repo_root),
                      # The FIRST stamp, appended by the same read. The legacy baseline is kept
                      # beside it: every consumer of the old field goes on working, and a run

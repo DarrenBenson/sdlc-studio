@@ -30,8 +30,8 @@ Commit the run's open/closed marker with the report: when `close` files RPTxxxx,
 - [ ] **AC1** When `sprint close` files a report, a committed run record names the run as awaiting signature, with its report and fingerprint, so a fresh clone sees that a run is open
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k close_commits_an_awaiting_signature_record
   - **Verified:** yes (2026-10-08)
-- [ ] **AC2** `sprint plan --write` in a checkout whose local state names no open run still refuses while a committed run record awaits signature, naming the run, its report and the sign command
-  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k plan_refused_by_an_unsigned_committed_run
+- [ ] **AC2** `sprint plan --write` in a checkout whose local state names no open run reads the committed run record, so a run awaiting signature is seen from any checkout; since D0503 and US1290 it opens the next run over a closed run awaiting signature rather than refusing (the refusal this criterion first pinned was overturned by that ruling)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k plan_opens_a_run_over_an_unsigned_committed_run
   - **Verified:** yes (2026-10-08)
 - [ ] **AC3** `sprint sign --report <id>` seals the run from a fresh clone that holds the committed record but not the closing machine's `.local/` state
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py -k sign_from_a_fresh_clone
@@ -113,3 +113,4 @@ APPROVE, nothing blocking. `critic.py record` refused it as it refused round 3 (
 | 2026-10-08 | Claude Opus 5.5 (engineering seat) | Round 3 REJECT kept verbatim (the ledger refused it past the cap, BG1003); repaired under D0353 |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | QA round 4 APPROVE kept verbatim (refused by the ledger past the cap, BG1003); lows filed as BG1004 |
 | 2026-10-09 | Claude Opus 5.5 (engineering seat) | Code ships; the bug stays Open under D0354 until BG1003 lets the ledger record rounds 3 and 4 (`transition -> Fixed` reads round 2's REJECT as the last verdict) |
+| 2026-11-18 | Claude Opus 5.5 (run sixteen) | AC2 restated and repointed: US1290 (D0503) replaced the refusal it pinned, and renamed its test |
