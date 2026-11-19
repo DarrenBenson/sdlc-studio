@@ -2,7 +2,16 @@
 copy fails. The old `rm -rf $dest; cp -r ...` left the user with nothing (or a half-copy)
 if cp failed between the two. The fix stages into a temp sibling and swaps, so a failed
 copy leaves the previous install byte-for-byte intact.
+
+BG1546 (NothingInstalledOutcome): a run that wrote no target says so and exits non-zero, and a
+run that wrote some names only those in its banner, its next steps and the list the sweep trusts.
+
+BG1632 (InstallPs1ExistingFolderTests): install.ps1 removed an existing folder named sdlc-studio
+that is not the skill and installed in its place, where install.sh skips it.
 """
+import os
+import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +19,8 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 INSTALL_SH = REPO / "install.sh"
+INSTALL_PS1 = REPO / "install.ps1"
+PWSH = shutil.which("pwsh")
 
 # Source the installer, point install_to at a source, but make `cp` fail. The previous
 # install at $dest must survive unchanged, and install_to must report failure (non-zero).
@@ -275,6 +286,168 @@ class LocalSourceInstall(unittest.TestCase):
             self.assertIn("refusing to downgrade", proc.stdout + proc.stderr)
             self.assertEqual((dest / "templates" / "version.yaml").read_text(encoding="utf-8"),
                              'skill_version: "9.9.9"\n')  # newer install untouched
+
+
+class NothingInstalledOutcome(unittest.TestCase):
+    """BG1546: install_to skipped a foreign folder and refused a downgrade with `return 0`, and
+    main appended every requested target to the installed list, so a run that wrote nothing
+    printed 'SDLC Studio installed for: claude' and exited 0. Each run installs this
+    repository's own skill folder with `--from`, into a scratch HOME, stderr merged into stdout
+    so the closing line is the one a reader sees last."""
+
+    SKILL = REPO / ".claude" / "skills" / "sdlc-studio"
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.home = self.root / "home"
+        self.home.mkdir()
+        self.env = {**os.environ, "HOME": str(self.home)}
+
+    def _dest(self, tool: str) -> Path:
+        return self.home / f".{tool}" / "skills" / "sdlc-studio"
+
+    def _foreign(self, tool: str) -> Path:
+        dest = self._dest(tool)
+        dest.mkdir(parents=True)
+        (dest / "notes.txt").write_text("mine\n", encoding="utf-8")
+        return dest
+
+    def _run(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["bash", str(INSTALL_SH), "--from", str(self.SKILL), *args],
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                              env=self.env, cwd=str(self.root), timeout=120)
+
+    @staticmethod
+    def _closing(out: str) -> str:
+        lines = [ln for ln in out.splitlines() if ln.strip()]
+        return lines[-1] if lines else ""
+
+    def test_a_skipped_foreign_folder_ends_with_no_banner_and_a_failing_exit(self) -> None:
+        """AC1. MUTANT: HEAD, whose banner names claude over the skipped folder and exits 0.
+        MUTANT: a closing line that says nothing was installed without saying why."""
+        dest = self._foreign("claude")
+        proc = self._run("--no-sweep", "--target", "claude")
+        self.assertIn("not touching it", proc.stdout, "the fixture never reached the skip")
+        self.assertNotEqual(0, proc.returncode, proc.stdout)
+        self.assertNotIn("SDLC Studio installed for", proc.stdout, proc.stdout)
+        self.assertNotIn("Next steps", proc.stdout, proc.stdout)
+        closing = self._closing(proc.stdout)
+        self.assertIn("Nothing was installed", closing, proc.stdout)
+        self.assertIn("no sdlc-studio SKILL.md", closing, proc.stdout)
+        self.assertEqual(["notes.txt"], sorted(p.name for p in dest.iterdir()))
+        self.assertEqual("mine\n", (dest / "notes.txt").read_text(encoding="utf-8"))
+
+    def test_a_refused_downgrade_ends_with_no_banner_and_a_failing_exit(self) -> None:
+        """AC2. MUTANT: HEAD's `return 0   # refused`, read by main as a write."""
+        dest = self._dest("claude")
+        (dest / "templates").mkdir(parents=True)
+        (dest / "SKILL.md").write_text("---\nname: sdlc-studio\n---\n", encoding="utf-8")
+        stamp = dest / "templates" / "version.yaml"
+        stamp.write_text('skill_version: "99.0.0"\n', encoding="utf-8")
+        proc = self._run("--no-sweep", "--target", "claude")
+        self.assertIn("refusing to downgrade", proc.stdout, proc.stdout)
+        self.assertNotEqual(0, proc.returncode, proc.stdout)
+        self.assertNotIn("SDLC Studio installed for", proc.stdout, proc.stdout)
+        closing = self._closing(proc.stdout)
+        self.assertIn("Nothing was installed", closing, proc.stdout)
+        self.assertIn("downgrade refused", closing, proc.stdout)
+        self.assertEqual('skill_version: "99.0.0"\n', stamp.read_text(encoding="utf-8"))
+
+    def test_a_partly_skipped_run_names_only_what_it_wrote(self) -> None:
+        """AC3. MUTANT: HEAD's unconditional `installed_dests` append, which hands the skipped
+        gemini folder to the sweep as written. MUTANT: a banner or next steps built from every
+        requested target. MUTANT: a skipped target left unnamed after the banner."""
+        foreign = self._foreign("gemini")
+        proc = self._run("--no-sweep", "--target", "claude,gemini")
+        out = proc.stdout
+        self.assertEqual(0, proc.returncode, out)
+        self.assertIn("SDLC Studio installed for: claude\n", out, out)
+        self.assertNotIn("Gemini CLI: run /skills", out, "the skipped gemini got next steps")
+        self.assertIn("Claude Code: run /sdlc-studio", out, out)
+        tail = out[out.index("SDLC Studio installed for"):]
+        self.assertTrue(any("gemini" in ln and "no sdlc-studio SKILL.md" in ln
+                            for ln in tail.splitlines()),
+                        f"the skipped gemini target is not named with its reason:\n{out}")
+        self.assertTrue((self._dest("claude") / "SKILL.md").is_file(), out)
+        self.assertEqual(["notes.txt"], sorted(p.name for p in foreign.iterdir()))
+
+        # The list handed to the sweep, read off sweep_stale's own argument.
+        driver = (f'source "{INSTALL_SH}" --from "{self.SKILL}" --target claude,gemini\n'
+                  'sweep_stale() { echo "SWEEP_LIST=[$2]"; }\nmain\n')
+        proc = subprocess.run(["bash", "-c", driver], capture_output=True, text=True,
+                              env=self.env, cwd=str(self.root), timeout=120)
+        listed = [ln for ln in proc.stdout.splitlines() if ln.startswith("SWEEP_LIST=")]
+        self.assertEqual(1, len(listed), proc.stdout + proc.stderr)
+        claude = os.path.realpath(self._dest("claude").parent) + "/sdlc-studio"
+        gemini = os.path.realpath(foreign.parent) + "/sdlc-studio"
+        self.assertIn(claude, listed[0], listed[0])
+        self.assertNotIn(gemini, listed[0], f"the sweep trusts the skipped gemini: {listed[0]}")
+
+    def test_a_clean_install_still_prints_the_banner_and_exits_zero(self) -> None:
+        """AC4, the control. MUTANT: a check that reports every install as nothing installed."""
+        proc = self._run("--no-sweep", "--target", "claude")
+        self.assertEqual(0, proc.returncode, proc.stdout)
+        self.assertIn("SDLC Studio installed for: claude", proc.stdout, proc.stdout)
+        self.assertNotIn("Nothing was installed", proc.stdout, proc.stdout)
+        self.assertTrue((self._dest("claude") / "SKILL.md").is_file(), proc.stdout)
+
+
+class InstallPs1ExistingFolderTests(unittest.TestCase):
+    """BG1632. The install loop is read in every case; where pwsh is installed (the CI runners)
+    a dry run over a foreign folder also runs, which needs no download."""
+
+    def test_ps1_install_skips_an_existing_folder_that_is_not_the_skill(self) -> None:
+        """AC1. MUTANT: HEAD's `if (Test-Path $dest) { ... Remove-Item ... }`, which replaces any
+        folder of that name. MUTANT: the guard after the removal, or after the dry-run branch, so
+        a dry run says it would install over the folder. MUTANT: a guard that warns and still
+        removes. MUTANT: a skipped target still named in the banner, or a run that wrote
+        nothing not refused (the BG1546 shape install.sh no longer has)."""
+        src = INSTALL_PS1.read_text(encoding="utf-8")
+        start = src.index("$installedDests = @()")
+        loop = re.search(r"\n        foreach \(\$t in \$resolved\.Keys\) \{\n(.*?)\n        \}\n",
+                         src[start:], re.S)
+        self.assertIsNotNone(loop, "install.ps1's install loop moved")
+        body = loop.group(1)
+        removals = [m.start() for m in re.finditer(r"Remove-Item -Path \$dest\b", body)]
+        self.assertEqual(1, len(removals), "the install loop should remove $dest in one place")
+        guard = re.search(r"if \(\(Test-Path \$dest\) -and -not \(Test-SkillCopy \$dest\)[^\n]*\) "
+                          r"\{(.*?)\n\s*\}", body, re.S)
+        self.assertIsNotNone(guard, "the replacement is not guarded by the SKILL.md check")
+        self.assertLess(guard.start(), removals[0], "the guard comes after the removal")
+        self.assertLess(guard.start(), body.index("if ($DryRun)"),
+                        "a dry run reaches the would-install line before the guard")
+        self.assertIn("continue", guard.group(1), "a foreign folder is not skipped")
+        self.assertIn("not touching it", guard.group(1), "the skip is not reported")
+        self.assertNotIn("Remove-Item", guard.group(1))
+        after = src[start + loop.end():]
+        self.assertIn('throw "Nothing was installed', after, "a run that wrote nothing exits 0")
+        self.assertIn('Write-Ok "SDLC Studio installed for: $($installedTargets -join', after,
+                      "the banner does not name only the written targets")
+        if PWSH:
+            self._executed()
+
+    def _executed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            project, home = Path(d) / "project", Path(d) / "home"
+            home.mkdir()
+            dest = project / ".claude" / "skills" / "sdlc-studio"
+            dest.mkdir(parents=True)
+            (dest / "notes.txt").write_text("mine\n", encoding="utf-8")
+            env = {**os.environ, "HOME": str(home), "NO_COLOR": "1",
+                   "POWERSHELL_TELEMETRY_OPTOUT": "1", "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+                   "DOTNET_NOLOGO": "1"}
+            proc = subprocess.run([PWSH, "-NoProfile", "-NonInteractive", "-File",
+                                   str(INSTALL_PS1), "-Target", "claude", "-Local", "-NoSweep",
+                                   "-DryRun", "-Version", "v9.9.9"],
+                                  capture_output=True, text=True, env=env, cwd=str(project),
+                                  timeout=180)
+            out = proc.stdout + proc.stderr
+            self.assertEqual(0, proc.returncode, out)
+            self.assertIn("not touching it", out, out)
+            self.assertNotIn("would install to", out, out)
+            self.assertEqual(["notes.txt"], sorted(p.name for p in dest.iterdir()), out)
 
 
 if __name__ == "__main__":

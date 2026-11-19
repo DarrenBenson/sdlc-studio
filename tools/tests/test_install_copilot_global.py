@@ -16,6 +16,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -30,7 +31,8 @@ AGENT_CLIS = ("gh", "copilot", "codex", "cursor", "claude", "gemini", "opencode"
 
 
 def curated_path(root: Path, stubs: tuple[str, ...] = ()) -> str:
-    """A PATH of one directory: symlinks to UTILITIES, plus an `exit 0` stub per name in stubs.
+    """A PATH of one directory: symlinks to UTILITIES, a python3 that imports yaml (install.sh
+    refuses without one, US1296), plus an `exit 0` stub per name in stubs.
 
     Asserts the premise rather than assuming it: no agent CLI is on it except a stub asked for.
     """
@@ -40,6 +42,11 @@ def curated_path(root: Path, stubs: tuple[str, ...] = ()) -> str:
         real = shutil.which(name, path="/usr/bin:/bin")
         if real:
             (bin_dir / name).symlink_to(real)
+    # This test's own interpreter, which imports yaml; a wrapper rather than a link, so a
+    # virtualenv's interpreter still finds its own site-packages.
+    python3 = bin_dir / "python3"
+    python3.write_text(f'#!/bin/sh\nexec "{sys.executable}" "$@"\n', encoding="utf-8")
+    python3.chmod(0o755)
     for name in stubs:
         stub = bin_dir / name
         stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

@@ -12,6 +12,7 @@ import shutil as _shutil
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the sibling helper
 import gitutil  # noqa: E402 - confined git for the fixture repos below
@@ -5577,6 +5578,199 @@ class FullSuiteCountFloorTests(unittest.TestCase):
                 out = r["empty lane"].stdout + r["empty lane"].stderr
                 self.assertNotEqual(0, r["empty lane"].returncode, "a suite of no test passed:\n" + out)
                 self.assertIn("no test ran, pytest collected nothing", self._lane(out), out)
+
+
+@contextlib.contextmanager
+def _yaml_unimportable():
+    """Make `import yaml` raise ImportError for the duration, as on an interpreter without
+    PyYAML. Only the one entry is set and restored: patching the whole of `sys.modules` drops
+    every module the block imported when it unwinds."""
+    missing = object()
+    saved = sys.modules.get("yaml", missing)
+    sys.modules["yaml"] = None          # a None entry makes the import statement raise
+    try:
+        yield
+    finally:
+        if saved is missing:
+            sys.modules.pop("yaml", None)
+        else:
+            sys.modules["yaml"] = saved
+
+
+class RequiredPyYamlTests(unittest.TestCase):
+    """US1298 (CR0731): PyYAML is required, so the gate refuses where it cannot be imported.
+
+    Without it a project's `.config.yaml` is read as the shipped defaults, and a gate the project
+    switched on runs disarmed under one warning and an unchanged exit code. Every lane a plain or
+    push-boundary run can start is replaced by a recorder, so "before any lane" is what was
+    observed, not inferred from the output, and no real lane pays its cost here."""
+
+    #: A config that switches a gate on: `constitution` is an on-demand lane a plain run leaves
+    #: out unless the project set it to block, so whether it runs shows the config was honoured.
+    CONFIG = "constitution:\n  enforce: true\n"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "sdlc-studio").mkdir()
+        self.ran: list[str] = []
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _configure(self):
+        (self.root / "sdlc-studio" / ".config.yaml").write_text(self.CONFIG, encoding="utf-8")
+
+    def _recorder(self, name: str, failing: str | None):
+        def lane(root):
+            self.ran.append(name)
+            red = name == failing
+            return {"count": int(red), "blocking": True, "detail": "red" if red else "ok"}
+        return lane
+
+    def _run(self, *argv, yaml_imports: bool, failing: str | None = None):
+        """Run `gate.main` over the fixture with every lane recorded; returns (code, out, err)."""
+        out, err = io.StringIO(), io.StringIO()
+
+        def rec(name):
+            return self._recorder(name, failing)
+        with contextlib.ExitStack() as stack:
+            for table in (gate.DEFAULT_CHECKS, gate.ON_DEMAND_CHECKS,
+                          gate.PUSHED_RANGE_LANES, gate.WHOLE_WORKSPACE_LANES):
+                stack.enter_context(mock.patch.dict(table, {n: rec(n) for n in table}))
+            for attr in ("_full_suite", "_release_rehearsal", "_module_alone"):
+                stack.enter_context(mock.patch.object(gate, attr, rec(attr)))
+            if not yaml_imports:
+                stack.enter_context(_yaml_unimportable())
+            stack.enter_context(contextlib.redirect_stdout(out))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            code = gate.main(["--root", str(self.root), *argv])
+        return code, out.getvalue(), err.getvalue()
+
+    def _assert_refused(self, code, out, err, argv):
+        self.assertEqual(2, code, f"{argv}: a gate without PyYAML was not refused:\n{out}{err}")
+        self.assertEqual([], self.ran, f"{argv}: lanes ran before the refusal: {self.ran}")
+        self.assertNotIn("[PASS]", out, f"{argv}: the gate printed lane rows:\n{out}")
+        self.assertIn("PyYAML", err, f"{argv}: the refusal does not name PyYAML:\n{err}")
+        self.assertIn("pip install pyyaml", err, f"{argv}: no install command named:\n{err}")
+
+    def test_the_gate_refuses_before_any_lane_without_pyyaml(self):
+        self._configure()
+        for argv in ((), ("--boundary", "push")):
+            with self.subTest(boundary=argv or "commit"):
+                self.ran.clear()
+                code, out, err = self._run(*argv, yaml_imports=False)
+                self._assert_refused(code, out, err, argv)
+
+    def test_the_gate_refuses_without_pyyaml_even_with_no_project_config(self):
+        self.assertFalse((self.root / "sdlc-studio" / ".config.yaml").exists())
+        code, out, bare = self._run(yaml_imports=False)
+        self._assert_refused(code, out, bare, "no config")
+        self._configure()
+        _, _, configured = self._run(yaml_imports=False)
+        self.assertEqual(configured, bare, "the refusal differs with and without a config")
+
+    def test_the_gate_runs_its_lanes_when_pyyaml_imports(self):
+        self._configure()
+        for argv in ((), ("--boundary", "push")):
+            for failing, want in ((None, 0), ("reconcile", 1)):
+                with self.subTest(boundary=argv or "commit", failing=failing):
+                    self.ran.clear()
+                    code, out, err = self._run(*argv, yaml_imports=True, failing=failing)
+                    self.assertEqual(want, code, f"not the lanes' own exit code:\n{out}{err}")
+                    self.assertIn("reconcile", self.ran, f"the lanes did not run:\n{out}{err}")
+                    self.assertIn("constitution", self.ran,
+                                  "the gate the config switched on did not run, so the "
+                                  f"config was not read: {self.ran}")
+                    self.assertEqual("", err, "the prerequisite check printed on a pass")
+                    self.assertNotIn("PyYAML", out, "the prerequisite check printed on a pass")
+
+    def test_a_pyyaml_that_fails_on_import_is_refused_too(self):
+        """A broken or tampered install can raise something other than ImportError on import; it
+        is no more usable than an absent one, so it is refused the same way."""
+        broken = self.root / "site" / "yaml"
+        broken.mkdir(parents=True)
+        (broken / "__init__.py").write_text("raise RuntimeError('tampered')\n", encoding="utf-8")
+        missing = object()
+        saved = sys.modules.pop("yaml", missing)
+        sys.path.insert(0, str(broken.parent))
+        try:
+            code, out, err = self._run(yaml_imports=True)
+        finally:
+            sys.path.remove(str(broken.parent))
+            sys.modules.pop("yaml", None)
+            if saved is not missing:
+                sys.modules["yaml"] = saved
+        self._assert_refused(code, out, err, "broken install")
+        self.assertIn("tampered", err, f"the refusal hides why the import failed:\n{err}")
+
+
+class GatePyYamlEveryRouteTests(unittest.TestCase):
+    """BG1633: a verb beside the lanes reads the project config too (`--red-run` reads
+    `ci.rerun_limit`), so each verb refuses where PyYAML cannot be imported, as the lanes do.
+
+    Each verb is replaced by a recorder and both config readers by spies, so "before reading the
+    project config" is observed: a refused route never reaches its verb and reads nothing. The
+    positive control proves each argv reaches its own verb, so a refusal is not the lanes route
+    answering for it. RequiredPyYamlTests pins the lanes route; together they hold every route."""
+
+    ROUTES = {
+        "cmd_suite_decision": ("--suite-decision", "--changed", "README.md"),
+        "cmd_run_tests": ("--run-tests", "tests/test_example.py"),
+        "cmd_record_suite_verdict": ("--record-suite-verdict", "RUN-1"),
+        "cmd_red_run": ("--red-run", "123", "--failed", "tests/test_example.py::T::test_x",
+                        "--token", "can-rerun"),
+    }
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "sdlc-studio").mkdir()
+        (self.root / "sdlc-studio" / ".config.yaml").write_text("ci:\n  rerun_limit: 0\n",
+                                                                  encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _run(self, argv, *, yaml_imports: bool):
+        """Run `gate.main` over the fixture; returns (code, verbs reached, config reads, stderr)."""
+        import config
+        reached: list[str] = []
+        reads: list[tuple] = []
+        err = io.StringIO()
+
+        def verb(name):
+            return lambda args: reached.append(name) or 0
+
+        def spy(real):
+            return lambda *a, **k: reads.append(a) or real(*a, **k)
+        with contextlib.ExitStack() as stack:
+            for name in self.ROUTES:
+                stack.enter_context(mock.patch.object(gate, name, verb(name)))
+            stack.enter_context(mock.patch.object(
+                gate.sdlc_md, "project_override", spy(gate.sdlc_md.project_override)))
+            stack.enter_context(mock.patch.object(config, "get", spy(config.get)))
+            if not yaml_imports:
+                stack.enter_context(_yaml_unimportable())
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            code = gate.main(["--root", str(self.root), *argv])
+        return code, reached, reads, err.getvalue()
+
+    def test_every_config_reading_route_refuses_without_pyyaml(self):
+        for name, argv in self.ROUTES.items():
+            with self.subTest(route=argv[0]):
+                code, reached, _, err = self._run(argv, yaml_imports=True)
+                self.assertEqual((0, [name]), (code, reached),
+                                 f"{argv[0]} does not reach {name}, so a refusal proves nothing")
+                self.assertNotIn("PyYAML", err, f"{argv[0]} printed the check on a pass")
+                code, reached, reads, err = self._run(argv, yaml_imports=False)
+                self.assertEqual(2, code, f"{argv[0]} was not refused without PyYAML:\n{err}")
+                self.assertEqual([], reached, f"{argv[0]} reached its verb before the refusal")
+                self.assertEqual([], reads, f"{argv[0]} read the project config first: {reads}")
+                self.assertIn("PyYAML", err, f"{argv[0]}: the refusal does not name PyYAML")
+                self.assertIn("python3 -m pip install pyyaml", err,
+                              f"{argv[0]}: the refusal names no install command:\n{err}")
 
 
 if __name__ == "__main__":

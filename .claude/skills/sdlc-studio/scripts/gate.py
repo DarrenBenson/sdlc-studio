@@ -6,7 +6,8 @@ constitution, integrity) over the artifact graph, prints a consolidated pass/fai
 exits non-zero only when a *blocking* check fails. No network, no CI/cloud assumption -
 runnable as a bare shell step in any CI (GitHub Actions, GitLab, Jenkins, a pre-commit
 hook). `--only` / `--skip` select checks. `--release` is the pre-tag form: the same gate plus
-an EXECUTING acceptance-criteria verify pass, as one exit code.
+an EXECUTING acceptance-criteria verify pass, as one exit code. Every route refuses first,
+with exit 2 and before any verb or lane, where PyYAML cannot be imported (`pyyaml_refusal`).
 
 Each check is a callable `fn(root) -> {"count": int, "blocking": bool, "detail": str}`;
 the registry is injectable so the aggregation logic is testable without a full repo.
@@ -3348,7 +3349,34 @@ def lane_stamp(check: dict) -> str:
     return f" [{secs:.1f}s]" if isinstance(secs, (int, float)) else ""
 
 
+#: The command a PyYAML refusal names, so the operator is told how to clear it.
+PYYAML_INSTALL = "python3 -m pip install pyyaml"
+
+
+def pyyaml_refusal() -> str | None:
+    """The gate's prerequisite check: the refusal to print when PyYAML cannot be imported, or
+    None when it can. Without PyYAML a project's `.config.yaml` is read as the shipped
+    defaults, so a gate the project switched on would run disarmed. The check reads no config,
+    so it refuses the same way whether one is present or not, and it prints nothing on a pass.
+    Its cost on a pass is one import, which stays cached for every later reader."""
+    try:
+        import yaml  # noqa: F401 - the prerequisite itself
+    except Exception as exc:  # noqa: BLE001 - a broken install cannot be imported either
+        return (f"gate: refused - PyYAML is required and cannot be imported ({exc}). "
+                f"Install it with `{PYYAML_INSTALL}`; without it a project's .config.yaml "
+                "is read as the shipped defaults, so a gate it switched on would be off.")
+    return None
+
+
 def cmd_gate(args: argparse.Namespace) -> int:
+    # The prerequisite check comes first on every route, before any verb or lane reads the
+    # project config, at every boundary: exit 2, the gate's refusal code, so a missing PyYAML is
+    # never mistaken for a red lane. A verb reads the config too: `--red-run` reads
+    # `ci.rerun_limit`.
+    refusal = pyyaml_refusal()
+    if refusal:
+        print(refusal, file=sys.stderr)
+        return 2
     if getattr(args, "red_run", None):
         return cmd_red_run(args)
     if getattr(args, "run_tests", None):

@@ -7,8 +7,9 @@ override) so scripts read the value instead of re-deriving it from a markdown
 table. Before this, every default lived in three places - the YAML, a duplicate
 fenced block in reference-config.md, and a prose table - and drifted.
 
-PyYAML is a soft dependency, imported lazily, so the pure-stdlib core scripts are
-unaffected and only this helper needs it.
+PyYAML is required and imported lazily. A project `.config.yaml` that is
+present when PyYAML will not import is refused with `sdlc_md.PyYamlRequired`, never read as
+the defaults; with no project config there is nothing to misread, and `get` still degrades.
 """
 from __future__ import annotations
 
@@ -62,10 +63,11 @@ def _deep_merge(base: dict, over: dict) -> dict:
 
 
 def load_config(repo_root: Path | str = ".", defaults_path: Path | str = DEFAULTS_PATH) -> dict:
-    """Skill defaults merged with the project's `.config.yaml` override, if present."""
-    yaml = _yaml()
-    cfg = yaml.safe_load(Path(defaults_path).read_text(encoding="utf-8")) or {}
+    """Skill defaults merged with the project's `.config.yaml` override, if present. A present
+    override with no PyYAML raises `sdlc_md.PyYamlRequired` before anything is read."""
     override = Path(repo_root) / "sdlc-studio" / ".config.yaml"
+    yaml = sdlc_md.require_pyyaml(override) if override.exists() else _yaml()
+    cfg = yaml.safe_load(Path(defaults_path).read_text(encoding="utf-8")) or {}
     if override.exists():
         cfg = _deep_merge(cfg, yaml.safe_load(override.read_text(encoding="utf-8")) or {})
     return cfg
@@ -77,10 +79,10 @@ _DEGRADE_WARNED = False
 def get(repo_root: Path | str, dotted: str, default=None):
     """Resolve a dotted key (e.g. `coverage.unit`) from the config, or `default`.
 
-    BG0093: if the config cannot be loaded at all (PyYAML absent, or an unreadable/malformed
-    override), degrade to `default` with a one-line stderr warning instead of raising - so a
-    stdlib-only machine gets the built-in default, not a traceback. This unifies the former
-    three regimes (warn-degrade / silent-default / hard-crash) into warn-and-default."""
+    BG0093: if the config cannot be loaded at all (PyYAML absent with no project config, or an
+    unreadable/malformed override), degrade to `default` with a one-line stderr warning instead
+    of raising. A PRESENT override with PyYAML absent is not degraded: `load_config` raises
+    `sdlc_md.PyYamlRequired`, a SystemExit this function's catch does not reach (US1297)."""
     global _DEGRADE_WARNED
     try:
         cur = load_config(repo_root)

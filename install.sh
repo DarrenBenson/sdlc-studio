@@ -321,6 +321,21 @@ check_deps() {
     if [[ ${#missing[@]} -gt 0 ]]; then error "Missing required tools: ${missing[*]}"; exit 1; fi
 }
 
+# The skill's scripts read a project's configuration with PyYAML, and without it every gate the
+# project switched on falls back to the shipped default (CR0731). So an install refuses, before
+# anything is looked up, downloaded or copied, on a machine whose python3 cannot import it.
+require_pyyaml() {
+    local how="Install it with: python3 -m pip install pyyaml (on a system Python, your package manager's python3-yaml), then re-run the installer."
+    if ! command -v python3 >/dev/null 2>&1; then
+        error "SDLC Studio needs Python 3.10+ with PyYAML, and no python3 is on PATH. Install Python 3, then PyYAML. $how"
+        exit 1
+    fi
+    if ! python3 -c 'import yaml' >/dev/null 2>&1; then
+        error "SDLC Studio needs PyYAML, and python3 ($(command -v python3)) cannot import it. $how"
+        exit 1
+    fi
+}
+
 # Temp dir for the download, cleaned up when the script exits.
 TMP_DIR=""
 SRC=""
@@ -328,12 +343,6 @@ SRC=""
 # overwrite the script's real exit status with 1.
 cleanup() { { [[ -n "$TMP_DIR" ]] && rm -rf "$TMP_DIR"; } || true; }
 trap cleanup EXIT
-
-# Best-effort fetch of a URL to stdout (empty on failure; used for the checksum sidecar).
-fetch_stdout() {
-    if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" 2>/dev/null
-    else wget -qO- "$1" 2>/dev/null; fi
-}
 
 # The tag of the latest published release (GitHub's releases/latest skips pre-releases), or
 # empty when it cannot be looked up - offline, rate-limited, or a reply naming no plain tag. A
@@ -355,7 +364,8 @@ sha256_of() {
 }
 
 # Download $1 to $2. Returns 0, or 22 when the server said 404 - the artefact is NOT THERE - or
-# 1 for anything else.
+# 1 for anything else. FETCH_STATUS names what happened (`HTTP 503`, or a transport error with
+# the downloader's exit code), so a caller refusing on a fault can say which fault it was.
 #
 # The three-way answer is the point (BG0575). A caller falls back to the unverified source
 # archive on 22 and only on 22, so "no asset was published for this tag" is distinguished from
@@ -372,11 +382,15 @@ sha256_of() {
 # Both branches delete a partial file on failure: `curl` without `-f` writes the error body to
 # the output path, and `wget -O` leaves a zero-length file behind, either of which a later `tar`
 # would read as a corrupt archive rather than as the absence it is.
+FETCH_STATUS=""
 download_to() {
     local url="$1" dest="$2" rc=0 code="" err=""
     if command -v curl >/dev/null 2>&1; then
         code=$(curl -sSL -o "$dest" -w '%{http_code}' "$url") || rc=$?
-        if [[ "$rc" -ne 0 ]]; then rm -f "$dest"; return 1; fi
+        if [[ "$rc" -ne 0 ]]; then
+            FETCH_STATUS="a transport error (curl exit $rc)"; rm -f "$dest"; return 1
+        fi
+        FETCH_STATUS="HTTP $code"
         case "$code" in
             2??) return 0 ;;
             404) rm -f "$dest"; return 22 ;;
@@ -384,6 +398,9 @@ download_to() {
         esac
     fi
     err=$(wget -q -S "$url" -O "$dest" 2>&1) || rc=$?
+    code=$(printf '%s\n' "$err" | sed -n 's/^ *HTTP\/[0-9.]* \([0-9][0-9][0-9]\).*/\1/p' | tail -n 1)
+    if [[ -n "$code" ]]; then FETCH_STATUS="HTTP $code"
+    else FETCH_STATUS="a transport error (wget exit $rc)"; fi
     if [[ "$rc" -eq 0 ]]; then return 0; fi
     rm -f "$dest"
     printf '%s' "$err" | grep -qE 'HTTP/[0-9.]+ 404' && return 22
@@ -392,18 +409,34 @@ download_to() {
 
 # Verify the downloaded tarball against a published sha256 BEFORE extraction, so a
 # swapped artefact cannot inject code. The expected digest comes from (in order):
-# SDLC_STUDIO_SHA256 (an explicit pin), else a best-effort sidecar `<url>.sha256`.
-# With no published digest we warn and proceed for a rolling install, unless
-# SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
+# SDLC_STUDIO_SHA256 (an explicit pin), else the sidecar `<url>.sha256`.
+#
+# The sidecar is read with download_to's three-way status, because a fault is not an absence
+# (BG1543). A 2xx is the digest. A 404 beside the source archive or `main` means none is
+# published there: we warn and proceed, unless SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes that fatal.
+# Anything else refuses, naming the fault, since a 503, a 429 or a dropped connection on the
+# sidecar would otherwise turn a verified install into an unverified one. So does a 404 beside
+# the release asset ($3 = asset), whose sidecar the release workflow publishes with it.
 #
 # The sidecar is fetched beside whatever was ACTUALLY downloaded, which is why the caller
 # passes the resolved url rather than the one it first tried. GitHub serves no sidecar next to
 # a generated source archive and never will, so before BG0575 this fallback could only ever
 # resolve empty and REQUIRE_CHECKSUM=1 could only ever refuse.
 verify_download() {
-    local file="$1" url="$2" expected actual
+    local file="$1" url="$2" kind="${3:-}" expected actual rc=0
     expected="${SDLC_STUDIO_SHA256:-}"
-    [[ -z "$expected" ]] && expected=$(fetch_stdout "$url.sha256" | tr -d '\r' | awk 'NR==1{print $1}')
+    if [[ -z "$expected" ]]; then
+        download_to "$url.sha256" "$file.sha256" || rc=$?
+        if [[ "$rc" -eq 0 ]]; then
+            expected=$(tr -d '\r' < "$file.sha256" | awk 'NR==1{print $1}')
+            [[ -n "$expected" ]] || FETCH_STATUS="$FETCH_STATUS with an empty body"
+        fi
+        if [[ -z "$expected" ]] && [[ "$rc" -ne 22 || "$kind" == asset ]]; then
+            error "Could not fetch the published sha256 for $VERSION from $url.sha256: $FETCH_STATUS"
+            error "Refusing to install unverified. Retry, or set SDLC_STUDIO_SHA256 to pin the digest."
+            exit 1
+        fi
+    fi
     if [[ -z "$expected" ]]; then
         if [[ "${SDLC_STUDIO_REQUIRE_CHECKSUM:-}" == "1" ]]; then
             error "No published sha256 for $VERSION and SDLC_STUDIO_REQUIRE_CHECKSUM=1 - refusing to install"
@@ -476,7 +509,9 @@ prepare_source() {
         download_to "$url" "$TMP_DIR/archive.tar.gz" \
             || { error "Failed to download from $url"; exit 1; }
     fi
-    verify_download "$TMP_DIR/archive.tar.gz" "$url"
+    local kind=fallback
+    if [[ -n "$asset_url" && "$url" == "$asset_url" ]]; then kind=asset; fi
+    verify_download "$TMP_DIR/archive.tar.gz" "$url" "$kind"
     info "Extracting..."
     tar -xzf "$TMP_DIR/archive.tar.gz" -C "$TMP_DIR"
     extracted=$(find "$TMP_DIR" -maxdepth 1 -type d -name "sdlc-studio-*" | head -1)
@@ -515,34 +550,60 @@ swap_install() {
     mv "$staging" "$dest"
 }
 
+# Install into one parent dir. A skip returns 0, so one skipped target never aborts the run, but
+# INSTALL_RESULT tells main which happened (BG1546): `installed` (written, or the --from source
+# already in place, or a dry run's would-install) or `skipped`, with the reason in INSTALL_REASON.
+# Only an installed target is named in the banner and handed to the sweep as written. A copy
+# that fails returns 1, which `set -e` turns into the run's failure.
+INSTALL_RESULT=""
+INSTALL_REASON=""
 install_to() {
-    local parent="$1" src="$2" dest="$1/$SKILL_NAME"
+    local parent="$1" src="$2" dest="$1/$SKILL_NAME" existing
+    INSTALL_RESULT=skipped
     if [[ -d "$dest" && "$(canon "$dest")" == "$(canon "$src")" ]]; then
-        info "skipping $dest: it IS the --from source"; return 0
+        info "skipping $dest: it IS the --from source"; INSTALL_RESULT=installed; return 0
     fi
     # A folder holding something that is not an sdlc-studio copy is the user's, not ours to
     # replace: skipped as the sweep skips it. An empty folder holds nothing and is installed into.
     if [[ -d "$dest" ]] && ! is_skill_copy "$dest" && [[ -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
         warn "skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+        INSTALL_REASON="$dest holds no sdlc-studio SKILL.md, so it was not touched"
         return 0
     fi
     if would_downgrade "$dest" "$(installed_version "$src")"; then
+        existing=$(installed_version "$dest")
+        INSTALL_REASON="$dest is at $existing, newer than $(installed_version "$src"): downgrade refused (--allow-downgrade forces it)"
         return 0   # refused: a downgrade of newer local work is a skip, not a failure
     fi
     if [[ "$DRY_RUN" == true ]]; then
-        info "[dry run] would install to: $dest"; return
+        info "[dry run] would install to: $dest"; INSTALL_RESULT=installed; return
     fi
     if ! swap_install "$parent" "$src"; then
         error "install failed: could not copy to $dest (previous install left untouched)"
+        INSTALL_RESULT=failed
         return 1
     fi
     success "installed: $dest"
+    INSTALL_RESULT=installed
 }
 
+# Remove the copy in one parent dir, under the identity guard the install paths apply (BG1547):
+# only a folder that is an sdlc-studio copy or is empty is removed, and anything else is the
+# user's and left alone. A symbolic link is removed as a link, never followed, so the copy it
+# points at stays where it is. UNINSTALL_REMOVED and UNINSTALL_KEPT count the two outcomes.
+UNINSTALL_REMOVED=0
+UNINSTALL_KEPT=0
 uninstall_from() {
     local dest="$1/$SKILL_NAME"
-    if [[ ! -d "$dest" ]]; then info "not present: $dest"; return; fi
+    if [[ ! -d "$dest" && ! -L "$dest" ]]; then info "not present: $dest"; return; fi
+    if [[ -d "$dest" ]] && ! is_skill_copy "$dest" && [[ -n "$(ls -A "$dest" 2>/dev/null)" ]]; then
+        warn "skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy, so it is left alone)"
+        UNINSTALL_KEPT=$((UNINSTALL_KEPT + 1))
+        return
+    fi
+    UNINSTALL_REMOVED=$((UNINSTALL_REMOVED + 1))
     if [[ "$DRY_RUN" == true ]]; then info "[dry run] would remove: $dest"; return; fi
+    # No trailing slash: on a link's own path rm removes the link and never descends into it.
     rm -rf "$dest"; success "removed: $dest"
 }
 
@@ -601,8 +662,11 @@ is_skill_copy() {
 # Refresh every sdlc-studio copy found in a known location of the install's reach that was not
 # already written this run, so no stale version lingers. A --local install reaches this project
 # only: it pins a version here, and the personal copies are what every other project loads.
+# $2 lists the copies written this run. $3 lists the targets the install skipped and has already
+# reported with their reason; they are not written, and are passed only so the sweep does not
+# report the same folder a second time (BG1546).
 sweep_stale() {
-    local src="$1" done_list="$2"
+    local src="$1" done_list="$2 ${3:-}"
     local t scope scopes="global local" parent dest old new_ver found=false parents=()
     [[ "$INSTALL_MODE" == local ]] && scopes="local"
     if [[ "$DRY_RUN" == true ]]; then new_ver="$VERSION"; else new_ver=$(installed_version "$src"); fi
@@ -688,6 +752,7 @@ main() {
     echo ""
 
     if [[ "$LIST_TARGETS" == true ]]; then print_list; exit 0; fi
+    if [[ "$UNINSTALL" == false && "$DRY_RUN" == false ]]; then require_pyyaml; fi
 
     # No --version: install the latest published release, which goes down the tagged path and
     # is verified against its published sha256. `main` publishes none, so it is installed only
@@ -720,7 +785,15 @@ main() {
 
     if [[ "$UNINSTALL" == true ]]; then
         for item in $resolved; do uninstall_from "${item#*:}"; done
-        echo ""; success "Uninstall complete."; exit 0
+        echo ""
+        if [[ "$UNINSTALL_REMOVED" -gt 0 ]]; then
+            success "Uninstall complete."
+        elif [[ "$UNINSTALL_KEPT" -gt 0 ]]; then
+            info "Nothing was removed: $UNINSTALL_KEPT folder(s) named $SKILL_NAME are not an sdlc-studio copy and were left alone."
+        else
+            info "Nothing was removed: no sdlc-studio copy was present."
+        fi
+        exit 0
     fi
 
     if [[ "$DRY_RUN" == false ]]; then
@@ -734,17 +807,33 @@ main() {
     fi
 
     echo ""
-    local installed_dests="" dest_parent
+    # Only what was written is named as installed and handed to the sweep as written (BG1546); a
+    # skipped target is named with its reason, and a run that wrote nothing exits non-zero.
+    local installed_dests="" dest_parent written_parents="" skipped=() skipped_dests=""
+    local installed_targets="" p
     for item in $resolved; do
         install_to "${item#*:}" "$SRC"
-        dest_parent=$(canon "${item#*:}")
-        installed_dests="$installed_dests $dest_parent/$SKILL_NAME"
+        if [[ "$INSTALL_RESULT" == installed ]]; then
+            dest_parent=$(canon "${item#*:}")
+            installed_dests="$installed_dests $dest_parent/$SKILL_NAME"
+            written_parents="$written_parents ${item#*:}"
+        else
+            skipped+=("${item%%:*}: $INSTALL_REASON")
+            skipped_dests="$skipped_dests $(canon "${item#*:}")/$SKILL_NAME"
+        fi
     done
+    for t in $targets; do
+        parent=$(target_dir "$t" "$INSTALL_MODE")
+        for p in $written_parents; do
+            if [[ "$p" == "$parent" ]]; then installed_targets="$installed_targets $t"; break; fi
+        done
+    done
+    installed_targets="${installed_targets# }"
 
     if [[ "$SWEEP" == true ]]; then
         echo ""
         info "Sweep: checking other tool locations for stale copies..."
-        sweep_stale "$SRC" "$installed_dests"
+        sweep_stale "$SRC" "$installed_dests" "$skipped_dests"
     fi
     if [[ "$INSTALL_MODE" == local && " $targets " == *" claude "* ]]; then
         echo ""
@@ -753,13 +842,19 @@ main() {
     if [[ -z "$TARGETS_RAW" ]]; then undetected_hint "$targets"; fi
 
     echo ""
+    local s
     if [[ "$DRY_RUN" == true ]]; then
         success "Dry run complete - no changes made"
+    elif [[ -z "$installed_targets" ]]; then
+        for s in "${skipped[@]}"; do warn "not installed for $s"; done
+        error "Nothing was installed. ${skipped[*]}"
+        exit 1
     else
-        success "SDLC Studio installed for: $targets"
+        success "SDLC Studio installed for: $installed_targets"
+        for s in "${skipped[@]}"; do warn "not installed for $s"; done
         echo ""
         echo "Next steps:"
-        for t in $targets; do
+        for t in $installed_targets; do
             echo "  - $(invoke_note "$t")"
             native_hint "$t"
         done

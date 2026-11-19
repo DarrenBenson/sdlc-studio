@@ -43,7 +43,7 @@ harness gives once installed, and the fallback where one lacks a feature.
 
 ## Requirements
 
-You need Python 3.10+ for the bundled scripts (standard library only, with two optional dependencies: **PyYAML**, needed only if you set a project `.config.yaml`, without which the scripts degrade to the built-in defaults with a one-line warning, never a crash; and **coverage** 7.10 or later, needed only by `verify_ac run --coverage`, which measures a unit's own added lines). You need the `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
+You need Python 3.10+ with **PyYAML** for the bundled scripts. PyYAML is required, and both installers refuse on a machine whose Python cannot import it; install it with `python3 -m pip install pyyaml` (on a system Python, your package manager's `python3-yaml`). Optional: **coverage** 7.10 or later, needed only by `verify_ac run --coverage`, which measures a unit's own added lines. You need the `gh` CLI only for the GitHub sync commands, and whatever test runners your acceptance criteria invoke (pytest, vitest, go, ...).
 
 It is not an npm package or an SDK. It is a curl-installed Agent Skill (a plug-in for AI coding tools) - a folder of instructions, templates, and scripts. There is nothing to import into your code.
 
@@ -63,7 +63,7 @@ tests/           # generated test code (project root)
 
 ## For agents evaluating this skill
 
-Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](../.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](../llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `audit --profile repo` (read-only three-leg audit of the host repo, refute-panel verified, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](../AGENTS.md).
+Open Agent Skills format ([agentskills.io](https://agentskills.io)): the entry point is [SKILL.md](../.claude/skills/sdlc-studio/SKILL.md) (name, description with use-when/not-for triggers, `allowed-tools`, tool-specific extras under `metadata:`). Invoke as `/sdlc-studio [type] [action]`, or model-invoke from the description. Requires Python 3.10+ with PyYAML for the bundled deterministic scripts; `gh` CLI only for GitHub sync. A machine-readable index of this repo lives at [llms.txt](../llms.txt). If you maintain a project for a human, the zero-setup evaluation path is `audit --profile repo` (read-only three-leg audit of the host repo, refute-panel verified, findings filed as artifacts). Repo-level agent guidance: [AGENTS.md](../AGENTS.md).
 
 ## Choosing tools
 
@@ -164,8 +164,8 @@ mkdir -p ~/.claude/skills
 cp -r sdlc-studio/.claude/skills/sdlc-studio ~/.claude/skills/
 ```
 
-The skill is self-contained (markdown plus pure-stdlib Python helpers), so no
-build or dependency install is needed.
+The skill is self-contained (markdown plus Python helpers that need PyYAML beyond the
+standard library), so no build is needed; install PyYAML as [Requirements](#requirements) says.
 
 ## Updating and uninstalling
 
@@ -187,9 +187,17 @@ build or dependency install is needed.
   copy as it is.
 - **Specific version**: `--version <tag>` (bash) or `-Version <tag>`
   (PowerShell), for example `--version v6.4.0`.
+- **When nothing is installed**: both installers skip a target whose folder is not an
+  sdlc-studio copy, and `install.sh` also skips one holding a newer copy it will not
+  downgrade; each skipped target is named with its reason. When every target is skipped,
+  the installer says nothing was installed and why, and exits non-zero; when some were
+  written, its banner and next steps name only those.
 - **Uninstall**: `--uninstall` (bash) or `-Uninstall` (PowerShell), with the same
   `--target` / scope you installed with. Preview first with `--dry-run`. The
-  uninstall does not sweep other locations.
+  uninstall does not sweep other locations. Either installer's uninstall removes only a
+  folder that is an sdlc-studio copy or is empty: any other folder of that name is
+  left alone with a warning. `install.sh` removes a symbolic link as a link, leaving
+  the copy it points at.
 
 ## Verifying
 
@@ -222,8 +230,14 @@ irm https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/install.ps1 
 
 | Variable | Effect |
 | --- | --- |
-| `SDLC_STUDIO_REQUIRE_CHECKSUM=1` | A missing digest is fatal. Without it, an unverifiable download warns and proceeds |
+| `SDLC_STUDIO_REQUIRE_CHECKSUM=1` | A digest that is not published is fatal. Without it, a download with no published digest (`main`, or a tag before v5.0.1) warns and proceeds |
 | `SDLC_STUDIO_SHA256=<digest>` | Verify against a digest you supply, instead of the published one |
+
+**A digest that cannot be fetched refuses the install.** Only a 404 beside a source
+archive or `main`, where no digest is published, counts as no digest. Any other failure
+to fetch the `.sha256` (a server error, a rate limit, a dropped connection, or a 404
+beside a release asset, which is always published with its digest) refuses the install
+and names the fault, with or without `SDLC_STUDIO_REQUIRE_CHECKSUM`.
 
 **What is verified.** For a tagged version the installer downloads a `.tar.gz` (or `.zip` on
 Windows) that this project built from the tag and published as a release asset, and checks it

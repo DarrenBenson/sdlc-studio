@@ -142,6 +142,23 @@ Native alternatives (sdlc-studio is a standard skill):
         (Test-Path $sm) -and [bool](Select-String -Path $sm -Pattern '^name: sdlc-studio\s*$' -Quiet)
     }
 
+    # The skill's scripts read a project's configuration with PyYAML, and without it every gate
+    # the project switched on falls back to the shipped default (CR0731). True when a Python on
+    # PATH (python3, python, or the py launcher) imports yaml. A native command's stderr must not
+    # stop the script here, so this function runs with the Continue preference.
+    function Test-PyYaml {
+        $ErrorActionPreference = 'Continue'
+        foreach ($cand in @(@('python3'), @('python'), @('py', '-3'))) {
+            $exe = Get-Command $cand[0] -CommandType Application -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if (-not $exe) { continue }
+            $rest = @($cand | Select-Object -Skip 1)
+            try { & $exe.Source @rest -c 'import yaml' 2>$null | Out-Null } catch { continue }
+            if ($LASTEXITCODE -eq 0) { return $true }
+        }
+        return $false
+    }
+
     # The directory a path reaches, its final link or junction followed where PowerShell 7 reports
     # the target (Windows PowerShell 5.1 compares the path as written).
     function Get-RealPath($p) {
@@ -194,6 +211,11 @@ Native alternatives (sdlc-studio is a standard skill):
         return
     }
 
+    # Refused before the release lookup, any download or any copy, as install.sh refuses.
+    if (-not $Uninstall -and -not $DryRun -and -not (Test-PyYaml)) {
+        throw "PyYAML is required, and no Python on PATH (python3, python or py -3) can import it. Install it with: python -m pip install pyyaml, then re-run the installer."
+    }
+
     # No -Version: install the latest published release, as install.sh does, which goes down
     # the tagged path and is verified against its published sha256. `main` publishes none, so it
     # is installed only when asked for by name, or when the lookup fails (an offline machine
@@ -228,15 +250,27 @@ Native alternatives (sdlc-studio is a standard skill):
     }
     if ($resolved.Count -eq 0) { throw 'No installable targets resolved.' }
 
+    # Uninstall removes only a folder that is an sdlc-studio copy or is empty, as install.sh's
+    # does (BG1547, BG1631): any other folder of that name is the user's and is left alone.
     if ($Uninstall) {
+        $removed = 0; $kept = 0
         foreach ($t in $resolved.Keys) {
             $dest = Join-Path $resolved[$t] $SkillName
-            if (Test-Path $dest) {
-                if ($DryRun) { Write-Info "[dry run] would remove: $dest" }
-                else { Remove-Item -Path $dest -Recurse -Force; Write-Ok "removed: $dest" }
-            } else { Write-Info "not present: $dest" }
+            if (-not (Test-Path $dest)) { Write-Info "not present: $dest"; continue }
+            if (-not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {
+                Write-Warn2 "skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy, so it is left alone)"
+                $kept++
+                continue
+            }
+            $removed++
+            if ($DryRun) { Write-Info "[dry run] would remove: $dest" }
+            else { Remove-Item -Path $dest -Recurse -Force; Write-Ok "removed: $dest" }
         }
-        Write-Host ''; Write-Ok 'Uninstall complete.'; return
+        Write-Host ''
+        if ($removed -gt 0) { Write-Ok 'Uninstall complete.' }
+        elseif ($kept -gt 0) { Write-Info "Nothing was removed: $kept folder(s) named $SkillName are not an sdlc-studio copy and were left alone." }
+        else { Write-Info 'Nothing was removed: no sdlc-studio copy was present.' }
+        return
     }
 
     # Download + extract once (skipped on dry run).
@@ -289,13 +323,28 @@ Native alternatives (sdlc-studio is a standard skill):
             # SDLC_STUDIO_REQUIRE_CHECKSUM=1 makes a missing digest fatal.
             # GitHub serves the sidecar as application/octet-stream, for which .Content is a byte
             # array; split as it stands, its first field is a byte's decimal value, not the digest.
+            # Only a 404 is an absence (BG1543): a 503, a 429 or a dropped connection on the
+            # sidecar is a fault and refuses, naming it, as does a 404 beside the release asset,
+            # whose sidecar is published with it. A 404 beside the source archive or `main`,
+            # where none is published, falls through to the warning below.
             $expected = $env:SDLC_STUDIO_SHA256
             if (-not $expected) {
                 try {
                     $sc = (Invoke-WebRequest -Uri "$Url.sha256" -UseBasicParsing).Content
                     if ($sc -is [byte[]]) { $sc = [System.Text.Encoding]::UTF8.GetString($sc) }
                     $expected = ("$sc".Trim() -split '\s+')[0]
-                } catch { $expected = $null }
+                    if (-not $expected) { throw 'the sidecar was empty' }
+                } catch {
+                    $code = $null
+                    if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode }
+                    $fault = if ($code) { "HTTP $code" } else { $_.Exception.Message }
+                    if ($code -ne 404 -or $Url -eq $AssetUrl) {
+                        throw ("Could not fetch the published sha256 for $Version from $Url.sha256: " +
+                               "$fault. Refusing to install unverified. Retry, or set " +
+                               "SDLC_STUDIO_SHA256 to pin the digest.")
+                    }
+                    $expected = $null
+                }
             }
             if ($expected) {
                 $actual = (Get-FileHash -Path $ZipPath -Algorithm SHA256).Hash
@@ -317,10 +366,24 @@ Native alternatives (sdlc-studio is a standard skill):
         }
 
         Write-Host ''
+        # A folder of that name holding something that is not an sdlc-studio copy is the user's,
+        # not ours to replace: skipped and named, as install.sh skips it (BG1632). An empty folder
+        # holds nothing and is installed into. Only a written target is named in the banner, and
+        # a run that wrote none refuses, as install.sh's does (BG1546).
         $installedDests = @()
+        $skippedDests = @()
+        $skipped = @()
+        $writtenDirs = @()
         foreach ($t in $resolved.Keys) {
             $parent = $resolved[$t]
             $dest = Join-Path $parent $SkillName
+            if ((Test-Path $dest) -and -not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {
+                Write-Warn2 "skipping $dest (no sdlc-studio SKILL.md - not touching it)"
+                $skipped += "${t}: $dest holds no sdlc-studio SKILL.md, so it was not touched"
+                $skippedDests += (Join-Path (Resolve-Path $parent).Path $SkillName)
+                continue
+            }
+            $writtenDirs += $parent
             if ($DryRun) { Write-Info "[dry run] would install to: $dest" }
             else {
                 New-Item -ItemType Directory -Path $parent -Force | Out-Null
@@ -331,6 +394,7 @@ Native alternatives (sdlc-studio is a standard skill):
             }
             if (Test-Path $parent) { $installedDests += (Join-Path (Resolve-Path $parent).Path $SkillName) }
         }
+        $installedTargets = @($targets | Where-Object { $writtenDirs -contains $Map[$_].$Scope })
 
         # Refresh every sdlc-studio copy found in a known location of the install's reach that was
         # not written this run, so no stale version lingers. A -Local install reaches this project
@@ -347,7 +411,8 @@ Native alternatives (sdlc-studio is a standard skill):
                     if (-not $parent -or -not (Test-Path $parent)) { continue }
                     $parent = (Resolve-Path $parent).Path
                     $dest = Join-Path $parent $SkillName
-                    if ($installedDests -contains $dest) { continue }
+                    # A skipped target was reported above; it is not written, only not re-reported.
+                    if ($installedDests -contains $dest -or $skippedDests -contains $dest) { continue }
                     if (-not (Test-Path $dest)) { continue }
                     $installedDests += $dest
                     if (-not (Test-SkillCopy $dest)) {
@@ -372,11 +437,15 @@ Native alternatives (sdlc-studio is a standard skill):
         Write-Host ''
         if ($DryRun) {
             Write-Ok 'Dry run complete - no changes made'
+        } elseif ($installedTargets.Count -eq 0) {
+            foreach ($s in $skipped) { Write-Warn2 "not installed for $s" }
+            throw "Nothing was installed. $($skipped -join ' ')"
         } else {
-            Write-Ok "SDLC Studio installed for: $($targets -join ' ')"
+            Write-Ok "SDLC Studio installed for: $($installedTargets -join ' ')"
+            foreach ($s in $skipped) { Write-Warn2 "not installed for $s" }
             Write-Host ''
             Write-Host 'Next steps:'
-            foreach ($t in $targets) { Write-Host "  - $(Invoke-Note $t)" }
+            foreach ($t in $installedTargets) { Write-Host "  - $(Invoke-Note $t)" }
             Write-Host ''
             Write-Host 'Then: status / hint / help (e.g. Claude: /sdlc-studio status).'
         }

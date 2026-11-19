@@ -77,6 +77,12 @@ jobs:
         # so CI installs the suite's packages from the same file.
         run: python -m pip install --quiet -r requirements-dev.txt
 
+      - name: The image's python3 imports PyYAML
+        # US1296: install.sh refuses where the python3 on PATH cannot import yaml, and some
+        # installer tests run it with PATH=/usr/bin:/bin, which reaches the image's own python3
+        # rather than the pinned interpreter above. That python3 must import yaml too.
+        run: /usr/bin/python3 -c 'import yaml' || sudo apt-get install -y --no-install-recommends python3-yaml
+
       - name: Lint (markdown, style, links)
         run: npm run lint
 
@@ -201,6 +207,11 @@ jobs:
         # machine that has it (BG1054).
         run: sudo apt-get install -y --no-install-recommends poppler-utils
 
+      - name: The image's python3 imports PyYAML
+        # US1296: as in the ci job, criteria that run install.sh with PATH=/usr/bin:/bin reach
+        # the image's own python3, which install.sh now requires to import yaml.
+        run: /usr/bin/python3 -c 'import yaml' || sudo apt-get install -y --no-install-recommends python3-yaml
+
       - name: Time the slowest criterion on this runner
         # US0940 AC1's verifier is the slowest criterion known: 276 s on a developer machine, 353 s
         # here. Timed alone on every run, so the ceiling below can be set from this runner's own
@@ -237,6 +248,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        # US1296: install.ps1 refuses a real install where no Python on PATH can import yaml.
+        # -ListTargets and -DryRun skip that check; the real installs below need it.
+        run: python -m pip install --quiet pyyaml
 
       - name: install.ps1 - list targets and dry run (offline)
         shell: pwsh

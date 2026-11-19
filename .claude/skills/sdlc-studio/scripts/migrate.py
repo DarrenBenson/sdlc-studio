@@ -142,9 +142,9 @@ def _retired_config(root: Path) -> tuple[list[dict], list[dict], dict[Path, str]
     a key's own line and its block's children go, and a parent the removal leaves empty goes
     too (an empty block would read as null and mask the shipped defaults under it). Every other
     line is kept byte for byte, comments included; a comment block directly above a removed key
-    is named, never removed. With PyYAML present the result is re-parsed and must equal the
-    original minus those keys, or nothing is written and the keys are handed to a human.
-    Returns (removals, needs-human, rewrites)."""
+    is named, never removed. The result is re-parsed and must equal the original minus those
+    keys, or nothing is written and the keys are handed to a human. Without PyYAML a present
+    config raises `sdlc_md.PyYamlRequired` (US1297). Returns (removals, needs-human, rewrites)."""
     path = root / "sdlc-studio" / ".config.yaml"
     text = _read_raw(path)
     if not text:
@@ -180,16 +180,9 @@ def _retired_config(root: Path) -> tuple[list[dict], list[dict], dict[Path, str]
                                 f"{' with its block' if end > i else ''} - {retired[dotted]}"
                                 + (f"; the comment above it ({span}) is kept for you to judge"
                                    if comment else "")})
-    try:
-        import yaml  # noqa: PLC0415 - soft dependency, and the check on every rewrite
-    except ImportError:
-        # no parser, no check: name every key the text may hold (a flow mapping included)
-        suspects = [k for k in retired if re.search(
-            rf"(?<![\w.-]){re.escape(k.rsplit('.', 1)[-1])}\s*:", text)]
-        return [], ([{"kind": "retired-config-key", "command": None, "detail":
-                      f".config.yaml: remove {', '.join(suspects)} by hand if present - "
-                      f"PyYAML is not installed, so a rewrite cannot be checked"}]
-                    if suspects else []), {}
+    # PyYAML is required (D0505), and the check on every rewrite: a present config without it is
+    # refused here as at every other read, before anything is written.
+    yaml = sdlc_md.require_pyyaml(path)
     try:
         expected = yaml.safe_load(text) or {}
     except yaml.YAMLError:

@@ -1717,6 +1717,37 @@ def is_terminal_status(type_: str, status: str) -> bool:
 
 _OVERRIDE_WARNED: set[str] = set()
 
+#: The command a refusal names for installing PyYAML into the interpreter that runs the scripts.
+PYYAML_INSTALL = "python3 -m pip install pyyaml"
+
+
+class PyYamlRequired(SystemExit):
+    """A present `.config.yaml` cannot be read because PyYAML will not import.
+
+    PyYAML is required, so this refuses: answering from the shipped defaults would read a
+    setting the project switched on as switched off, with one warning and an unchanged exit code.
+
+    A SystemExit rather than an Exception, and on purpose. Callers wrap config reads in
+    `except Exception` so that a config fault "never breaks" them (status's update notice,
+    `config.feature_enabled`), and each of those would turn a refusal back into the default.
+    Uncaught, it ends the command with exit status 1 and its one-line message on stderr, with
+    no traceback. Cleanup handlers that catch BaseException and re-raise still run."""
+
+    def __init__(self, cfg_path) -> None:
+        self.cfg_path = Path(cfg_path)
+        super().__init__(f"error: {cfg_path} is present but PyYAML is not installed, so it "
+                         f"cannot be read; sdlc-studio requires PyYAML - install it with "
+                         f"`{PYYAML_INSTALL}`")
+
+
+def require_pyyaml(cfg_path):
+    """The `yaml` module, or `PyYamlRequired` naming the present config it was needed for."""
+    try:
+        import yaml  # noqa: PLC0415 - required, imported where a config is read
+    except ImportError:
+        raise PyYamlRequired(cfg_path) from None
+    return yaml
+
 
 def _warn_unhonoured(cfg_path: Path, why: str) -> None:
     """Emit a one-line stderr warning (once per file) that a present `.config.yaml` could not
@@ -1754,18 +1785,15 @@ _CONFIG_PARSE_CACHE_MAX = 256
 
 def _parse_config_text(cfg_path: Path, text: str):
     """Parse a config body, memoised on its exact content. Returns the mapping, or None when
-    it cannot be parsed (the caller then falls back to its default, as it always did)."""
+    it cannot be parsed (the caller then falls back to its default, as it always did). Raises
+    `PyYamlRequired` when PyYAML will not import: the config is present, so it is refused."""
     import hashlib
+    yaml = require_pyyaml(cfg_path)   # before the cache, so no cached parse answers without it
     key = (str(cfg_path), hashlib.sha256(text.encode("utf-8", "surrogatepass")).hexdigest())
     if key in _CONFIG_PARSE_CACHE:
         return _CONFIG_PARSE_CACHE[key]
     if len(_CONFIG_PARSE_CACHE) >= _CONFIG_PARSE_CACHE_MAX:
         _CONFIG_PARSE_CACHE.clear()   # bounded: a whole-map drop, since the win is within one run
-    try:
-        import yaml  # soft dependency, mirrors config.py
-    except ImportError:
-        _warn_unhonoured(cfg_path, "PyYAML is not installed")
-        return None
     try:
         parsed = yaml.safe_load(text) or {}
     except Exception as exc:  # noqa: BLE001 - a broken override must never break parsing
@@ -1783,9 +1811,8 @@ def config_unparseable(cfg) -> bool:
     Tests the actual condition rather than inferring it from `project_override` returning None -
     which a perfectly valid config that simply does not set the key returns too, so inferring
     from it refuses projects that never adopted the rule. PyYAML being ABSENT is not this
-    condition: that stands the whole config down and is already warned about loudly at every
-    read, and turning it into a per-transition refusal would break the documented PyYAML-less
-    path rather than close a hole.
+    condition: `project_override` refuses a present config outright then (`PyYamlRequired`),
+    so this answers False and leaves the refusal to the read.
 
     Lives HERE rather than beside its first caller because two gates now decide the same
     question - a gate stands down, or it resolves to its strictest setting - and two copies of
@@ -1800,7 +1827,7 @@ def config_unparseable(cfg) -> bool:
         return True                      # a directory, a permissions error, non-UTF-8 bytes
     try:
         import yaml  # noqa: PLC0415
-    except ImportError:                  # pragma: no cover - documented degraded path
+    except ImportError:                  # pragma: no cover - the read refuses this case
         return False
     try:
         yaml.safe_load(raw)
@@ -1811,10 +1838,11 @@ def config_unparseable(cfg) -> bool:
 
 def project_override(repo_root, dotted: str, default=None):
     """Read a dotted key from the project's `sdlc-studio/.config.yaml` (the override
-    file only, no defaults merge). Self-contained and fully degrading: a missing
-    file, no PyYAML, or malformed YAML all return `default`. This is the reader for
-    parser-critical paths that must never hard-depend on PyYAML; the richer merged
-    config (defaults + override) lives in config.py."""
+    file only, no defaults merge). A missing file returns `default`; an unreadable or
+    malformed one warns once and returns `default`. A present file with no PyYAML raises
+    `PyYamlRequired` (US1297): PyYAML is required, and a config nobody can read is never
+    answered from the defaults. The richer merged config (defaults + override) lives in
+    config.py."""
     cfg_path = Path(repo_root) / "sdlc-studio" / ".config.yaml"
     if not cfg_path.exists():
         return default          # absent: silently the default, as it always was

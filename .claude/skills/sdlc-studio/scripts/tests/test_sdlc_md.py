@@ -5,13 +5,20 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
 
 
 def _load(name: str, rel: str):
@@ -589,6 +596,111 @@ class PersonaRegistryFenceTests(unittest.TestCase):
             reg = sdlc_md.persona_registry(root)
             self.assertTrue(reg.available)
             self.assertEqual([e.name for e in reg.entries], ["Real"])
+
+
+class RequiredPyYamlTests(unittest.TestCase):
+    """US1297 (CR0731, operator ruling D0505): PyYAML is required. A project whose
+    `.config.yaml` is present but cannot be read, because `yaml` will not import, is refused.
+    Before this the reader printed one warning and handed back the shipped default, so every
+    gate the project had switched on ran disarmed with an unchanged exit code."""
+
+    CONFIG = "profile: lite\n"   # away from the shipped default, `full`
+
+    def _project(self, d: str) -> Path:
+        root = Path(d) / "proj"
+        (root / "sdlc-studio").mkdir(parents=True)
+        (root / "sdlc-studio" / ".config.yaml").write_text(self.CONFIG, encoding="utf-8")
+        return root
+
+    @staticmethod
+    def _env_without_yaml(d: str) -> dict:
+        """A child environment whose interpreter cannot import `yaml`: a module of that name,
+        first on PYTHONPATH, raises ImportError as an absent PyYAML does."""
+        hidden = Path(d) / "no-yaml"
+        hidden.mkdir()
+        (hidden / "yaml.py").write_text("raise ImportError('PyYAML is hidden for this test')\n",
+                                        encoding="utf-8")
+        return gitutil.git_env(PYTHONPATH=str(hidden), HOME=d)
+
+    def test_a_present_config_is_refused_not_defaulted_without_pyyaml(self) -> None:
+        """AC1. MUTANTS: warn and return the default (today's behaviour); raise a refusal that
+        is an Exception, which a caller's broad `except` turns back into the default."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d)
+            err = io.StringIO()
+            with mock.patch.dict(sys.modules, {"yaml": None}), contextlib.redirect_stderr(err):
+                with self.assertRaises(sdlc_md.PyYamlRequired) as cm:
+                    sdlc_md.project_override(root, "profile", "full")
+                with self.assertRaises(sdlc_md.PyYamlRequired):
+                    sdlc_md.profile(root)       # a helper reading through it cannot default either
+                try:
+                    sdlc_md.project_override(root, "profile", "full")
+                except Exception:  # noqa: BLE001 - the swallow a guarded caller writes
+                    self.fail("the refusal is an Exception, so a caller's `except Exception` "
+                              "swallows it and reads the shipped default")
+                except sdlc_md.PyYamlRequired:
+                    pass
+                # Positive control: the refusal is keyed on a PRESENT config. A project with none
+                # has nothing to misread, and still gets the default it always did.
+                self.assertEqual("full", sdlc_md.project_override(Path(d), "profile", "full"))
+            message = str(cm.exception)
+            self.assertIn("PyYAML", message)
+            self.assertIn("pip install pyyaml", message, "the refusal names how to install it")
+            self.assertIn(str(root / "sdlc-studio" / ".config.yaml"), message)
+            self.assertNotIn("\n", message.strip(), "the refusal is one line")
+            self.assertEqual("", err.getvalue(),
+                             "the refusal replaces the warn-and-default; it does not ride beside it")
+
+    def test_a_shipped_command_exits_non_zero_with_one_refusal_line(self) -> None:
+        """AC3. `status.py hint` reads `profile` to choose the next step: `lite` skips the TRD,
+        so today's warn-and-default answers `trd create` at exit 0. A refusal that subclasses
+        Exception is not told apart here, since status.py's `__main__` guard prints any
+        Exception as one `error:` line at exit 1; the broad-except check in AC1 pins that."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d)
+            (root / "sdlc-studio" / "prd.md").write_text("# PRD\n", encoding="utf-8")
+            env = self._env_without_yaml(d)
+            probe = subprocess.run([sys.executable, "-c", "import yaml"], env=env,
+                                   capture_output=True, text=True, timeout=60)
+            self.assertNotEqual(0, probe.returncode, "yaml is not hidden, so the refusal is "
+                                "never reached and this test proves nothing")
+            cmd = [sys.executable, str(SCRIPTS_DIR / "status.py"), "hint", "--format", "json",
+                   "--root", str(root)]
+            run = subprocess.run(cmd, cwd=root, env=env, capture_output=True, text=True,
+                                 timeout=120)
+            self.assertNotEqual(0, run.returncode, f"exit 0 on a config it never read: {run.stdout}")
+            self.assertNotIn("Traceback", run.stderr)
+            lines = run.stderr.strip().splitlines()
+            self.assertEqual(1, len(lines), f"one refusal line, not {run.stderr!r}")
+            self.assertIn("PyYAML", lines[0])
+            self.assertIn("pip install pyyaml", lines[0])
+            self.assertEqual("", run.stdout.strip(), "no next step is printed from the default")
+            if _HAS_YAML:
+                # Positive control: where yaml imports, the same command honours the opted-in
+                # `lite`, so the refusal above stands in for a real change of answer.
+                ok = subprocess.run(cmd, cwd=root, env=gitutil.git_env(HOME=d),
+                                    capture_output=True, text=True, timeout=120)
+                self.assertEqual(0, ok.returncode, ok.stderr)
+                self.assertEqual("story", json.loads(ok.stdout)["next_command"])
+
+    @unittest.skipUnless(_HAS_YAML, "PyYAML not installed - the honoured path needs it")
+    def test_a_readable_config_is_still_honoured_with_pyyaml(self) -> None:
+        """AC4. MUTANTS: refuse whenever a config is present; refuse a malformed config instead
+        of warning and degrading as it did."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._project(d)
+            self.assertEqual("lite", sdlc_md.project_override(root, "profile", "full"))
+            self.assertEqual("lite", sdlc_md.profile(root))
+            bad = Path(d) / "bad"
+            (bad / "sdlc-studio").mkdir(parents=True)
+            cfg = bad / "sdlc-studio" / ".config.yaml"
+            cfg.write_text("profile: [unclosed\n", encoding="utf-8")
+            sdlc_md._OVERRIDE_WARNED.discard(str(cfg))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual("full", sdlc_md.project_override(bad, "profile", "full"))
+            self.assertTrue(sdlc_md.config_unparseable(cfg))
+            self.assertIn("was not applied", err.getvalue())
 
 
 class ConfigOverrideWarnTests(unittest.TestCase):

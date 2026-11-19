@@ -3,14 +3,19 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import subprocess
 import sys
 import contextlib
 import io
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # tests/ dir, for the shared gitutil helper
+import gitutil  # noqa: E402
 
 SCRIPT = Path(__file__).resolve().parent.parent / "config.py"
 DEFAULTS = Path(__file__).resolve().parent.parent.parent / "templates" / "config-defaults.yaml"
@@ -190,8 +195,9 @@ class RiskMapDefaultTests(unittest.TestCase):
 
 
 class GracefulDegradeTests(unittest.TestCase):
-    """BG0093: config.get must warn-and-default when config cannot be loaded (no PyYAML /
-    unreadable), never crash - unifying the three failure regimes into one."""
+    """BG0093: config.get must warn-and-default when config cannot be loaded (no PyYAML with no
+    project config to honour / unreadable), never crash - unifying the three failure regimes
+    into one. A PRESENT project config without PyYAML is refused instead (US1297)."""
 
     def test_get_returns_default_when_yaml_unavailable(self) -> None:
         from unittest import mock
@@ -221,6 +227,49 @@ class GracefulDegradeTests(unittest.TestCase):
                 self.assertEqual(config.get(d, "pricing.opus", "DEFAULT"), "DEFAULT")
             self.assertIn("could not load", buf.getvalue(),
                           "the warn half of warn-and-default must still happen")
+
+
+class RequiredPyYamlTests(unittest.TestCase):
+    """US1297 (CR0731, D0505): PyYAML is required, so a project config that is present but
+    cannot be read is refused by `get` and by `show`, never answered from the defaults."""
+
+    CONFIG = "require_ac_verification: true\n"   # the shipped default is false
+
+    def test_config_refuses_without_pyyaml_and_prints_no_defaults(self) -> None:
+        """AC2. MUTANTS: `get` keeps the warn-and-default for a present config; `show` prints
+        the defaults merged with nothing, or tracebacks on the import."""
+        config = _load()
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            (root / "sdlc-studio").mkdir(parents=True)
+            (root / "sdlc-studio" / ".config.yaml").write_text(self.CONFIG, encoding="utf-8")
+            err = io.StringIO()
+            with mock.patch.dict(sys.modules, {"yaml": None}), contextlib.redirect_stderr(err):
+                with self.assertRaises(config.sdlc_md.PyYamlRequired) as cm:
+                    config.get(root, "require_ac_verification", False)
+                with self.assertRaises(config.sdlc_md.PyYamlRequired):
+                    config.feature_enabled(root, "require_ac_verification")  # its broad except
+            self.assertIn("PyYAML", str(cm.exception))
+            self.assertIn("pip install pyyaml", str(cm.exception))
+            self.assertEqual("", err.getvalue(), "no warn-and-default beside the refusal")
+
+            hidden = Path(d) / "no-yaml"
+            hidden.mkdir()
+            (hidden / "yaml.py").write_text("raise ImportError('PyYAML is hidden for this test')\n",
+                                            encoding="utf-8")
+            env = gitutil.git_env(PYTHONPATH=str(hidden), HOME=d)
+            probe = subprocess.run([sys.executable, "-c", "import yaml"], env=env,
+                                   capture_output=True, text=True, timeout=60)
+            self.assertNotEqual(0, probe.returncode, "yaml is not hidden, so this proves nothing")
+            for extra in ([], ["--key", "require_ac_verification"], ["--sources"]):
+                run = subprocess.run([sys.executable, str(SCRIPT), "show", "--root", str(root),
+                                      *extra], cwd=root, env=env, capture_output=True, text=True,
+                                     timeout=60)
+                self.assertNotEqual(0, run.returncode, f"show {extra} exited 0")
+                self.assertEqual("", run.stdout, f"show {extra} printed a config it never read")
+                self.assertNotIn("Traceback", run.stderr)
+                self.assertIn("PyYAML", run.stderr)
+                self.assertIn("pip install pyyaml", run.stderr)
 
 
 class ReviewKeysAreDeclaredTests(unittest.TestCase):

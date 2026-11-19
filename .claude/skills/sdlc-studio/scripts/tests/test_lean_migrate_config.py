@@ -349,23 +349,24 @@ class MigrateConfigTests(unittest.TestCase):
             self.assertEqual(dod.count("\n"), dod.count("\r\n"), "every line stays CRLF")
             self.assertEqual(sdlc_md.retired_check_ids(dod), [])
 
-    def test_without_a_parser_retired_keys_are_handed_back_unwritten(self) -> None:
-        """AC3 with no PyYAML. MUTANTS: writing the unchecked line pass; staying silent about a
-        flow-mapped key the line pass cannot see."""
+    def test_without_a_parser_migrate_refuses_and_writes_nothing(self) -> None:
+        """US1297 (D0505: PyYAML is required). With no PyYAML a present config is refused, so
+        `--apply` writes nothing, and the retired-key pass refuses too rather than handing a
+        guessed key list to a human. MUTANTS: the old no-parser branch in `_retired_config`
+        (it hands the keys back instead of refusing); a sweep that writes before it refuses."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _v51(root)
             cfg = root / "sdlc-studio/.config.yaml"
-            for text, key in ((REPO_CONFIG, "review.two_role_after"),
-                              ("review: {signoff: panel, policy: block}\n", "review.signoff")):
+            for text in (REPO_CONFIG, "review: {signoff: panel, policy: block}\n"):
                 cfg.write_text(text, encoding="utf-8")
+                before = _snapshot(root)
                 with mock.patch.dict(sys.modules, {"yaml": None}):
-                    res = migrate.migrate(root, apply=True, today=TODAY)
-                self.assertEqual(cfg.read_text(encoding="utf-8"), text, "nothing is written")
-                self.assertEqual([e for e in _retired(res) if e["source"] == "config"], [])
-                self.assertTrue(any(key in h["detail"] for h in res["needs_human"]
-                                    if h["kind"] == "retired-config-key"),
-                                f"{key} is handed to a human")
+                    with self.assertRaises(sdlc_md.PyYamlRequired):
+                        migrate.migrate(root, apply=True, today=TODAY)
+                    with self.assertRaises(sdlc_md.PyYamlRequired):
+                        migrate._retired_config(root)   # the pass itself, reached directly
+                self.assertEqual(_snapshot(root), before, "nothing is written")
 
     def test_dry_run_writes_nothing_and_a_second_apply_is_a_no_op(self) -> None:
         """AC4. MUTANTS: a stripper that writes in dry-run; one that re-reports every pass."""
