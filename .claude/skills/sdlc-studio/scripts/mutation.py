@@ -20,6 +20,16 @@ Subcommands:
              sdlc-studio/.local/mutation-report.json (the latest run) and appends ONE
              row to sdlc-studio/.local/mutation-series.jsonl (the per-run cost/yield
              series); non-zero on survivors. No per-target ledger is kept.
+             With --edits it is the runner for chosen mutants:
+             `mutation.py run --edits <list.json> --scope <id> [--report PATH]`.
+             Applies each `{file, old, new, test}` entry of the list, one at a time, in a
+             scratch copy of the tree, runs its pytest selector there and prints one line
+             per entry (`<mutant> killed|survived|not-applied|error: <detail>`); no
+             edit and no test runs in the working tree, and the report is the one file
+             written there. An edit outside the unit's Affects, or whose old
+             text is absent or not unique, is reported not applied and is never counted
+             killed. Writes sdlc-studio/.local/mutation-edits-<unit>.json, whose shape is
+             documented above `EDITS_REPORT_VERSION`.
   yield      what one run COST (wall-clock) against what was FILED from it - the
              artefacts attributed to the run, never its raw survivor count.
   window     declare (or clear) that a process is rewriting source files in place.
@@ -1866,6 +1876,8 @@ def _pct(part: int, whole: int) -> str:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    if args.edits or args.scope or args.report:
+        return cmd_edits(args)
     root = Path(args.root)
     try:
         files = select_files(root, files=args.files, since=args.since, story=args.story)
@@ -2089,6 +2101,309 @@ def cmd_prefilter(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- The edit runner -------------------------------------------------------------------------
+#
+# `mutation.py run --edits <list.json> --scope <id>` runs mutants a person chose, where `run`
+# without `--edits` enumerates its own. Each entry of the list is one textual edit, `{file, old, new, test}`,
+# with an optional `mutant` name and an optional `answer` for a survivor. The working tree is
+# copied once into a temporary directory and every edit, and every test, runs in that copy:
+# no edit is ever written to the author's tree, so no mutant can be stranded in it by a crash,
+# a kill or a test that writes to the file it is testing. The report is the one file this
+# mode writes there.
+#
+# The report it writes, `sdlc-studio/.local/mutation-edits-<unit>.json` unless `--report`
+# names another path, is one JSON object of a fixed shape:
+#
+#   {"kind": "mutation-edits", "version": 1, "unit": "<id>", "edits": "<list path>",
+#    "counts": {"killed": n, "survived": n, "not_applied": n, "error": n},
+#    "mutants": [{"mutant", "file", "old", "new", "test", "result", "last_line",
+#                 "reason", "answer"}, ...]}
+#
+# `mutants` holds every entry of the list, in list order, each with its `result` (one of
+# `EDIT_RESULTS`), the last line its test printed, the reason an entry measured nothing, and
+# the entry's own answer ("" when it gave none).
+
+#: The report's shape version; a key that changes meaning bumps it.
+EDITS_REPORT_VERSION = 1
+#: The verdicts an entry can carry. Only `killed` and `survived` measured a mutant:
+#: `not-applied` (the edit could not be made) and `error` (the test cannot judge it) are
+#: counted apart and never as a kill.
+EDIT_RESULTS = ("killed", "survived", "not-applied", "error")
+#: Exit status of a run stopped because a scratch file would not return to its bytes.
+EXIT_NOT_RESTORED = 3
+_EDIT_KEYS = ("file", "old", "new", "test")
+#: Every variable that can point git at another repository; a hook exports them.
+_REPO_LOCATING_GIT_VARS = (
+    "GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_INDEX_VERSION",
+    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE",
+    "GIT_CEILING_DIRECTORIES", "GIT_DISCOVERY_ACROSS_FILESYSTEM", "GIT_PREFIX",
+)
+
+
+class EditsRefused(ValueError):
+    """The list, the unit or the tree cannot be run at all; nothing was run."""
+
+
+class _NotRestored(RuntimeError):
+    """A scratch file did not return to its original bytes after a test ran."""
+
+
+class _Terminated(BaseException):
+    """SIGTERM arrived mid-run. Raised from the handler so every `finally` below runs: the
+    test's process group is killed and the scratch copy removed before the process dies."""
+
+
+def read_edits(path) -> list[dict]:
+    """The entries of an edit list, or EditsRefused naming the file. A list must be a
+    non-empty JSON list of objects, each with string `file`, `old`, `new` and `test` (`file`,
+    `old` and `test` non-empty) and, when present, a string `mutant` and `answer`. An empty
+    list is refused because it would exit 0 having measured nothing."""
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise EditsRefused(f"cannot read {path} as JSON: {exc}") from None
+    if not isinstance(data, list) or not data:
+        raise EditsRefused(f"{path} is not a non-empty JSON list of edits, each "
+                           f"{{file, old, new, test}}")
+    for n, entry in enumerate(data, 1):
+        if not isinstance(entry, dict):
+            raise EditsRefused(f"{path}: entry {n} is not an object")
+        bad = [k for k in _EDIT_KEYS if not isinstance(entry.get(k), str)]
+        bad += [k for k in ("mutant", "answer") if not isinstance(entry.get(k, ""), str)]
+        bad += [k for k in ("file", "old", "test") if k not in bad and not entry[k].strip()]
+        if bad:
+            raise EditsRefused(f"{path}: entry {n} has no usable {', '.join(bad)}")
+    return data
+
+
+def unit_affects(root: Path, unit: str) -> list[str]:
+    """The paths the unit's `Affects` declares, or EditsRefused when there is no such unit or
+    it declares none: an edit is in scope only inside the unit's own files."""
+    hit = sdlc_md.find_by_id(root, unit)
+    if not hit:
+        raise EditsRefused(f"no artefact {unit!r} under {root}")
+    files = sdlc_md.affects_files(sdlc_md.read_text_safe(Path(hit[0])))
+    if not files:
+        raise EditsRefused(f"{unit} declares no Affects, so no edit is in its scope")
+    return files
+
+
+def _in_affects(rel: str, affects: list[str]) -> bool:
+    """True when `rel` is a declared path or sits under a declared directory."""
+    import posixpath  # noqa: PLC0415
+    for tok in affects:
+        tok = posixpath.normpath(tok.removeprefix("./"))
+        if rel == tok or rel.startswith(tok + "/"):
+            return True
+    return False
+
+
+def _copy_work_tree(root: Path, dest: Path) -> None:
+    """Copy the files git would show (tracked and untracked, ignored ones left out) into
+    `dest`, so uncommitted work is what is mutated. A link is copied as a link."""
+    import os  # noqa: PLC0415
+    import shutil  # noqa: PLC0415
+    env = {k: v for k, v in os.environ.items() if k not in _REPO_LOCATING_GIT_VARS}
+    proc = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--cached", "--others",
+                           "--exclude-standard"], capture_output=True, env=env, timeout=120)
+    if proc.returncode != 0:
+        raise EditsRefused(f"{root} is not a git work tree, so which files to copy is unknown: "
+                           f"{proc.stderr.decode('utf-8', 'replace').strip()}")
+    for name in sorted(set(proc.stdout.decode("utf-8", "surrogateescape").split("\0"))):
+        src, dst = root / name, dest / name
+        if not name or not (src.is_symlink() or src.is_file()):
+            continue                          # a deleted tracked file, or a submodule
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.is_symlink():
+            os.symlink(os.readlink(src), dst)
+        else:
+            shutil.copy2(src, dst)
+
+
+def _why_not_applied(entry: dict, rel: str, unit: str, affects: list[str],
+                     originals: dict) -> str | None:
+    """Why this edit cannot be made in the scratch copy, or None when it can."""
+    if not _in_affects(rel, affects):
+        return f"{entry['file']} is not in {unit}'s Affects"
+    if rel not in originals:
+        return (f"{entry['file']} is not a regular file in the scratch copy (missing, ignored "
+                f"by git, a link, or outside the copy)")
+    try:
+        text = originals[rel].decode("utf-8")
+    except UnicodeDecodeError:
+        return f"{entry['file']} is not UTF-8 text"
+    count = text.count(entry["old"])
+    if count == 0:
+        return f"the old text is not in {entry['file']}"
+    if count > 1:
+        return (f"the old text occurs {count} times in {entry['file']}; widen it until it "
+                f"occurs once")
+    return None
+
+
+def _scratch_originals(scratch: Path, entries: list[dict], affects: list[str]) -> dict:
+    """{relative path: original bytes} for each in-scope regular file the list edits."""
+    import posixpath  # noqa: PLC0415
+    out: dict[str, bytes] = {}
+    top = scratch.resolve()
+    for entry in entries:
+        rel = posixpath.normpath(entry["file"].removeprefix("./"))
+        p = scratch / rel
+        if (rel in out or not _in_affects(rel, affects) or p.is_symlink() or not p.is_file()
+                or not p.resolve().is_relative_to(top)):
+            continue
+        out[rel] = p.read_bytes()
+    return out
+
+
+def _restore_scratch(scratch: Path, originals: dict) -> None:
+    """Put every edited file back to its original bytes and read each back; raise
+    `_NotRestored` naming the first that does not match. Run after EVERY test, because a test
+    may itself rewrite the file it tests, and the next mutant must start from the original."""
+    for rel, original in originals.items():
+        p = scratch / rel
+        try:
+            if p.is_symlink():
+                p.unlink()                    # never write through a link a test made
+            if not p.is_file() or p.read_bytes() != original:
+                p.write_bytes(original)
+            ok = p.read_bytes() == original
+        except OSError:
+            ok = False
+        if not ok:
+            raise _NotRestored(rel)
+
+
+def _test_command(test: str) -> str:
+    """The shell command that runs one pytest selector with this interpreter."""
+    import shlex  # noqa: PLC0415
+    return f"{shlex.quote(sys.executable)} -m pytest -q -p no:cacheprovider {shlex.quote(test)}"
+
+
+def _last_line() -> str:
+    """The last non-blank line the previous test run printed, as one line."""
+    lines = [ln.strip() for ln in _LAST_RUN_OUTPUT[0].splitlines() if ln.strip()]
+    return lines[-1] if lines else "(the test printed nothing)"
+
+
+def run_edits(root: Path, unit: str, entries: list[dict], affects: list[str], scratch: Path,
+              emit=print) -> list[dict]:
+    """Run each entry in `scratch`, a copy of `root`, emitting one line per entry as it
+    finishes; return the report's `mutants` rows. A test is first run without the edit, once
+    per test, and an entry whose test is red there is an `error`: a test already failing
+    cannot kill anything."""
+    import posixpath  # noqa: PLC0415
+    originals = _scratch_originals(scratch, entries, affects)
+    baselines: dict[str, tuple[str, str]] = {}
+    rows = []
+    for n, entry in enumerate(entries, 1):
+        name = entry.get("mutant", "").strip() or f"M{n}"
+        rel = posixpath.normpath(entry["file"].removeprefix("./"))
+        row = {"mutant": name, **{k: entry[k] for k in _EDIT_KEYS}, "result": "",
+               "last_line": "", "reason": "", "answer": entry.get("answer", "")}
+        reason = _why_not_applied(entry, rel, unit, affects, originals)
+        if reason:
+            row.update(result="not-applied", reason=reason)
+        else:
+            if entry["test"] not in baselines:
+                verdict = _run_tests(_test_command(entry["test"]), scratch)
+                baselines[entry["test"]] = (verdict, _last_line())
+                _restore_scratch(scratch, originals)
+            base, base_line = baselines[entry["test"]]
+            if base != "pass":
+                row.update(result="error", last_line=base_line,
+                           reason=f"the test does not pass without the edit: {base_line}")
+            else:
+                target = scratch / rel
+                text = originals[rel].decode("utf-8")
+                target.write_bytes(text.replace(entry["old"], entry["new"], 1).encode("utf-8"))
+                _purge_bytecode(target)
+                verdict = _run_tests(_test_command(entry["test"]), scratch)
+                row["last_line"] = _last_line()
+                _restore_scratch(scratch, originals)
+                row["result"] = {"fail": "killed", "pass": "survived"}.get(verdict, "error")
+                if row["result"] == "error":
+                    row["reason"] = ("the test could not be run (not found, not executable, "
+                                     "or past the time limit)")
+        rows.append(row)
+        detail = row["last_line"] if row["result"] in ("killed", "survived") else row["reason"]
+        emit(f"{name} {row['result']}: {' '.join(detail.split())}")
+    return rows
+
+
+def cmd_edits(args: argparse.Namespace) -> int:
+    """`mutation.py run --edits <list.json> --scope <id>`: exit 0 when every entry was
+    killed, 1 when any survived, was not applied or errored, 2 when the list, the unit or the
+    tree is refused (nothing run), 3 when a scratch file would not restore (the run stops).
+    SIGTERM removes the scratch copy, then ends the process by that signal."""
+    import os  # noqa: PLC0415
+    import shutil  # noqa: PLC0415
+    import signal  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+    root = Path(args.root)
+    mixed = [flag for flag, given in (("--files", args.files), ("--since", args.since),
+                                      ("--story", args.story), ("--test", args.test),
+                                      ("--suggest-test", args.suggest_test),
+                                      ("--dry-run", args.dry_run)) if given]
+    try:
+        if not (args.edits and args.scope):
+            raise EditsRefused("--edits and --scope go together, and --report needs both")
+        if mixed:
+            raise EditsRefused(f"--edits names its own files and tests, so it takes no "
+                               f"{', '.join(mixed)}")
+        entries = read_edits(args.edits)
+        affects = unit_affects(root, args.scope)
+    except EditsRefused as exc:
+        print(f"error: {exc}. Nothing was run.", file=sys.stderr)
+        return 2
+    report_path = Path(args.report) if args.report else (
+        root / "sdlc-studio" / ".local" / f"mutation-edits-{args.scope}.json")
+
+    def _on_term(_signum, _frame):
+        raise _Terminated()
+
+    try:
+        previous = signal.signal(signal.SIGTERM, _on_term)
+    except (ValueError, OSError):
+        previous = None                       # not the main thread: no handler to restore
+    scratch = None
+    try:
+        scratch = Path(tempfile.mkdtemp(prefix="mutation_edits_"))
+        _copy_work_tree(root, scratch)
+        rows = run_edits(root, args.scope, entries, affects, scratch,
+                         emit=lambda line: print(line, flush=True))
+    except EditsRefused as exc:
+        print(f"error: {exc}. Nothing was run.", file=sys.stderr)
+        return 2
+    except _NotRestored as exc:
+        print(f"error: {exc.args[0]} did not restore to its original bytes in the scratch copy "
+              f"after its test ran, so every later verdict would be measured over the wrong "
+              f"file; the run stopped and wrote no report. The working tree was not touched.",
+              file=sys.stderr)
+        return EXIT_NOT_RESTORED
+    except _Terminated:
+        if scratch is not None:
+            shutil.rmtree(scratch, ignore_errors=True)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        os.kill(os.getpid(), signal.SIGTERM)
+        return 128 + signal.SIGTERM           # not reached: the signal ends the process
+    finally:
+        if scratch is not None:
+            shutil.rmtree(scratch, ignore_errors=True)
+        if previous is not None:
+            signal.signal(signal.SIGTERM, previous)
+    counts = {"killed": 0, "survived": 0, "not_applied": 0, "error": 0}
+    for row in rows:
+        counts[row["result"].replace("-", "_")] += 1
+    report = {"kind": "mutation-edits", "version": EDITS_REPORT_VERSION, "unit": args.scope,
+              "edits": str(args.edits), "counts": counts, "mutants": rows}
+    sdlc_md.atomic_write(report_path, json.dumps(report, indent=2) + "\n")
+    print(f"mutation edits for {args.scope}: killed {counts['killed']}, survived "
+          f"{counts['survived']}, not applied {counts['not_applied']}, error "
+          f"{counts['error']} -> {report_path}")
+    return 0 if counts["killed"] == len(rows) else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Opt-in mutation probe: would the tests fail if the code "
                                             "broke? No gate reads a run's result; only an "
@@ -2113,6 +2428,18 @@ def build_parser() -> argparse.ArgumentParser:
                    help="run the mutants and print the verdicts, but write no report and "
                         "no series row - a rehearsal leaves no evidence")
     r.add_argument("--format", choices=("text", "json"), default="text")
+    r.add_argument("--edits", metavar="LIST.json",
+                   help="run chosen mutants instead of enumerating them: a JSON list of "
+                        "{file, old, new, test} entries (optional mutant name and answer; test "
+                        "is a pytest selector), each applied in a scratch copy of the tree with "
+                        "one verdict line printed: `mutation.py run --edits <list.json> "
+                        "--scope <id>`. Takes --scope and --report, and no target or --test")
+    r.add_argument("--scope", metavar="ID",
+                   help="with --edits: the unit whose Affects bounds which files an edit may "
+                        "change")
+    r.add_argument("--report", metavar="PATH",
+                   help="with --edits: where to write the report (default "
+                        "sdlc-studio/.local/mutation-edits-<unit>.json)")
     sdlc_md.retire_flag(r, "--from-plan", "no gate joins a test plan to mutation evidence any "
                         "more; measure the unit's changed surface with "
                         "`mutation.py run --story <id>`")
