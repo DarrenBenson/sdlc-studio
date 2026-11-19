@@ -3,12 +3,13 @@ or the wave end.
 
 The fixture is `test_sprint_drive`'s: a throwaway repository with an open run, a stub pre-commit
 hook and a stub `claude` that builds and reviews, logging when each session starts and ends. The
-plan's waves are written where `sprint plan --write` keeps them. One case wraps the step runner,
+plan's waves are written where `sprint plan --write` keeps them. Two cases wrap the step runner,
 `drive.run_script`, to add a WARNING line to one unit's green `lane accept`.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/lib/drive.py
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import unittest
@@ -102,6 +103,48 @@ class SprintDriveWaveTests(walk._DriveFixture):  # noqa: SLF001
         self.assertIn(f"{A} paperwork: committed", out)
         self.assertEqual("Done", case.status_at(A))
         self.assertTrue([s for s in subjects if s.startswith(f"docs({A})")], subjects)
+
+    def test_a_warning_at_accept_holds_the_drive_until_it_is_answered(self) -> None:
+        warning = "WARNING the verdict was taken against an earlier Affects scope"
+
+        def warn(real, root, script, *args, **kw):
+            done = real(root, script, *args, **kw)
+            if args[:2] == ("lane", "accept") and A in args and done.returncode == 0:
+                done = subprocess.CompletedProcess(done.args, 0, done.stdout,
+                                                   done.stderr + warning + "\n")
+            return done
+
+        rc, out, err = self.drive(wrap=warn)
+        self.assertEqual(1, rc, out + err)
+        text = "\n".join(self.record_of(out))
+        self.assertIn(f"DRIVE STOPPED: {A} at accept, {drive.WARNED}", text)
+        resume = re.search(r"^  resume: (.+)$", text, re.M).group(1)
+        self.assertNotIn("lane accept", resume, "the record names an accept already made")
+        self.assertEqual(self.STATUS, self.status_at(A))
+        # re-run unanswered, the drive stops on the same unit and starts no later wave
+        rc, out, err = self.drive()
+        self.assertEqual(1, rc, out + err)
+        self.assertIn(f"DRIVE STOPPED: {A} at paperwork, {drive.REFUSAL}", out)
+        self.assertIn("uncommitted", out)
+        self.assertEqual([], _sessions(self, B, "start"), "the next wave drove past the stop")
+        self.assertEqual(self.STATUS, self.status_at(A))
+        # the answer is the command the first record named, which commits only the unit's
+        # paperwork; the drive then resumes
+        command = resume.split(", then ")[0]
+        walk._write(self.root, "src/c.py", "C = 9\n")  # noqa: SLF001
+        walk.gitutil.git(["add", "--", "src/c.py"], self.root)
+        subprocess.run(command, shell=True, cwd=self.root, env=self.env, check=True,
+                       capture_output=True)
+        self.assertEqual("Done", self.status_at(A))
+        self.assertEqual([], [ln for ln in self.dirty() if A in ln])
+        self.assertNotIn("src/c.py", walk._git(  # noqa: SLF001
+            self.root, "show", "--name-only", "--format=", "HEAD").splitlines())
+        walk.gitutil.git(["reset", "-q", "--", "src/c.py"], self.root)
+        walk.gitutil.git(["checkout", "--", "src/c.py"], self.root)
+        rc, out, err = self.drive()
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"DRIVE STOPPED: wave 2 of 2 ended, {drive.WAVE_END}", out)
+        self.assertEqual("Done", self.status_at(B))
 
     def test_a_rebase_conflict_stops_the_wave_and_keeps_the_first_landing(self) -> None:
         case = self._case(_SlowPair, "run")

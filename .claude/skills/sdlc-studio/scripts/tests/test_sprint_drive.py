@@ -79,6 +79,9 @@ for rel, body in mine["files"].items():
     Path(rel).parent.mkdir(parents=True, exist_ok=True)
     Path(rel).write_text(body)
     subprocess.run(["git", "add", "--", rel], check=True)
+for rel, body in mine.get("loose", {{}}).items():
+    Path(rel).parent.mkdir(parents=True, exist_ok=True)
+    Path(rel).write_text(body)
 lane = Path("sdlc-studio/.local/lane")
 lane.mkdir(parents=True, exist_ok=True)
 (lane / "commit-msg.txt").write_text(f"feat({{unit}}): {{unit}} lands\\n")
@@ -292,6 +295,77 @@ class SprintDriveTests(_DriveFixture):
         self.assertEqual(1, len([ln for ln in critic.verdicts_path(self.root).read_text(
             encoding="utf-8").splitlines() if ln.startswith(f"| {A} |")]))
         self.assertEqual(self.STATUS, self.status_at(A, "HEAD"))
+
+    def test_a_landing_stopped_after_its_commit_is_resumed_by_the_next_drive(self) -> None:
+        # the build leaves a file no commit carries, so the landing commits, lands and then
+        # cannot remove the worktree unforced
+        self.spec({A: {"files": {"src/a.py": "A = 2\n", f"changelog.d/{A}.md": "x\n"},
+                       "loose": {"src/loose.py": "x\n"}}})
+        rc, out, err = self.drive()
+        self.assertEqual(1, rc, out + err)
+        self.assertIn(f"DRIVE STOPPED: {A} at land, {drive.REFUSAL}", out)
+        self.assertEqual(f"feat({A}): {A} lands", self.subjects()[0])
+        wt = self.root / drive.lanes.RUN_WORKTREES / f"lane-{A.lower()}"
+        self.assertIn(f"repair the lane in {wt}, then sprint.py drive --harness claude", out)
+        # the repair the record names, then the drive it names: the landing is resumed, not
+        # begun again over a lane with nothing left to commit
+        (wt / "src" / "loose.py").unlink()
+        rc, out, err = self.drive()
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"{A}: resuming at land", out)
+        self.assertNotIn("nothing to land", out + err)
+        self.assertFalse(wt.exists(), "the resumed landing did not remove the worktree")
+        self.assertEqual(1, sum(1 for s in self.sessions() if s.get("event") == "start"))
+        self.assertEqual("Done", self.status_at(A))
+        self.assertEqual(1, self.subjects().count(f"feat({A}): {A} lands"))
+        # a landing that removed the worktree and then stopped resumes at its landing too,
+        # never at a fresh build
+        wt = self.root / drive.lanes.RUN_WORKTREES / f"lane-{B.lower()}"
+        record = {"worktrees": [wt.name], "paths": [str(wt)], "units": [B], "owners": {},
+                  "author": None, "commit": None, "briefed": [],
+                  "completed": ["hand-in", "commit", "rebase", "fast-forward", "remove"]}
+        _write(self.root, (drive.lanes.LANDED / f"{wt.name}.land.json").as_posix(),
+               json.dumps(record))
+        self.assertEqual("land", drive._resume_at(self.root, B, wt))  # noqa: SLF001
+        record["completed"].remove("commit")
+        _write(self.root, (drive.lanes.LANDED / f"{wt.name}.land.json").as_posix(),
+               json.dumps(record))
+        self.assertEqual("build", drive._resume_at(self.root, B, wt))  # noqa: SLF001
+
+    def test_the_paperwork_commit_carries_only_the_paths_it_lists(self) -> None:
+        story = self.root / "sdlc-studio" / "stories" / f"{A}-drive.md"
+        story.write_text(story.read_text(encoding="utf-8").replace(
+            f"**Status:** {self.STATUS}", "**Status:** Done"), encoding="utf-8")
+        _write(self.root, f"sdlc-studio/reviews/verdicts/{A}/v.txt", "VERDICT: APPROVE\n")
+        # the operator's own staged work, outside sdlc-studio/ and in it
+        _write(self.root, "src/c.py", "C = 9\n")
+        _write(self.root, "sdlc-studio/notes.md", "mine\n")
+        gitutil.git(["add", "--", "src/c.py", "sdlc-studio/notes.md"], self.root)
+        with unittest.mock.patch.dict(os.environ, self.env, clear=True):
+            done, paths = drive.paperwork(self.root, A)
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        committed = _git(self.root, "show", "--name-only", "--format=", "HEAD").splitlines()
+        self.assertNotIn("src/c.py", committed, "the operator's staged file was committed")
+        self.assertEqual(sorted(paths), sorted(committed))
+        self.assertIn(f"sdlc-studio/stories/{A}-drive.md", committed)
+        # what the operator staged in sdlc-studio/ is one of the paths listed; their file
+        # outside it stays staged and uncommitted
+        self.assertEqual(["src/c.py"],
+                         _git(self.root, "diff", "--cached", "--name-only").splitlines())
+        # a refused paperwork commit leaves the root's index as it was
+        _write(self.root, f"sdlc-studio/reviews/verdicts/{A}/w.txt", "VERDICT: APPROVE\n")
+        _write(self.root, "sdlc-studio/notes2.md", "mine\n")
+        gitutil.git(["add", "--", "sdlc-studio/notes2.md"], self.root)
+        before = _git(self.root, "rev-parse", "HEAD")
+        self.refuse.write_text("on\n", encoding="utf-8")
+        with unittest.mock.patch.dict(os.environ, self.env, clear=True):
+            done, paths = drive.paperwork(self.root, A)
+        self.assertNotEqual(0, done.returncode)
+        self.assertEqual(before, _git(self.root, "rev-parse", "HEAD"))
+        self.assertEqual(["sdlc-studio/notes2.md", "src/c.py"],
+                         _git(self.root, "diff", "--cached", "--name-only").splitlines())
+        self.assertIn(f"?? sdlc-studio/reviews/verdicts/{A}/w.txt", _git(
+            self.root, "status", "--porcelain", "--untracked-files=all").splitlines())
 
     def test_the_help_and_reference_name_each_stop(self) -> None:
         out = io.StringIO()

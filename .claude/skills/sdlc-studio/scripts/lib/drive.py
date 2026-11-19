@@ -1,10 +1,10 @@
 """`sprint drive`: walk a wave's lanes from build to paperwork, and wake the model only at a stop.
 
 `walk` is `sprint.py drive --harness <cli>`. It drives the open run's current wave: the first wave
-of the plan (`sdlc-studio/.local/sprint-plan.json`) holding a unit not at a terminal status, the
-batch units no wave names making a last wave of their own. Each unit walks `STEPS` in order, with
-one line printed per step; the build, land and accept steps run `sprint.py` through its own entry
-point, as an operator would:
+of the plan (`sdlc-studio/.local/sprint-plan.json`) holding a unit not at a terminal status, or at
+one with its paperwork uncommitted, the batch units no wave names making a last wave of their
+own. Each unit walks `STEPS` in order, with one line printed per step; the build, land and accept
+steps run `sprint.py` through its own entry point, as an operator would:
 
 1. build: `sprint.py lane run --harness <cli>` runs the unit's brief headless in its worktree;
 2. land: `sprint.py lane land` commits it through the hooks, lands it, records the self-check
@@ -15,7 +15,8 @@ point, as an operator would:
    moves the unit to Done or Fixed;
 6. return: the priced `lane return` that an APPROVE's accept runs, printed on its own line;
 7. paperwork: one commit, through the hooks, of every change under `sdlc-studio/` outside
-   `.local/`, leaving out the artefact and the verdict folder of every other batch unit.
+   `.local/`, leaving out the artefact and the verdict folder of every other batch unit; it
+   names its paths, so nothing else staged in the root is committed with them.
 
 A unit stops at the first of `STOPS` it meets: a refusal (a step that exits non-zero, or leaves
 nothing for the next step to read), a WARNING line on the stderr of a step that exited 0, or a
@@ -34,23 +35,29 @@ wave starts once that unit has landed, so its worktree is made from the landing.
 and paperwork commits take the root one at a time. A WARNING naming another unit of the same wave
 as briefed and never returned is that unit's own lane in flight beside it, so it stops nothing.
 Re-running `walk` resumes each unit: one whose worktree holds a hand-in commit message starts at
-its landing, one whose landing completed starts at its brief, and a review whose verdict file is
-already written is not run again.
+its landing, one whose landing stopped after its commit has it finished by `lane land --resume`,
+one whose landing completed starts at its brief, and a review whose verdict file is already
+written is not run again. A unit at a terminal status in the working tree and not at HEAD, as a
+warning at accept or a refused paperwork commit leaves it, stops each re-run again until the
+paperwork commit its record names is made.
 
 `step` is `sprint.py drive step --after <agent-id>`, for an orchestrator that spawns its own agents
 and hands each one's return to one command, which ends with the next prompt's path:
 
 - a builder's or repair builder's hand-back, from the worktree `agent-<id>`: `lane land` lands it,
   records the self-check, writes the QA brief and prices the return from the agent's transcript;
-  the last line is the reviewer's prompt. A repair's prompt is the round's rejoinder
-  (`critic.py brief --rejoinder`, quoting the unanswered REJECT), addressed to the reviewer who
-  rejected, so that reviewer is resumed rather than a fresh one spawned;
+  the last line is the reviewer's prompt. A landing of it that stopped after its commit is
+  finished by `lane land --resume`, found by its land record once the worktree is gone. A
+  repair's prompt is the round's rejoinder (`critic.py brief --rejoinder`, quoting the unanswered
+  REJECT), addressed to the reviewer who rejected, so that reviewer is resumed rather than a fresh
+  one spawned;
 - a reviewer's hand-back, whose verdict is in the file its prompt named: `lane accept` records it.
   An APPROVE is verified, moved and returned, its paperwork committed, and the last line is the
-  builder prompt of the wave's next unit no prompt was issued for, or says the wave waits or has
-  ended. A REJECT under the review round cap (`review.max_rounds`) is answered by the repair brief
-  (`sprint.py lane brief --repair`), whose path is the last line. A REJECT at the cap stops with a
-  decision record naming the cap and the operator's ruling owed.
+  builder prompt of the wave's next unit not yet briefed, building or landed (one neither drive's
+  lane record, `run_state.lanes_in_flight` nor a land record since the run opened names), or
+  says the wave waits or has ended. A REJECT under the review round cap (`review.max_rounds`) is
+  answered by the repair brief (`sprint.py lane brief --repair`), whose path is the last line. A
+  REJECT at the cap stops with a decision record naming the cap and the operator's ruling owed.
 
 A stop prints the decision record and no prompt path. Exit 2 is a refusal before anything moved
 (no open run, an agent the run has no lane for), 0 a step that ends with a prompt or a wave's
@@ -62,6 +69,7 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -177,14 +185,37 @@ def warnings(text: str, own=frozenset()) -> list[str]:
     return out
 
 
-def _status(root: Path, unit: str) -> tuple[str, bool]:
-    """`unit`'s status and whether it is terminal for its type."""
+def _status(root: Path, unit: str, text: str | None = None) -> tuple[str, bool]:
+    """`unit`'s status and whether it is terminal for its type, read from the working tree or,
+    given, from `text`, another version of its artefact."""
     hit = sdlc_md.find_by_id(root, unit)
     if hit is None:
         return "not found", False
-    raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]), "Status") or ""
+    raw = sdlc_md.extract_field(sdlc_md.read_text_safe(hit[0]) if text is None else text,
+                                "Status") or ""
     status = sdlc_md.canonical_status(raw, sdlc_md.status_vocab(hit[1], root)) or raw.strip()
     return status, sdlc_md.is_terminal_status(hit[1], status)
+
+
+def _finished(root: Path, unit: str) -> bool:
+    """Whether `unit` is at a terminal status in the working tree and at HEAD: one moved there
+    with its paperwork uncommitted is a stop not yet answered, so not finished."""
+    if not _status(root, unit)[1]:
+        return False
+    hit = sdlc_md.find_by_id(root, unit)
+    rel = Path(hit[0]).resolve().relative_to(root).as_posix()
+    shown = lanes._git(root, "show", f"HEAD:{rel}")  # noqa: SLF001
+    return shown.returncode == 0 and _status(root, unit, shown.stdout)[1]
+
+
+def _stopped_landing(root: Path, name: str) -> dict | None:
+    """The land record of the worktree `name` when its landing made its commit and stopped
+    before its last step, so `lane land --resume` finishes it; None otherwise."""
+    record = lanes._read_record(lanes._record_file(root, name))  # noqa: SLF001
+    if (record and "commit" in record["completed"]
+            and not all(s in record["completed"] for s in lanes.LAND_STEPS)):
+        return record
+    return None
 
 
 def _affects(root: Path, unit: str) -> set[str]:
@@ -227,20 +258,19 @@ def _written(path) -> bool:
         return False
 
 
-def paperwork(root: Path, unit: str) -> tuple[subprocess.CompletedProcess | None, list[str]]:
-    """Commit, through the hooks, every change under `sdlc-studio/` outside `.local/`, leaving
-    out the artefact and the verdict folder of every other unit of the open run's batch, so a
-    unit stopped beside this one keeps its move uncommitted: (the commit, or None with nothing
-    to commit, and the paths). A refused commit is unstaged again, so the root is as it was."""
+def _paperwork_paths(root: Path, unit: str) -> tuple[list[str], list[str]]:
+    """The paths `paperwork` commits for `unit`, and those of them git does not track yet."""
     status = lanes._git(root, "status", "--porcelain", "-z", "--untracked-files=all",  # noqa: SLF001
                         "--", "sdlc-studio").stdout.split("\0")
-    paths, skip = [], False
+    paths, new, skip = [], set(), False
     for entry in status:
         if skip or len(entry) < 4:
             skip = False
             continue
         skip = entry[0] in "RC"
         paths.append(entry[3:])
+        if entry[:2] == "??":
+            new.add(entry[3:])
     verdicts, key = "sdlc-studio/reviews/verdicts/", sdlc_md.norm_id(unit)
     others = set()
     for other in run_state.read(root).get("batch") or []:
@@ -251,17 +281,38 @@ def paperwork(root: Path, unit: str) -> tuple[subprocess.CompletedProcess | None
     paths = [p for p in paths if not p.startswith("sdlc-studio/.local/") and p not in others
              and not (p.startswith(verdicts)
                       and sdlc_md.norm_id(p[len(verdicts):].split("/", 1)[0]) != key)]
+    return paths, [p for p in paths if p in new]
+
+
+def _paperwork_message(root: Path, unit: str) -> str:
+    return f"docs({unit}): record {unit}'s review and its move to {_status(root, unit)[0]}"
+
+
+def paperwork_command(root: Path, unit: str) -> str:
+    """The shell command that makes `unit`'s paperwork commit by hand, of only its paths."""
+    paths = shlex.join(_paperwork_paths(root, unit)[0])
+    return (f"git add -- {paths} && git commit -m \"{_paperwork_message(root, unit)}\" "
+            f"-- {paths}")
+
+
+def paperwork(root: Path, unit: str) -> tuple[subprocess.CompletedProcess | None, list[str]]:
+    """Commit, through the hooks, every change under `sdlc-studio/` outside `.local/`, leaving
+    out the artefact and the verdict folder of every other unit of the open run's batch, so a
+    unit stopped beside this one keeps its move uncommitted: (the commit, or None with nothing
+    to commit, and the paths). The commit names its paths, so nothing else staged in the root
+    is in it and stays staged; a refused commit leaves the root's index as it was."""
+    paths, new = _paperwork_paths(root, unit)
     if not paths:
         return None, []
-    added = lanes._git(root, "add", "--", *paths)  # noqa: SLF001
-    if added.returncode:
-        return added, paths
-    status_word = _status(root, unit)[0]
-    done = lanes._git(root, "commit", "-q", "-m",  # noqa: SLF001
-                      f"docs({unit}): record {unit}'s review and its move to {status_word}",
-                      timeout=lanes.COMMIT_TIMEOUT)
-    if done.returncode:
-        lanes._git(root, "reset", "-q", "--", *paths)  # noqa: SLF001
+    if new:
+        # known to git, so the commit's pathspec reaches them, and nothing staged yet
+        added = lanes._git(root, "add", "--intent-to-add", "--", *new)  # noqa: SLF001
+        if added.returncode:
+            return added, paths
+    done = lanes._git(root, "commit", "-q", "-m", _paperwork_message(root, unit),  # noqa: SLF001
+                      "--only", "--", *paths, timeout=lanes.COMMIT_TIMEOUT)
+    if done.returncode and new:
+        lanes._git(root, "reset", "-q", "--", *new)  # noqa: SLF001
     return done, paths
 
 
@@ -273,8 +324,8 @@ def _paperwork_step(root: Path, unit: str) -> str:
         kept = keep(root, unit, "paperwork", done)
         raise _Stop(decision_record(
             unit, "paperwork", REFUSAL, done.returncode, done.stdout + done.stderr, kept,
-            resume=f"repair what the hook names, then git add -- {' '.join(paths)} && "
-                   f"git commit -m \"docs({unit}): record {unit}'s review\""), done.returncode)
+            resume=f"repair what the hook names, then {paperwork_command(root, unit)}"),
+            done.returncode)
     sha = lanes._git(root, "rev-parse", "--short", "HEAD").stdout.strip()  # noqa: SLF001
     return f"committed {sha} ({len(paths)} file(s))"
 
@@ -339,13 +390,16 @@ class _Wave:
 
 def _resume_at(root: Path, unit: str, wt: Path) -> str:
     """The step a unit's walk starts at: its brief once its landing completed, its landing when
-    its worktree holds a hand-in commit message, else its build."""
+    that landing stopped after its commit or its worktree holds a hand-in commit message, else
+    its build."""
     record = lanes._read_record(lanes._record_file(root, wt.name))  # noqa: SLF001
     if (record and unit in (record.get("units") or [])
             and all(s in (record.get("completed") or []) for s in lanes.LAND_STEPS)
             and (root / lanes.BRIEFS / f"{unit}-qa.txt").is_file() and not wt.is_dir()):
         return "brief"
-    if (wt / lanes.HAND_IN / lanes.COMMIT_MSG).is_file():
+    stopped = _stopped_landing(root, wt.name)
+    if (stopped and unit in (stopped.get("units") or [])) \
+            or (wt / lanes.HAND_IN / lanes.COMMIT_MSG).is_file():
         return "land"
     return "build"
 
@@ -354,6 +408,14 @@ def _walk_steps(w: _Wave, unit: str) -> None:
     root = w.root
     wt = root / lanes.RUN_WORKTREES / f"lane-{unit.lower()}"
     ctx: dict = {}
+    if _status(root, unit)[1]:
+        # terminal in the tree and not at HEAD: the stop that left its move uncommitted is
+        # unanswered, and a re-run never carries it forward
+        raise _Stop(decision_record(unit, "paperwork", REFUSAL, quote=[
+            f"{unit} is at {_status(root, unit)[0]} in the working tree but not at HEAD: its "
+            f"move is uncommitted, so the stop that left it (a warning, or a refused paperwork "
+            f"commit) is unanswered and drive drives nothing past it"],
+            resume=f"{paperwork_command(root, unit)}, then {w.again}"), 1)
     first = _resume_at(root, unit, wt)
     if first != "build":
         w.say(f"{unit}: resuming at {first}")
@@ -379,8 +441,10 @@ def _walk_steps(w: _Wave, unit: str) -> None:
                 if w.halt.is_set():
                     w.held[unit] = step
                     return
+                stopped = _stopped_landing(root, wt.name)
+                resume = ["--resume"] if stopped and unit in (stopped.get("units") or []) else []
                 done = run_script(root, "sprint.py", "lane", "land", "--worktree", str(wt),
-                                  "--units", unit, timeout=lanes.COMMIT_TIMEOUT + 600)
+                                  "--units", unit, *resume, timeout=lanes.COMMIT_TIMEOUT + 600)
             if done.returncode == 0:
                 w.mark_landed(unit)
             _stop_for(root, unit, step, done, f"repair the lane in {wt}, then {w.again}", w.own)
@@ -467,8 +531,12 @@ def _walk_accept(w: _Wave, unit: str, ctx: dict) -> str | None:
             quote=[rejected.group(0).rstrip(";"), *_blocking(done.stdout),
                    "drive briefs and spawns no repair: the repair-scope brief is the "
                    "command under resume"]), done.returncode)
-    _stop_for(w.root, unit, "accept", done, f"sprint.py lane accept --unit {unit} --verdict "
-                                            f"{ctx['verdict']} --reviewer <name>", w.own)
+    # a warning from an accept that exited 0 follows the move: committing the paperwork answers it
+    _stop_for(w.root, unit, "accept", done,
+              f"{paperwork_command(w.root, unit)}, then {w.again}"
+              if done.returncode == 0 and warnings(done.stderr, w.own) else
+              f"sprint.py lane accept --unit {unit} --verdict {ctx['verdict']} --reviewer <name>",
+              w.own)
     moved = next((ln.split(": ", 1)[1] for ln in done.stdout.splitlines()
                   if ln.startswith(f"{unit}: moved to")), "moved")
     return f"APPROVE recorded; {moved}"
@@ -544,13 +612,13 @@ def walk(root: Path | str, harness: str, model: str | None = None,
         print(f"sprint drive: {exc}", file=sys.stderr)
         return 2
     index = next((n for n, wave in enumerate(every)
-                  if any(not _status(root, u)[1] for u in wave)), None)
+                  if any(not _finished(root, u) for u in wave)), None)
     if index is None:
         print(f"drive: every unit of the open run's {len(every)} wave(s) is at a terminal "
               f"status; nothing is left to drive")
         return 0
     wave = every[index]
-    w = _Wave(root, harness, model, timeout, [u for u in wave if not _status(root, u)[1]])
+    w = _Wave(root, harness, model, timeout, [u for u in wave if not _finished(root, u)])
     w.say(f"drive: wave {index + 1} of {len(every)}: {', '.join(w.order)} ({harness})")
     never = _run_wave(w)
     for unit in w.order:
@@ -598,17 +666,22 @@ def _agent_worktree(root: Path, agent: str) -> Path | None:
 
 
 def _after_builder(root: Path, agent: str, wt: Path, state: dict, record: dict) -> list[str]:
+    """A builder's hand-back landed: a landing of its worktree that stopped after its commit is
+    resumed with `lane land --resume` for the units its land record names."""
+    stopped = _stopped_landing(root, wt.name)
     hand_in = wt / lanes.HAND_IN
-    keys = sorted({p.name[:-len(suffix)] for suffix in ("-claims.json", "-mutants.json")
+    keys = sorted({sdlc_md.norm_id(str(u)) for u in stopped.get("units") or []} if stopped else
+                  {p.name[:-len(suffix)] for suffix in ("-claims.json", "-mutants.json")
                    for p in (hand_in.glob(f"*{suffix}") if hand_in.is_dir() else [])})
     batch = {sdlc_md.norm_id(u): u for u in state.get("batch") or []}
     if not keys or any(k not in batch for k in keys):
         raise _Refused(f"agent {agent}'s worktree {wt} hands in "
                        f"{', '.join(keys) if keys else 'no self-check'}, not units of the open "
                        f"run {state.get('run_id')}, so nothing was landed")
-    units = [batch[k] for k in keys]
+    units = list(stopped["units"]) if stopped else [batch[k] for k in keys]
     done = run_script(root, "sprint.py", "lane", "land", "--worktree", str(wt), "--units",
-                      *units, timeout=lanes.COMMIT_TIMEOUT + 600)
+                      *units, *(["--resume"] if stopped else []),
+                      timeout=lanes.COMMIT_TIMEOUT + 600)
     _stop_for(root, units[0], "land", done, f"repair the lane in {wt}, then sprint.py drive "
                                             f"step --after {agent}", set(batch))
     out = [ln.strip() for ln in done.stdout.splitlines()
@@ -723,9 +796,24 @@ def _after_reviewer(root: Path, agent: str, unit: str | None, state: dict,
             str(path)]
 
 
+def _taken(root: Path, state: dict) -> dict[str, str]:
+    """The units the run has a lane for that drive's own record may not name, each with what it
+    is: those `lane brief` sent out and no `lane return` has cleared
+    (`run_state.lanes_in_flight`), and those a land record written since the run opened names."""
+    taken = {sdlc_md.norm_id(str(r.get("unit") or "")): "in flight"
+             for r in run_state.lanes_in_flight(root)}
+    opened = sdlc_md.parse_iso8601(state.get("started_at"))
+    for path in sorted((root / lanes.LANDED).glob(lanes.LAND_RECORD.format(name="*"))):
+        land = lanes._read_record(path)  # noqa: SLF001
+        if land and (opened is None or path.stat().st_mtime >= opened.timestamp()):
+            taken.update({sdlc_md.norm_id(str(u)): "landed" for u in land.get("units") or []})
+    return taken
+
+
 def _next_prompt(root: Path, unit: str, state: dict, record: dict) -> list[str]:
-    """After `unit` is accepted: the builder prompt of its wave's next unit given none yet, or
-    what the wave waits on, or that it has ended."""
+    """After `unit` is accepted: the builder prompt of its wave's next unit not yet briefed,
+    building or landed (one neither drive's lane record nor `_taken` names), or what the wave
+    waits on, or that it has ended."""
     every = waves(root, state)
     key = sdlc_md.norm_id(unit)
     k = next((n for n, wave in enumerate(every)
@@ -742,12 +830,15 @@ def _next_prompt(root: Path, unit: str, state: dict, record: dict) -> list[str]:
     building = set().union(*[_affects(root, u) for u in left
                              if (record.get(sdlc_md.norm_id(u)) or {}).get("stage")
                              in ("build", "repair")])
+    taken = _taken(root, state)
     fresh = [u for u in left if sdlc_md.norm_id(u) not in record
-             and not (_affects(root, u) & building)]
+             and sdlc_md.norm_id(u) not in taken and not (_affects(root, u) & building)]
     if not fresh:
+        said = {sdlc_md.norm_id(u): (record.get(sdlc_md.norm_id(u)) or {}).get("stage")
+                or taken.get(sdlc_md.norm_id(u), "not started") for u in left}
         return [f"wave {k + 1} of {len(every)} waits on "
-                + ", ".join(f"{u} ({(record.get(sdlc_md.norm_id(u)) or {}).get('stage', 'not started')})"
-                            for u in left) + "; no unit is left to brief now"]
+                + ", ".join(f"{u} ({said[sdlc_md.norm_id(u)]})" for u in left)
+                + "; no unit is left to brief now"]
     nxt = fresh[0]
     brief = run_script(root, "sprint.py", "lane", "brief", "--units", nxt)
     if brief.returncode or not brief.stdout.strip():
@@ -774,6 +865,9 @@ def step(root: Path | str, after: str, unit: str | None = None) -> int:
         state = _open_run(root)
         record = _load(root)
         wt = _agent_worktree(root, after)
+        if wt is None and (stopped := _stopped_landing(root, f"agent-{after}")):
+            # the landing removed the worktree and then stopped: its land record names it
+            wt = Path(stopped["paths"][0])
         lines = (_after_builder(root, after, wt, state, record) if wt is not None
                  else _after_reviewer(root, after, unit, state, record))
     except _Refused as exc:

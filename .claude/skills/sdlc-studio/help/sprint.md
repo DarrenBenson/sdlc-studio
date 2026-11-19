@@ -799,7 +799,7 @@ paperwork (one commit through the hooks of the changes under `sdlc-studio/`, lea
 other unit's artefact and verdict folder). Units with disjoint Affects build at once; a unit
 sharing a file with an earlier unit of the wave starts once that unit has landed. Landings,
 accepts and paperwork commits take the root one at a time. The current wave is the first wave of
-the plan holding a unit not yet at a terminal status.
+the plan holding a unit not yet at a terminal status, or at one with its paperwork uncommitted.
 
 Drive stops at five points only: a refusal (a step that exits non-zero, or leaves nothing for the
 next step to read), a warning (a WARNING line on the stderr of a step that exited 0), a REJECT
@@ -810,9 +810,12 @@ the stop, the exit status, what it quotes (the warning line, the BLOCKING findin
 conflicting files), the last lines of the step's output, where the whole output is kept
 (`sdlc-studio/.local/drive/<unit>/<step>.log`) and the command that resumes. A REJECT's record
 names the repair-scope brief, `sprint.py lane brief --repair --units <unit>`. Re-running drive
-resumes each unit: a worktree holding a hand-in starts at its landing, a completed landing at its
-brief, and a verdict file already written is not reviewed again. Exit 2 is a refusal before
-anything ran, 0 a wave end, otherwise the stopped step's own status.
+resumes each unit: a worktree holding a hand-in starts at its landing, a landing that stopped
+after its commit is finished with `lane land --resume`, a completed landing starts at its brief,
+and a verdict file already written is not reviewed again. A unit moved with its paperwork
+uncommitted, as a warning at accept or a refused paperwork commit leaves it, stops every re-run
+until the paperwork commit its record names is made. Exit 2 is a refusal before anything ran, 0 a
+wave end, otherwise the stopped step's own status.
 
 An orchestrator that spawns its own agents hands each agent's return to one command instead:
 
@@ -821,16 +824,18 @@ python3 <skill>/scripts/sprint.py drive step --after <agent-id>
 ```
 
 For a builder's hand-back, from its worktree `agent-<id>`, `drive step` lands the lane, records
-the self-check, writes the QA brief and prices the return from the agent's transcript. For a
-repair builder's, the reviewer's prompt is the round's rejoinder (`critic.py brief --rejoinder`,
-quoting the unanswered REJECT), addressed to the reviewer who rejected, to resume rather than
-replace. For a reviewer's hand-back, whose verdict is in the file its prompt named, it records the
-verdict: an APPROVE is verified, moved, returned and its paperwork committed, and a REJECT under
-`review.max_rounds` is answered by the repair brief. The last line printed is the next prompt's
-path: the reviewer's, the repair builder's, or the builder's of the wave's next unit given no
-prompt yet; otherwise it says what the wave waits on, or that it has ended. A REJECT at the round
-cap, like every other stop, prints the decision record, naming the cap and the operator's ruling
-owed, and no path. `--unit` names the unit a reviewer answered when several verdicts are written
-at once. Exit 2 is a refusal that changed nothing, such as an agent the run has no lane for. The
-prompts, and the record of which reviewer answers which unit, are kept under
+the self-check, writes the QA brief and prices the return from the agent's transcript; the same
+command finishes a landing that stopped after its commit with `lane land --resume`, from its land
+record once the worktree is gone. For a repair builder's, the reviewer's prompt is the round's
+rejoinder (`critic.py brief --rejoinder`, quoting the unanswered REJECT), addressed to the
+reviewer who rejected, to resume rather than replace. For a reviewer's hand-back, whose verdict
+is in the file its prompt named, it records the verdict: an APPROVE is verified, moved, returned
+and its paperwork committed, and a REJECT under `review.max_rounds` is answered by the repair
+brief. The last line printed is the next prompt's path: the reviewer's, the repair builder's, or
+the builder's of the wave's next unit not yet briefed, building or landed, by `drive step` or by
+`lane brief`; otherwise it says what the wave waits on, or that it has ended. A REJECT at the
+round cap, like every other stop, prints the decision record, naming the cap and the operator's
+ruling owed, and no path. `--unit` names the unit a reviewer answered when several verdicts are
+written at once. Exit 2 is a refusal that changed nothing, such as an agent the run has no lane
+for. The prompts, and the record of which reviewer answers which unit, are kept under
 `sdlc-studio/.local/drive/`.

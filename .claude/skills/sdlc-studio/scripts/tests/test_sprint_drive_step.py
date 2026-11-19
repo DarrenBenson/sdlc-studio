@@ -159,6 +159,71 @@ class SprintDriveStepTests(_StepFixture):
         self.assertIn("wave 1 of 2 has ended", self.last(out))
         self.assertFalse((self.root / drive.PROMPTS / f"{D}-build.txt").exists())
 
+    def test_a_unit_briefed_outside_drive_is_given_no_second_builder_prompt(self) -> None:
+        # the wave's builders are started the usual way, by `lane brief`, which drive's own
+        # lane record never sees
+        rc, out, err = self.run_sprint("lane", "brief", "--units", A, B, C)
+        self.assertEqual(0, rc, out + err)
+        self.builder("a1", A, "A = 2\n")
+        rc, out, err = self.step("a1")
+        self.assertEqual(0, rc, out + err)
+        self.verdict(A, APPROVE)
+        rc, out, err = self.step("ra")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("Done", self.status_at(A))
+        # B's and C's builders were briefed and never returned: neither is briefed again
+        self.assertFalse(list((self.root / drive.PROMPTS).glob("*-build.txt")), out)
+        self.assertFalse(Path(self.last(out)).is_file(), out)
+        self.assertIn("waits on", self.last(out))
+
+    def test_a_landing_stopped_after_its_commit_is_resumed_by_the_next_step(self) -> None:
+        self.builder("a1", A, "A = 2\n")
+        rc, out, err = self.step("a1")
+        self.assertEqual(0, rc, out + err)
+        # B's builder leaves a file no commit carries: its landing commits, lands and then
+        # cannot remove the worktree unforced
+        wt = self.builder("b1", B, "B = 2\n")
+        walk._write(wt, "src/loose.py", "x\n")  # noqa: SLF001
+        rc, out, err = self.step("b1")
+        self.assertEqual(1, rc, out + err)
+        self.assertIn(f"DRIVE STOPPED: {B} at land, {drive.REFUSAL}", out)
+        self.assertEqual(f"feat({B}): B = 2", self.subjects()[0])
+        # A's APPROVE names no builder prompt for B, which is landed
+        self.verdict(A, APPROVE)
+        rc, out, err = self.step("ra")
+        self.assertEqual(0, rc, out + err)
+        self.assertFalse((self.root / drive.PROMPTS / f"{B}-build.txt").exists(), out)
+        # the repair the record names, then the step it names: the landing is resumed
+        (wt / "src" / "loose.py").unlink()
+        rc, out, err = self.step("b1")
+        self.assertEqual(0, rc, out + err)
+        self.assertFalse(wt.exists(), "the resumed landing did not remove the worktree")
+        prompt = Path(self.last(out))
+        self.assertEqual(f"{sdlc_md.norm_id(B)}-review-r1.txt", prompt.name)
+        # and B's reviewer's hand-back is taken
+        self.verdict(B, APPROVE)
+        rc, out, err = self.step("rb")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual("Done", self.status_at(B))
+        self.assertEqual(1, self.subjects().count(f"feat({B}): B = 2"))
+
+    def test_a_landing_stopped_after_its_worktree_went_is_resumed_from_its_record(self) -> None:
+        wt = self.builder("a1", A, "A = 2\n")
+        (wt / "sdlc-studio" / ".local" / "lane" / f"{A}-claims.json").unlink()
+        rc, out, err = self.step("a1")
+        self.assertEqual(1, rc, out + err)
+        self.assertEqual(f"feat({A}): A = 2", self.subjects()[0])
+        self.assertFalse(wt.exists())
+        # the claims are handed in where the landing kept the hand-in, and the step resumes it
+        kept = self.root / drive.lanes.LANDED / "agent-a1"
+        claims = [{"surface": "commit message", "claim": "it lands", "ruling": "TRUE"},
+                  {"surface": f"changelog.d/{A}.md", "claim": "it lands", "ruling": "TRUE"}]
+        walk._write(kept, f"{A}-claims.json", json.dumps(claims))  # noqa: SLF001
+        rc, out, err = self.step("a1")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(f"{sdlc_md.norm_id(A)}-review-r1.txt", Path(self.last(out)).name)
+        self.assertEqual("review", self.lanes()[sdlc_md.norm_id(A)]["stage"])
+
     def test_a_refused_step_prints_a_decision_record_and_no_prompt_path(self) -> None:
         self.refuse.write_text("on\n", encoding="utf-8")
         self.builder("a1", A, "A = 2\n")
