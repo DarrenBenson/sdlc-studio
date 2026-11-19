@@ -52,6 +52,7 @@ Delivered 15 units, 48 points: the 14 planned (47 points) and BG1622, folded in 
 | BG1626 | not-stop-ship | orchestrator | 2026-11-19 |
 | BG1627 | not-stop-ship | orchestrator | 2026-11-19 |
 | BG1628 | not-stop-ship | orchestrator | 2026-11-19 |
+| BG1629 | not-stop-ship | orchestrator | 2026-11-19 |
 | CR0746 | not-stop-ship | orchestrator | 2026-11-19 |
 | CR0747 | not-stop-ship | orchestrator | 2026-11-19 |
 
@@ -80,13 +81,7 @@ Delivered 15 units, 48 points: the 14 planned (47 points) and BG1622, folded in 
 
 **0 of 15 unit(s) measured; 15 of 15 forecast at plan time.**
 
-**Priced cost: 46,289,662 priced input-equivalent tokens**, 964,368 per point over 48 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $126.81, $2.64 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 3,862 x1
-- output: 1,894,460 x5
-- cache write 5m: 5,351,434 x1.25
-- cache write 1h: 476,072 x2
-- cache read: 291,720,636 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 160,955** (7,725,828 tokens over 48 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 

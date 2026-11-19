@@ -4,7 +4,7 @@
   "report_id": "RPT0037",
   "run_id": "RUN-01M7SS62",
   "retro_id": "RETRO0151",
-  "generated_at": "2026-11-19T19:51:52Z",
+  "generated_at": "2026-11-19T20:21:39Z",
   "window_end": "2026-11-19T19:51:52Z",
   "signature": null,
   "sections": [
@@ -49,7 +49,7 @@
         },
         "verified_sha": {
           "key": "verified_sha",
-          "value": "e4febe06c81b3fee50c766615749943a9e035196",
+          "value": "a0e07099240f4620891b70a3c9ae4c03a3950c02",
           "source": "sdlc-studio/reports/runs/RUN-01M7SS62.json"
         }
       },
@@ -1369,7 +1369,7 @@
       "figures": {
         "findings_scan": {
           "key": "findings_scan",
-          "value": "21 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
+          "value": "22 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)",
           "source": "sdlc-studio/reports/runs/RUN-01M7SS62.json"
         }
       },
@@ -1525,6 +1525,23 @@
             "key": "issue_detail",
             "value": "critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit - not-stop-ship, ruled by orchestrator",
             "source": "sdlc-studio/bugs/BG1628-critic-py-record-escapes-a-verdict-s-underscores.md"
+          }
+        },
+        {
+          "issue_id": {
+            "key": "issue_id",
+            "value": "BG1629",
+            "source": "sdlc-studio/bugs/BG1629-lane-land-prices-a-landed-lane-s-tokens.md"
+          },
+          "issue_priority": {
+            "key": "issue_priority",
+            "value": "Medium",
+            "source": "sdlc-studio/bugs/BG1629-lane-land-prices-a-landed-lane-s-tokens.md"
+          },
+          "issue_detail": {
+            "key": "issue_detail",
+            "value": "lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report - not-stop-ship, ruled by orchestrator",
+            "source": "sdlc-studio/bugs/BG1629-lane-land-prices-a-landed-lane-s-tokens.md"
           }
         },
         {
@@ -2182,7 +2199,7 @@
           },
           "dora_value": {
             "key": "dora_value",
-            "value": "6h 55m",
+            "value": "8h 17m",
             "source": "git log"
           },
           "dora_mapping": {
@@ -2197,7 +2214,7 @@
           },
           "dora_source": {
             "key": "dora_source",
-            "value": "git history - first to last of 15 commit(s)",
+            "value": "git history - first to last of 16 commit(s)",
             "source": "git log"
           }
         },
@@ -2545,6 +2562,7 @@
       "not_measured": null
     }
   ],
+  "findings_window_end": "2026-11-19T20:21:39Z",
   "record_paths": "portable",
   "token_ratio": "every-delivered-unit-delegated",
   "restore_pairing": "next-success-after-failure",
@@ -2976,5 +2994,5 @@
   "usd_prices": "per-model-prices-and-delegated-dollars",
   "cost_forecast": "forecast-actual-ratio",
   "dispatch_effort": "per-role-from-plan",
-  "fingerprint": "91abee9f194ad376"
+  "fingerprint": "37a01f3d6c94675d"
 }

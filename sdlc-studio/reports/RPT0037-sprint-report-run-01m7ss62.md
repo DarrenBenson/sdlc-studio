@@ -7,7 +7,7 @@ Toward cost per unit: one drive step per hand-back, replayed machine-run mutants
 **Verdict: Judged achieved** - Every clause delivered on independent APPROVEs, all 15 units resolved: one drive step per hand-back (US1198, with US1192, US1193, US1195, US1196 and US1197 carrying the hand-back loop), replayed machine-run mutants (US1200, US1201, US1202), configurable CI red-run rules (US1236, US1237, US1238), and cost measured or flagged (BG1605, BG1607). Six units needed a repair round, and each repair answered every blocking finding of both seats. Known issues carried, none stop-ship: BG1623 and BG1626 (drive step's resumes and guards), BG1627 (an outer brief bound orphans the runner), BG1625 (report and replay edges).
 
 > **Run:** 2026-11-19T11:34:33Z to 2026-11-19T19:51:52Z (8.3h)
-> **Verified on:** e4febe06c81b3fee50c766615749943a9e035196   **Fingerprint:** 91abee9f194ad376
+> **Verified on:** a0e07099240f4620891b70a3c9ae4c03a3950c02   **Fingerprint:** 37a01f3d6c94675d
 
 ## Estimates
 
@@ -85,7 +85,7 @@ size, plan and added together: 48.
 
 ## Known issues handed over
 
-21 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
+22 open finding(s) raised in the run, 0 close gap(s), 0 carried unit(s)
 
 | Issue | Priority | Detail |
 | --- | --- | --- |
@@ -98,6 +98,7 @@ size, plan and added together: 48.
 | BG1626 | Medium | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded - not-stop-ship, ruled by orchestrator |
 | BG1627 | Medium | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running - not-stop-ship, ruled by orchestrator |
 | BG1628 | Medium | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit - not-stop-ship, ruled by orchestrator |
+| BG1629 | Medium | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report - not-stop-ship, ruled by orchestrator |
 | CR0746 | Medium | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS - not-stop-ship, ruled by orchestrator |
 | BG1611 | Low | gate.py --red-run's regression path over-claims: a failing id that names no file files no bug, and a second red on a different test reuses the first bug without naming that test - not-stop-ship, ruled by orchestrator |
 | BG1612 | Low | Two of gate.py --red-run's behaviours hold by probe but no test pins them: the sections after a bug's CI Red Runs section, and the refusal of a negative, boolean or fractional rerun limit - not-stop-ship, ruled by orchestrator |
@@ -157,7 +158,7 @@ part's share of the role's priced cost; context is input + cache write + cache r
 | Key | This run | Mapping | Elite band | Derived from |
 | --- | --- | --- | --- | --- |
 | Deployment frequency | 2 | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up | on demand | forge runs 44579888486/44519035594 - 2 push-triggered run(s) on main in the run window |
-| Lead time for changes | 6h 55m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 15 commit(s) |
+| Lead time for changes | 8h 17m | the span from the run's first commit on main to its last - per-commit lead time is not derived, because the work is committed locally and pushed in batches | under a day | git history - first to last of 16 commit(s) |
 | Change failure rate | 0% | a push to main IS the deployment in this trunk-based repository: there is no separate deploy step, and CI on that commit is what decides whether the change stood up; the rate is the share of push-triggered CI runs on main that concluded failure or timed out - a cancelled or skipped run is not a failed deployment | 0-15% | forge runs 44579888486/44519035594 - 2 deployment(s); 0 failed on none |
 | Time to restore | no restore needed | per red streak on main, in creation order, the span from its first failure's conclusion to the conclusion of the first push-triggered run created after it that concluded success, floored at zero; the median over the window's restored streaks, or not restored while the window's last streak is still red | under an hour | forge runs 44579888486/44519035594 - no push-triggered run on main concluded failure |
 

@@ -2706,6 +2706,11 @@
       "at": "2026-11-19T19:27:44Z",
       "outstanding": 0,
       "stages": []
+    },
+    {
+      "at": "2026-11-19T20:04:59Z",
+      "outstanding": 0,
+      "stages": []
     }
   ],
   "close_known_issues": [],
@@ -2714,7 +2719,7 @@
     "sdlc-studio/retros/RETRO0151-a-second-review-seat-earns-its-cost-on.md"
   ],
   "close_not_measured": [],
-  "close_tree": "ddf2fb5db4053e83268cb24cf17fb7aa0d8d7219",
+  "close_tree": "33e869014584826e536b18c9aedf11ea71e8bd00",
   "retro": "RETRO0151",
   "report_gate_clear": [
     "BG1605",
@@ -2733,7 +2738,7 @@
     "US1237",
     "US1238"
   ],
-  "verified_sha": "e4febe06c81b3fee50c766615749943a9e035196",
+  "verified_sha": "a0e07099240f4620891b70a3c9ae4c03a3950c02",
   "ci_runs": {
     "source": "gh run list",
     "runs": [
@@ -2838,7 +2843,7 @@
     "skipped": 0
   },
   "report": "RPT0037",
-  "report_fingerprint": "91abee9f194ad376",
+  "report_fingerprint": "37a01f3d6c94675d",
   "report_window_end": "2026-11-19T19:51:52Z",
   "evidence_schema": "1.0"
 }
