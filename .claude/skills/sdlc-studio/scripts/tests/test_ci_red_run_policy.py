@@ -1,10 +1,11 @@
 """A red CI run on main is put through `gate.py --red-run`, which gives one of three answers.
 
 Every failure named by an open bug filed as flaky: the run is recorded on that bug, and the
-answer is to rerun the failed jobs once, within `ci.rerun_limit`; past the limit, or with a token
-that cannot rerun, it is to stop and ask the operator. Any failure no filed flake names makes the
-run a regression: a bug is filed through the shipped filer and nothing is pushed until main is
-green. No answer skips or deselects a test.
+answer is to rerun the failed jobs once, while the run's reds, counted across every open bug's
+record, are fewer than `ci.rerun_limit`; past the limit, or with a token that cannot rerun, it is
+to stop and ask the operator. Any failure no filed flake names, a module that fails whole among
+them, makes the run a regression: a bug is filed through the shipped filer and nothing is pushed
+until main is green. No answer skips or deselects a test.
 
 Driven through `gate.main` in throwaway projects.
 """
@@ -29,6 +30,9 @@ sys.path.insert(0, str(SCRIPTS))
 
 FLAKE = "tests/test_temp.py::TempTests::test_cleanup"
 OTHER = "tests/test_core.py::CoreTests::test_sum"
+#: A second filed flake, so one run's reds can land on two flaky bugs. It is named as unittest
+#: names a test, with no `::` and no file behind it, so it is a test and not a whole module.
+SECOND = "tests.test_io.IoTests.test_read"
 #: A test whose path holds the word "flaky", so the regression filed for it does too.
 IN_FLAKY_DIR = "tests/flaky/test_net.py::NetTests::test_get"
 FLAKY_BUG = """# BG0001: Flaky test: test_cleanup fails when the temp folder is shared
@@ -56,7 +60,8 @@ def _live(name: str):
     return sys.modules.get(name) or importlib.import_module(name)
 
 
-def _project(d: str, config: str | None = None, closed_flake: str | None = None) -> Path:
+def _project(d: str, config: str | None = None, closed_flake: str | None = None,
+             open_flake: str | None = None) -> Path:
     root = Path(d)
     bugs = root / "sdlc-studio" / "bugs"
     bugs.mkdir(parents=True)
@@ -66,6 +71,10 @@ def _project(d: str, config: str | None = None, closed_flake: str | None = None)
         (bugs / "BG0002-flaky-test-sum.md").write_text(
             FLAKY_BUG.format(test=closed_flake).replace("BG0001", "BG0002")
             .replace("**Status:** Open", "**Status:** Fixed"), encoding="utf-8")
+    if open_flake:
+        (bugs / "BG0003-flaky-test-read.md").write_text(
+            FLAKY_BUG.format(test=open_flake).replace("BG0001", "BG0003")
+            .replace("tests/test_temp.py", "tests/test_io.py"), encoding="utf-8")
     (root / "tests").mkdir()
     (root / "tests" / "flaky").mkdir()
     for name in ("test_temp.py", "test_core.py", "flaky/test_net.py"):
@@ -106,7 +115,11 @@ class CiRedRunPolicyTests(unittest.TestCase):
     def test_a_filed_flake_is_recorded_on_its_bug_and_rerun_once(self) -> None:
         """AC1. MUTANTS: the record skipped (rerun with nothing on the bug); the limit check
         `>=` made `>` (a second rerun); a record count that ignores the run id (another run's
-        red spent this run's rerun); an answer that skips or deselects the test."""
+        red spent this run's rerun); an answer that skips or deselects the test; the run's reds
+        counted on only the bugs the current red names (a second rerun when the reds land on two
+        flakes); the largest record of one bug taken for the run's count (a third rerun when the
+        reds alternate under a limit of two); a red recorded on two bugs counted twice (a stop
+        one rerun early)."""
         with tempfile.TemporaryDirectory() as d:
             root = _project(d)
             rc, first = _red(root, "9001", FLAKE)
@@ -126,6 +139,21 @@ class CiRedRunPolicyTests(unittest.TestCase):
             self.assertEqual("rerun", other["answer"], "each run has its own rerun")
             for answer in (first, second, other):
                 self.assertIsNone(HIDING.search(json.dumps(answer)), answer)
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(d, open_flake=SECOND)
+            self.assertEqual("rerun", _red(root, "7000", FLAKE)[1]["answer"])
+            rc, moved = _red(root, "7000", SECOND)
+            self.assertNotEqual(0, rc, "the run's second red, on another flake, is past the limit")
+            self.assertEqual(("stop", "BG0003"), (moved["answer"], moved["bug"]), moved)
+            self.assertIn("limit", moved["reason"])
+            self.assertEqual(1, len(_records(root, "BG0003", "7000")))
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(d, config="ci:\n  rerun_limit: 2\n", open_flake=SECOND)
+            answers = [_red(root, "7001", test)[1]["answer"] for test in (FLAKE, SECOND, FLAKE)]
+            self.assertEqual(["rerun", "rerun", "stop"], answers, "the reds alternate flakes")
+            answers = [_red(root, "7002", *tests)[1]["answer"]
+                       for tests in ((FLAKE, SECOND), (FLAKE,), (SECOND,))]
+            self.assertEqual(["rerun", "rerun", "stop"], answers, "a red on two flakes is one red")
 
     def test_a_token_that_cannot_rerun_stops_and_asks_the_operator(self) -> None:
         """AC2. MUTANTS: the record skipped when the token cannot rerun; the answer `rerun`
@@ -145,7 +173,8 @@ class CiRedRunPolicyTests(unittest.TestCase):
         bug filed, or a bug that names neither the run nor the test; a rerun offered; the
         hold on pushes dropped; a second red of the same run filing a duplicate; a regression
         filed for a test under `flaky/` read as a filed flake by the next run; a test id matched
-        as the start of a filed flake's longer id."""
+        as the start of a filed flake's longer id; a failing id naming only a module, as pytest
+        prints for one that will not collect, read as the flake whose bug's Affects lists it."""
         with tempfile.TemporaryDirectory() as d:
             root = _project(d, closed_flake=OTHER)
             before = _bugs(root)
@@ -173,6 +202,11 @@ class CiRedRunPolicyTests(unittest.TestCase):
             self.assertEqual("regression", _red(root, "9104", IN_FLAKY_DIR)[1]["answer"])
             prefix = FLAKE[:-2]  # `test_clean`, which the filed flake's `test_cleanup` starts with
             self.assertEqual("regression", _red(root, "9105", prefix)[1]["answer"])
+            module = FLAKE.split("::", 1)[0]  # BG0001's Affects, and a module that will not collect
+            rc, broken = _red(root, "9106", module)
+            self.assertNotEqual(0, rc)
+            self.assertEqual("regression", broken["answer"], broken)
+            self.assertEqual([], _records(root, "BG0001", "9106"), "no flake rerun is spent")
 
     def test_the_help_and_the_reference_state_the_red_run_policy(self) -> None:
         """AC4. MUTANTS: the help section or its command line cut; an answer dropped from the

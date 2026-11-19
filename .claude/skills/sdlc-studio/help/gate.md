@@ -311,10 +311,13 @@ It gives one of three answers, and exits 0 only on the first:
 - `rerun`: every failing test is named by an open bug filed as flaky (its title says "flaky" and
   its text names the test id). The red is recorded on that bug, under `## CI Red Runs`, and the
   answer is to rerun the failed jobs once, with `gh run rerun <run> --failed`.
-- `stop`: stop and ask the operator. Either the run has had the reruns `ci.rerun_limit` allows
-  (default one), or `--token cannot-rerun` says the agent's token may not rerun jobs. The red is
-  still recorded on the bug, and the answer names the run and the bug.
-- `regression`: a failing test no open flaky bug names, even beside known flakes. A bug is filed
+- `stop`: stop and ask the operator. Either the run's earlier reds reach `ci.rerun_limit`
+  (default one), or `--token cannot-rerun` says the agent's token may not rerun jobs. The reds
+  are counted across every open bug's `## CI Red Runs` record, so a run whose reds land on two
+  flakes has one limit. The red is still recorded on the bug, and the answer names the run and
+  the bug.
+- `regression`: a failing test no open flaky bug names, even beside known flakes, or an id that
+  is only a file's path (what pytest prints for a module that will not collect). A bug is filed
   through `file_finding.py` naming the run and the test, no rerun is offered, and nothing is
   pushed until main is green. A second red of the same run reuses that bug.
 

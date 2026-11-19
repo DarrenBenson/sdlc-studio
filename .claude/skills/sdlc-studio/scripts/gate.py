@@ -3139,11 +3139,12 @@ def cmd_record_suite_verdict(args: argparse.Namespace) -> int:
 
 # --- red-run policy -------------------------------------------------------------------
 # A red CI run on main gets one of three answers. When every failing test is named by an open
-# bug filed as flaky, the run is recorded on that bug and its failed jobs are rerun once,
-# within `ci.rerun_limit`; past the limit, or when the agent's token cannot rerun, the answer
-# is to stop and ask the operator. When any failing test is named by no filed flake, the run
-# is a regression: a bug is filed through the shipped filer and nothing is pushed until main
-# is green. No answer skips or deselects a test. This is the one mode of the gate that writes
+# bug filed as flaky, the run is recorded on that bug and its failed jobs are rerun once, while
+# the run's reds, counted across every open bug's record, are fewer than `ci.rerun_limit`; past
+# the limit, or when the agent's token cannot rerun, the answer is to stop and ask the operator.
+# When any failing test is named by no filed flake, or an id names only a module, the run is a
+# regression: a bug is filed through the shipped filer and nothing is pushed until main is
+# green. No answer skips or deselects a test. This is the one mode of the gate that writes
 # a tracked file, and only when it is asked to (`--red-run`): the gate's checks stay read-only.
 
 #: What `--token` says the agent's CI token may do.
@@ -3176,10 +3177,14 @@ def _open_bugs(root: str) -> list[tuple[str, Path, str, str]]:
 _REGRESSION_TITLE = "CI run {run} is red on {test}{more}"
 
 
-def _filed_flake(bugs: list, test: str) -> tuple[str, Path] | None:
+def _filed_flake(root: str, bugs: list, test: str) -> tuple[str, Path] | None:
     """The open bug filed as flaky that names `test`: its title says "flaky" and its text names
     the test id whole. None when no open bug does. A regression `--red-run` filed is never a
-    flake, even when a test id in its title holds the word."""
+    flake, even when a test id in its title holds the word. Nor is an id that is only the path
+    of a file in this tree, which pytest prints for a module that will not collect: a whole
+    module failing is a regression, even where a flaky bug's Affects lists that file."""
+    if "::" not in test and (Path(root) / test).is_file():
+        return None
     for bug_id, path, title, text in bugs:
         if re.search(r"\bCI run \S+ is red on\b", title):
             continue
@@ -3188,20 +3193,29 @@ def _filed_flake(bugs: list, test: str) -> tuple[str, Path] | None:
     return None
 
 
-def _reds_recorded(text: str, run: str) -> int:
-    """How many reds of `run` a bug's CI red-run section records. Each one after the first
-    followed a rerun, so this is also the reruns that run has already had."""
-    if RED_RUN_SECTION not in text:
-        return 0
-    section = text.split(RED_RUN_SECTION, 1)[1].split("\n## ", 1)[0]
-    return len(re.findall(rf"(?m)^- .*\bCI run {re.escape(run)} red\b", section))
+def _reds_recorded(bugs: list, run: str) -> int:
+    """How many reds of `run` the CI red-run sections of the open bugs `bugs` record, a red
+    counted once however many bugs it was recorded on. Each line carries the red's number in
+    the run (`red #2`), so the count is the highest number any bug holds; a line without one
+    counts as its place among that bug's lines. A red answered `stop` is recorded, and counted,
+    as well as one answered `rerun`."""
+    count = 0
+    for _bug_id, _path, _title, text in bugs:
+        if RED_RUN_SECTION not in text:
+            continue
+        section = text.split(RED_RUN_SECTION, 1)[1].split("\n## ", 1)[0]
+        lines = re.findall(rf"(?m)^- .*\bCI run {re.escape(run)} red\b(?: #(\d+))?", section)
+        count = max([count, len(lines), *(int(n) for n in lines if n)])
+    return count
 
 
-def _record_red(path: Path, run: str, tests: list[str], answer: str, today: str) -> None:
-    """Append one line for this red run to the bug's CI red-run section, creating it last."""
+def _record_red(path: Path, run: str, number: int, tests: list[str], answer: str,
+                today: str) -> None:
+    """Append one line for red `number` of this run to the bug's CI red-run section, creating
+    it last."""
     text = path.read_text(encoding="utf-8")
     named = ", ".join(f"`{t}`" for t in tests)
-    line = f"- {today}: CI run {run} red on {named}; answer: {answer}."
+    line = f"- {today}: CI run {run} red #{number} on {named}; answer: {answer}."
     if RED_RUN_SECTION in text:
         head, tail = text.split(RED_RUN_SECTION, 1)
         body, sep, rest = tail.partition("\n## ")
@@ -3267,7 +3281,7 @@ def red_run(root: str, run: str, failed: list[str], can_rerun: bool,
         raise ValueError("--red-run needs the run id and at least one failing test (--failed)")
     today = today or datetime.now(timezone.utc).date().isoformat()
     bugs = _open_bugs(root)
-    flakes = {t: _filed_flake(bugs, t) for t in failed}
+    flakes = {t: _filed_flake(root, bugs, t) for t in failed}
     unknown = [t for t, hit in flakes.items() if hit is None]
     base = {"run": run, "failed": failed}
     if unknown:
@@ -3279,7 +3293,7 @@ def red_run(root: str, run: str, failed: list[str], can_rerun: bool,
     limit = _rerun_limit(root)
     hits = sorted({hit for hit in flakes.values()}, key=lambda h: h[0])
     ids = ", ".join(bug_id for bug_id, _ in hits)
-    reruns = max(_reds_recorded(path.read_text(encoding="utf-8"), run) for _, path in hits)
+    reruns = _reds_recorded(bugs, run)
     if reruns >= limit:
         answer = "stop"
         reason = (f"run {run} has had {reruns} rerun(s) and `ci.rerun_limit` is {limit}, so the "
@@ -3294,7 +3308,8 @@ def red_run(root: str, run: str, failed: list[str], can_rerun: bool,
                   f"rerun the failed jobs once with `gh run rerun {run} --failed`, then wait on "
                   f"the run again.")
     for _bug_id, path in hits:
-        _record_red(path, run, [t for t, hit in flakes.items() if hit[1] == path], answer, today)
+        _record_red(path, run, reruns + 1, [t for t, hit in flakes.items() if hit[1] == path],
+                    answer, today)
     return {**base, "answer": answer, "bug": hits[0][0], "recorded": [b for b, _ in hits],
             "limit": limit, "reason": reason}
 
@@ -3464,10 +3479,12 @@ def build_parser() -> argparse.ArgumentParser:
                         "A boundary declines a green earned by a `selected` run")
     p.add_argument("--red-run", dest="red_run", metavar="RUN",
                    help="Answer a red CI run on main, by its run id: `rerun` (every failing test "
-                        "is named by an open bug filed as flaky, where the red is recorded; once, "
-                        "within ci.rerun_limit), `stop` (the limit is reached, or the token cannot "
-                        "rerun: ask the operator) or `regression` (a failing test no filed flake "
-                        "names: a bug is filed, and nothing is pushed until main is green). "
+                        "is named by an open bug filed as flaky, where the red is recorded; once "
+                        "per red, while the run's reds, counted across every open bug's record, "
+                        "are fewer than ci.rerun_limit), `stop` (the limit is reached, or the "
+                        "token cannot rerun: ask the operator) or `regression` (a failing test no "
+                        "filed flake names, or an id naming only a module: a bug is filed, and "
+                        "nothing is pushed until main is green). "
                         "Exits 0 only on `rerun`")
     p.add_argument("--failed", nargs="+", metavar="TEST",
                    help="--red-run: the run's failing test ids, as its log names them")
