@@ -171,10 +171,17 @@ def _resolve(root: Path, worktree: Path) -> tuple[Path, Path, str, str]:
 
 
 def _critic(root: Path, *args: str) -> subprocess.CompletedProcess:
-    """`critic.py` through its own entry point, the command an operator would run by hand."""
+    """`critic.py` through its own entry point, the command an operator would run by hand,
+    bounded at CRITIC_TIMEOUT; a brief at critic's own BRIEF_TIMEOUT, which leaves the replay
+    of the author's mutants in it room to end at its own bound, so a long replay is said in the
+    brief rather than this bound killing the brief with it."""
+    timeout = CRITIC_TIMEOUT
+    if args[:1] == ("brief",):
+        import critic  # noqa: PLC0415 - sibling; its replay sets the brief's bound
+        timeout = critic.BRIEF_TIMEOUT
     return subprocess.run([sys.executable, str(CRITIC), *args, "--root", str(root)],
                           cwd=str(root), capture_output=True, text=True,
-                          timeout=CRITIC_TIMEOUT, check=False)
+                          timeout=timeout, check=False)
 
 
 def _commit(wt_top: Path, msg: Path, log: Path, target: str, where: str) -> str:
@@ -293,7 +300,9 @@ def report_hand_in_name(unit: str) -> str:
 def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tuple[bool, str]:
     """Record one unit's self-check on the root and write its QA brief; (ok, the unit's line).
     A hand-in carrying the runner's report (`report_hand_in_name`) is recorded through
-    `--mutants-from`, so its whole list is kept; one without it, through its mutants file."""
+    `--mutants-from`, so its whole list is kept; its mutants file, when there is one beside it,
+    through `--mutants` with it, so a mutant listed by hand is judged with the report's rows.
+    One without the report is recorded through its mutants file alone."""
     claims, mutants = (keep / name for name in hand_in_names(unit))
     report = keep / report_hand_in_name(unit)
     missing = [p.name for p in (claims, mutants)
@@ -302,12 +311,18 @@ def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tup
         nor = f" (nor the runner report {report.name})" if mutants.name in missing else ""
         return False, (f"{unit}: self-check NOT RECORDED and no brief written - the hand-in "
                        f"carries no {' or '.join(missing)}{nor}")
-    given = ("--mutants-from", str(report)) if report.is_file() else ("--mutants", str(mutants))
+    given = [*(("--mutants-from", str(report)) if report.is_file() else ()),
+             *(("--mutants", str(mutants)) if mutants.is_file() else ())]
     rec = _critic(root_top, "self-check", "record", "--unit", unit, "--claims", str(claims),
                   *given, "--author", author)
     if rec.returncode:
         return False, f"{unit}: self-check REFUSED and no brief written - {_tail(rec.stderr)}"
-    brief = _critic(root_top, "brief", "--unit", unit, "--seat", "qa")
+    try:
+        brief = _critic(root_top, "brief", "--unit", unit, "--seat", "qa")
+    except subprocess.TimeoutExpired as exc:
+        return False, (f"{unit}: self-check recorded; QA brief NOT WRITTEN - `critic.py brief` "
+                       f"was stopped at {exc.timeout:g}s; write it with `critic.py brief "
+                       f"--unit {unit} --seat qa`")
     if brief.returncode or not brief.stdout.strip():
         return False, f"{unit}: self-check recorded; QA brief REFUSED - {_tail(brief.stderr)}"
     rel = BRIEFS / f"{unit}-qa.txt"

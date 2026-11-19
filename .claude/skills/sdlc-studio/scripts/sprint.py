@@ -3346,8 +3346,8 @@ def _hand_in_self_check(text: str | None, uid: str) -> str | None:
     if "--mutants-from" in text:
         note = (f"   Write the claims to {claims}; the runner command above writes its report "
                 f"to {report}, which `sprint lane land` records through --mutants-from (a "
-                f"mutant listed by hand goes in {mutants} instead). Do not record them "
-                f"yourself.")
+                f"mutant the runner cannot run goes in {mutants}, which it records beside the "
+                f"report through --mutants). Do not record them yourself.")
     names = {"CLAIMS.json": claims.rsplit("/", 1)[-1], "MUTANTS.json": mutants.rsplit("/", 1)[-1],
              "REPORT.json": report}
     out = []
@@ -3400,8 +3400,9 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
              f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
              f"    {_lane_report_file(uid)} - the mutation pass above, the report the runner "
              f"command writes there, which `sprint lane land` records through --mutants-from",
-             f"    {mutants} - or, for a mutant the runner cannot run or a unit with no test "
-             f"file, the mutation pass by hand, each as {{mutant, test, result, answer}}",
+             f"    {mutants} - for a mutant the runner cannot run, recorded beside the report "
+             f"through --mutants, or for a unit with no test file, the mutation pass by hand, "
+             f"each as {{mutant, test, result, answer}}",
              f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
              f"subject, written last"]
     if not affects:

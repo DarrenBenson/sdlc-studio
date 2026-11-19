@@ -2929,7 +2929,8 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
               "   CLAIMS.json lists each claim as {surface, claim, ruling}; REPORT.json is the "
               "runner's report, kept whole with the record so the review replays it. A mutant "
               "the runner cannot run goes in MUTANTS.json as {mutant, test, result, answer}, "
-              "recorded with --mutants MUTANTS.json in place of --mutants-from."]
+              "recorded with --mutants MUTANTS.json beside --mutants-from and judged with the "
+              "report's rows, so its survivor needs an answer too."]
     return "\n".join(lines)
 
 
@@ -3256,7 +3257,8 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
 
 
 def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
-                      mutants: list[dict], author: str = "", report: str | None = None) -> Path:
+                      mutants: list[dict], author: str = "", report: str | None = None,
+                      by_hand: list[dict] = ()) -> Path:
     """Append the author's self-check for a unit to the committed log, once `check_self_check`
     admits it, with the digest of its Affects content as it stands and the commit it was taken
     at (none outside a repository). Nothing is written on a refusal.
@@ -3265,8 +3267,9 @@ def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
     (`mutants_from_report`), the whole list is kept beside the row in the unit's committed file
     under `AUTHOR_MUTANTS_DIR`, naming the row's digest cell, so `critic.py brief` replays it.
     Without one, that file is removed: a list kept for an earlier row is never read as this
-    one's."""
-    counts = check_self_check(repo_root, unit, claims, mutants)
+    one's. `by_hand`, the mutants listed by hand beside a report (ones the runner cannot run),
+    is judged and counted with the report's rows; it is not kept, carrying no edit to replay."""
+    counts = check_self_check(repo_root, unit, claims, [*mutants, *by_hand])
     digest, commit = affects_digest(repo_root, unit), _head_commit(Path(repo_root))
     cell = f"{digest}{_DIGEST_AT}{commit}" if commit else digest
     cells = (sdlc_md.norm_id(unit), _clean(author) or "-", sdlc_md.now_date(),
@@ -3374,8 +3377,15 @@ REPLAY_DISAGREES = "DISAGREES"
 #: The section's closing line: not shaped `--- NAME ---`, so it is never read as a tier section,
 #: and exact, so the strip ends there and leaves whatever follows.
 AUTHOR_MUTANTS_END = "(end of the author's recorded mutants)"
-#: The wall-clock bound on one brief's replay; past it the brief says so and is issued.
+#: The wall-clock bound on the runner in one brief's replay; past it the runner is stopped and
+#: the brief says so and is issued, within a caller's bound of `BRIEF_TIMEOUT`.
 REPLAY_TIMEOUT = 600
+#: The seconds a stopped runner is given to exit before it is killed.
+REPLAY_STOP_GRACE = 60
+#: The bound a caller gives a whole `critic.py brief` so its replay, the stop included, ends
+#: inside it, leaving 120s for critic's start-up and the brief itself. `sprint.py lane land`
+#: gives its QA brief this bound.
+BRIEF_TIMEOUT = REPLAY_TIMEOUT + REPLAY_STOP_GRACE + 120
 
 
 def _replay_author_mutants(repo_root: Path | str, unit: str,
@@ -3403,7 +3413,7 @@ def _replay_author_mutants(repo_root: Path | str, unit: str,
         except subprocess.TimeoutExpired:
             proc.terminate()                  # SIGTERM: the runner removes its scratch copy
             try:
-                proc.communicate(timeout=60)
+                proc.communicate(timeout=REPLAY_STOP_GRACE)
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.communicate()
@@ -5319,11 +5329,14 @@ def _superseded_suffix(verdict: dict) -> str:
 def cmd_self_check_record(args: argparse.Namespace) -> int:
     try:
         claims = _entries(args.claims, "claims")
-        report = getattr(args, "mutants_from", None)
-        mutants = (mutants_from_report(report, args.unit) if report
-                   else _entries(args.mutants, "mutants"))
+        report, listed = getattr(args, "mutants_from", None), getattr(args, "mutants", None)
+        if not report and listed is None:
+            raise ValueError("no mutants given - name the runner's report with --mutants-from "
+                             "REPORT.json, a list by hand with --mutants MUTANTS.json, or both")
+        by_hand = _entries(listed, "mutants") if listed is not None else []
+        mutants = mutants_from_report(report, args.unit) if report else by_hand
         path = record_self_check(args.root, args.unit, claims, mutants, author=args.author,
-                                 report=report)
+                                 report=report, by_hand=by_hand if report else [])
     except (OSError, ValueError) as exc:
         print(f"self-check record refused: {exc}. Nothing was written.", file=sys.stderr)
         return 2
@@ -5476,16 +5489,18 @@ def build_parser() -> argparse.ArgumentParser:
                      help="a JSON list of {surface, claim, ruling}: the surface is the commit "
                           "message, a changelog fragment the unit's Affects declares, or one of "
                           "the brief's claim surfaces; the ruling TRUE, FALSE or UNVERIFIABLE")
-    given = scr.add_mutually_exclusive_group(required=True)
-    given.add_argument("--mutants-from", dest="mutants_from", metavar="REPORT.json",
-                       help="the report `mutation.py run --edits <list> --scope <unit>` wrote: "
-                            "each mutant killed or survived, a survivor answered in the list, "
-                            "the whole list kept with the row for `critic.py brief` to replay")
-    given.add_argument("--mutants", metavar="MUTANTS.json",
-                       help="a JSON list of {mutant, test, result, answer}: the test a "
-                            "`path::name` in a test file the unit's Affects declares, the "
-                            "result killed or survived, and an answer for every survivor; [] "
-                            "for a unit that declares no test file. Only the counts are kept")
+    # One of the two at least, or both: `cmd_self_check_record` refuses neither.
+    scr.add_argument("--mutants-from", dest="mutants_from", metavar="REPORT.json",
+                     help="the report `mutation.py run --edits <list> --scope <unit>` wrote: "
+                          "each mutant killed or survived, a survivor answered in the list, "
+                          "the whole list kept with the row for `critic.py brief` to replay")
+    scr.add_argument("--mutants", metavar="MUTANTS.json",
+                     help="a JSON list of {mutant, test, result, answer}: the test a "
+                          "`path::name` in a test file the unit's Affects declares, the "
+                          "result killed or survived, and an answer for every survivor; [] "
+                          "for a unit that declares no test file. Only the counts are kept; "
+                          "beside --mutants-from, the mutants the runner cannot run, judged "
+                          "and counted with the report's")
     scr.add_argument("--author", default="",
                      help="the authoring seat or delegation id that ran the self-check")
     # SUPPRESS here, not ".": `add_global_root` re-points one level of subcommands and this one

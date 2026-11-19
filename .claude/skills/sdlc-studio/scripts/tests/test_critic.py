@@ -4135,6 +4135,63 @@ class BriefAuthorMutantsTests(unittest.TestCase):
         self.assertRegex(page, r"(?i)the replayed list is the author's[^.]*does not count as "
                                r"the reviewer's own mutation pass")
 
+    def _land(self, root: Path, brief_bound: float | None = None) -> tuple[bool, str, list]:
+        """`sprint.py lane land`'s record-and-brief step over a hand-in of the fixture's claims
+        and runner report: (ok, the unit's line, the bound each `critic.py brief` was given),
+        that bound replaced by `brief_bound` when one is given. The commands run for real."""
+        import subprocess  # noqa: PLC0415
+        from lib import lanes  # noqa: PLC0415
+        keep = root.parent / "hand-in"
+        keep.mkdir()
+        claims, _mutants = lanes.hand_in_names("US0101")
+        (keep / claims).write_text(json.dumps(self.CLAIMS), encoding="utf-8")
+        shutil.copy(Path(self._tmp.name) / "report.json",
+                    keep / lanes.report_hand_in_name("US0101"))
+        real, seen = subprocess.run, []
+
+        def run(argv, *args, **kwargs):
+            if isinstance(argv, list) and str(lanes.CRITIC) in argv and "brief" in argv:
+                seen.append(kwargs.get("timeout"))
+                if brief_bound is not None:
+                    kwargs["timeout"] = brief_bound
+            return real(argv, *args, **kwargs)
+
+        with unittest.mock.patch.object(subprocess, "run", run):
+            good, line = lanes._record_and_brief(root, keep, "US0101", "builder-7")
+        return good, line, seen
+
+    def test_lane_land_bounds_the_qa_brief_past_the_whole_replay(self) -> None:
+        """Lane land gives `critic.py brief` a bound the replay, its stop included, ends inside,
+        with room for critic's start-up and the brief, so a replay that runs long is stopped
+        by its own bound and said in the brief rather than killed with the brief. Mutants: the
+        brief run under lane land's general `critic.py` bound; that bound equal to the
+        replay's."""
+        critic = _load()
+        good, line, seen = self._land(self._copy())
+        self.assertTrue(good, line)
+        self.assertEqual(1, len(seen), f"lane land ran `critic.py brief` {len(seen)} times")
+        ends = critic.REPLAY_TIMEOUT + getattr(critic, "REPLAY_STOP_GRACE", 60)
+        self.assertGreaterEqual(seen[0] - ends, 60,
+                                f"lane land bounds the brief at {seen[0]}s, and the replay in "
+                                f"it may run to {ends}s, so lane land's bound fires first")
+
+    def test_a_qa_brief_past_lane_lands_bound_is_a_stop_it_names(self) -> None:
+        """A brief lane land's bound stops is a stop the landing names, with the command that
+        writes the brief, after the self-check it recorded: never a traceback. Mutants: the
+        time-out not caught; the line naming no command that writes the brief; the harness
+        applying no bound to the brief."""
+        from lib import lanes  # noqa: PLC0415
+        critic = _load()
+        root = self._copy()
+        rows = len(critic.read_self_checks(root))
+        good, line, _seen = self._land(root, brief_bound=0.01)
+        self.assertFalse(good, line)
+        self.assertRegex(line, r"^US0101: self-check recorded; QA brief NOT WRITTEN - .*"
+                               r"stopped at 0\.01s")
+        self.assertIn("critic.py brief --unit US0101 --seat qa", line)
+        self.assertEqual(rows + 1, len(critic.read_self_checks(root)))
+        self.assertFalse((root / lanes.BRIEFS / "US0101-qa.txt").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

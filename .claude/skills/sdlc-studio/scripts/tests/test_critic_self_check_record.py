@@ -128,12 +128,12 @@ def _run_runner(root: Path, edits: list, unit: str = "US0101", name: str = "repo
     return report
 
 
-def _record_from(root: Path, unit: str, report: Path) -> subprocess.CompletedProcess:
+def _record_from(root: Path, unit: str, report: Path, *extra: str) -> subprocess.CompletedProcess:
     """`self-check record --mutants-from <report>` through the shipped command."""
     cpath = root.parent / "claims.json"
     cpath.write_text(json.dumps(_covered()), encoding="utf-8")
     return subprocess.run([sys.executable, "-B", str(CRITIC), "self-check", "record", "--unit",
-                           unit, "--claims", str(cpath), "--mutants-from", str(report),
+                           unit, "--claims", str(cpath), "--mutants-from", str(report), *extra,
                            "--author", "builder-7", "--root", str(root)],
                           capture_output=True, text=True, timeout=300, env=gitutil.git_env(),
                           check=False)
@@ -395,8 +395,10 @@ class SelfCheckRecordTests(unittest.TestCase):
         """A runner report with one survivor is refused, naming it and writing nothing, until
         the survivor carries an answer; then the answer is kept beside it. A report whose
         mutant names a test outside the unit's Affects is refused as `--mutants` refuses it.
-        Mutants: the survivor check skipped for a report; the answer dropped from the kept
-        list; the Affects check skipped for a report."""
+        A `--mutants` list beside the report is judged with it, and a record given neither is
+        refused. Mutants: the survivor check skipped for a report; the answer dropped from the
+        kept list; the Affects check skipped for a report; the list beside the report left
+        unjudged, or kept with the report's; the record given neither list let through."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d) / "repo"
             _runner_project(root)
@@ -414,6 +416,31 @@ class SelfCheckRecordTests(unittest.TestCase):
             kept = {m["mutant"]: m for m in critic.recorded_mutants(root, "US0101")}
             self.assertEqual(("survived", answer), (kept["zero reads negative"]["result"],
                                                      kept["zero reads negative"]["answer"]))
+            # A mutant the runner cannot run, listed by hand beside the report, is judged with
+            # its rows: unanswered it refuses the record, writing nothing; answered it is
+            # counted, and the kept list stays the report's, the one the brief can replay.
+            hand, by_hand = Path(d) / "by-hand.json", {
+                "mutant": "sign of zero by hand", "test": SIGN, "result": "survived"}
+            hand.write_text(json.dumps([by_hand]), encoding="utf-8")
+            before = (root / LOG).read_text(encoding="utf-8")
+            r = _record_from(root, "US0101", answered, "--mutants", str(hand))
+            self.assertEqual(2, r.returncode, f"recorded:\n{r.stdout}{r.stderr}")
+            self.assertIn("sign of zero by hand", r.stderr)
+            self.assertEqual(before, (root / LOG).read_text(encoding="utf-8"))
+            hand.write_text(json.dumps([{**by_hand, "answer": answer}]), encoding="utf-8")
+            r = _record_from(root, "US0101", answered, "--mutants", str(hand))
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual("killed 1, survived 2", critic.read_self_checks(root)[-1]["mutants"])
+            self.assertEqual(["add subtracts", "zero reads negative"],
+                             [m["mutant"] for m in critic.recorded_mutants(root, "US0101")])
+            before = (root / LOG).read_text(encoding="utf-8")
+            r = subprocess.run([sys.executable, "-B", str(CRITIC), "self-check", "record",
+                                "--unit", "US0101", "--claims", str(root.parent / "claims.json"),
+                                "--root", str(root)], capture_output=True, text=True,
+                               timeout=300, env=gitutil.git_env(), check=False)
+            self.assertEqual(2, r.returncode, f"recorded with no mutants:\n{r.stdout}{r.stderr}")
+            self.assertIn("--mutants-from REPORT.json", r.stderr)
+            self.assertEqual(before, (root / LOG).read_text(encoding="utf-8"))
             outside = _rewrite_report(answered, lambda data: data["mutants"][0].update(
                 test="tests/test_other.py::test_add"))
             before = (root / LOG).read_text(encoding="utf-8")
@@ -464,6 +491,8 @@ class SelfCheckRecordTests(unittest.TestCase):
             self.assertEqual(shlex.split(ran)[-1], parsed.mutants_from,
                              "the record does not read the report the runner writes")
             self.assertIsNone(parsed.mutants)
+            # the list by hand goes beside the report, as the lane brief and lane land have it
+            self.assertIn("--mutants MUTANTS.json beside --mutants-from", " ".join(own.split()))
         skill = SCRIPTS.parent
         command = "mutation.py run --edits EDITS.json --scope <id> --report REPORT.json"
         for page in ("reference-sprint-toolchain.md", "reference-agent-prompt-template.md"):
@@ -478,25 +507,38 @@ class SelfCheckRecordTests(unittest.TestCase):
     def test_lane_land_records_through_the_runners_report(self) -> None:
         """Lane land records a hand-in holding the runner's report through `--mutants-from`,
         keeping the list and refusing an unanswered survivor; a hand-in holding only the
-        mutants file records as before; and the lane brief names the report under the name
-        the landing reads. Mutants: the report passed to `--mutants`; the report ignored, so
-        the land refuses for want of a mutants file; the brief naming another file name."""
+        mutants file records as before; a mutants file handed in beside the report is recorded
+        and judged with it, so its unanswered survivor is refused; and the lane brief names
+        the report under the name the landing reads. Mutants: the report passed to
+        `--mutants`; the report ignored, so the land refuses for want of a mutants file; the
+        mutants file dropped when the report is there; the brief naming another file name."""
         import loader as _loader  # noqa: PLC0415
         sprint = _loader.load_script("sprint")
         from lib import lanes  # noqa: PLC0415 - on the path once sprint is loaded
         self.assertEqual("US0101-mutation-edits.json", lanes.report_hand_in_name("us0101"))
         commands = "\n".join(sprint._lane_builder_commands("US0101", ["src/widget.py"], 2))
         self.assertIn(f"{sprint.LANE_HAND_IN}/US0101-mutation-edits.json", commands)
+        self.assertRegex(commands, r"US0101-mutants\.json - [^\n]*recorded beside the report",
+                         "the brief does not say the mutants file is recorded with the report")
+        by_hand ={"mutant": "sign of zero by hand", "test": SIGN, "result": "survived"}
         with tempfile.TemporaryDirectory() as d:
             root = Path(d) / "repo"
             _runner_project(root)
             claims, mutants = lanes.hand_in_names("US0101")
             report = _run_runner(root, THREE_KILLED)
             survivor = _run_runner(root, [THREE_KILLED[0], ZERO_SURVIVES], name="survivor")
-            for label, files, ok, kept in (
-                    ("the runner's report", {"report": report}, True, 3),
-                    ("an unanswered survivor", {"report": survivor}, False, None),
-                    ("a mutants file alone", {"mutants": KILLED}, True, None)):
+            for label, files, refused, kept, counts in (
+                    ("the runner's report", {"report": report}, None, 3, "killed 3, survived 0"),
+                    ("an unanswered survivor", {"report": survivor}, "zero reads negative",
+                     None, None),
+                    ("a mutants file alone", {"mutants": KILLED}, None, None,
+                     "killed 1, survived 0"),
+                    ("an unanswered survivor by hand beside the report",
+                     {"report": report, "mutants": [by_hand]}, "sign of zero by hand", None,
+                     None),
+                    ("an answered survivor by hand beside the report",
+                     {"report": report, "mutants": [{**by_hand, "answer": "BG0001 files it"}]},
+                     None, 3, "killed 3, survived 1")):
                 with self.subTest(hand_in=label):
                     keep = Path(d) / label.replace(" ", "-")
                     keep.mkdir()
@@ -504,17 +546,18 @@ class SelfCheckRecordTests(unittest.TestCase):
                     if "report" in files:
                         (keep / lanes.report_hand_in_name("US0101")).write_text(
                             files["report"].read_text(encoding="utf-8"), encoding="utf-8")
-                    else:
+                    if "mutants" in files:
                         (keep / mutants).write_text(json.dumps(files["mutants"]),
                                                     encoding="utf-8")
                     rows = len(critic.read_self_checks(root))
                     good, line = lanes._record_and_brief(root, keep, "US0101", "builder-7")
-                    self.assertEqual(ok, good, line)
-                    if not ok:
+                    self.assertEqual(refused is None, good, line)
+                    if refused:
                         self.assertIn("REFUSED", line)
-                        self.assertIn("zero reads negative", line)
+                        self.assertIn(refused, line)
                         self.assertEqual(rows, len(critic.read_self_checks(root)))
                         continue
+                    self.assertEqual(counts, critic.read_self_checks(root)[-1]["mutants"])
                     listed = critic.recorded_mutants(root, "US0101")
                     self.assertEqual(kept, None if listed is None else len(listed))
 
