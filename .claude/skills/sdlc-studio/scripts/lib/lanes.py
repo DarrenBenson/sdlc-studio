@@ -1,4 +1,4 @@
-"""`sprint lane land`: land a builder's staged lane on the branch the root has checked out.
+"""`sprint lane land`: land builders' staged lanes on the branch the root has checked out.
 
 A builder works in its own git worktree, stages its unit's Affects and stops, leaving a commit
 message and its self-check files at the hand-in path `sdlc-studio/.local/lane/`. Landing that
@@ -26,12 +26,31 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
    caller hands in (`sprint lane land` hands in what `lane return --agent <id>` records), and
    name each unit it could not price.
 
+Several worktrees named together land as one commit, so the hooks run once for them all. Each
+unit belongs to the worktree whose hand-in carries its claims or mutants file, and keeps that
+worktree's kept hand-in, self-check author and transcript. Each staged change is replayed onto
+the root's branch in its own worktree, the later ones are added to the first's staged change,
+and the first commits with its own subject, its scope naming every landed unit, the later
+messages as body, and a `Refs:` trailer per unit. The later worktrees are brought to the landed
+commit before they are removed. A file two of them stage with different content, a unit whose
+hand-in is in none or several of them, and a worktree named twice are refused before anything
+moves; a change that will not apply beside the first's, or a commit the hooks refuse, takes the
+added changes back out, so every worktree holds its own staged change and nothing landed.
+
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
-aborts the rebase and leaves the root's branch as it was. Re-running after a repair resumes: a
-branch with nothing staged but commits ahead is rebased and landed without a second commit.
-After the fast-forward nothing stops: a worktree that cannot be removed unforced is left in
-place, and a unit whose self-check or brief is refused is named while the others are briefed.
+aborts the rebase and leaves the root's branch as it was. Re-running after a repair starts the
+landing again: a branch with nothing staged but commits ahead is rebased and landed without a
+second commit. After the fast-forward nothing stops: a worktree that cannot be removed unforced
+is left in place, and a unit whose self-check or brief is refused is named while the others are
+briefed.
+
+Every landing keeps a land record, `landed/<worktree>.land.json` for the first worktree named:
+its worktrees and units, the steps of `LAND_STEPS` it completed, the step it stopped at, the
+units it briefed and, once the root's branch moved, the commit. `--resume` runs only the steps
+the record does not name as completed: the hand-in it kept is read, never emptied or copied
+again, a unit already briefed keeps its brief, and a worktree the removal step took away is
+not looked for. A resume with no record, or with one whose landing completed, is refused.
 
 Exit 2 is a refusal before anything was committed, 1 a landing that stopped part way or a unit
 whose self-check or brief was not written, 0 a landed lane with every unit briefed, priced or
@@ -155,24 +174,25 @@ def _critic(root: Path, *args: str) -> subprocess.CompletedProcess:
                           timeout=CRITIC_TIMEOUT, check=False)
 
 
-def _commit(wt_top: Path, keep: Path, target: str) -> str:
-    """Commit the staged change through the hooks; the short sha, or a LandError carrying the
-    hook's own output."""
-    log = keep / "commit.log"
+def _commit(wt_top: Path, msg: Path, log: Path, target: str, where: str) -> str:
+    """Commit the staged change in `wt_top` through the hooks with the message at `msg`; the
+    short sha, or a LandError carrying the hook's own output. `where` names the worktrees a
+    refusal leaves to resume in."""
     try:
-        done = subprocess.run(["git", "-C", str(wt_top), "commit", "-F", str(keep / COMMIT_MSG)],
+        done = subprocess.run(["git", "-C", str(wt_top), "commit", "-F", str(msg)],
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                               timeout=COMMIT_TIMEOUT, check=False)
     except subprocess.TimeoutExpired:
         raise LandError(f"the commit's hooks ran past {COMMIT_TIMEOUT}s and were stopped, so "
                         f"nothing was committed and {target} is as it was. Resume in "
-                        f"{wt_top}.") from None
+                        f"{where}.") from None
     log.write_text(done.stdout or "", encoding="utf-8")
     if done.returncode:
         raise LandError(f"the commit was refused (exit {done.returncode}). The staged change, "
-                        f"the worktree and {target} are as they were. Resume in {wt_top}, then "
-                        f"re-run lane land. The whole output is in {log}; its last lines:\n"
-                        f"{_tail(done.stdout)}")
+                        f"the worktree and {target} are as they were. Resume in {where}, then "
+                        f"re-run lane land; with --resume it reads the hand-in it kept rather "
+                        f"than copying it again. The whole output is in {log}; its last "
+                        f"lines:\n{_tail(done.stdout)}")
     return _git(wt_top, "rev-parse", "--short", "HEAD").stdout.strip()
 
 
@@ -306,78 +326,434 @@ def _price(root_top: Path, name: str, units: list[str], price) -> None:
             _say(f"{unit}'s return UNPRICED: {said}", err=True)
 
 
-def _land(root: Path, worktree: Path, units: list[str], author: str | None,
-          price=None) -> int:
-    root_top, wt_top, branch, target = _resolve(root, worktree)
-    hand_in = wt_top / HAND_IN
-    staged = _git(wt_top, "diff", "--cached", "--quiet").returncode == 1
-    if staged:
-        msg = hand_in / COMMIT_MSG
-        if not msg.is_file() or not msg.read_text(encoding="utf-8").strip():
-            raise LandError(f"{wt_top} holds a staged change but no commit message at "
-                            f"{HAND_IN / COMMIT_MSG}; nothing was committed", 2)
-    elif _git(wt_top, "rev-list", "--count", f"{target}..HEAD").stdout.strip() == "0":
-        raise LandError(f"{wt_top} has nothing staged and no commit ahead of {target}: there "
-                        f"is nothing to land", 2)
-    keep = root_top / LANDED / wt_top.name
-    # a repair round reuses the worktree's name, so what an earlier landing left here is
-    # cleared first: the self-check recorded below is read only from this landing's hand-in
-    if keep.is_dir():
-        shutil.rmtree(keep)
-    keep.mkdir(parents=True, exist_ok=True)
-    for path in sorted(hand_in.glob("*")) if hand_in.is_dir() else []:
-        if path.is_file():
-            shutil.copy2(path, keep / path.name)
-    _say(f"hand-in copied to {keep.relative_to(root_top)}")
-    # an earlier round's brief is not this landing's: lane accept would record a verdict on it
-    landing = (f"the landing of {wt_top.name} begun "
-               f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}")
+#: A landing's steps, in order. Its land record names those it completed, and `--resume` runs
+#: the rest, so no step a stopped landing finished is run twice.
+LAND_STEPS = ("hand-in", "commit", "rebase", "fast-forward", "remove", "self-check", "price")
+#: the land record under `LANDED`, named for the first worktree landed, beside its kept hand-in
+LAND_RECORD = "{name}.land.json"
+#: the one message a landing of several worktrees commits with, kept with the first's hand-in
+LANDING_MSG = "landing-msg.txt"
+_SUBJECT = re.compile(r"^(?P<head>[\w-]+)\((?P<scope>[^)]*)\)(?P<rest>!?: .*)$")
+_TRAILER = re.compile(r"^[A-Za-z][A-Za-z0-9-]*: \S")
+#: the steps that work in a worktree, so a resume of any of them needs it in place
+_IN_WORKTREE = ("commit", "rebase", "fast-forward")
+
+
+class _Lane:
+    """One worktree of a landing: its directory name, which names the kept hand-in and, for
+    `agent-<id>`, the builder's transcript; where it is and its branch, both None once it is
+    gone; the root's branch it lands on; and the units whose hand-in it carries."""
+
+    def __init__(self, name: str, keep: Path, target: str, top: Path | None = None,
+                 branch: str | None = None, units: list[str] | None = None) -> None:
+        self.name, self.keep, self.target = name, keep, target
+        self.top, self.branch = top, branch
+        self.units = list(units or [])
+
+
+def _raw(cwd: Path, *args: str, data: bytes | None = None) -> subprocess.CompletedProcess:
+    """git with bytes in and out, for a patch whose files need not be text."""
+    return subprocess.run(["git", "-C", str(cwd), *args], input=data, capture_output=True,
+                          timeout=GIT_TIMEOUT, check=False)
+
+
+def _said(done: subprocess.CompletedProcess) -> str:
+    return _tail((done.stdout + done.stderr).decode("utf-8", "replace"))
+
+
+def _has_staged(top: Path) -> bool:
+    return _git(top, "diff", "--cached", "--quiet").returncode == 1
+
+
+def _staged_blobs(top: Path) -> dict[str, str]:
+    """Each path `top` stages and the blob it stages there (all zeros for a deletion)."""
+    fields = _git(top, "diff", "--cached", "--no-renames", "--no-abbrev", "--raw",
+                  "-z").stdout.split("\0")
+    return {path: meta.split()[3] for meta, path in zip(fields[0::2], fields[1::2])
+            if meta.startswith(":")}
+
+
+def _refuse_overlap(lanes_: list[_Lane], code: int) -> dict[str, _Lane]:
+    """Which worktree first stages each path, refusing a path two of them stage with different
+    content: one commit cannot hold both. The same content staged twice is landed once."""
+    first: dict[str, tuple[str, _Lane]] = {}
+    for lane in lanes_:
+        for path, blob in _staged_blobs(lane.top).items():
+            held = first.setdefault(path, (blob, lane))
+            if held[0] != blob:
+                raise LandError(f"{path} is staged with different content in {held[1].top} and "
+                                f"{lane.top}, so the two cannot land as one commit and nothing "
+                                f"was landed. Reconcile {path} in one of them, or land them one "
+                                f"at a time.", code)
+    return {path: lane for path, (_, lane) in first.items()}
+
+
+def _paragraphs(text: str) -> list[list[str]]:
+    out: list[list[str]] = [[]]
+    for line in text.strip().splitlines():
+        if line.strip():
+            out[-1].append(line.rstrip())
+        elif out[-1]:
+            out.append([])
+    return [para for para in out if para]
+
+
+def _combined_message(lanes_: list[_Lane]) -> str:
+    """The one message a landing of several worktrees commits with: the first worktree's
+    subject, its scope naming every landed unit it did not; each message's body in the order the
+    worktrees were named, the later ones led by their own subject; then the trailers they carry,
+    once each, and a `Refs:` trailer for each landed unit that none of them refs."""
+    subject, body, trailers = "", [], []
+    for n, lane in enumerate(lanes_):
+        paras = _paragraphs((lane.keep / COMMIT_MSG).read_text(encoding="utf-8"))
+        head, *rest = paras or [[""]]
+        if rest and all(_TRAILER.match(line) for line in rest[-1]):
+            trailers += [line for line in rest.pop() if line not in trailers]
+        if n == 0:
+            subject, rest = head[0], ([head[1:], *rest] if head[1:] else rest)
+        else:
+            rest = [head, *rest]
+        body += rest
+    units = [unit for lane in lanes_ for unit in lane.units]
+    shape = _SUBJECT.match(subject)
+    if shape:
+        scope = [part.strip() for part in shape["scope"].split(",") if part.strip()]
+        named = {sdlc_md.norm_id(part) for part in scope}
+        scope += [unit for unit in units if sdlc_md.norm_id(unit) not in named]
+        subject = f"{shape['head']}({', '.join(scope)}){shape['rest']}"
+    refd = {sdlc_md.norm_id(line.split(":", 1)[1]) for line in trailers
+            if line.lower().startswith("refs:")}
+    trailers += [f"Refs: {unit}" for unit in units if sdlc_md.norm_id(unit) not in refd]
+    paras = [subject, *("\n".join(para) for para in body), "\n".join(trailers)]
+    return "\n\n".join(paras) + "\n"
+
+
+def _unwind(top: Path, applied: list[bytes]) -> str | None:
+    """Take the other worktrees' changes back out of `top`, newest first, so it holds only its
+    own staged change again; None, or git's reason one could not be taken out."""
+    for patch in reversed(applied):
+        back = _raw(top, "apply", "--index", "-R", data=patch)
+        if back.returncode:
+            return _said(back)
+    return None
+
+
+def _commit_several(lanes_: list[_Lane]) -> None:
+    """Commit the staged changes of several worktrees as one, in the first, through the hooks
+    once: each is replayed onto the root's branch in its own worktree, the later ones' changes
+    are added to the first's staged change, and the first commits with `_combined_message`. A
+    change that does not apply, or a commit the hooks refuse, takes the added changes back out
+    again, so every worktree holds its own staged change and nothing was committed."""
+    carrier, target = lanes_[0], lanes_[0].target
+    for lane in lanes_:
+        if _has_staged(lane.top):
+            _carry(lane.top, target)
+    owner = _refuse_overlap(lanes_, 1)
+    where = ", ".join(str(lane.top) for lane in lanes_)
+    patches = []
+    for lane in lanes_[1:]:
+        paths = sorted(path for path, first in owner.items() if first is lane)
+        if not paths:
+            continue
+        patch = _raw(lane.top, "diff", "--cached", "--binary", "--no-renames", "--",
+                     *paths).stdout
+        fits = _raw(carrier.top, "apply", "--index", "--check", data=patch)
+        if fits.returncode:
+            raise LandError(f"the change staged in {lane.top} does not apply beside the one "
+                            f"in {carrier.top} on {target}, so nothing was committed and "
+                            f"{target} is as it was. Resume in {where}, or land them one at "
+                            f"a time:\n{_said(fits)}")
+        patches.append(patch)
+    applied: list[bytes] = []
+    for patch in patches:
+        done = _raw(carrier.top, "apply", "--index", data=patch)
+        if done.returncode:
+            stuck = _unwind(carrier.top, applied)
+            raise LandError(f"adding a worktree's staged change to {carrier.top} failed, so "
+                            f"nothing was committed and {target} is as it was"
+                            + (f"; taking the others back out failed too: {stuck}" if stuck
+                               else "") + f". Resume in {where}:\n{_said(done)}")
+        applied.append(patch)
+    if not _has_staged(carrier.top):
+        _say(f"the staged changes are already on {target}: nothing is left to commit")
+        return
+    msg = carrier.keep / LANDING_MSG
+    sdlc_md.atomic_write(msg, _combined_message(lanes_))
+    try:
+        sha = _commit(carrier.top, msg, carrier.keep / "commit.log", target, where)
+    except LandError as exc:
+        stuck = _unwind(carrier.top, applied)
+        if stuck:
+            raise LandError(f"{exc}\nTaking the other worktrees' changes back out of "
+                            f"{carrier.top} failed, so it still holds them: {stuck}") from None
+        raise
+    _say(f"committed {sha} in {carrier.top} through the hooks, holding the staged changes of "
+         f"{where}")
+
+
+def _record_file(root_top: Path, name: str) -> Path:
+    return root_top / LANDED / LAND_RECORD.format(name=name)
+
+
+def _save(root_top: Path, record: dict) -> None:
+    """Write the land record, naming the first step not completed as the one it stopped at."""
+    record["stopped_at"] = next((s for s in LAND_STEPS if s not in record["completed"]), None)
+    sdlc_md.atomic_write(_record_file(root_top, record["worktrees"][0]),
+                         json.dumps(record, indent=2) + "\n")
+
+
+def _read_record(path: Path) -> dict | None:
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if isinstance(record, dict) and isinstance(record.get("completed"), list):
+        return record
+    return None
+
+
+def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lane]:
+    """Each named worktree resolved, its units assigned, and every refusal made before anything
+    moves: a worktree named twice, one with nothing to land, and for several, a unit whose
+    hand-in is in none or more than one of them, or a file two of them stage differently."""
+    lanes_: list[_Lane] = []
+    for path in worktrees:
+        root_top, top, branch, target = _resolve(root, path)
+        for seen in lanes_:
+            if seen.top == top:
+                raise LandError(f"the worktree {top} is named twice; name each builder's "
+                                f"worktree once. Nothing was landed.", 2)
+            if seen.name == top.name:
+                raise LandError(f"{seen.top} and {top} share the name {top.name}, under which "
+                                f"each one's hand-in is kept. Nothing was landed.", 2)
+        lanes_.append(_Lane(top.name, root_top / LANDED / top.name, target, top, branch))
+    several = len(lanes_) > 1
+    for lane in lanes_:
+        if _has_staged(lane.top):
+            msg = lane.top / HAND_IN / COMMIT_MSG
+            if not msg.is_file() or not msg.read_text(encoding="utf-8").strip():
+                raise LandError(f"{lane.top} holds a staged change but no commit message at "
+                                f"{HAND_IN / COMMIT_MSG}; nothing was committed", 2)
+        elif several:
+            raise LandError(f"{lane.top} has nothing staged: a landing of several worktrees "
+                            f"commits their staged changes as one, so each must hold one. Land "
+                            f"a branch already committed on its own, or resume a stopped "
+                            f"landing with --resume. Nothing was landed.", 2)
+        elif _git(lane.top, "rev-list", "--count",
+                  f"{lane.target}..HEAD").stdout.strip() == "0":
+            raise LandError(f"{lane.top} has nothing staged and no commit ahead of "
+                            f"{lane.target}: there is nothing to land", 2)
+    if not several:
+        lanes_[0].units = list(units)
+        return lanes_
     for unit in units:
-        _unbrief(root_top, unit, f"{landing} wrote no brief: it stopped before it briefed "
-                                 f"{unit}")
-    _discard_own_artefacts(wt_top, units)
-    if staged:
-        staged = _carry(wt_top, target)
-    if staged:
-        _say(f"committed {_commit(wt_top, keep, target)} in {wt_top} through the hooks")
-    _rebase(wt_top, branch, target)
-    _say(f"rebased {branch} onto {target}")
-    ff = _git(root_top, "merge", "--ff-only", branch)
-    if ff.returncode:
-        raise LandError(f"{target} could not be fast-forwarded to {branch}, so {target} is as "
-                        f"it was and the lane stays on {branch} in {wt_top}. Re-run lane land "
-                        f"once that is cleared:\n{_tail(ff.stdout + ff.stderr)}")
-    head = _git(root_top, "rev-parse", "--short", "HEAD").stdout.strip()
-    _say(f"{target} fast-forwarded to {head}")
-    failed = 0
-    left = _remove(root_top, wt_top, branch)
-    if left:
-        failed += 1
-        _say(f"WARNING {left}", err=True)
-    else:
-        _say(f"removed the worktree {wt_top} and the branch {branch}")
-    for unit in units:
-        ok, line = _record_and_brief(root_top, keep, unit, author or wt_top.name)
-        if not ok:
-            _unbrief(root_top, unit, f"{landing} wrote no brief: {line}")
-        failed += 0 if ok else 1
-        _say(line, err=not ok)
-    _price(root_top, wt_top.name, units, price)
+        owners = [lane for lane in lanes_
+                  if any((lane.top / HAND_IN / name).is_file() for name in hand_in_names(unit))]
+        if len(owners) != 1:
+            held = " and ".join(str(lane.top) for lane in owners) or "none of them"
+            raise LandError(f"{unit}'s hand-in is in {held}, so which worktree landed it is not "
+                            f"known. Nothing was landed.", 2)
+        owners[0].units.append(unit)
+    for lane in lanes_:
+        if not lane.units:
+            raise LandError(f"{lane.top} carries the hand-in of none of the units named "
+                            f"({', '.join(units)}). Nothing was landed.", 2)
+    _refuse_overlap(lanes_, 2)
+    return lanes_
+
+
+def _keep_hand_ins(root_top: Path, lanes_: list[_Lane]) -> None:
+    """Step 1: each worktree's hand-in copied to its own directory under `LANDED`, emptied
+    first: a repair round reuses the worktree's name, and the self-check recorded later is read
+    only from this landing's hand-in."""
+    for lane in lanes_:
+        # spelt out from LANDED here, where it is written, as the TRD's `.local` row reads it
+        lane.keep = keep = root_top / LANDED / lane.name
+        if keep.is_dir():
+            shutil.rmtree(keep)
+        keep.mkdir(parents=True, exist_ok=True)
+        hand_in = lane.top / HAND_IN
+        for path in sorted(hand_in.glob("*")) if hand_in.is_dir() else []:
+            if path.is_file():
+                shutil.copy2(path, keep / path.name)
+        _say(f"hand-in copied to {keep.relative_to(root_top)}")
+
+
+def _remove_all(root_top: Path, lanes_: list[_Lane]) -> bool:
+    """Step 5: every worktree still in place removed with its branch. A later worktree's staged
+    change landed in the first's commit, so it is fast-forwarded first to the root's branch,
+    which holds that change; one that cannot be is left in place."""
+    ok = True
+    for n, lane in enumerate(lanes_):
+        if lane.top is None or not lane.top.exists():
+            continue
+        if n:
+            follow = _git(lane.top, "merge", "--ff-only", "--quiet", lane.target)
+            if follow.returncode:
+                _say(f"WARNING the worktree {lane.top} was left in place: it could not be "
+                     f"brought to {lane.target}, which holds its landed change: "
+                     f"{_tail(follow.stdout + follow.stderr)}", err=True)
+                ok = False
+                continue
+        left = _remove(root_top, lane.top, lane.branch)
+        if left:
+            ok = False
+            _say(f"WARNING {left}", err=True)
+        else:
+            _say(f"removed the worktree {lane.top} and the branch {lane.branch}")
+    return ok
+
+
+def _steps(root_top: Path, lanes_: list[_Lane], record: dict, author: str | None,
+           price) -> int:
+    """Run each step the record does not name as completed, in order, saving the record after
+    each; a step that stops raises, the record naming it as the step to resume from."""
+    carrier, target, failed = lanes_[0], lanes_[0].target, 0
+
+    def commit() -> bool:
+        for lane in lanes_:
+            _discard_own_artefacts(lane.top, lane.units)
+        if len(lanes_) > 1:
+            _commit_several(lanes_)
+        elif _has_staged(carrier.top):
+            msg = carrier.keep / COMMIT_MSG
+            if not msg.is_file() or not msg.read_text(encoding="utf-8").strip():
+                raise LandError(f"{carrier.top} holds a staged change but the kept hand-in "
+                                f"{carrier.keep.relative_to(root_top)} has no commit message; "
+                                f"nothing was committed", 2)
+            if _carry(carrier.top, target):
+                sha = _commit(carrier.top, msg, carrier.keep / "commit.log", target,
+                              str(carrier.top))
+                _say(f"committed {sha} in {carrier.top} through the hooks")
+        return True
+
+    def rebase() -> bool:
+        _rebase(carrier.top, carrier.branch, target)
+        _say(f"rebased {carrier.branch} onto {target}")
+        return True
+
+    def fast_forward() -> bool:
+        ff = _git(root_top, "merge", "--ff-only", carrier.branch)
+        if ff.returncode:
+            raise LandError(f"{target} could not be fast-forwarded to {carrier.branch}, so "
+                            f"{target} is as it was and the lane stays on {carrier.branch} in "
+                            f"{carrier.top}. Re-run lane land once that is cleared:\n"
+                            f"{_tail(ff.stdout + ff.stderr)}")
+        record["commit"] = _git(root_top, "rev-parse", "HEAD").stdout.strip()
+        short = _git(root_top, "rev-parse", "--short", "HEAD").stdout.strip()
+        _say(f"{target} fast-forwarded to {short}")
+        return True
+
+    def self_check() -> bool:
+        ok = True
+        for lane in lanes_:
+            for unit in lane.units:
+                if unit in record["briefed"]:
+                    continue
+                good, line = _record_and_brief(root_top, lane.keep, unit, author or lane.name)
+                if good:
+                    record["briefed"].append(unit)
+                else:
+                    ok = False
+                    _unbrief(root_top, unit, f"{record['landing']} wrote no brief: {line}")
+                _say(line, err=not good)
+        return ok
+
+    def priced() -> bool:
+        for lane in lanes_:
+            _price(root_top, lane.name, lane.units, price)
+        return True
+
+    run = {"commit": commit, "rebase": rebase, "fast-forward": fast_forward,
+           "remove": lambda: _remove_all(root_top, lanes_), "self-check": self_check,
+           "price": priced}
+    for step in LAND_STEPS:
+        if step in record["completed"]:
+            continue
+        gone = [record["paths"][n] for n, lane in enumerate(lanes_) if lane.top is None]
+        if step in _IN_WORKTREE and gone:
+            raise LandError(f"the landing's {step} step works in {', '.join(gone)}, which is "
+                            f"gone, so nothing was resumed", 2)
+        try:
+            done = run[step]()
+        except LandError:
+            _save(root_top, record)
+            raise
+        if done:
+            record["completed"].append(step)
+        else:
+            failed += 1
+        _save(root_top, record)
     return 1 if failed else 0
 
 
-def land(root: Path | str, worktree: Path | str | None, units: list[str],
-         author: str | None = None, price=None) -> int:
-    """Land one builder's lane; the exit status, with every step and refusal printed. `price`
-    records each unit's priced return from an `agent-<id>` worktree's transcript (`_price`)."""
+def _land(root: Path, worktrees: list[Path], units: list[str], author: str | None,
+          price=None) -> int:
+    lanes_ = _preflight(root, worktrees, units)
+    root_top = _top(root, "the root")
+    _keep_hand_ins(root_top, lanes_)
+    names = [lane.name for lane in lanes_]
+    record = {"worktrees": names, "paths": [str(lane.top) for lane in lanes_], "units": units,
+              "owners": {unit: lane.name for lane in lanes_ for unit in lane.units},
+              "author": author, "commit": None, "briefed": [], "completed": ["hand-in"],
+              "landing": f"the landing of {', '.join(names)} begun "
+                         f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"}
+    _save(root_top, record)
+    # an earlier round's brief is not this landing's: lane accept would record a verdict on it
+    for unit in units:
+        _unbrief(root_top, unit, f"{record['landing']} wrote no brief: it stopped before it "
+                                 f"briefed {unit}")
+    return _steps(root_top, lanes_, record, author, price)
+
+
+def _resume(root: Path, worktrees: list[Path], units: list[str], author: str | None,
+            price=None) -> int:
+    """Resume the stopped landing of `worktrees` from the step its land record names: the
+    hand-in it kept is read, never emptied or copied again, a unit it briefed keeps its brief,
+    and a worktree a finished removal step took away is not looked for."""
+    root_top = _top(root, "the root")
+    target = _branch(root_top, "the root")
+    names = [_top(path, "the worktree").name if path.is_dir() else path.name
+             for path in worktrees]
+    where = _record_file(root_top, names[0])
+    record = _read_record(where)
+    none = f"there is no stopped landing of {', '.join(names)} to resume"
+    if record is None:
+        raise LandError(f"{none}: no land record at {where.relative_to(root_top)}", 2)
+    if all(step in record["completed"] for step in LAND_STEPS):
+        raise LandError(f"{none}: its landing completed, at {record.get('commit')}", 2)
+    if record.get("worktrees") != names or sorted(record.get("units") or []) != sorted(units):
+        raise LandError(f"the landing stopped at {where.relative_to(root_top)} was of "
+                        f"{', '.join(record.get('worktrees') or [])} for "
+                        f"{', '.join(record.get('units') or [])}: resume it as it was begun", 2)
+    lanes_ = []
+    for name, path in zip(names, worktrees):
+        lane = _Lane(name, root_top / LANDED / name, target,
+                     units=[u for u in record["units"] if record["owners"].get(u) == name])
+        if path.is_dir():
+            _, lane.top, lane.branch, _ = _resolve(root_top, path)
+        lanes_.append(lane)
+    _say(f"resuming the landing of {', '.join(names)} from its {record['stopped_at']} step; "
+         f"already done: {', '.join(record['completed']) or 'nothing'}")
+    return _steps(root_top, lanes_, record, author or record.get("author"), price)
+
+
+def land(root: Path | str, worktrees: list[Path | str] | Path | str | None, units: list[str],
+         author: str | None = None, price=None, resume: bool = False) -> int:
+    """Land the lanes of one or several builders' worktrees as one commit, or with `resume`
+    the landing of them that stopped; the exit status, with every step and refusal printed.
+    `price` records each unit's priced return from an `agent-<id>` worktree's transcript
+    (`_price`)."""
     units = [u.strip() for u in units or [] if u and u.strip()]
+    named = [worktrees] if isinstance(worktrees, (str, Path)) else list(worktrees or [])
+    named = [Path(path) for path in named if str(path).strip()]
     try:
-        if not worktree:
+        if not named:
             raise LandError("name the builder's worktree with --worktree", 2)
         if not units:
             raise LandError("name the lane's units with --units: each one's self-check is "
                             "recorded and its brief written, so none is assumed", 2)
-        return _land(Path(root), Path(worktree), units, author, price)
+        return (_resume if resume else _land)(Path(root), named, units, author, price)
     except LandError as exc:
         _say(f"sprint lane land: {exc}", err=True)
         return exc.code

@@ -9417,6 +9417,8 @@ def _lane_run_refusal(args: argparse.Namespace, units: list[str]) -> str | None:
     if len(units) != 1:
         return (f"a lane run takes one unit, one fresh session per lane priced on its own; got "
                 f"{len(units)} ({', '.join(units)})")
+    if len(getattr(args, "worktree", None) or []) > 1:
+        return "a lane run runs in one worktree: name one --worktree"
     binary = lanes.BINARIES[args.harness]
     if shutil.which(binary) is None:
         return f"{binary} is not on PATH, so no {args.harness} lane can run"
@@ -9973,9 +9975,9 @@ def cmd_lane(args: argparse.Namespace) -> int:
             print(refusal, file=sys.stderr)
             return 2
         from lib import lanes  # noqa: PLC0415 - only the landing needs it
-        return lanes.land(args.root, getattr(args, "worktree", None),
+        return lanes.land(args.root, getattr(args, "worktree", None) or [],
                           getattr(args, "units", None) or [], getattr(args, "author", None),
-                          price=_lane_land_price)
+                          price=_lane_land_price, resume=bool(getattr(args, "resume", False)))
     if args.action == "accept":
         from lib import lanes  # noqa: PLC0415 - only the accept needs it
         # handed to the `lane return` an APPROVE ends with, exactly as given here
@@ -10086,7 +10088,8 @@ def cmd_lane(args: argparse.Namespace) -> int:
                                      None, "the run state could not be read, so the lane record "
                                            "names no run and its return will not price it")
             return lanes.run(root, brief["id"], args.harness, lane_brief_text(brief),
-                             model=args.model, worktree=getattr(args, "worktree", None),
+                             model=args.model, worktree=(getattr(args, "worktree", None)
+                                                         or [None])[0],
                              timeout=args.timeout or lanes.RUN_TIMEOUT, run_id=run_id,
                              on_start=lambda: start_lane(brief))
         for b in dispatch["briefs"]:
@@ -14075,11 +14078,16 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--timeout", type=_lane_positive_int, default=None,
                     help="(return, accept) per-verifier timeout in seconds (default: 300); "
                          "(run) the CLI session's timeout in seconds (default: 3600)")
-    ln.add_argument("--worktree", default=None,
-                    help="(land) the builder's worktree, holding its staged change and the "
-                         "hand-in files under sdlc-studio/.local/lane/; (run) the worktree the "
-                         "session runs in (default: sdlc-studio/.local/worktrees/lane-<unit>, "
-                         "created from HEAD when absent)")
+    ln.add_argument("--worktree", action="append", default=None,
+                    help="(land) a builder's worktree, holding its staged change and the "
+                         "hand-in files under sdlc-studio/.local/lane/; repeat it to land "
+                         "several worktrees as one commit with a Refs: trailer per unit; (run) "
+                         "the one worktree the session runs in (default: "
+                         "sdlc-studio/.local/worktrees/lane-<unit>, created from HEAD when absent)")
+    ln.add_argument("--resume", action="store_true",
+                    help="(land) resume the stopped landing of the named worktrees from the "
+                         "step its land record under sdlc-studio/.local/lane/landed/ names, "
+                         "reading the hand-in it kept and running no step it completed")
     ln.add_argument("--author", default=None,
                     help="(land) the author each self-check is recorded under (default: the "
                          "worktree's directory name); (accept) the author the verdict names (default: "

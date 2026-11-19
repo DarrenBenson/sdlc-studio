@@ -568,12 +568,10 @@ BUILD_1 = meter._usage(40, 400, 5_000, 0, 120_000)
 BUILD_2 = meter._usage(15, 150, 800, 0, 30_000)
 
 
-class LandPricesTheBuilderTests(_LaneFixture):
-    """BG1330. `lane land` read the builder's id off its `agent-<id>` worktree only as the
-    self-check's author and recorded no return, so a unit no one returned by hand with `lane
-    return --agent` read NOT MEASURED. Each case lands through `sprint.py lane land` with HOME,
-    CLAUDE_CONFIG_DIR and XDG_DATA_HOME on a temporary harness store, never the operator's, and
-    prices against the fixture store's own weight table (`test_meter_reads_true`)."""
+class _PricedFixture(_LaneFixture):
+    """The lane fixture with an open run and a temporary harness store, never the operator's:
+    HOME, CLAUDE_CONFIG_DIR and XDG_DATA_HOME point into it, and a builder's transcript is
+    priced against the fixture store's own weight table (`test_meter_reads_true`)."""
 
     AGENT = "a1b2c3d4e5f6"
     WORKTREE = f"agent-{AGENT}"
@@ -599,14 +597,26 @@ class LandPricesTheBuilderTests(_LaneFixture):
                    XDG_DATA_HOME=str(self.home / ".local" / "share"))
         return env
 
-    def _builder_says(self, *usages: dict) -> None:
+    def _builder_says(self, *usages: dict, agent: str | None = None,
+                      wt: Path | None = None) -> None:
+        """The builder `agent` (this fixture's own by default) spends `usages` in `wt`."""
         lines = [ln for n, usage in enumerate(usages)
-                 for ln in self.tx._records(f"msg_build_{n}", usage, None, str(self.wt))]
-        meter._Transcripts._append(self.builder, lines)
+                 for ln in self.tx._records(f"msg_build_{agent or self.AGENT}_{n}", usage, None,
+                                            str(wt or self.wt))]
+        meter._Transcripts._append(self.tx.subagents / f"agent-{agent or self.AGENT}.jsonl",
+                                   lines)
 
     def _returns(self, unit: str = A) -> list[dict]:
         return [r for r in run_state.read(self.root).get(run_state.DELEGATED) or []
                 if r.get("unit") == unit]
+
+
+class LandPricesTheBuilderTests(_PricedFixture):
+    """BG1330. `lane land` read the builder's id off its `agent-<id>` worktree only as the
+    self-check's author and recorded no return, so a unit no one returned by hand with `lane
+    return --agent` read NOT MEASURED. Each case lands through `sprint.py lane land` with HOME,
+    CLAUDE_CONFIG_DIR and XDG_DATA_HOME on a temporary harness store, never the operator's, and
+    prices against the fixture store's own weight table (`test_meter_reads_true`)."""
 
     def test_a_landed_unit_is_priced_from_its_builders_transcript(self) -> None:
         self._builder_says(BUILD_1, BUILD_2)
@@ -670,6 +680,162 @@ class LandPricesTheBuilderTests(_LaneFixture):
         for key, whole in (("tokens", meter._tokens(parts)), ("priced", meter._priced(parts))):
             self.assertEqual(whole, sum(recs[0][key] for recs in shares.values()), key)
         self.assertNotIn("UNPRICED", r.stderr)
+
+
+
+class LandSeveralWorktreesTests(_PricedFixture):
+    """`lane land` given several builders' worktrees of one root lands them as one commit, so the
+    commit hook is paid once for the lot, while each unit keeps what is its own: its hand-in, its
+    self-check, its QA brief and its price. The second builder works in `agent-<id>` beside the
+    first; each staged its unit's Affects and handed in its own message and self-check files."""
+
+    OTHER = "f6e5d4c3b2a1"
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.wt2 = Path(self._tmp.name).resolve() / f"agent-{self.OTHER}"
+        gitutil.git(["worktree", "add", "-q", "-b", "lane-us0102", str(self.wt2), "main"],
+                    self.root)
+
+    def _two_lanes(self) -> None:
+        """Builder one stages A in the first worktree; builder two stages B in the second."""
+        for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n")):
+            self._stage(rel, body)
+        self._hand_in(units=(A,), message=f"feat({A}): a is two")
+        _write(self.wt, f"{LANE}/HANDOFF.md", "builder one\n")
+        first, self.wt = self.wt, self.wt2
+        try:
+            for rel, body in (("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
+                self._stage(rel, body)
+            self._hand_in(units=(B,), message=f"feat({B}): b is two\n\nBuilder two's body.")
+            _write(self.wt, f"{LANE}/HANDOFF.md", "builder two\n")
+        finally:
+            self.wt = first
+
+    def _land_both(self, *worktrees: Path) -> subprocess.CompletedProcess:
+        named = [arg for wt in worktrees or (self.wt, self.wt2) for arg in ("--worktree", str(wt))]
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "land", *named, "--units", A, B,
+             "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+
+    def _hook_runs(self) -> int:
+        """The commits the hook judged in either worktree; the fixture's own on main are not."""
+        lines = self.log.read_text(encoding="utf-8").splitlines() if self.log.exists() else []
+        return sum(lines.count(str(wt)) for wt in (self.wt, self.wt2))
+
+    def _staged(self, wt: Path) -> list[str]:
+        return sorted(_git(wt, "diff", "--cached", "--name-only").splitlines())
+
+    def test_two_worktrees_land_as_one_commit_with_a_refs_trailer_each(self) -> None:
+        moved = self._move_main("README.md", "main moved on\n")
+        self._two_lanes()
+        r = self._land_both()
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertEqual("1", _git(self.root, "rev-list", "--count", f"{moved}..HEAD"),
+                         "the two worktrees did not land as exactly one commit")
+        self.assertEqual(moved, _git(self.root, "rev-parse", "HEAD^"))
+        self.assertEqual(sorted(["src/a.py", f"changelog.d/{A}.md", "src/b.py",
+                                 f"changelog.d/{B}.md"]),
+                         sorted(_git(self.root, "show", "--format=", "--name-only",
+                                     "HEAD").splitlines()))
+        self.assertEqual(1, self._hook_runs(), "the commit hook did not run exactly once")
+        self.assertEqual([A, B], _git(self.root, "log", "-1",
+                                      "--format=%(trailers:key=Refs,valueonly)").splitlines())
+        self.assertEqual(f"feat({A}, {B}): a is two", _git(self.root, "log", "-1", "--format=%s"))
+        self.assertIn("Builder two's body.", _git(self.root, "log", "-1", "--format=%b"))
+        for rel, body in (("src/a.py", "A = 2\n"), ("src/b.py", "B = 2\n"),
+                          ("README.md", "main moved on\n")):
+            self.assertEqual(body, (self.root / rel).read_text(encoding="utf-8"), rel)
+        for wt in (self.wt, self.wt2):
+            self.assertFalse(wt.exists(), f"{wt.name} was not removed")
+        self.assertEqual(["main"], self._branches())
+
+    def test_each_unit_keeps_its_own_hand_in_and_price(self) -> None:
+        self._builder_says(BUILD_1)
+        self._builder_says(BUILD_2, agent=self.OTHER, wt=self.wt2)
+        self._two_lanes()
+        r = self._land_both()
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        landed = self.root / LANE / "landed"
+        rows = {row["unit"]: row for row in critic.read_self_checks(self.root)}
+        fingerprints = set()
+        for unit, wt, says, other in ((A, self.wt, BUILD_1, B), (B, self.wt2, BUILD_2, A)):
+            with self.subTest(unit=unit):
+                kept = landed / wt.name
+                self.assertEqual("builder one\n" if unit == A else "builder two\n",
+                                 (kept / "HANDOFF.md").read_text(encoding="utf-8"),
+                                 "one worktree's hand-in overwrote the other's")
+                self.assertTrue((kept / f"{unit}-claims.json").is_file())
+                self.assertFalse((kept / f"{other}-claims.json").exists())
+                self.assertEqual(wt.name, rows[unit]["author"],
+                                 "the self-check was not recorded from the unit's own worktree")
+                brief = self.root / lanes.BRIEFS / f"{unit}-qa.txt"
+                self.assertTrue(brief.is_file(), f"no QA brief written for {unit}")
+                fingerprints.add(critic.brief_fingerprint(brief.read_text(encoding="utf-8")))
+                recs = self._returns(unit)
+                self.assertEqual(1, len(recs), out)
+                parts = meter._sum(says)
+                self.assertEqual((meter._tokens(parts), meter._priced(parts),
+                                  str(self.tx.subagents / f"{wt.name}.jsonl")),
+                                 (recs[0]["tokens"], recs[0]["priced"], recs[0]["transcript"]),
+                                 "the unit was not priced from its own builder's transcript")
+                self.assertNotIn(run_state.APPORTIONED, recs[0])
+                self.assertIn(f"{unit}'s return priced from {wt.name}'s transcript", r.stdout)
+        self.assertEqual(2, len(fingerprints), "the two units share one QA brief")
+
+    def test_a_conflict_or_a_refused_commit_lands_nothing(self) -> None:
+        head = _git(self.root, "rev-parse", "HEAD")
+        self._two_lanes()
+        rival = "A = 3\n"
+        _write(self.wt2, "src/a.py", rival)
+        gitutil.git(["add", "--", "src/a.py"], self.wt2)
+        staged = {wt: self._staged(wt) for wt in (self.wt, self.wt2)}
+
+        def lands_nothing(r: subprocess.CompletedProcess, hooks: int) -> None:
+            out = r.stdout + r.stderr
+            self.assertNotEqual(0, r.returncode, out)
+            self.assertEqual(head, _git(self.root, "rev-parse", "HEAD"), "a half landing")
+            self.assertEqual(hooks, self._hook_runs(), out)
+            for wt in (self.wt, self.wt2):
+                self.assertTrue(wt.is_dir(), f"{wt.name} was removed")
+                self.assertEqual(staged[wt], self._staged(wt), f"{wt.name}'s staged change moved")
+            self.assertEqual([], critic.read_self_checks(self.root))
+
+        with self.subTest("the same file staged with different content in both"):
+            r = self._land_both()
+            lands_nothing(r, 0)
+            self.assertEqual(2, r.returncode, "the conflict was not refused before anything moved")
+            for named in ("src/a.py", str(self.wt), str(self.wt2)):
+                self.assertIn(named, r.stderr)
+            self.assertEqual(rival, (self.wt2 / "src/a.py").read_text(encoding="utf-8"))
+
+        gitutil.git(["reset", "-q", "--", "src/a.py"], self.wt2)
+        gitutil.git(["checkout", "--", "src/a.py"], self.wt2)
+        self._stage_in(self.wt2, "src/refuse.py", "X = 1\n")
+        staged = {wt: self._staged(wt) for wt in (self.wt, self.wt2)}
+        with self.subTest("a commit the hook refuses"):
+            r = self._land_both()
+            lands_nothing(r, 1)
+            self.assertIn(REFUSAL, r.stderr, "the hook's own refusal was not shown")
+            self.assertNotEqual("B = 2\n", (self.wt / "src/b.py").read_text(encoding="utf-8"),
+                                "the first worktree still holds the second's change")
+
+        kept = self.root / LANE / "landed" / self.wt.name / "kept.marker"
+        _write(kept.parent, kept.name, "an earlier landing's\n")
+        with self.subTest("one worktree named twice"):
+            r = self._land_both(self.wt, self.wt / "src")
+            lands_nothing(r, 1)
+            self.assertEqual(2, r.returncode, r.stderr)
+            self.assertIn("named twice", r.stderr)
+            self.assertTrue(kept.is_file(), "the refusal came after the hand-in was copied")
+
+    def _stage_in(self, wt: Path, rel: str, body: str) -> None:
+        _write(wt, rel, body)
+        gitutil.git(["add", "--", rel], wt)
 
 
 if __name__ == "__main__":
