@@ -74,6 +74,78 @@ class ConfinementTests(unittest.TestCase):
     def test_readiness_is_read_only(self) -> None:
         self._assert_read_only(["readiness.py", "check", "--stories", "Ready"])
 
+    def test_validate_is_read_only(self) -> None:
+        self._assert_read_only(["validate.py", "check"])
+
+    def test_next_id_is_read_only(self) -> None:
+        self._assert_read_only(["next_id.py", "scan", "--type", "story"])
+
+    def test_critic_show_is_read_only(self) -> None:
+        self._assert_read_only(["critic.py", "show"])
+
+
+def _full_snapshot(root: Path) -> dict:
+    """Every file under `root` by content hash, `.local/` included, and every directory by name,
+    so a folder made and left empty is a change too."""
+    snap = {}
+    for p in sorted(root.rglob("*")):
+        if "__pycache__" in p.parts:
+            continue
+        rel = str(p.relative_to(root))
+        snap[rel + "/" if p.is_dir() else rel] = (
+            "(directory)" if p.is_dir() else hashlib.sha256(p.read_bytes()).hexdigest())
+    return snap
+
+
+class WritingHelperConfinementTests(unittest.TestCase):
+    """BG1531: `critic brief`, `gate` and `review_prep close` are not read-only; each writes
+    only the state the TRD (section 5 rule 5) names for it."""
+
+    def _changed(self, argv: list[str], setup=None) -> tuple[set[str], int]:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _fixture(root)
+            if setup:
+                setup(root)
+            before = _full_snapshot(root)
+            done = subprocess.run([sys.executable, str(SCRIPTS / argv[0]), *argv[1:]],
+                                  capture_output=True, text=True, cwd=str(root))
+            after = _full_snapshot(root)
+        return {k for k in set(before) | set(after) if before.get(k) != after.get(k)}, \
+            done.returncode
+
+    def test_each_writing_helper_writes_only_its_named_state(self) -> None:
+        """Mutants: a helper writing outside its named paths (a `LATEST.md` from `prep`, a
+        tracked file from `brief`); a named path the helper no longer writes."""
+        def review(root: Path) -> None:
+            (root / "sdlc-studio" / "reviews").mkdir()
+            (root / "sdlc-studio" / "reviews" / "RV0001-x.md").write_text(
+                "# RV0001: a review\n\n> **Status:** Complete\n", encoding="utf-8")
+
+        brief, rc = self._changed(["critic.py", "brief", "--unit", "US0001", "--seat",
+                                   "engineering"])
+        self.assertEqual(0, rc)
+        self.assertEqual({"sdlc-studio/.local/briefs.jsonl", "sdlc-studio/.local/",
+                          "sdlc-studio/reviews/", "sdlc-studio/reviews/verdicts/",
+                          "sdlc-studio/reviews/verdicts/US0001/"}, brief)
+
+        gate, _ = self._changed(["gate.py"])
+        named = {"sdlc-studio/.local/", "sdlc-studio/.local/gate-cost.json",
+                 "sdlc-studio/.local/gate-suite-verdict.json",
+                 "sdlc-studio/.local/boundary-suite-last.log",
+                 "sdlc-studio/.local/gate-timings.json"}
+        self.assertLessEqual(gate, named)
+        self.assertIn("sdlc-studio/.local/gate-cost.json", gate)
+
+        prep, rc = self._changed(["review_prep.py", "prep"], review)
+        self.assertEqual((set(), 0), (prep, rc))
+
+        close, rc = self._changed(["review_prep.py", "close", "--rv", "RV0001"], review)
+        self.assertEqual(0, rc)
+        self.assertIn("sdlc-studio/.local/review-state.json", close)
+        self.assertEqual(set(), {c for c in close if not c.startswith("sdlc-studio/.local/")
+                                 and c not in ("sdlc-studio/reviews/_index.md",)})
+
 
 class SideEffectConfinementTests(unittest.TestCase):
     def test_ledger_writes_only_its_named_target(self) -> None:

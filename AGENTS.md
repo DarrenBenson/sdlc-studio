@@ -32,9 +32,14 @@ rule that matters is gated in the command people run (LL0027); one stated here a
 **Enable the hooks once per clone: `bash tools/enable-hooks.sh`.** It installs the
 three tracked hooks and an ssh keepalive, and names any missing prerequisite
 ([hooks and the push](CONTRIBUTING.md#hooks-and-the-push)). Without them the gates are off. The only bypass is `git commit --no-verify` or
-`git push --no-verify`. Pushes go straight to main; a red main is read before the next push
-(D0181). pre-commit and commit-msg list their lanes (`--list` above); `.githooks/pre-push` runs the full suite
+`git push --no-verify`. **Integrate continuously.** Commit each unit to `main` when its gate
+passes and push `main`; open no PR and push no branch unless `release_strategy` is `pr-required`.
+Wait on the push's CI run with one blocking command under a timeout, never a polling loop, and
+read a red main before pushing again (D0181). pre-commit and commit-msg list their lanes (`--list` above); `.githooks/pre-push` runs the full suite
 once.
+
+The operating doctrine is [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md);
+read it, do not restate it.
 
 ## Non-negotiable rules
 

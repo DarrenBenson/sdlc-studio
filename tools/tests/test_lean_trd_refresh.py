@@ -53,8 +53,9 @@ from test_lean_prd_refresh import release_baseline  # noqa: E402 - the release t
 import reconcile  # noqa: E402
 import sprint  # noqa: E402
 import sprint_report  # noqa: E402
+import verify_ac  # noqa: E402
 import telemetry  # noqa: E402
-from lib import run_state, sdlc_md  # noqa: E402
+from lib import lanes, run_state, sdlc_md  # noqa: E402
 
 #: The authority's name. Each test first checks `sdlc_md` defines it, so a rename fails here
 #: rather than leaving the documents naming a set that no longer exists.
@@ -268,6 +269,48 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
                 for member in self.executes:
                     self.assertRegex(why, rf"\b{re.escape(member)}\b")
                 self.assertEqual([], _narrower_than(why, self.executes))
+
+    def test_the_http_allow_list_is_described_as_unset_and_http_only(self) -> None:
+        """Mutants: the Network paths prose or the exfiltration row saying a project's
+        Verify-line tools are bounded to the hosts the variable names; either dropping `unset by
+        default`, the `http` verb or `bounds nothing until`; the code reading a default list."""
+        var = "SDLC_VERIFY_HTTP_HOSTS"
+        with mock.patch.dict("os.environ", clear=False) as env:
+            env.pop(var, None)
+            self.assertEqual((), verify_ac._restricted_http_hosts())
+            verify_ac._check_http_target("http://example.test/")
+            env[var] = "only.test"
+            with self.assertRaises(ValueError):
+                verify_ac._check_http_target("http://example.test/")
+        body = _trd_body()
+        prose = next(p for p in _section(body, "Network paths").split("\n\n") if var in p)
+        row = next(r for r in _threat_rows() if r[0] == "Network exfiltration")
+        for name, text in (("Network paths", prose), ("Network exfiltration", row[3])):
+            flat = " ".join(text.split())
+            with self.subTest(passage=name):
+                self.assertIn(var, flat)
+                self.assertIn("unset by default", flat)
+                self.assertIn("`http` verb", flat)
+                self.assertRegex(flat, r"bound[s]? (?:nothing|only) until a project sets it")
+                self.assertNotRegex(flat, r"bounded to the hosts|host-bounded by")
+
+    def test_the_threat_model_has_a_verify_line_execution_row(self) -> None:
+        """Mutants: the row removed; the stamp, `--no-shell` or `--allow-external` left out of
+        its control; the limit (self-declared stamp, an absent stamp permits shell) left out; the
+        code no longer permitting shell for an absent stamp."""
+        text = "# US0001: s\n\n> **Status:** Ready\n"
+        self.assertTrue(verify_ac.shell_allowed_for(text), "an absent stamp permits shell")
+        external = text + "> **Provenance:** external\n"
+        self.assertFalse(verify_ac.shell_allowed_for(external))
+        self.assertTrue(verify_ac.shell_allowed_for(external, allow_external=True))
+        self.assertFalse(verify_ac.shell_allowed_for(text, allow_shell=False))
+        rows = [r for r in _threat_rows() if "Verif" in r[0] and "shell" in r[0]]
+        self.assertEqual(1, len(rows), "no Threat Model row for the verifier's shell")
+        control = " ".join(rows[0][3].split())
+        for named in ("`Provenance: external`", "`--no-shell`", "`--allow-external`"):
+            self.assertIn(named, control)
+        self.assertIn("self-declared", control)
+        self.assertIn("an absent stamp permits shell", control)
 
 
 def _git(*argv: str) -> subprocess.CompletedProcess:
@@ -789,6 +832,10 @@ def _in_tree(span: str) -> bool:
     return (SCRIPTS / span).exists()
 
 
+#: The `Under ADR-004` cell of the row for a process the skill spawns, not a call it makes.
+SPAWNED = "spawned process"
+
+
 class TrdRegistryNetworkTests(unittest.TestCase):
     """US1101: the type registry, the network paths, ADR-003, ADR-004, ADR-009, ADR-012 and the
     coverage line match what 6.2 builds."""
@@ -843,8 +890,17 @@ class TrdRegistryNetworkTests(unittest.TestCase):
         table = _one_table(_section(_trd_body(), "Network paths"), "Path")
         script, fn, cmd, adr = (table[0].index(c) for c in
                                 ("Script", "Function", "Command or endpoint", "Under ADR-004"))
-        rows = {(r[script].strip("`"), r[fn].strip("`")): r for r in table[1:]}
-        self.assertEqual(len(table) - 1, len(rows), "a script and function listed twice")
+        every = {(r[script].strip("`"), r[fn].strip("`")): r for r in table[1:]}
+        self.assertEqual(len(table) - 1, len(every), "a script and function listed twice")
+        # BG1516: the lane runner's agent CLI is a process the skill spawns, whose own network use
+        # no scan of the shipped scripts can see; it is listed as `spawned process`, and the
+        # function it names must be the one that starts a process.
+        spawned = {k for k, r in every.items() if r[adr] == SPAWNED}
+        self.assertEqual({("lib/lanes.py", "_run_in_group")}, spawned)
+        self.assertIn("subprocess.Popen", ast.unparse(next(
+            n for n in ast.walk(ast.parse(_read(SCRIPTS / "lib" / "lanes.py")))
+            if isinstance(n, ast.FunctionDef) and n.name == "_run_in_group")))
+        rows = {k: r for k, r in every.items() if k not in spawned}
         # US1138: a connection is the ADR-004 exception when its script reaches `api.github.com`,
         # and not GitHub otherwise, as the Cursor usage GET is.
         github = {k for k in get if "api.github.com" in _read(SCRIPTS / k[0])}
@@ -1086,6 +1142,312 @@ class TrdSignatureRulingTests(unittest.TestCase):
                                  and re.search(r"\blater run\b", u) and refusal in u],
                                 "no sentence says an uncommitted close beside a later run is "
                                 "refused, in the refusal's own words")
+
+
+# --- BG1516, BG1529, BG1530, BG1531, BG1533: the TRD held to the code and tree it describes ---
+
+
+def _threat_rows() -> list[list[str]]:
+    return _one_table(_section(_trd_body(), "Threat Model"), "Threat")[1:]
+
+
+def _network_rows() -> list[list[str]]:
+    return _one_table(_section(_trd_body(), "Network paths"), "Path")[1:]
+
+
+class TrdLaneRunnerTests(unittest.TestCase):
+    """BG1516: the TRD names the headless lane runner, the five CLIs it drives and the flags it
+    gives them, and no longer calls the Agent-tool fan-out the one harness-specific part."""
+
+    #: What `headless_command` adds that is not a permission: the prompt, the output format.
+    NOT_PERMISSIONS = {"-p", "--output-format", "--format", "--json", "-s", "--skip-git-repo-check",
+                       "--model", "-m"}
+
+    def test_every_headless_harness_is_named_with_its_flags(self) -> None:
+        """Mutants: no lane runner subsection; a harness `BINARIES` lists left out of its table;
+        a flag `headless_command` gives a harness left out of its row; `none` for a harness the
+        code gives flags; the subsection not saying where the runner runs."""
+        section = _section(_trd_body(), "Headless lane runner")
+        self.assertIn("`sprint.py lane run`", section)
+        self.assertIn("worktree", section)
+        rows = _one_table(section, "Harness")[1:]
+        self.assertGreaterEqual(len(lanes.BINARIES), 5)
+        scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(scratch.cleanup)
+        # A real repository, so Codex's `--add-dir` (the git directory) is part of its command.
+        gitutil.git(["init", "-q", "--template="], Path(scratch.name))
+        for harness, binary in sorted(lanes.BINARIES.items()):
+            cmd = lanes.headless_command(harness, "BRIEF", None, Path(scratch.name))
+            self.assertEqual(binary, cmd[0])
+            named = [r for r in rows if binary in _spans(r[1])]
+            with self.subTest(harness=harness):
+                self.assertEqual(1, len(named), f"{binary} is named by {len(named)} rows")
+                flags = [a for a in cmd[1:] if a.startswith("-")
+                         and a not in self.NOT_PERMISSIONS]
+                if flags:
+                    for flag in flags:
+                        self.assertIn(flag, named[0][2])
+                else:
+                    self.assertRegex(named[0][2], r"^none\b")
+        with self.assertRaises(ValueError):
+            lanes.headless_command("nonesuch", "BRIEF", None, Path(scratch.name))
+
+    def test_agentic_waves_are_not_called_the_only_harness_specific_part(self) -> None:
+        """Mutants: either passage restored to calling the wave fan-out the one or only
+        harness-specific part; question 3 left open with no word of the lane runner."""
+        body = _trd_body()
+        agentic = _section(body, "Agentic execution")
+        bullets = re.split(r"\n(?=- \[)", _section(body, "12. Open Technical Questions"))
+        q3 = next(b for b in bullets if "agentic wave" in b)
+        only = re.compile(r"\b(?:the\s+)?(?:one|only)\s+(?:part|feature|non-neutral)\b|"
+                          r"\bthe\s+rest\s+is\s+harness-neutral\b", re.I)
+        for name, text in (("Agentic execution", agentic), ("question 3", q3)):
+            with self.subTest(passage=name):
+                self.assertIsNone(only.search(" ".join(text.split())), text)
+        self.assertIn("headless lane runner", " ".join(agentic.split()))
+        flat = " ".join(q3.split())
+        self.assertTrue(q3.startswith("- [x]") or all(b in flat for b in lanes.BINARIES.values()),
+                        "question 3 is open and does not name the harnesses the runner drives")
+
+    def test_the_spawned_agent_has_a_network_row_and_a_threat_row(self) -> None:
+        """Mutants: either row removed; the network row's last cell or the threat row's
+        mitigation emptied; the threat row dropping the limit it states."""
+        net = [r for r in _network_rows() if "lib/lanes.py" in r[1]]
+        self.assertEqual(1, len(net), "the Network paths table has no row for the lane runner")
+        self.assertTrue(net[0][-1].strip(), "the network row names no bound")
+        self.assertIn("bounded by", net[0][-1])
+        threat = [r for r in _threat_rows() if "agent CLI" in r[0]]
+        self.assertEqual(1, len(threat), "the Threat Model has no row for the spawned agent CLI")
+        control = threat[0][3]
+        for word in ("worktree", "timeout", "sandbox", "reviewer", "limit"):
+            self.assertIn(word, control)
+
+
+class TrdPerformanceClaimTests(unittest.TestCase):
+    """BG1529: sections 8 and 10 state no sub-second target for the census, and the cost-model
+    paragraph reads as complete sentences."""
+
+    SUB_SECOND = re.compile(r"sub-second|under a second|within a second", re.I)
+
+    def _sections(self) -> dict[str, str]:
+        body = _trd_body()
+        return {"8": _section(body, "8. Infrastructure"),
+                "10": _section(body, "10. Performance Requirements")}
+
+    def test_no_unmeasured_sub_second_target_for_reconcile_or_status(self) -> None:
+        """Mutants: a sub-second claim restored for reconcile or status in either section; the
+        measured figures, their date, the live command or the `settle` cost dropped."""
+        for name, text in self._sections().items():
+            for unit in _units(text):
+                if re.search(r"\b(?:reconcile|status)\b", unit, re.I):
+                    with self.subTest(section=name, unit=unit[:60]):
+                        self.assertIsNone(self.SUB_SECOND.search(unit), unit)
+        row = next(r for r in _one_table(self._sections()["10"], "Metric")[1:]
+                   if r[0].startswith("Reconcile"))
+        cell = " ".join(row[1:])
+        self.assertIn("scales with artefact count", cell)
+        self.assertRegex(cell, r"\d{4}-\d{2}-\d{2}")
+        self.assertRegex(cell, r"`reconcile\.py detect` \d+ s")
+        self.assertRegex(cell, r"`status\.py` [\d.]+ s")
+        self.assertRegex(cell, r"settle` [\d.]+ s")
+        self.assertIn("`time python3 <skill>/scripts/reconcile.py detect`", cell)
+        scaling = " ".join(self._sections()["8"].split())
+        self.assertIn("grows with the artefact count", scaling)
+        self.assertIn("`reconcile.py settle`", scaling)
+        self.assertRegex(_read(REPO / ".githooks" / "pre-commit"),
+                         re.compile(r'^(?![ \t]*#).*reconcile\.py"? settle\b', re.M))
+
+    def test_the_spliced_cost_model_sentence_is_repaired(self) -> None:
+        """Mutants: the sentence ending 'is never a gate: a script' run into 'the meter reads
+        the store' again; either sentence left without its stop or its capital."""
+        text = self._sections()["10"]
+        para = next(p for p in text.split("\n\n") if p.startswith("**The cost model"))
+        self.assertNotRegex(para, r"a script\s+the meter reads")
+        units = _units(para)
+        at = next(i for i, u in enumerate(units) if "**never** a gate:" in u)
+        self.assertRegex(units[at], r"a gate: a script \w+ .*[.]$")
+        self.assertNotIn("the meter reads", units[at])
+        self.assertTrue(units[at + 1].startswith("The meter reads the store of the harness"),
+                        units[at + 1][:60])
+        self.assertTrue(units[at + 1].endswith("is in it."), units[at + 1][-40:])
+
+
+#: The sentences of `text` naming a story as open, as the stories' ids they name.
+_OPEN_CLAIM = re.compile(r"\bopen\b", re.I)
+_STORY_ID = re.compile(r"\bUS\d{4}\b")
+
+
+def _story_status(story: str, stories: Path) -> str | None:
+    """The Status line of `story`'s file under `stories`, or None when there is no such file."""
+    for path in sorted(stories.glob(f"{story}-*.md")):
+        m = re.search(r"^> \*\*Status:\*\*\s*(.+?)\s*$", _read(path), re.M)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _done_stories_called_open(adr: str, stories: Path) -> list[str]:
+    """The stories `adr` names in a sentence that says `open`, whose Status line says Done."""
+    named = {s for unit in _units(adr) if _OPEN_CLAIM.search(unit)
+             for s in _STORY_ID.findall(unit)}
+    return sorted(s for s in named if _story_status(s, stories) == "Done")
+
+
+class TrdAdr012Tests(unittest.TestCase):
+    """BG1530: ADR-012 names the built learning stories as built, and its check reads the
+    stories' own Status lines."""
+
+    STORIES = REPO / "sdlc-studio" / "stories"
+    BUILT = ("US1066", "US1067", "US1068")
+
+    def test_adr_012_names_the_built_learning_stories_as_built(self) -> None:
+        """Mutants: Status ending not yet built; the sentence saying no learning is live yet
+        restored; a story left out of Built so far, or listed as not built; no Revision History
+        row naming the change."""
+        text, adr = _read(TRD), _adr(_trd_body(), "012")
+        status = re.search(r"^\*\*Status:\*\*.*$", adr, re.M).group(0)
+        self.assertNotRegex(status, r"not yet built\s*$")
+        flat = " ".join(adr.split())
+        self.assertNotIn("no learning is live yet", flat)
+        built, not_built = flat.split("**Built so far:**", 1)[1].split("**Not yet built:**", 1)
+        for story in self.BUILT:
+            with self.subTest(story=story):
+                self.assertEqual("Done", _story_status(story, self.STORIES))
+                self.assertIn(story, built)
+                self.assertNotIn(story, not_built.split("**Consequences:**")[0])
+        history = _one_table(_section(text, "Revision History"), "Date")
+        self.assertTrue([r for r in history[1:] if "ADR-012" in r[2]
+                         and all(s in r[2] for s in self.BUILT)],
+                        "no Revision History row names ADR-012 with US1066, US1067 and US1068")
+
+    def test_a_done_story_called_open_fails_the_check(self) -> None:
+        """Mutants: the check reading no Status line (a Done story passes); reading every story
+        as Done (an open one fails); ADR-012 calling a Done story open."""
+        with tempfile.TemporaryDirectory() as d:
+            stories = Path(d)
+            (stories / "US9001-done.md").write_text("# US9001: a\n\n> **Status:** Done\n",
+                                                    encoding="utf-8")
+            (stories / "US9002-open.md").write_text("# US9002: b\n\n> **Status:** Draft\n",
+                                                    encoding="utf-8")
+            self.assertEqual(["US9001"], _done_stories_called_open("US9001 is still open.",
+                                                                   stories))
+            self.assertEqual([], _done_stories_called_open("US9002 is still open.", stories))
+            self.assertEqual([], _done_stories_called_open("US9001 is built.", stories))
+            self.assertEqual([], _done_stories_called_open("US9003 is still open.", stories))
+        self.assertEqual(["US1066"], _done_stories_called_open("US1066 is an open story.",
+                                                               self.STORIES))
+        self.assertEqual([], _done_stories_called_open(_adr(_trd_body(), "012"), self.STORIES))
+
+
+class TrdReadOnlyHelperTests(unittest.TestCase):
+    """BG1531: `critic brief`, `gate` and `review_prep` write state, so no read-only list holds
+    them, and every helper a list does hold has a confinement assertion."""
+
+    CONFINEMENT = SCRIPTS / "tests" / "test_confinement.py"
+    LIST = re.compile(r"read-only\s+helpers\s*\(([^)]*)\)", re.I)
+    WRITERS = ("critic brief", "gate", "review_prep")
+
+    def _lists(self) -> list[set[str]]:
+        found = [_spans(m.group(1)) for m in self.LIST.finditer(_trd_body())]
+        return [f for f in found if f]
+
+    def test_the_writing_helpers_are_not_listed_as_read_only(self) -> None:
+        """Mutants: any of the three put back in a read-only list; section 2 calling the script
+        layer read-only; the files and their tracking left out of section 5; the section 9
+        mitigation not citing the lists."""
+        body = _trd_body()
+        lists = self._lists()
+        self.assertGreaterEqual(len(lists), 2, "premise: the split rule and rule 5 list helpers")
+        for held in lists:
+            for writer in self.WRITERS:
+                with self.subTest(writer=writer, held=sorted(held)):
+                    self.assertFalse([h for h in held if h.split("/")[0].startswith(writer)],
+                                     held)
+        self.assertNotRegex(_section(body, "2. Project Classification"), r"read-only Python")
+        contract = " ".join(_section(body, "Script CLI contract").split())
+        for named in ("`critic.py brief`", "`sdlc-studio/reviews/verdicts/<UNIT>/`",
+                      "`sdlc-studio/.local/briefs.jsonl` (untracked)", "`gate.py`",
+                      "`review_prep.py close`", "`sdlc-studio/.local/review-state.json` (untracked)",
+                      "`reviews/LATEST.md`", "(both tracked)"):
+            self.assertIn(named, contract)
+        self.assertIn("gate-cost.json", _section(body, "The gate tier"))
+        row = next(r for r in _threat_rows() if r[0].startswith("Script mutating"))
+        self.assertIn("§5 rule 5", row[3])
+        self.assertRegex(row[3], r"`critic brief`, `gate` and `review_prep close`")
+
+    def test_every_helper_called_read_only_has_a_confinement_assertion(self) -> None:
+        """Mutants: a helper added to a read-only list with no `_assert_read_only` call for it;
+        a call renamed so no list entry matches it."""
+        calls = []
+        for node in ast.walk(ast.parse(_read(self.CONFINEMENT))):
+            if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "_assert_read_only" and node.args
+                    and isinstance(node.args[0], ast.List)):
+                calls.append([e.value for e in node.args[0].elts if isinstance(e, ast.Constant)])
+        self.assertTrue(calls, "premise: test_confinement.py asserts some helper read-only")
+        lists = self._lists()
+        self.assertTrue(lists, "premise: the TRD lists read-only helpers")
+        for held in lists:
+            for helper in sorted(held):
+                tokens = helper.split()
+                want = [tokens[0] + ".py", *tokens[1:]]
+                with self.subTest(helper=helper):
+                    self.assertTrue([c for c in calls if c[:len(want)] == want],
+                                    f"no read-only assertion in test_confinement.py runs {helper}")
+
+
+class TrdInstructionsCheckTests(unittest.TestCase):
+    """BG1533: the ADRs call `validate.py instructions` what it is, an advisory report, and this
+    repository's `AGENTS.md` passes it within the cap the page states for itself."""
+
+    def test_the_adrs_do_not_call_the_advisory_check_enforcement(self) -> None:
+        """Mutants: ADR-005 saying `enforces`, or not saying warnings, init, upgrade and not a
+        gate; ADR-001 saying the check keeps the loading guide and type tables in sync; the
+        check made a gate (a warning exiting non-zero)."""
+        body = _trd_body()
+        adr5 = " ".join(_adr(body, "005").split())
+        unit = next(u for u in _units(adr5) if "`validate.py instructions`" in u)
+        self.assertNotRegex(unit, r"\benforc\w*")
+        for word in ("warnings", "`init` and `upgrade`", "not a gate"):
+            self.assertIn(word, adr5)
+        adr1 = " ".join(_adr(body, "001").split())
+        self.assertNotRegex(adr1, r"enforced[^.]*`validate\.py instructions`")
+        self.assertRegex(adr1, r"no check holds the type tables|names the check")
+        # The premise: a warning does not fail the run, so it is advisory.
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "AGENTS.md").write_text("# Notes\n", encoding="utf-8")
+            out = subprocess.run([sys.executable, str(SCRIPTS / "validate.py"), "--root", d,
+                                  "instructions"], capture_output=True, text=True)
+        self.assertIn("WARNING [no-doctrine-pointer]", out.stdout)
+        self.assertEqual(0, out.returncode)
+
+    def test_the_instructions_check_reports_no_warning_here(self) -> None:
+        """Mutants: the doctrine pointer or the integration rule removed from `AGENTS.md`
+        (each named by its rule); a file with neither as the positive control."""
+        def run(root: Path) -> str:
+            return subprocess.run([sys.executable, str(SCRIPTS / "validate.py"), "--root",
+                                   str(root), "instructions"], capture_output=True,
+                                  text=True).stdout
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "AGENTS.md").write_text("# Notes\n", encoding="utf-8")
+            bare = run(Path(d))
+        self.assertIn("no-doctrine-pointer", bare)
+        self.assertIn("no-integration-rule", bare)
+        here = run(REPO)
+        self.assertNotIn("WARNING", here)
+        self.assertIn("warnings=0", here)
+        text = _read(REPO / "AGENTS.md")
+        self.assertIn("reference-doctrine", text)
+        self.assertIn("Integrate continuously", text)
+
+    def test_agents_md_stays_within_its_character_cap(self) -> None:
+        """Mutants: the cap read as larger than the page states; `AGENTS.md` past it."""
+        text = _read(REPO / "AGENTS.md")
+        stated = re.search(r"held to ([\d,]+) chars", text)
+        self.assertIsNotNone(stated, "AGENTS.md states no cap for itself")
+        cap = int(stated.group(1).replace(",", ""))
+        self.assertEqual(7000, cap)
+        self.assertLessEqual(len(text), cap)
 
 
 if __name__ == "__main__":

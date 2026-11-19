@@ -82,8 +82,8 @@ library or SDK that the agent harness loads, so `sdk_library` fits better than
 
 - **Default Pattern:** layered knowledge base with a deterministic helper layer.
 - **Pattern Used:** progressive-disclosure router (a lean always-loaded entry file
-  plus on-demand detail) over a markdown knowledge base, with a read-only Python
-  script layer for computation.
+  plus on-demand detail) over a markdown knowledge base, with a Python script layer for
+  computation: a read path that mutates nothing and a bounded, tested set of writers (§5 rule 5).
 - **Deviation Rationale:** the router pattern is dictated by the token economics of
   an LLM context window - only `SKILL.md` is paid for on every invocation, so it
   must stay minimal while the rest of the corpus loads on demand. See ADR-001.
@@ -153,12 +153,14 @@ scaling property of the design.
 | Python script tier | Determinism: census, parsing, counting, ID allocation, drift detection, AC execution, repo indexing, GitHub sync. | Tested code |
 
 The split rule (`reference-scripts.md`): read-only helpers (`reconcile detect`,
-`status`, `validate`, `next_id`, `review_prep`, `audit`, `critic brief`/`show`,
-`gate`) emit JSON and the agent does the judgement; the authoring and repair helpers
-(`artifact`, `file_finding`, `transition`, `reconcile apply`, `verify_ac`,
-`repo_map`, `github_sync`, `plan`, `lessons`, `retro`, `archive`, `critic record`)
-perform bounded, tested mutations. `critic` straddles the line: its `brief`/`show`
-path is read-only, but `record`, `correct` and `supersede` append to the committed verdict log. Everything else (reading files, walking directories, simple transforms) stays
+`status`, `validate`, `next_id`, `critic show`) emit JSON and the agent does the judgement; the
+authoring and repair helpers (`artifact`, `file_finding`, `transition`, `reconcile apply`,
+`verify_ac`, `repo_map`, `github_sync`, `plan`, `lessons`, `retro`, `archive`, `critic record`)
+perform bounded, tested mutations. Three helpers that read like read-only ones write state of
+their own and are in no read-only list: `critic brief`, `gate` and `review_prep close` (§5 rule 5
+names each one's files). `critic` straddles the line: `show` is read-only, but `brief` writes its
+verdict folder and brief note, and `record`, `correct` and `supersede` append to the committed
+verdict log. Everything else (reading files, walking directories, simple transforms) stays
 with the agent's built-in tools.
 
 #### The gate tier
@@ -281,8 +283,15 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
 3. `--help` on every subcommand.
 4. Non-zero exit on any failure that should halt the workflow.
 5. Bounded, tested write surface. Read-only helpers (`reconcile detect`, `status`,
-   `validate`, `next_id`, `audit`, `critic brief`/`show`) never mutate the workspace.
-   The deterministic-authoring helpers DO write, each within a tested boundary:
+   `validate`, `next_id`, `critic show`) never mutate the workspace, and
+   `scripts/tests/test_confinement.py` asserts each. Three helpers write only their own named
+   state: `critic.py brief` makes the verdict folder `sdlc-studio/reviews/verdicts/<UNIT>/`
+   (tracked, once a verdict is written in it) and appends a note to
+   `sdlc-studio/.local/briefs.jsonl` (untracked); `gate.py` writes only the untracked files
+   under `sdlc-studio/.local/` that the gate tier lists; `review_prep.py close` writes
+   `sdlc-studio/.local/review-state.json` (untracked), the review's row in `reviews/_index.md`
+   and, given `--latest-body`, `reviews/LATEST.md` (both tracked). `review_prep.py prep` writes
+   nothing. The deterministic-authoring helpers DO write, each within a tested boundary:
    `artifact.py` creates artefact files and appends index rows; `file_finding.py` files
    findings; `reconcile apply` rewrites `_index.md` rows and counts; `transition.py`
    rewrites an artefact's Status and cascades the epic breakdown; `github_sync.py` writes
@@ -333,9 +342,10 @@ every shipped script that imports `urllib.request`.
 | The release check | `version_check.py` | `latest_release` | HTTPS GET to `api.github.com`, 5 s timeout | exception | Reads as offline and says nothing; `version_check.enabled: false` turns it off |
 | Origin drift | `sprint.py` | `origin_drift` | `git fetch origin` | not GitHub | Marks the comparison unverified, naming why |
 | Cursor usage | `lib/meter_cursor.py` | `call` | Sent by `call`, nested in `_get`: HTTPS GET `/v1/agents/{id}/usage` on `https://api.cursor.com` (`SDLC_STUDIO_CURSOR_API` overrides it: https, or http on a loopback IP address only), 5 s timeout, redirect refused, `CURSOR_API_KEY` in its `Authorization` header | not GitHub | Reads tokens None with the reason; made only when the Cursor meter is selected and both `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID` are set |
+| Lane runner's agent CLI | `lib/lanes.py` | `_run_in_group` | The harness CLI `headless_command` builds (`claude`, `cursor-agent`, `codex`, `copilot`, `opencode`), a networked process holding write tools | spawned process | Ends at the lane timeout with its process group killed and no lane recorded; bounded by the tool set and sandbox flags in Headless lane runner, the lane worktree and the landing review, not by a network filter |
 
-The consuming project's own Verify-line tools reach the network too, bounded to the hosts
-`SDLC_VERIFY_HTTP_HOSTS` names.
+The consuming project's own Verify-line tools reach the network too; `SDLC_VERIFY_HTTP_HOSTS`
+is unset by default, applies to the `http` verb only and bounds nothing until a project sets it.
 
 ### Error / report format
 
@@ -683,8 +693,27 @@ merged PRs.
 `epic implement` / `project implement` fan out work to subagents via the harness's
 Agent tool, bounded into waves with quality gates (`reference-agentic-lessons.md`,
 `reference-agent-prompt-template.md`). Wave prompts begin from a `repo_map`-derived
-file list. This is the one part of the skill flagged Claude-Code-only in the
-`compatibility` frontmatter; the rest is harness-neutral.
+file list. The Agent-tool fan-out is one of two harness-specific parts of the skill and is
+flagged Claude-Code-only in the `compatibility` frontmatter; the other is the headless lane
+runner below, which drives five harness CLIs. Nothing else in the skill is tied to one harness.
+
+### Headless lane runner
+
+`sprint.py lane run` briefs one unit and starts that unit's builder as a headless agent CLI
+process (`lib/lanes.py`, `headless_command` and `_run_in_group`). The process runs in a
+worktree of its own, `lane-<unit>` under `sdlc-studio/.local/worktrees/`, with its working
+directory set there and its stdin closed. It leads its own process group, which is ended on a
+timeout or an interrupt, and its usage is read back from the CLI's JSON output. Nothing the
+runner starts commits or pushes: `sprint lane land` commits what the lane staged.
+`headless_command` builds a command for five harnesses, each given the permission flags below:
+
+| Harness | Binary | Permission flags it is given |
+| --- | --- | --- |
+| Claude Code | `claude` | `--tools` and `--allowedTools`, each naming the six lane tools (Bash, Read, Edit, Write, Glob, Grep), with `--strict-mcp-config` and `--disable-slash-commands` |
+| Cursor | `cursor-agent` | `--trust` and `--force` |
+| Codex CLI | `codex` | `--sandbox workspace-write`, widened with `--add-dir` to the repository's git directory, which a worktree keeps outside itself |
+| Copilot CLI | `copilot` | `--allow-all-tools` |
+| OpenCode | `opencode` | none: `opencode run --format json` is given no permission flag |
 
 ---
 
@@ -735,9 +764,13 @@ the check reports rather than fails.
 Scaling is about context tokens, not machines. Progressive disclosure keeps the
 always-loaded footprint near-constant (`SKILL.md` under its 500-line ceiling, enforced by `tools/check_budgets.py`)
 however large the corpus grows. Agentic waves bound concurrency and the appetite
-breaker bounds an unattended run. Read-only scripts run in well under a second; the
-script suite runs in minutes, not seconds (`tools/gate_timing.py estimate` prints the
-current figure). The one deliberate exception is
+breaker bounds an unattended run. The read-only census (`reconcile.py detect`, `status.py`)
+re-reads every artefact on each run, so its cost grows with the artefact count and is not a
+fixed target: taken on 2026-11-19 over this repository's own artefact tree,
+`reconcile.py detect` took 29 s and `status.py` 5.8 s, and the pre-commit `reconcile.py settle`
+step 4.7 s. `time python3 <skill>/scripts/reconcile.py detect` prints the live figure. The
+script suite runs in minutes, not seconds (`tools/gate_timing.py estimate` prints the current
+figure). The one deliberate exception is
 `mutation.py`, which re-runs the suite once per mutant and is measured in minutes -
 which is why it is run on demand and no gate lane reads it.
 
@@ -760,12 +793,14 @@ cross-machine clash is caught at merge (ADR-008).
 
 | Threat | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Script mutating files outside its remit | L | M | Contract rule 5: read-only helpers never mutate the workspace, and every writer is confined to the tested boundary §5 rule 5 names for it. The write surface is a bounded, enumerated SET, not a single exception. Unit-tested, with a write-confinement snapshot suite. |
+| Script mutating files outside its remit | L | M | Contract rule 5: the read-only helpers (§3 split rule, §5 rule 5) never mutate the workspace, `critic brief`, `gate` and `review_prep close` write only the state §5 rule 5 names, and every writer is confined to the tested boundary §5 rule 5 names for it. The write surface is a bounded, enumerated SET, not a single exception. Unit-tested, with a write-confinement snapshot suite. |
 | Token leakage via GitHub integration | L | M | No GitHub token handling: every GitHub call but the release check goes through `gh`, which owns auth, and the release check sends none (ADR-004). |
 | Credential leakage via the Cursor meter | L | M | The skill stores no secret. `CURSOR_API_KEY` is read from the environment and sent only in the Cursor usage request's `Authorization` header, over https or http to a loopback IP address, with a redirect refused so the key never follows one; no reading carries it (US0989). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
 | Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |
-| Network exfiltration | L | H | Only the outbound paths §5 Network paths lists, each with what it does when it gets no answer, plus the consuming project's own Verify-line tools (host-bounded by `SDLC_VERIFY_HTTP_HOSTS`). See §5 rule 6. |
+| Lane runner's agent CLI writing outside its lane | M | H | The runner spawns a networked agent CLI that holds write tools (Headless lane runner). Its control: it runs in its own worktree with stdin closed, Claude Code gets only the six named tools, Codex is sandboxed to `workspace-write`, and a timeout kills its process group; it never commits or pushes, `sprint lane land` stages from the lane's declared Affects and an independent reviewer judges the diff. The limit: `--force`, `--trust` and `--allow-all-tools` widen Cursor and Copilot and OpenCode takes no flag, so those lanes are bounded by the worktree and the review alone. |
+| Verifier running artefact text through a shell | M | H | `verify_ac.py` runs a `- **Verify:**` line from artefact text through a shell. Its control: an artefact stamped `Provenance: external` has its shell verbs refused, `--no-shell` refuses them for every artefact, and `--allow-external` is the explicit override. The limit: the stamp is self-declared by whoever wrote the artefact and an absent stamp permits shell, so the control protects only artefacts that say they are external. |
+| Network exfiltration | L | H | Only the outbound paths §5 Network paths lists, each with what it does when it gets no answer, plus the consuming project's own Verify-line tools, which are bounded by nothing until a project sets `SDLC_VERIFY_HTTP_HOSTS`, an allow-list that is unset by default and applies to the `http` verb only (it bounds nothing until a project sets it, and any other Verify-line tool is never bounded by it). See §5 rule 6. |
 
 ### Security Controls
 
@@ -784,8 +819,8 @@ cross-machine clash is caught at merge (ADR-008).
 | Metric | Target | Measurement |
 | --- | --- | --- |
 | Always-loaded context | `SKILL.md` under its hard ceiling of 500 lines | Line count of the router, gated by `check_budgets.py` - the ceiling is the claim, not a snapshot of the current count |
-| Script run time | Sub-second on a typical project | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
-| Reconcile / status | Sub-second | Read-only census over the artifact tree |
+| Script run time | Seconds for one helper; the suite takes minutes | `scripts/tests` suite: minutes, not seconds - see `tools/gate_timing.py estimate` for the live figure |
+| Reconcile / status | No fixed target: census cost scales with artefact count. Measured 2026-11-19 over this repository's own artefact tree: `reconcile.py detect` 29 s, `status.py` 5.8 s, pre-commit `settle` 4.7 s | Read-only census over the artifact tree; `time python3 <skill>/scripts/reconcile.py detect` (or `status.py`) prints the live figure, and the pre-commit `settle` step runs `reconcile.py settle --root .` |
 | Gate run | A declared 45 s budget (`GATE_BUDGET_S` in `gate.py`, derived from the standard run recorded beside it as `GATE_BUDGET_MEASURED`; `gate.budget_seconds` overrides it per project) | Each run measures its own cost against the budget and reports an overrun without refusing; the last cost is kept in `.local/gate-cost.json`. A push or release run judges only its standard lanes against the budget and names the lanes the boundary added, with their seconds, outside it. A boundary run is far longer: `python3 tools/gate_timing.py estimate --suite boundary-push` gives the measured figure |
 | Mutation run | Minutes, by design | One suite run per mutant; not on the fast path |
 | Install | Single fetch-and-copy | `install.sh` / `install.ps1`, no build step |
@@ -804,7 +839,8 @@ plan time** to `retros/evidence/forecasts-*.jsonl` (`telemetry.forecasts`), stam
 with the points and the estimator rate constants that produced it, so `retro
 accuracy` judges that recorded number and never re-derives one - the loop can falsify
 itself. It is quoted with a band (about +/-50%) and is **never** a gate: a script
-the meter reads the store of the harness running the session (`lib/token_meters.py`: Claude
+cannot observe token spend itself, so it reads the harness's own record. The meter reads the
+store of the harness running the session (`lib/token_meters.py`: Claude
 Code, Codex CLI, Copilot CLI, OpenCode or Cursor, named by `SDLC_STUDIO_HARNESS`, else the
 one harness the environment signals, else the one store on disk), and each reading says
 with `includes_subagents` whether delegated agents' spend is in it. A reading that holds it
@@ -837,7 +873,9 @@ loads.
   commands add a `help/` file and a guide row, not router bulk.
 - Positive: the agent reads only what a task needs, lowering cost and noise.
 - Negative: detail is spread across many files; contributors must keep the loading
-  guide and the type tables in sync (enforced partly by `validate.py instructions`).
+  guide and the type tables in sync. `tools/check_links.py` checks that every path the loading
+  guide presents exists, and no check holds the type tables to each other, so that half stays
+  with the contributor.
 
 ### ADR-002: Deterministic Python helpers emitting JSON, not agent-parsed markdown
 
@@ -932,9 +970,11 @@ Duplicating operating instructions per tool (`CLAUDE.md`,
 **Decision:** Make `AGENTS.md` the canonical, tool-neutral instruction file (read by
 Codex, Copilot, Cursor, Gemini, Aider, Windsurf, Zed). Tool-specific files point at
 it - Claude Code's `CLAUDE.md` imports it with `@AGENTS.md`. `init` seeds it from
-`templates/agent-instructions.md`; `validate.py instructions` enforces the hygiene
+`templates/agent-instructions.md`; `validate.py instructions` reports the hygiene
 (AGENTS.md canonical, CLAUDE.md a pointer, doctrine + `LATEST.md` pointers present,
-pre-release gate and compaction rule present, no narrative bloat). The cross-harness
+pre-release gate, compaction rule and integration rule present, no narrative bloat) as warnings
+at `init` and `upgrade`. It is advisory and not a gate: it exits 0 on its own warnings, and
+only a missing `AGENTS.md` is an error. The cross-harness
 installer targets six agents.
 
 **Consequences:**
@@ -1225,7 +1265,7 @@ name that appears somewhere in the prose:
 
 ### ADR-012: Personas are accountable team members with their own memory and a review standard
 
-**Status:** Accepted (RFC0061, 2026-10-09); not yet built
+**Status:** Accepted (RFC0061, 2026-10-09); the learning loop is built, the review standard is not
 
 **Context:** Personas were used as static cards. A review seat was rendered into each brief and
 forgot everything when the brief ended; a user persona was read at planning and then sat still.
@@ -1257,11 +1297,14 @@ generalisable learning reaches the shipped amigos only by deliberate promotion. 
 CR0631 (review), CR0632 (memory), CR0633 (the learning loop), CR0634 (user personas and
 promotion).
 
-**Built so far:** the memory and the brief side of it. `persona_memory.py` (US1058) records a
-persona's evidenced learnings as proposed in its committed memory file and lists them, and a
-review brief and every `persona_resolve.py` framing carry the seat's live learnings, capped and
-ranked (US1059). Approval, the close's listing and the signature are open stories of EP0287,
-so no learning is live yet, and `persona_gen.py` holds a card to no review standard.
+**Built so far:** the memory, the brief side of it and the loop that makes a learning live.
+`persona_memory.py` (US1058) records a persona's evidenced learnings as proposed in its
+committed memory file and lists them, and a review brief and every `persona_resolve.py`
+framing carry the seat's live learnings, capped and ranked (US1059). Another seat approves or
+rejects each proposed learning (US1066), the close lists every learning about to go live on
+the retro (US1067) and a learning reaches a brief only once a signed close has listed it, one
+the operator strikes at the signature never doing so (US1068). `persona_gen.py` still holds a
+card to no review standard.
 **Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning)
 and `persona_review.py` (US1052).
 
@@ -1347,7 +1390,9 @@ key.
   expects frontmatter.
 - [ ] **Q:** What is the porting path for the Claude-Code-only agentic wave
   execution to other `AGENTS.md` harnesses?
-  **Context:** it is the only non-neutral feature.
+  **Context:** the headless lane runner already drives `claude`, `cursor-agent`, `codex`,
+  `copilot` and `opencode` (see Headless lane runner); what is open is the Agent-tool wave
+  fan-out, which only Claude Code has.
 - [x] **Q:** Is there a plan-time predictor of delivery cost at all? **Resolved
   (RFC0038).** The file-complexity predictor was falsified out-of-sample (0.55x); its
   replacement, modified Fibonacci points, cleared a pre-registered bar in a blind
@@ -1429,6 +1474,7 @@ touches the component. The constraints below span components.
 | 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): §6's committed records gain the verdict files `critic.py brief` issues and `critic.py record` binds, the persona memory files and a release's evidence pack, each held to its writer's code, and the scan of tracked records reads the verdict and persona memory trees too; §6 names `reference-evidence-schema.md` at annex version 1.0 as the report's contract, and the `.local` table gains `resume-brief.md` from `sprint.py handoff` |
 | 2026-11-16 | 6.4.0 | US1173: the release cut. The Coverage line reads v6.4.0 as cut, plus the 6.5 work on `main` |
 | 2026-11-18 | 6.4.0 | US1293: ADR-013 records D0503 (RFC0065): a closed run waits for the operator's signature and the next run opens on top of it, and a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack. §6's run lifecycle plan row no longer says the plan refuses while a record awaits its signature |
+| 2026-11-19 | 6.4.0 | BG1516: §7 gains the headless lane runner and its five harnesses, and §5 and §9 gain the agent CLI it spawns. BG1517: §5 and §9 say `SDLC_VERIFY_HTTP_HOSTS` is unset by default and bounds the `http` verb only, and §9 gains the Verify-line shell row. BG1529: §8 and §10 drop the sub-second claim for the census and give measured figures. BG1530: ADR-012's Status and Built so far name approval (US1066), the close's listing (US1067) and the signed-close gate (US1068) as built. BG1531: `critic brief`, `gate` and `review_prep close` leave every read-only list. BG1533: ADR-001 and ADR-005 stop calling `validate.py instructions` enforcement |
 
 ---
 
