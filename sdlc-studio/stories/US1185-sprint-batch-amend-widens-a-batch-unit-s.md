@@ -40,6 +40,13 @@
 - **Then** each names `sprint.py batch amend` with `--affects-add` and `--reason`, and the command as written there parses. Fails on: a runbook row for a command the parser refuses, or the step still having no command
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_batch_amend_affects.py::BatchAmendAffectsTests::test_the_runbook_and_help_name_the_amend_command
 
+## Further evidence
+
+- 2026-11-18, the website's RUN-01M7R7KN: a lane found tests/data.test.ts pinning the agents list
+  its unit's criterion changes, outside both its units' Affects. The orchestrator hand-edited the
+  story's Affects on main and recorded the website's D0023; CR0744 was filed for the same command
+  and rejected as a duplicate of CR0656.
+
 ## Revision History
 
 | Date | Author | Change |

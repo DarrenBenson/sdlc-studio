@@ -22,6 +22,14 @@ Land a unit whose self-check omits commit-message claims.
 
 Run the self-check gate before the commit.
 
+Further evidence, 2026-11-18 (the website's RUN-01M7R7KN): all three lane builders wrote each
+claim's `ruling` as "TRUE: <evidence>" and each mutant's `test` as a vitest command line rather
+than `path::name`. The evidence lane landed and committed, then its self-check was refused with
+its worktree removed, so the builder was resumed to fix files under `.local/lane/landed/`; the
+other two were caught by reading the hand-in before landing. The lane brief describes each file as
+`{surface, claim, ruling}` and `{mutant, test, result, answer}` without saying the ruling is one
+bare word or the test a `path::name`, so the fix also names the allowed values in the brief.
+
 ## Acceptance Criteria
 
 - [ ] **AC1** Given a self-check missing a required surface, when `sprint lane land` runs, then it refuses before committing and leaves the worktree intact. Fails on: the commit made first.

@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 446 |
+| Open | 448 |
 | In Progress | 0 |
 | Fixed | 958 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1601** |
+| **Total** | **1603** |
 
 ## All Bugs
 
@@ -677,6 +677,8 @@
 | [BG1599](BG1599-skill-md-and-help-epic-md-say-agentic.md) | SKILL.md and help/epic.md say --agentic runs waves in parallel 'where the harness has sub-agents', an untested claim for four harnesses, and reference-epic.md has no step for the stated one-at-a-time fallback | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1600](BG1600-test-skill-metadata-neutral-py-passes-must-be.md) | test_skill_metadata_neutral.py passes 'must be installed' and 'exclusive to' requirement wordings, cannot tell a fallback from its denial, and leaves four helper branches unpinned | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1601](BG1601-sprint-plan-opened-run-seventeen-although-its-goal.md) | sprint plan opened run seventeen although its goal had no seat review, the recorded one being an earlier run's goal, and the close then refuses goal-seat-reviewed past its window | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1602](BG1602-sprint-batch-add-takes-an-untriaged-inbox-bug.md) | sprint batch add takes an untriaged inbox bug without saying lane accept will refuse it Fixed until it is triaged | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1603](BG1603-tools-lint-style-sh-scans-gitignored-scratch-files.md) | tools/lint-style.sh scans gitignored scratch files, so an untracked note under .local/ blocks a commit that does not touch it | Open | Low | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

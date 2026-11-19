@@ -10,11 +10,11 @@
 | Approved | 0 |
 | In Progress | 81 |
 | Complete | 560 |
-| Rejected | 33 |
+| Rejected | 34 |
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **743** |
+| **Total** | **744** |
 
 ## All Changes
 
@@ -155,6 +155,7 @@
 | [CR-0741](CR0741-the-sprint-report-gives-no-one-line-actual.md) | The sprint report gives no one-line actual cost, and its Estimates table puts the forecast before the actual, so a reader quotes the forecast as the run's cost | Proposed | Medium | Enhancement | 2026-11-18 | -- |
 | [CR-0742](CR0742-harness-agnostic-and-enterprise-ready-documentation.md) | Harness-agnostic and enterprise-ready documentation | Complete | High | Improvement | 2026-11-18 | EP0377 |
 | [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Proposed | Medium | Improvement | 2026-11-18 | -- |
+| [CR-0744](CR0744-amend-a-batch-unit-s-affects-in-flight.md) | Amend a batch unit's Affects in flight with a recorded reason | Rejected | Medium | Improvement | 2026-11-18 | -- |
 
 ## Archived Releases
 
