@@ -317,9 +317,11 @@ It gives one of three answers, and exits 0 only on the first:
   flakes has one limit. The red is still recorded on the bug, and the answer names the run and
   the bug.
 - `regression`: a failing test no open flaky bug names, even beside known flakes, or an id that
-  is only a file's path (what pytest prints for a module that will not collect). A bug is filed
-  through `file_finding.py` naming the run and the test, no rerun is offered, and nothing is
-  pushed until main is green. A second red of the same run reuses that bug.
+  is only a file's path (what pytest prints for a module that will not collect). When a failing
+  id names a file in the tree, a bug is filed through `file_finding.py` naming the run and the
+  test, and a second red of the same run reuses it; an id that names no file is refused (exit 2)
+  with nothing filed, for the operator to file. No rerun is offered, and nothing is pushed until
+  main is green.
 
 No answer skips or deselects a test. The policy is in `reference-test-validation.md#red-ci-run`.
 
