@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 181 |
+| Draft | 180 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 953 |
+| Done | 954 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -229,7 +229,7 @@
 | [US1189](US1189-the-project-lessons-log-s-critic-py-citations.md) | The project lessons log's critic.py citations are re-anchored to the current tree and the reason on L-0370 is corrected | Draft | EP0324 | 2026-11-17 | 2026-11-17 |
 | [US1190](US1190-remote-gate-judges-a-staged-tree-s-selected.md) | remote-gate judges a staged tree's selected test modules on the gate host and returns their verdict | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
 | [US1191](US1191-the-commit-hook-sends-its-selected-suites-to.md) | The commit hook sends its selected suites to the named gate host, and runs them locally when the host cannot be reached | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
-| [US1192](US1192-lane-land-takes-several-worktrees-and-lands-them.md) | Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1192](US1192-lane-land-takes-several-worktrees-and-lands-them.md) | Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1193](US1193-lane-land-resumes-a-landing-whose-commit-was.md) | Lane land resumes a landing whose commit was refused without repeating the steps already done | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1194](US1194-sprint-close-names-each-unit-that-reached-main.md) | Sprint close names each unit that reached main with no lane land record | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1195](US1195-a-refused-landing-or-a-reject-yields-a.md) | A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim | Done | EP0326 | 2026-11-17 | 2026-11-17 |

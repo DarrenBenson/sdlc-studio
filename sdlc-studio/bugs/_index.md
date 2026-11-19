@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 462 |
+| Open | 464 |
 | In Progress | 0 |
 | Fixed | 960 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1620** |
+| **Total** | **1622** |
 
 ## All Bugs
 
@@ -696,6 +696,8 @@
 | [BG1618](BG1618-the-plan-s-unmetered-warning-gives-a-false.md) | The plan's unmetered warning gives a false reason on a re-plan, one of its test assertions cannot fail, and a fallback sentence is reached by no test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1619](BG1619-sprint-sign-prints-nothing-when-its-retro-write.md) | sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1620](BG1620-the-verbatim-repair-brief-loses-the-first-line.md) | The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Open | High | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

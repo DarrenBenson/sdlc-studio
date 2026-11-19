@@ -14,7 +14,7 @@ Decomposed from CR0672. Delivers the work CR0672 requested.
 
 ## Story Breakdown
 
-- [ ] [US1192: Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit](../stories/US1192-lane-land-takes-several-worktrees-and-lands-them.md)
+- [x] [US1192: Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit](../stories/US1192-lane-land-takes-several-worktrees-and-lands-them.md)
 - [x] [US1193: Lane land resumes a landing whose commit was refused without repeating the steps already done](../stories/US1193-lane-land-resumes-a-landing-whose-commit-was.md)
 - [ ] [US1194: Sprint close names each unit that reached main with no lane land record](../stories/US1194-sprint-close-names-each-unit-that-reached-main.md)
 - [x] [US1195: A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim](../stories/US1195-a-refused-landing-or-a-reject-yields-a.md)

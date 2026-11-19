@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1616.md
-> **Evidence:** run eighteen, 2026-11-19: sdlc-studio/reviews/verdicts/US1192/4ee5be2fb53e-5663bc2b.txt
+> **Evidence:** round two of the engineering seat on the repair (sdlc-studio/reviews/verdicts/US1192/56bc2b908958-a142de19.txt) adds: the refusal of a later worktree with commits ahead advises naming that worktree first, and no test pins the behaviour that advice relies on (the mutant at lanes.py around 397 survived)
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
