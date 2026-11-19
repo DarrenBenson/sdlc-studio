@@ -13,9 +13,13 @@ release the PRD's baseline must name from package.json (US1111), reads its capab
 RV0028's PRD-10 row, and checks the commands those capabilities' inventory rows name the same
 way. `PrdRulesTests` (US1104) reads the rules, NFRs and cost model against the code that decides
 them, holds each derived count to a band around the tree's own measure, and ties the detail
-criteria's ticks to the status of the bug that holds each one.
+criteria's ticks to the status of the bug that holds each one. `PrdFlagDefaultsTests` (BG1525,
+BG1526) holds section 9's gate-key defaults to the defaults file, `PrdEnvironmentVariablesTests`
+(BG1553) its environment table to what the scripts read, and `PrdCloseChainTests` (BG1555) the
+account of the sprint close to `sprint._CLOSE_CHAIN`.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
+import ast
 import functools
 import importlib.util
 import re
@@ -242,6 +246,67 @@ def loop_sections(text: str) -> str:
     return section(text, "## Mission") + section(text, "### Core Behaviours")
 
 
+def status_note_problems(prd: str) -> list[str]:
+    """Why the Complete versus calibrated note of section 3 calls the shipped forecast
+    falsified, drops the distinction, or loses its pointer to section 10 (BG1527)."""
+    m = re.search(r"^> \*\*Complete vs Ready:\*\*.*?(?=^> \*\*Location)", prd, re.M | re.S)
+    note = flat(re.sub(r"^\s*>\s?", "", m.group(0), flags=re.M)) if m else ""
+    problems = []
+    if not re.search(r"Complete is not the same as calibrated", note):
+        problems.append("the status note drops the Complete versus calibrated distinction")
+    if not re.search(r"first token predictor .{0,60}was falsified and replaced", note):
+        problems.append("the status note does not say the earlier predictor was falsified and "
+                        "replaced")
+    if not re.search(r"points-based forecast .{0,60}cleared the bar", note):
+        problems.append("the status note does not say the points-based forecast cleared the bar")
+    if "falsified hypothesis" in note:
+        problems.append("the status note calls the shipped forecast a falsified hypothesis")
+    if "(see §10)" not in note:
+        problems.append("the status note does not point to section 10")
+    return problems
+
+
+def context_problems(prd: str) -> list[str]:
+    """Why the Context paragraph does not say fixes land here and `tools/forward-port.sh`
+    mirrors them to the installed copy, citing AGENTS.md's Forward-porting section (BG1528)."""
+    context = flat(section(prd, "### Context"))
+    problems = []
+    if "back-port" in context:
+        problems.append("the Context calls the installed copy the back-port source")
+    if "`tools/forward-port.sh`" not in context:
+        problems.append("the Context does not name `tools/forward-port.sh`")
+    if "fixes land here" not in context:
+        problems.append("the Context does not say fixes land in this repository")
+    if "Forward-porting in `AGENTS.md`" not in context:
+        problems.append("the Context does not cite the Forward-porting section of `AGENTS.md`")
+    return problems
+
+
+_STOP_CLAIM_RE = re.compile(r"\bStop[- ]hook installer\b|"
+                            r"\binstalls? (?:the |a )?(?:\w+ )?Stop[- ]hook\b", re.I)
+
+
+def stop_hook_writers(sources: dict[str, str]) -> list[str]:
+    """The scripts whose source writes a `Stop` hook entry into a settings file: one that names
+    the `"Stop"` key, a settings file, and a write primitive. The close guard itself only reads."""
+    return sorted(name for name, src in sources.items()
+                  if re.search(r"""["']Stop["']""", src) and re.search(r"settings(?:\.json)?", src)
+                  and _WRITE_RE.search(src))
+
+
+def stop_hook_claims(prd: str) -> list[str]:
+    """Each sentence of the PRD that credits a Stop-hook installer."""
+    return [s for s in _SENTENCE_RE.split(body(prd)) if _STOP_CLAIM_RE.search(s)]
+
+
+def stop_hook_problems(prd: str, sources: dict[str, str]) -> list[str]:
+    """Each claim of a Stop-hook installer while no script writes one."""
+    if stop_hook_writers(sources):
+        return []
+    return [f"the PRD claims a Stop-hook installer and no script writes one: {s!r}"
+            for s in stop_hook_claims(prd)]
+
+
 class PrdRefreshTests(unittest.TestCase):
 
     def test_every_outcome_traces_to_a_real_end_goal(self):
@@ -287,6 +352,93 @@ class PrdRefreshTests(unittest.TestCase):
         self.assertEqual(["sprint.py frobnicate"], unknown_commands("`sprint.py frobnicate`"))
         self.assertEqual(["nosuch.py plan"], unknown_commands("`nosuch.py plan`"))
         self.assertEqual([], unknown_commands("`sprint.py plan` and `critic.py brief`"))
+
+    def test_the_status_note_does_not_call_the_shipped_forecast_falsified(self):
+        """BG1527. The Complete-versus-calibrated note keeps its distinction and says the
+        earlier token predictor was falsified and replaced and the points forecast cleared the
+        bar. Mutants: the old sentence put back; the section 10 reference dropped."""
+        prd = PRD.read_text(encoding="utf-8")
+        self.assertEqual([], status_note_problems(prd))
+        old = ("the first token predictor under \"Sizing and velocity\" was\n> falsified and "
+               "replaced, and the points-based forecast that ships cleared the bar set\n> before "
+               "its data was seen (see §10).")
+        self.assertIn(old, prd)
+        put_back = ("the token forecast under \"Sizing and velocity\" ships and\n> runs, and "
+                    "its prediction is a falsified hypothesis (see §10).")
+        self.assertEqual(3, len(status_note_problems(prd.replace(old, put_back, 1))))
+        no_ref = status_note_problems(prd.replace("its data was seen (see §10).",
+                                                  "its data was seen.", 1))
+        self.assertEqual(["the status note does not point to section 10"], no_ref)
+        no_distinction = status_note_problems(prd.replace("Complete is not the\n> same as "
+                                                          "calibrated:", "Complete:", 1))
+        self.assertEqual(["the status note drops the Complete versus calibrated distinction"],
+                         no_distinction)
+
+    def test_the_context_names_forward_port_as_the_direction_of_flow(self):
+        """BG1528. Mutants: `back-port source` put back; `tools/forward-port.sh` or the
+        AGENTS.md citation dropped."""
+        prd = PRD.read_text(encoding="utf-8")
+        self.assertEqual([], context_problems(prd))
+        self.assertTrue((REPO / "tools" / "forward-port.sh").is_file())
+        self.assertIn("## Forward-porting", (REPO / "AGENTS.md").read_text(encoding="utf-8"))
+        context = section(prd, "### Context")
+        for old, new, says in (("`tools/forward-port.sh` mirrors", "a tool mirrors",
+                                "does not name `tools/forward-port.sh`"),
+                               ("Forward-porting in\n`AGENTS.md`", "`CLAUDE.md`",
+                                "does not cite the Forward-porting section of `AGENTS.md`"),
+                               ("fixes land here and", "the installed copy is the back-port "
+                                "source for production fixes and",
+                                "calls the installed copy the back-port source")):
+            problems = context_problems(prd.replace(context, context.replace(old, new, 1), 1))
+            self.assertIn(f"the Context {says}", problems, (new, problems))
+
+    def test_the_close_down_row_describes_the_hand_wired_reminder(self):
+        """BG1554 AC1. Mutants: the row crediting a Stop-hook installer, saying the hook
+        redefines when a sprint is done, or the feature name calling the advisory a gate."""
+        prd = PRD.read_text(encoding="utf-8")
+        row = next(r for r in feature_rows(prd) if r["Feature"].startswith("Sprint close-down"))
+        self.assertEqual("Sprint close-down reminder", row["Feature"])
+        self.assertIn("`close_guard.py`", row["Location"])
+        self.assertIn("scripts/hooks/", row["Location"])
+        text = row["Description"]
+        self.assertRegex(text, r"optional Stop hook")
+        self.assertRegex(text, r"wires into its own settings by hand")
+        self.assertRegex(text, r"reminds once at a turn end and never locks")
+        self.assertNotRegex(text, r"installer|redefines|close-gate-green")
+        self.assertNotRegex(row["Feature"], r"\bgate\b")
+        guard = (SCRIPTS / "hooks" / "close_guard.py").read_text(encoding="utf-8")
+        self.assertIn("Opt-in", guard)
+        self.assertIn("never HARD-locks", guard)
+
+    def test_no_stop_hook_installer_is_claimed_while_none_ships(self):
+        """BG1554 AC2. A script that writes a `Stop` hook entry into a settings file would
+        allow the claim; none does today. Mutants: the claim written back into the row, and a
+        writer added to a script's source."""
+        prd = PRD.read_text(encoding="utf-8")
+        sources = script_sources()
+        self.assertEqual([], stop_hook_writers(sources), "a script now installs the hook")
+        self.assertEqual([], stop_hook_claims(prd))
+        self.assertEqual([], stop_hook_problems(prd, sources))
+        row = next(r for r in feature_rows(prd) if r["Feature"].startswith("Sprint close-down"))
+        for claim in ("a Stop-hook installer redefines sprint-done as close-gate-green",
+                      "`init` installs the Stop hook into settings.json"):
+            mutated = prd.replace(row["line"], row["line"].replace(
+                "reminds once at a turn end and never locks", claim), 1)
+            self.assertEqual(1, len(stop_hook_claims(mutated)), claim)
+        writer = ('hooks = settings.setdefault("hooks", {})\n'
+                  'hooks["Stop"] = [entry]\n'
+                  'Path(".claude/settings.json").write_text(json.dumps(settings))\n')
+        self.assertEqual(["init.py"], stop_hook_writers({**sources, "init.py": writer}))
+        self.assertEqual(["init.py"], stop_hook_writers({"init.py": writer}))
+        self.assertEqual([], stop_hook_writers({"init.py": 'hooks["Stop"] = [entry]\n'}))
+        no_settings = 'a["Stop"] = 1\nPath("f").write_text("x")\n'
+        no_stop = 'settings = 1\nPath("f").write_text("x")\n'
+        self.assertEqual([], stop_hook_writers({"x.py": no_settings, "y.py": no_stop}))
+        self.assertEqual([], stop_hook_problems(prd, {**sources, "init.py": writer}))
+        mutated = prd.replace("reminds once at a turn end and never locks",
+                              "`init` installs the Stop hook into settings.json", 1)
+        self.assertEqual(1, len(stop_hook_problems(mutated, sources)))
+        self.assertEqual([], stop_hook_problems(mutated, {**sources, "init.py": writer}))
 
     def test_the_retired_learning_loop_is_not_described_as_current(self):
         """AC3. Mutant: restore either retired phrase, or a Learning loop row that names no
@@ -619,15 +771,24 @@ def feature_rows(prd: str) -> list[dict[str, str]]:
 
 def unreleased_marks(prd: str) -> list[str]:
     """Each shipped feature row (Status Complete or Partial) and each Feature Details block
-    whose `**Status:**` reads so, carrying `UNRELEASED` outside a code span."""
-    marked = [f"row {row.get('Feature', '?')}" for row in feature_rows(prd)
-              if _SHIPPED_RE.match(row.get("Status", ""))
-              and UNRELEASED in _CODE_SPAN_RE.sub("", row["line"])]
+    whose `**Status:**` reads so, carrying `UNRELEASED`. A code span exempts the marker only in
+    a row's Description cell (where the release-cut row quotes it) and in a block's text below
+    its Status line: in any other cell, or on the Status line itself, it still counts (BG1168)."""
+    marked = []
+    for row in feature_rows(prd):
+        if not _SHIPPED_RE.match(row.get("Status", "")):
+            continue
+        cells = {k: v for k, v in row.items() if k != "line"}
+        if any(UNRELEASED in (_CODE_SPAN_RE.sub("", v) if k == "Description" else v)
+               for k, v in cells.items()):
+            marked.append(f"row {row.get('Feature', '?')}")
     details = section(prd, "### Feature Details (representative)")
     for block in re.split(r"^(?=#### )", details, flags=re.M):
         status = re.search(r"^\*\*Status:\*\*(.*)$", block, re.M)
-        if block.startswith("#### ") and status and _SHIPPED_RE.match(status.group(1)) \
-                and UNRELEASED in _CODE_SPAN_RE.sub("", block):
+        if not (block.startswith("#### ") and status and _SHIPPED_RE.match(status.group(1))):
+            continue
+        rest = block.replace(status.group(0), "", 1)
+        if UNRELEASED in status.group(0) or UNRELEASED in _CODE_SPAN_RE.sub("", rest):
             marked.append(f"details {block.splitlines()[0][5:]}")
     return marked
 
@@ -718,7 +879,17 @@ class PrdBaselineTests(unittest.TestCase):
         self.assertEqual([f"row {row['Feature']}"],
                          unreleased_marks(self.prd.replace(row["line"], marked, 1)))
         spanned = row["line"].replace(status, f"| {row['Status']} `{UNRELEASED}` |", 1)
-        self.assertEqual([], unreleased_marks(self.prd.replace(row["line"], spanned, 1)))
+        self.assertEqual([f"row {row['Feature']}"],
+                         unreleased_marks(self.prd.replace(row["line"], spanned, 1)))
+        cut = next(r for r in feature_rows(self.prd) if UNRELEASED in r["Description"])
+        self.assertIn(f"`{UNRELEASED}`", cut["Description"])
+        self.assertEqual([], unreleased_marks(self.prd), cut["Feature"])
+        block = next(b for b in re.split(r"^(?=#### )", self.prd, flags=re.M)
+                     if b.startswith("#### ") and re.search(r"^\*\*Status:\*\* Complete", b, re.M))
+        status_line = re.search(r"^\*\*Status:\*\* Complete.*$", block, re.M).group(0)
+        self.assertEqual([f"details {block.splitlines()[0][5:]}"],
+                         unreleased_marks(self.prd.replace(status_line,
+                                                           f"{status_line} `{UNRELEASED}`", 1)))
         planned = row["line"].replace(status, f"| Not Started **{UNRELEASED}** |", 1)
         self.assertEqual([], unreleased_marks(self.prd.replace(row["line"], planned, 1)))
         heading = re.search(r"^#### .+$", self.prd, re.M).group(0)
@@ -833,8 +1004,10 @@ _AC_SHAPE_WORDS = {"no-criteria": r"\babsent\b", "placeholder": r"\bplaceholder\
 #: A network call in a script's own source: a `gh` argv, a git `fetch` argument, or the stdlib
 #: HTTP clients. Keyed by kind so a scan that matches nothing of one kind is caught.
 _NETWORK_RES = {
-    "gh": re.compile(r"""\[\s*["']gh["']"""),
+    "gh": re.compile(r"""[\[(]\s*["']gh["']"""),
     "fetch": re.compile(r"""["']fetch["']\s*,\s*["']origin["']"""),
+    "git-verb": re.compile(r"""(?:["']git["']\s*,|\b_git\([^,\n]*,)\s*"""
+                           r"""["'](?:ls-remote|fetch|pull|push|clone)["']|["']ls-remote["']"""),
     "http": re.compile(r"urlopen\(|urllib\.request|http\.client|^import socket", re.M),
 }
 #: A write primitive in a script's own source.
@@ -882,6 +1055,9 @@ _HISTORY_RE = re.compile(r"\bused to (?:list|carry|say|state|read)\b|"
 MOVED_HISTORY = ("BG0133", "BG0136", "2026-07-04")
 #: The bug that holds the engagement floor's `adopt_after` escape (US1104 AC3).
 FLOOR_BUG = "BG0959"
+#: The open bugs the Feature Details criteria are held by, so a criterion reassigned to another of
+#: them is compared with the bug it came from (BG1162).
+HOLDERS = ("BG1023", "BG1063", FLOOR_BUG)
 _HELD_RE = re.compile(r"\bHeld by (BG-?[0-9A-Z]+)\b")
 
 
@@ -990,10 +1166,16 @@ def network_scripts(sources: dict[str, str]) -> dict[str, set[str]]:
             for kind, rx in _NETWORK_RES.items()}
 
 
+#: A sentence's word for fetching, and the negation that says a thing does not (BG1180).
+_FETCH_RE = re.compile(r"\bfetch(?:es|ed|ing)?\b", re.I)
+_NO_FETCH_RE = re.compile(r"\b(?:never|not|no|without)\s+(?:\w+\s+)?fetch", re.I)
+
+
 def network_problems(prd: str, sources: dict[str, str]) -> list[str]:
     """Why the Security NFR's list of scripts that reach the network differs from the scripts
-    whose source makes a network call, or why it says id allocation fetches when `next_id.py`
-    makes no fetch; empty when they agree."""
+    whose source makes a network call, or why any sentence of the PRD says id allocation fetches
+    when `next_id.py` makes no fetch (or that it never does, when it makes one); empty when
+    they agree."""
     security = section(prd, "### Security")
     found = set().union(*network_scripts(sources).values())
     named = set(re.findall(r"`([a-z_]+\.py)`", security))
@@ -1002,11 +1184,10 @@ def network_problems(prd: str, sources: dict[str, str]) -> list[str]:
     problems += [f"the Security NFR names {s}, whose source makes no network call"
                  for s in sorted(named - found)]
     fetches = "next_id.py" in found
-    for sentence in _SENTENCE_RE.split(flat(security)):
-        if re.search(r"\bid allocation\b", sentence, re.I) and \
-                bool(re.search(r"\bnever fetches\b", sentence)) == fetches:
-            problems.append(f"the Security NFR misstates whether id allocation fetches: "
-                            f"{sentence!r}")
+    for sentence in _SENTENCE_RE.split(body(prd)):
+        if re.search(r"\bid allocation\b", sentence, re.I) and _FETCH_RE.search(sentence) and \
+                (not _NO_FETCH_RE.search(sentence)) != fetches:
+            problems.append(f"the PRD misstates whether id allocation fetches: {sentence!r}")
     return problems
 
 
@@ -1091,6 +1272,13 @@ def cost_problems(prd: str) -> list[str]:
                         f"`{sprint.TOKENS_PER_POINT_KEY}`")
     if seed not in cost:
         problems.append(f"the cost model does not name the seed, {seed}")
+    key = f"`{sprint.TOKENS_PER_POINT_KEY}`"
+    for sentence in _SENTENCE_RE.split(flat(cost)):
+        if key in sentence and not 0 <= sentence.find("measured") < sentence.find("unless") \
+                < sentence.find(key):
+            problems.append(f"the cost model does not say the override {key} replaces the "
+                            f"measured rate (the override wins in `sprint.tokens_per_point`): "
+                            f"{sentence!r}")
     return problems
 
 
@@ -1155,6 +1343,35 @@ def detail_blocks(prd: str) -> dict[str, dict]:
     return blocks
 
 
+@functools.lru_cache(maxsize=None)
+def bug_words(bug_id: str) -> set[str]:
+    """The words of five letters or more in a bug's own file, lower-cased."""
+    found = sdlc_md.find_by_id(REPO, bug_id)
+    return set(re.findall(r"[a-z_]{5,}", Path(found[0]).read_text(encoding="utf-8").lower()))
+
+
+def holder_problems(prd: str, words_of=bug_words) -> list[str]:
+    """Why a criterion's `Held by BG` clause names a bug that matches its words less well than
+    another bug the PRD names as a holder: a criterion reassigned to the wrong open bug (BG1162).
+    The clause is the text from the bug id to the end of the criterion."""
+    clauses = []
+    for name, block in detail_blocks(prd).items():
+        for i, (_, text) in enumerate(block["criteria"], 1):
+            for m in _HELD_RE.finditer(text):
+                clauses.append((name, i, m.group(1),
+                                set(re.findall(r"[a-z_]{5,}", text[m.end():].lower()))))
+    holders = {c[2] for c in clauses} | set(HOLDERS)
+    problems = []
+    for name, i, bug, said in clauses:
+        scores = {b: len(said & words_of(b)) for b in holders}
+        better = sorted(b for b, n in scores.items() if n > scores[bug])
+        if better:
+            problems.append(f"{name} criterion {i} names {bug} as its holder, but its words "
+                            f"match {better[0]} better ({scores[better[0]]} against "
+                            f"{scores[bug]})")
+    return problems
+
+
 def tick_problems(prd: str, status_of=bug_status) -> list[str]:
     """Why a Feature Details criterion is unticked without naming the open bug that holds it,
     ticked while it names one, or names one that is no longer open; why a block with an
@@ -1180,6 +1397,41 @@ def tick_problems(prd: str, status_of=bug_status) -> list[str]:
         if rows.get(name, want) != block["status"]:
             problems.append(f"the {name} row reads {rows.get(name)!r}; its block reads "
                             f"{block['status']!r}")
+    return problems
+
+
+#: The commit that cut v6.1.0, after which every commit that changed the PRD owes the Changelog
+#: table a row naming its unit (BG1168).
+SINCE_6_1_0 = "ddc3cda0"
+_UNIT_ID_RE = re.compile(r"\b(?:US|BG|CR|RFC|EP|D)\d{4}\b")
+
+
+def prd_commits(since: str = SINCE_6_1_0) -> list[tuple[str, str]] | None:
+    """Each (hash, subject) of a commit after `since` that changed the PRD, or None when the
+    history cannot answer (no clone, or a shallow one without `since`)."""
+    env = gitutil.git_env()
+    known = subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{since}^{{commit}}"],
+                           cwd=REPO, capture_output=True, text=True, env=env, check=False)
+    if known.returncode:
+        return None
+    run = subprocess.run(["git", "log", "--format=%H%x09%s", f"{since}..HEAD", "--",
+                          "sdlc-studio/prd.md"], cwd=REPO, capture_output=True, text=True,
+                         env=env, check=False)
+    if run.returncode:
+        return None
+    return [tuple(line.split("\t", 1)) for line in run.stdout.splitlines() if line]
+
+
+def revision_problems(prd: str, commits: list[tuple[str, str]]) -> list[str]:
+    """Each commit whose subject names no unit that the PRD's Changelog table names, and whose
+    hash it does not name either; empty when every content change has its row."""
+    table = section(prd, "## Changelog")
+    problems = []
+    for sha, subject in commits:
+        units = _UNIT_ID_RE.findall(subject)
+        if not any(re.search(rf"\b{u}\b", table) for u in units) and sha[:8] not in table:
+            problems.append(f"{sha[:8]} ({subject[:60]}) changed the PRD and the Changelog table "
+                            f"names none of {units or 'its hash'}")
     return problems
 
 
@@ -1237,7 +1489,7 @@ class PrdRulesTests(unittest.TestCase):
         for old, new, says in (("carries\n  acceptance criteria,", "carries\n  substance,",
                                 "business rule leaves out grooming.acs"),
                                (("criteria, at least one with a `Verify:` line or a `manual` "
-                                 "marker,"), "criteria,",
+                                 "marker;"), "criteria;",
                                 "business rule leaves out criteria that are no-verifier"),
                                ("the template placeholder or only", "or only",
                                 "detail criterion leaves out criteria that are placeholder"),
@@ -1264,6 +1516,25 @@ class PrdRulesTests(unittest.TestCase):
                                     self.sources)
         self.assertEqual(1, len(fetching), fetching)
         self.assertIn("misstates whether id allocation fetches", fetching[0])
+        remote = "Id allocation reads `origin/main` with `git ls-tree` and does not fetch."
+        self.assertIn(remote, self.prd)
+        section8 = network_problems(self.mutate(remote, "Remote-aware id allocation fetches "
+                                                        "first."), self.sources)
+        self.assertEqual(1, len(section8), section8)
+        self.assertIn("misstates whether id allocation fetches", section8[0])
+        # a script given a network call the PRD does not list fails the check (BG1162 AC1)
+        for call, kind in (('subprocess.run(["git", "ls-remote", "origin"])\n', "git-verb"),
+                           ('subprocess.run(("gh", "api", "repos"))\n', "gh"),
+                           ('subprocess.run(["git", "pull", "--ff-only"])\n', "git-verb"),
+                           ('_git(root, "fetch", "origin")\n', "git-verb")):
+            self.assertEqual({"readiness.py"}, network_scripts({"readiness.py": call})[kind], call)
+        quiet = '_git(root, "status")\nparser.add_parser("pull")\nSTEPS = ("close", "fetch", "x")\n'
+        self.assertEqual(set(), set().union(*network_scripts({"readiness.py": quiet}).values()))
+        probe = network_problems(self.prd, {**self.sources, "readiness.py":
+                                            self.sources["readiness.py"] +
+                                            'subprocess.run(["git", "ls-remote", "origin"])\n'})
+        self.assertEqual(["the Security NFR does not name readiness.py, whose source reaches "
+                          "the network"], probe)
 
         critic = readonly_problems(self.mutate("`handoff.py` write nothing",
                                                "`handoff.py`, `critic.py` write nothing"),
@@ -1327,6 +1598,33 @@ class PrdRulesTests(unittest.TestCase):
         lost = history_problems(self.mutate(table, table.replace("BG0133", "a bug")))
         self.assertEqual(["the changelog table does not record BG0133"], lost)
 
+    def test_every_prd_change_since_6_1_0_has_a_changelog_row(self):
+        """BG1168 AC2. Mutants, on commits made up so they need no history: a commit whose
+        subject names a unit no row names, and the row put back by its hash. Then the clone's
+        own history, which a clone without it skips."""
+        table = section(self.prd, "## Changelog")
+        named = [("a" * 40, "fix(US1104): a row names it")]
+        self.assertEqual([], revision_problems(self.prd, named))
+        unnamed = [("f" * 40, "fix(US9999): no row names this")]
+        self.assertEqual(1, len(revision_problems(self.prd, unnamed)))
+        self.assertEqual(1, len(revision_problems(self.prd, [("f" * 40, "fix: no unit named")])))
+        by_hash = self.mutate(table, table + f"| x | {'f' * 8} |\n")
+        self.assertEqual([], revision_problems(by_hash, [("f" * 40, "fix: no unit named")]))
+        commits = prd_commits()
+        if commits is None:
+            self.skipTest(f"{SINCE_6_1_0} is not in this clone's history")
+        self.assertGreater(len(commits), 10, commits)
+        self.assertEqual([], revision_problems(self.prd, commits))
+        sha, subject = commits[-1]
+        units = _UNIT_ID_RE.findall(subject)
+        self.assertTrue(units, subject)
+        stripped = table
+        for unit in units:
+            stripped = stripped.replace(unit, "XX0000")
+        dropped = revision_problems(self.mutate(table, stripped), [(sha, subject)])
+        self.assertEqual(1, len(dropped), dropped)
+        self.assertIn(sha[:8], dropped[0])
+
     def test_the_engagement_floor_tracks_bg0959(self):
         """AC3. Mutants: the floor's row or its block reading Complete while BG0959 is open;
         its held criterion ticked; a verified criterion left unticked; BG0959 read as Fixed
@@ -1370,6 +1668,438 @@ class PrdRulesTests(unittest.TestCase):
         self.assertIn(f"Engagement floor criterion 4 is held by {FLOOR_BUG}, which is Fixed",
                       fixed)
         self.assertIn("Engagement floor criterion 4 is unticked and no open bug holds it", fixed)
+
+    def test_the_breakdown_rule_names_the_split_ceiling_for_any_pointed_unit(self):
+        """BG1162 AC2. The code refuses any pointed unit above the ceiling (`sprint.py`'s
+        `grooming.split` branch asks only that `points` be set), so the rule says so. Mutant:
+        the rule put back to a story or bug."""
+        rule = flat(section(self.prd, "### Business Logic Rules"))
+        self.assertRegex(rule, r"any pointed unit, a CR included, is pointed at or under the "
+                               r"split ceiling \(`sprint\.points_split_above`, default 8\)")
+        old = "and any pointed unit, a CR included, is pointed"
+        self.assertIn(old, flat(self.prd))
+        stale = flat(self.mutate("and any pointed unit, a CR included, is pointed",
+                                 "and is pointed"))
+        self.assertNotRegex(flat(section(stale, "### Business Logic Rules")),
+                            r"any pointed unit, a CR included")
+        self.assertEqual([], grooming_problems(self.prd))
+
+    def test_a_held_criterion_names_the_bug_its_words_describe(self):
+        """BG1162 AC3. Mutants: the Verify AC criterion Held by BG1023 reassigned to BG0959, and
+        the floor's criterion reassigned to BG1063; each must be named, the tree as it is not."""
+        self.assertEqual([], holder_problems(self.prd))
+        verify = "Held by BG1023: the vitest"
+        self.assertIn(verify, self.prd)
+        moved = holder_problems(self.mutate(verify, "Held by BG0959: the vitest"))
+        self.assertEqual(1, len(moved), moved)
+        self.assertIn("criterion 1 names BG0959 as its holder", moved[0])
+        self.assertIn("match BG1023 better", moved[0])
+        floor = holder_problems(self.mutate(f"Held by {FLOOR_BUG}", "Held by BG1063"))
+        self.assertEqual(1, len(floor), floor)
+        self.assertIn("names BG1063 as its holder", floor[0])
+
+    def test_the_override_is_said_to_beat_the_measured_rate(self):
+        """BG1162 AC3. Mutant: the sentence reversed, the override named first and the measured
+        rate as the thing that applies unless one is recorded."""
+        self.assertEqual([], cost_problems(self.prd))
+        old = "A plan prices from the project's own measured rate:"
+        self.assertIn(old, self.prd)
+        reversed_ = self.mutate(old, "A plan prices from `estimate.tokens_per_point` unless the "
+                                     "project has a measured rate:")
+        problems = cost_problems(reversed_)
+        self.assertEqual(1, len(problems), problems)
+        self.assertIn("the override `estimate.tokens_per_point` replaces the measured rate",
+                      problems[0])
+
+
+DEFAULTS = SKILL / "templates" / "config-defaults.yaml"
+REFERENCE_CONFIG = SKILL / "reference-config.md"
+#: Each gate-bearing key that ships off or advisory, with where its off value is written and the
+#: pattern that finds it there (BG1525). `quality.require_full_sections` is documented in the
+#: reference, whose example block holds it; the defaults file holds the other five.
+GATE_KEYS_OFF = {
+    "review.line_coverage": (DEFAULTS, r"^  line_coverage: off\b"),
+    "review.author_self_check": (DEFAULTS, r"^  author_self_check: report\b"),
+    "require_ac_verification": (DEFAULTS, r"^require_ac_verification: false\b"),
+    "constitution.enforce": (DEFAULTS, r"^constitution:\s*\n(?:\s*#[^\n]*\n)*  enforce: false\b"),
+    "two_backlog.enforce": (DEFAULTS, r"^two_backlog:\s*\n(?:\s*#[^\n]*\n)*  enforce: false\b"),
+    "quality.require_full_sections": (REFERENCE_CONFIG, r"^  require_full_sections: false\b"),
+}
+#: A sentence that makes `two_backlog.enforce` the only gate-bearing key that ships off.
+_SINGLE_EXCEPTION_RE = re.compile(r"\b(?:the one|the only|one deliberate|single) "
+                                  r"(?:deliberate )?(?:exception|gate-bearing key)\b|"
+                                  r"\bevery other gate-bearing key\b", re.I)
+
+
+def flag_intro(prd: str) -> str:
+    """The Feature Flags introduction: the text under the heading, above its table."""
+    return flat(section(prd, "### Feature Flags").split("\n| Key", 1)[0])
+
+
+def flag_intro_problems(prd: str) -> list[str]:
+    """Why section 9's Feature Flags introduction names fewer default-off gate keys than
+    `GATE_KEYS_OFF`, gives one no reason, or still calls one the single exception."""
+    intro = flag_intro(prd)
+    problems = [f"the introduction does not name `{key}`" for key in GATE_KEYS_OFF
+                if f"`{key}`" not in intro]
+    problems += [f"the introduction gives `{key}` no incremental-adoption reason"
+                 for key in GATE_KEYS_OFF
+                 if re.search(rf"`{re.escape(key)}` \(`[^`]+`: [^)]{{12,}}\)", intro) is None]
+    if _SINGLE_EXCEPTION_RE.search(intro):
+        problems.append("the introduction still calls one key the single exception")
+    return problems
+
+
+class PrdFlagDefaultsTests(unittest.TestCase):
+    """BG1525 and BG1526: section 9's account of the gate keys' defaults is the defaults file's."""
+
+    def setUp(self):
+        self.prd = PRD.read_text(encoding="utf-8")
+
+    def test_section_9_names_every_gate_key_that_ships_off(self):
+        """BG1525 AC1. Mutants: one key dropped from the introduction; one named without its
+        reason; the single-exception sentence put back."""
+        for key, (path, pattern) in GATE_KEYS_OFF.items():
+            self.assertRegex(path.read_text(encoding="utf-8"), re.compile(pattern, re.M),
+                             f"{path.name} does not hold {key} off")
+        self.assertEqual([], flag_intro_problems(self.prd))
+        intro = section(self.prd, "### Feature Flags")
+        for key in GATE_KEYS_OFF:
+            mutant = self.prd.replace(intro, intro.replace(f"`{key}`", "a key", 1), 1)
+            self.assertEqual([f"the introduction does not name `{key}`",
+                              f"the introduction gives `{key}` no incremental-adoption reason"],
+                             flag_intro_problems(mutant), key)
+        bare = self.prd.replace("`constitution.enforce` (`false`: a violation is advisory "
+                                "until the project opts in)", "`constitution.enforce`", 1)
+        self.assertEqual(["the introduction gives `constitution.enforce` no incremental-"
+                          "adoption reason"], flag_intro_problems(bare))
+        old = ("The one deliberate exception is `two_backlog.enforce`, which defaults **OFF**")
+        put_back = flag_intro_problems(self.prd.replace(
+            "Six ship **OFF** or advisory", old, 1))
+        self.assertEqual(["the introduction still calls one key the single exception"],
+                         put_back)
+
+    def test_reference_config_does_not_claim_a_single_exception(self):
+        """BG1525 AC2. Mutants: the old row and sentence put back."""
+        text = REFERENCE_CONFIG.read_text(encoding="utf-8")
+        self.assertIsNone(_SINGLE_EXCEPTION_RE.search(text))
+        self.assertNotIn("the one gate-bearing key", text)
+        rule = section(text, "## Two-Backlog Enforcement {#two-backlog}")
+        for key in GATE_KEYS_OFF:
+            self.assertIn(f"`{key}`", rule, key)
+        old_row = "Deliberately OFF - the one gate-bearing key whose absence does not block"
+        self.assertIsNotNone(_SINGLE_EXCEPTION_RE.search(old_row))
+        old_rule = "every other gate-bearing key blocks when absent"
+        self.assertIsNotNone(_SINGLE_EXCEPTION_RE.search(old_rule))
+
+    def test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file(self):
+        """BG1526 AC1. Mutants: `lessons.loop` back at `loop`; `schema_version` back at 3, or
+        saying nothing of what `init` stamps."""
+        defaults = DEFAULTS.read_text(encoding="utf-8")
+        loop = re.search(r"^lessons:\s*\n(?:  [^\n]*\n)*?  loop: (\w+)", defaults, re.M)
+        fallback = re.search(r"^schema_version: (\d+)", defaults, re.M)
+        stamped = re.search(r"^schema_version: (\d+)", (SKILL / "templates" / "config.yaml")
+                            .read_text(encoding="utf-8"), re.M)
+        self.assertEqual(("enforce", "2", "3"), (loop.group(1), fallback.group(1),
+                                                 stamped.group(1)))
+        self.assertEqual([], flag_row_problems(self.prd, loop.group(1), fallback.group(1),
+                                               stamped.group(1)))
+        for key, old, new, says in (
+                ("lessons.loop", "| `lessons.loop` | `enforce` |", "| `lessons.loop` | `loop` |",
+                 "the `lessons.loop` row gives `loop`, not the default `enforce`"),
+                ("schema_version", "| `schema_version` | 2 (", "| `schema_version` | 3 (",
+                 "the `schema_version` row does not give the fallback default 2"),
+                ("schema_version", "`init` stamps 3 on a new project", "a later release",
+                 "the `schema_version` row does not say `init` stamps 3 on a new project")):
+            self.assertIn(old, self.prd)
+            problems = flag_row_problems(self.prd.replace(old, new, 1), "enforce", "2", "3")
+            self.assertIn(says, problems, (key, problems))
+
+
+def flag_rows(prd: str) -> list[dict[str, str]]:
+    """Each data row of the Feature Flags table, as {Key, Default, Effect} with the key's
+    backticks dropped."""
+    rows = []
+    for line in section(prd, "### Feature Flags").splitlines():
+        if line.startswith("|") and not re.fullmatch(r"[\s|:-]+", line):
+            cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+            if cells[0] != "Key":
+                rows.append({"Key": cells[0].strip("`"), "Default": cells[1], "Effect": cells[2]})
+    return rows
+
+
+def flag_row_problems(prd: str, loop: str, fallback: str, stamped: str) -> list[str]:
+    """Why the `lessons.loop` or `schema_version` row gives a default the defaults file does not
+    hold: `loop` is the value the file gives, `fallback` the schema version it falls back to and
+    `stamped` the one `init` seeds a new project with."""
+    rows = {r["Key"]: r for r in flag_rows(prd)}
+    problems = []
+    given = re.match(r"`(\w+)`", rows["lessons.loop"]["Default"])
+    if not given or given.group(1) != loop:
+        problems.append(f"the `lessons.loop` row gives `{given.group(1) if given else None}`, "
+                        f"not the default `{loop}`")
+    default = rows["schema_version"]["Default"]
+    if not re.match(rf"{fallback}\b", default):
+        problems.append(f"the `schema_version` row does not give the fallback default {fallback}")
+    if f"`init` stamps {stamped} on a new project" not in default:
+        problems.append(f"the `schema_version` row does not say `init` stamps {stamped} on a "
+                        "new project")
+    return problems
+
+
+#: A name that reads as an environment variable: upper case, at least three characters.
+_ENV_NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,}$")
+#: A row of the Environment Variables table that is not a script's read is marked as one of
+#: these: the harness sets it, or the installer (not a script) reads it.
+_NOT_A_SCRIPT_READ_RE = re.compile(r"\bthe harness sets\b|\bread by the installer\b", re.I)
+
+
+def _is_env_expr(node: ast.AST) -> bool:
+    """Whether `node` is an environment mapping: `os.environ`, `env`, `self.env`, `child_env`."""
+    while isinstance(node, ast.Attribute):
+        if node.attr in ("environ", "env") or node.attr.endswith("_env"):
+            return True
+        node = node.value
+    return isinstance(node, ast.Name) and (node.id in ("environ", "env")
+                                           or node.id.endswith("_env"))
+
+
+def env_variables(sources: dict[str, str]) -> set[str]:
+    """Every environment variable name the shipped scripts and their lib folder read: a `get` or
+    subscript on an environment mapping, an `in` test against one, a module constant whose name
+    ends `_ENV`, and the names a `SIGNALS` table lists."""
+    names: set[str] = set()
+    for source in sources.values():
+        tree = ast.parse(source)
+        for node in ast.walk(tree):
+            literal = None
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                    and node.func.attr in ("get", "getenv") and node.args \
+                    and (node.func.attr == "getenv" or _is_env_expr(node.func.value)):
+                literal = node.args[0]
+            elif isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) \
+                    and _is_env_expr(node.value):
+                literal = node.slice
+            elif isinstance(node, ast.Compare) and any(isinstance(o, (ast.In, ast.NotIn))
+                                                       for o in node.ops) \
+                    and any(_is_env_expr(c) for c in node.comparators):
+                literal = node.left
+            if isinstance(literal, ast.Constant) and isinstance(literal.value, str):
+                names.add(literal.value)
+        for node in tree.body:
+            if isinstance(node, ast.Assign) and len(node.targets) == 1 \
+                    and isinstance(node.targets[0], ast.Name) \
+                    and ((node.targets[0].id.endswith("_ENV")
+                          and isinstance(node.value, ast.Constant))
+                         or node.targets[0].id == "SIGNALS"):
+                names |= {n.value for n in ast.walk(node.value)
+                          if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+    return {n for n in names if _ENV_NAME_RE.match(n)}
+
+
+def env_rows(prd: str) -> dict[str, str]:
+    """The Environment Variables table's rows, by variable, with the row's own text."""
+    rows = {}
+    for line in section(prd, "### Environment Variables").splitlines():
+        m = re.match(r"\|\s*`([A-Z][A-Z0-9_]+)`\s*\|", line)
+        if m:
+            rows[m.group(1)] = line
+    return rows
+
+
+def env_problems(prd: str, read: set[str]) -> list[str]:
+    """Each variable in `read` with no row in the Environment Variables table, and each row for
+    a variable no script reads that the PRD does not mark as set by the harness or read by the
+    installer."""
+    rows = env_rows(prd)
+    problems = [f"the Environment Variables table has no row for {v}"
+                for v in sorted(read - set(rows))]
+    problems += [f"the Environment Variables table names {v}, which no script reads and the "
+                 "row does not mark as harness-set or installer-read"
+                 for v, line in sorted(rows.items())
+                 if v not in read and not _NOT_A_SCRIPT_READ_RE.search(line)]
+    return problems
+
+
+class PrdEnvironmentVariablesTests(unittest.TestCase):
+    """BG1553: section 9's Environment Variables table lists what the scripts read."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sources = script_sources()
+        cls.read = env_variables(cls.sources)
+
+    def setUp(self):
+        self.prd = PRD.read_text(encoding="utf-8")
+
+    def test_every_variable_the_scripts_read_has_a_row(self):
+        """AC1. The collector is not vacuous: it finds the four the Cursor meter and the
+        harness switch added, and each of the variables has a row."""
+        for name in ("SDLC_STUDIO_HARNESS", "CURSOR_API_KEY", "SDLC_STUDIO_CURSOR_AGENT_ID",
+                     "SDLC_STUDIO_CURSOR_API", "SDLC_AUTHOR", "SDLC_DEBUG", "HOME"):
+            self.assertIn(name, self.read)
+        self.assertGreater(len(self.read), 25, sorted(self.read))
+        self.assertEqual([], env_problems(self.prd, self.read))
+
+    def test_the_secret_and_the_endpoint_override_are_marked(self):
+        """AC2. Mutants: the key's row with `secret` taken out; the override's row with its
+        kind taken out; the CLAUDE_SKILL_DIR row claiming a script reads it."""
+        rows = env_rows(self.prd)
+        self.assertRegex(rows["CURSOR_API_KEY"], r"(?i)\bsecret\b")
+        self.assertRegex(rows["SDLC_STUDIO_CURSOR_API"], r"(?i)network endpoint override")
+        skill_dir = rows["CLAUDE_SKILL_DIR"]
+        self.assertRegex(skill_dir, r"the harness sets it")
+        self.assertRegex(skill_dir, r"no script reads it")
+        self.assertNotIn("CLAUDE_SKILL_DIR", self.read)
+        self.assertNotRegex(rows["SDLC_AUTHOR"] + rows["HOME"], r"(?i)\bsecret\b")
+        unmarked = rows["CLAUDE_SKILL_DIR"].replace("the harness sets it; no script reads it",
+                                                    "used to invoke scripts")
+        self.assertNotEqual(unmarked, rows["CLAUDE_SKILL_DIR"])
+        mutant = self.prd.replace(rows["CLAUDE_SKILL_DIR"], unmarked, 1)
+        self.assertEqual(1, len(env_problems(mutant, self.read)), env_problems(mutant, self.read))
+        self.assertIn("CLAUDE_SKILL_DIR", env_problems(mutant, self.read)[0])
+
+    def test_a_dropped_row_is_named(self):
+        """AC3. Mutants: one variable's row removed, for every variable; a row added for a
+        variable no script reads; the harness-set mark taken off the one that is."""
+        rows = env_rows(self.prd)
+        for var in sorted(self.read):
+            mutant = self.prd.replace(rows[var] + "\n", "", 1)
+            self.assertNotEqual(mutant, self.prd, var)
+            self.assertEqual([f"the Environment Variables table has no row for {var}"],
+                             env_problems(mutant, self.read), var)
+        extra = self.prd.replace(rows["SDLC_DEBUG"], rows["SDLC_DEBUG"] +
+                                 "\n| `SDLC_NO_SUCH_SWITCH` | Nothing reads this | No | unset |", 1)
+        self.assertEqual(1, len(env_problems(extra, self.read)))
+        self.assertIn("SDLC_NO_SUCH_SWITCH", env_problems(extra, self.read)[0])
+        self.assertEqual([], env_problems(self.prd, self.read | {"SDLC_NO_SUCH_SWITCH"})[1:])
+        self.assertEqual(["the Environment Variables table has no row for SDLC_NO_SUCH_SWITCH"],
+                         env_problems(self.prd, self.read | {"SDLC_NO_SUCH_SWITCH"}))
+        # the collector reads each shape: a get, a subscript, an `in` test, a `_ENV` constant
+        shapes = {"a.py": 'import os\nx = os.environ.get("AAA_ONE")\ny = os.environ["BBB_TWO"]\n'
+                          'z = "CCC_THREE" in os.environ\nFOUR_ENV = "DDD_FOUR"\n'
+                          'w = os.environ.pop("EEE_FIVE", None)\nenv["FFF_SIX"] = "1"\n'}
+        self.assertEqual({"AAA_ONE", "BBB_TWO", "CCC_THREE", "DDD_FOUR"}, env_variables(shapes))
+
+
+#: The close chain's steps are named in the PRD's account of the close by this text, step by
+#: step; the three retro steps are grouped, and the grouping is said (BG1555).
+_RETRO_STEPS = {"retro-validate": "validate", "retro-extract": "extract",
+                "retro-accuracy": "accuracy"}
+_STEP_WORDS = ("review coverage", "retro", "persona memory", "lessons", "checklist", "gate",
+               "reconcile", "review anchor")
+
+
+def close_account(prd: str) -> str:
+    """The PRD's single account of the close: the Core Behaviours bullet that runs the chain."""
+    m = re.search(r"^- `sprint\.py close` runs the close chain.*?(?=^- )",
+                  section(prd, "### Core Behaviours"), re.M | re.S)
+    return flat(m.group(0)) if m else ""
+
+
+def close_passages(prd: str) -> dict[str, str]:
+    """The three passages that speak of the close: the Mission paragraph, the Sprint report and
+    sign row and the account in Core Behaviours."""
+    rows = [r["line"] for r in feature_rows(prd) if r["Feature"] == "Sprint report and sign"]
+    return {"Mission": flat(section(prd, "## Mission")), "Sprint report and sign row":
+            flat(rows[0]) if rows else "", "Core Behaviours": close_account(prd)}
+
+
+def chain_problems(prd: str, chain: tuple[str, ...]) -> list[str]:
+    """Each step of `chain` the PRD's account of the close does not name."""
+    account = close_account(prd).lower()
+    problems = []
+    for step in chain:
+        named = (step.replace("-", " ") in account if step not in _RETRO_STEPS
+                 else "retro" in account and _RETRO_STEPS[step] in account)
+        if not named:
+            problems.append(f"the account of the close does not name {step}")
+    return problems
+
+
+def goal_verdict_problems(prd: str) -> list[str]:
+    """Why a passage on the close lists the goal verdict among the chain steps, does not give the
+    goal and its verdict as preconditions, lists chain steps of its own beside the account, or
+    why the account loses the rule that a failed step is carried to the report."""
+    problems = []
+    for name, text in close_passages(prd).items():
+        if not re.search(r"preconditions? hold[^.]*\bgoal verdict\b", text):
+            problems.append(f"{name} does not give the sprint goal and its verdict as "
+                            "preconditions of the close")
+        for clause in re.split(r"[;:]|\.(?=\s)", text):
+            steps = [w for w in _STEP_WORDS if w in clause.lower()]
+            if "goal verdict" in clause and len(steps) >= 2:
+                problems.append(f"{name} lists the goal verdict among the chain steps: "
+                                f"{clause.strip()!r}")
+            elif name != "Core Behaviours" and len(steps) >= 3:
+                problems.append(f"{name} gives its own list of chain steps: {clause.strip()!r}")
+    if not re.search(r"A step that fails is a known issue on the one-page sprint report",
+                     close_account(prd)):
+        problems.append("the account of the close loses the rule that a failed step is carried "
+                        "to the report")
+    return problems
+
+
+class PrdCloseChainTests(unittest.TestCase):
+    """BG1555: one account of the sprint close, and it is `sprint._CLOSE_CHAIN`."""
+
+    def setUp(self):
+        self.prd = PRD.read_text(encoding="utf-8")
+
+    def test_every_close_chain_step_is_named(self):
+        """AC1. The account names each step of the shipped chain, persona-memory, checklist and
+        review-anchor included."""
+        chain = tuple(sprint._CLOSE_CHAIN)
+        for step in ("persona-memory", "checklist", "review-anchor"):
+            self.assertIn(step, chain)
+        self.assertGreaterEqual(len(chain), 10)
+        self.assertEqual([], chain_problems(self.prd, chain))
+        self.assertEqual(["the account of the close does not name new-step"],
+                         chain_problems(self.prd, chain + ("new-step",)))
+
+    def test_the_goal_verdict_is_a_precondition_in_all_three_passages(self):
+        """AC2. Mutants: the goal verdict listed among the chain steps in the row, and a step
+        list of its own in the Mission; the failed-step rule dropped."""
+        self.assertEqual([], goal_verdict_problems(self.prd))
+        self.assertEqual(3, len(close_passages(self.prd)))
+        row = "runs the close as one chain (the steps are listed in section 4)"
+        self.assertIn(row, self.prd)
+        listed = goal_verdict_problems(self.prd.replace(
+            row, "runs the close as one chain (goal verdict, retro, lessons, gate, reconcile)", 1))
+        self.assertEqual(1, len(listed), listed)
+        self.assertIn("Sprint report and sign row lists the goal verdict among the chain steps",
+                      listed[0])
+        own = goal_verdict_problems(self.prd.replace(
+            "files the one-page sprint report", "files the one-page sprint report. The close runs "
+            "review coverage, retro and the gate", 1))
+        self.assertEqual(1, len(own), own)
+        self.assertIn("Mission gives its own list of chain steps", own[0])
+        gone = goal_verdict_problems(self.prd.replace("A step that fails is a known issue",
+                                                      "A step that fails stops the close", 1))
+        self.assertEqual(["the account of the close loses the rule that a failed step is "
+                          "carried to the report"], gone)
+        unconditioned = goal_verdict_problems(self.prd.replace("a sprint goal, a goal verdict and "
+                                                               "a retro):", "a sprint goal and "
+                                                               "a retro):", 1))
+        self.assertEqual(["Core Behaviours does not give the sprint goal and its verdict as "
+                          "preconditions of the close"], unconditioned)
+
+    def test_a_dropped_chain_step_is_named(self):
+        """AC3. Mutants: each step's name taken out of the account, in turn."""
+        chain = tuple(sprint._CLOSE_CHAIN)
+        account = re.search(r"^- `sprint\.py close` runs the close chain.*?(?=^- )",
+                            section(self.prd, "### Core Behaviours"), re.M | re.S).group(0)
+        cuts = {"review-coverage": "review coverage", "retro-validate": "validate",
+                "retro-extract": "extract", "retro-accuracy": "accuracy",
+                "persona-memory": "persona memory", "lessons-summary": "lessons summary",
+                "checklist": "checklist", "gate": "gate", "reconcile": "reconcile",
+                "review-anchor": "review anchor"}
+        self.assertEqual(set(chain), set(cuts))
+        for step, words in cuts.items():
+            mutant = self.prd.replace(account, account.replace(words, "XXXX"), 1)
+            self.assertNotEqual(mutant, self.prd, step)
+            self.assertIn(f"the account of the close does not name {step}",
+                          chain_problems(mutant, chain), step)
 
 
 if __name__ == "__main__":
