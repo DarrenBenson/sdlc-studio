@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0484: When a unit adds a line to stderr of a command the tests call in-process, its builder runs `tools/run-suite.sh --noise-gate` on the modules…**
+- **L-0483: Run `verify_ac` after `critic.py record`, never between a brief and its record**
+- **L-0482: Give a landing the machine to itself: start no suite-sized job until `lane land` reports, at least until BG1610 makes a timed-out commit…**
 - **L-0481: At refine, read each criterion that prescribes public wording against the request's Constraints section, so a wording the CR forbids is…**
 - **L-0480: Hold every field write in the learning store to the read-back rule `add` now follows, and say so in the reference page, so the next writer…**
 - **L-0479: The plan-time registry check (CR0705, now in run fourteen as US1169), naming the prose-writer sweep and command-audit.md among the files a…**

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 469 |
+| Open | 470 |
 | In Progress | 0 |
 | Fixed | 961 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1628** |
+| **Total** | **1629** |
 
 ## All Bugs
 
@@ -704,6 +704,7 @@
 | [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Open | Medium | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

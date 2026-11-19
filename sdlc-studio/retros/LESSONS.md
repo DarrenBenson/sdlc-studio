@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-19
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0484: When a unit adds a line to stderr of a command the tests call in-process, its builder runs `tools/run-suite.sh --noise-gate` on the modules…
+
+- **Added:** 2026-11-19
+- **Review-by:** 2027-02-17
+
+When a unit adds a line to stderr of a command the tests call in-process, its builder runs `tools/run-suite.sh --noise-gate` on the modules that call it before hand-in, the check BG1622 needed.
+
+Recorded from retro RETRO0151.
+
+## L-0483: Run `verify_ac` after `critic.py record`, never between a brief and its record
+
+- **Added:** 2026-11-19
+- **Review-by:** 2027-02-17
+
+Run `verify_ac` after `critic.py record`, never between a brief and its record. The verify stamps the criteria and changes the brief's fingerprint, so the record then warns of a scope change that is only a stamp (BG1614).
+
+Recorded from retro RETRO0151.
+
+## L-0482: Give a landing the machine to itself: start no suite-sized job until `lane land` reports, at least until BG1610 makes a timed-out commit…
+
+- **Added:** 2026-11-19
+- **Review-by:** 2027-02-17
+
+Give a landing the machine to itself: start no suite-sized job until `lane land` reports, at least until BG1610 makes a timed-out commit end its own hooks.
+
+Recorded from retro RETRO0151.
 
 ## L-0481: At refine, read each criterion that prescribes public wording against the request's Constraints section, so a wording the CR forbids is…
 

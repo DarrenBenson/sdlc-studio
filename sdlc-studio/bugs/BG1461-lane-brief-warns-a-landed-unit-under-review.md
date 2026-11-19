@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
-> **Evidence:** Run thirteen, 2026-11-15, the BG1460 lane brief.
+> **Evidence:** run eighteen's close (RPT0037) listed seven landed and accepted units IN FLIGHT at close, each the lane brief --repair of a repair round that lane land had landed and priced: US1238, US1192, US1196, US1197, US1198, US1201, US1202
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1
