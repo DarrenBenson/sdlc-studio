@@ -3137,6 +3137,189 @@ def cmd_record_suite_verdict(args: argparse.Namespace) -> int:
 # --- end suite decision ------------------------------------------------------------
 
 
+# --- red-run policy -------------------------------------------------------------------
+# A red CI run on main gets one of three answers. When every failing test is named by an open
+# bug filed as flaky, the run is recorded on that bug and its failed jobs are rerun once,
+# within `ci.rerun_limit`; past the limit, or when the agent's token cannot rerun, the answer
+# is to stop and ask the operator. When any failing test is named by no filed flake, the run
+# is a regression: a bug is filed through the shipped filer and nothing is pushed until main
+# is green. No answer skips or deselects a test. This is the one mode of the gate that writes
+# a tracked file, and only when it is asked to (`--red-run`): the gate's checks stay read-only.
+
+#: What `--token` says the agent's CI token may do.
+RED_RUN_TOKENS = ("can-rerun", "cannot-rerun")
+#: The rerun limit when the project's config sets none, the default `config-defaults.yaml` holds.
+RERUN_LIMIT_DEFAULT = 1
+#: The section of a flaky bug that records each red run put through `--red-run`.
+RED_RUN_SECTION = "## CI Red Runs"
+
+
+def _names_test(text: str, test: str) -> bool:
+    """Whether `text` names the test id `test` whole, never as the start of a longer id."""
+    return re.search(rf"(?<![\w/.:-]){re.escape(test)}(?![\w/.:-])", text) is not None
+
+
+def _open_bugs(root: str) -> list[tuple[str, Path, str, str]]:
+    """`(id, path, title, text)` for each bug whose status is set and not terminal."""
+    rows = []
+    for path in sdlc_md.artifact_files("bug", Path(root)):
+        text = path.read_text(encoding="utf-8")
+        status = (sdlc_md.extract_field(text, "Status") or "").strip()
+        if not status or sdlc_md.is_terminal_status("bug", status):
+            continue
+        rows.append((path.name.split("-", 1)[0], path, sdlc_md.extract_h1_title(text) or "",
+                     text))
+    return rows
+
+
+#: The title `--red-run` gives a regression it files, which names the run.
+_REGRESSION_TITLE = "CI run {run} is red on {test}{more}"
+
+
+def _filed_flake(bugs: list, test: str) -> tuple[str, Path] | None:
+    """The open bug filed as flaky that names `test`: its title says "flaky" and its text names
+    the test id whole. None when no open bug does. A regression `--red-run` filed is never a
+    flake, even when a test id in its title holds the word."""
+    for bug_id, path, title, text in bugs:
+        if re.search(r"\bCI run \S+ is red on\b", title):
+            continue
+        if re.search(r"\bflaky\b", title, re.I) and _names_test(text, test):
+            return bug_id, path
+    return None
+
+
+def _reds_recorded(text: str, run: str) -> int:
+    """How many reds of `run` a bug's CI red-run section records. Each one after the first
+    followed a rerun, so this is also the reruns that run has already had."""
+    if RED_RUN_SECTION not in text:
+        return 0
+    section = text.split(RED_RUN_SECTION, 1)[1].split("\n## ", 1)[0]
+    return len(re.findall(rf"(?m)^- .*\bCI run {re.escape(run)} red\b", section))
+
+
+def _record_red(path: Path, run: str, tests: list[str], answer: str, today: str) -> None:
+    """Append one line for this red run to the bug's CI red-run section, creating it last."""
+    text = path.read_text(encoding="utf-8")
+    named = ", ".join(f"`{t}`" for t in tests)
+    line = f"- {today}: CI run {run} red on {named}; answer: {answer}."
+    if RED_RUN_SECTION in text:
+        head, tail = text.split(RED_RUN_SECTION, 1)
+        body, sep, rest = tail.partition("\n## ")
+        text = head + RED_RUN_SECTION + body.rstrip("\n") + f"\n{line}\n"
+        if sep:
+            text += f"\n## {rest}"
+    else:
+        text = text.rstrip("\n") + f"\n\n{RED_RUN_SECTION}\n\n{line}\n"
+    sdlc_md.atomic_write(path, text)
+
+
+def _rerun_limit(root: str) -> int:
+    """`ci.rerun_limit` as the project's config resolves it; refused unless a whole number."""
+    import config  # noqa: PLC0415 - local: loaded only when a red run is answered
+    limit = config.get(root, "ci.rerun_limit", RERUN_LIMIT_DEFAULT)
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 0:
+        raise ValueError(f"`ci.rerun_limit` must be a whole number of reruns, not {limit!r}")
+    return limit
+
+
+def _file_regression(root: str, bugs: list, run: str, unknown: list[str],
+                     failed: list[str]) -> str:
+    """The id of the open bug filed for this run's regression: the one an earlier red of the
+    same run filed, or a new one through `file_finding`, naming the run and each unknown test."""
+    marker = re.compile(rf"\bCI run {re.escape(run)} is red on\b")
+    for bug_id, _path, title, _text in bugs:
+        if marker.search(title):
+            return bug_id
+    import file_finding  # noqa: PLC0415 - local: only a regression files a bug
+    affects = sorted({t.split("::", 1)[0] for t in unknown
+                      if (Path(root) / t.split("::", 1)[0]).is_file()})
+    if not affects:
+        raise ValueError(
+            f"regression: run {run} failed on {', '.join(unknown)}, and no failing test names a "
+            f"file in this tree for the bug's Affects - file it with file_finding.py, naming the "
+            f"run and the tests, and do not push again until main is green")
+    names = ", ".join(f"`{t}`" for t in unknown)
+    more = f" and {len(unknown) - 1} more" if len(unknown) > 1 else ""
+    known = [f"`{t}`" for t in failed if t not in unknown]
+    fields = {
+        "severity": "High",
+        "summary": f"CI run {run} on main went red on {names}, which no open flaky bug names, so "
+                   f"the run is a regression and nothing is pushed until main is green."
+                   + (f" Also failing, each a filed flake: {', '.join(known)}." if known else ""),
+        "steps": f"Read the failed log of CI run {run} (gh run view {run} --log-failed), then run "
+                 f"each failing test locally: {names}.",
+        "fix": "Find the change that turned main red and repair it. A failure that proves to be "
+               "a flake is filed as a flaky bug naming the test, and the test stays in the run.",
+        "affects": ", ".join(affects),
+        "points": 1,
+    }
+    title = _REGRESSION_TITLE.format(run=run, test=unknown[0], more=more)
+    result = file_finding.file_finding(root, "bug", title, fields)
+    return result["id"]
+
+
+def red_run(root: str, run: str, failed: list[str], can_rerun: bool,
+            today: str | None = None) -> dict:
+    """The policy's answer for a red CI run `run` whose failing test ids are `failed`."""
+    run = str(run).strip()
+    failed = list(dict.fromkeys(t.strip() for t in failed if t and t.strip()))
+    if not run or not failed:
+        raise ValueError("--red-run needs the run id and at least one failing test (--failed)")
+    today = today or datetime.now(timezone.utc).date().isoformat()
+    bugs = _open_bugs(root)
+    flakes = {t: _filed_flake(bugs, t) for t in failed}
+    unknown = [t for t, hit in flakes.items() if hit is None]
+    base = {"run": run, "failed": failed}
+    if unknown:
+        bug = _file_regression(root, bugs, run, unknown, failed)
+        return {**base, "answer": "regression", "bug": bug, "recorded": [], "limit": None,
+                "reason": f"{len(unknown)} failing test(s) match no open flaky bug "
+                          f"({', '.join(unknown)}): run {run} is a regression, filed as {bug}. "
+                          f"Repair it, and do not push again until main is green."}
+    limit = _rerun_limit(root)
+    hits = sorted({hit for hit in flakes.values()}, key=lambda h: h[0])
+    ids = ", ".join(bug_id for bug_id, _ in hits)
+    reruns = max(_reds_recorded(path.read_text(encoding="utf-8"), run) for _, path in hits)
+    if reruns >= limit:
+        answer = "stop"
+        reason = (f"run {run} has had {reruns} rerun(s) and `ci.rerun_limit` is {limit}, so the "
+                  f"limit is reached: stop and ask the operator. The red is recorded on {ids}.")
+    elif not can_rerun:
+        answer = "stop"
+        reason = (f"the token cannot rerun jobs: stop and ask the operator to rerun run {run} "
+                  f"(gh run rerun {run} --failed). The red is recorded on {ids}.")
+    else:
+        answer = "rerun"
+        reason = (f"every failing test is a filed flaky bug ({ids}), where the red is recorded: "
+                  f"rerun the failed jobs once with `gh run rerun {run} --failed`, then wait on "
+                  f"the run again.")
+    for _bug_id, path in hits:
+        _record_red(path, run, [t for t, hit in flakes.items() if hit[1] == path], answer, today)
+    return {**base, "answer": answer, "bug": hits[0][0], "recorded": [b for b, _ in hits],
+            "limit": limit, "reason": reason}
+
+
+def cmd_red_run(args: argparse.Namespace) -> int:
+    """Print the red-run answer. Exits 0 only on `rerun`: a stop or a regression holds the
+    agent, which pushes nothing more on its own."""
+    if not getattr(args, "token", None):
+        print("gate: refused - --red-run needs --token can-rerun|cannot-rerun", file=sys.stderr)
+        return 2
+    try:
+        result = red_run(args.root, args.red_run, getattr(args, "failed", None) or [],
+                         can_rerun=args.token == "can-rerun")
+    except ValueError as exc:
+        print(f"gate: red-run refused - {exc}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"red-run: {result['answer']} (run {result['run']}, bug {result['bug']})")
+        print(f"  {result['reason']}")
+    return 0 if result["answer"] == "rerun" else 1
+# --- end red-run policy ---------------------------------------------------------------
+
+
 def lane_stamp(check: dict) -> str:
     """One lane's seconds as it is printed beside its name, or "" when it was not timed.
 
@@ -3151,6 +3334,8 @@ def lane_stamp(check: dict) -> str:
 
 
 def cmd_gate(args: argparse.Namespace) -> int:
+    if getattr(args, "red_run", None):
+        return cmd_red_run(args)
     if getattr(args, "run_tests", None):
         return cmd_run_tests(args)
     if getattr(args, "record_suite_verdict", None):
@@ -3277,6 +3462,17 @@ def build_parser() -> argparse.ArgumentParser:
                    default="full",
                    help="--record-suite-verdict: how much of the suite earned the verdict. "
                         "A boundary declines a green earned by a `selected` run")
+    p.add_argument("--red-run", dest="red_run", metavar="RUN",
+                   help="Answer a red CI run on main, by its run id: `rerun` (every failing test "
+                        "is named by an open bug filed as flaky, where the red is recorded; once, "
+                        "within ci.rerun_limit), `stop` (the limit is reached, or the token cannot "
+                        "rerun: ask the operator) or `regression` (a failing test no filed flake "
+                        "names: a bug is filed, and nothing is pushed until main is green). "
+                        "Exits 0 only on `rerun`")
+    p.add_argument("--failed", nargs="+", metavar="TEST",
+                   help="--red-run: the run's failing test ids, as its log names them")
+    p.add_argument("--token", choices=RED_RUN_TOKENS,
+                   help="--red-run: whether the agent's CI token may rerun jobs")
     p.add_argument("--format", choices=("text", "json"), default="text")
     p.set_defaults(func=cmd_gate)
     return p

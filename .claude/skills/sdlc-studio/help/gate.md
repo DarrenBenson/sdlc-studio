@@ -297,6 +297,29 @@ and read-only for a pre-commit hook).
 Mutation testing is not a gate lane, on demand or otherwise: run `mutation.py run` when you want to
 probe a suite (see [mutation](mutation.md)). `--only mutation` is refused as an unknown lane.
 
+## `--red-run`: a red CI run on main
+
+When the one blocking wait on a push's CI run ends red, put the run through the gate before
+anything is pushed again:
+
+```bash
+python3 "$CLAUDE_SKILL_DIR/scripts/gate.py" --red-run <run> --failed <test> [<test> ...] --token can-rerun
+```
+
+It gives one of three answers, and exits 0 only on the first:
+
+- `rerun`: every failing test is named by an open bug filed as flaky (its title says "flaky" and
+  its text names the test id). The red is recorded on that bug, under `## CI Red Runs`, and the
+  answer is to rerun the failed jobs once, with `gh run rerun <run> --failed`.
+- `stop`: stop and ask the operator. Either the run has had the reruns `ci.rerun_limit` allows
+  (default one), or `--token cannot-rerun` says the agent's token may not rerun jobs. The red is
+  still recorded on the bug, and the answer names the run and the bug.
+- `regression`: a failing test no open flaky bug names, even beside known flakes. A bug is filed
+  through `file_finding.py` naming the run and the test, no rerun is offered, and nothing is
+  pushed until main is green. A second red of the same run reuses that bug.
+
+No answer skips or deselects a test. The policy is in `reference-test-validation.md#red-ci-run`.
+
 ## CI wiring (the gate is the mechanism; these are just examples)
 
 Each example names its script through `$CLAUDE_SKILL_DIR`, the skill's install directory, so it

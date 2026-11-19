@@ -226,6 +226,12 @@ contract_tables:
 #                    soak window before promoting to "live".
 release_strategy: trunk
 
+# The wait on CI after a trunk push, and the answer to a red run (reference-code.md, the
+# `trunk` section; `gate.py --red-run`).
+ci:
+  wait_timeout_minutes: 30  # bounds the one blocking watch on the CI run a push started
+  rerun_limit: 1            # reruns one red run may have when every failure is a filed flaky bug
+
 # Artifact provenance. `new` stamps tool-created artifacts; `provenance check`
 # flags un-stamped ones past adopt_after (advisory unless enforce). `remake` backfills the
 # stamp. Standalone/advisory by default - not wired into the gate.

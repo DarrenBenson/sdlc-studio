@@ -20,27 +20,26 @@ context compaction or reset (`/compact`, `/clear`, a fresh session):
 3. Run `/sdlc-studio status`, then `/sdlc-studio hint` for the next step.
 4. Recall relevant lessons: `/sdlc-studio lessons recall`.
 
-Do not restate the doctrine here; record below only what this project adds to it.
+Do not restate the doctrine; record below only what this project adds.
 
 ## Non-negotiable gates
 
 **Never release until the full pre-release gate is green.** In order, before any tag:
 
 1. `/sdlc-studio reconcile --verify` runs every story's `Verify:` expression and fails on any
-   `no` or `stale`. This is what makes "Done" mean done.
+   `no` or `stale`.
 2. `/sdlc-studio review` runs all five legs, **PRD - TRD - TSD - Persona - CODE** (plus **PVD**
    when `sdlc-studio/product/pvd.md` exists), and confirms the PRD (and PVD) requirements
    are met. The CODE leg is not optional.
 
-Fix the findings before tagging. Even a production hotfix files a `bug` (rationale +
-`Verify:` expression + audit pin).
+Fix the findings before tagging. Even a production hotfix files a `bug`.
 
 **Review is independent of the author.** One independent reviewer, a fresh context that did
 not write the change, records each unit's verdict with `critic.py record`, and its APPROVE
 decides the unit. The run is signed once, with `sprint sign`, by its reviewer of record: the
 operator, or a named delegate in a separate trust boundary, never a unit's author or reviewer.
 
-**Integrate continuously.** Commit each unit to `main` when its gate passes and push `main`; open no PR and push no branch unless `release_strategy` is `pr-required`.
+**Integrate continuously.** Commit each unit to `main` when its gate passes and push `main`; open no PR and push no branch unless `release_strategy` is `pr-required`. After the push, wait on its CI run with one blocking command under a timeout, never a polling loop, and read a red main before pushing again.
 
 **No ad-hoc coding.** Every change flows CR / RFC -> Epic -> Story -> code plan -> code
 implement -> code verify -> reconcile -> review. Default to TDD: write the `Verify:`
@@ -71,7 +70,7 @@ habits section of `<skill>/reference-doctrine.md`.
 
 ## Project specifics
 
-Fill these in: this is the part an agent cannot infer.
+Fill these in.
 
 - **Stack:** {{languages, frameworks, runtime versions}}
 - **Run / build / test:** {{exact commands, e.g. `make test`, `npm run dev`}}

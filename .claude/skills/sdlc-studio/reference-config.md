@@ -30,8 +30,8 @@
 | Model Prices {#pricing} | 343-372 |
 | Skill Source Repo {#skill-source-repo} | 373-391 |
 | Contract Tables {#contract-tables} | 392-407 |
-| Release Strategy {#release-strategy} | 408-426 |
-| Deploy Contract {#deploy} | 427-455 |
+| Release Strategy {#release-strategy} | 408-431 |
+| Deploy Contract {#deploy} | 432-455 |
 | Model-Tier Routing {#routing} | 456-488 |
 | Spec-Edit Guard {#spec-guard} | 489-511 |
 | Using Config in Templates | 512-524 |
@@ -420,17 +420,18 @@ release_strategy: trunk    # trunk | pr-required | staged-rollout (solo-dev read
 | `pr-required` | **Opt-in.** `gh pr create` + review + merge. | Team projects where a non-author's PR approval is the change gate. |
 | `staged-rollout` | Tag + deploy + soak window + promote. A feature that needs a stable soak carries it as an acceptance criterion, so it reaches Done when the soak's `Verify:` line passes. | Production systems with multi-environment deploys. |
 
-`/sdlc-studio code implement` and `/sdlc-studio epic implement` branch their final-step ship guidance on this value. See `reference-code.md#release-strategy-branch` and `reference-decisions.md#release-strategy-decision`.
+`/sdlc-studio code implement` and `/sdlc-studio epic implement` branch their final-step ship guidance on this value. See `reference-code.md#release-strategy-branch` and `reference-decisions.md#release-strategy-decision`. After a `trunk` push the agent waits on CI and answers a red run under two `ci` keys:
+
+| Key | Meaning | Default |
+| --- | --- | --- |
+| `ci.wait_timeout_minutes` | Bounds the one blocking watch on the CI run a push started: the wait gives up after this many minutes (`reference-code.md#release-strategy-branch`). | `30` |
+| `ci.rerun_limit` | Counts the reruns one red run may have when every failure is a filed flaky bug; past it `gate.py --red-run` answers stop and ask the operator. | `1` |
 
 ---
 
 ## Deploy Contract {#deploy}
 
-The orchestrate-only deploy last-mile. The skill **gates** before and **verifies** after a
-deploy; it never holds the production trigger, never auto-rolls-back, and never deploys inside the
-autonomous loop. Secrets are never read - only the command you configure is invoked, and only on an
-explicit, interactive `/sdlc-studio deploy`. All keys are optional; with none set, `deploy` is a pure
-gate + verification harness around a deploy you trigger yourself.
+The orchestrate-only deploy last-mile. The skill **gates** before and **verifies** after a deploy; it never holds the production trigger, never auto-rolls-back, and never deploys inside the autonomous loop. Secrets are never read - only the command you configure is invoked, and only on an explicit, interactive `/sdlc-studio deploy`. All keys are optional; with none set, `deploy` is a pure gate + verification harness around a deploy you trigger yourself.
 
 ```text
 deploy:
@@ -448,8 +449,7 @@ deploy:
 | `deploy.soak_minutes` | Minutes a rolled-out deploy must soak before it is **verified** (Done). Smoke alone never means verified. | `0` |
 | `deploy.rollback` | A documented rollback **procedure** (steps, or a command an operator runs by hand). The agent never executes it; `deploy` surfaces it on a failed smoke. | `""` |
 
-See `reference-deploy.md` for the workflow and `reference-deploy-readiness.md` for the verification
-patterns (cold-spawn, smoke budget, soak).
+See `reference-deploy.md` for the workflow and `reference-deploy-readiness.md` for the verification patterns (cold-spawn, smoke budget, soak).
 
 ---
 
