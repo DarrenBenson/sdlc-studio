@@ -8,8 +8,10 @@
 stories and BG1599, 25 points, all on independent APPROVEs, for $54.60 ($2.18 per point) against a
 $79.42 forecast. At the close the operator authorised an expired waiver of the goal's missed seat
 review (D0533, cause filed as BG1601) and delegated this run's signature (D0535), and the
-orchestrator signed over RPT0036 after a rehearsal in a throwaway clone. Next: the website run
-RUN-01M7R7KN in the website's repository delivers CR0742's change 5.
+orchestrator signed over RPT0036 after a rehearsal in a throwaway clone. The website run
+RUN-01M7R7KN, in the website's own repository, then delivered CR0742's change 5 and is signed
+(2026-11-19, under that repository's delegation decision): the site's home page now says SDLC
+Studio runs in the reader's own harness and models, and it is live on both web hosts.
 
 > Goal: "A reviewer reading only the front door knows SDLC Studio runs in their own harness,
 > models and change process." Judged **partial**: the repository's front door is done, but
@@ -38,10 +40,10 @@ RUN-01M7R7KN in the website's repository delivers CR0742's change 5.
 
 ## What is owed
 
-- **The website run** (RUN-01M7R7KN, opened 2026-11-18): the change request there covers the home page
-  positioning, the agents list matching docs/harnesses.md, links to the two new pages, the footer
-  sponsorship line and the site's evidence page (it stops at RPT0011).
-- **Runs eighteen onward** are replanned from D0519's backlog after the website run.
+- **Runs eighteen onward** are replanned from D0519's backlog next.
+- **Filed from the website run:** BG1602 to BG1607 and CR0745. BG1605 is why that run's cost
+  went unmeasured (a run driven from a session started in another repository takes no token
+  stamp), and BG1607 is a sign that rewrote an unrelated retro there.
 - **Filed in the run, not taken:** BG1591 to BG1598 and BG1600, ruled not-stop-ship (D0532,
   RETRO0150); CR0743 (the report records the harness) and RFC0068 (a neutral skill path).
 - **Carried from run sixteen:** BG1570 to BG1578, BG1581 to BG1585, BG1587 to BG1589, BG1590,

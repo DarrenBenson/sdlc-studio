@@ -106,6 +106,10 @@ other nine here and a change request filed in that repository carries change 5, 
 one: the home page positioning, the agents list matching docs/harnesses.md, links to the two new
 pages, the footer sponsorship line, and the site's evidence page.
 
+Change 5 was delivered on 2026-11-19 by the website's run RUN-01M7R7KN, whose goal was judged
+achieved and which is signed: the home page, agents list, footer and evidence page are live on
+both web hosts and the public site.
+
 ## Revision History
 
 | Date | Author | Change |

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 448 |
+| Open | 452 |
 | In Progress | 0 |
 | Fixed | 958 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 56 |
 | Superseded | 54 |
-| **Total** | **1603** |
+| **Total** | **1607** |
 
 ## All Bugs
 
@@ -679,6 +679,10 @@
 | [BG1601](BG1601-sprint-plan-opened-run-seventeen-although-its-goal.md) | sprint plan opened run seventeen although its goal had no seat review, the recorded one being an earlier run's goal, and the close then refuses goal-seat-reviewed past its window | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1602](BG1602-sprint-batch-add-takes-an-untriaged-inbox-bug.md) | sprint batch add takes an untriaged inbox bug without saying lane accept will refuse it Fixed until it is triaged | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1603](BG1603-tools-lint-style-sh-scans-gitignored-scratch-files.md) | tools/lint-style.sh scans gitignored scratch files, so an untracked note under .local/ blocks a commit that does not touch it | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1604](BG1604-sprint-plan-takes-the-stories-of-an-untriaged.md) | sprint plan takes the stories of an untriaged inbox CR, and only the close refuses to derive the CR Complete | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1605](BG1605-a-run-driven-from-a-session-started-in.md) | A run driven from a session started in another repository records no token stamp, so its report states no cost at all | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Open | Medium | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-19
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 3 |
+| Proposed | 4 |
 | Approved | 0 |
 | In Progress | 81 |
 | Complete | 560 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **744** |
+| **Total** | **745** |
 
 ## All Changes
 
@@ -156,6 +156,7 @@
 | [CR-0742](CR0742-harness-agnostic-and-enterprise-ready-documentation.md) | Harness-agnostic and enterprise-ready documentation | Complete | High | Improvement | 2026-11-18 | EP0377 |
 | [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Proposed | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0744](CR0744-amend-a-batch-unit-s-affects-in-flight.md) | Amend a batch unit's Affects in flight with a recorded reason | Rejected | Medium | Improvement | 2026-11-18 | -- |
+| [CR-0745](CR0745-file-finding-asks-the-filer-to-rule-on.md) | file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after | Proposed | Medium | Improvement | 2026-11-19 | -- |
 
 ## Archived Releases
 

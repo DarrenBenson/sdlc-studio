@@ -14,6 +14,12 @@
 
 `sprint.py lane brief --units BG1460` printed a 'was briefed ... and never returned - the working tree MAY ALREADY CARRY its work. Check the diff before starting' warning for each of six units (US1058, US1064, US1065, US1066, US1067, US1068) that had been built, landed through `lane land` (self-check recorded, QA brief written) and were waiting on review. Their work is committed on main, not loose in the tree, so the advice to check the diff is wrong for them. The warning is meant for a lane that crashed; a landed unit is reported the same way, so six false warnings bury a real one.
 
+Further evidence, 2026-11-19 (the website's RUN-01M7R7KN): `lane brief --units BG-01M7RJCQ` warned
+that BG-01M7RAW9 and US-01M7R7HA were briefed and never returned, though both were past review:
+BG-01M7RAW9 was accepted and Fixed, and US-01M7R7HA's round-two repair was landed and approved.
+The two briefs it names are the round-two repair brief and the in-run bug's first brief, so the
+warning outlives the review as well as the land.
+
 ## Steps to Reproduce
 
 1. Land a lane with `sprint.py lane land --worktree <path> --units US1065`.
