@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 70 |
+| Draft | 69 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 274 |
+| Done | 275 |
 | Superseded | 33 |
 | **Total** | **377** |
 
@@ -90,7 +90,7 @@
 | [EP0337](EP0337-a-project-that-lost-its-lessons-log-rebuilds.md) | A project that lost its lessons log rebuilds it from the committed digest with one command | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0338](EP0338-an-engineering-review-checks-a-change-s-failure.md) | An engineering review checks a change's failure behaviour and signals against what the TRD declares | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0339](EP0339-a-head-of-engineering-reads-change-failure-rate.md) | A head of engineering reads change failure rate per release beside escapes per 100 points | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0340](EP0340-after-a-push-the-agent-waits-on-ci.md) | After a push the agent waits on CI once and handles a red run by a recorded policy | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0340](EP0340-after-a-push-the-agent-waits-on-ci.md) | After a push the agent waits on CI once and handles a red run by a recorded policy | Done | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0341](EP0341-a-project-can-require-a-reviewer-from-a.md) | A project can require a reviewer from a different model family, and reads what that buys | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0342](EP0342-the-instruction-text-every-agent-loads-is-cut.md) | The instruction text every agent loads is cut to what current models need, every gated rule kept | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0343](EP0343-a-consolidation-unit-can-opt-in-to-an.md) | A consolidation unit can opt in to an ownership line, kept only if a measured trial earns it | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |

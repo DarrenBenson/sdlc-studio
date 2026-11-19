@@ -1,6 +1,6 @@
 # BG1607: sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py, changelog.d/BG1607.md
@@ -30,6 +30,7 @@ Resolve the sign's retro from `--retro`, then the retro the close recorded on th
 - **When** `sprint sign --report <its report> --principal P --retro RETRO0002` seals it
 - **Then** the accuracy block and velocity row are written for RETRO0002, and RETRO0001 and its VELOCITY.md row are byte-identical to before. Fails on: any change to RETRO0001 or its row
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_sign_writes_the_named_retro_and_leaves_retro0001
+- **Verified:** yes (2026-11-19)
 
 ### AC2: Sign falls back to the close's retro, and writes none when no retro is known
 
@@ -37,6 +38,7 @@ Resolve the sign's retro from `--retro`, then the retro the close recorded on th
 - **When** each is signed without `--retro`
 - **Then** the first writes RETRO0002's accuracy block; the second writes no retro and prints that the velocity row was not recorded, naming `--retro`. Fails on: either writing RETRO0001
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_sign_uses_the_close_retro_and_writes_none_when_unknown
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

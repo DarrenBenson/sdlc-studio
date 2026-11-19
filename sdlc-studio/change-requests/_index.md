@@ -6,15 +6,15 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 4 |
+| Proposed | 5 |
 | Approved | 0 |
-| In Progress | 81 |
-| Complete | 560 |
+| In Progress | 80 |
+| Complete | 561 |
 | Rejected | 34 |
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **745** |
+| **Total** | **746** |
 
 ## All Changes
 
@@ -108,7 +108,7 @@
 | [CR-0694](CR0694-the-plan-forecasts-every-cost-row-the-report.md) | The plan forecasts every cost row the report measures, so each run's cost has a ratio to learn from | In Progress | High | enhancement | 2026-11-10 | EP0306, CR0703 |
 | [CR-0695](CR0695-the-sprint-report-and-the-scorecard-state-change.md) | The sprint report and the scorecard state change failure rate, from releases and the incidents linked to them | In Progress | High | feature | 2026-11-10 | EP0339 |
 | [CR-0696](CR0696-each-unit-carries-a-risk-and-compliance-class.md) | Each unit carries a risk and compliance class from a declared component map, flagged at plan, and a high class adds a second review seat | Complete | High | feature | 2026-11-10 | EP0307 |
-| [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | In Progress | High | enhancement | 2026-11-10 | EP0340 |
+| [CR-0697](CR0697-after-a-push-the-agent-waits-on-ci.md) | After a push, the agent waits on CI with one blocking watch, and a red run from a known flaky test follows a recorded policy | Complete | High | enhancement | 2026-11-10 | EP0340 |
 | [CR-0698](CR0698-a-project-can-require-its-reviewer-to-run.md) | A project can require its reviewer to run on a different model family or harness from the builder, and each verdict records the reviewer's model | In Progress | Medium | enhancement | 2026-11-10 | EP0341 |
 | [CR-0699](CR0699-builder-and-reviewer-reasoning-effort-is-a-project.md) | Builder and reviewer reasoning effort is a project setting, recorded in each run and measured against cost per point | Complete | High | Improvement | 2026-11-12 | EP0311 |
 | [CR-0700](CR0700-the-agent-instruction-files-and-shipped-templates-are.md) | The agent instruction files and shipped templates are audited against Opus 5.5's prompting guidance, keeping every rule a gate stands behind | In Progress | Medium | Improvement | 2026-11-12 | EP0342 |
@@ -157,6 +157,7 @@
 | [CR-0743](CR0743-the-run-report-records-the-harness-each-run.md) | The run report records the harness each run ran in, beside the models it priced | Proposed | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0744](CR0744-amend-a-batch-unit-s-affects-in-flight.md) | Amend a batch unit's Affects in flight with a recorded reason | Rejected | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0745](CR0745-file-finding-asks-the-filer-to-rule-on.md) | file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after | Proposed | Medium | Improvement | 2026-11-19 | -- |
+| [CR-0746](CR0746-the-session-meter-finds-a-claude-code-session.md) | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS | Proposed | Medium | Feature | 2026-11-19 | -- |
 
 ## Archived Releases
 

@@ -1,6 +1,6 @@
 # US1238: A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0697
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** the red run is put through the red-run command of `gate.py`
 - **Then** the run is recorded on that bug, the answer is to rerun the failed jobs once, and a second red of the same run answers stop, with the limit reached. Fails on: a rerun with nothing recorded on the bug, a second rerun past the limit, or any answer that skips or deselects the test
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_a_filed_flake_is_recorded_on_its_bug_and_rerun_once
+- **Verified:** yes (2026-11-19)
 
 ### AC2: Without a token that can rerun, the agent stops and asks the operator
 
@@ -32,6 +33,7 @@
 - **When** the red run is put through the command
 - **Then** the run is still recorded on the bug, and the answer is to stop and ask the operator to rerun, naming the run and the bug. Fails on: a rerun attempted and its failure read as a second red, or a silent stop that names no one to act
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_a_token_that_cannot_rerun_stops_and_asks_the_operator
+- **Verified:** yes (2026-11-19)
 
 ### AC3: A red run matching no filed flake is a regression that holds pushes
 
@@ -39,6 +41,7 @@
 - **When** each is put through the command
 - **Then** each is answered as a regression: a bug is filed through the shipped filer naming the run and the failing test, no rerun is offered, and the answer says not to push again until main is green. Fails on: a run rerun as a flake because one of its failures is known, or a regression with no bug filed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_a_red_run_matching_no_filed_flake_is_a_regression
+- **Verified:** yes (2026-11-19)
 
 ### AC4: The gate help and the test reference state the policy
 
@@ -46,6 +49,7 @@
 - **When** each is read for the red-run policy
 - **Then** the help names the command and its three answers (rerun once, stop and ask the operator, regression), and the reference says a known flake is recorded and rerun within the configured limit and never skipped. Fails on: a reference that still offers only prevention advice, or help that names no command
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_the_help_and_the_reference_state_the_red_run_policy
+- **Verified:** yes (2026-11-19)
 
 ### AC5: A configured rerun limit changes the red-run answer
 
@@ -53,6 +57,7 @@
 - **When** the first red run of a filed flaky failure is classified
 - **Then** the answer is stop and ask the operator, not rerun, and the reason names the configured limit. Fails on: the default limit of one applied despite the override
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_a_configured_rerun_limit_of_zero_stops_at_the_first_red_run
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

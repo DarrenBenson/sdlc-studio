@@ -1,6 +1,6 @@
 # BG1605: A run driven from a session started in another repository records no token stamp, so its report states no cost at all
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG1605.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -30,6 +30,7 @@ Resolve the session transcript from the harness's own session (its id or transcr
 - **When** `sprint plan --write` opens a run there
 - **Then** the run still opens, and the plan prints a warning that no session token stamp could be taken, so the run's cost will read NOT MEASURED, and names `SDLC_STUDIO_TRANSCRIPTS` as the way to point the meter at the session's own store. Fails on: a silent plan, or a warning that names no remedy
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::CrossRepoMeterTests::test_plan_warns_when_no_token_stamp_can_be_taken
+- **Verified:** yes (2026-11-19)
 
 ### AC2: A run in another repository is priced from the named store
 
@@ -37,6 +38,7 @@ Resolve the session transcript from the harness's own session (its id or transcr
 - **When** a run is planned and closed there
 - **Then** the run carries an open and a closing stamp whose `source` is the transcript under the named store, and the report's Priced cost row carries a figure rather than NOT MEASURED. Fails on: no stamp, a stamp read from the second repository's absent store, or a cost row left NOT MEASURED
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::CrossRepoMeterTests::test_a_cross_repository_run_is_priced_from_the_named_store
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

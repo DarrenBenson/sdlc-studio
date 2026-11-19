@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 452 |
+| Open | 462 |
 | In Progress | 0 |
-| Fixed | 958 |
+| Fixed | 960 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1608** |
+| **Total** | **1620** |
 
 ## All Bugs
 
@@ -680,10 +680,22 @@
 | [BG1602](BG1602-sprint-batch-add-takes-an-untriaged-inbox-bug.md) | sprint batch add takes an untriaged inbox bug without saying lane accept will refuse it Fixed until it is triaged | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1603](BG1603-tools-lint-style-sh-scans-gitignored-scratch-files.md) | tools/lint-style.sh scans gitignored scratch files, so an untracked note under .local/ blocks a commit that does not touch it | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1604](BG1604-sprint-plan-takes-the-stories-of-an-untriaged.md) | sprint plan takes the stories of an untriaged inbox CR, and only the close refuses to derive the CR Complete | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1605](BG1605-a-run-driven-from-a-session-started-in.md) | A run driven from a session started in another repository records no token stamp, so its report states no cost at all | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1605](BG1605-a-run-driven-from-a-session-started-in.md) | A run driven from a session started in another repository records no token stamp, so its report states no cost at all | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1608](BG1608-goal-review-brief-and-a-first-round-record.md) | goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1609](BG1609-a-high-risk-unit-s-second-review-seat.md) | A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1610](BG1610-lane-land-s-commit-timeout-kills-git-but.md) | lane land's commit timeout kills git but leaves the hooks' test run running orphaned, holding the host's CPU after the land reports nothing committed | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1611](BG1611-gate-py-red-run-s-regression-path-over.md) | gate.py --red-run's regression path over-claims: a failing id that names no file files no bug, and a second red on a different test reuses the first bug without naming that test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1612](BG1612-two-of-gate-py-red-run-s-behaviours.md) | Two of gate.py --red-run's behaviours hold by probe but no test pins them: the sections after a bug's CI Red Runs section, and the refusal of a negative, boolean or fractional rerun limit | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1613](BG1613-ci-wait-timeout-minutes-has-no-reader-the.md) | ci.wait_timeout_minutes has no reader: the trunk guidance's wait fence hardcodes `timeout 30m`, so a project's override changes nothing | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1614](BG1614-lane-accept-records-a-second-seat-s-verdict.md) | lane accept records a second seat's verdict against the unit's saved qa brief, not the brief the verdict file names | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1615](BG1615-mutation-py-run-edits-counts-an-edit-that.md) | mutation.py run --edits counts an edit that does not compile as killed and exits 0, and silently ignores --format and --max-mutations | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1616](BG1616-lane-land-s-several-worktree-landing-moves-a.md) | lane land's several-worktree landing moves a body line shaped like a trailer into the trailers, and three of its refusals have no test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1617](BG1617-lane-land-resume-compares-unit-ids-as-raw.md) | lane land --resume compares unit ids as raw strings, a landing stopped at rebase records no commit, and two refusals have no test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1618](BG1618-the-plan-s-unmetered-warning-gives-a-false.md) | The plan's unmetered warning gives a false reason on a re-plan, one of its test assertions cannot fail, and a fallback sentence is reached by no test | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1619](BG1619-sprint-sign-prints-nothing-when-its-retro-write.md) | sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1620](BG1620-the-verbatim-repair-brief-loses-the-first-line.md) | The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test | Open | Low | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

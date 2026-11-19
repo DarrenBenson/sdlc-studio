@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 187 |
+| Draft | 181 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 947 |
+| Done | 953 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -230,14 +230,14 @@
 | [US1190](US1190-remote-gate-judges-a-staged-tree-s-selected.md) | remote-gate judges a staged tree's selected test modules on the gate host and returns their verdict | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
 | [US1191](US1191-the-commit-hook-sends-its-selected-suites-to.md) | The commit hook sends its selected suites to the named gate host, and runs them locally when the host cannot be reached | Draft | EP0325 | 2026-11-17 | 2026-11-17 |
 | [US1192](US1192-lane-land-takes-several-worktrees-and-lands-them.md) | Lane land takes several worktrees and lands them as one commit with a Refs trailer for each unit | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
-| [US1193](US1193-lane-land-resumes-a-landing-whose-commit-was.md) | Lane land resumes a landing whose commit was refused without repeating the steps already done | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1193](US1193-lane-land-resumes-a-landing-whose-commit-was.md) | Lane land resumes a landing whose commit was refused without repeating the steps already done | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1194](US1194-sprint-close-names-each-unit-that-reached-main.md) | Sprint close names each unit that reached main with no lane land record | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
-| [US1195](US1195-a-refused-landing-or-a-reject-yields-a.md) | A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1195](US1195-a-refused-landing-or-a-reject-yields-a.md) | A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1196](US1196-sprint-drive-walks-one-unit-s-lane-from.md) | Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1197](US1197-sprint-drive-runs-a-wave-s-independent-units.md) | Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1198](US1198-sprint-drive-step-performs-the-whole-chain-after.md) | Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1199](US1199-the-mutation-probe-drops-each-conjunct-of-a.md) | The mutation probe drops each conjunct of a guard and flips polarity words in a document a test reads | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
-| [US1200](US1200-a-mutation-runner-applies-a-list-of-file.md) | A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1200](US1200-a-mutation-runner-applies-a-list-of-file.md) | A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each | Done | EP0327 | 2026-11-17 | 2026-11-17 |
 | [US1201](US1201-self-check-record-takes-the-runner-s-report.md) | Self-check record takes the runner's report and mutant list, and the author brief names the runner command | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
 | [US1202](US1202-the-critic-brief-prints-the-author-s-recorded.md) | The critic brief prints the author's recorded mutants and their replay, labelled as the author's | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
 | [US1203](US1203-the-hostile-kit-proves-the-verifier-dies-with.md) | The hostile kit proves the verifier dies with its caller, exits on an interrupt and leaves no orphan | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
@@ -273,9 +273,9 @@
 | [US1233](US1233-the-release-cut-writes-a-committed-record-of.md) | The release cut writes a committed record of each release, with its date and the reports it shipped | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
 | [US1234](US1234-a-command-derives-change-failure-rate-from-release.md) | A command derives change failure rate from release records and linked incidents, never reading 0% unmeasured | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
 | [US1235](US1235-the-sprint-report-and-the-seat-scorecard-show.md) | The sprint report and the seat scorecard show the release change failure rate, naming its source records | Draft | EP0339 | 2026-11-17 | 2026-11-17 |
-| [US1236](US1236-the-trunk-guidance-tells-the-agent-to-wait.md) | The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
-| [US1237](US1237-a-project-sets-the-ci-wait-timeout-and.md) | A project sets the CI wait timeout and the rerun limit in config, with the defaults documented | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
-| [US1238](US1238-a-red-ci-run-is-recorded-against-its.md) | A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes | Draft | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1236](US1236-the-trunk-guidance-tells-the-agent-to-wait.md) | The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first | Done | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1237](US1237-a-project-sets-the-ci-wait-timeout-and.md) | A project sets the CI wait timeout and the rerun limit in config, with the defaults documented | Done | EP0340 | 2026-11-17 | 2026-11-17 |
+| [US1238](US1238-a-red-ci-run-is-recorded-against-its.md) | A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes | Done | EP0340 | 2026-11-17 | 2026-11-17 |
 | [US1239](US1239-each-recorded-verdict-states-the-reviewer-s-model.md) | Each recorded verdict states the reviewer's model and harness, or unknown where the store gives neither | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
 | [US1240](US1240-with-review-reviewer-family-set-to-different-a.md) | With review.reviewer_family set to different, a same-family verdict is refused and an unknown needs a waiver | Draft | EP0341 | 2026-11-17 | 2026-11-17 |
 | [US1241](US1241-the-review-brief-names-the-harness-and-model.md) | The review brief names the harness and model to dispatch the reviewer to when the family setting is on | Draft | EP0341 | 2026-11-17 | 2026-11-17 |

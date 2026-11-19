@@ -1,6 +1,6 @@
 # US1236: The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0697
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** its steps after `git push origin main` are read
 - **Then** it tells the agent to wait on the run that push started with one blocking command under a timeout, naming `gh run watch <id> --exit-status` for GitHub, and says never to poll in a loop. Fails on: guidance that ends at the push, or that shows a loop over `gh run list`
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_trunk_ci_wait_guidance.py::TrunkCiWaitGuidanceTests::test_the_trunk_section_waits_with_one_blocking_watch_under_a_timeout
+- **Verified:** yes (2026-11-19)
 
 ### AC2: A red main is read before the next push
 
@@ -32,6 +33,7 @@
 - **When** its rule for a run that ends red is read
 - **Then** it says a red main is read before anything is pushed again, and points at the red-run policy instead of restating it. Fails on: guidance that lets the next unit be pushed over a red main
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_trunk_ci_wait_guidance.py::TrunkCiWaitGuidanceTests::test_a_red_main_is_read_before_the_next_push
+- **Verified:** yes (2026-11-19)
 
 ### AC3: The agent instructions template carries the rule within its budget
 
@@ -39,6 +41,7 @@
 - **When** its integration rule is read
 - **Then** it states the one blocking wait and the red-main read in the words of the reference's rule, and the template stays within its character budget. Fails on: a template silent on the wait, so a consuming project's agent never reads the rule, or one pushed over its budget
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_trunk_ci_wait_guidance.py::TrunkCiWaitGuidanceTests::test_the_agent_instructions_template_carries_the_wait_rule
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

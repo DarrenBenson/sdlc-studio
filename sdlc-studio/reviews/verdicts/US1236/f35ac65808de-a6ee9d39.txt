@@ -1,0 +1,6 @@
+UNIT: US1236
+BRIEF: f35ac65808de-a6ee9d39
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: verify_ac run --id US1236 --dry-run gives ac=3 pass=3 fail=0, and test_trunk_ci_wait_guidance.py with test_agent_instructions_budget.py gives 6 passed. Four mutants in an isolated copy of the skill each fail one test (a while/sleep loop over gh run list in the fence, the red-run pointer replaced by "push the next unit", the template dropping the red-main clause, the watch line without `timeout`). Claim inventory TRUE: the template is 4,996 chars under the 5,000 cap, the two dropped asides ("Done mean done", the hotfix bug's audit-pin parenthetical) are still in reference-doctrine.md:28 and :61, the pointer `reference-test-validation.md#red-ci-run` resolves to the new subsection inside Flakiness Prevention, init carries the sentence into a project's AGENTS.md, docgen reading-guides reports 0 drift and lint-style is clean. Remark, not a finding and UNVERIFIABLE offline: the fence's `gh run list --commit <sha> --limit 1` run straight after the push can find no run yet, because GitHub registers the run asynchronously, so an agent may see an empty id before the one watch (reference-code.md:760).

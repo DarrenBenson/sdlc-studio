@@ -4,7 +4,7 @@
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/templates/agents/sdlc-builder.md, .claude/agents/sdlc-builder.md, .claude/skills/sdlc-studio/scripts/tests/test_agent_definitions.py, changelog.d/BG1504.md
-> **Evidence:** Run fifteen (RUN-01M7HA6R) BG1498 builder report, 2026-11-16.
+> **Evidence:** run eighteen, 2026-11-19: two parallel lane builders shared the session scratch folder, and one overwrote the other's write_mutants.py helper, leaving it crashing
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

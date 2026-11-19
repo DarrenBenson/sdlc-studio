@@ -1,6 +1,6 @@
 # EP0340: After a push the agent waits on CI once and handles a red run by a recorded policy
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 9
 > **Parent:** CR0697
 > **Created:** 2026-11-17
@@ -14,9 +14,9 @@ Decomposed from CR0697. Delivers the work CR0697 requested.
 
 ## Story Breakdown
 
-- [ ] [US1236: The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first](../stories/US1236-the-trunk-guidance-tells-the-agent-to-wait.md)
-- [ ] [US1237: A project sets the CI wait timeout and the rerun limit in config, with the defaults documented](../stories/US1237-a-project-sets-the-ci-wait-timeout-and.md)
-- [ ] [US1238: A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes](../stories/US1238-a-red-ci-run-is-recorded-against-its.md)
+- [x] [US1236: The trunk guidance tells the agent to wait on its CI run with one blocking watch and to read a red main first](../stories/US1236-the-trunk-guidance-tells-the-agent-to-wait.md)
+- [x] [US1237: A project sets the CI wait timeout and the rerun limit in config, with the defaults documented](../stories/US1237-a-project-sets-the-ci-wait-timeout-and.md)
+- [x] [US1238: A red CI run is recorded against its filed flaky bug and rerun once, or filed as a regression holding pushes](../stories/US1238-a-red-ci-run-is-recorded-against-its.md)
 
 ## Acceptance Criteria (Epic Level)
 
