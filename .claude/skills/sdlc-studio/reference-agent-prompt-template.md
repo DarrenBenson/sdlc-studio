@@ -342,7 +342,10 @@ a unit with no contract reaches a terminal status.
 
 The brief leaves the commit to `sprint lane land`: the builder stages exactly its Affects, writes
 the commit message and its claims and mutants files to `sdlc-studio/.local/lane/`, and stops, so
-no builder waits on a commit hook. The brief states a tool-call budget, a fixed share plus one
+no builder waits on a commit hook. Its mutants are the runner's report: the builder runs
+`mutation.py run --edits EDITS.json --scope <id> --report REPORT.json`, REPORT.json the hand-in
+name the brief gives, and `lane land` records it with `critic.py self-check record --mutants-from
+REPORT.json`, which keeps the whole list for the review to replay. The brief states a tool-call budget, a fixed share plus one
 per-point constant times the unit's points; at the budget the builder writes `HANDOFF.md` there
 (what is done, the criteria left, the next step) and returns.
 

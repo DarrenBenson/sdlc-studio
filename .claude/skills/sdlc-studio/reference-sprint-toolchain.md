@@ -45,6 +45,7 @@ Read this at plan time. `sprint plan` prints it.
 | Run a suite | `tools/run-suite.sh all` | `npm test \| tail`, which reports tail's exit code |
 | Confirm the suite verdict | `tools/run-suite.sh --check` | trusting a remembered green |
 | Mutation-check a guard | `mutation.py run --story <id> --test <cmd>` | a hand-rolled mutate/restore loop |
+| Run the self-check's mutants | `mutation.py run --edits EDITS.json --scope <id> --report REPORT.json`, then `critic.py self-check record --unit <id> --author <you> --claims CLAIMS.json --mutants-from REPORT.json`, which keeps the whole list for the brief to replay | applying and restoring each chosen mutant by hand |
 | Change status | `transition.py set <id> <status>` | editing the Status line |
 
 ## 4. Review a unit

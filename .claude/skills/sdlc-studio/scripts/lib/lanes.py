@@ -283,15 +283,28 @@ def hand_in_names(unit: str) -> tuple[str, str]:
     return f"{key}-claims.json", f"{key}-mutants.json"
 
 
+def report_hand_in_name(unit: str) -> str:
+    """The name `unit` hands the mutation runner's report in under, keyed as `hand_in_names`
+    keys the other two: the lane brief points the runner's `--report` there and the landing
+    records it through `--mutants-from`."""
+    return f"{sdlc_md.norm_id(unit)}-mutation-edits.json"
+
+
 def _record_and_brief(root_top: Path, keep: Path, unit: str, author: str) -> tuple[bool, str]:
-    """Record one unit's self-check on the root and write its QA brief; (ok, the unit's line)."""
+    """Record one unit's self-check on the root and write its QA brief; (ok, the unit's line).
+    A hand-in carrying the runner's report (`report_hand_in_name`) is recorded through
+    `--mutants-from`, so its whole list is kept; one without it, through its mutants file."""
     claims, mutants = (keep / name for name in hand_in_names(unit))
-    missing = [p.name for p in (claims, mutants) if not p.is_file()]
+    report = keep / report_hand_in_name(unit)
+    missing = [p.name for p in (claims, mutants)
+               if not p.is_file() and not (p == mutants and report.is_file())]
     if missing:
+        nor = f" (nor the runner report {report.name})" if mutants.name in missing else ""
         return False, (f"{unit}: self-check NOT RECORDED and no brief written - the hand-in "
-                       f"carries no {' or '.join(missing)}")
+                       f"carries no {' or '.join(missing)}{nor}")
+    given = ("--mutants-from", str(report)) if report.is_file() else ("--mutants", str(mutants))
     rec = _critic(root_top, "self-check", "record", "--unit", unit, "--claims", str(claims),
-                  "--mutants", str(mutants), "--author", author)
+                  *given, "--author", author)
     if rec.returncode:
         return False, f"{unit}: self-check REFUSED and no brief written - {_tail(rec.stderr)}"
     brief = _critic(root_top, "brief", "--unit", unit, "--seat", "qa")
@@ -574,7 +587,8 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
         return lanes_
     for unit in units:
         owners = [lane for lane in lanes_
-                  if any((lane.top / HAND_IN / name).is_file() for name in hand_in_names(unit))]
+                  if any((lane.top / HAND_IN / name).is_file()
+                         for name in (*hand_in_names(unit), report_hand_in_name(unit)))]
         if len(owners) != 1:
             held = " and ".join(str(lane.top) for lane in owners) or "none of them"
             raise LandError(f"{unit}'s hand-in is in {held}, so which worktree landed it is not "

@@ -78,6 +78,16 @@ _GROOMED_AC = ("\n## Acceptance Criteria\n\n### AC1: it behaves as recorded\n\n"
                "- **Given** the recorded state\n- **Verify:** shell true\n")
 
 
+def _no_transcript_store(root: Path):
+    """Point the session meter at an empty folder under `root` (BG1622), so a plan --write
+    opens its run with no token stamp whatever the caller exported: a test asserting the
+    unstamped-run warning must not pass or fail on the operator's environment."""
+    from lib import run_state  # noqa: PLC0415
+    empty = root / "no-transcripts"
+    empty.mkdir(parents=True, exist_ok=True)
+    return unittest.mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(empty)})
+
+
 def _bug(root, num, status="Open", severity="Medium", groomed=True, points=FIXTURE_POINTS):
     d = root / "sdlc-studio" / "bugs"
     d.mkdir(parents=True, exist_ok=True)
@@ -570,12 +580,18 @@ class AuthoringPlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _bug(root, 1, status="Open")
-            # stdout captured: a green suite must print nothing, or a real error
-            # hides in the noise (the repo's test-noise budget enforces it).
-            with contextlib.redirect_stdout(io.StringIO()):
+            # stdout AND stderr captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it). BG1622: --write
+            # opens a run, and a run opened with no token stamp warns on stderr, which leaked
+            # one line per run until it was captured here and asserted below.
+            err = io.StringIO()
+            with _no_transcript_store(root), contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(err):
                 rc = _load().main(["plan", "--bugs", "Open", "--write", "--root", str(root)])
             self.assertEqual(rc, 0)
             self.assertTrue((root / "sdlc-studio" / ".local" / "sprint-plan.json").exists())
+            self.assertIn("warning: no session token stamp could be taken", err.getvalue(),
+                          "the plan opened an unstamped run without saying so on stderr")
 
 
 class CloseBlockerAttributionTests(unittest.TestCase):
@@ -1892,12 +1908,17 @@ class CapacityFeedsTheAppetiteTests(unittest.TestCase):
             sp = _load()
             data = sp.build_plan(root, "bug", "Open")
             self.assertIn("units", data["capacity"]["over"])          # flagged at PLAN time
-            # stdout captured: a green suite must print nothing, or a real error
-            # hides in the noise (the repo's test-noise budget enforces it).
-            with contextlib.redirect_stdout(io.StringIO()):
+            # stdout AND stderr captured: a green suite must print nothing, or a real error
+            # hides in the noise (the repo's test-noise budget enforces it). BG1622: the run
+            # this --write opens holds no token stamp, so the plan warns on stderr.
+            err = io.StringIO()
+            with _no_transcript_store(root), contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(err):
                 rc = sp.main(["plan", "--bugs", "Open", "--root", str(root),
                               "--no-fetch", "--write"])
             self.assertEqual(rc, 0)
+            self.assertIn("warning: no session token stamp could be taken", err.getvalue(),
+                          "the plan opened an unstamped run without saying so on stderr")
 
             guard = _load_loop_guard()
             # the breaker resolves the SAME ceiling, from the run state the plan stamped

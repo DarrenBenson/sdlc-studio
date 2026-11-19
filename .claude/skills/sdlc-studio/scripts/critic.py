@@ -157,6 +157,7 @@ def brief_fingerprint(brief_text: str) -> str:
     file section: its path is unique per briefing, so digesting it would give every brief of one
     scope its own fingerprint. Stripped here rather than in `cmd_brief`, because readers of a
     saved brief's whole stdout (`lanes._brief_of`, `resume_brief._approved`) hash through here.
+    The author's recorded mutants section is left out too: its replay moves with the tree.
     """
     import hashlib  # noqa: PLC0415 - local; only this path needs it
     import reconcile  # noqa: PLC0415 - sibling; the section's renderer owns its shape
@@ -180,13 +181,15 @@ VERDICTS_DIR_REL = Path("sdlc-studio") / "reviews" / "verdicts"
 
 
 def strip_verdict_file(text: str) -> str:
-    """`text` without the verdict file section `verdict_file_section` rendered into it. The LAST
-    match is the section, as `cmd_brief` prints it after everything else."""
+    """`text` without the sections `cmd_brief` adds to `brief()` for one briefing: the verdict
+    file section `verdict_file_section` rendered into it, whose LAST match is the section, as
+    `cmd_brief` prints it after everything else, and the author's recorded mutants section
+    (`strip_author_mutants`), whose replay is of the tree at that briefing."""
     matches = list(_VERDICT_FILE_RE.finditer(text))
-    if not matches:
-        return text
-    m = matches[-1]
-    return text[:m.start()] + text[m.end():]
+    if matches:
+        m = matches[-1]
+        text = text[:m.start()] + text[m.end():]
+    return strip_author_mutants(text)
 
 
 def verdict_file_section(path: Path, unit: str, stem: str) -> str:
@@ -2902,15 +2905,47 @@ def author_self_check(repo_root: Path | str, unit: str) -> str:
              (f"2. Mutation pass, over: {', '.join(tests)}." if tests else
               "2. Mutation pass: the unit's Affects declares no test file, so there is no test "
               "of its own to mutate."),
-             f"   {mutate}",
-             "",
-             "3. Record both, bound to the content of the unit's Affects as it stands now:",
-             f"   critic.py self-check record --unit {sdlc_md.norm_id(unit)} --author <you> "
-             f"--claims CLAIMS.json --mutants MUTANTS.json",
-             "   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json lists "
-             "each mutant as {mutant, test, result, answer}, and is [] when the unit declares "
-             "no test file."]
+             f"   {mutate}"]
+    uid = sdlc_md.norm_id(unit)
+    if not tests:
+        return "\n".join([
+            *lines, "",
+            "3. Record both, bound to the content of the unit's Affects as it stands now:",
+            f"   critic.py self-check record --unit {uid} --author <you> "
+            f"--claims CLAIMS.json --mutants MUTANTS.json",
+            "   CLAIMS.json lists each claim as {surface, claim, ruling}; MUTANTS.json is [], "
+            "the unit declaring no test file."])
+    selectors = _verify_selectors(repo_root, unit)
+    named = (f"such as the unit's Verify selectors: {'; '.join(selectors)}" if selectors else
+             "the unit's criteria naming no pytest Verify selector to start from")
+    lines += [f"   Let the mutation runner apply and run them: list each mutant in EDITS.json as "
+              f"{{mutant, file, old, new, test}}, its test a pytest selector, {named}. Give "
+              f"each survivor an answer there, then run:",
+              f"   {RUNNER_COMMAND.format(unit=uid)}",
+              "",
+              "3. Record both, bound to the content of the unit's Affects as it stands now:",
+              f"   critic.py self-check record --unit {uid} --author <you> "
+              f"--claims CLAIMS.json --mutants-from REPORT.json",
+              "   CLAIMS.json lists each claim as {surface, claim, ruling}; REPORT.json is the "
+              "runner's report, kept whole with the record so the review replays it. A mutant "
+              "the runner cannot run goes in MUTANTS.json as {mutant, test, result, answer}, "
+              "recorded with --mutants MUTANTS.json in place of --mutants-from."]
     return "\n".join(lines)
+
+
+def _verify_selectors(repo_root: Path | str, unit: str) -> list[str]:
+    """The pytest selectors the unit's Verify lines run, in criterion order, read through the
+    verifier's own parser; [] when there are none or the unit cannot be parsed."""
+    found = sdlc_md.find_by_id(Path(repo_root), unit)
+    if not found:
+        return []
+    import verify_ac  # noqa: PLC0415 - sibling; its AC parser is the one the criteria run by
+    out: list[str] = []
+    for block in verify_ac.parse_story(sdlc_md.read_text_safe(found[0])):
+        words = (block.verifier or "").split()
+        if words[:1] == ["pytest"]:
+            out += [w for w in words[1:] if not w.startswith("-") and w not in out]
+    return out
 
 
 def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list[str], list[str]]:
@@ -2975,8 +3010,10 @@ def self_checks_path(repo_root: Path | str) -> Path:
 
 
 def _review_tool_write(rel: str) -> bool:
-    """True for a path the review tooling writes (`_REVIEW_TOOL_WRITES`), relative to the root."""
-    return rel in _REVIEW_TOOL_WRITES or rel.startswith(_REVIEW_TOOL_RUNTIME)
+    """True for a path the review tooling writes (`_REVIEW_TOOL_WRITES`, the kept mutant lists
+    and the runtime notes), relative to the root."""
+    return (rel in _REVIEW_TOOL_WRITES or rel.startswith(_REVIEW_TOOL_RUNTIME)
+            or rel.startswith(f"sdlc-studio/reviews/{AUTHOR_MUTANTS_DIR}/"))
 
 
 def _working_members(root: Path, rel: str) -> list[str]:
@@ -3219,16 +3256,211 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
 
 
 def record_self_check(repo_root: Path | str, unit: str, claims: list[dict],
-                      mutants: list[dict], author: str = "") -> Path:
+                      mutants: list[dict], author: str = "", report: str | None = None) -> Path:
     """Append the author's self-check for a unit to the committed log, once `check_self_check`
     admits it, with the digest of its Affects content as it stands and the commit it was taken
-    at (none outside a repository). Nothing is written on a refusal."""
+    at (none outside a repository). Nothing is written on a refusal.
+
+    With `report`, the path of the runner's report `mutants` was read from
+    (`mutants_from_report`), the whole list is kept beside the row in the unit's committed file
+    under `AUTHOR_MUTANTS_DIR`, naming the row's digest cell, so `critic.py brief` replays it.
+    Without one, that file is removed: a list kept for an earlier row is never read as this
+    one's."""
     counts = check_self_check(repo_root, unit, claims, mutants)
     digest, commit = affects_digest(repo_root, unit), _head_commit(Path(repo_root))
+    cell = f"{digest}{_DIGEST_AT}{commit}" if commit else digest
     cells = (sdlc_md.norm_id(unit), _clean(author) or "-", sdlc_md.now_date(),
-             counts["claims"], counts["mutants"],
-             f"{digest}{_DIGEST_AT}{commit}" if commit else digest)
-    return _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
+             counts["claims"], counts["mutants"], cell)
+    path = _append_row(self_checks_path(repo_root), _SELF_CHECK_HEADER, cells)
+    kept = author_mutants_path(repo_root, unit)
+    if report is None:
+        kept.unlink(missing_ok=True)
+    else:
+        kept.parent.mkdir(parents=True, exist_ok=True)
+        sdlc_md.atomic_write(kept, json.dumps(
+            {"unit": sdlc_md.norm_id(unit), "digest": cell, "report": str(report),
+             "mutants": [{k: m.get(k, "") for k in _KEPT_MUTANT_KEYS} for m in mutants]},
+            indent=2) + "\n")
+    return path
+
+
+# --- The runner's report, recorded whole ----------------------------------------------------
+# The edit runner (`RUNNER_COMMAND`) runs mutants the author chose, in a scratch copy, and
+# writes a report of a fixed shape (documented above `mutation.EDITS_REPORT_VERSION`).
+# `self-check record --mutants-from` reads that report in place of a hand-written mutants list:
+# its rows are judged as `--mutants` rows are, and the whole list - each mutant's file, old and
+# new text, test, verdict and answer - is kept, so the reviewer's brief can replay it rather
+# than take the counts on trust.
+#: The committed directory, under `sdlc-studio/reviews/`, holding each unit's kept list.
+AUTHOR_MUTANTS_DIR = "author-mutants"
+#: The runner command the author section prints, with the unit's id, and the pages name.
+RUNNER_COMMAND = "mutation.py run --edits EDITS.json --scope {unit} --report REPORT.json"
+_KEPT_MUTANT_KEYS = ("mutant", "file", "old", "new", "test", "result", "answer")
+
+
+def author_mutants_path(repo_root: Path | str, unit: str) -> Path:
+    """The committed file the unit's runner-reported mutant list is kept in."""
+    return (Path(repo_root) / "sdlc-studio" / "reviews" / AUTHOR_MUTANTS_DIR
+            / f"{sdlc_md.norm_id(unit)}.json")
+
+
+def mutants_from_report(path: str | Path, unit: str) -> list[dict]:
+    """The rows of the runner's report at `path` as self-check mutants, or ValueError naming
+    the cause: a file that is not a runner report of the current shape, a report for another
+    unit, counts that disagree with its rows, or a row the runner did not measure (not applied
+    or an error), which a record would otherwise count as run."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import mutation  # noqa: PLC0415 - sibling; the report's shape is the runner's own
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"cannot read {path} as JSON: {exc}") from None
+    if not isinstance(data, dict) or data.get("kind") != "mutation-edits":
+        raise ValueError(f"{path} is not a report the mutation runner wrote ("
+                         f"{RUNNER_COMMAND.format(unit=sdlc_md.norm_id(unit))})")
+    if data.get("version") != mutation.EDITS_REPORT_VERSION:
+        raise ValueError(f"{path} is a version {data.get('version')!r} runner report, and this "
+                         f"record reads version {mutation.EDITS_REPORT_VERSION}")
+    if sdlc_md.norm_id(str(data.get("unit") or "")) != sdlc_md.norm_id(unit):
+        raise ValueError(f"{path} is the runner's report for {data.get('unit')!r}, not "
+                         f"{sdlc_md.norm_id(unit)}")
+    rows = data.get("mutants")
+    if not isinstance(rows, list) or not rows or not all(isinstance(r, dict) for r in rows):
+        raise ValueError(f"{path} lists no mutant")
+    for n, row in enumerate(rows, 1):
+        name = str(row.get("mutant") or "").strip() or f"M{n}"
+        if bad := [k for k in _KEPT_MUTANT_KEYS if not isinstance(row.get(k, ""), str)]:
+            raise ValueError(f"mutant {n} ({name!r}) in {path} has no usable {', '.join(bad)}")
+        if row.get("result") not in MUTANT_RESULTS:
+            raise ValueError(f"mutant {n} ({name!r}) is {row.get('result') or 'unjudged'!r} in "
+                             f"{path}, so it measured nothing "
+                             f"({row.get('reason') or 'no reason given'}) - correct the edit "
+                             f"and run the runner again")
+    counted = {r: sum(1 for row in rows if row["result"] == r) for r in MUTANT_RESULTS}
+    stated = data.get("counts") if isinstance(data.get("counts"), dict) else {}
+    if any(stated.get(r) != counted[r] for r in MUTANT_RESULTS):
+        raise ValueError(f"{path} states counts {stated} that its rows do not add up to")
+    return [{k: row.get(k, "") for k in _KEPT_MUTANT_KEYS} for row in rows]
+
+
+def recorded_mutants(repo_root: Path | str, unit: str) -> list[dict] | None:
+    """The mutant list kept with the unit's latest self-check row, or None when that row was
+    recorded with no runner report (or there is no row, or the kept file names another row)."""
+    uid = sdlc_md.norm_id(unit)
+    rows = [r for r in read_self_checks(repo_root) if sdlc_md.norm_id(r["unit"]) == uid]
+    try:
+        kept = json.loads(author_mutants_path(repo_root, unit).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not rows or not isinstance(kept, dict) or not isinstance(kept.get("mutants"), list):
+        return None
+    last = rows[-1]
+    cell = f"{last['digest']}{_DIGEST_AT}{last['commit']}" if last["commit"] else last["digest"]
+    return kept["mutants"] if kept.get("digest") == cell else None
+
+
+# --- The author's recorded mutants, replayed in the brief -----------------------------------
+# A recorded verdict is the author's word for the tree as it was. The brief replays the kept
+# list through the same runner against the tree as it is, and prints both verdicts per mutant,
+# so a kill a later change undid reaches the reviewer marked rather than as current. The
+# replay is the author's evidence re-run: it is never the reviewer's own mutation pass.
+#: The section's opening line. Like the verdict file mark, the section is added by `cmd_brief`
+#: for one briefing at every tier, outside `brief()`, so it is not shaped `--- NAME ---` and is
+#: never read as one of the tier sections `TIER_SECTIONS` declares.
+AUTHOR_MUTANTS_HEADING = ("The author's recorded mutants, replayed now (the author's own pass, "
+                          "not the reviewer's mutation pass):")
+#: The marker on a line whose replayed verdict is not the recorded one.
+REPLAY_DISAGREES = "DISAGREES"
+#: The section's closing line: not shaped `--- NAME ---`, so it is never read as a tier section,
+#: and exact, so the strip ends there and leaves whatever follows.
+AUTHOR_MUTANTS_END = "(end of the author's recorded mutants)"
+#: The wall-clock bound on one brief's replay; past it the brief says so and is issued.
+REPLAY_TIMEOUT = 600
+
+
+def _replay_author_mutants(repo_root: Path | str, unit: str,
+                           mutants: list[dict]) -> tuple[list[str] | None, str]:
+    """Each kept mutant's verdict now, from the runner run over the kept list, or (None, why)
+    when the runner did not give one: a refusal, a timeout or a report it did not write. The
+    list and the report live in a temporary directory, so the replay writes nothing to the
+    workspace; the runner itself mutates only a scratch copy of the tree."""
+    import shutil  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+    work = Path(tempfile.mkdtemp(prefix="author_mutants_"))
+    try:
+        edits, report = work / "edits.json", work / "report.json"
+        edits.write_text(json.dumps(
+            [{k: str(m.get(k, "")) for k in ("mutant", "file", "old", "new", "test", "answer")}
+             for m in mutants]), encoding="utf-8")
+        proc = subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve().parent / "mutation.py"), "run",
+             "--edits", str(edits), "--scope", sdlc_md.norm_id(unit), "--report", str(report),
+             "--root", str(repo_root)],
+            cwd=str(repo_root), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            _out, err = proc.communicate(timeout=REPLAY_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            proc.terminate()                  # SIGTERM: the runner removes its scratch copy
+            try:
+                proc.communicate(timeout=60)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+            return None, f"the runner did not finish within {REPLAY_TIMEOUT}s"
+        try:
+            rows = json.loads(report.read_text(encoding="utf-8"))["mutants"]
+        except (OSError, ValueError, KeyError, TypeError):
+            tail = " ".join((err or "").split())[-300:]
+            return None, f"the runner wrote no report (exit {proc.returncode}): {tail or 'no output'}"
+        if not isinstance(rows, list) or len(rows) != len(mutants):
+            return None, "the runner's report does not list the kept mutants one for one"
+        return [str(r.get("result") or "error") if isinstance(r, dict) else "error"
+                for r in rows], ""
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def author_mutants_section(repo_root: Path | str, unit: str, tier: str) -> str:
+    """The brief's section of the author's recorded mutants: each with its recorded verdict
+    and the verdict the runner's replay gives it now, a disagreement marked, and the rule that
+    the replay does not count as the reviewer's own mutation pass. A unit whose latest
+    self-check kept no list is told so, and its brief is issued as before."""
+    uid = sdlc_md.norm_id(unit)
+    kept = recorded_mutants(repo_root, unit)
+    if not kept:
+        return (f"{AUTHOR_MUTANTS_HEADING}\n\nNo mutant list was recorded: {uid}'s latest "
+                f"self-check kept counts only (recorded with --mutants, or not recorded), so "
+                f"there is nothing of the author's to replay. Your own mutation pass is as the "
+                f"tier asks.\n{AUTHOR_MUTANTS_END}")
+    replayed, why = _replay_author_mutants(repo_root, unit, kept)
+    own = (" Your own pass still mutates the author's tests, as the STANDING REVIEW PRACTICES "
+           "ask." if "CLAIM INVENTORY" in TIER_SECTIONS.get(tier, ()) else "")
+    lines = [AUTHOR_MUTANTS_HEADING, "",
+             f"These are the author's mutants for {uid}, each replayed now by the mutation "
+             f"runner over the tree as it stands; the replayed list does not count as your own "
+             f"mutation pass.{own}", ""]
+    for n, m in enumerate(kept):
+        now = replayed[n] if replayed else f"not run ({why})"
+        mark = f"  {REPLAY_DISAGREES}" if replayed and now != m.get("result") else ""
+        lines.append(f"- {m.get('mutant')}: {m.get('file')} against {m.get('test')} - recorded "
+                     f"{m.get('result')}, replayed {now}{mark}")
+        if str(m.get("answer") or "").strip():
+            lines.append(f"  the author's answer: {' '.join(str(m['answer']).split())}")
+    if replayed and (off := sum(1 for n, m in enumerate(kept) if replayed[n] != m.get("result"))):
+        lines += ["", f"{off} of {len(kept)} replayed verdict(s) disagree with the record: judge "
+                      f"each by its replay, not by what was recorded."]
+    return "\n".join([*lines, AUTHOR_MUTANTS_END])
+
+
+def strip_author_mutants(text: str) -> str:
+    """`text` without the author's recorded mutants section: its replay moves whenever the tree
+    does, so a fingerprint over it would differ between briefing and recording."""
+    start = text.find(f"\n\n{AUTHOR_MUTANTS_HEADING}")
+    if start < 0:
+        return text
+    end = text.find(AUTHOR_MUTANTS_END, start)
+    return text[:start] + (text[end + len(AUTHOR_MUTANTS_END):] if end >= 0 else "")
 
 
 def read_self_checks(repo_root: Path | str) -> list[dict]:
@@ -4755,6 +4987,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
             explicit = args.tier is not None
             tier = args.tier or tier_for(args.root, args.unit)
             text = brief(args.root, args.unit, args.seat, tier)
+            # The author's recorded mutants, replayed here in the verb rather than in `brief()`,
+            # which other readers render through and should not pay a replay for.
+            text += "\n\n" + author_mutants_section(args.root, args.unit, tier)
             # The checks run here, in the verb, and never inside `brief()`, which other readers
             # also render through. Each tier is held to the practices and the claim inventory
             # its tables say it carries, so a light brief is asked for neither the mutation
@@ -5084,8 +5319,11 @@ def _superseded_suffix(verdict: dict) -> str:
 def cmd_self_check_record(args: argparse.Namespace) -> int:
     try:
         claims = _entries(args.claims, "claims")
-        mutants = _entries(args.mutants, "mutants")
-        path = record_self_check(args.root, args.unit, claims, mutants, author=args.author)
+        report = getattr(args, "mutants_from", None)
+        mutants = (mutants_from_report(report, args.unit) if report
+                   else _entries(args.mutants, "mutants"))
+        path = record_self_check(args.root, args.unit, claims, mutants, author=args.author,
+                                 report=report)
     except (OSError, ValueError) as exc:
         print(f"self-check record refused: {exc}. Nothing was written.", file=sys.stderr)
         return 2
@@ -5093,6 +5331,8 @@ def cmd_self_check_record(args: argparse.Namespace) -> int:
     taken = f" at {row['commit']}" if row["commit"] else ""
     print(f"recorded the self-check for {row['unit']}: claims {row['claims']}; mutants "
           f"{row['mutants']}; Affects digest {row['digest']}{taken} -> {path}")
+    if report:
+        print(f"kept the runner's mutant list -> {author_mutants_path(args.root, args.unit)}")
     return 0
 
 
@@ -5236,11 +5476,16 @@ def build_parser() -> argparse.ArgumentParser:
                      help="a JSON list of {surface, claim, ruling}: the surface is the commit "
                           "message, a changelog fragment the unit's Affects declares, or one of "
                           "the brief's claim surfaces; the ruling TRUE, FALSE or UNVERIFIABLE")
-    scr.add_argument("--mutants", required=True, metavar="MUTANTS.json",
-                     help="a JSON list of {mutant, test, result, answer}: the test a "
-                          "`path::name` in a test file the unit's Affects declares, the result "
-                          "killed or survived, and an answer for every survivor; [] for a unit "
-                          "that declares no test file")
+    given = scr.add_mutually_exclusive_group(required=True)
+    given.add_argument("--mutants-from", dest="mutants_from", metavar="REPORT.json",
+                       help="the report `mutation.py run --edits <list> --scope <unit>` wrote: "
+                            "each mutant killed or survived, a survivor answered in the list, "
+                            "the whole list kept with the row for `critic.py brief` to replay")
+    given.add_argument("--mutants", metavar="MUTANTS.json",
+                       help="a JSON list of {mutant, test, result, answer}: the test a "
+                            "`path::name` in a test file the unit's Affects declares, the "
+                            "result killed or survived, and an answer for every survivor; [] "
+                            "for a unit that declares no test file. Only the counts are kept")
     scr.add_argument("--author", default="",
                      help="the authoring seat or delegation id that ran the self-check")
     # SUPPRESS here, not ".": `add_global_root` re-points one level of subcommands and this one

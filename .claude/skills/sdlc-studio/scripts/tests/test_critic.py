@@ -3987,5 +3987,154 @@ class SeatCardResolutionTests(unittest.TestCase):
             self.assertIn("declares no role", err)
 
 
+class BriefAuthorMutantsTests(unittest.TestCase):
+    """The brief carries the author's recorded mutants, each with its recorded verdict and the
+    verdict the mutation runner's replay gives it now, labelled as the author's and never as
+    the reviewer's own pass. Driven through `critic.py` and `mutation.py`'s entry points in a
+    throwaway git work tree, since the runner copies what git sees."""
+
+    WIDGET = ("def add(a, b):\n    return a + b\n\n\ndef sign(x):\n    if x < 0:\n"
+              "        return -1\n    return 1\n")
+    TESTS = ("from src.widget import add, sign\n\n\ndef test_add():\n    assert add(2, 3) == 5\n"
+             "\n\ndef test_sign():\n    assert sign(-4) == -1\n    assert sign(4) == 1\n")
+    ADD, SIGN = "tests/test_widget.py::test_add", "tests/test_widget.py::test_sign"
+    EDITS = [
+        {"mutant": "add subtracts", "file": "src/widget.py", "old": "return a + b",
+         "new": "return a - b", "test": ADD},
+        {"mutant": "negative reads positive", "file": "src/widget.py", "old": "return -1",
+         "new": "return 1", "test": SIGN},
+        {"mutant": "positive reads zero", "file": "src/widget.py", "old": "    return 1\n",
+         "new": "    return 0\n", "test": SIGN},
+    ]
+    CLAIMS = [{"surface": "commit message", "claim": "it adds", "ruling": "TRUE"},
+              {"surface": "changelog.d/US0101.md", "claim": "it signs", "ruling": "TRUE"}]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import gitutil  # noqa: PLC0415 - the confined git environment every fixture uses
+        cls.gitutil = gitutil
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.base = Path(cls._tmp.name) / "repo"
+        files = {
+            "src/widget.py": cls.WIDGET, "tests/test_widget.py": cls.TESTS,
+            "sdlc-studio/personas/seats/qa.md": "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n",
+            "sdlc-studio/stories/US0101-widget.md": (
+                "# US0101: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"
+                "> **Affects:** src/widget.py, tests/test_widget.py, changelog.d/US0101.md\n\n"
+                "## Acceptance Criteria\n\n### AC1: adds\n- **Verify:** pytest "
+                f"{cls.ADD}\n\n### AC2: signs\n- **Verify:** pytest {cls.SIGN}\n")}
+        for rel, body in files.items():
+            (cls.base / rel).parent.mkdir(parents=True, exist_ok=True)
+            (cls.base / rel).write_text(body, encoding="utf-8")
+        for argv in (["init", "-q"], ["add", "-A"], ["commit", "-q", "-m", "fixture"]):
+            gitutil.git(argv, cls.base)
+        work = Path(cls._tmp.name)
+        (work / "edits.json").write_text(json.dumps(cls.EDITS), encoding="utf-8")
+        (work / "claims.json").write_text(json.dumps(cls.CLAIMS), encoding="utf-8")
+        cls._run(SCRIPT.parent / "mutation.py", "run", "--edits", str(work / "edits.json"),
+                 "--scope", "US0101", "--report", str(work / "report.json"), root=cls.base)
+        rec = cls._run(SCRIPT, "self-check", "record", "--unit", "US0101", "--claims",
+                       str(work / "claims.json"), "--mutants-from", str(work / "report.json"),
+                       "--author", "builder-7", root=cls.base)
+        assert rec.returncode == 0, rec.stderr
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._tmp.cleanup()
+
+    @classmethod
+    def _run(cls, script: Path, *args: str, root: Path):
+        import subprocess  # noqa: PLC0415
+        return subprocess.run([sys.executable, "-B", str(script), *args, "--root", str(root)],
+                              cwd=str(root), capture_output=True, text=True, timeout=600,
+                              env=cls.gitutil.git_env(), check=False)
+
+    def _copy(self) -> Path:
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d, True)
+        shutil.copytree(self.base, Path(d) / "repo", symlinks=True)
+        return Path(d) / "repo"
+
+    def _brief(self, root: Path, *extra: str) -> str:
+        r = self._run(SCRIPT, "brief", "--unit", "US0101", "--seat", "qa", *extra, root=root)
+        self.assertEqual(0, r.returncode, r.stderr)
+        return r.stdout
+
+    @staticmethod
+    def _section(brief: str) -> str:
+        start = brief.find("The author's recorded mutants, replayed now")
+        if start < 0:
+            return ""
+        end = brief.find("\n--- ", start + 4)
+        return brief[start:end if end > 0 else len(brief)]
+
+    @staticmethod
+    def _line(section: str, mutant: str) -> str:
+        return next((ln for ln in section.splitlines() if mutant in ln), "")
+
+    def test_the_brief_lists_the_authors_mutants_with_their_replay(self) -> None:
+        """Mutants: the section left out, or naming only the counts; a line with no recorded
+        verdict, or with no replayed one; the replay never run, its verdict taken from the
+        record (the next criterion tells those apart)."""
+        section = self._section(self._brief(self._copy()))
+        self.assertTrue(section, "the brief carries no section of the author's recorded mutants")
+        self.assertRegex(section.splitlines()[0], r"(?i)author's")
+        for edit in self.EDITS:
+            with self.subTest(mutant=edit["mutant"]):
+                line = self._line(section, edit["mutant"])
+                self.assertTrue(line, f"{edit['mutant']} is not listed:\n{section}")
+                self.assertIn(edit["test"], line)
+                self.assertRegex(line, r"recorded killed\b.*replayed killed\b")
+                self.assertNotIn("DISAGREES", line)
+
+    def test_a_replay_that_disagrees_with_the_record_is_marked(self) -> None:
+        """After the test stops asking for the sign of four, the mutant recorded killed that it
+        caught survives the replay and is marked; the other two still agree. Mutants: the
+        replayed verdict copied from the record; the mark dropped, or put on every line."""
+        root = self._copy()
+        tests = root / "tests" / "test_widget.py"
+        tests.write_text(self.TESTS.replace("    assert sign(4) == 1\n", ""), encoding="utf-8")
+        section = self._section(self._brief(root))
+        stale = self._line(section, "positive reads zero")
+        self.assertRegex(stale, r"recorded killed\b.*replayed survived\b")
+        self.assertIn("DISAGREES", stale)
+        for agreeing in ("add subtracts", "negative reads positive"):
+            with self.subTest(mutant=agreeing):
+                line = self._line(section, agreeing)
+                self.assertRegex(line, r"recorded killed\b.*replayed killed\b")
+                self.assertNotIn("DISAGREES", line)
+
+    def test_the_replay_is_never_counted_as_the_reviewers_own_pass(self) -> None:
+        """Mutants: the section dropping the sentence that the replay is not the reviewer's
+        pass; the practice to mutate the author's tests dropped when a list is replayed; a unit
+        with no list refused, or given an empty section; the page not stating the rule."""
+        brief = self._brief(self._copy(), "--tier", "full")
+        section = self._section(brief)
+        self.assertRegex(" ".join(section.split()),
+                         r"(?i)the author's[^.]*replayed[^.]*do(es)? not count as your own "
+                         r"mutation pass")
+        self.assertIn("Mutate the author's TESTS", brief,
+                      "the full tier lost the practice to mutate the author's tests")
+        root = self._copy()
+        work = root.parent
+        (work / "mutants.json").write_text(json.dumps(
+            [{"mutant": "by hand", "test": self.ADD, "result": "killed"}]), encoding="utf-8")
+        (work / "claims.json").write_text(json.dumps(self.CLAIMS), encoding="utf-8")
+        rec = self._run(SCRIPT, "self-check", "record", "--unit", "US0101", "--claims",
+                        str(work / "claims.json"), "--mutants", str(work / "mutants.json"),
+                        root=root)
+        self.assertEqual(0, rec.returncode, rec.stderr)
+        plain = self._brief(root, "--tier", "full")
+        none = self._section(plain)
+        self.assertRegex(" ".join(none.split()), r"(?i)no mutant list was recorded")
+        self.assertNotIn("replayed killed", none)
+        for block in ("VERIFY COMMAND", "CLAIM INVENTORY", "STANDING REVIEW PRACTICES"):
+            self.assertIn(block, plain, f"the brief with no list lost its {block}")
+        page = " ".join((SCRIPT.parent.parent / "reference-review.md")
+                        .read_text(encoding="utf-8").split())
+        self.assertRegex(page, r"(?i)the replayed list is the author's[^.]*does not count as "
+                               r"the reviewer's own mutation pass")
+
+
 if __name__ == "__main__":
     unittest.main()

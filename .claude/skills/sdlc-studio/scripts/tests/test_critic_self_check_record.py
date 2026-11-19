@@ -77,6 +77,76 @@ def _record(root: Path, unit: str, claims, mutants, *extra: str) -> subprocess.C
                           check=False)
 
 
+# --- The runner's report ------------------------------------------------------------------
+MUTATION = SCRIPTS / "mutation.py"
+WIDGET = ("def add(a, b):\n    return a + b\n\n\ndef sign(x):\n    if x < 0:\n"
+          "        return -1\n    return 1\n")
+WIDGET_TESTS = ("from src.widget import add, sign\n\n\ndef test_add():\n"
+                "    assert add(2, 3) == 5\n\n\ndef test_sign():\n    assert sign(-4) == -1\n"
+                "    assert sign(4) == 1\n")
+ADD, SIGN = "tests/test_widget.py::test_add", "tests/test_widget.py::test_sign"
+#: Three mutants the widget's tests kill.
+THREE_KILLED = [
+    {"mutant": "add subtracts", "file": "src/widget.py", "old": "return a + b",
+     "new": "return a - b", "test": ADD},
+    {"mutant": "negative reads positive", "file": "src/widget.py", "old": "return -1",
+     "new": "return 1", "test": SIGN},
+    {"mutant": "positive reads zero", "file": "src/widget.py", "old": "    return 1\n",
+     "new": "    return 0\n", "test": SIGN},
+]
+#: One the tests cannot see: no test asks for the sign of zero.
+ZERO_SURVIVES = {"mutant": "zero reads negative", "file": "src/widget.py", "old": "if x < 0:",
+                 "new": "if x <= 0:", "test": SIGN}
+
+
+def _runner_project(root: Path, unit: str = "US0101", verify: tuple = (ADD, SIGN)) -> None:
+    """A git work tree whose unit declares the widget, its tests and a fragment, with a pytest
+    Verify selector per criterion: the tree the mutation runner copies and mutates."""
+    _project(root, unit, "src/widget.py, tests/test_widget.py, changelog.d/US0101.md")
+    acs = "".join(f"### AC{n}: holds\n- **Verify:** pytest {sel}\n\n"
+                  for n, sel in enumerate(verify, 1))
+    _write(root, f"sdlc-studio/stories/{unit}-widget.md",
+           f"# {unit}: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"
+           f"> **Affects:** src/widget.py, tests/test_widget.py, changelog.d/US0101.md\n\n"
+           f"## Acceptance Criteria\n\n{acs}")
+    _write(root, "src/widget.py", WIDGET)
+    _write(root, "tests/test_widget.py", WIDGET_TESTS)
+    gitutil.git(["init", "-q"], root)
+    gitutil.git(["add", "-A"], root)
+    gitutil.git(["commit", "-q", "-m", "fixture"], root)
+
+
+def _run_runner(root: Path, edits: list, unit: str = "US0101", name: str = "report") -> Path:
+    """The shipped runner over `edits`, through its entry point; the report it wrote."""
+    epath, report = root.parent / f"{name}-edits.json", root.parent / f"{name}.json"
+    epath.write_text(json.dumps(edits), encoding="utf-8")
+    r = subprocess.run([sys.executable, "-B", str(MUTATION), "run", "--edits", str(epath),
+                        "--scope", unit, "--report", str(report), "--root", str(root)],
+                       cwd=str(root), capture_output=True, text=True, timeout=300,
+                       env=gitutil.git_env(), check=False)
+    assert report.is_file(), f"the runner wrote no report:\n{r.stdout}{r.stderr}"
+    return report
+
+
+def _record_from(root: Path, unit: str, report: Path) -> subprocess.CompletedProcess:
+    """`self-check record --mutants-from <report>` through the shipped command."""
+    cpath = root.parent / "claims.json"
+    cpath.write_text(json.dumps(_covered()), encoding="utf-8")
+    return subprocess.run([sys.executable, "-B", str(CRITIC), "self-check", "record", "--unit",
+                           unit, "--claims", str(cpath), "--mutants-from", str(report),
+                           "--author", "builder-7", "--root", str(root)],
+                          capture_output=True, text=True, timeout=300, env=gitutil.git_env(),
+                          check=False)
+
+
+def _rewrite_report(report: Path, change) -> Path:
+    """The report with `change(data)` applied, as an author editing it by hand would."""
+    data = json.loads(report.read_text(encoding="utf-8"))
+    change(data)
+    report.write_text(json.dumps(data), encoding="utf-8")
+    return report
+
+
 class SelfCheckRecordTests(unittest.TestCase):
 
     def _refused(self, root: Path, r: subprocess.CompletedProcess, *names: str) -> None:
@@ -266,6 +336,187 @@ class SelfCheckRecordTests(unittest.TestCase):
             args = critic.build_parser().parse_args(words)
             self.assertEqual(("self-check", "US0101"), (args.cmd, args.unit))
             self.assertNotIn("self-check record", r.stdout, "the record command reached the brief")
+
+    def test_the_runners_report_is_recorded_with_its_full_mutant_list(self) -> None:
+        """The runner's own report, three mutants all killed, is recorded with its counts and
+        its whole list, which the brief reads back. Mutants: only the counts kept; a key of
+        each mutant dropped from what is kept; a report for another unit, or a mutant the
+        runner did not apply, recorded; a later record by hand left reading the stale list."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "repo"
+            _runner_project(root)
+            report = _run_runner(root, THREE_KILLED)
+            r = _record_from(root, "US0101", report)
+            self.assertEqual(0, r.returncode, r.stderr)
+            row = critic.read_self_checks(root)[-1]
+            self.assertEqual(("US0101", "killed 3, survived 0"), (row["unit"], row["mutants"]))
+            kept = critic.recorded_mutants(root, "US0101")
+            self.assertIsNotNone(kept, "the record kept no mutant list for the brief to read")
+            ran = json.loads(report.read_text(encoding="utf-8"))["mutants"]
+            keys = ("mutant", "file", "old", "new", "test", "result")
+            self.assertEqual([{k: m[k] for k in keys} for m in ran],
+                             [{k: m[k] for k in keys} for m in kept])
+            self.assertEqual(["killed"] * 3, [m["result"] for m in kept])
+            self.assertEqual(sorted(e["old"] for e in THREE_KILLED),
+                             sorted(m["old"] for m in kept))
+            # The same list read back is the brief's: kept in a committed file, not under .local.
+            self.assertFalse(any(".local" in p.parts for p in (root / "sdlc-studio").rglob("*")
+                                 if p.is_file() and "US0101" in p.name and "mutant" in p.name))
+            # A kept list naming another row is not this row's.
+            sidecar = critic.author_mutants_path(root, "US0101")
+            good = sidecar.read_text(encoding="utf-8")
+            sidecar.write_text(good.replace(row["digest"], "0123456789abcdef"), encoding="utf-8")
+            self.assertIsNone(critic.recorded_mutants(root, "US0101"),
+                              "a list kept for another row was read as this row's")
+            sidecar.write_text(good, encoding="utf-8")
+            for label, change, named in (
+                    ("another unit's report", lambda data: data.update(unit="US0999"), "US0999"),
+                    ("a mutant not applied", lambda data: data["mutants"][1].update(
+                        result="not-applied", reason="the old text is not in src/widget.py"),
+                     "negative reads positive"),
+                    ("counts its rows deny", lambda data: data["counts"].update(killed=2),
+                     "counts")):
+                with self.subTest(refused=label):
+                    bad = Path(d) / f"{label}.json"
+                    bad.write_text(report.read_text(encoding="utf-8"), encoding="utf-8")
+                    before = (root / LOG).read_text(encoding="utf-8")
+                    r = _record_from(root, "US0101", _rewrite_report(bad, change))
+                    self.assertEqual(2, r.returncode, f"recorded:\n{r.stdout}{r.stderr}")
+                    self.assertIn(named, r.stderr)
+                    self.assertEqual(before, (root / LOG).read_text(encoding="utf-8"))
+            r = _record(root, "US0101", _covered(), [{"mutant": "by hand", "result": "killed",
+                                                      "test": ADD}])
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual("killed 1, survived 0", critic.read_self_checks(root)[-1]["mutants"])
+            self.assertIsNone(critic.recorded_mutants(root, "US0101"),
+                              "a record by hand left the brief reading the report's list")
+
+    def test_a_report_with_an_unanswered_survivor_is_refused(self) -> None:
+        """A runner report with one survivor is refused, naming it and writing nothing, until
+        the survivor carries an answer; then the answer is kept beside it. A report whose
+        mutant names a test outside the unit's Affects is refused as `--mutants` refuses it.
+        Mutants: the survivor check skipped for a report; the answer dropped from the kept
+        list; the Affects check skipped for a report."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "repo"
+            _runner_project(root)
+            report = _run_runner(root, [THREE_KILLED[0], ZERO_SURVIVES])
+            ran = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(["killed", "survived"], [m["result"] for m in ran["mutants"]])
+            r = _record_from(root, "US0101", report)
+            self._refused(root, r, "zero reads negative", "answer")
+            self.assertIsNone(critic.recorded_mutants(root, "US0101"))
+            answer = "no criterion asks for the sign of zero; BG0001 files it"
+            answered = _run_runner(root, [THREE_KILLED[0], {**ZERO_SURVIVES, "answer": answer}])
+            r = _record_from(root, "US0101", answered)
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual("killed 1, survived 1", critic.read_self_checks(root)[-1]["mutants"])
+            kept = {m["mutant"]: m for m in critic.recorded_mutants(root, "US0101")}
+            self.assertEqual(("survived", answer), (kept["zero reads negative"]["result"],
+                                                     kept["zero reads negative"]["answer"]))
+            outside = _rewrite_report(answered, lambda data: data["mutants"][0].update(
+                test="tests/test_other.py::test_add"))
+            before = (root / LOG).read_text(encoding="utf-8")
+            r = _record_from(root, "US0101", outside)
+            self.assertEqual(2, r.returncode, f"recorded:\n{r.stdout}{r.stderr}")
+            self.assertIn("tests/test_other.py::test_add", r.stderr)
+            self.assertIn("Affects", r.stderr)
+            self.assertEqual(before, (root / LOG).read_text(encoding="utf-8"))
+
+    def test_the_author_brief_names_the_runner_command_for_the_units_selectors(self) -> None:
+        """The author section `sprint.py lane brief` prints names the runner command with the
+        unit's id and both Verify selectors, and the record's `--mutants-from`; critic's own
+        section prints that record command whole. The runbook's mutation row and the prompt
+        template name the same runner command, and the runner's parser accepts it. Mutants:
+        the selectors left out; the runner command missing the unit's id; the record command
+        still `--mutants` only; a page naming a command the parser refuses."""
+        import loader as _loader  # noqa: PLC0415
+        mutation = _loader.load_script("mutation")
+        sprint = _loader.load_script("sprint")
+        from lib import run_state  # noqa: PLC0415 - on the path once sprint is loaded
+        import contextlib  # noqa: PLC0415
+        import io  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "repo"
+            _runner_project(root)
+            run_state.open_run(root, batch=["US0101"], goal="g")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(0, sprint.main(
+                    ["lane", "brief", "--units", "US0101", "--root", str(root)]))
+            text = out.getvalue()
+            section = text[text.index("AUTHOR SELF-CHECK"):text.index("Then, for US0101")]
+            runner = next((ln.strip() for ln in section.splitlines()
+                           if "mutation.py run --edits" in ln), "")
+            self.assertTrue(runner, f"the lane brief names no runner command:\n{section}")
+            args = mutation.build_parser().parse_args(shlex.split(runner)[1:])
+            self.assertEqual(("US0101", "sdlc-studio/.local/lane/US0101-mutation-edits.json"),
+                             (args.scope, args.report))
+            for selector in (ADD, SIGN):
+                self.assertIn(selector, section, "a Verify selector is missing from the section")
+            self.assertIn("--mutants-from", section)
+            # critic's own section, the one `critic.py brief` prints, carries the record command
+            own = critic.author_self_check(root, "US0101")
+            line = next(ln for ln in own.splitlines() if "self-check record --unit US0101" in ln)
+            words = shlex.split(line[line.index("critic.py"):].rstrip("."))[1:]
+            parsed = critic.build_parser().parse_args(words)
+            ran = next(ln.strip() for ln in own.splitlines() if "mutation.py run --edits" in ln)
+            self.assertEqual(shlex.split(ran)[-1], parsed.mutants_from,
+                             "the record does not read the report the runner writes")
+            self.assertIsNone(parsed.mutants)
+        skill = SCRIPTS.parent
+        command = "mutation.py run --edits EDITS.json --scope <id> --report REPORT.json"
+        for page in ("reference-sprint-toolchain.md", "reference-agent-prompt-template.md"):
+            with self.subTest(page=page):
+                body = " ".join((skill / page).read_text(encoding="utf-8").split())
+                self.assertTrue(command in body, f"{page} does not name the runner command")
+                args = mutation.build_parser().parse_args(
+                    shlex.split(command.replace("<id>", "US0101"))[1:])
+                self.assertEqual(("US0101", "EDITS.json"), (args.scope, args.edits))
+                self.assertTrue("--mutants-from REPORT.json" in body, f"{page} names no record")
+
+    def test_lane_land_records_through_the_runners_report(self) -> None:
+        """Lane land records a hand-in holding the runner's report through `--mutants-from`,
+        keeping the list and refusing an unanswered survivor; a hand-in holding only the
+        mutants file records as before; and the lane brief names the report under the name
+        the landing reads. Mutants: the report passed to `--mutants`; the report ignored, so
+        the land refuses for want of a mutants file; the brief naming another file name."""
+        import loader as _loader  # noqa: PLC0415
+        sprint = _loader.load_script("sprint")
+        from lib import lanes  # noqa: PLC0415 - on the path once sprint is loaded
+        self.assertEqual("US0101-mutation-edits.json", lanes.report_hand_in_name("us0101"))
+        commands = "\n".join(sprint._lane_builder_commands("US0101", ["src/widget.py"], 2))
+        self.assertIn(f"{sprint.LANE_HAND_IN}/US0101-mutation-edits.json", commands)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "repo"
+            _runner_project(root)
+            claims, mutants = lanes.hand_in_names("US0101")
+            report = _run_runner(root, THREE_KILLED)
+            survivor = _run_runner(root, [THREE_KILLED[0], ZERO_SURVIVES], name="survivor")
+            for label, files, ok, kept in (
+                    ("the runner's report", {"report": report}, True, 3),
+                    ("an unanswered survivor", {"report": survivor}, False, None),
+                    ("a mutants file alone", {"mutants": KILLED}, True, None)):
+                with self.subTest(hand_in=label):
+                    keep = Path(d) / label.replace(" ", "-")
+                    keep.mkdir()
+                    (keep / claims).write_text(json.dumps(_covered()), encoding="utf-8")
+                    if "report" in files:
+                        (keep / lanes.report_hand_in_name("US0101")).write_text(
+                            files["report"].read_text(encoding="utf-8"), encoding="utf-8")
+                    else:
+                        (keep / mutants).write_text(json.dumps(files["mutants"]),
+                                                    encoding="utf-8")
+                    rows = len(critic.read_self_checks(root))
+                    good, line = lanes._record_and_brief(root, keep, "US0101", "builder-7")
+                    self.assertEqual(ok, good, line)
+                    if not ok:
+                        self.assertIn("REFUSED", line)
+                        self.assertIn("zero reads negative", line)
+                        self.assertEqual(rows, len(critic.read_self_checks(root)))
+                        continue
+                    listed = critic.recorded_mutants(root, "US0101")
+                    self.assertEqual(kept, None if listed is None else len(listed))
 
 
 if __name__ == "__main__":

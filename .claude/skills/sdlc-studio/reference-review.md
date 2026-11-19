@@ -468,20 +468,20 @@ rather than by the author remembering it. Each tier carries ([the review brief](
 
 ### The author's self-check runs before the brief {#author-self-check}
 
-`critic.py brief` also prints an AUTHOR SELF-CHECK section on stderr: the claim inventory and the
-mutation pass above, named over the unit's own surfaces and declared test files, for the author to
-run first. It ends with the command that records both, `critic.py self-check record --unit <id>
---author <you> --claims CLAIMS.json --mutants MUTANTS.json`. `CLAIMS.json` lists each claim as
-`{surface, claim, ruling}`; the record is refused, naming the cause and writing nothing, when a
-claim is unruled or ruled outside the three rulings, when one is FALSE (correct the prose first),
-when all are UNVERIFIABLE (nothing was checked), or when the commit message or a changelog fragment
-the unit's Affects declares carries no claim. Docstrings, comments, Resolutions and CHANGELOG are
-named surfaces, and optional. `MUTANTS.json` lists each mutant as `{mutant, test, result, answer}`:
-the test sits in a test file the unit's Affects declares, the result is killed or survived, and a
-survivor carries an answer; a unit declaring no test file records `[]`. Each row of the committed
-log `sdlc-studio/reviews/author-self-checks.md` names the unit, the author, the date, the claim
-counts by ruling, the mutant counts by result, and a digest of the unit's Affects content, less the
-review tooling's own writes, then the commit it was taken at.
+`critic.py brief` also prints an AUTHOR SELF-CHECK section on stderr: both passes above, over the
+unit's own surfaces and tests, for the author to run first, mutants through `mutation.py run --edits
+EDITS.json --scope <id> --report REPORT.json`, then `critic.py self-check record --unit <id>
+--author <you> --claims CLAIMS.json --mutants-from REPORT.json`. A claim is `{surface, claim,
+ruling}`; the record refuses, writing nothing, a claim unruled, outside the three rulings or FALSE,
+an inventory all UNVERIFIABLE, or no claim from the commit message or a declared changelog fragment
+(docstrings, comments, Resolutions and CHANGELOG are optional). A mutant is `{mutant, test, result,
+answer}`: a declared test file's test, killed or survived, a survivor answered; a report row the
+runner did not apply or judge is refused, and `--mutants MUTANTS.json` takes a list by hand (`[]`
+with no test file). Each row of `sdlc-studio/reviews/author-self-checks.md` holds the unit, author,
+date, both counts, and a digest of the Affects content, then the commit. A report's list is kept in
+`sdlc-studio/reviews/author-mutants/<id>.json`; the brief prints it as the author's recorded mutants,
+each mutant's recorded and replayed verdict, a disagreement marked. The replayed list is the
+author's evidence and does not count as the reviewer's own mutation pass.
 
 `review.author_self_check` decides what a brief, first round or `--rejoinder` at either tier, does
 when the unit has no current row: `block` refuses it (exit 2 naming the missing or stale record and

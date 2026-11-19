@@ -3325,16 +3325,31 @@ def _lane_hand_in_files(uid: str) -> tuple[str, str]:
     return f"{LANE_HAND_IN}/{claims}", f"{LANE_HAND_IN}/{mutants}"
 
 
+def _lane_report_file(uid: str) -> str:
+    """The path `uid`'s builder points the mutation runner's `--report` at, under LANE_HAND_IN,
+    named by `lanes.report_hand_in_name`, the name `lane land` records it by."""
+    from lib import lanes  # noqa: PLC0415 - one key for the brief and the landing
+    return f"{LANE_HAND_IN}/{lanes.report_hand_in_name(uid)}"
+
+
 def _hand_in_self_check(text: str | None, uid: str) -> str | None:
     """`critic.author_self_check`'s section with every line naming `self-check record` replaced
-    by the hand-in files, its "Record both" step read as handing both in, and its CLAIMS.json and
-    MUTANTS.json placeholders named as the hand-in files: the builder writes its two passes there
-    and does not record them, so the brief never tells it to. Every other line is critic's own."""
+    by the hand-in files, its "Record both" step read as handing both in, and its CLAIMS.json,
+    MUTANTS.json and REPORT.json placeholders named as the hand-in files, so the runner command
+    writes its report where `lane land` reads it: the builder writes its two passes there and
+    does not record them, so the brief never tells it to. Every other line is critic's own."""
     if not text:
         return text
     claims, mutants = _lane_hand_in_files(uid)
+    report = _lane_report_file(uid)
     note = f"   Write them to {claims} and {mutants}; do not record them yourself."
-    names = {"CLAIMS.json": claims.rsplit("/", 1)[-1], "MUTANTS.json": mutants.rsplit("/", 1)[-1]}
+    if "--mutants-from" in text:
+        note = (f"   Write the claims to {claims}; the runner command above writes its report "
+                f"to {report}, which `sprint lane land` records through --mutants-from (a "
+                f"mutant listed by hand goes in {mutants} instead). Do not record them "
+                f"yourself.")
+    names = {"CLAIMS.json": claims.rsplit("/", 1)[-1], "MUTANTS.json": mutants.rsplit("/", 1)[-1],
+             "REPORT.json": report}
     out = []
     for ln in text.splitlines():
         if "self-check record" in ln:
@@ -3383,8 +3398,10 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
              f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
              f"  Hand in, under {LANE_HAND_IN}/ at the project root:",
              f"    {claims} - the claim inventory above, each as {{surface, claim, ruling}}",
-             f"    {mutants} - the mutation pass above, each as "
-             f"{{mutant, test, result, answer}}",
+             f"    {_lane_report_file(uid)} - the mutation pass above, the report the runner "
+             f"command writes there, which `sprint lane land` records through --mutants-from",
+             f"    {mutants} - or, for a mutant the runner cannot run or a unit with no test "
+             f"file, the mutation pass by hand, each as {{mutant, test, result, answer}}",
              f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
              f"subject, written last"]
     if not affects:
