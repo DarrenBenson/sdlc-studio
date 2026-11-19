@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md
-> **Evidence:** run eighteen, 2026-11-19: hand-back of the lane six repair builder
+> **Evidence:** round two of the engineering seat on US1202 (sdlc-studio/reviews/verdicts/US1202/a035ef15c560-e539f377.txt): when the brief bound fires, the stop advises critic.py brief --unit <id> --seat qa (lib/lanes.py around 323), but lane accept still refuses with exit 2 afterwards because no saved QA brief exists; the advice must name a command that saves the brief lane accept reads
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, changelog.d/BG1626.md
-> **Evidence:** run eighteen, 2026-11-19: hand-back of the lane five repair builder
+> **Evidence:** round two of the qa seat on US1198 (sdlc-studio/reviews/verdicts/US1198/bb6e1cb2124b-18b672fa.txt): drive step can report a wave ended while a unit's paperwork is uncommitted, because `_next_prompt` reads status from the working tree (drive.py around 824), so the repair's HEAD check for the walk does not reach step mode
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

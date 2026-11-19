@@ -1,6 +1,6 @@
 # US1197: Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** elevated
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** `sprint.py drive` is run
 - **Then** the two disjoint units' builds overlap in time, the third starts only after the first has landed, and all three land on the root's branch. Fails on: builds run one after another, or two units that share a file built at once
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_disjoint_units_build_together_and_a_shared_file_waits
+- **Verified:** yes (2026-11-19)
 
 ### AC2: A warning from a step that exited 0 stops that unit
 
@@ -32,6 +33,7 @@
 - **When** `sprint.py drive` is run
 - **Then** drive runs no further step for that unit, exits non-zero and its decision record quotes the warning line and names the unit and the step; the wave's other unit is not left half landed. Fails on: a warning carried forward unread while the unit's paperwork is committed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_a_warning_on_a_green_step_stops_the_unit
+- **Verified:** yes (2026-11-19)
 
 ### AC3: A rebase conflict stops the wave and leaves the first landing standing
 
@@ -39,6 +41,7 @@
 - **When** `sprint.py drive` is run
 - **Then** the first unit's landing stands, the root's branch is as that landing left it, the second unit's lane stays in its worktree, and the decision record names the conflicting files; drive retries nothing and forces nothing. Fails on: a conflict resolved or retried by the loop, or a root branch left mid-rebase
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_a_rebase_conflict_stops_the_wave_and_keeps_the_first_landing
+- **Verified:** yes (2026-11-19)
 
 ### AC4: Drive stops at the wave end, and the doctrine says when the model is woken
 
@@ -46,6 +49,7 @@
 - **When** `sprint.py drive` is run, and the doctrine is read
 - **Then** drive exits after the first wave with a decision record naming the wave end and each unit's state, having started no unit of the second wave; the doctrine names the same stops the record can carry (a refusal, a warning, a REJECT, a conflict, a wave end) as the only points the model is woken. Fails on: drive running on into the next wave, or a doctrine listing a stop the loop does not make
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py::SprintDriveWaveTests::test_the_wave_end_stops_drive_and_the_doctrine_names_the_stops
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

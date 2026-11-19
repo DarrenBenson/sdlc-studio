@@ -1,6 +1,6 @@
 # US1198: Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0672
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** `sprint.py drive step --after <id>` is run
 - **Then** it lands the lane, records the self-check, writes the QA brief and prices the return in that one command, exits 0, and the last line of stdout is the path of the reviewer's prompt file, which exists and holds the QA brief. Fails on: a step that stops after the landing and leaves the brief to a second call, or prints a path that does not exist
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_builders_hand_back_is_landed_briefed_and_the_review_prompt_named
+- **Verified:** yes (2026-11-19)
 
 ### AC2: One command handles a reviewer's hand-back and names what is next
 
@@ -32,6 +33,7 @@
 - **When** `sprint.py drive step --after <reviewer id>` is run
 - **Then** it records the verdict, runs the criteria, moves the unit, returns its lane and commits the paperwork, exits 0, and its last line is the next unit's builder prompt path, or says the wave has ended when none is left. Fails on: a second command needed to accept or to commit the paperwork, or a prompt path printed for a unit already built
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_reviewers_hand_back_is_accepted_and_the_next_prompt_named
+- **Verified:** yes (2026-11-19)
 
 ### AC3: A refusal inside the chain stops it and prints no prompt path
 
@@ -39,6 +41,7 @@
 - **When** `sprint.py drive step --after <id>` is run for each
 - **Then** the first stops at the landing, exits non-zero and prints the decision record with no prompt path; the second exits 2 naming the unknown agent and changes nothing. Fails on: a prompt path printed after a refused step, so the orchestrator spawns a reviewer for a lane that never landed
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_refused_step_prints_a_decision_record_and_no_prompt_path
+- **Verified:** yes (2026-11-19)
 
 ### AC4: One command handles a reviewer's REJECT and names the repair builder's prompt
 
@@ -46,6 +49,7 @@
 - **When** `sprint.py drive step --after <reviewer id>` is run
 - **Then** it records the REJECT, writes the repair brief carrying the refusal and blocking findings verbatim (US1195's brief), exits 0, and its last line is the repair builder's prompt path, which exists and holds that brief. Fails on: a second command needed to brief the repair, or a prompt path printed for the next unit while this one is rejected
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_reject_hand_back_briefs_the_repair_and_names_its_prompt
+- **Verified:** yes (2026-11-19)
 
 ### AC5: One command handles a repair's hand-back and names the round-two reviewer's prompt
 
@@ -53,6 +57,7 @@
 - **When** `sprint.py drive step --after <repair id>` is run
 - **Then** it lands the repair, records the self-check, writes the round-two QA brief as a rejoinder quoting the unanswered REJECT, exits 0, prices the repair's return as AC1 prices a builder's, and its last line is the round-two prompt path for the reviewer who rejected, whose resumed hand-back AC2 then accepts. Fails on: a fresh round-one brief that drops the REJECT, a prompt addressed to a different reviewer, or a second command needed to land or brief the repair
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_repair_hand_back_is_landed_and_the_round_two_prompt_named
+- **Verified:** yes (2026-11-19)
 
 ### AC6: A REJECT at the review round cap stops and prints no prompt path
 
@@ -60,6 +65,7 @@
 - **When** `sprint.py drive step --after <reviewer id>` is run
 - **Then** it records the REJECT, briefs no third repair, exits non-zero and prints a decision record that names the round cap and the operator ruling owed, with no prompt path. Fails on: a third repair briefed and its prompt printed, so a round `critic.py record` refuses is built
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py::SprintDriveStepTests::test_a_reject_at_the_round_cap_stops_with_a_decision_record
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

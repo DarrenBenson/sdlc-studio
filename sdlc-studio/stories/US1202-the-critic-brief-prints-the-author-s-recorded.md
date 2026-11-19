@@ -1,6 +1,6 @@
 # US1202: The critic brief prints the author's recorded mutants and their replay, labelled as the author's
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** high
 > **Delivers:** CR0673
 > **Created:** 2026-11-17
@@ -25,6 +25,7 @@
 - **When** `critic.py brief --unit <id> --seat qa` is run
 - **Then** the brief carries a section labelled as the author's recorded mutants, listing each mutant with its recorded verdict and the verdict the runner's replay gives it now. Fails on: a brief that names only the counts, or prints the recorded verdict in place of a replay it never ran
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefAuthorMutantsTests::test_the_brief_lists_the_authors_mutants_with_their_replay
+- **Verified:** yes (2026-11-19)
 
 ### AC2: A replay that disagrees with the record is marked
 
@@ -32,6 +33,7 @@
 - **When** `critic.py brief --unit <id> --seat qa` is run
 - **Then** that mutant's line shows recorded killed and replayed survived and is marked as a disagreement, while the other two lines agree. Fails on: a stale kill passed on to the reviewer as current
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefAuthorMutantsTests::test_a_replay_that_disagrees_with_the_record_is_marked
+- **Verified:** yes (2026-11-19)
 
 ### AC3: The author's replayed mutants are not the reviewer's own pass
 
@@ -39,6 +41,7 @@
 - **When** each is read
 - **Then** the full-tier brief says the replayed list is the author's and does not count as the reviewer's own mutation pass, and still carries the practice to mutate the author's tests; the second brief says no mutant list was recorded and is issued as before; `reference-review.md` states the same rule. Fails on: a brief that lets a replay of the author's mutants stand in for the reviewer's own, or one refused for want of a mutant list
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefAuthorMutantsTests::test_the_replay_is_never_counted_as_the_reviewers_own_pass
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

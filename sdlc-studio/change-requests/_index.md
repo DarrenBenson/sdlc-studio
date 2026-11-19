@@ -6,7 +6,7 @@
 
 | Status | Count |
 | --- | --- |
-| Proposed | 5 |
+| Proposed | 6 |
 | Approved | 0 |
 | In Progress | 80 |
 | Complete | 561 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **746** |
+| **Total** | **747** |
 
 ## All Changes
 
@@ -158,6 +158,7 @@
 | [CR-0744](CR0744-amend-a-batch-unit-s-affects-in-flight.md) | Amend a batch unit's Affects in flight with a recorded reason | Rejected | Medium | Improvement | 2026-11-18 | -- |
 | [CR-0745](CR0745-file-finding-asks-the-filer-to-rule-on.md) | file_finding asks the filer to rule on a close duplicate before it writes, instead of warning after | Proposed | Medium | Improvement | 2026-11-19 | -- |
 | [CR-0746](CR0746-the-session-meter-finds-a-claude-code-session.md) | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS | Proposed | Medium | Feature | 2026-11-19 | -- |
+| [CR-0747](CR0747-critic-py-record-has-no-check-mode-so.md) | critic.py record has no check mode, so a reviewer cannot confirm its verdict file will record before handing back | Proposed | Low | Feature | 2026-11-19 | -- |
 
 ## Archived Releases
 

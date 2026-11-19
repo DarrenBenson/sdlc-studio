@@ -16,8 +16,8 @@ Decomposed from CR0673. Delivers the work CR0673 requested.
 
 - [ ] [US1199: The mutation probe drops each conjunct of a guard and flips polarity words in a document a test reads](../stories/US1199-the-mutation-probe-drops-each-conjunct-of-a.md)
 - [x] [US1200: A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each](../stories/US1200-a-mutation-runner-applies-a-list-of-file.md)
-- [ ] [US1201: Self-check record takes the runner's report and mutant list, and the author brief names the runner command](../stories/US1201-self-check-record-takes-the-runner-s-report.md)
-- [ ] [US1202: The critic brief prints the author's recorded mutants and their replay, labelled as the author's](../stories/US1202-the-critic-brief-prints-the-author-s-recorded.md)
+- [x] [US1201: Self-check record takes the runner's report and mutant list, and the author brief names the runner command](../stories/US1201-self-check-record-takes-the-runner-s-report.md)
+- [x] [US1202: The critic brief prints the author's recorded mutants and their replay, labelled as the author's](../stories/US1202-the-critic-brief-prints-the-author-s-recorded.md)
 
 ## Acceptance Criteria (Epic Level)
 

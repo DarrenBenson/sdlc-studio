@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1625.md
-> **Evidence:** run eighteen, 2026-11-19: sdlc-studio/reviews/verdicts/US1201/669469ea2223-6fb0e8bd.txt, sdlc-studio/reviews/verdicts/US1201/051d8828322e-b640a5a7.txt, sdlc-studio/reviews/verdicts/US1202/954d1070c15f-c1d1820b.txt, sdlc-studio/reviews/verdicts/US1202/9a175f05837c-d89a0955.txt
+> **Evidence:** round two of the qa seat on US1201 (sdlc-studio/reviews/verdicts/US1201/7168f002079e-b8ab7ed8.txt): the same report passed to both --mutants-from and --mutants is counted twice (killed 6), and the lane brief's rewritten hand-in note (sprint.py around 3349) has no test
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

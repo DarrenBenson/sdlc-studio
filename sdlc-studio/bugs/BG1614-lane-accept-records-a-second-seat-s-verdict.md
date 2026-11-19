@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1614.md
-> **Evidence:** run eighteen, 2026-11-19: BG1605's engineering APPROVE (verdict file BRIEF 90ab5c4b4795-ffc45d3f) was recorded by lane accept 'round 2, against brief 6b1af452cfb0', the qa brief; the other engineering verdicts were recorded with critic.py record instead
+> **Evidence:** run eighteen also hit it with critic.py record: US1198's round-two record warned the criteria changed since brief bb6e1cb2124b (now 2c77fe936603) only because verify_ac run had stamped the criteria between the brief and the record; the warning cannot tell a stamp from a changed scope
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

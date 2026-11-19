@@ -4,7 +4,7 @@
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py, .claude/skills/sdlc-studio/help/sprint.md, changelog.d/BG1623.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
-> **Evidence:** run eighteen, 2026-11-19: sdlc-studio/reviews/verdicts/US1196/842c7f3f9625-b8b1e1c3.txt, sdlc-studio/reviews/verdicts/US1196/beb30bf86bc5-68b0a0d2.txt, sdlc-studio/reviews/verdicts/US1197/ed68c299cea3-682a9c50.txt, sdlc-studio/reviews/verdicts/US1198/161d07a9d1a9-fd1084c9.txt, sdlc-studio/reviews/verdicts/US1198/861273372b32-828ebc7e.txt
+> **Evidence:** round two of the qa seat on the lane five repair (sdlc-studio/reviews/verdicts/US119[678]/*-r2 files 2ad5df0e4f4b, b01d3c59aca3, bb6e1cb2124b): mutant M16 survives, the run-start filter in _taken (drive.py around 808) has no test that fails without it; R10 kill depends on timing; R7-R9, R12, R14 and R17 still survive
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 180 |
+| Draft | 175 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 954 |
+| Done | 959 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -233,13 +233,13 @@
 | [US1193](US1193-lane-land-resumes-a-landing-whose-commit-was.md) | Lane land resumes a landing whose commit was refused without repeating the steps already done | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1194](US1194-sprint-close-names-each-unit-that-reached-main.md) | Sprint close names each unit that reached main with no lane land record | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1195](US1195-a-refused-landing-or-a-reject-yields-a.md) | A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim | Done | EP0326 | 2026-11-17 | 2026-11-17 |
-| [US1196](US1196-sprint-drive-walks-one-unit-s-lane-from.md) | Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
-| [US1197](US1197-sprint-drive-runs-a-wave-s-independent-units.md) | Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
-| [US1198](US1198-sprint-drive-step-performs-the-whole-chain-after.md) | Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path | Draft | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1196](US1196-sprint-drive-walks-one-unit-s-lane-from.md) | Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal | Done | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1197](US1197-sprint-drive-runs-a-wave-s-independent-units.md) | Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end | Done | EP0326 | 2026-11-17 | 2026-11-17 |
+| [US1198](US1198-sprint-drive-step-performs-the-whole-chain-after.md) | Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path | Done | EP0326 | 2026-11-17 | 2026-11-17 |
 | [US1199](US1199-the-mutation-probe-drops-each-conjunct-of-a.md) | The mutation probe drops each conjunct of a guard and flips polarity words in a document a test reads | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
 | [US1200](US1200-a-mutation-runner-applies-a-list-of-file.md) | A mutation runner applies a list of file edits in a scratch copy and prints one verdict line for each | Done | EP0327 | 2026-11-17 | 2026-11-17 |
-| [US1201](US1201-self-check-record-takes-the-runner-s-report.md) | Self-check record takes the runner's report and mutant list, and the author brief names the runner command | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
-| [US1202](US1202-the-critic-brief-prints-the-author-s-recorded.md) | The critic brief prints the author's recorded mutants and their replay, labelled as the author's | Draft | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1201](US1201-self-check-record-takes-the-runner-s-report.md) | Self-check record takes the runner's report and mutant list, and the author brief names the runner command | Done | EP0327 | 2026-11-17 | 2026-11-17 |
+| [US1202](US1202-the-critic-brief-prints-the-author-s-recorded.md) | The critic brief prints the author's recorded mutants and their replay, labelled as the author's | Done | EP0327 | 2026-11-17 | 2026-11-17 |
 | [US1203](US1203-the-hostile-kit-proves-the-verifier-dies-with.md) | The hostile kit proves the verifier dies with its caller, exits on an interrupt and leaves no orphan | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
 | [US1204](US1204-the-hostile-kit-proves-a-batch-obeys-a.md) | The hostile kit proves a batch obeys a consumer's pytest addopts and collects under warnings as errors | Draft | EP0328 | 2026-11-17 | 2026-11-17 |
 | [US1205](US1205-the-hostile-kit-proves-a-shallow-clone-a.md) | The hostile kit proves a shallow clone, a non-Claude harness and an over-long token change no result | Draft | EP0328 | 2026-11-17 | 2026-11-17 |

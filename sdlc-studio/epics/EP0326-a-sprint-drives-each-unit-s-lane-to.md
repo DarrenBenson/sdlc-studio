@@ -18,9 +18,9 @@ Decomposed from CR0672. Delivers the work CR0672 requested.
 - [x] [US1193: Lane land resumes a landing whose commit was refused without repeating the steps already done](../stories/US1193-lane-land-resumes-a-landing-whose-commit-was.md)
 - [ ] [US1194: Sprint close names each unit that reached main with no lane land record](../stories/US1194-sprint-close-names-each-unit-that-reached-main.md)
 - [x] [US1195: A refused landing or a REJECT yields a repair brief carrying the refusal and the findings verbatim](../stories/US1195-a-refused-landing-or-a-reject-yields-a.md)
-- [ ] [US1196: Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal](../stories/US1196-sprint-drive-walks-one-unit-s-lane-from.md)
-- [ ] [US1197: Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end](../stories/US1197-sprint-drive-runs-a-wave-s-independent-units.md)
-- [ ] [US1198: Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path](../stories/US1198-sprint-drive-step-performs-the-whole-chain-after.md)
+- [x] [US1196: Sprint drive walks one unit's lane from build to paperwork and stops with a decision record at any refusal](../stories/US1196-sprint-drive-walks-one-unit-s-lane-from.md)
+- [x] [US1197: Sprint drive runs a wave's independent units in parallel and stops at a warning, a conflict or the wave end](../stories/US1197-sprint-drive-runs-a-wave-s-independent-units.md)
+- [x] [US1198: Sprint drive step performs the whole chain after a hand-back in one command and prints the next prompt path](../stories/US1198-sprint-drive-step-performs-the-whole-chain-after.md)
 
 ## Acceptance Criteria (Epic Level)
 

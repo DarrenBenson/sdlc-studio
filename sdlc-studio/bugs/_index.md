@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 468 |
+| Open | 469 |
 | In Progress | 0 |
 | Fixed | 961 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1627** |
+| **Total** | **1628** |
 
 ## All Bugs
 
@@ -703,6 +703,7 @@
 | [BG1625](BG1625-the-recorded-runner-report-and-the-replayed-mutants.md) | The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 
