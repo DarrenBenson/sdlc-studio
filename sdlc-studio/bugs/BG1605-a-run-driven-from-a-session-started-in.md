@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG-METER.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py, changelog.d/BG1605.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** the website's RUN-01M7R7KN, 2026-11-19: orchestrator; its run-state holds no stamps, while run seventeen's 18 stamps in the same session name this repository's project folder as their source
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,19 @@ Resolve the session transcript from the harness's own session (its id or transcr
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `run_state.stamp_tokens` reads the session meter with `session_tokens(repo_root)`, which looks for the session transcript under the harness project folder...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Start a session in repository A, then `sprint plan`, deliver and `sprint close --root <repository B>`: B's run-state has `session_token_stamps: []` and...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Resolve the session transcript from the harness's own session (its id or transcript path, as the stamp's `source` already records for a same-repository run)...
+### AC1: Plan warns when no token stamp can be taken
+
+- **Given** a repository whose harness transcript store does not exist (no project folder for it, `SDLC_STUDIO_TRANSCRIPTS` unset)
+- **When** `sprint plan --write` opens a run there
+- **Then** the run still opens, and the plan prints a warning that no session token stamp could be taken, so the run's cost will read NOT MEASURED, and names `SDLC_STUDIO_TRANSCRIPTS` as the way to point the meter at the session's own store. Fails on: a silent plan, or a warning that names no remedy
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::CrossRepoMeterTests::test_plan_warns_when_no_token_stamp_can_be_taken
+
+### AC2: A run in another repository is priced from the named store
+
+- **Given** a second repository with no store of its own, and `SDLC_STUDIO_TRANSCRIPTS` pointing at a store holding the current session's transcript, which grows between the plan and the close
+- **When** a run is planned and closed there
+- **Then** the run carries an open and a closing stamp whose `source` is the transcript under the named store, and the report's Priced cost row carries a figure rather than NOT MEASURED. Fails on: no stamp, a stamp read from the second repository's absent store, or a cost row left NOT MEASURED
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_run_state.py::CrossRepoMeterTests::test_a_cross_repository_run_is_priced_from_the_named_store
 
 ## Revision History
 

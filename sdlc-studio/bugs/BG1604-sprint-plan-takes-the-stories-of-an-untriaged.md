@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG-CR-TRIAGE.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1604.md
 > **Evidence:** the website's RUN-01M7R7KN, 2026-11-19: orchestrator, sprint close --dry-run
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file

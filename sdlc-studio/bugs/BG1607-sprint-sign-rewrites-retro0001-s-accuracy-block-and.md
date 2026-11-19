@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG-SIGN-RETRO.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py, changelog.d/BG1607.md
 > **Evidence:** the website's RUN-01M7R7KN sign, 2026-11-19: orchestrator; restored under the website's D0031
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,19 @@ Resolve the sign's retro from `--retro`, then the retro the close recorded on th
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: After sealing, `sprint sign` runs `retro.py accuracy --id <retro> --write --tokens-from-harness`, taking the retro from the run state's `scaffolded_retro` and...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Scaffold a run's retro with `artifact.py new --type retro`, close with `sprint close --retro RETROnnnn`, then `sprint sign --report RPTxxxx --principal P...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Resolve the sign's retro from `--retro`, then the retro the close recorded on the run, then `scaffolded_retro`, and refuse to write when none is known rather...
+### AC1: Sign writes the named retro and leaves RETRO0001 alone
+
+- **Given** a closed run whose run state names no `scaffolded_retro`, in a fixture holding RETRO0001 and RETRO0002
+- **When** `sprint sign --report <its report> --principal P --retro RETRO0002` seals it
+- **Then** the accuracy block and velocity row are written for RETRO0002, and RETRO0001 and its VELOCITY.md row are byte-identical to before. Fails on: any change to RETRO0001 or its row
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_sign_writes_the_named_retro_and_leaves_retro0001
+
+### AC2: Sign falls back to the close's retro, and writes none when no retro is known
+
+- **Given** a closed run whose close was given `--retro RETRO0002`, and a second closed run whose state records no retro at all
+- **When** each is signed without `--retro`
+- **Then** the first writes RETRO0002's accuracy block; the second writes no retro and prints that the velocity row was not recorded, naming `--retro`. Fails on: either writing RETRO0001
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_retro.py::SignRetroTests::test_sign_uses_the_close_retro_and_writes_none_when_unknown
 
 ## Revision History
 

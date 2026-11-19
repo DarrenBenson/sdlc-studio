@@ -1,7 +1,7 @@
 # EP0326: A sprint drives each unit's lane to its paperwork and wakes the model only for judgement
 
 > **Status:** Draft
-> **Derived Point Total:** 24
+> **Derived Point Total:** 26
 > **Parent:** CR0672
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new

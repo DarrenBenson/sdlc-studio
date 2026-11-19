@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 451 |
+| Open | 452 |
 | In Progress | 0 |
 | Fixed | 958 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1607** |
+| **Total** | **1608** |
 
 ## All Bugs
 
@@ -683,6 +683,7 @@
 | [BG1605](BG1605-a-run-driven-from-a-session-started-in.md) | A run driven from a session started in another repository records no token stamp, so its report states no cost at all | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1608](BG1608-goal-review-brief-and-a-first-round-record.md) | goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse | Open | Low | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

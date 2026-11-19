@@ -6,9 +6,9 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, .claude/skills/sdlc-studio/reference-agent-prompt-template.md, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py, sdlc-studio/reviews/command-audit.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py
 > **Epic:** EP0327
-> **Points:** 3
+> **Points:** 5
 > **Persona:** Abena Osei
 
 ## User Story
@@ -39,6 +39,13 @@
 - **When** its author self-check section is printed by `sprint.py lane brief`, and `reference-sprint-toolchain.md` and `reference-agent-prompt-template.md` are read
 - **Then** the section prints the runner command with the unit's id and its Verify selectors and the `--mutants-from` record command, and no longer asks for hand-chosen mutants as the only route; the runbook's mutation row and the prompt template name the same command, which the `mutation.py` parser accepts. Fails on: a brief that still tells the author to choose and apply mutants by hand, or pages naming a command the parser refuses
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_the_author_brief_names_the_runner_command_for_the_units_selectors
+
+### AC4: Lane land records the self-check through the runner's report
+
+- **Given** a builder's hand-in holding the runner's report for the unit in place of a hand-written `<id>-mutants.json`, and a second hand-in holding only `<id>-mutants.json`
+- **When** `sprint.py lane land` records each unit's self-check
+- **Then** the first is recorded through `--mutants-from` that report, so the row keeps the full list (AC1) and an unanswered survivor refuses the land's record as AC2 does; the second records as it does today; and `sprint.py lane brief` tells the builder to hand in the runner's report under the name lane land reads. Fails on: lane land passing the report to `--mutants`, ignoring it and recording no mutants, or a brief naming a hand-in file lane land does not read
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_lane_land_records_through_the_runners_report
 
 ## Revision History
 

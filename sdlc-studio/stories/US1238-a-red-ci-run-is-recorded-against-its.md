@@ -47,6 +47,13 @@
 - **Then** the help names the command and its three answers (rerun once, stop and ask the operator, regression), and the reference says a known flake is recorded and rerun within the configured limit and never skipped. Fails on: a reference that still offers only prevention advice, or help that names no command
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_the_help_and_the_reference_state_the_red_run_policy
 
+### AC5: A configured rerun limit changes the red-run answer
+
+- **Given** a project whose config sets the CI rerun limit (US1237's key) to 0
+- **When** the first red run of a filed flaky failure is classified
+- **Then** the answer is stop and ask the operator, not rerun, and the reason names the configured limit. Fails on: the default limit of one applied despite the override
+- **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py::CiRedRunPolicyTests::test_a_configured_rerun_limit_of_zero_stops_at_the_first_red_run
+
 ## Revision History
 
 | Date | Author | Change |

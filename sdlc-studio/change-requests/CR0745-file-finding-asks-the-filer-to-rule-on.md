@@ -3,7 +3,7 @@
 > **Status:** Proposed
 > **Priority:** Medium
 > **Type:** Improvement
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/CR-DUP-REFUSE.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/CR0745.md
 > **Evidence:** the website's RUN-01M7R7KN, 2026-11-19: orchestrator; artifact.duplicate_candidates scores the pair 0.77, sharing README.md
 > **Date:** 2026-11-19
 > **Created-by:** sdlc-studio file
