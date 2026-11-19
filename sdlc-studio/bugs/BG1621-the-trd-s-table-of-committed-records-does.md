@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/trd.md, changelog.d/BG1621.md
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1621.md
 > **Evidence:** run eighteen, 2026-11-19: lane L6 builder's hand-back; the file is outside both units' Affects
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,8 @@ Add a row for the author mutant lists to the committed-records table, naming the
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run eighteen's self-check work (`critic.py self-check record --mutants-from`) keeps each unit's full mutant list as a committed file...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Record a self-check with `--mutants-from <runner report>`, then read trd.md section 6: the new file under sdlc-studio/reviews/author-mutants/ has no row.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Add a row for the author mutant lists to the committed-records table, naming the writer and the reader (the QA brief's replay).
+- [ ] **AC1** Given trd.md section 6's table of committed records, when it is read, then it has a row for `sdlc-studio/reviews/author-mutants/<id>.json` that names `critic.py self-check record --mutants-from` as its writer and the QA brief's replay of the author's mutants as its reader
+  - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_committed_records_table_lists_the_author_mutant_lists
 
 ## Revision History
 
