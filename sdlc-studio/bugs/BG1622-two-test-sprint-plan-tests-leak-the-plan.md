@@ -1,6 +1,6 @@
 # BG1622: Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1622.md
@@ -30,6 +30,7 @@ Capture stderr in the two tests and assert the warning is said there, so the run
 - **When** `test_plan_write_persists_artifact` and `test_capacity_units_become_the_run_breakers_ceiling` run `sprint plan --write`
 - **Then** each test captures the plan's stderr and asserts it carries the warning that no session token stamp could be taken, and nothing of it reaches pytest's capture
 - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::AuthoringPlanTests::test_plan_write_persists_artifact .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::CapacityFeedsTheAppetiteTests::test_capacity_units_become_the_run_breakers_ceiling
+- **Verified:** yes (2026-11-19)
 
 ### AC2: A passing test_sprint run is back within its noise budget
 
@@ -37,6 +38,7 @@ Capture stderr in the two tests and assert the warning is said there, so the run
 - **When** test_sprint.py runs under the green-run noise gate
 - **Then** it prints no line beginning `warning: no session token stamp`, and the selected run is within the module's budget
 - **Verify:** shell bash tools/run-suite.sh --noise-gate python3 -m pytest -q -p no:cacheprovider .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

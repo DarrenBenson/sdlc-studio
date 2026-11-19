@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 464 |
+| Open | 468 |
 | In Progress | 0 |
-| Fixed | 960 |
+| Fixed | 961 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 54 |
-| **Total** | **1622** |
+| **Total** | **1627** |
 
 ## All Bugs
 
@@ -697,7 +697,12 @@
 | [BG1619](BG1619-sprint-sign-prints-nothing-when-its-retro-write.md) | sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1620](BG1620-the-verbatim-repair-brief-loses-the-first-line.md) | The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Open | High | 2026-11-19 | 2026-11-19 |
+| [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Fixed | High | 2026-11-19 | 2026-11-19 |
+| [BG1623](BG1623-sprint-drive-and-drive-step-an-oversized-brief.md) | sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1624](BG1624-flaky-test-lane-run-s-timed-out-git.md) | Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1625](BG1625-the-recorded-runner-report-and-the-replayed-mutants.md) | The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Open | Medium | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 
