@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-test-validation.md, .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/help/gate.md, .claude/skills/sdlc-studio/reference-test-validation.md, .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py, changelog.d/US1238.md
 > **Epic:** EP0340
 > **Points:** 5
 > **Persona:** Abena Osei

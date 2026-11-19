@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/reference-code.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/scripts/tests/test_trunk_ci_wait_guidance.py
+> **Affects:** .claude/skills/sdlc-studio/reference-code.md, .claude/skills/sdlc-studio/templates/agent-instructions.md, .claude/skills/sdlc-studio/scripts/tests/test_trunk_ci_wait_guidance.py, changelog.d/US1236.md
 > **Epic:** EP0340
 > **Points:** 2
 > **Persona:** Abena Osei

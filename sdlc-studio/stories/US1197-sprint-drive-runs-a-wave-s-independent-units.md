@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/drive.py, .claude/skills/sdlc-studio/reference-doctrine.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py, changelog.d/US1197.md
 > **Epic:** EP0326
 > **Points:** 3
 > **Persona:** Abena Osei
