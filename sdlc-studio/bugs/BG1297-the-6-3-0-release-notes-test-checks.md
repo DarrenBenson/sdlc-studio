@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_lean_release_notes_v63.py
+> **Affects:** tools/tests/test_lean_release_notes_v63.py, changelog.d/BG1297.md
 > **Evidence:** US1136 round-2 review (qa-seat-US1136-r1), notes mutants
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file

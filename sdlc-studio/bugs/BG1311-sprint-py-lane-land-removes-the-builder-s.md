@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/reference-sprint-toolchain.md, changelog.d/BG1311.md
 > **Evidence:** RUN-01M7061X, US1143's repair, 2026-11-09: the SendMessage resume refusal
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

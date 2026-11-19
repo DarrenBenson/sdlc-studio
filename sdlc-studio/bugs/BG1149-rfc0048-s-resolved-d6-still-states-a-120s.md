@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md
+> **Affects:** sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md, changelog.d/BG1149.md
 > **Evidence:** US1106 round-1 repair report (2026-11-01), L-0175's new Revalidated reason; RFC0048:131; .config.yaml:207-218.
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

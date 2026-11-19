@@ -1,8 +1,9 @@
 # BG1115: A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push
 
 > **Status:** Open
+> **Supersedes:** BG1299, BG1587
 > **Severity:** Low
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, .claude/skills/sdlc-studio/scripts/tests/test_cli_grammar.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py, changelog.d/BG1115.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
 > **Evidence:** US1088 build, 2026-10-22: the local hook's unit-tests lane (94 modules) did not select test_cli_grammar.py; run-suite.sh all on devserver1 failed RootPlacementConformance for tree f10299e4.
 > **Created:** 2026-10-22
@@ -34,6 +35,8 @@ Let a census header name a glob (`# test-census-subject: .claude/skills/sdlc-stu
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py::CensusGlobTests::test_a_script_change_selects_the_grammar_test
 - [ ] **AC3** Given a staged change to AGENTS.md, selection includes `tools/tests/test_lean_commit_lanes.py`, which reads AGENTS.md
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gate_census_glob.py::CensusGlobTests::test_an_agents_md_change_selects_the_commit_lanes_test
+- [ ] **AC4** Given a staged change to `sdlc-studio/trd.md`, or any spec a test reads by path, selection includes every `tools/tests` module that reads it, `test_token_premise.py` among them (carried from BG1299)
+- [ ] **AC5** Given a staged new or changed `test_*.py` under either suite directory, selection includes `test_test_census.py` (carried from BG1587)
 
 ## Impact
 

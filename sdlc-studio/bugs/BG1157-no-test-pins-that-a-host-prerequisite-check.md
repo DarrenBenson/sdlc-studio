@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_gate_prereqs.py
+> **Affects:** tools/tests/test_gate_prereqs.py, changelog.d/BG1157.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, BG1138 APPROVE by qa-seat-BG1138-r1 (brief 771df035cf0c).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

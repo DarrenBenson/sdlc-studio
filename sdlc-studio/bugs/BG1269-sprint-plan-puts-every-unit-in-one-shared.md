@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1269.md
 > **Evidence:** the orchestrator's friction log (R8-F12), from run eight (RUN-01M6RZQZ)'s plan and the BG1254 and US1132 landings
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

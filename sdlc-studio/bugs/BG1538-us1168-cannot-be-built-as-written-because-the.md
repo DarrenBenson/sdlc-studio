@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** sdlc-studio/stories/US1168-the-commit-hook-refuses-a-staged-new-test.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md
+> **Affects:** sdlc-studio/stories/US1168-the-commit-hook-refuses-a-staged-new-test.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, changelog.d/BG1538.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, stories lens, survived 2 of 3 refute votes; observed at sdlc-studio/stories/US1168-the-commit-hook-refuses-a-staged-new-test.md Header (Status, Affects) and Notes lines 36-37; sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md epic-level criteria 4 and 5
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

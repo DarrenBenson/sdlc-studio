@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1589.md
 > **Evidence:** Close of RUN-01M7NTY5, 2026-11-18; sdlc-studio/reviews/LATEST.md close-status block.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

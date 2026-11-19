@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py, changelog.d/BG1307.md
 > **Evidence:** lib/sdlc_md.py:2768 docstring and the refusal at :2814 name only Primary/Secondary/Negative; the run nine product seat's grooming report
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

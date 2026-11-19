@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** sdlc-studio/prd.md, .claude/skills/sdlc-studio/reference-config.md, tools/tests/test_lean_prd_refresh.py
+> **Affects:** sdlc-studio/prd.md, .claude/skills/sdlc-studio/reference-config.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1525.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, prd lens, survived 3 of 3 refute votes; observed at sdlc-studio/prd.md Section 9 Feature Flags, lines 657-662 (intro) against the table rows at 672 and 674, the Line coverage gate row (line 322) and the Project constitution row (line 268)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

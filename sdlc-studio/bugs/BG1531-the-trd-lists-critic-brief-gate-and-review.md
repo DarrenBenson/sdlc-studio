@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1531.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §3 Markdown / Python split (lines 155-161); §5 rule 5 (283-284); §2 Pattern Used (85-86); §9 Threat Model row 1 (763); against §3 gate tier (180-187), §6 rows at 556, 601 and 602, and scripts/critic.py:217-228 and 3471-3484
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate_reads_once.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate_reads_once.py, changelog.d/BG1155.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, BG1109 APPROVE by qa-seat-BG1109-r1 (brief 2a598c381e45).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

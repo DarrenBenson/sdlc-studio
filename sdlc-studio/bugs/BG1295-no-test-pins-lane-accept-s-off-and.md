@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1295.md
 > **Evidence:** BG1290 round-2 review (qa-seat-BG1290-r1), surviving mutants at lanes.py:339-343
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file

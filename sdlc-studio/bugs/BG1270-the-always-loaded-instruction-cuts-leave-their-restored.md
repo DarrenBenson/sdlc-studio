@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** AGENTS.md, CONTRIBUTING.md, tools/check_budgets.py, tools/tests/test_agents_md_budget.py, tools/tests/test_check_budgets.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_instructions_budget.py
+> **Affects:** AGENTS.md, CONTRIBUTING.md, tools/check_budgets.py, tools/tests/test_agents_md_budget.py, tools/tests/test_check_budgets.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_instructions_budget.py, changelog.d/BG1270.md
 > **Evidence:** run eight (RUN-01M6RZQZ) US1129 review rounds 1 and 2 and US1130 review round 1 ([new], non-blocking), and the orchestrator's friction log (R8-F15)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

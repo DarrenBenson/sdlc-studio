@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/stories/US1058-persona-memory-py-keeps-each-persona-s-evidenced.md, changelog.d/BG1499.md
 > **Evidence:** Run fifteen (RUN-01M7HA6R) US1172 QA verdict 91be561f8170-9c671c7e, 2026-11-16.
 > **Created:** 2026-11-16

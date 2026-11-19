@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/personas/persona-index-template.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py
+> **Affects:** .claude/skills/sdlc-studio/templates/personas/persona-index-template.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py, changelog.d/BG1536.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/templates/personas/persona-index-template.md Sections 'Team Personas', 'Stakeholder Personas', 'Consultation Defaults', 'Custom Personas', 'Usage', 'Persona Sources' and the final 'See reference-persona.md' line (lines 26-133)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

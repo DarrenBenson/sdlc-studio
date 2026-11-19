@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1529.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §8 Scaling Strategy (lines 735-742); §10 Performance Requirements rows 'Script run time' and 'Reconcile / status' (787-788), and the cost-model paragraph (806-807)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

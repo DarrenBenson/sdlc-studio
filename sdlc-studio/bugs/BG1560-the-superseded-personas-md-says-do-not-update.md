@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/personas.md, sdlc-studio/personas/index.md, sdlc-studio/personas/rowan-achterberg-skill-maintainer.md, tools/tests/test_persona_coherence.py
+> **Affects:** sdlc-studio/personas.md, sdlc-studio/personas/index.md, sdlc-studio/personas/rowan-achterberg-skill-maintainer.md, tools/tests/test_persona_coherence.py, changelog.d/BG1560.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 2 of 3 refute votes; observed at sdlc-studio/personas.md Banner (lines 11-20), metadata block (lines 22-25), and the Skill Maintainer section
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

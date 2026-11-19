@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/personas/seats/product.md, tools/tests/test_persona_coherence.py
+> **Affects:** sdlc-studio/personas/seats/product.md, tools/tests/test_persona_coherence.py, changelog.d/BG1308.md
 > **Evidence:** sdlc-studio/personas/seats/product.md:96; D0436
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

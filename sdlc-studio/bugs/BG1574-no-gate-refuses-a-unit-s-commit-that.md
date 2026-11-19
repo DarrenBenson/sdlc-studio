@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/refine.py, tools/tests/test_changelog_fragment_required.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py
+> **Affects:** .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/refine.py, tools/tests/test_changelog_fragment_required.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_refine.py, changelog.d/BG1574.md
 > **Evidence:** Run sixteen (RUN-01M7NTY5), 2026-11-18: commits 79519227 (has one), cb445223, b10e40ae, 85b79786 (none).
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

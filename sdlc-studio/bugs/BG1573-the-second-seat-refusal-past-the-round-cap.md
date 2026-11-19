@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1573.md
 > **Evidence:** BG1523 QA verdict, sdlc-studio/reviews/verdicts/BG1523/cdda89988311-0990e453.txt
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

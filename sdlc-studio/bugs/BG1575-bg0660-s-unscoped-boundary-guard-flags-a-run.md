@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/gate.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/gate.py, changelog.d/BG1575.md
 > **Evidence:** BG1519 QA verdict, sdlc-studio/reviews/verdicts/BG1519/b4860a569b60-148ea286.txt; test_gate.py near line 5486 at 85b79786.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

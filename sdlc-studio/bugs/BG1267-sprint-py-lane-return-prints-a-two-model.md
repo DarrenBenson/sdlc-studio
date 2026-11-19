@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, CHANGELOG.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1267.md
 > **Evidence:** run eight (RUN-01M6RZQZ) BG1252 review round 1 ([pre-existing]) and BG1244 review round 1 ([new]), and the orchestrator's friction log (R8-F7)
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

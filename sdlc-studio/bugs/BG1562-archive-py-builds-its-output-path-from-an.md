@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/archive.py, .claude/skills/sdlc-studio/scripts/tests/test_archive.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/archive.py, .claude/skills/sdlc-studio/scripts/tests/test_archive.py, changelog.d/BG1562.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/scripts/archive.py line 91 (where archive_rel is built from the release label) and the --release argument at line 159
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

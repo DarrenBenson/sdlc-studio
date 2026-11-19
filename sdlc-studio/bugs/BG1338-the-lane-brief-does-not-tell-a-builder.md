@@ -1,6 +1,7 @@
 # BG1338: The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1292
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_brief_handover.py, changelog.d/BG1338.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

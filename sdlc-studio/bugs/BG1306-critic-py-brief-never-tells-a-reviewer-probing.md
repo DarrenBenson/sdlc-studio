@@ -4,7 +4,7 @@
 > **Supersedes:** BG1345
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1306.md
 > **Evidence:** BG1300 (the ~/.gitconfig overwrite of 2026-11-08) and its Proposed Fix's third clause
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

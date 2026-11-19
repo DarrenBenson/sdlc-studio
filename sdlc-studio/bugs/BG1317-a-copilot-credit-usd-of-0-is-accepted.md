@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/reference-sprint.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1317.md
 > **Evidence:** US1144-verdict-r1 (RUN-01M7061X)
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

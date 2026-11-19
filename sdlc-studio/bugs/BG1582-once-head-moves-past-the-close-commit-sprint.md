@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1582.md
 > **Evidence:** US1290 QA round-2 verdict, sdlc-studio/reviews/verdicts/US1290/b9e0f15856ad-b543e9a9.txt; ruling D0524.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

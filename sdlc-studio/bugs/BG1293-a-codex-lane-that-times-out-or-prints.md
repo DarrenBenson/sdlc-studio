@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_codex.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_codex.py, changelog.d/BG1293.md
 > **Evidence:** BG1288 round-2 review (qa-seat-BG1288-r1), probe S7
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file

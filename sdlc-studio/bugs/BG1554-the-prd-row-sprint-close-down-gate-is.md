@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
+> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1554.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, prd lens, survived 3 of 3 refute votes; observed at sdlc-studio/prd.md Section 3, 'v3 and v4 capabilities' table, row 'Sprint close-down gate' (line 311)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

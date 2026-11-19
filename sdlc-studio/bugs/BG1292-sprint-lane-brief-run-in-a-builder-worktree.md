@@ -1,9 +1,10 @@
 # BG1292: `sprint lane brief` run in a builder worktree that is behind the root's branch prints the worktree's stale copy of the unit without a warning
 
 > **Status:** Open
+> **Supersedes:** BG1338
 > **Severity:** Low
-> **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1292.md
 > **Evidence:** the 6.3.0 release builders, 2026-11-08 (BG1248's BLOCKED hand-back)
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file
@@ -28,6 +29,7 @@ When `lane brief` runs in a linked worktree whose HEAD is not a descendant of th
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_a_worktree_behind_the_roots_branch_is_warned_with_the_fast_forward
 - [ ] **AC2** Given a linked worktree at or ahead of the main worktree's branch tip, and the main worktree itself, when `lane brief` runs in each, then no such warning is printed and the brief is the one printed today. Fails on: a warning on every brief, which a builder learns to ignore.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_an_up_to_date_worktree_and_the_root_are_not_warned
+- [ ] **AC3** Given a builder briefed by `lane brief` in a harness worktree that starts at origin's commit, the brief names the fast-forward step and the base the builder must be at before building (carried from BG1338)
 
 ## Revision History
 

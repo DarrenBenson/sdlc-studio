@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 470 |
+| Open | 467 |
 | In Progress | 0 |
 | Fixed | 961 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
-| Superseded | 54 |
-| **Total** | **1629** |
+| Superseded | 58 |
+| **Total** | **1630** |
 
 ## All Bugs
 
@@ -374,7 +374,7 @@
 | [BG1296](BG1296-sprint-lane-land-names-a-unit-s-brief.md) | `sprint lane land` names a unit's brief and no-brief note by the unit id as typed, so `--units us0101` writes `us0101-qa.none` beside `US0101-qa.txt` and leaves the canonical brief in place | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1297](BG1297-the-6-3-0-release-notes-test-checks.md) | The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes | Open | Low | 2026-11-08 | 2026-11-08 |
 | [BG1298](BG1298-the-trd-s-path-row-pin-checks-its.md) | The TRD's path-row pin checks its depth rule in one direction only, so loosening `_matches` to accept the directory itself or a deeper file leaves the suite green | Open | Low | 2026-11-09 | 2026-11-09 |
-| [BG1299](BG1299-a-commit-that-changes-sdlc-studio-trd-md.md) | A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push | Open | Low | 2026-11-09 | 2026-11-09 |
+| [BG1299](BG1299-a-commit-that-changes-sdlc-studio-trd-md.md) | A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push | Superseded | Low | 2026-11-09 | 2026-11-09 |
 | [BG1300](BG1300-conftest-s-move-home-writes-the-test-identity.md) | conftest's `_move_home` writes the test identity to whatever HOME names, overwriting, so a mutant that leaves HOME unmoved replaced the operator's ~/.gitconfig and 23 commits on main took the test author | Fixed | Medium | 2026-11-09 | 2026-11-09 |
 | [BG1301](BG1301-the-release-cut-leaves-this-repository-s-own.md) | The release cut leaves this repository's own sdlc-studio/.version on the previous release, so `gate.py --release` refuses US0926::AC1 at every cut and the tagged commit moves | Open | Low | 2026-11-09 | 2026-11-09 |
 | [BG1302](BG1302-sprint-lane-brief-units-us-01m6xqjf-tells-the.md) | `sprint lane brief --units US-01M6XQJF` tells the builder it shares a seam with a nameless unit, because the seam scope keeps the run state's `US01M6XQJF` and the asked-for `US-01M6XQJF` as two units | Fixed | Low | 2026-11-09 | 2026-11-09 |
@@ -413,7 +413,7 @@
 | [BG1335](BG1335-sprint-py-decision-defer-block-cannot-mark-a.md) | sprint.py decision defer --block cannot mark a bug Blocked, so an autonomous run's blocked bug reads as an ordinary open unit | Open | Low | 2026-11-12 | 2026-11-12 |
 | [BG1336](BG1336-the-lane-brief-s-verify-ac-step-writes.md) | The lane brief's verify_ac step writes into the unit's own artefact outside its Affects, and lane land's rebase then fails on that unstaged edit while exiting 0 under a pipe | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1337](BG1337-sprint-py-lane-land-commits-a-lane-at.md) | sprint.py lane land commits a lane at its worktree's old base and rebases afterwards, so the hook judges it against code main has already fixed | Fixed | Medium | 2026-11-12 | 2026-11-12 |
-| [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Open | Low | 2026-11-12 | 2026-11-12 |
+| [BG1338](BG1338-the-lane-brief-does-not-tell-a-builder.md) | The lane brief does not tell a builder to fast-forward its worktree, and harness worktrees start at origin's commit, so builders build on a base missing the run's landed units | Superseded | Low | 2026-11-12 | 2026-11-12 |
 | [BG1339](BG1339-sprint-py-lane-accept-has-no-path-for.md) | sprint.py lane accept has no path for a round-2 verdict given against a rejoinder brief, so the orchestrator records it by hand | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1340](BG1340-critic-py-brief-rejoinder-with-no-file-reads.md) | critic.py brief --rejoinder with no file reads only the unit's current delivery, so a unit carried across runs has no ledger rejoinder | Fixed | Medium | 2026-11-12 | 2026-11-12 |
 | [BG1341](BG1341-reconcile-blocking-findings-lists-a-reject-row-s.md) | reconcile.blocking_findings lists a REJECT row's RULINGS item as a blocking defect in a lane brief's file history | Fixed | Medium | 2026-11-12 | 2026-11-12 |
@@ -537,7 +537,7 @@
 | [BG1459](BG1459-persona-memory-py-s-new-fields-file-flag.md) | persona_memory.py's new --fields-file flag is neither judged nor in the unjudged-flags baseline, so test_command_audit's ratchet is red on main | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1460](BG1460-us1058-did-not-converge-in-review-round-2.md) | US1058 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1461](BG1461-lane-brief-warns-a-landed-unit-under-review.md) | lane brief warns a landed unit under review never returned, and that the tree may already carry its work | Open | Low | 2026-11-15 | 2026-11-15 |
-| [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Open | Low | 2026-11-15 | 2026-11-15 |
+| [BG1462](BG1462-lane-accept-records-under-the-self-check-s.md) | lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form | Superseded | Low | 2026-11-15 | 2026-11-15 |
 | [BG1463](BG1463-retro-py-seats-drops-an-escaped-via-bug.md) | retro.py seats drops an Escaped-via bug silently when its unit's approval names no seat, has only a REJECT, or post-dates the bug | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1464](BG1464-retro-py-s-own-finding-check-matches-a.md) | retro.py's own-finding check matches a review word anywhere in Evidence and two of its guards have no test | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1465](BG1465-retro-py-seat-misses-reads-each-cited-unit.md) | retro.py seat_misses reads each cited unit's file uncached, so an unbounded window does not finish in ten minutes | Open | Medium | 2026-11-15 | 2026-11-15 |
@@ -662,7 +662,7 @@
 | [BG1584](BG1584-bg1507-and-bg1520-left-four-checks-with-no.md) | BG1507 and BG1520 left four checks with no test: --includes, includeIf identities, the self-check-author refusal and the retro's owed branches | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1585](BG1585-the-pre-commit-gate-lane-passes-the-whole.md) | The pre-commit gate lane passes the whole reconcile detect JSON through one environment variable, so on a large corpus it dies with Argument list too long and never prints the drift detail | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1586](BG1586-us1313-s-test-lists-the-gate-scripts-by.md) | US1313's test lists the gate scripts by name without declaring the list HAND-MAINTAINED ON PURPOSE, so the hand-copied-list guard reddened the push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1587](BG1587-a-commit-that-adds-a-test-file-never.md) | A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push | Open | Low | 2026-11-18 | 2026-11-18 |
+| [BG1587](BG1587-a-commit-that-adds-a-test-file-never.md) | A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push | Superseded | Low | 2026-11-18 | 2026-11-18 |
 | [BG1588](BG1588-the-hand-copied-list-guard-misses-known-mirrors.md) | The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1589](BG1589-a-run-closed-to-await-the-operator-s.md) | A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Open | Medium | 2026-11-18 | 2026-11-18 |
@@ -705,6 +705,7 @@
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1630](BG1630-lessons-add-global-writes-only-the-lesson-section.md) | lessons add --global writes only the Lesson section and ships the template's other sections as placeholders | Open | Low | 2026-11-19 | 2026-11-19 |
 
 ## Archived Releases
 

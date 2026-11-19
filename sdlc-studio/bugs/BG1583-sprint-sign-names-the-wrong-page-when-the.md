@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1583.md
 > **Evidence:** sdlc-studio/reviews/verdicts/US1290/1d42d95f5aae-72f7cc40.txt and b9e0f15856ad-b543e9a9.txt
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

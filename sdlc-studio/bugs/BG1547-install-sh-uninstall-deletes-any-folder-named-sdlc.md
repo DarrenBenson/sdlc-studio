@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** install.sh, docs/INSTALL.md, tools/tests/test_install_uninstall_guard.py
+> **Affects:** install.sh, docs/INSTALL.md, tools/tests/test_install_uninstall_guard.py, changelog.d/BG1547.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at install.sh uninstall_from() lines 542-547 (`rm -rf "$dest"`), against is_skill_copy() lines 596-599 ('Identity guard: only ever touch a directory that is genuinely this skill')
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

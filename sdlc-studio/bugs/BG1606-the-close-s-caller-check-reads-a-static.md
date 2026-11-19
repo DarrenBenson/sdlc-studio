@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 1
+> **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1606.md
 > **Evidence:** the website's RUN-01M7R7KN close, 2026-11-19: orchestrator
 > **Created:** 2026-11-19

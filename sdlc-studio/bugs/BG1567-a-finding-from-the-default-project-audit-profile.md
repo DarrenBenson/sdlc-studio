@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/help/audit.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, .claude/skills/sdlc-studio/help/audit.md, changelog.d/BG1567.md
 > **Evidence:** audit AUDIT-2026-11-17, filing step; file_finding.py lens lookup near line 1955 and the refusal it printed
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/check_links.py, tools/tests/test_check_links.py
+> **Affects:** tools/check_links.py, tools/tests/test_check_links.py, changelog.d/BG1593.md
 > **Evidence:** sdlc-studio/reviews/verdicts/US1317/60b1992c5231-2634e155.txt, finding 5 (pre-existing).
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_persona_coherence.py, changelog.d/US1081.md
+> **Affects:** tools/tests/test_persona_coherence.py, changelog.d/US1081.md, changelog.d/BG1156.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1081 full-tier APPROVE by qa-seat-US1081-r1 (brief 56745dcdbded).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_lean_trd_refresh.py
+> **Affects:** tools/tests/test_lean_trd_refresh.py, changelog.d/BG1158.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1099 APPROVE round 2 by qa-seat-US1099-r1 (brief dd3da56d673b).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

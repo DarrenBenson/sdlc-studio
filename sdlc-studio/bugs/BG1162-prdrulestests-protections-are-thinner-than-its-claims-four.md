@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_lean_prd_refresh.py, sdlc-studio/prd.md, changelog.d/US1104.md
+> **Affects:** tools/tests/test_lean_prd_refresh.py, sdlc-studio/prd.md, changelog.d/US1104.md, changelog.d/BG1162.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1104 APPROVE by qa-seat-US1104-r1 (brief d21783422d23).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/templates/personas/stakeholder-template.md, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/reference-consult.md, sdlc-studio/personas/graham-doyle-change-approver.md, tools/tests/test_persona_coherence.py
+> **Affects:** .claude/skills/sdlc-studio/templates/personas/stakeholder-template.md, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/reference-consult.md, sdlc-studio/personas/graham-doyle-change-approver.md, tools/tests/test_persona_coherence.py, changelog.d/BG1535.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/templates/personas/stakeholder-template.md stakeholder-template.md header comment and Cast line (lines 1-20); persona-template.md 'Cast-role variants' (Customer / Served); sdlc-studio/personas/graham-doyle-change-approver.md Quick Reference
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

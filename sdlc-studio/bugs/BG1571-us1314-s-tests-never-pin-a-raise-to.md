@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile_risk_class.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG1571.md
 > **Evidence:** US1314 QA verdict, run sixteen, 2026-11-17.
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

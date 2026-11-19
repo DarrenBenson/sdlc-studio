@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, changelog.d/BG1570.md
 > **Evidence:** Found by the run sixteen builder of BG1524 and US1292, 2026-11-17.
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

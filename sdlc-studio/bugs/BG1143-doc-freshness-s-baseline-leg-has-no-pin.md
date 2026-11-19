@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py, changelog.d/BG1143.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1098 APPROVE round 2 by qa-seat-US1098-r1 (brief 66ed763beade).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

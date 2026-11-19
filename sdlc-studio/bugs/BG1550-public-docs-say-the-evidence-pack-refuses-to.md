@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** docs/engineering-leaders.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, tools/tests/test_engineering_leaders_page.py
+> **Affects:** docs/engineering-leaders.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, tools/tests/test_engineering_leaders_page.py, changelog.d/BG1550.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at docs/engineering-leaders.md line 15-17 ('The pack refuses a report nobody has signed, and it refuses to name an agent as the accountable person'); also docs/release-notes-v6.4.0.md 'a signer who reads as an agent refuses the pack' and reference-scripts-domain.md:94-95; code at .claude/skills/sdlc-studio/scripts/evidence_pack.py:44-48,134-151 and sprint.py:10954-10985
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

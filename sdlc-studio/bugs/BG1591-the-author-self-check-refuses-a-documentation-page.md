@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1591.md
 > **Evidence:** .local/run17/land-US1321.log (2026-11-18): US1321 landed at 42fc6eb5 and its self-check was refused on claim 27, surface docs/evidence.md.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 2
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1517.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §5 Network paths (lines 337-338); §9 Threat Model, 'Network exfiltration' row (line 768); no row for Verify-line execution anywhere in §9
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

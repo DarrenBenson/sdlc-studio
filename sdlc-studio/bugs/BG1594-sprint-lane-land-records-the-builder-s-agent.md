@@ -1,9 +1,10 @@
 # BG1594: sprint lane land records the builder's agent id as the self-check author instead of the building seat, so lane accept writes a verdict row the retro cannot score as a seat's
 
 > **Status:** Open
+> **Supersedes:** BG1462
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1594.md
 > **Evidence:** lane accept US1317, 2026-11-18: 'critic.py record: WARNING: author agent-adf464901f9fa8e86 lacks the <holder> (<role>) form'.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -27,6 +28,7 @@ Record the lane brief's building seat as the self-check author at land, and have
 - [ ] **AC1** The behaviour described is corrected: For US1316 and US1317 in run seventeen, `sprint lane land` recorded the self-check, and `sprint lane accept` then recorded the APPROVE with author...
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Land a unit with `sprint lane land`, then `sprint lane accept --unit <id> --verdict <file> --reviewer 'Sam Eriksson (qa)'`: the record warns that the author...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Record the lane brief's building seat as the self-check author at land, and have lane accept read it, so the verdict row names the seat.
+- [ ] **AC4** Given `lane land` then `lane accept` with no `--author`, the verdict is recorded under the building seat in holder (role) form, the agent id kept as a separate field, and `critic.py record` prints no author-form warning (carried from BG1462)
 
 ## Revision History
 

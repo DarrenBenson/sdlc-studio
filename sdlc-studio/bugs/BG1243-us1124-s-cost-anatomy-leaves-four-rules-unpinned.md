@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py, changelog.d/BG1243.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1124 review rounds 1 and 2
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

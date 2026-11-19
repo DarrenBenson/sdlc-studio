@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .githooks/pre-commit, tools/tests/test_lean_precommit_parallel.py
+> **Affects:** .githooks/pre-commit, tools/tests/test_lean_precommit_parallel.py, changelog.d/BG1585.md
 > **Evidence:** Run sixteen paperwork commit, 2026-11-18, .local/run16/commit-paper3.log line 23.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

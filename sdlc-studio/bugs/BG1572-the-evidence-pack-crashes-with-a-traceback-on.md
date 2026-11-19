@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/evidence_pack.py, .claude/skills/sdlc-studio/scripts/tests/test_evidence_pack_build.py, changelog.d/BG1572.md
 > **Evidence:** BG1524 QA verdict, sdlc-studio/reviews/verdicts/BG1524/bda4e4dce0f6-603dbf96.txt
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

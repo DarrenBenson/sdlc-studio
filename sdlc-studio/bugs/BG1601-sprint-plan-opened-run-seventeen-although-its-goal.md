@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_goal_review.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_goal_review.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1601.md
 > **Evidence:** sprint close --dry-run --retro RETRO0150, 2026-11-18: 'STOP checklist: goal-seat-reviewed: Sprint Goal stated and seat-reviewed BEFORE the plan - past its window'.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

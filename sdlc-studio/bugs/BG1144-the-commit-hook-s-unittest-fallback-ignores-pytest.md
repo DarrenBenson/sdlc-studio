@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .githooks/commit-msg, .claude/skills/sdlc-studio/scripts/boundary.py, tools/tests/test_boundary_marker.py
+> **Affects:** .githooks/commit-msg, .claude/skills/sdlc-studio/scripts/boundary.py, tools/tests/test_boundary_marker.py, .claude/skills/sdlc-studio/scripts/tests/boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, changelog.d/BG1144.md
 > **Evidence:** BG0963 REJECT round 1 by qa-seat-BG0963-r1, [pre-existing] finding; sdlc-studio/reviews/critic-verdicts.md.
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

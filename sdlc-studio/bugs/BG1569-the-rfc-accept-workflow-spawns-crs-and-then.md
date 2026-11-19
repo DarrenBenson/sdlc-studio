@@ -4,7 +4,7 @@
 > **Supersedes:** BG1020
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md, changelog.d/BG1569.md
 > **Evidence:** accepting RFC0065 and RFC0066 on 2026-11-17; the refusal transition.py printed, against reference-rfc.md section accept steps 3 and 4
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

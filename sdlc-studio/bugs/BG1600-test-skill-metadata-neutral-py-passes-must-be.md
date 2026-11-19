@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_skill_metadata_neutral.py, tools/tests/test_harness_neutral_docs.py, docs/why-sdlc-studio.md
+> **Affects:** tools/tests/test_skill_metadata_neutral.py, tools/tests/test_harness_neutral_docs.py, docs/why-sdlc-studio.md, changelog.d/BG1600.md
 > **Evidence:** sdlc-studio/reviews/verdicts/US1319/2f4c79618b69-47ae04d4.txt, findings 3 to 5.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

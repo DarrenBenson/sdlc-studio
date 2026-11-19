@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .githooks/pre-push, tools/check_versions.py, tools/known_issues.py, tools/tests/test_pre_push_hook.py, tools/tests/test_check_versions.py
+> **Affects:** .githooks/pre-push, tools/check_versions.py, tools/known_issues.py, tools/tests/test_pre_push_hook.py, tools/tests/test_check_versions.py, changelog.d/BG1545.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at .githooks/pre-push lines 27-36 (the ref loop: `remote_ref` is read only by `case "$remote_ref" in refs/tags/*)` to pick the boundary) and lines 76-86 (the known-issues check); gate.py registry lines ~2176-2208 (`versions` strict is bound under `--release`, not under `--boundary release`)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

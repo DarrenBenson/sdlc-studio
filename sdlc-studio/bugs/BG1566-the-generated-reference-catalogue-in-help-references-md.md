@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/docgen.py, .claude/skills/sdlc-studio/help/references.md, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_docgen.py, tools/tests/test_check_links.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/docgen.py, .claude/skills/sdlc-studio/help/references.md, tools/check_links.py, .claude/skills/sdlc-studio/scripts/tests/test_docgen.py, tools/tests/test_check_links.py, changelog.d/BG1566.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/help/references.md generated table, lines 67-124; writer at .claude/skills/sdlc-studio/scripts/docgen.py:213 (render_references); guard at tools/check_links.py passes 1 and 4
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

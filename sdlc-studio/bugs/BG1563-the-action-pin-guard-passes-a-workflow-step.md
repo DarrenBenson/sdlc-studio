@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/check_action_pins.sh, tools/tests/test_check_action_pins.py
+> **Affects:** tools/check_action_pins.sh, tools/tests/test_check_action_pins.py, changelog.d/BG1563.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at tools/check_action_pins.sh lines 24-26 (the grep collector that extracts only uses values containing an at sign)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

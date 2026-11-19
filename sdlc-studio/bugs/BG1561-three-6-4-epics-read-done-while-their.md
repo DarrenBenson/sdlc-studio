@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/epics/EP0308-a-change-board-can-approve-a-release-from.md, sdlc-studio/epics/EP0309-an-escaped-defect-is-traced-to-the-unit.md, sdlc-studio/epics/EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md, tools/tests/test_epic_completion_bar_carried.py
+> **Affects:** sdlc-studio/epics/EP0308-a-change-board-can-approve-a-release-from.md, sdlc-studio/epics/EP0309-an-escaped-defect-is-traced-to-the-unit.md, sdlc-studio/epics/EP0311-builder-and-reviewer-reasoning-effort-is-a-project.md, tools/tests/test_epic_completion_bar_carried.py, changelog.d/BG1561.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, stories lens, survived 2 of 3 refute votes; observed at sdlc-studio/epics/EP0309-an-escaped-defect-is-traced-to-the-unit.md 'Acceptance Criteria (Epic Level)' sections of EP0309, EP0308 and EP0311
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

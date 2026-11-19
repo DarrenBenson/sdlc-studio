@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, tools/tests/test_skill_tests_env.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, tools/tests/test_skill_tests_env.py, changelog.d/BG1253.md
 > **Evidence:** run seven (RUN-01M6RAP7) BG1238 build
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

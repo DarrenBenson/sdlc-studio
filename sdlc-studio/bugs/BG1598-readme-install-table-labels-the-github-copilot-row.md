@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** tools/tests/test_install_copilot_global.py, README.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py, tools/tests/test_readme_front_door.py
+> **Affects:** tools/tests/test_install_copilot_global.py, README.md, .claude/skills/sdlc-studio/scripts/tests/test_evidence_page.py, tools/tests/test_readme_front_door.py, changelog.d/BG1598.md
 > **Evidence:** US1318 builder hand-back, 2026-11-18; sdlc-studio/reviews/verdicts/US1321/19ef1a51a344-e3f271af.txt.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

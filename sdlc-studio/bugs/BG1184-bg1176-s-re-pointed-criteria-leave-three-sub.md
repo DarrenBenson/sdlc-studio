@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/stories/US0201-prd-sections-3-10-11-to-the-shipped.md, sdlc-studio/stories/US0206-tsd-record-the-blocking-80-coverage-gate-and.md, sdlc-studio/bugs/BG1176-eight-done-criteria-went-stale-in-the-6.md, sdlc-studio/bugs/BG1053-us1004-did-not-converge-in-review-round-3.md, sdlc-studio/bugs/BG1056-bg1053-did-not-converge-in-review-round-2.md
+> **Affects:** sdlc-studio/stories/US0201-prd-sections-3-10-11-to-the-shipped.md, sdlc-studio/stories/US0206-tsd-record-the-blocking-80-coverage-gate-and.md, sdlc-studio/bugs/BG1176-eight-done-criteria-went-stale-in-the-6.md, sdlc-studio/bugs/BG1053-us1004-did-not-converge-in-review-round-3.md, sdlc-studio/bugs/BG1056-bg1053-did-not-converge-in-review-round-2.md, changelog.d/BG1184.md
 > **Created:** 2026-11-02
 > **Created-by:** sdlc-studio file
 > **Raised-by:** claude; human; v1

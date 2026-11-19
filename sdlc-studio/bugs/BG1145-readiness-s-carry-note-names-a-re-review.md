@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/tests/test_readiness.py, changelog.d/BG1145.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, BG1140 APPROVE by qa-seat-BG1140-r1 (brief efc4a9bd1fa2).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file

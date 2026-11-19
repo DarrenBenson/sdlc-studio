@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** tools/tests/test_message_first_gate.py, tools/tests/test_lean_ci_unittest_run.py
+> **Affects:** tools/tests/test_message_first_gate.py, tools/tests/test_lean_ci_unittest_run.py, changelog.d/BG1581.md
 > **Evidence:** Push gate on devserver1, 2026-11-18, log boundary-suite-last.log lines 302-355.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

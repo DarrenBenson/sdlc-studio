@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_persona_coherence.py, tools/tests/test_lean_prd_refresh.py, sdlc-studio/personas/jonah-reyes-team-lead.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
+> **Affects:** tools/tests/test_persona_coherence.py, tools/tests/test_lean_prd_refresh.py, sdlc-studio/personas/jonah-reyes-team-lead.md, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py, changelog.d/BG1314.md
 > **Evidence:** US1146-verdict-r1 (RUN-01M7061X) and its mutant log
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

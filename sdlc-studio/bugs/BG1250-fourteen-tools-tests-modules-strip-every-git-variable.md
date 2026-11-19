@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 2
-> **Affects:** tools/tests/conftest.py, tools/tests/test_bench_headless.py, tools/tests/test_check_budgets.py, tools/tests/test_corpus_verify_env.py, tools/tests/test_lean_docs_v61.py, tools/tests/test_lean_docs_v63.py, tools/tests/test_lean_gate_docs.py, tools/tests/test_lean_one_runner.py, tools/tests/test_lean_push.py, tools/tests/test_lean_release_cut_v62.py, tools/tests/test_lean_release_cut_v63.py, tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v61.py, tools/tests/test_lean_upgrade_page_docs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_run_suite_remote.py, tools/tests/test_skill_tests_env.py, tools/tests/test_git_env_keeps_maintenance_pin.py
+> **Points:** 3
+> **Affects:** tools/tests/conftest.py, tools/tests/test_bench_headless.py, tools/tests/test_check_budgets.py, tools/tests/test_corpus_verify_env.py, tools/tests/test_lean_docs_v61.py, tools/tests/test_lean_docs_v63.py, tools/tests/test_lean_gate_docs.py, tools/tests/test_lean_one_runner.py, tools/tests/test_lean_push.py, tools/tests/test_lean_release_cut_v62.py, tools/tests/test_lean_release_cut_v63.py, tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v61.py, tools/tests/test_lean_upgrade_page_docs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_run_suite_remote.py, tools/tests/test_skill_tests_env.py, tools/tests/test_git_env_keeps_maintenance_pin.py, changelog.d/BG1250.md
 > **Evidence:** run seven (RUN-01M6RAP7) US1128 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

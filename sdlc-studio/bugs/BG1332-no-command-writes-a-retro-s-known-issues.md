@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, changelog.d/BG1332.md
 > **Evidence:** RETRO0142 before D0455; retro.py --help; a consuming project's agent, 2026-11-10
 > **Created:** 2026-11-10
 > **Created-by:** sdlc-studio file

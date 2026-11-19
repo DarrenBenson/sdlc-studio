@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 2
-> **Affects:** tools/known_issues.py, tools/tests/test_known_issues.py, sdlc-studio/stories/US1173-v6-4-0-is-cut-version-changelog-known.md
+> **Points:** 1
+> **Affects:** tools/known_issues.py, tools/tests/test_known_issues.py, sdlc-studio/stories/US1173-v6-4-0-is-cut-version-changelog-known.md, changelog.d/BG1540.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, stories lens, survived 3 of 3 refute votes; observed at sdlc-studio/stories/US1173-v6-4-0-is-cut-version-changelog-known.md AC3 (lines 28-30) and Notes line 44
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

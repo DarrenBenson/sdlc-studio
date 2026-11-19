@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** High
 > **Points:** 3
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1516.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md §7 Agentic execution (lines 681-687); §5 rule 6 (307-309) and Network paths (320-338); §9 Threat Model (759-768); §12 open question 3 (1291-1293); checked against .claude/skills/sdlc-studio/scripts/lib/lanes.py:604-654
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

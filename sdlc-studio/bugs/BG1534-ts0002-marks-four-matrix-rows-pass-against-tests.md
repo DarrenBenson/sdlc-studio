@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md, changelog.d/BG1534.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, tsd lens, survived 3 of 3 refute votes; observed at sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md AC Coverage Matrix, rows US0052 AC4 and US0054 AC1, AC2, AC4; the checker is `ts_check` in .claude/skills/sdlc-studio/scripts/verify_ac.py lines 3853-3925
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** sdlc-studio/tsd.md, tools/tests/test_lean_gate_docs.py
+> **Affects:** sdlc-studio/tsd.md, tools/tests/test_lean_gate_docs.py, changelog.d/BG1577.md
 > **Evidence:** BG1519 QA verdict, sdlc-studio/reviews/verdicts/BG1519/b4860a569b60-148ea286.txt
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
+> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1553.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, prd lens, survived 3 of 3 refute votes; observed at sdlc-studio/prd.md Section 9 Environment Variables, lines 643-650, against Section 3 line 325 and Section 5 lines 522-533
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, tools/remote-gate.sh, tools/tests/test_remote_gate_release.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_test_selection.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_batch.py, tools/remote-gate.sh, tools/tests/test_remote_gate_release.py, changelog.d/BG1514.md
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

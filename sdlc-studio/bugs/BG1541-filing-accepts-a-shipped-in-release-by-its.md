@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/escape.py, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/scripts/tests/test_escape_trace.py, .claude/skills/sdlc-studio/scripts/tests/test_bug_escape_fields.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1541.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, stories lens, survived 3 of 3 refute votes; observed at sdlc-studio/stories/US1157-a-bug-records-that-it-escaped-to-production.md AC2 ('a `--shipped-in` naming no tag or release in the project') against US1158 AC1/AC3; .claude/skills/sdlc-studio/scripts/file_finding.py:1775-1781 and 1811-1815; .claude/skills/sdlc-studio/scripts/escape.py:60-66 and 163-169
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

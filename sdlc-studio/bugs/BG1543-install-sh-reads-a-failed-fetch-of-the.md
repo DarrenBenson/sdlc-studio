@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** install.sh, install.ps1, docs/INSTALL.md, tools/tests/test_install_sidecar_fault.py
+> **Affects:** install.sh, install.ps1, docs/INSTALL.md, tools/tests/test_install_sidecar_fault.py, changelog.d/BG1543.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at install.sh `fetch_stdout` (lines 332-336) and `verify_download` (lines 403-413)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

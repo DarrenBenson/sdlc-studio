@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** install.sh, docs/INSTALL.md, tools/tests/test_install_atomic.py
+> **Affects:** install.sh, docs/INSTALL.md, tools/tests/test_install_atomic.py, changelog.d/BG1546.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at install.sh install_to() lines 518-540 (`return 0` on the foreign-folder skip and on the refused downgrade) and main() lines 736-768 (`installed_dests` appended unconditionally; `success "SDLC Studio installed for: $targets"`)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

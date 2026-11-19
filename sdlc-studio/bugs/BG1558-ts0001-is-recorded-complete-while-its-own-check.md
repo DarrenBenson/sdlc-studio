@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 3
-> **Affects:** sdlc-studio/test-specs/TS0001-ep0010-ac-coverage-token-economy-learning-loop.md, sdlc-studio/test-specs/_index.md, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
+> **Affects:** sdlc-studio/test-specs/TS0001-ep0010-ac-coverage-token-economy-learning-loop.md, sdlc-studio/test-specs/_index.md, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, changelog.d/BG1558.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, tsd lens, survived 3 of 3 refute votes; observed at sdlc-studio/test-specs/_index.md Summary by Epic table (TS0001 row, Status Complete), Coverage Summary ("Automated 0 (0%)", "Pending 42"), and Next Steps ("the specs sit Ready"); TS0001 header Status: Complete
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

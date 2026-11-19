@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_seat_record_edges.py, changelog.d/BG1457.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_retro.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
 > **Evidence:** Run thirteen (RUN-01M7EYR3) reviews: sdlc-studio/reviews/verdicts/US1061/e6aa7796c870-de0ae7a6.txt and sdlc-studio/reviews/verdicts/US1062/d61be0d3a16a-c6e88f35.txt
 > **Created:** 2026-11-15

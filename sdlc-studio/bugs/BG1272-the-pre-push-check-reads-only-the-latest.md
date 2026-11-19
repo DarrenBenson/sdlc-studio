@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_red_main.py
+> **Affects:** .githooks/pre-push, tools/tests/test_pre_push_red_main.py, tools/tests/test_pre_push_hook.py, changelog.d/BG1272.md
 > **Evidence:** run eight (RUN-01M6RZQZ) mid-run push, GitHub Actions Lint run 42263229398
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

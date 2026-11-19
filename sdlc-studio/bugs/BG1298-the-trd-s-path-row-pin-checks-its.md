@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/BG1298.md
 > **Evidence:** US1138 round-2 verdict (qa-seat-US1138-r1) at 7961ea8b, the two loosening mutants
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

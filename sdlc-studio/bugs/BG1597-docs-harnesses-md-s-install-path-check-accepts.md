@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** docs/harnesses.md, tools/tests/test_harness_matrix_doc.py
+> **Affects:** docs/harnesses.md, tools/tests/test_harness_matrix_doc.py, changelog.d/BG1597.md
 > **Evidence:** sdlc-studio/reviews/verdicts/US1316/ea58b65ac3c9-912d8166.txt, findings 3, 5 and 6.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

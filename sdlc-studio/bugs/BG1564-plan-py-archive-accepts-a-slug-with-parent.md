@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/plan.py, .claude/skills/sdlc-studio/scripts/tests/test_plan.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/plan.py, .claude/skills/sdlc-studio/scripts/tests/test_plan.py, changelog.d/BG1564.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, code lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/scripts/plan.py cmd_archive() lines 140-162 (source and destination both built from the slug, then moved with shutil.move)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

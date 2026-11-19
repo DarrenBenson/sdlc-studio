@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_test_hygiene.py, changelog.d/BG1511.md
 > **Created:** 2026-11-16
 > **Created-by:** sdlc-studio file
 > **Raised-by:** sdlc-studio; agent; v1

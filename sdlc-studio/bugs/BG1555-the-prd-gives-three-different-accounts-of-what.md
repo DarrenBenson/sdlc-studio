@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
+> **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1555.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, prd lens, survived 3 of 3 refute votes; observed at sdlc-studio/prd.md Mission (lines 67-69); Section 3 row 'Sprint report and sign' (line 324); Section 4 Core Behaviours (lines 437-440)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

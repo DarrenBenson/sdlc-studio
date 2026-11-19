@@ -1,6 +1,7 @@
 # BG1299: A commit that changes sdlc-studio/trd.md selects 2 of the test modules that read it, so a broken spec sentence is first seen by the full suite at push
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1115
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_selection_reaches_loaders.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py

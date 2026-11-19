@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** docs/why-sdlc-studio.md, tools/tests/test_doc_claims.py, sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md
+> **Affects:** docs/why-sdlc-studio.md, tools/tests/test_doc_claims.py, sdlc-studio/bugs/BG1039-us1004-s-one-list-test-no-longer-requires.md, changelog.d/BG1549.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at docs/why-sdlc-studio.md line 285-287 ('A team grown from your project'), against .claude/skills/sdlc-studio/scripts/transition.py:1003-1011 and reference-bug.md:269
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

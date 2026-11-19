@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** tools/skill-tests.sh, conftest.py, tools/tests/test_skill_tests_env.py
+> **Affects:** tools/skill-tests.sh, conftest.py, tools/tests/test_skill_tests_env.py, changelog.d/BG1310.md
 > **Evidence:** The run nine US0986 builder's hand-back (2026-11-09): the CURSOR_AGENT=1 and CLAUDECODE=1 runs of the 14 modules through tools/skill-tests.sh
 > **Created:** 2026-11-09
 > **Created-by:** sdlc-studio file

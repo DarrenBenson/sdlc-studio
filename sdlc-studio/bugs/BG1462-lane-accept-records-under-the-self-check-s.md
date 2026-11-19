@@ -1,6 +1,7 @@
 # BG1462: lane accept records under the self-check's agent author and critic.py record then warns that author lacks the holder (role) form
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1594
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py

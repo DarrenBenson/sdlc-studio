@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1557.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md section 3 System Context (lines 104-105); section 2 Pattern Used (lines 84-86); section 3 C4 note (line 135); section 8 Deployment Topology table (lines 699-706); section 10 cost model (line 799) and section 12 (line 1297)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

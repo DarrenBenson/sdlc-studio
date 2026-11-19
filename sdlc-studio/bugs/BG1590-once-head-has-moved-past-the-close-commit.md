@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, changelog.d/BG1590.md
 > **Evidence:** Run sixteen sign rehearsal, 2026-11-18, at local commit 1c7ae77a (never pushed): sign judged against 59763d63 and refused on issue_detail[0]; sprint.py lines 11251-11268.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

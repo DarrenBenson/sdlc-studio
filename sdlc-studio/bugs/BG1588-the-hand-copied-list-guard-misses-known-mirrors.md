@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_test_census.py, sdlc-studio/bugs/BG1586-us1313-s-test-lists-the-gate-scripts-by.md
+> **Affects:** tools/tests/test_test_census.py, sdlc-studio/bugs/BG1586-us1313-s-test-lists-the-gate-scripts-by.md, changelog.d/BG1588.md
 > **Evidence:** BG1586 QA verdict, run sixteen, 2026-11-18.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file

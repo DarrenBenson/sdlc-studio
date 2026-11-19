@@ -2,7 +2,7 @@
 
 > **Status:** Open
 > **Severity:** Low
-> **Points:** 2
+> **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/cursor_usage_hook.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor_ledger_edges.py, changelog.d/BG1233.md, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py
 > **Evidence:** run six reviews, scratchpad run6/*-verdict-r*.txt
 > **Created:** 2026-11-05

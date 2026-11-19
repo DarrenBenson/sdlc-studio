@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** sdlc-studio/rfcs/RFC0063-human-in-the-lead-the-accountable-engineering-lead.md, sdlc-studio/rfcs/RFC0064-production-learning-and-risk-proportionate-review.md, tools/lint_corpus.py, tools/tests/test_lint_corpus.py
+> **Affects:** sdlc-studio/rfcs/RFC0063-human-in-the-lead-the-accountable-engineering-lead.md, sdlc-studio/rfcs/RFC0064-production-learning-and-risk-proportionate-review.md, tools/lint_corpus.py, tools/tests/test_lint_corpus.py, changelog.d/BG1548.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, rfc lens, survived 3 of 3 refute votes; observed at sdlc-studio/rfcs/RFC0063-human-in-the-lead-the-accountable-engineering-lead.md ## Decision (lines 158-166) and ## Phased Plan / Workstreams rows WS2, WS5, WS6, WS7; rfcs/RFC0064-*.md ## Decision (lines 148-154)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

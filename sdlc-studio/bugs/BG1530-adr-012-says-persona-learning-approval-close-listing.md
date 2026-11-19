@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1530.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md ADR-012 Status line (1228) and 'Built so far' paragraph (1260-1266), against the §6 Persona memory row (557)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

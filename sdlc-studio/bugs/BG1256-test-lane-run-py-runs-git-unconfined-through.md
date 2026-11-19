@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, changelog.d/BG1256.md
 > **Evidence:** run seven (RUN-01M6RAP7) BG1255 review round 1
 > **Created:** 2026-11-06
 > **Created-by:** sdlc-studio file

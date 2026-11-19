@@ -1,6 +1,7 @@
 # BG1587: A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push
 
-> **Status:** Open
+> **Status:** Superseded
+> **Superseded by:** BG1115
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/pre-commit, tools/tests/test_lean_precommit_parallel.py

@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1556.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, trd lens, survived 3 of 3 refute votes; observed at sdlc-studio/trd.md section 6 Storage Strategy and 'Committed evidence and records' table (lines 526-558); section 5 rule 5 (292-293); against sdlc-studio/decisions/ (33 files), sdlc-studio/decisions.md, scripts/ledger.py:4,29 and scripts/decisions.py:8
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file

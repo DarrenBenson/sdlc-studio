@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Low
 > **Points:** 1
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1294.md
 > **Evidence:** BG1290 round-2 review (qa-seat-BG1290-r1), probes P6, P6b and P0c, verdict in scratchpad rel63/lanes/BG1290-verdict-r2.txt
 > **Created:** 2026-11-08
 > **Created-by:** sdlc-studio file

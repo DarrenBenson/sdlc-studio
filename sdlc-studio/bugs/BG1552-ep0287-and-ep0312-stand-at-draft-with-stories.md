@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/reference-epic.md, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md, sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md, changelog.d/BG1552.md
 > **Evidence:** audit AUDIT-2026-11-17, project profile, cross lens, survived 3 of 3 refute votes; observed at sdlc-studio/epics/EP0287-personas-become-accountable-team-members-a-review-standard.md Line 3 (`> **Status:** Draft`) and the Story Breakdown; sdlc-studio/prd.md lines 333-334; sdlc-studio/epics/EP0312-the-commit-hook-runs-the-cheap-repo-wide.md line 3; `epic_status_stale_drift` in .claude/skills/sdlc-studio/scripts/reconcile.py (about line 1032)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
