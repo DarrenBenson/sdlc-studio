@@ -712,11 +712,14 @@ class LandSeveralWorktreesTests(_PricedFixture):
         finally:
             self.wt = first
 
-    def _land_both(self, *worktrees: Path) -> subprocess.CompletedProcess:
+    def _land_both(self, *worktrees: Path, resume: bool = False) -> subprocess.CompletedProcess:
         named = [arg for wt in worktrees or (self.wt, self.wt2) for arg in ("--worktree", str(wt))]
+        return self._sprint("lane", "land", *named, "--units", A, B,
+                            *(["--resume"] if resume else []))
+
+    def _sprint(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, "-B", str(SPRINT), "lane", "land", *named, "--units", A, B,
-             "--root", str(self.root)],
+            [sys.executable, "-B", str(SPRINT), *args, "--root", str(self.root)],
             capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
             check=False)
 
@@ -823,6 +826,13 @@ class LandSeveralWorktreesTests(_PricedFixture):
             self.assertIn(REFUSAL, r.stderr, "the hook's own refusal was not shown")
             self.assertNotEqual("B = 2\n", (self.wt / "src/b.py").read_text(encoding="utf-8"),
                                 "the first worktree still holds the second's change")
+            # the unit whose file the hook refused is the one a repair brief must reach
+            for unit in (B, A):
+                repair = self._sprint("lane", "brief", "--units", unit, "--repair")
+                self.assertEqual(0, repair.returncode,
+                                 f"{unit} has no repair route: {repair.stdout + repair.stderr}")
+                self.assertIn(REFUSAL, repair.stdout,
+                              f"{unit}'s repair brief does not quote the hook's refusal")
 
         kept = self.root / LANE / "landed" / self.wt.name / "kept.marker"
         _write(kept.parent, kept.name, "an earlier landing's\n")
@@ -832,6 +842,37 @@ class LandSeveralWorktreesTests(_PricedFixture):
             self.assertEqual(2, r.returncode, r.stderr)
             self.assertIn("named twice", r.stderr)
             self.assertTrue(kept.is_file(), "the refusal came after the hand-in was copied")
+
+        # the second builder commits its code and leaves only its changelog staged
+        gitutil.git(["rm", "-q", "--cached", "--", "src/refuse.py"], self.wt2)
+        (self.wt2 / "src/refuse.py").unlink()
+        gitutil.git(["commit", "-q", "--no-verify", "-m", "b is two", "--", "src/b.py"],
+                    self.wt2)
+        ahead = _git(self.wt2, "rev-parse", "HEAD")
+        staged = {wt: self._staged(wt) for wt in (self.wt, self.wt2)}
+        self.assertEqual([f"changelog.d/{B}.md"], staged[self.wt2])
+        for how, resume in (("landed", False), ("resumed", True)):
+            with self.subTest(f"a later worktree holding a commit ahead of main, {how}"):
+                r = self._land_both(resume=resume)
+                lands_nothing(r, 1)
+                self.assertIn(str(self.wt2), r.stderr)
+                self.assertIn("ahead of main", r.stderr)
+                self.assertEqual(ahead, _git(self.wt2, "rev-parse", "HEAD"),
+                                 "the commit ahead was moved")
+                self.assertEqual("B = 1\n", (self.root / "src/b.py").read_text(encoding="utf-8"))
+                if not resume:
+                    self.assertEqual(2, r.returncode, "not refused before anything moved")
+                    self.assertTrue(kept.is_file(), "the refusal came after the hand-in was copied")
+
+        gitutil.git(["reset", "-q", "--soft", "HEAD~1"], self.wt2)
+        with self.subTest("the resumed landing commits, and leaves no refusal to repair"):
+            r = self._land_both(resume=True)
+            self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+            self.assertEqual("B = 2\n", (self.root / "src/b.py").read_text(encoding="utf-8"))
+            for unit in (A, B):
+                repair = self._sprint("lane", "brief", "--units", unit, "--repair")
+                self.assertEqual(2, repair.returncode,
+                                 f"{unit}'s landed change still reads as refused: {repair.stdout}")
 
     def _stage_in(self, wt: Path, rel: str, body: str) -> None:
         _write(wt, rel, body)

@@ -306,6 +306,11 @@ since every call loads that file and pays for each line in it; it keeps item 8 a
    run, or keep it inside your own worktree. A worktree isolates the tree, not `/tmp`.
 9. **Generated specs are migration blueprints**, not documentation, and never auto-promote to
    Done.
+10. **Drive wakes the model only at a stop.** `sprint.py drive` walks a wave's lanes from build to
+    paperwork with no model between its steps, and the model is woken at five points only: a
+    refusal (a step that exits non-zero), a warning (a WARNING line from a step that exited 0), a
+    REJECT, a rebase conflict and a wave end. Each arrives as a decision record of at most 30
+    lines, and the loop resumes only once the stop is answered.
 
 ## Project constitution {#constitution}
 

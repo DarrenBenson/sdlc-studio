@@ -33,9 +33,12 @@ the root's branch in its own worktree, the later ones are added to the first's s
 and the first commits with its own subject, its scope naming every landed unit, the later
 messages as body, and a `Refs:` trailer per unit. The later worktrees are brought to the landed
 commit before they are removed. A file two of them stage with different content, a unit whose
-hand-in is in none or several of them, and a worktree named twice are refused before anything
-moves; a change that will not apply beside the first's, or a commit the hooks refuse, takes the
-added changes back out, so every worktree holds its own staged change and nothing landed.
+hand-in is in none or several of them, a worktree named twice, and a worktree after the first
+holding commits ahead of the root's branch, which landing only its staged change would leave
+behind, are refused before anything moves; a change that will not apply beside the first's, or a commit
+the hooks refuse, takes the added changes back out, so every worktree holds its own staged
+change and nothing landed. The commit's output is kept in every worktree's kept hand-in, so a
+refusal reaches each unit's repair brief.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -388,6 +391,19 @@ def _refuse_overlap(lanes_: list[_Lane], code: int) -> dict[str, _Lane]:
     return {path: lane for path, (_, lane) in first.items()}
 
 
+def _refuse_commits_ahead(lanes_: list[_Lane], code: int) -> None:
+    """Refuse a worktree after the first that holds commits ahead of the root's branch: only
+    its staged change is added to the first's commit, so its commits would not land."""
+    for lane in lanes_[1:]:
+        ahead = _git(lane.top, "rev-list", "--count", f"{lane.target}..HEAD").stdout.strip()
+        if ahead != "0":
+            raise LandError(f"{lane.top} holds {ahead} commit(s) on {lane.branch} ahead of "
+                            f"{lane.target}: a landing of several worktrees adds only a later "
+                            f"worktree's staged change to the first's commit, so those commits "
+                            f"would not land. Name that worktree first, or land it on its own. "
+                            f"Nothing was landed.", code)
+
+
 def _paragraphs(text: str) -> list[list[str]]:
     out: list[list[str]] = [[]]
     for line in text.strip().splitlines():
@@ -443,8 +459,12 @@ def _commit_several(lanes_: list[_Lane]) -> None:
     once: each is replayed onto the root's branch in its own worktree, the later ones' changes
     are added to the first's staged change, and the first commits with `_combined_message`. A
     change that does not apply, or a commit the hooks refuse, takes the added changes back out
-    again, so every worktree holds its own staged change and nothing was committed."""
+    again, so every worktree holds its own staged change and nothing was committed. The
+    commit's output is kept in every worktree's kept hand-in, where each unit's repair brief
+    reads a refusal."""
     carrier, target = lanes_[0], lanes_[0].target
+    # a resume runs no preflight, and a commit made since the landing stopped would be left behind
+    _refuse_commits_ahead(lanes_, 1)
     for lane in lanes_:
         if _has_staged(lane.top):
             _carry(lane.top, target)
@@ -477,16 +497,20 @@ def _commit_several(lanes_: list[_Lane]) -> None:
     if not _has_staged(carrier.top):
         _say(f"the staged changes are already on {target}: nothing is left to commit")
         return
-    msg = carrier.keep / LANDING_MSG
+    msg, log = carrier.keep / LANDING_MSG, carrier.keep / "commit.log"
     sdlc_md.atomic_write(msg, _combined_message(lanes_))
     try:
-        sha = _commit(carrier.top, msg, carrier.keep / "commit.log", target, where)
+        sha = _commit(carrier.top, msg, log, target, where)
     except LandError as exc:
         stuck = _unwind(carrier.top, applied)
         if stuck:
             raise LandError(f"{exc}\nTaking the other worktrees' changes back out of "
                             f"{carrier.top} failed, so it still holds them: {stuck}") from None
         raise
+    finally:
+        for lane in lanes_[1:] if log.is_file() else []:
+            lane.keep.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(log, lane.keep / "commit.log")
     _say(f"committed {sha} in {carrier.top} through the hooks, holding the staged changes of "
          f"{where}")
 
@@ -515,7 +539,8 @@ def _read_record(path: Path) -> dict | None:
 def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lane]:
     """Each named worktree resolved, its units assigned, and every refusal made before anything
     moves: a worktree named twice, one with nothing to land, and for several, a unit whose
-    hand-in is in none or more than one of them, or a file two of them stage differently."""
+    hand-in is in none or more than one of them, a worktree after the first holding commits
+    ahead of the root's branch, or a file two of them stage differently."""
     lanes_: list[_Lane] = []
     for path in worktrees:
         root_top, top, branch, target = _resolve(root, path)
@@ -543,6 +568,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
                   f"{lane.target}..HEAD").stdout.strip() == "0":
             raise LandError(f"{lane.top} has nothing staged and no commit ahead of "
                             f"{lane.target}: there is nothing to land", 2)
+    _refuse_commits_ahead(lanes_, 2)
     if not several:
         lanes_[0].units = list(units)
         return lanes_

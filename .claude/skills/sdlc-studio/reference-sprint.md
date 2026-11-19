@@ -191,12 +191,12 @@ a recorded waiver that answers none.
 
 ### The wave boundary {#wave-boundary}
 
-A wave boundary is the point where every lane of the wave is accepted and none is in flight. A
-builder's hand-back reaches only the session that spawned its agent, so no boundary falls with a
-lane in flight. At a boundary `sprint.py handoff` writes the resume brief, and the next wave starts
-in a fresh session with `sprint.py resume`. The close (the retro, the report, `sprint.py close` and
-`sprint.py sign`) runs in its own fresh session, started from the resume brief written at the last
-wave's boundary, never in that wave's session.
+A wave boundary is the point where every lane of the wave is accepted and none is in flight. A builder's hand-back reaches only the session that spawned its agent, so no boundary falls with a lane in flight. At a boundary `sprint.py handoff` writes the resume brief, and the next wave starts in a fresh session with `sprint.py resume`.
+The close (the retro, the report, `sprint.py close` and `sprint.py sign`) runs in its own fresh session, started from the resume brief written at the last wave's boundary, never in that wave's session.
+
+`sprint.py drive --harness <cli>` walks a wave from its start to its boundary with no model between the steps: per unit build (`lane run`), land (`lane land`), brief, review (the QA brief run headless in the same CLI), accept (`lane accept`), return (the priced `lane return`) and paperwork (one commit through the hooks), units with disjoint Affects building at once and a unit sharing a file waiting for the earlier one to land.
+Drive stops at five points only, each with a decision record of at most 30 lines naming the unit, the step, its exit status, its output's last lines, where the whole output is kept and the command that resumes: a refusal (a step that exits non-zero), a warning (a WARNING line from a step that exited 0), a REJECT (recorded, and no repair spawned), a rebase conflict (the whole wave stops) and a wave end (the next wave waits for a fresh session).
+`sprint.py drive step --after <agent-id>` is the same chain for an orchestrator that spawns its own agents, one command per hand-back ending with the next prompt's path; `help/sprint.md` has the detail.
 
 ### The handoff and the run object
 

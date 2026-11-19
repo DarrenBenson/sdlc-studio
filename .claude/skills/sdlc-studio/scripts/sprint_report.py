@@ -893,9 +893,11 @@ NON_CEREMONY_VERBS = {
     # `cost` is a read-only report of where a session's tokens went; it certifies nothing.
     # `handoff` and `resume` carry an open run into a fresh session through its resume brief;
     # they move no unit and certify nothing.
+    # `drive` runs the `lane` verbs in sequence during the run, as `lane` itself does; the close
+    # certifies their results, never the command that chained them.
     "sprint": ("appetite", "close", "boundary", "report", "sign",
                "reopen", "stop", "decision", "batch", "lane", "next", "queue", "call", "cost",
-               "handoff", "resume"),
+               "handoff", "resume", "drive"),
     "critic": ("brief", "caller-check", "correct", "self-check", "show", "supersede"),
     "handoff": ("show",),
     # `evidence` renders the signed reports onto a page after the runs are signed; it reads

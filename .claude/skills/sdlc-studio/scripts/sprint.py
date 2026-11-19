@@ -10206,6 +10206,41 @@ def _print_lane_return(res: dict) -> None:
         print(f"  {res['why']}", file=sys.stderr)
 
 
+def cmd_drive(args: argparse.Namespace) -> int:
+    """`sprint drive` walks the open run's current wave from build to paperwork, and `sprint drive
+    step --after <agent-id>` handles one agent's hand-back; the steps, stops and exit statuses of
+    both are `lib/drive.py`'s."""
+    from lib import drive  # noqa: PLC0415 - only drive needs it
+    if args.action == "step":
+        if not (args.after or "").strip():
+            print("sprint drive step: name the agent whose hand-back this is with --after",
+                  file=sys.stderr)
+            return 2
+        named = [f"--{flag}" for flag in ("harness", "model", "timeout")
+                 if getattr(args, flag, None) is not None]
+        if named:
+            print(f"sprint drive step: {', '.join(named)} belong to the walk; a step runs no "
+                  f"session of its own", file=sys.stderr)
+            return 2
+    else:
+        named = [f"--{flag}" for flag in ("after", "unit") if getattr(args, flag, None)]
+        if named:
+            print(f"sprint drive: {', '.join(named)} belong to `drive step`", file=sys.stderr)
+            return 2
+        if not args.harness:
+            print("sprint drive: name the CLI each build and review runs in with --harness",
+                  file=sys.stderr)
+            return 2
+    # Before anything commits: a landing or a paperwork commit made now would carry an identity
+    # an agent wrote, and pushed history cannot be re-attributed.
+    if refusal := _identity_refusal(args.root, "sprint drive"):
+        print(refusal, file=sys.stderr)
+        return 2
+    if args.action == "step":
+        return drive.step(args.root, args.after, getattr(args, "unit", None))
+    return drive.walk(args.root, args.harness, model=args.model, timeout=args.timeout)
+
+
 def tree_digest(root) -> str:
     """A digest of the working tree's CONTENT, as a real git tree object, or "".
 
@@ -14102,6 +14137,40 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--format", choices=("text", "json"), default="text")
     ln.add_argument("--root", default=".", help="Repo root (default: .)")
     ln.set_defaults(func=cmd_lane)
+
+    drive_help = (
+        "Drive the open run's current wave with no model between its steps. Each unit walks "
+        "build (`lane run --harness`), land (`lane land`), brief (the QA brief the landing "
+        "wrote), review (that brief run headless in the same CLI), accept (`lane accept`), "
+        "return (the priced `lane return` an APPROVE's accept runs) and paperwork (one commit "
+        "through the hooks), one line per step. Disjoint units build at once; a unit sharing a "
+        "file waits for the earlier one to land. Drive stops at five points only, each printing "
+        "a decision record of at most 30 lines: a refusal (a step that exits non-zero), a "
+        "warning (a WARNING line from a step that exited 0), a REJECT (recorded, with the repair "
+        "brief named), a rebase conflict (the whole wave stops) and a wave end (no unit of the "
+        "next wave starts). "
+        "`step --after <agent-id>` handles one agent's hand-back instead: a builder's or "
+        "repair's worktree agent-<id> is landed, briefed and priced, and a reviewer's verdict "
+        "accepted, its paperwork committed, or answered by the repair brief; the last line "
+        "printed is the next prompt's path, and a stop prints none.")
+    dr = sub.add_parser("drive", help=drive_help, description=drive_help)
+    dr.add_argument("action", nargs="?", choices=("step",),
+                    help="step: handle the hand-back of the agent --after names")
+    dr.add_argument("--harness", default=None, choices=("claude", "cursor", "codex", "copilot",
+                                                        "opencode"),
+                    help="(walk) the CLI each build and each review runs in, headless")
+    dr.add_argument("--model", default=None,
+                    help="(walk) the model each session runs on, passed through to the CLI")
+    dr.add_argument("--timeout", type=_lane_positive_int, default=None,
+                    help="(walk) each session's timeout in seconds (default: 3600)")
+    dr.add_argument("--after", default=None, metavar="AGENT_ID",
+                    help="(step) the agent whose hand-back this is: a builder or repair "
+                         "builder by its worktree agent-<id>, else a reviewer")
+    dr.add_argument("--unit", default=None,
+                    help="(step) the unit a reviewer's verdict answers, when several units "
+                         "await a written verdict")
+    dr.add_argument("--root", default=".", help="Repo root (default: .)")
+    dr.set_defaults(func=cmd_drive)
 
     co = sub.add_parser(
         "cost",
