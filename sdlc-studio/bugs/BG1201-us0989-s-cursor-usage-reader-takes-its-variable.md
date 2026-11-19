@@ -1,6 +1,7 @@
 # BG1201: US0989's Cursor usage reader takes its variable names and response shape from documentation, not from a real Cursor cloud run
 
 > **Status:** Open
+> **Ruling:** D0536 (operator, 2026-11-19): deferred - kept open but out of the next runs until a Cursor user reports a reading; the reader fails safe meanwhile.
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/meter_cursor.py, .claude/skills/sdlc-studio/scripts/tests/test_meter_cursor.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1201.md

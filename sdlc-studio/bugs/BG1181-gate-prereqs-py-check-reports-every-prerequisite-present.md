@@ -1,6 +1,7 @@
 # BG1181: gate_prereqs.py check reports every prerequisite present on a machine with no Python 3.10, which the release gate's US0908 lane needs
 
-> **Status:** Open
+> **Status:** Won't Fix
+> **Resolution:** Won't Fix under D0536 (operator, 2026-11-19): release cuts run on the gate host (D0382), where BG1220's --release preflight names Python 3.10 with its install command.
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/gate_prereqs.py, tools/tests/test_gate_prereqs.py, changelog.d/BG1181.md

@@ -47,7 +47,8 @@ Studio runs in the reader's own harness and models, and it is live on both web h
 - **Filed in the run, not taken:** BG1591 to BG1598 and BG1600, ruled not-stop-ship (D0532,
   RETRO0150); CR0743 (the report records the harness) and RFC0068 (a neutral skill path).
 - **Carried from run sixteen:** BG1570 to BG1578, BG1581 to BG1585, BG1587 to BG1589, BG1590,
-  CR0740 and CR0741; four sweep questions (BG1404, BG1103, BG1181, BG1201) wait for you.
+  CR0740 and CR0741. The four held sweep questions are ruled (D0536): BG1404 narrowed, BG1103
+  re-scoped to US1290's binding, BG1181 Won't Fix, BG1201 deferred.
 - **Carried from run fifteen:** BG1495 to BG1497, BG1499, BG1500, BG1502, BG1504, BG1505,
   CR0713, CR0673, CR0710, US1168, and the after-tag bugs BG1508, BG1510 to BG1514 and BG1301.
 

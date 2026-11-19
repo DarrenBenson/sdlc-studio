@@ -1,6 +1,7 @@
 # BG1103: The close binds the untracked files it leaves into the signature without naming them, so tidying one refuses the sign
 
 > **Status:** Open
+> **Ruling:** D0536 (operator, 2026-11-19): re-scoped to the binding US1290 shipped - the close names exactly what the signature still checks (the close commit once main moves past it), nothing more. Re-groom the criteria to that before planning.
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_names_bound_untracked.py, changelog.d/BG1103.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py

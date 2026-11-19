@@ -1,6 +1,7 @@
 # BG1404: critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused
 
 > **Status:** Open
+> **Ruling:** D0536 (operator, 2026-11-19): narrowed - keep the fail-closed split at a bare semicolon (BG1032); the fix is only that critic.py record's refusal names the \; escape. Re-groom the criteria to that before planning.
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_issues_semicolon.py, changelog.d/BG1404.md
