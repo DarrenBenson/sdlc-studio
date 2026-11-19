@@ -23,6 +23,8 @@ Run from the repo root:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import re
@@ -36,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 # gitutil is the TESTS' confined-git helper, so it sits beside this module, not in scripts/.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
+import test_meter_reads_true as meter  # noqa: E402 - the harness transcript fixture, shared
 from lib import run_state, token_meters  # noqa: E402
 
 #: The process environment with no harness named or signalled, for the whole module: every
@@ -1181,6 +1184,113 @@ class SplitDeltaTests(unittest.TestCase):
                                       self.row(run_state.SESSION_MODEL_MIXED,
                                                {"a": 150, "b": 50})], 100),
                          {"a": 50, "b": 50})
+
+
+class CrossRepoMeterTests(unittest.TestCase):
+    """A run driven in one repository from a session started in another: the meter looks for the
+    session's transcripts under the harness folder named for the run's OWN repository, which the
+    session never wrote to. Without a stamp the close reports every cost row NOT MEASURED, so the
+    plan has to say so when it opens the run, and name the variable that points the meter at the
+    store the session does write to.
+
+    Every fixture runs the shipped `sprint.py plan --write` and `sprint.py close` in a throwaway
+    tree, HOME redirected so the harness folder the meter derives for it does not exist."""
+
+    def setUp(self) -> None:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        (self.tmp / "home").mkdir()
+        env = mock.patch.dict(os.environ, {"HOME": str(self.tmp / "home")})
+        env.start()
+        self.addCleanup(env.stop)
+        os.environ.pop(run_state.TRANSCRIPTS_ENV, None)
+        # The repository the run lives in: it has no store of its own under the fake HOME.
+        self.root = self.tmp / "website"
+        bugs = self.root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        (self.root / "src").mkdir()
+        for n in (1, 2):
+            (self.root / "src" / f"bg{n}.py").write_text("", encoding="utf-8")
+            (bugs / f"BG000{n}-x.md").write_text(
+                f"# BG000{n}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Affects:** src/bg{n}.py\n> **Points:** 2\n\n## Acceptance Criteria\n\n"
+                "### AC1: it behaves\n\n- **Verify:** shell true\n", encoding="utf-8")
+        self.sprint = meter._live("sprint")
+
+    def _run(self, *argv: str) -> tuple[int, str]:
+        buf = io.StringIO()
+        with mock.patch.object(sys, "stdin", io.StringIO("")), \
+                contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = self.sprint.main([*argv, "--root", str(self.root)])
+        return rc, buf.getvalue()
+
+    def _plan(self) -> tuple[int, str]:
+        return self._run("plan", "--bugs", "Open", "--write", "--no-fetch",
+                         "--sprint-goal", "every open bug is fixed")
+
+    def _store(self) -> "meter._Transcripts":
+        """The session's own store: the folder the harness keeps for the repository the session
+        was started in, which is not the run's."""
+        tx = meter._Transcripts(self.tmp / "home" / ".claude" / "projects" / "-work-repo")
+        tx.main_says("msg_before", meter.MAIN_1)
+        return tx
+
+    def test_plan_warns_when_no_token_stamp_can_be_taken(self) -> None:
+        """AC1. MUTANTS: no warning (a silent plan); a warning naming no remedy; a warning on
+        every plan, a stamped one too (the control below); the plan refusing to open the run."""
+        self.assertFalse(run_state._harness_transcript_dir(self.root).exists())  # noqa: SLF001
+        rc, out = self._plan()
+        self.assertEqual(rc, 0, out)
+        state = run_state.read(self.root)
+        self.assertTrue(state.get("run_id"), f"the run did not open: {out}")
+        self.assertEqual(state.get(run_state.TOKEN_STAMPS), [], "no stamp could be taken")
+        said = " ".join(out.split())
+        self.assertIn("no session token stamp could be taken", said, out)
+        self.assertIn("NOT MEASURED", said, "the warning says what the close will report")
+        self.assertIn(f"{run_state.TRANSCRIPTS_ENV}=", said, "the warning names the remedy")
+        self.assertIn(str(run_state._harness_transcript_dir(self.root)),  # noqa: SLF001
+                      said, "the warning names the store the meter looked in")
+
+        # The control: the same plan with the variable pointing at a store is stamped, silent.
+        run_state.update(self.root, outcome="goal-reached")   # spent: the next plan opens afresh
+        tx = self._store()
+        with mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(tx.dir)}):
+            rc, out = self._plan()
+        self.assertEqual(rc, 0, out)
+        self.assertEqual(len(run_state.read(self.root)[run_state.TOKEN_STAMPS]), 1, out)
+        self.assertNotIn("no session token stamp", " ".join(out.split()),
+                         "a run whose open was stamped is not warned about")
+
+    def test_a_cross_repository_run_is_priced_from_the_named_store(self) -> None:
+        """AC2. MUTANTS: the stamp read from the run's own (absent) store, the variable ignored;
+        no closing stamp taken; the Priced cost row left NOT MEASURED."""
+        tx = self._store()
+        cr = meter._live("test_close_cost_regression")
+        with mock.patch.dict(os.environ, {run_state.TRANSCRIPTS_ENV: str(tx.dir)}):
+            rc, out = self._plan()
+            self.assertEqual(rc, 0, out)
+            self.assertNotIn("no session token stamp", " ".join(out.split()), out)
+            tx.main_says("msg_work", cr.WORK)
+            retros = self.root / "sdlc-studio" / "retros"
+            retros.mkdir(parents=True, exist_ok=True)
+            (retros / f"{cr.RETRO}-cost.md").write_text(
+                cr.RETRO_TEXT.replace("US0101, US0102, US0103", "BG0001, BG0002"),
+                encoding="utf-8")
+            with cr._chain_green(self.sprint, real=()):
+                rc, out = self._run("close", "--retro", cr.RETRO, "--goal-verdict", "achieved",
+                                    "--note", "the batch shipped")
+        stamps = run_state.read(self.root).get(run_state.TOKEN_STAMPS) or []
+        self.assertEqual([s.get("kind") for s in stamps], ["open", "report"], out)
+        for s in stamps:
+            self.assertEqual(s["source"], str(tx.main),
+                             "each stamp is read from the named store, not the run's own")
+        self.assertGreater(stamps[1]["priced"], stamps[0]["priced"], "the store grew")
+        page = meter._live("sprint_report").build_report(self.root, cr.RETRO)
+        rows = next(s for s in page["sections"] if s["key"] == "estimates")["rows"]
+        row = next(r for r in rows if r["est_measure"]["value"] == "Priced cost")
+        self.assertEqual(row["est_actual"]["value"], meter._priced(meter._parts(cr.WORK)),
+                         f"the Priced cost row: {row}")
 
 
 if __name__ == "__main__":

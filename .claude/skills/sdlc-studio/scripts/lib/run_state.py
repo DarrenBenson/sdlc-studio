@@ -1655,6 +1655,31 @@ def stamp_tokens(repo_root: Path | str, kind: str,
     return stamp
 
 
+def unmetered_warning(repo_root: Path | str, state: dict | None) -> str | None:
+    """The plan's warning for a run that holds no session token stamp, or None when it holds one.
+
+    Without a stamp from the run's own session the close has no delta to state, so every cost
+    row reads NOT MEASURED. The usual cause is a session started in another repository: the
+    meter looks under the harness folder named for THIS repository, which that session never
+    wrote to. The warning names where the meter looked, why it found nothing, and the variable
+    that points it at the session's own store. Never raises: a plan must not fail over a
+    warning, as it must not over the stamp itself."""
+    if (state or {}).get(TOKEN_STAMPS):
+        return None
+    try:
+        where = os.environ.get(TRANSCRIPTS_ENV) or str(_harness_transcript_dir(repo_root))
+        why = session_tokens(repo_root).get("reason") or "the meter returned no reading"
+    except Exception as exc:  # noqa: BLE001 - the warning is said whatever the meter raised
+        where, why = "the harness folder for this repository", f"the meter could not be read: {exc}"
+    looked = "" if where in why else f" The meter looked in {where}."
+    return (f"warning: no session token stamp could be taken as this run opened ({why}), so its "
+            f"cost will read NOT MEASURED at the close unless a later reading is taken.{looked} "
+            f"A session started in another repository keeps its transcripts under that "
+            f"repository's harness folder: set {TRANSCRIPTS_ENV}=<that folder> on every "
+            f"sprint.py and transition.py call of this run, so the meter reads the session's own "
+            f"store.")
+
+
 #: The session's spend by role, as `sprint cost --anatomy` reads it at the close, recorded on the
 #: close's own reading (`stamp_cost_roles`). The report states it from here and never from the
 #: live transcript, which grows after the close, so a page filed at the close re-derives to the

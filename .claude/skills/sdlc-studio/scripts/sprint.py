@@ -3127,6 +3127,100 @@ def _effort_brief_line(brief: dict) -> str:
             f"(routing.effort) - pass each to the agent spawn.")
 
 
+#: The line `git commit` prints for a commit it made, `[<branch> <sha>] <subject>`: a landing's
+#: `commit.log` holding one records a commit, so the landing was not refused by the hook.
+_COMMIT_MADE_RE = re.compile(r"^\[[^\]\n]+ [0-9a-f]{7,40}\] ", re.M)
+#: Where `sprint lane land` keeps each landing's hand-in and its commit's output (`lib/lanes.py`).
+_LANDED_REL = Path("sdlc-studio") / ".local" / "lane" / "landed"
+
+
+def _landing_refusal(root: Path, unit: str) -> dict | None:
+    """The commit hook's refusal of `unit`'s latest landing, or None.
+
+    The latest landing is the newest directory under `_LANDED_REL` whose hand-in names the unit,
+    by a `<unit>-claims.json` or by an id in its commit message's subject. It was refused when
+    its `commit.log` records no commit made; a landing with no `commit.log` committed nothing of
+    its own, and a later landing that committed answers an earlier refusal."""
+    uid, latest = sdlc_md.norm_id(unit), None
+    base = root / _LANDED_REL
+    for d in sorted(base.iterdir()) if base.is_dir() else []:
+        if not d.is_dir():
+            continue
+        named = {sdlc_md.norm_id(p.name[:-len("-claims.json")]) for p in d.glob("*-claims.json")}
+        msg = d / "commit-msg.txt"
+        subject = (msg.read_text(encoding="utf-8", errors="replace").splitlines() or [""])[0] \
+            if msg.is_file() else ""
+        named |= {sdlc_md.norm_id(t) for t in re.findall(r"[A-Za-z]{2,}-?[0-9A-Za-z]{4,}", subject)}
+        if uid in named and (latest is None or d.stat().st_mtime >= latest.stat().st_mtime):
+            latest = d
+    log = latest / "commit.log" if latest is not None else None
+    if log is None or not log.is_file():
+        return None
+    output = log.read_text(encoding="utf-8", errors="replace")
+    if _COMMIT_MADE_RE.search(output):
+        return None
+    return {"landing": latest.name, "log": log.relative_to(root).as_posix(), "output": output}
+
+
+def _unanswered_reject(root: Path, unit: str) -> dict | None:
+    """The unit's latest recorded delivery verdict when it is a REJECT, or None: a REJECT a later
+    verdict answered is not one a repair answers. Its ISSUES and BLOCKING text is read verbatim
+    from the verdict file the ledger row is bound to; a row bound to no file is quoted from the
+    ledger cell, and says so."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    uid = sdlc_md.norm_id(unit)
+    rows = [r for r in critic.read_verdicts(root)
+            if sdlc_md.norm_id(str(r.get("unit") or "")) == uid and not r.get("superseded")]
+    if not rows or str(rows[-1].get("verdict") or "").upper() != critic.REJECT:
+        return None
+    row = rows[-1]
+    _label, rel = critic.verdict_source(root, row)
+    text = (root / rel).read_text(encoding="utf-8", errors="replace") \
+        if rel and (root / rel).is_file() else None
+    verdict = critic._VERDICT_LINE.search(text) if text else None  # noqa: SLF001 - its grammar
+    if verdict is None:
+        return {"source": critic.verdicts_path(root).relative_to(root).as_posix(),
+                "bound": False, "date": row.get("date"), "reviewer": row.get("reviewer"),
+                "issues": str(row.get("issues") or ""), "blocking": ""}
+    after = text[verdict.end():]
+    return {"source": rel, "bound": True, "date": row.get("date"),
+            "reviewer": row.get("reviewer"),
+            "issues": critic._block_field(after, "ISSUES"),  # noqa: SLF001 - its grammar
+            "blocking": critic._block_field(after, "BLOCKING")}  # noqa: SLF001
+
+
+def lane_repair_scope(root: Path | str, unit: str) -> dict | None:
+    """What a repair of `unit` answers: {"unit", "refusal", "reject"}, either of the last two
+    None, or None when the unit has neither a refused landing nor an unanswered REJECT, so
+    there is nothing to repair."""
+    root = Path(root)
+    refusal, reject = _landing_refusal(root, unit), _unanswered_reject(root, unit)
+    return {"unit": unit, "refusal": refusal, "reject": reject} if refusal or reject else None
+
+
+def lane_repair_text(scope: dict) -> str:
+    """The repair section `lane brief --repair` prints after the unit's brief: the landing's
+    refusal and the REJECT's findings, each quoted byte for byte from the file named beside it,
+    never summarised."""
+    unit = scope["unit"]
+    out = [f"--- REPAIR: what this repair of {unit} answers, quoted verbatim ---",
+           "Carry only the blocking fix and the pins that kill it, and file the rest."]
+    if ref := scope.get("refusal"):
+        body = ref["output"] if ref["output"].endswith("\n") else ref["output"] + "\n"
+        out += [f"The landing's refusal: the commit hook refused the landing of "
+                f"{ref['landing']}. Its output, byte for byte, from {ref['log']}:",
+                "----- begin commit.log -----", body + "----- end commit.log -----"]
+    if rej := scope.get("reject"):
+        bound = "" if rej["bound"] else (" (the row is bound to no verdict file, so its ledger "
+                                         "cell is quoted)")
+        out += [f"The REJECT this repair answers: recorded {rej['date']} by {rej['reviewer']}, "
+                f"verbatim from {rej['source']}{bound}:", "ISSUES:", rej["issues"] or "none"]
+        if rej["bound"]:
+            out += ["BLOCKING (every finding here blocks the unit; an issue above that is not "
+                    "here does not):", rej["blocking"] or "none"]
+    return "\n".join(out)
+
+
 def lane_brief_text(brief: dict) -> str:
     """One lane's brief as the text handed to whoever (or whatever) picks the unit up: the
     criteria it is held to, its Affects, the seat card to adopt, the history of the files it
@@ -9919,6 +10013,17 @@ def cmd_lane(args: argparse.Namespace) -> int:
             if getattr(args, flag, None) is not None:
                 print(f"WARNING --{flag} was not recorded: a brief records no agent total - "
                       f"pass the builder's total to `sprint lane return`", file=sys.stderr)
+        # A REPAIR brief is issued only for a unit with something to repair, and refused before
+        # anything is recorded for one without: an empty repair brief reads as a repair owed.
+        repairs = None
+        if args.action == "brief" and getattr(args, "repair", False):
+            repairs = {sdlc_md.norm_id(u): lane_repair_scope(root, u) for u in units}
+            if idle := [u for u in units if repairs[sdlc_md.norm_id(u)] is None]:
+                print(f"sprint lane brief --repair: nothing to repair for {', '.join(idle)} - no "
+                      f"refused landing and no unanswered REJECT is recorded, so no repair brief "
+                      f"is issued. `sprint.py lane brief --units {' '.join(idle)}` issues the "
+                      f"ordinary brief.", file=sys.stderr)
+                return 2
         build_seat = getattr(args, "seat", None) or "engineering"
         dispatch = lane_dispatch(root, units, build_seat)
         if args.action == "run" and dispatch["refused"]:
@@ -9986,11 +10091,15 @@ def cmd_lane(args: argparse.Namespace) -> int:
                              on_start=lambda: start_lane(brief))
         for b in dispatch["briefs"]:
             start_lane(b)
+            if repairs is not None:
+                b["repair"] = repairs.get(sdlc_md.norm_id(b["id"]))
         if getattr(args, "format", "text") == "json":
             print(json.dumps(dispatch, indent=2))
         else:
             for brief in dispatch["briefs"]:
                 print(lane_brief_text(brief))
+                if brief.get("repair"):
+                    print(lane_repair_text(brief["repair"]))
                 print("")
             for ref in dispatch["refused"]:
                 print(f"REFUSED {ref['refusal']}", file=sys.stderr)
@@ -10698,6 +10807,9 @@ def cmd_close(args: argparse.Namespace) -> int:
     # The commit this close's gate ran against, stamped beside it: the page states it as the
     # commit the run was verified on, and the base ref is the commit it was planned from.
     head = _git(root, "rev-parse", "HEAD")
+    # The retro this close was given, recorded on the run so `sign` writes its velocity row for
+    # this retro and no other (`_sign_retro`).
+    run_state.update(root, **{CLOSE_RETRO: (args.retro or "").strip() or None})
     run_state.update(root, report_gate_clear=sorted(
         u for u, why in _report_gate_verdicts(root, state).items() if not why),
                      verified_sha=(head.stdout.strip() or None)
@@ -11024,14 +11136,29 @@ def goal_note_contradiction(root, report_id: str) -> str | None:
             f"`sprint.py goal-verdict` and re-close before signing")
 
 
-def _cascade_after_signature(root, state, units) -> None:
+#: The run-state key holding the retro the close was given, which `boundary` records under the same
+#: key for each cycle it closes.
+CLOSE_RETRO = "retro"
+
+
+def _sign_retro(state, retro_arg: str | None) -> str:
+    """The retro whose accuracy block and velocity row the signature writes: `sign --retro`, then
+    the retro the close was given (`CLOSE_RETRO`), then the one the close scaffolded; "" when
+    none is known. Never a default id: a default rewrites an unrelated run's retro."""
+    return next((str(r).strip() for r in (retro_arg, state.get(CLOSE_RETRO),
+                                          state.get("scaffolded_retro")) if str(r or "").strip()),
+                "")
+
+
+def _cascade_after_signature(root, state, units, retro_arg: str | None = None) -> None:
     """What the SIGNATURE entails, and nothing else.
 
     SEAL has just transitioned each batch unit, so three things follow from that and could not
     have been true before it: the parent epics whose children are now all terminal, the requests
     above them whose children are now all resolved, and the velocity row, which counts delivered
     units by status. It is NOT `_apply_signoff_tail`: the velocity row and the final reconcile
-    change facts the report states, so they run in PREPARE, before anyone signs.
+    change facts the report states, so they run in PREPARE, before anyone signs. The row is
+    written for `_sign_retro`'s retro, and for none when no retro is known.
     """
     derived = _derive_parent_epics(root, units, "sign")
     if derived:
@@ -11044,11 +11171,15 @@ def _cascade_after_signature(root, state, units) -> None:
     # units by status, and those statuses exist only because this signature wrote them. Filing
     # it at PREPARE would count zero. It is one row, upserted by retro id, and it is the last
     # thing the signature entails - not the tail, whose reconcile still belongs before the page.
+    if not (retro_id := _sign_retro(state, retro_arg)):
+        print("sign: velocity row NOT recorded - this run names no retro (the close recorded "
+              "none); write it with `retro.py accuracy --id RETROxxxx --write`, or pass "
+              "`sign --retro RETROxxxx`", file=sys.stderr)
+        return
     try:
         import retro as _retro  # noqa: PLC0415
-        rc, out = _run_cli(_retro.main, ["--root", str(root), "accuracy", "--id",
-                                         (state.get("scaffolded_retro") or "").strip()
-                                         or "RETRO0001", "--write", "--tokens-from-harness"])
+        rc, out = _run_cli(_retro.main, ["--root", str(root), "accuracy", "--id", retro_id,
+                                         "--write", "--tokens-from-harness"])
         if rc == 0:
             # the capture line itself, not a paraphrase: the operator needs to read WHAT was
             # attributed and from which session, which is the half a summary always drops
@@ -11324,7 +11455,8 @@ def cmd_sign(args: argparse.Namespace) -> int:
         rc = _seal_units(root, state)
         if rc != 0:
             return rc
-        _cascade_after_signature(root, state, list(state.get("batch") or []))
+        _cascade_after_signature(root, state, list(state.get("batch") or []),
+                                 retro_arg=getattr(args, "retro", None))
         try:
             ua = unanswered_units(root, state)
         except Exception as exc:           # noqa: BLE001 - a seal records what it ended over
@@ -11878,6 +12010,10 @@ def cmd_plan(args: argparse.Namespace) -> int:
         except run_state.DisjointBatchError as exc:
             print(str(exc), file=sys.stderr)
             return 2
+        # A run opened with no token stamp closes with every cost row NOT MEASURED: said now,
+        # while the operator can still point the meter at the session's own store.
+        if unmetered := run_state.unmetered_warning(args.root, state):
+            print(unmetered, file=sys.stderr)
     # RECORD THE FORECAST, under --write only, AFTER open_run accepted the batch, so a refusal
     # records nothing. A preview is not the plan: the forecast log keeps a unit's FIRST record,
     # so a preview's row won over the plan's own, and a unit regroomed between preview and
@@ -13911,6 +14047,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "--agent on, recorded on its delegated record as given; optional")
     ln.add_argument("--units", nargs="+", default=None,
                     help="the unit ids this lane covers (default: the open run's batch)")
+    ln.add_argument("--repair", action="store_true",
+                    help="(brief) the repair brief: each unit's brief followed by its latest "
+                         "landing's refusal (the landing's commit.log) and its unanswered REJECT's "
+                         "ISSUES and BLOCKING, quoted verbatim, for a fresh repair agent; exit 2, "
+                         "and no brief, for a unit with neither")
     ln.add_argument("--seat", default="engineering", metavar="ROLE",
                     help="(brief, run) the seat that builds the units: its card frames the "
                          "brief, and the run records it so the review's record command names "
