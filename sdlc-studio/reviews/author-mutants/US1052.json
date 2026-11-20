@@ -1,0 +1,160 @@
+{
+  "unit": "US1052",
+  "digest": "ed1b551ad3866656 at ff97be63c73c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad8371ad57cade70e/US1052-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 fluff demoted to reported in the table",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "\"seat-demographic-fluff\": (\"Identity\", BLOCKS),",
+      "new": "\"seat-demographic-fluff\": (\"Identity\", REPORTED),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_every_printed_rule_is_on_the_standard_page_and_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 evidence passes when its ids resolve to nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "elif not any(resolves(i) for i in ids):",
+      "new": "elif not ids and False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 evidence ids read from the whole card",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    rest = text[head.end():]\n",
+      "new": "    rest = text\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 the Cast role never compared with the registry",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "if role is None or entry is None or entry.role == role:",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_a_card_contradicting_the_registry_blocks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 --card does not narrow to the card",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "if card is not None and path != Path(card).resolve():",
+      "new": "if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_blocking_and_reported_rules_are_told_apart_from_one_table",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 every finding read as blocking for the exit code",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "return 1 if n_blocks else 0",
+      "new": "return 1 if findings else 0",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_blocking_and_reported_rules_are_told_apart_from_one_table",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 validate keeps its own list of what blocks",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "return \" (blocks resolve)\" if persona_review.blocks(rule) else \"\"",
+      "new": "return \" (blocks resolve)\" if rule in {\"seat-demographic-fluff\"} else \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_blocking_and_reported_rules_are_told_apart_from_one_table",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 a minted rule neither in the table nor named outside it",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    \"persona-legacy\": \"the legacy single-file layout, not a card\",\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_every_printed_rule_is_on_the_standard_page_and_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 a decisions row does not resolve",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "return persona_memory.resolves(root, rec_id)",
+      "new": "return sdlc_md.find_by_id(root, rec_id) is not None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 a skill lesson does not resolve",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "            return rec_id in skill\n",
+      "new": "            return False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 a validator rule dropped rather than printed unclassified",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        if f[\"rule\"] in OUTSIDE or stakeholders in path.parents:\n",
+      "new": "        if f[\"rule\"] in OUTSIDE or f[\"rule\"] not in RULES or stakeholders in path.parents:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_every_printed_rule_is_on_the_standard_page_and_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "A1 the product card's worked example names a persona again",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "against the End goal of the Primary for that interface, a new shopper who wants to \"add my first item\nin seconds.\"",
+      "new": "against the Primary persona, Sam the new shopper, whose End goal is \"add my first item\nin seconds.\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_each_shipped_amigo_card_copied_into_a_project_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "A2 the qa card cites a lesson the skill does not hold",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/qa.md",
+      "old": "- LL0023 - a gate",
+      "new": "- LL9023 - a gate",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_each_shipped_amigo_card_copied_into_a_project_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "A3 the engineering card loses its Evidence heading",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/engineering.md",
+      "old": "## Evidence\n",
+      "new": "## Grounds\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_each_shipped_amigo_card_copied_into_a_project_blocks_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 the fluff fixture card carries no demographic token",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py",
+      "old": "_seat(\"sre\", \"Fen Oak\", extra=\" She is married.\")",
+      "new": "_seat(\"sre\", \"Fen Oak\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_every_printed_rule_is_on_the_standard_page_and_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 the unresolved-evidence card cites a story on disk",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py",
+      "old": "evidence=\"## Evidence\\n\\n- US9999, D9999 and LL9999\\n\"",
+      "new": "evidence=\"## Evidence\\n\\n- US0001, D9999 and LL9999\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 the registry declares Jonah Primary, agreeing with his card",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py",
+      "old": "\"## Secondary\\n\\n- [Jonah Reyes](jonah-reyes.md) - a team lead\\n\")",
+      "new": "\"## Primary\\n\\n- [Jonah Reyes](jonah-reyes.md) - a team lead\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_a_card_contradicting_the_registry_blocks",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

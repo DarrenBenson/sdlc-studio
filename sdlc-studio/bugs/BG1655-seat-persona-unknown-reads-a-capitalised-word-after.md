@@ -31,8 +31,10 @@ Read a persona name only where a capitalised token is followed by a cast surname
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_first_name_with_the_wrong_surname_is_unknown
 - [ ] **AC3** Given a `personas/index.md` that omits Hana Ito while her card's Cast role is Primary, when a seat card says `the Secondary persona, Hana`, then `validate.py seats` warns `seat-persona-role` naming Primary and Secondary
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card
+- [ ] **AC4** Given a cast of Maya Okafor and Jonah Reyes and a seat card holding `As the Primary persona, I want a quick start.`, `Lead with the Primary persona, She decides.`, `the Primary persona, If pressed`, `the Primary persona, Then the rest` and `the Primary persona is Not yet chosen`, when `validate.py seats` runs, then it prints no `seat-persona-unknown` finding; and `Primary persona: Zed Quill` and `Ask the Primary persona: Zed Quill would refuse this.` each warn `seat-persona-unknown` naming Zed Quill (D0554)
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_only_a_cast_name_or_a_full_name_run_is_read_as_a_name
 
-AC1 must fail on: a stop list of the three test words, so another question word or acronym after the role is still read as a name (the Zed Quill control keeps a real unknown name warning). AC2 must fail on: any first-name match passing whatever surname follows. AC3 must fail on: a name the registry omits skipping the role check.
+AC1 must fail on: a stop list of the three test words, so another question word or acronym after the role is still read as a name (the Zed Quill control keeps a real unknown name warning). AC2 must fail on: any first-name match passing whatever surname follows. AC3 must fail on: a name the registry omits skipping the role check. AC4 must fail on: a rule that reads only a run's first word (a multi-word no-name run then warns) or skips every name after a colon (Zed Quill then goes silent).
 
 ## Revision History
 

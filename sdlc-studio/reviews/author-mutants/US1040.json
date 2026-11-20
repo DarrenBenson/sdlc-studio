@@ -1,0 +1,160 @@
+{
+  "unit": "US1040",
+  "digest": "1a28dc73fc21b617 at 96f53a41ff7a",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-adac51c04957c10de/US1040-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 a manual Verify counted as executable",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return \"manual\" if verify_ac._is_manual(expr) else \"executable\"",
+      "new": "    return \"executable\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 checkable computed over every persona card",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        trace[\"checkable\"] = bool(trace[\"checked_by\"])",
+      "new": "        trace[\"checkable\"] = any(c[\"goal_verify\"] for c in cards)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_checkable_reads_only_the_traced_personas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 goal-check line dropped from the plan",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            print(f\"goal check: {check} (advice: the plan is not refused)\")",
+      "new": "            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 goal-check line dropped from the brief",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            lines.append(f\"Goal check: {check} (reading, not a refusal)\")",
+      "new": "            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 advice turned refusal: the plan exits 1 on an uncheckable goal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if trace is not None:\n        data[\"goal_trace\"] = trace\n",
+      "new": "    if trace is not None:\n        data[\"goal_trace\"] = trace\n        if trace.get(\"checkable\") is False:\n            return 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 checkability computed for every trace, persona or not",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if traced:\n        by_name",
+      "new": "    if True:\n        by_name",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 a Verify attached to the following goal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"verify\": by_name[name][\"goal_verify\"].get(n),",
+      "new": "\"verify\": by_name[name][\"goal_verify\"].get(str(int(n) - 1)),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 the brief keeps the text-only listing",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lines.extend([f\"    {_end_goal_label(g)}\" for g in goals]",
+      "new": "lines.extend([f\"    {g['number']}. {g['text']}\" for g in goals]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 the goal-check line names only the first traced persona",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    names = \", \".join(trace[\"end_goals\"])",
+      "new": "    names = next(iter(trace[\"end_goals\"]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 checked_by lists every traced goal, executable or not",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "for g in goals if g[\"check\"] == \"executable\"]",
+      "new": "for g in goals]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_checkable_reads_only_the_traced_personas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M11 a Negative persona's End goals read as traced",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "traced = [s[\"name\"] for s in designed_for if s[\"kind\"] == \"persona\"]",
+      "new": "traced = [s[\"name\"] for s in served if s[\"kind\"] == \"persona\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M12 an unfilled placeholder Verify counted as executable",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not expr or \"{{\" in expr:\n        return \"none\"",
+      "new": "    if not expr:\n        return \"none\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_a_verify_naming_no_check_is_not_testable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 test: AC1 expects goal 1 checked by hand",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "\"    1. Walk in to a warm house - not testable: no Verify line\",",
+      "new": "\"    1. Walk in to a warm house - checked by hand: no Verify line\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 test: AC2 goal traces to Maya alone",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "        goal = \"Maya Okafor and Hana Ito see every open bug fixed\"",
+      "new": "        goal = \"Maya Okafor sees every open bug fixed\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 test: AC3 Maya's End goal 1 gains a manual Verify, not an executable one",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "[(\"Walk in to a warm house\", _PYTEST), (\"Every room is lit\", None)])",
+      "new": "[(\"Walk in to a warm house\", _MANUAL), (\"Every room is lit\", None)])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_checkable_reads_only_the_traced_personas",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T4 test: AC4 outcome goal also names Maya",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "            outcome_goal = \"every open bug is fixed, advancing O1\"",
+      "new": "            outcome_goal = \"Maya Okafor sees every open bug fixed, advancing O1\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T5 test: AC4 positive control names no persona",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "            persona_goal = \"Maya Okafor sees every open bug fixed\"",
+      "new": "            persona_goal = \"every open bug is fixed for O2\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 460 |
+| Open | 461 |
 | In Progress | 0 |
 | Fixed | 996 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1658** |
+| **Total** | **1659** |
 
 ## All Bugs
 
@@ -734,6 +734,7 @@
 | [BG1656](BG1656-the-consult-s-load-step-never-classifies-a.md) | The consult's load step never classifies a flat Served card, and BG1535's tests accept the stakeholder declaration anywhere on the card | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1658](BG1658-the-goal-brief-s-no-current-batch-answer.md) | The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1659](BG1659-five-behaviours-persona-review-py-and-its-reference.md) | Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

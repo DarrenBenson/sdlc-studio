@@ -1,6 +1,6 @@
 # US1052: The persona standard names every rule a card is held to, and persona_review check reports each card against it
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a fixture project whose seat and persona cards are each built to break one rule, when `persona_review.py check --format json` runs, then every rule it prints appears on `best-practices/persona.md` under exactly one standard heading with its severity (blocks or reported), and every rule the page names is printed for at least one fixture card.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_every_printed_rule_is_on_the_standard_page_and_back
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given a project seat card carrying a demographic token and a persona card with no Evidence section, when `persona_review.py check --card` runs on each, then the first prints `seat-demographic-fluff` as blocks and exits 1, the second prints `persona-evidence` as reported and exits 0, and `validate.py seats` prints `blocks resolve` beside the first rule from the same table.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_blocking_and_reported_rules_are_told_apart_from_one_table
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given a persona card whose Evidence section cites US0001 (a story on disk) and D9999 (in no decisions row), and another whose Evidence cites only ids that resolve to nothing, when `persona_review.py check` runs, then only the second is reported `persona-evidence`, naming its unresolved ids.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_evidence_must_cite_something_that_resolves
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given `personas/index.md` declaring Jonah Reyes Secondary while his card's Cast role says Primary, when `persona_review.py check` runs, then it reports `persona-registry-role` as blocks on Jonah's card, naming both roles.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py::PersonaStandardTests::test_a_card_contradicting_the_registry_blocks
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

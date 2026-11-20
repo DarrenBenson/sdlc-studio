@@ -1,0 +1,34 @@
+# BG1659: Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py
+
+> **Status:** Open
+> **Severity:** Low
+> **Points:** 2
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py
+> **Created:** 2026-11-20
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+> **Raised-in-batch:** none open - raised outside a delivery batch, 2026-11-20T08:39:53Z
+
+## Summary
+
+US1052's qa seat (verdict sdlc-studio/reviews/verdicts/US1052/fdf0d5d75ae1-7505788d.txt, RUN-01M7VNR0) found five behaviours that run correctly but that no test pins: the exit 2 for a --card naming no card (`persona_review.py`:224, stated in reference-scripts-review.md; without the guard a mistyped --card prints blocks=0 and exits 0), seat cards inside the Evidence rule (`persona_review.py`:191), and three more the verdict lists. `test_persona_standard.py` is the only module importing `persona_review`, so a later edit could revert any of them with the suite green.
+
+## Steps to Reproduce
+
+Apply the verdict's mutants one at a time in a copy and run tests/`test_persona_standard.py`: each stays green.
+
+## Proposed Fix
+
+Add one test per behaviour that fails on its mutant.
+
+## Acceptance Criteria
+
+- [ ] **AC1** The behaviour described is corrected: US1052's qa seat (verdict sdlc-studio/reviews/verdicts/US1052/fdf0d5d75ae1-7505788d.txt, RUN-01M7VNR0) found five behaviours that run correctly but that no...
+- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Apply the verdict's mutants one at a time in a copy and run tests/`test_persona_standard.py`: each stays green.
+- [ ] **AC3** The proposed fix lands, pinned by a test: Add one test per behaviour that fails on its mutant.
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-11-20 | sdlc-studio | Filed |

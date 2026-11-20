@@ -1,0 +1,133 @@
+{
+  "unit": "US1054",
+  "digest": "b86d6f012df25132 at c6af0e052df1",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a1c1bdf525618e3e4/US1054-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the shipped scenario names the Primary persona, Sam the new shopper (AC1)",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "against the End goal of the Primary for that interface, a new shopper who wants to \"add my first item",
+      "new": "against the Primary persona, Sam the new shopper, whose End goal is \"add my first item",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the shipped scenario names the Primary persona, Sam the new shopper (AC2)",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "against the End goal of the Primary for that interface, a new shopper who wants to \"add my first item",
+      "new": "against the Primary persona, Sam the new shopper, whose End goal is \"add my first item",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the reword drops the Scenario section",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "## Scenario\n\nA \"default list for first-time users\" story is proposed with five acceptance criteria. Lena checks it\nagainst the End goal of the Primary for that interface, a new shopper who wants to \"add my first item\nin seconds.\" Four ACs serve that; the fifth - a configurable default-list naming scheme - serves no\npersona. She cuts it to a follow-up, sharpens AC1 to \"first run lands on a usable list with a visible\nadd box\", and marks the story Ready against that goal.\n\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the scenario no longer judges against the Primary's End goal",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "against the End goal of the Primary for that interface, a new shopper",
+      "new": "against a new shopper",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Lens review-render heading is dropped",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "## Lens *(review render)*",
+      "new": "## Questions",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Pushes Back When heading is dropped",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "## Pushes Back When\n",
+      "new": "## Objects When\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Shadow heading is dropped",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "## Shadow\n",
+      "new": "## Weakness\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Hand-back section is no longer marked as the review render",
+      "file": ".claude/skills/sdlc-studio/templates/personas/amigos/product.md",
+      "old": "## Hand-back *(review render)*",
+      "new": "## Hand-back",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the upgrade runs without --with-default-amigos",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py",
+      "old": "\"--apply\", \"--with-default-amigos\"])",
+      "new": "\"--apply\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the first cast holds a Sam",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py",
+      "old": "CASTS = (({\"Maya Okafor\": \"Primary\", \"Trevor Hale\": \"Negative\"},",
+      "new": "CASTS = (({\"Sam Patel\": \"Primary\", \"Trevor Hale\": \"Negative\"},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the old-scenario control leaves the card unchanged",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py",
+      "old": "return text.replace(body, \"\\n\" + OLD_SCENARIO, 1)",
+      "new": "return text",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the seat-file filter reads no finding",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py",
+      "old": "on_seats = [f for f in found if Path(f[\"file\"]).parent == seats.resolve()]",
+      "new": "on_seats = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule",
+      "result": "survived",
+      "answer": "survives by design: the rc == 0 assertion beside it holds the whole check to no blocking finding, so a block on a copied card still fails the test; the filter only narrows the failure message to the seat cards"
+    },
+    {
+      "mutant": "test: the old worked example names no one",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "against the Primary persona, Sam the new shopper, whose",
+      "new": "against the Primary persona, the new shopper, whose",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ShippedCardTests::test_a_copy_carrying_the_old_worked_example_names_sam",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the Scenario substitution never applies",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "r\"(?ms)^(## Scenario\\n\\n).*?(?=^## )\"",
+      "new": "r\"(?ms)^(## Scenarios\\n\\n).*?(?=^## )\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ShippedCardTests::test_a_copy_carrying_the_old_worked_example_names_sam",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

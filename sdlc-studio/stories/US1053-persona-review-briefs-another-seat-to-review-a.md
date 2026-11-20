@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/persona_gen.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py, changelog.d/US1053.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/persona_gen.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py, changelog.d/US1053.md, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1052
@@ -47,6 +47,7 @@
 - A seat card is reviewed by any seat but its own; a user persona card by any seat. Context-level independence needs the transcripts US1014 and US1015 read (later).
 - `--from-verdict <file>` reads OUTCOME and FAILED lines from the reviewer's own file, as `critic.py record` does. AC3's five refusals are one test with a subTest each.
 - Rewrites reference-persona.md's `persona review` workflow in place to run brief then record; its step 5 (clearing provisional labels) becomes what a PASS does. Regenerate the reading guide and reference-scripts-surface.md.
+- Widened in run twenty (RUN-01M7VNR0): `persona_review.py record` writes the ledger, and `test_confinement.py`'s roster sweep refuses a workspace writer with no confinement case, so the fix includes that test. Prefer a `WRITER_CASES` case that proves the writer stays inside `sdlc-studio/reviews/persona-reviews.md` and the card's provenance line over an allowlist exemption.
 
 ## Triage (2026-10-21)
 

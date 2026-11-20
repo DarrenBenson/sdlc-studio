@@ -1,0 +1,106 @@
+{
+  "unit": "BG1655",
+  "digest": "33194c0a9ece2d5e at ff97be63c73c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad8371ad57cade70e/BG1655-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "B1 a stop list of the criterion's three words",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    first = words[0]\n    return not (",
+      "new": "    first = words[0]\n    return first not in {\"Is\", \"When\", \"CLI\"}\n    return not (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_word_after_the_role_that_is_no_name_is_not_read_as_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B2 a word opening a clause after a colon read as a name",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "                or (leading and \":\" in m.group(\"sep\")))",
+      "new": ")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_word_after_the_role_that_is_no_name_is_not_read_as_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B3 an acronym read as a name",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "(len(first) > 1 and first.isupper())",
+      "new": "False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_word_after_the_role_that_is_no_name_is_not_read_as_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B4 a first name passes whatever surname follows",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "(i + 1 == len(words) or rest[:1] == words[i + 1:i + 2])",
+      "new": "True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_first_name_with_the_wrong_surname_is_unknown",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B5 a bare first name no longer resolves",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "(i + 1 == len(words) or rest[:1] == words[i + 1:i + 2])",
+      "new": "(rest[:1] == words[i + 1:i + 2])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_first_name_with_the_wrong_surname_is_unknown",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B6 a name the registry omits skips the role check",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "((registry[who], \"personas/index.md\") if who in (registry or {})",
+      "new": "((registry.get(who), \"personas/index.md\") if registry is not None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B7 the card role read for a name the registry declares",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "((registry[who], \"personas/index.md\") if who in (registry or {})",
+      "new": "((registry[who], \"personas/index.md\") if False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "B8 the not-name set read before the cast",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    if not run:\n        return None",
+      "new": "    if not run or run[0][0] in _CLAIM_NOT_NAMES:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TB1 the AC1 control names a cast member, not an unknown one",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "lens=\"- Would the Primary persona, Zed Quill, approve?\")",
+      "new": "lens=\"- Would the Primary persona, Maya Okafor, approve?\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_word_after_the_role_that_is_no_name_is_not_read_as_one",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TB2 the wrong-surname claim states the right surname",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "lens=\"- Judge it as the Primary persona is Maya Smith would.\")",
+      "new": "lens=\"- Judge it as the Primary persona is Maya Okafor would.\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_first_name_with_the_wrong_surname_is_unknown",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TB3 the registry declares Hana Secondary, agreeing with the claim",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "                      {\"Secondary\": [\"Maya Okafor\"]})",
+      "new": "                      {\"Secondary\": [\"Maya Okafor\", \"Hana Ito\"]})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
