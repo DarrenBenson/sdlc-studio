@@ -1,3 +1,4 @@
+<!-- stakeholder: served -->
 # Graham Doyle
 
 > A specific person, not a type. Served: affected by the product without ever using it (D0437).

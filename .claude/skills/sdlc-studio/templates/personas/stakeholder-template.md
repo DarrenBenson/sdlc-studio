@@ -9,6 +9,11 @@ build or review code). Goals, veto lines, and evidence beat demographics: a
 characteristic that influences no decision is omitted.
 Declare the stakeholder type in the machine-readable comment below - the consult groups
 on THIS field, never the H1 prose or the filename.
+A Customer or Served party sits on the one stakeholder panel `consult stakeholders`
+reads: a card under `sdlc-studio/personas/stakeholders/`, or a flat card in
+`sdlc-studio/personas/` whose Cast role is Customer or Served. Either way it declares its
+type in a `stakeholder:` comment (buyer, compliance, ops or served), which the consult
+groups on. A flat card is written on persona-template.md's Customer / Served variant.
 Related: reference-persona-generate.md#stakeholders, reference-consult.md#stakeholder-review
 -->
 <!-- stakeholder: {{buyer | compliance | ops | served}} -->

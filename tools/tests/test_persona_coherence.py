@@ -1225,5 +1225,92 @@ class LegacyAppendixTests(unittest.TestCase):
                          + "; ".join(offenders))
 
 
+#: BG1535: the one rule both persona templates and the consult page state for where a Customer or
+#: Served party's card lives and what it carries. Each page states it word for word, so a page that
+#: drifts from the other two fails here rather than in a consult with an empty panel.
+SERVED_FLAT_CLAUSE = ("a flat card in `sdlc-studio/personas/` whose Cast role is Customer or "
+                      "Served")
+SERVED_RULE = ("A Customer or Served party sits on the one stakeholder panel `consult stakeholders` "
+               "reads: a card under `sdlc-studio/personas/stakeholders/`, or "
+               f"{SERVED_FLAT_CLAUSE}. Either way it declares its type in a `stakeholder:` "
+               "comment (buyer, compliance, ops or served), which the consult groups on.")
+TEMPLATES = SCRIPTS.parent / "templates" / "personas"
+PERSONA_TEMPLATE = TEMPLATES / "persona-template.md"
+STAKEHOLDER_TEMPLATE = TEMPLATES / "stakeholder-template.md"
+CONSULT = SCRIPTS.parent / "reference-consult.md"
+STAKEHOLDER_TYPE = re.compile(r"<!--\s*stakeholder:\s*([a-z]+)\s*-->", re.I)
+STAKEHOLDER_CAST = re.compile(r"\*\*Cast:\*\*\s*(Customer|Served)\b", re.I)
+
+
+def consult_load_step() -> str:
+    """Step 1 of the consult page's stakeholder review: what the panel is loaded from."""
+    text = CONSULT.read_text(encoding="utf-8")
+    section = re.search(r"^## Stakeholder Review\b.*?(?=^## )", text, re.M | re.S)
+    assert section, "reference-consult.md has no `## Stakeholder Review` section"
+    step = re.search(r"^1\.\s+\*\*Load Stakeholder Personas\*\*(.*?)(?=^\d+\.\s+\*\*)",
+                     section.group(0), re.M | re.S)
+    assert step, "the stakeholder review has no `1. **Load Stakeholder Personas**` step"
+    return step.group(1)
+
+
+def stakeholder_types() -> set[str]:
+    """The types the stakeholder template's own `stakeholder:` comment offers."""
+    m = re.search(r"<!--\s*stakeholder:\s*\{\{([^}]+)\}\}\s*-->",
+                  STAKEHOLDER_TEMPLATE.read_text(encoding="utf-8"))
+    assert m, "the stakeholder template carries no `stakeholder:` type comment"
+    return {t.strip().lower() for t in m.group(1).split("|")}
+
+
+class ServedHomeTests(unittest.TestCase):
+    """BG1535: one home and one schema for the Customer and Served cast, read by the consult."""
+
+    def test_both_templates_and_the_consult_page_name_one_home_for_the_served_cast(self):
+        """Mutants: a template placing the party in one home while the other places it in the
+        other; the consult loading a folder neither template names."""
+        rule = flat(SERVED_RULE)
+        persona = PERSONA_TEMPLATE.read_text(encoding="utf-8")
+        variant = persona.split("**Customer / Served.**", 1)
+        self.assertEqual(len(variant), 2, "the persona template has no Customer / Served variant")
+        self.assertIn(rule, flat(variant[1]),
+                      "the persona template's Customer / Served variant does not state the rule")
+        self.assertIn(rule, flat(STAKEHOLDER_TEMPLATE.read_text(encoding="utf-8")),
+                      "the stakeholder template does not state the rule")
+        step = consult_load_step()
+        self.assertIn(rule, flat(step), "the consult's stakeholder load step does not read it")
+        for folder in sorted(set(re.findall(r"`(sdlc-studio/personas/[^`]*)`", step))):
+            for page in (PERSONA_TEMPLATE, STAKEHOLDER_TEMPLATE):
+                self.assertIn(f"`{folder}`", page.read_text(encoding="utf-8"),
+                              f"the consult reads {folder}, which {page.name} never names")
+
+    def test_every_served_card_here_sits_where_the_consult_reads(self):
+        """Mutants: the consult reading only `personas/stakeholders/`, so the flat Served card
+        is outside its panel; a Served card carrying no `stakeholder:` type to group on."""
+        pdir = REGISTRY.parent
+        step = flat(consult_load_step())
+        reads = {"flat": flat(SERVED_FLAT_CLAUSE) in step,
+                 "stakeholders": "`sdlc-studio/personas/stakeholders/`" in step}
+        served: list[tuple[Path, str]] = []
+        for card in sorted(pdir.glob("*.md")):
+            if card.name.lower() in {"index.md", "readme.md", "consult-guide.md"} \
+                    or card.name.startswith("_"):
+                continue
+            row = CAST_ROLE_ROW.search(card.read_text(encoding="utf-8"))
+            if row and re.search(r"\b(customer|served)\b", row.group(1), re.I):
+                served.append((card, "flat"))
+        for card in sorted((pdir / "stakeholders").glob("*.md")):
+            if STAKEHOLDER_CAST.search(card.read_text(encoding="utf-8")):
+                served.append((card, "stakeholders"))
+        self.assertIn(CHANGE_APPROVER_CARD.resolve(), [c.resolve() for c, _ in served])
+        types = stakeholder_types()
+        for card, home in served:
+            with self.subTest(card=card.name):
+                self.assertTrue(reads[home], f"{card.name} sits in the {home} home, which the "
+                                             f"consult's stakeholder review does not read")
+                m = STAKEHOLDER_TYPE.search(card.read_text(encoding="utf-8"))
+                self.assertTrue(m and m.group(1).lower() in types,
+                                f"{card.name} declares no `stakeholder:` type in {sorted(types)}, "
+                                f"so the consult cannot group it")
+
+
 if __name__ == "__main__":
     unittest.main()

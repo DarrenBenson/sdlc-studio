@@ -29,6 +29,17 @@ product. Concrete and particular, never a demographic average.}}
 2. {{the next}}
 3. {{...}}
 
+<!-- end-goal-example: a goal you mean to check carries its own Verify line, and the files it
+constrains as Applies-to patterns, both nested under its number. Applies-to reads like a TRD
+component path: whole segments, case-sensitive; a pattern ending `/` names every file beneath
+that directory wherever it sits, any other pattern the path's trailing segments, with `*` inside
+one segment. `**` is not part of it: write `app/bookings/`, not `app/bookings/**`.
+
+1. A booking confirmed on the phone is still there after the app restarts
+   - **Verify:** pytest tests/test_bookings.py::BookingTests::test_survives_restart
+   - **Applies-to:** `app/bookings/`
+-->
+
 ## Experience Goals
 
 *How they want to feel while using it.*
@@ -68,4 +79,9 @@ Primary / Secondary / Supplemental use every section above. Two roles bend the s
   well-formed with: cast role, Who They Are, End Goals (stated to exclude), Why-not, Behaviours &
   Context, Frustrations, How-to-handle.
 - **Customer / Served.** The End goals are the buyer's, or the affected party's, not a user's;
-  Experience Goals and Scenario are optional.
+  Experience Goals and Scenario are optional. A Customer or Served party sits on the one
+  stakeholder panel `consult stakeholders` reads: a card under
+  `sdlc-studio/personas/stakeholders/`, or a flat card in `sdlc-studio/personas/` whose Cast role
+  is Customer or Served. Either way it declares its type in a `stakeholder:` comment (buyer,
+  compliance, ops or served), which the consult groups on. On this template, put
+  `<!-- stakeholder: served -->` (or `buyer`) above the card's title.

@@ -53,7 +53,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import run_state, sdlc_md  # noqa: E402
+from lib import persona_goals, run_state, sdlc_md  # noqa: E402
 import config  # noqa: E402  (sibling - routing block for tier enrichment)
 import lessons  # noqa: E402  (sibling - the still-valid lessons digest carried in the plan)
 import reconcile  # noqa: E402  (sibling - reconcile before plan)
@@ -11755,23 +11755,16 @@ def prd_outcomes(root: Path | str) -> dict[str, str]:
 
 def _end_goals(text: str) -> list[tuple[str, str]]:
     """`[(number, text)]` from a card's `## End Goals` section (a Negative card's `End Goals
-    (stated to exclude)` too), numbered as on the card."""
-    goals: list[tuple[str, str]] = []
-    inside = False
-    for line in text.splitlines():
-        if re.match(r"^#{1,2}\s", line):
-            inside = bool(re.match(r"^##\s+End Goals\b", line, re.I))
-            continue
-        m = re.match(r"^\s*(\d+)[.)]\s+(.+?)\s*$", line) if inside else None
-        if m and "{{" not in m.group(2):   # an unfilled template End goal is not one
-            goals.append((m.group(1), m.group(2)))
-    return goals
+    (stated to exclude)` too), numbered as on the card, read by the one End goal reader."""
+    return [(g.number, g.text) for g in persona_goals.end_goals(text)]
 
 
 def persona_cards(root: Path | str) -> list[dict]:
-    """`[{name, role, end_goals}]` for each persona card in `sdlc-studio/personas/` - the name
-    from its `# ` heading, the role from its Quick Reference `Cast role` (None when undeclared),
-    the End goals numbered as on the card."""
+    """`[{name, role, end_goals, goal_verify, goal_applies_to}]` for each persona card in
+    `sdlc-studio/personas/` - the name from its `# ` heading, the role from its Quick Reference
+    `Cast role` (None when undeclared), the End goals as `(number, text)` pairs numbered as on
+    the card, and, keyed by that number, the Verify each goal carries and its Applies-to
+    patterns (a goal carrying neither is absent from both)."""
     from validate import _persona_cast_role  # noqa: PLC0415 - the one cast-role reader
     pdir = Path(root) / "sdlc-studio" / "personas"
     cards = []
@@ -11782,8 +11775,13 @@ def persona_cards(root: Path | str) -> list[dict]:
         text = sdlc_md.read_text_safe(p)
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
         if m and "{{" not in m.group(1):   # an unfilled template card names nobody
+            goals = persona_goals.end_goals(text)
             cards.append({"name": m.group(1), "role": _persona_cast_role(text),
-                          "end_goals": _end_goals(text)})
+                          "end_goals": [(g.number, g.text) for g in goals],
+                          "goal_verify": {g.number: g.verify for g in goals
+                                          if g.verify is not None},
+                          "goal_applies_to": {g.number: list(g.applies_to) for g in goals
+                                              if g.applies_to}})
     return cards
 
 
@@ -12134,6 +12132,13 @@ def cmd_plan(args: argparse.Namespace) -> int:
         # an absent value preserves, only a stated one writes (run_state never-discard).
         if data.get("sprint_goal") is not None:
             extra["sprint_goal"] = data["sprint_goal"]
+        # What the run DECLARES it serves (`--serves`), kept on the run so the goal-review brief
+        # reads the declaration rather than re-tracing the goal's own wording; like the goal, an
+        # absent value preserves and only a stated one writes.
+        declared = [v.strip() for raw in (getattr(args, "serves", None) or [])
+                    for v in raw.split(",") if v.strip()]
+        if declared:
+            extra["sprint_serves"] = declared
         # The seat verdict sits BESIDE the goal, carrying its date and the seats that gave it,
         # so the closing goal-verdict judges the goal against what the seats said THEN rather
         # than against a reconstruction. Recorded whether reviewed or not: "unreviewed" is a
@@ -12921,22 +12926,27 @@ def _compose_seat_brief(plan: dict, goal: str | None, injected: dict | None = No
     return "\n".join(lines)
 
 
-def _goal_served_lines(root: Path, goal: str | None) -> list[str]:
+def _goal_served_lines(root: Path, goal: str | None,
+                       serves: list[str] | None = None) -> list[str]:
     """What the product serves, for the seat judging whether the goal serves a user (D0266):
-    the PRD outcomes, each Primary and Secondary persona's End goals, the Negative personas
-    as declined, and the plan's own `goal_trace` of this goal. Reading, never a refusal."""
+    the PRD outcomes, the End goals of each Primary and Secondary persona and of any persona
+    the run declares it serves (`plan --serves`), the Negative personas as declined, and the
+    plan's own `goal_trace` of this goal and that declaration. Reading, never a refusal."""
     outcomes, cards = prd_outcomes(root), persona_cards(root)
+    declared = {s["name"] for s in (goal_trace(root, None, serves) or {}).get("serves", [])
+                if s["kind"] == "persona"} if serves else set()
     if not (outcomes or cards):
         return ["PRD outcomes and personas: none on disk - nothing to trace the Sprint Goal "
                 "against"]
     lines = (["PRD outcomes (does the goal serve one?):",
               *(f"  {oid} - {text}" for oid, text in outcomes.items())] if outcomes else
              ["PRD outcomes: none - sdlc-studio/prd.md lists no `## Outcomes`"])
-    designed = [c for c in cards if c["role"] in ("primary", "secondary")]
+    designed = [c for c in cards if c["role"] in ("primary", "secondary")
+                or (c["name"] in declared and c["role"] != "negative")]
     if designed:
         lines.append("Personas designed for (End goals, numbered as on the card):")
         for c in designed:
-            lines.append(f"  {c['name']} ({c['role'].capitalize()}):")
+            lines.append(f"  {c['name']} ({(c['role'] or 'no cast role').capitalize()}):")
             lines.extend([f"    {n}. {text}" for n, text in c["end_goals"]]
                          or ["    (no End goals on the card)"])
     else:
@@ -12944,7 +12954,7 @@ def _goal_served_lines(root: Path, goal: str | None) -> list[str]:
                      if cards else "Personas: none - no persona cards in sdlc-studio/personas/")
     lines.extend(f"  {c['name']} (Negative) - declined: the product does not design for them"
                  for c in cards if c["role"] == "negative")
-    trace = goal_trace(root, goal)
+    trace = goal_trace(root, goal, serves)
     if trace is None:
         lines.append("Goal serves: no Sprint Goal set, so nothing is traced")
     elif not trace["flagged"]:
@@ -12989,10 +12999,12 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
     previous sprint's by construction."""
     root = Path(repo_root)
     injected = lessons.phase_digest(root, "review")
+    live = _live_run(root)
+    serves = live.get("sprint_serves") or None
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
         goal = _brief_goal(root, goal, plan)
-        return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal))
+        return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal, serves))
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
@@ -13000,7 +13012,22 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
                 f"here, because a brief describing the wrong batch cannot be told from a right one.")
     goal = _brief_goal(root, goal, plan)
-    return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal))
+    if isinstance(live.get("batch"), list):
+        # The batch under review is the live run's: `batch add` after `plan --write` grows it,
+        # and the persisted plan still holds the count it was written with.
+        plan = {**plan, "count": len(live["batch"])}
+    return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal, serves))
+
+
+def _live_run(root: Path) -> dict:
+    """The run state while a run is open, else {} - a closed run's batch and declarations
+    describe a batch that is no longer the one under review."""
+    try:
+        state = run_state.read(root) or {}
+    except Exception as exc:  # noqa: BLE001 - a missing run state must not break the brief
+        sdlc_md.debug("sprint._live_run", exc)
+        return {}
+    return state if state.get("outcome") == run_state.RUNNING else {}
 
 
 def _brief_goal(root: Path, supplied: str | None, plan: dict) -> str | None:

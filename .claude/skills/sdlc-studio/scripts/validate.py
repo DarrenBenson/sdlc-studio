@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import sdlc_md, tiers  # noqa: E402
+from lib import persona_goals, sdlc_md, tiers  # noqa: E402
 import persona_gen  # noqa: E402  (the provenance stamp/reviewed grammar - one source)
 import file_finding  # noqa: E402  (the pseudo-`Verify:` detector the creators refuse on - one authority)
 
@@ -1275,6 +1275,18 @@ def _starts(headings: list[str], *prefixes: str) -> bool:
     return any(h.startswith(pfx) for h in headings for pfx in prefixes)
 
 
+def _persona_goal_findings(path: Path, text: str) -> list[dict]:
+    """A warning for each End goal whose own Verify or Applies-to line the tooling cannot read
+    (`persona-goal-verify`, `persona-goal-scope`), naming the card and the goal's number. Only
+    the lines nested under a numbered End goal are read: a Verify elsewhere on the card is not
+    an End goal's."""
+    import verify_ac  # noqa: PLC0415 - deferred: validate must run without the runner
+    return [{"severity": "warning", "rule": rule, "file": str(path), "goal": number,
+             "message": message}
+            for rule, number, message in persona_goals.findings(
+                persona_goals.end_goals(text), verify_ac.lint_verifier)]
+
+
 def check_personas(root: Path) -> list[dict]:
     """Cast-role-aware well-formedness check for goal-directed personas.
 
@@ -1331,6 +1343,7 @@ def check_personas(root: Path) -> list[dict]:
             if not ok:
                 out.append({"severity": "warning", "rule": "persona-section", "file": str(p),
                             "message": f"missing section: {name}"})
+        out.extend(_persona_goal_findings(p, text))
         if role == "primary":
             im = re.search(r"\|\s*\*\*Interface\*\*\s*\|\s*([^|]+?)\s*\|", text, re.I)
             primaries.append((p, im.group(1).strip().casefold() if im else None))
@@ -1554,6 +1567,107 @@ _DEMOGRAPHIC_RE = re.compile(
 _PROVENANCE_LINE_RE = re.compile(r"<!--\s*provenance\s*:", re.I)
 
 
+#: A seat card's claim about the cast: `the Primary (design) persona` then `is`, a comma, a colon
+#: or an opening bracket and a name; or a name then `(Primary)`. Matched over the card's text with
+#: newlines as whitespace, so a claim wrapped across a line break still reads.
+_CLAIM_ROLES = r"(?P<role>(?i:primary|secondary|negative))"
+_CLAIM_WORD = r"[^\W\d_][\w'’-]*"
+_CLAIM_GAP = r"(?:[ \t]+|[ \t]*\n[ \t]*)"
+_SEAT_CLAIM_RE = re.compile(
+    rf"\b{_CLAIM_ROLES}\s+(?i:design\s+)?(?i:persona)(?:\s+is\s+|\s*[,:(]\s*)"
+    rf"(?P<name>{_CLAIM_WORD}(?:{_CLAIM_GAP}{_CLAIM_WORD}){{0,3}})")
+_SEAT_NAMED_ROLE_RE = re.compile(
+    rf"(?P<name>(?:{_CLAIM_WORD}{_CLAIM_GAP}){{0,3}}{_CLAIM_WORD})[ \t]*\({_CLAIM_ROLES}\)")
+#: A capitalised word that opens a phrase rather than a name (`the Primary persona: The one who`).
+_CLAIM_NOT_NAMES = {"The", "A", "An", "This", "That", "These", "Those", "Each", "Every", "Any",
+                    "Its", "Their", "Our", "Your", "No", "One"}
+
+
+def _claimed_name(m: re.Match, leading: bool) -> tuple[list[str], int] | None:
+    """The capitalised run a claim names, and the offset its first word starts at: the run
+    opening the match's name for `persona is Name`, the run closing it for `Name (Primary)`."""
+    words = [(w.group(0), m.start("name") + w.start())
+             for w in re.finditer(_CLAIM_WORD, m.group("name"))]
+    caps = [w[0][0].isupper() for w in words]
+    if leading:
+        n = next((i for i, c in enumerate(caps) if not c), len(caps))
+        run = words[:n]
+    else:
+        n = next((i for i, c in enumerate(reversed(caps)) if not c), len(caps))
+        run = words[len(words) - n:]
+    run = [(re.sub(r"['’]s$", "", w), at) for w, at in run]
+    if not run or run[0][0] in _CLAIM_NOT_NAMES:
+        return None
+    return [w for w, _ in run], run[0][1]
+
+
+def _seat_cast(root: Path) -> tuple[dict[str, str | None], dict[str, str] | None]:
+    """`({name: card Cast role}, {name: registry role} or None)` - every persona card's name and
+    role, and the registry's declared roles when `personas/index.md` can be read."""
+    cards: dict[str, str | None] = {}
+    pdir = root / "sdlc-studio" / "personas"
+    for p in sorted(pdir.glob("*.md")) if pdir.is_dir() else ():
+        if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} or p.name.startswith("_"):
+            continue
+        text = sdlc_md.read_text_safe(p)
+        m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
+        if m and "{{" not in m.group(1):
+            cards[m.group(1).split(" - ")[0].strip()] = _persona_cast_role(text)
+    reg = sdlc_md.persona_registry(root)
+    return cards, ({e.name: e.role for e in reg.entries} if reg.available else None)
+
+
+def _resolve_claim(words: list[str], names: list[str]) -> str | None:
+    """The cast name a claim's words name: a full name running in them first, else a first
+    name among them."""
+    joined = " ".join(words)
+    return (next((n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", joined)), None)
+            or next((n for n in names if n.split()[0] in words), None))
+
+
+def _seat_persona_findings(path: Path, text: str, cast: tuple[dict, dict | None]) -> list[dict]:
+    """A warning for each claim on a seat card naming a persona the cast does not declare
+    (`seat-persona-unknown`) or declares in another role (`seat-persona-role`), at the line its
+    name starts. The declared role is the registry's, and the card's Cast role only when there is
+    no registry to read. HTML comments are read; fenced code is not."""
+    cards, registry = cast
+    names = list(dict.fromkeys([*(registry or {}), *cards]))
+    fence = None
+    kept = []
+    for line in text.splitlines():
+        was_open = fence is not None
+        fence, is_fence = sdlc_md.fence_step(line.lstrip(), fence)
+        kept.append("" if is_fence or was_open else line)
+    body = "\n".join(kept)
+    lines = text.splitlines()
+    out: list[dict] = []
+    claims = [(m, True) for m in _SEAT_CLAIM_RE.finditer(body)]
+    claims += [(m, False) for m in _SEAT_NAMED_ROLE_RE.finditer(body)]
+    for m, leading in sorted(claims, key=lambda c: c[0].start()):
+        named = _claimed_name(m, leading)
+        if named is None:
+            continue
+        words, at = named
+        claimed = m.group("role").lower()
+        lineno = body.count("\n", 0, at) + 1
+        where = f"line {lineno} (`{lines[lineno - 1].strip()}`)"
+        who = _resolve_claim(words, names)
+        if who is None:
+            out.append({"severity": "warning", "rule": "seat-persona-unknown", "file": str(path),
+                        "line": lineno,
+                        "message": f"{where} calls {' '.join(words)} the {claimed.capitalize()} "
+                                   "persona, but no persona card or registry entry names them"})
+            continue
+        declared, source = ((registry.get(who), "personas/index.md") if registry is not None
+                            else (cards.get(who), f"{who}'s card Cast role"))
+        if declared and declared != claimed:
+            out.append({"severity": "warning", "rule": "seat-persona-role", "file": str(path),
+                        "line": lineno,
+                        "message": f"{where} calls {who} the {claimed.capitalize()} persona, "
+                                   f"but {source} declares {who} {declared.capitalize()}"})
+    return out
+
+
 def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dict]:
     """Error-level well-formedness for the working-team seat cards (personas/seats/) - the
     mechanical floor of team generation (the review-render hard error given an owner).
@@ -1580,6 +1694,7 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
     # reconciliation below still verifies stamps and fails loudly on misses
     cards = sorted(sdir.glob("*.md")) if sdir.is_dir() else []
     roles_seen: dict[str, str] = {}
+    cast = _seat_cast(root) if cards else ({}, None)
     for p in cards:
         try:
             text = p.read_text(encoding="utf-8")
@@ -1587,6 +1702,7 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
             out.append({"severity": "error", "rule": "seat-unreadable", "file": str(p),
                         "message": f"unreadable seat card: {exc}"})
             continue
+        out.extend(_seat_persona_findings(p, text, cast))
         m = _SEAT_ROLE_RE.search(text)
         if not m:
             out.append({"severity": "error", "rule": "seat-no-role", "file": str(p),

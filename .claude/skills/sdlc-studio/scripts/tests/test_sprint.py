@@ -8301,7 +8301,7 @@ class SeatBriefFreshnessTests(unittest.TestCase):
              "reachable_end_state": {"state": "Review", "basis": "b"}}))
         (d / "sdlc-studio" / ".local" / "run-state.json").write_text(json.dumps(
             {"schema": 1, "run_id": "RUN-OLD", "sprint_goal": "the OLD goal",
-             "outcome": outcome, "batch": []}))
+             "outcome": outcome, "batch": [f"US{n:04d}" for n in range(1, plan_count + 1)]}))
         return d
 
     def test_the_brief_describes_the_batch_it_is_given_not_the_persisted_plan(self):
@@ -8331,6 +8331,17 @@ class SeatBriefFreshnessTests(unittest.TestCase):
         brief = s.seat_brief(d)
         self.assertIn("19 unit(s)", brief)
         self.assertNotIn("NO CURRENT BATCH", brief)
+
+    def test_a_live_run_counts_its_own_batch_not_the_plan_snapshot(self):
+        s = _load()
+        d = self._repo(plan_count=19, outcome="running")
+        state = d / "sdlc-studio" / ".local" / "run-state.json"
+        st = json.loads(state.read_text())
+        st["batch"] += ["US0020", "US0021"]                     # `sprint batch add`, twice
+        state.write_text(json.dumps(st))
+        brief = s.seat_brief(d)
+        self.assertIn("Batch: 21 unit(s)", brief)
+        self.assertNotIn("19 unit(s)", brief)
 
 
 class ReviewAnchorRefreshTests(unittest.TestCase):

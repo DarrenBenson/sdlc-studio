@@ -214,7 +214,9 @@ Live metrics (lint, type-check, coverage) are left to Claude to run. Help:
 - `seats`: error-level floor for working-team seat cards (role, review render,
   demographic denylist, cast cap, provenance-stamp grammar); `--require-stamp FILE...`
   additionally requires a valid stamp or reviewed marker on each named just-generated
-  card and fails loudly on any path it cannot match
+  card and fails loudly on any path it cannot match. It warns, never errs, on a seat card
+  naming a persona the cast does not declare (`seat-persona-unknown`) or in a role the
+  registry does not declare (`seat-persona-role`)
 - `serves`: persona-coverage report over `**Serves:**` tags (dormant until the first
   tag or `serves_coverage: true`; resolves names to persona files, flags units serving
   nobody, prints a coverage table keyed on the resolved file; advisory). Granularity is
