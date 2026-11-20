@@ -5259,6 +5259,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     print(f"batch: {data['count']} unit(s) ({src}){scope}, order={args.order}")
     _render_goal_review(data)
     _render_goal_trace(data)
+    _render_persona_standard(data)
     _render_seat_provenance(data)
     _render_waves(data)
     _render_delivery_mode(data)
@@ -11767,14 +11768,16 @@ def _end_goals(text: str) -> list[tuple[str, str]]:
 
 
 def persona_cards(root: Path | str) -> list[dict]:
-    """`[{name, role, end_goals, goals, goal_verify, goal_applies_to}]` for each persona card in
-    `sdlc-studio/personas/` - the name from its `# ` heading, the role from its Quick Reference
-    `Cast role` (None when undeclared), the End goals as `(number, text)` pairs numbered as on
-    the card, `goals` the same End goals in card order each with its own Verify and Applies-to
-    lines, and, keyed by the number, the Verify each goal carries and its Applies-to patterns (a
-    goal carrying neither is absent from both). A card may number several goals alike (every
-    item `1.`), where a number-keyed map keeps only the last, so a reader pairing a goal with
-    its own lines reads `goals`."""
+    """`[{name, role, end_goals, goals}]` for each persona card in `sdlc-studio/personas/` - the
+    name from its `# ` heading, the role from its Quick Reference `Cast role` (None when
+    undeclared), the End goals as `(number, text)` pairs numbered as on the card, and `goals` the
+    same End goals in card order, each carrying its own Verify and Applies-to lines. A card may
+    number several goals alike (every item `1.`), so nothing here is keyed by that number."""
+    return [card for _path, card in _persona_card_entries(root)]
+
+
+def _persona_card_entries(root: Path | str) -> list[tuple[Path, dict]]:
+    """`persona_cards`, each beside the path of the card it was read from."""
     from validate import _persona_cast_role  # noqa: PLC0415 - the one cast-role reader
     pdir = Path(root) / "sdlc-studio" / "personas"
     cards = []
@@ -11786,14 +11789,26 @@ def persona_cards(root: Path | str) -> list[dict]:
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
         if m and "{{" not in m.group(1):   # an unfilled template card names nobody
             goals = persona_goals.end_goals(text)
-            cards.append({"name": m.group(1), "role": _persona_cast_role(text),
-                          "end_goals": [(g.number, g.text) for g in goals],
-                          "goals": goals,
-                          "goal_verify": {g.number: g.verify for g in goals
-                                          if g.verify is not None},
-                          "goal_applies_to": {g.number: list(g.applies_to) for g in goals
-                                              if g.applies_to}})
+            cards.append((p, {"name": m.group(1), "role": _persona_cast_role(text),
+                              "end_goals": [(g.number, g.text) for g in goals],
+                              "goals": goals}))
     return cards
+
+
+def _refused_personas(root: Path | str, entries: list[tuple[Path, dict]],
+                      names: list[str]) -> list[dict]:
+    """Each named persona whose card the persona standard holds (`persona_review.held_cards`):
+    `{name, card, held, remedy}`, `card` relative to the root and `held` its `blocking` rows."""
+    import persona_review  # noqa: PLC0415 - sibling; the one judge of a card
+    paths = {c["name"]: p.resolve() for p, c in entries if c["name"] in names}
+    if not paths:
+        return []
+    findings = persona_review.blocking_findings(root)
+    held = persona_review.held_cards(root, list(paths.values()), findings)
+    base = Path(root).resolve()
+    return [{"name": n, "card": persona_review._rel(str(paths[n]), base), "held": held[paths[n]],
+             "remedy": persona_review.remedy(root, paths[n])}
+            for n in names if n in paths and paths[n] in held]
 
 
 def _names_persona(text: str, name: str) -> bool:
@@ -11812,9 +11827,12 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
     When it traces to a persona other than a Negative one, it also carries `end_goals` (each
     such persona's End goals, numbered as on the card, with their Verify and `check`:
     `executable`, `manual` or `none`), `checked_by` (the executable ones) and `checkable`
-    (whether any is); a trace naming no such persona carries none of the three."""
+    (whether any is); a trace naming no such persona carries none of the three. A traced
+    persona whose card the persona standard holds is listed in `refused` (`_refused_personas`)
+    and its End goals are read into none of the three."""
     wanted = [s.strip() for v in (serves or []) for s in v.split(",") if s.strip()]
-    outcomes, cards = prd_outcomes(root), persona_cards(root)
+    entries = _persona_card_entries(root)
+    outcomes, cards = prd_outcomes(root), [c for _p, c in entries]
     if not ((goal or "").strip() or wanted) or not (outcomes or cards or wanted):
         return None
     goal = goal or ""
@@ -11849,6 +11867,11 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
     # Only the personas the goal traces to are read: an untraced persona's testable End goal
     # checks nothing about this goal. A Negative persona's End goals are stated to exclude.
     traced = [s["name"] for s in designed_for if s["kind"] == "persona"]
+    refused = _refused_personas(root, entries, traced) if traced else []
+    if refused:
+        # A card the standard holds is not read as sound: its End goals check nothing here.
+        trace["refused"] = refused
+        traced = [n for n in traced if n not in {r["name"] for r in refused}]
     if traced:
         by_name = {c["name"]: c for c in cards}
         # Each End goal carries its own Verify from the reader, never re-joined on its number:
@@ -11918,6 +11941,47 @@ def _trace_none_why(trace: dict) -> str:
     return f"{why}; it could serve {options}"
 
 
+def _refused_line(card: str, held: list[dict], remedy: str, why: str = "",
+                  state: str = "is refused by") -> str:
+    """One `persona card blocked:` line: the card, `state` the persona standard, each rule
+    holding it with its line where the check names one, `why`, and the `persona_review.remedy`
+    line naming what to run next."""
+    rules = "; ".join(f"{f['rule']}" + (f" (line {f['line']})" if f.get("line") else "")
+                      + f": {f['message']}" for f in held)
+    return (f"persona card blocked: {card} {state} the persona standard - {rules}"
+            + (f" - {why}" if why else "") + f". {remedy}")
+
+
+def persona_standard_status(root: Path | str) -> dict | None:
+    """What the persona standard says at plan time: `blocked`, each card it refuses as `{card,
+    held, remedy}` (`persona_review.held_cards`), and `owed`, the count of cards owed a review
+    (`persona_review.owed`). None when it refuses no card and none is owed."""
+    import persona_review  # noqa: PLC0415 - sibling; the one judge of a card
+    findings = persona_review.blocking_findings(root)
+    base = Path(root).resolve()
+    blocked = [{"card": persona_review._rel(str(path), base), "held": held,
+                "remedy": persona_review.remedy(root, path)}
+               for path, held in persona_review.held_cards(root, findings=findings).items()]
+    owed = len(persona_review.owed(root))
+    return {"blocked": blocked, "owed": owed} if blocked or owed else None
+
+
+def _render_persona_standard(data: dict) -> None:
+    """One `persona card blocked:` line per card the standard refuses that the goal trace has
+    not already named, and one `persona reviews owed:` count; advice, never a refusal."""
+    std = data.get("persona_standard")
+    if not std:
+        return
+    named = {r["card"] for r in (data.get("goal_trace") or {}).get("refused") or []}
+    for b in std["blocked"]:
+        if b["card"] not in named:
+            print(_refused_line(b["card"], b["held"], b["remedy"],
+                                "advice: the plan is not refused", state="breaks"))
+    if std["owed"]:
+        print(f"persona reviews owed: {std['owed']} - `persona_review.py owed` lists them "
+              "(advice: the plan is not refused)")
+
+
 def _render_goal_trace(data: dict) -> None:
     """`goal serves:` lines on the text plan; nothing when no trace was recorded."""
     trace = data.get("goal_trace")
@@ -11926,6 +11990,10 @@ def _render_goal_trace(data: dict) -> None:
     if not trace["flagged"]:
         for s in trace["serves"]:
             print(f"goal serves: {_trace_label(s)}")
+        for r in trace.get("refused") or []:
+            print(_refused_line(r["card"], r["held"], r["remedy"],
+                                f"the Sprint Goal traces to {r['name']}, so none of its End "
+                                "goals is read"))
         check = _goal_check_line(trace)
         if check:
             print(f"goal check: {check} (advice: the plan is not refused)")
@@ -12103,6 +12171,12 @@ def cmd_plan(args: argparse.Namespace) -> int:
     trace = goal_trace(args.root, sprint_goal, getattr(args, "serves", None))
     if trace is not None:
         data["goal_trace"] = trace
+    # THE PERSONA STANDARD ADVISES too: each card it refuses is named here with its remedy, so
+    # the refusal is met at the plan rather than mid-run, and the reviews owed are counted.
+    standard = (None if getattr(args, "skip_personas", False)
+                else persona_standard_status(args.root))
+    if standard is not None:
+        data["persona_standard"] = standard
     # THE ONE-RUN-SLOT GATE. A --write plan against an open run holding a DISJOINT batch is
     # refused: a project holds one run slot, and folding an unrelated batch into the open run
     # strands its goal verdict. Checked here, ahead of the forecast record and the sprint-plan
@@ -13003,8 +13077,14 @@ def _goal_served_lines(root: Path, goal: str | None,
     """What the product serves, for the seat judging whether the goal serves a user (D0266):
     the PRD outcomes, the End goals of each Primary and Secondary persona and of any persona
     the run declares it serves (`plan --serves`), the Negative personas as declined, and the
-    plan's own `goal_trace` of this goal and that declaration. Reading, never a refusal."""
-    outcomes, cards = prd_outcomes(root), persona_cards(root)
+    plan's own `goal_trace` of this goal and that declaration. Reading, with one refusal: a
+    goal tracing to a persona whose card the persona standard holds raises
+    `persona_resolve.StandardRefused` naming the card, its rules and the remedy; a listed
+    persona whose card the standard holds lists no End goals."""
+    import persona_resolve  # noqa: PLC0415 - sibling; its refusal is the brief's refusal
+    import persona_review  # noqa: PLC0415 - sibling; the one judge of a card
+    entries = _persona_card_entries(root)
+    outcomes, cards = prd_outcomes(root), [c for _p, c in entries]
     declared = {s["name"] for s in (goal_trace(root, None, serves) or {}).get("serves", [])
                 if s["kind"] == "persona"} if serves else set()
     if not (outcomes or cards):
@@ -13016,9 +13096,16 @@ def _goal_served_lines(root: Path, goal: str | None,
     designed = [c for c in cards if c["role"] in ("primary", "secondary")
                 or (c["name"] in declared and c["role"] != "negative")]
     if designed:
+        held = {r["name"]: r["card"]
+                for r in _refused_personas(root, entries, [c["name"] for c in designed])}
         lines.append("Personas designed for (End goals, numbered as on the card):")
         for c in designed:
-            lines.append(f"  {c['name']} ({(c['role'] or 'no cast role').capitalize()}):")
+            label = f"  {c['name']} ({(c['role'] or 'no cast role').capitalize()}):"
+            if c["name"] in held:
+                lines.append(f"{label} refused by the persona standard ({held[c['name']]}), so "
+                             "its End goals are not read")
+                continue
+            lines.append(label)
             lines.extend([f"    {n}. {text}" for n, text in c["end_goals"]]
                          or ["    (no End goals on the card)"])
     else:
@@ -13027,6 +13114,11 @@ def _goal_served_lines(root: Path, goal: str | None,
     lines.extend(f"  {c['name']} (Negative) - declined: the product does not design for them"
                  for c in cards if c["role"] == "negative")
     trace = goal_trace(root, goal, serves)
+    if trace and trace.get("refused"):
+        raise persona_resolve.StandardRefused("\n".join(
+            f"the Sprint Goal traces to {r['name']}, whose card the persona standard refuses, "
+            f"so no brief reads it:\n{persona_review.refusal(root, root / r['card'], r['held'])}"
+            for r in trace["refused"]))
     if trace is None:
         lines.append("Goal serves: no Sprint Goal set, so nothing is traced")
     elif not trace["flagged"]:

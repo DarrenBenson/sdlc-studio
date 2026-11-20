@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -319,6 +320,35 @@ class RepeatedNumberTests(unittest.TestCase):
             block = _traced_block(_brief(root, goal))
         self.assertEqual(["  Hana Ito (Secondary):", "  Maya Okafor (Primary):"],
                          sorted(ln for ln in block if not ln.startswith("    ")))
+
+    def test_persona_cards_returns_no_number_keyed_goal_map(self) -> None:
+        """Mutant: keep building a map keyed by the number written on the card beside the goals
+        list, the shape that kept only the last of two goals numbered alike."""
+        text = _card("Maya Okafor", "Primary",
+                     [("Walk in to a warm house", _MANUAL), ("Every open bug is fixed", _PYTEST)],
+                     ["1", "1"])
+        text += "   - **Applies-to:** `app/bugs/`\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio" / "personas").mkdir(parents=True)
+            (root / "sdlc-studio" / "personas" / "maya-okafor.md").write_text(text,
+                                                                             encoding="utf-8")
+            cards = sprint.persona_cards(root)
+        self.assertEqual(1, len(cards))
+        self.assertEqual({"name", "role", "end_goals", "goals"}, set(cards[0]))
+        goals = cards[0]["goals"]
+        self.assertEqual([("1", "Walk in to a warm house", _MANUAL, ()),
+                          ("1", "Every open bug is fixed", _PYTEST, ("app/bugs/",))],
+                         [(g.number, g.text, g.verify, tuple(g.applies_to)) for g in goals])
+        self.assertEqual([("1", "Walk in to a warm house"), ("1", "Every open bug is fixed")],
+                         cards[0]["end_goals"])
+        doc = sprint.persona_cards.__doc__
+        named = re.search(r"\[\{([^}]*)\}\]", doc)
+        self.assertIsNotNone(named, doc)
+        self.assertEqual(["name", "role", "end_goals", "goals"],
+                         [k.strip() for k in named.group(1).split(",")])
+        self.assertNotIn("goal_verify", doc)
+        self.assertNotIn("goal_applies_to", doc)
 
 
 if __name__ == "__main__":

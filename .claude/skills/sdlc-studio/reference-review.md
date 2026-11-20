@@ -183,7 +183,7 @@ See `reference-tsd.md#tsd-review-workflow` for details.
 
 ```text
 1. Load sdlc-studio/personas/index.md (and per-persona files)
-2. Build the staleness map: for each persona, last consult date + last referenced-in-CR/Story date
+2. Build the staleness map (last consult, last CR/Story reference) and name the cards `persona_review.py owed` lists
 3. Cross-check: every persona referenced in PRD §1/§2 still exists in personas/
 4. Cross-check: every persona consulted on a CR/Story in the last `personas.staleness_days`
                 (default 90 days) is still present (catches stale references after rename)

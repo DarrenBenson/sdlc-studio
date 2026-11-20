@@ -216,6 +216,19 @@ to lift one, in place of a command; `persona_review.py brief` refuses a held rev
 with exit 2 and that seat card's own refusal. A card with no review, or changed since its
 PASS, still frames, and one stderr line names it as owed its persona review.
 
+`persona_review.py owed` lists every card owed a review, and exits 0 whatever it finds:
+
+```text
+persona review owed: sdlc-studio/personas/seats/qa.md - changed since its review of 2026-11-02
+persona review owed: sdlc-studio/personas/jonah-reyes.md - never reviewed
+persona reviews owed: 2 (reported, never refused; brief a review with ...)
+```
+
+A card last passed before the newest release tag's commit is owed too, compared by day.
+`sprint.py plan` prints the count as `persona reviews owed: <count>` and one `persona card
+blocked:` line for each card the standard holds, with its remedy; `release_cut.py
+changelog-cut` prints each owed card. Neither refuses for an owed review.
+
 ---
 
 ## Output Structure

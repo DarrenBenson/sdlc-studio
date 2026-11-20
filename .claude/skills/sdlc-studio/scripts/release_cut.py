@@ -7,7 +7,9 @@ Its verbs:
 - `changelog-cut --version X.Y.Z` composes the pending `changelog.d/` fragments into `[Unreleased]`
   (the release-time `compose --apply`), then moves that body under a new `## [X.Y.Z] - <date>`
   header, leaving `[Unreleased]` empty. This is the deterministic cut US0348 requires - the notes
-  come from the per-unit fragments, never a hand-written section.
+  come from the per-unit fragments, never a hand-written section. It then prints one `persona
+  review owed:` line per persona or seat card `persona_review.owed` names, on stdout and never
+  in CHANGELOG.md: an owed review is reported, never a refusal.
 
 - `record-green --commit <sha>` stamps the commit the pre-tag gate passed on; `tag-check --commit
   <sha>` refuses unless that stamp names the same commit. A tag asserting a green measured on a
@@ -318,6 +320,9 @@ def _cmd_cut(args: argparse.Namespace) -> int:
         print(f"changelog-cut refused: {exc}", file=sys.stderr)
         return 2
     print(f"cut {header} from the fragments; [Unreleased] emptied")
+    import persona_review  # noqa: PLC0415 - sibling; the one reader of owed reviews
+    for owed in persona_review.owed(args.root):
+        print(owed["line"])
     return 0
 
 

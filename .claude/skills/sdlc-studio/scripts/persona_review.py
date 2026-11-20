@@ -38,7 +38,19 @@ breaks, and its latest ledger row when that row is a FAIL, whatever the card's b
 until a later PASS. `persona_resolve` calls it for every project seat card it resolves and
 raises `refusal`'s text, which names the card, each rule and `remedy`, the one command to run
 next. `review_owed` names a card with no review row, or one changed since its PASS: it still
-frames the brief.
+frames the brief. `standard_mode` reads `personas.standard` from the project's config: `block`,
+the default, refuses such a card; `report` frames it, and `report_line` is the one stderr line
+naming it, its rules and the remedy. Any other value is read as `block`, with one stderr line
+naming the key and its two values. `project_upgrade.py --apply` sets `report` for a project that
+holds its own cards and has no value.
+
+`owed [--format text|json]` names each card owed a review, one `persona review owed:` line
+each: never reviewed, changed since its PASS (by the recorded body hash, never the file's time
+or git history), or a PASS dated before the commit date of the newest release tag (by the
+commit's date, not the tag's name; compared by day). A FAIL is not owed: `blocking` holds the
+card. It exits 0, owed or not: an owed review is reported, never refused. `check` reports the
+same cards under `persona-review-owed`, and `sprint.py plan` and `release_cut.py changelog-cut`
+name them too.
 """
 from __future__ import annotations
 
@@ -77,6 +89,7 @@ RULES: dict[str, tuple[str, str]] = {
     "seat-cast-size": ("Consistency with the cast", REPORTED),
     "seat-core-missing": ("Consistency with the cast", REPORTED),
     "seat-malformed-stamp": ("Freshness", REPORTED),
+    "persona-review-owed": ("Freshness", REPORTED),
 }
 
 #: Rules the validators mint that judge no persona or seat card's content, so `check` never
@@ -98,6 +111,8 @@ _NEXT_HEAD_RE = re.compile(r"^#{1,2}\s", re.M)
 _COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
 _DECISION_RE = re.compile(r"\bD\d{4}\b")
 _PROJECT_LESSON_RE = re.compile(r"\bL-\d{4}\b")
+#: A release tag: a version, `v` optional (`v6.4.0`, `6.4.0`, `v6.5.0-rc1`).
+_RELEASE_TAG_RE = re.compile(r"^v?\d+\.\d+")
 
 
 #: The review ledger: append-only and committed, beside the other review ledgers. Never under
@@ -110,6 +125,10 @@ _LEDGER_HEAD = (
     "`persona_review.py record`. Hash is the card's body hash, the card without its generation "
     "stamp or reviewed marker. Run by names who asserted the review: the row is evidence of "
     "that assertion, not proof the review happened.\n\n")
+#: How the standard holds a project's own cards: `block` (the default) refuses a card that breaks
+#: a blocking rule or whose latest review failed; `report` frames it and names it on stderr.
+STANDARD_KEY = "personas.standard"
+STANDARD_MODES = ("block", "report")
 #: The standard a review judges a card against.
 STANDARD = Path(__file__).resolve().parent.parent / "best-practices" / "persona.md"
 OWN_SEAT = "a seat never reviews its own card"
@@ -225,18 +244,21 @@ def _registry_findings(root: Path, cards: list[Path]) -> list[dict]:
 
 
 def check(root: Path | str, card: Path | str | None = None, *,
-          evidence: bool = True) -> list[dict]:
+          evidence: bool = True, owed: bool = False) -> list[dict]:
     """Every finding against the standard, one dict per finding: `rule`, `severity` (blocks or
     reported), `heading`, `file`, `message`, and `line` or `goal` where the check names one.
     With `card`, only that card's findings; the cast-level ones sit on no card. `evidence=False`
-    leaves out the `persona-evidence` rule, which reads the lessons and the artefact corpus."""
+    leaves out the `persona-evidence` rule, which reads the lessons and the artefact corpus;
+    `owed=True` adds `persona-review-owed`, which reads the ledger and git's tags (the `check`
+    command and a review brief ask for it)."""
     import validate  # noqa: PLC0415 - deferred: validate imports this module for its labels
     root = Path(root).resolve()
     stakeholders = root / "sdlc-studio" / "personas" / "stakeholders"
     personas = _persona_cards(root)
     raw = [*validate.check_personas(root), *validate.check_seats(root),
            *(_evidence_findings(root, personas + _seat_cards(root)) if evidence else ()),
-           *_registry_findings(root, personas)]
+           *_registry_findings(root, personas),
+           *(_owed_findings(root) if owed else ())]
     out: list[dict] = []
     for f in raw:
         path = Path(f["file"]).resolve()
@@ -250,6 +272,89 @@ def check(root: Path | str, card: Path | str | None = None, *,
         row.update({k: f[k] for k in ("line", "goal") if k in f})
         out.append(row)
     return sorted(out, key=lambda r: (r["file"], r["rule"]))
+
+
+def blocking_findings(root: Path | str) -> list[dict]:
+    """`check` of every card with only what `blocking` reads: a rule `reported` that is costly
+    to read (the evidence corpus, the ledger and tags) is left out."""
+    return check(root, evidence=blocks("persona-evidence"), owed=blocks("persona-review-owed"))
+
+
+def held_cards(root: Path | str, cards: list[Path | str] | None = None,
+               findings: list[dict] | None = None) -> dict[Path, list[dict]]:
+    """`blocking` for many cards from one `check`: `{card path: what holds it}` for each persona
+    and seat card in the project, or each of `cards`, leaving out every card nothing holds.
+    `findings` passes a `check` already read, so a caller judging cards twice reads it once."""
+    root = Path(root).resolve()
+    if findings is None:
+        findings = blocking_findings(root)
+    paths = ([Path(c).resolve() for c in cards] if cards is not None
+             else [p.resolve() for p in _persona_cards(root) + _seat_cards(root)])
+    out: dict[Path, list[dict]] = {}
+    for path in dict.fromkeys(paths):
+        held = _held(root, path, findings)
+        if held:
+            out[path] = held
+    return out
+
+
+def release_tag(root: Path | str) -> tuple[str, str] | None:
+    """The newest release tag by the date of the commit it points at, as `(tag, that commit's
+    date as YYYY-MM-DD)`; None with no release tag, or no git to ask. An annotated tag is read
+    through to its commit, so the day it was tagged does not count."""
+    fmt = ("%(refname:short)%09%(*committerdate:unix)%09%(*committerdate:short)"
+           "%09%(committerdate:unix)%09%(committerdate:short)")
+    try:
+        done = subprocess.run(["git", "-C", str(root), "for-each-ref", f"--format={fmt}",
+                               "refs/tags"], capture_output=True, text=True, timeout=30,
+                              check=False)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    best: tuple[int, str, str] | None = None
+    for row in done.stdout.splitlines() if done.returncode == 0 else ():
+        parts = row.split("\t")
+        if len(parts) != 5 or not _RELEASE_TAG_RE.match(parts[0]):
+            continue
+        when, day = (parts[1], parts[2]) if parts[1] else (parts[3], parts[4])
+        if when.isdigit() and (best is None or int(when) > best[0]):
+            best = (int(when), parts[0], day)
+    return (best[1], best[2]) if best else None
+
+
+def owed(root: Path | str) -> list[dict]:
+    """Each persona and seat card owed a review, in card order: `{card, why, line}`, `card`
+    relative to the root and `line` the one `persona review owed:` line naming it. Owed when it
+    has no review row, when its latest review is a PASS of other bytes (the body hash, so the
+    reviewed marker is no change and a reverted edit is none), or when that PASS is dated before
+    the newest release tag's commit, compared by day. A FAIL is held by `blocking`, not owed."""
+    import persona_gen  # noqa: PLC0415 - sibling; the one card hash
+    root = Path(root).resolve()
+    latest = {r["card"]: r for r in ledger_rows(root)}
+    tag = release_tag(root)
+    out: list[dict] = []
+    for path in _persona_cards(root) + _seat_cards(root):
+        rel = _rel(str(path.resolve()), root)
+        last = latest.get(rel)
+        if last is None:
+            why = "never reviewed"
+        elif last["outcome"].upper() != "PASS":
+            continue
+        elif last["hash"] != persona_gen.body_hash(sdlc_md.read_text_safe(path)):
+            why = f"changed since its review of {last['date']}"
+        elif tag is not None and last["date"] < tag[1]:
+            why = (f"not reviewed since {tag[0]}: its PASS of {last['date']} is dated before the "
+                   f"tag commit's date, {tag[1]} (compared by day: the PASS date against the tag "
+                   "commit's date)")
+        else:
+            continue
+        out.append({"card": rel, "why": why, "line": f"persona review owed: {rel} - {why}"})
+    return out
+
+
+def _owed_findings(root: Path) -> list[dict]:
+    """`persona-review-owed`: each card `owed` names."""
+    return [{"rule": "persona-review-owed", "file": str(root / o["card"]), "message": o["why"]}
+            for o in owed(root)]
 
 
 def _rel(path: str, root: Path) -> str:
@@ -304,7 +409,7 @@ def brief(root: Path | str, card: Path | str, seat: str) -> str:
              f"Card under review: {rel}", "",
              "Its findings from `persona_review.py check`, the floor your judgement starts from:"]
     lines += [f"  {f['severity']:<8} {f['rule']} ({f['heading']}): {f['message']}"
-              for f in check(root, path)] or ["  none"]
+              for f in check(root, path, owed=True)] or ["  none"]
     lines += ["", "A PASS is refused while a finding that blocks stands; a FAIL names each rule "
               "it failed with --rule. Record the verdict:",
               f"  python3 {_rel(str(Path(__file__).resolve()), root)} record --card {rel} "
@@ -463,6 +568,32 @@ def refusal(root: Path | str, card: Path | str, held: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def standard_mode(root: Path | str) -> str:
+    """`personas.standard` from the project's config: `block` when it is unset, `report` or
+    `block` as set, and `block` for any other value, printing one stderr line naming the key and
+    its two values, so a mistyped value never turns the refusal off."""
+    value = sdlc_md.project_override(root, STANDARD_KEY)
+    if value is None:
+        return "block"
+    mode = str(value).strip().lower()
+    if mode in STANDARD_MODES:
+        return mode
+    print(f"{STANDARD_KEY} is {value!r}, which is neither block nor report, so it is read as "
+          "block", file=sys.stderr)
+    return "block"
+
+
+def report_line(root: Path | str, card: Path | str, held: list[dict]) -> str:
+    """The one stderr line naming a card `blocking` holds while `personas.standard` is
+    `report`: the card, each rule with its message, and the `remedy` line."""
+    root = Path(root).resolve()
+    rel = _rel(str(Path(card).resolve()), root)
+    rules = "; ".join(f"{f['rule']}: {' '.join(f['message'].split())}" for f in held)
+    return (f"persona card blocked (report mode): {rel} breaks the persona standard - {rules}. "
+            f"It frames the brief while {STANDARD_KEY} is report; set it to block to refuse it. "
+            f"{remedy(root, card)}")
+
+
 def review_owed(root: Path | str, card: Path | str) -> str | None:
     """One line naming `card` as owed its persona review, when it has no review row or has
     changed since its PASS; None when a PASS covers it as it stands, or a FAIL holds it."""
@@ -519,7 +650,7 @@ def cmd_check(args: argparse.Namespace) -> int:
             print(f"error: {args.card} is no persona card in sdlc-studio/personas/ or seat card "
                   "in sdlc-studio/personas/seats/", file=sys.stderr)
             return 2
-    findings = check(root, card)
+    findings = check(root, card, owed=True)
     n_blocks = sum(1 for f in findings if f["severity"] == BLOCKS)
     if args.format == "json":
         print(json.dumps({"findings": findings,
@@ -534,8 +665,21 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 1 if n_blocks else 0
 
 
+def cmd_owed(args: argparse.Namespace) -> int:
+    """Print each card owed a review; exit 0 either way, since an owed review is reported."""
+    found = owed(args.root)
+    if args.format == "json":
+        print(json.dumps({"owed": found, "tag": release_tag(args.root)}, indent=2))
+        return 0
+    for o in found:
+        print(o["line"])
+    print(f"persona reviews owed: {len(found)} (reported, never refused; brief a review with "
+          "persona_review.py brief --card <card> --seat <a seat not its own>)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
-    """Construct the argparse parser for the check subcommand."""
+    """Construct the argparse parser for the check, brief, record and owed subcommands."""
     p = argparse.ArgumentParser(prog="persona_review.py",
                                 description="Hold persona and seat cards to the persona "
                                             "standard (best-practices/persona.md).")
@@ -567,6 +711,12 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--rule", action="append", help="A rule the card failed (repeatable; a "
                                                    "FAIL names at least one)")
     r.set_defaults(func=cmd_record)
+    o = sub.add_parser("owed", help="Name each card owed a review: never reviewed, changed "
+                                    "since its PASS, or not reviewed since the newest release "
+                                    "tag (by day); exits 0.")
+    o.add_argument("--root", default=".", help="Repo root (default: .)")
+    o.add_argument("--format", choices=("text", "json"), default="text")
+    o.set_defaults(func=cmd_owed)
     sdlc_md.add_global_root(p)
     return p
 

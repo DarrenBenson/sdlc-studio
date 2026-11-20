@@ -6,8 +6,10 @@ what the new skill expects. It DETECTS the version/convention gap, AUDITS the pr
 migration plan split into **auto-correctable** (safe, deterministic) and **needs-judgment** (a
 report - never auto-applied, never filed as CRs). Only with `--apply` does it perform the safe set:
 scaffold `sdlc-studio/.config.yaml` (with a `provenance.adopt_after` cutoff so existing artefacts
-are exempt) and `.version`, then `reconcile` index/status drift. Dry-run by default; idempotent;
-nothing destructive. Reuses reconcile / validate / next_id / version_check. Pure stdlib.
+are exempt) and `.version`, then `reconcile` index/status drift. A project holding its own
+persona or seat cards whose config sets no `personas.standard` gets `report`, so the persona
+standard names its cards rather than refusing them until it sets `block`. Dry-run by default;
+idempotent; nothing destructive. Reuses reconcile / validate / next_id / version_check. Pure stdlib.
 """
 from __future__ import annotations
 
@@ -585,6 +587,9 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")
+    standard = _set_report_mode(root)
+    if standard:
+        actions.append(standard)
     # Agent-instructions seed. A project adopting the skill on an existing repo has no AGENTS.md,
     # and the file that establishes how the project is run is exactly what such a project needs
     # first. Writing an absent file is deterministic and reversible; an existing one is left
@@ -682,6 +687,39 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         if rows or counts:
             actions.append(f"reconciled {rows} index row(s)" + (f", {counts} count block(s)" if counts else ""))
     return actions
+
+
+def _set_report_mode(root: Path) -> str | None:
+    """Set `personas.standard: report` in `.config.yaml` for a project holding its own persona
+    or seat cards and setting no value, inserted into its `personas:` block (or appended as one)
+    so every other line is kept; return the action, or None when nothing is written. A value
+    already set, block or report or anything else, is the project's and is left alone."""
+    import persona_review  # noqa: PLC0415 - sibling; the one reader of a project's own cards
+    cfg = _sdlc(root) / ".config.yaml"
+    if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):
+        return None
+    if sdlc_md.project_override(root, persona_review.STANDARD_KEY) is not None:
+        return None
+    text = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
+    lines = text.splitlines(keepends=True)
+    at = next((i for i, ln in enumerate(lines) if re.match(r"personas:\s*(#.*)?$", ln)), None)
+    if at is None:
+        if re.search(r"(?m)^personas:", text):
+            return ("personas.standard NOT set: sdlc-studio/.config.yaml writes `personas:` on "
+                    "one line - add `standard: report` to it by hand, or `standard: block` to "
+                    "refuse cards that break the persona standard")
+        lines.append(("" if not text or text.endswith("\n") else "\n")
+                     + "personas:\n  standard: report\n")
+    else:
+        child = next((ln for ln in lines[at + 1:] if ln.strip() and not ln.lstrip()
+                      .startswith("#")), "")
+        indent = (child[:len(child) - len(child.lstrip())] if child[:1] in (" ", "\t")
+                  else "  ")
+        lines.insert(at + 1, f"{indent}standard: report\n")
+    _write_consumer_file(cfg, "".join(lines))
+    return ("set personas.standard: report in sdlc-studio/.config.yaml - this project holds its "
+            "own persona cards, so the persona standard names each one that breaks it on stderr "
+            "instead of refusing it; set personas.standard: block to switch the standard on")
 
 
 _VER_HEAD_RE = re.compile(rf"^##\s*\[({version_check.VERSION})\]")

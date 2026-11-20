@@ -75,12 +75,15 @@ class UnknownSeat(ValueError):
 
 def _judge(root: Path | str, card: Path) -> None:
     """Hold a project seat card to the persona standard before it frames anything: raise
-    StandardRefused when `persona_review.blocking` holds it, else name its review on stderr when
-    one is owed."""
+    StandardRefused when `persona_review.blocking` holds it, unless `personas.standard` is
+    `report`, which names it on one stderr line and frames it; then name its review on stderr
+    when one is owed."""
     import persona_review  # noqa: PLC0415 - sibling; it imports this module for the roster
     held = persona_review.blocking(root, card)
     if held:
-        raise StandardRefused(persona_review.refusal(root, card, held))
+        if persona_review.standard_mode(root) != "report":
+            raise StandardRefused(persona_review.refusal(root, card, held))
+        print(persona_review.report_line(root, card, held), file=sys.stderr)
     owed = persona_review.review_owed(root, card)
     if owed:
         print(owed, file=sys.stderr)

@@ -197,6 +197,11 @@ skill_source_repo: null
 # `/sdlc-studio review`. See reference-review.md.
 personas:
   staleness_days: 90
+  # The persona standard (best-practices/persona.md): `block` refuses a project card that
+  # breaks a blocking rule or whose latest review failed; `report` frames it and names it
+  # on one stderr line. Any other value is read as block. `project_upgrade.py --apply`
+  # sets report for an upgrading project that holds its own cards.
+  standard: block
   # Persona memory (reference-persona-learning.md): the days from a learning's Added to the
   # Review-by `persona_memory.py add` stamps, and the most live learnings one brief carries.
   memory:

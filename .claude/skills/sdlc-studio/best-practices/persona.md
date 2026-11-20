@@ -101,9 +101,12 @@ registry names, in its goals or its scenario?
 | Rule | Severity |
 | --- | --- |
 | `seat-malformed-stamp` | reported |
+| `persona-review-owed` | reported |
 
 The reviewing seat asks: does the card still describe the person the team designs for, and is
-a generated card still labelled provisional until someone reviews it?
+a generated card still labelled provisional until someone reviews it? A card is owed a review
+when it has none, has changed since its PASS, or was last passed before the newest release tag;
+`persona_review.py owed` lists them.
 
 ## Memory hygiene
 
