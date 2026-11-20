@@ -1,0 +1,6 @@
+UNIT: US1053
+BRIEF: d36270849ea5-a6834056
+VERDICT: APPROVE
+ISSUES: [new] the confinement case for persona_review.py proves file-level confinement only, not the card's provenance line: its targets are the ledger and the card as whole files (test_confinement.py:332-336) and a mutant making persona_gen.accept append a line to the card body still passed test_persona_review_confines_its_writes (replayed in a throwaway copy)\; the provenance-only claim is held instead by test_persona_review_record.py:215 (text equals stamped with the stamp swapped), which does kill that mutant, so the guarantee exists but not in the case its comment names\; the case also never reads the ledger row so an extra row would pass, non-blocking
+BLOCKING: none
+RULINGS: verify_ac run --id US1053 --dry-run passes 5 of 5 ACs\; the case does run the writer (exit 0 asserted), seeds a provisional card and fails on a missing or extra file, so it does prove the writer stays inside the two named files\; AC2 and AC3 match D0553 (run-by defaults to git user.name, refused when absent or only a role group) in persona_review.py:339-352

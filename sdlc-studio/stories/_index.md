@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 166 |
+| Draft | 165 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 1 |
 | Review | 0 |
-| Done | 968 |
+| Done | 969 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -90,7 +90,7 @@
 | [US1050](US1050-a-small-change-reaches-its-terminal-status-only.md) | A small change reaches its terminal status only on an independent approval at the derived depth while it still qualifies, and then owes no sprint close | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1051](US1051-the-small-change-path-is-written-down-once.md) | The small-change path is written down once, and every step is a runbook command that runs end to end | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1052](US1052-the-persona-standard-names-every-rule-a-card.md) | The persona standard names every rule a card is held to, and persona_review check reports each card against it | Done | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |

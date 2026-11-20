@@ -1,6 +1,6 @@
 # US1053: persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,14 +21,19 @@
 
 - **AC1:** Given project qa and product seat cards, when `persona_review.py brief --card sdlc-studio/personas/seats/qa.md --seat product` runs, then the brief names the product card to adopt, the standard page, the card under review, each rule `persona_review.py check` reports for that card with its severity, and the record command, while `--seat qa` exits 2 naming the rule that a seat never reviews its own card and prints no brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_brief_frames_another_seat_with_the_cards_findings
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given that card, when `persona_review.py record --card <qa card> --outcome fail --reviewer "Lena Marsh (product)" --run-by "Dana Fox" --rule persona-evidence` runs, then `sdlc-studio/reviews/persona-reviews.md` gains one row carrying the card's path, its body hash (the card without its generation stamp or reviewed marker), FAIL, the reviewer, product, the person who ran it (Dana Fox), the date and persona-evidence; with no `--run-by` the row names the repository's `git config user.name`, and recording again after `persona_gen.py stamp` adds a generation stamp writes the same hash.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given a FAIL naming no rule, a rule the standard does not hold, a reviewer naming no `(role)` group, no `--run-by` with no git user name to default to, a `--run-by` that is only a `(role)` group, the card's own seat, or a PASS while a blocking rule still fails on the card, when `persona_review.py record` runs, then each exits 2 naming its reason and the ledger is byte-identical.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given a generated seat card still carrying its provisional stamp, when a PASS is recorded for it, then the stamp becomes the dated reviewed marker `persona_gen.py accept` writes, and `persona_gen.py classify` no longer reports it provisional.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_pass_clears_a_generated_cards_provisional_stamp
+  - **Verified:** yes (2026-11-20)
 - **AC5:** Given a recorded review in a project whose cards include Maya Okafor, when `validate.py personas` runs and `sprint.py goal-review brief --goal "Persona Reviews land for Maya"` runs, then neither reads the ledger as a persona card: no warning names it and the goal traces to Maya alone.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_review_ledger_is_never_read_as_a_persona_card
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

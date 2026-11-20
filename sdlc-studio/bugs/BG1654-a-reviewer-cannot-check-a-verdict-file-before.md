@@ -13,6 +13,8 @@
 
 In run twenty (RUN-01M7VNR0), critic.py record refused US1039's engineering verdict because one finding held an odd number of backticks (critic.py:374-392). critic.py has no dry-run or verdict check a reviewer can run on its own file, so the refusal surfaced after hand-back and cost a resumed reviewer round. The rule was right; only its timing was wrong.
 
+A second instance in the same run: US1053's qa verdict ended its one finding with `; non-blocking`, the record step split ISSUES at that unescaped semicolon, and refused the trailing piece as a finding with no origin tag. That cost a second resumed round. A pre-check would catch both the backtick count and the split.
+
 ## Steps to Reproduce
 
 Write a verdict whose ISSUES field holds one unclosed backtick span and hand it back; critic.py record --from-verdict refuses it. Run critic.py record --help: no --dry-run or check subcommand exists.
