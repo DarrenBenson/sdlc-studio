@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 463 |
+| Open | 464 |
 | In Progress | 0 |
 | Fixed | 999 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1664** |
+| **Total** | **1665** |
 
 ## All Bugs
 
@@ -740,6 +740,7 @@
 | [BG1662](BG1662-seat-persona-unknown-still-reads-a-two-word.md) | seat-persona-unknown still reads a two-word product surface marked with a role, such as Ship the Admin Console (Primary), as an unknown persona | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1663](BG1663-bg1655-did-not-converge-in-review-round-2.md) | BG1655 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1664](BG1664-persona-cards-still-builds-the-number-keyed-goal.md) | persona_cards still builds the number-keyed goal_verify and goal_applies_to maps that nothing reads after BG1660 | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1665](BG1665-critic-py-record-refuses-a-parallel-second-seat.md) | critic.py record refuses a parallel second seat's verdict once the first seat's REJECT is recorded, so its REJECT never reaches the ledger | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 
