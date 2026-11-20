@@ -1832,6 +1832,60 @@ _STDLIB_ONLY = re.compile(
     r"only the standard library|no third-party packages?|free of third-party|"
     r"PyYAML is used (?:for config )?when present|degrades? to (?:the caller's |built-in )?"
     r"defaults? when absent", re.I)
+#: Where a sentence is cut into statements: at `;`, and before a `**Label:**` or a heading.
+_STATEMENT_CUT = re.compile(r";|(?=\*\*[^*]+:\*\*)|(?=#{1,6}\s)")
+#: A negation, then up to three words, at the end of the text before a term: the term is denied.
+_NEGATION_TAIL = re.compile(
+    r"(?:\b(?:not|never|no|nothing|rather than|instead of)\b|n't\b)(?:\s+\S+){0,3}\s*$", re.I)
+#: A term saying PyYAML may be absent: optional, soft, recommended, used where present, or the
+#: scripts falling back or degrading to their defaults.
+_MAY_BE_ABSENT = re.compile(
+    r"\boptional(?:ly)?\b|\bsoft\b|\brecommended\b|\bfall(?:s|ing)?\s+back\b|\bfallback\b|"
+    r"\bdegrad\w*|\bdefaults?\b|\b(?:when|if|where)\s+(?:it\s+is\s+|it's\s+)?"
+    r"(?:present|available|installed)\b", re.I)
+#: A term saying PyYAML must be there; denied ("not required"), it says PyYAML need not be.
+_REQUIRED = re.compile(r"\brequire[sd]?\b|\bmandatory\b|\bnecessary\b|\bneeded\b", re.I)
+_NEED_NOT = re.compile(r"\bneeds?\s+not\b|\bneedn't\b", re.I)
+#: PyYAML's verb in the past tense: the statement tells the history, not today's runtime.
+_PYYAML_PAST = re.compile(r"\bPyYAML`?\s+(?:was|were|had\s+been|used\s+to\s+be)\b")
+
+
+def _pyyaml_statements(units: list[str]) -> list[str]:
+    """The statements of `units` that name PyYAML: each unit, a table cell included, cut into
+    sentences, and each sentence at `_STATEMENT_CUT` outside a code span, so that a cell or an
+    ADR's labelled paragraphs are judged one statement at a time."""
+    out = []
+    for unit in units:
+        for sentence in re.split(r"(?<=[.!?])\s+", unit):
+            pieces = [""]
+            for i, part in enumerate(re.split(r"(`[^`]*`)", sentence)):
+                cut = [part] if i % 2 else _STATEMENT_CUT.split(part)
+                pieces[-1] += cut[0]
+                pieces.extend(cut[1:])
+            out.extend(p.strip() for p in pieces if "PyYAML" in p)
+    return out
+
+
+def _terms(statement: str, pattern: re.Pattern, denied: bool) -> list[str]:
+    """The `pattern` terms in `statement`'s words outside code spans, kept where a negation in
+    the three words before them denies them (`denied`) or where none does."""
+    words = re.sub(r"`[^`]*`", "`code`", statement)
+    return [m.group(0) for m in pattern.finditer(words)
+            if bool(_NEGATION_TAIL.search(words[:m.start()])) is denied]
+
+
+def _calls_pyyaml_optional(statement: str) -> bool:
+    """Whether a present-tense statement naming PyYAML says it may be absent: a term from
+    `_MAY_BE_ABSENT` it does not deny, a `_REQUIRED` term it does, or "need not"."""
+    if _PYYAML_PAST.search(statement):
+        return False
+    return bool(_terms(statement, _MAY_BE_ABSENT, False) or _terms(statement, _REQUIRED, True)
+                or _NEED_NOT.search(statement))
+
+
+def _calls_pyyaml_required(statement: str) -> bool:
+    """Whether a present-tense statement naming PyYAML says it is required, undenied."""
+    return not _PYYAML_PAST.search(statement) and bool(_terms(statement, _REQUIRED, False))
 
 
 class TrdRequiredPyYamlTests(unittest.TestCase):
@@ -1839,17 +1893,39 @@ class TrdRequiredPyYamlTests(unittest.TestCase):
     standard library only; the TRD records the ruling as an ADR and carries the threat row."""
 
     def test_no_spec_page_claims_a_standard_library_only_runtime(self) -> None:
-        """AC1, over the PRD, TRD, TSD and README. Mutants: the PRD's `stdlib only` tech stack
-        line; the TSD's pure-stdlib supply-chain sentence; the TRD's Won't Have bullet
-        ruling out a required third-party dependency; a page that names PyYAML nowhere as
-        required."""
+        """AC1, over the PRD, TRD, TSD and README, each statement naming PyYAML judged by what it
+        says. Mutants: the PRD's `stdlib only` tech stack line; the TSD's pure-stdlib
+        supply-chain sentence; the TRD's Won't Have bullet ruling out a required third-party
+        dependency; a page that names PyYAML nowhere as required; the README calling PyYAML not
+        required, or optional with the scripts falling back to their defaults; the PRD calling
+        it optional, or listing it among its soft runtime deps."""
         self.assertIsNotNone(_STDLIB_ONLY.search("- **Python 3.10+ (stdlib only)**"))
+        for soft in ("The scripts need Python 3.10 or later; PyYAML is not required.",
+                     "PyYAML is optional, and without it the scripts fall back to their defaults.",
+                     "PyYAML is optional: the scripts fall back to the defaults without it.",
+                     "- **Soft runtime deps** – `gh` CLI (sync), PyYAML (config), `git`.",
+                     "PyYAML is recommended.", "PyYAML isn't needed.", "PyYAML need not be there.",
+                     "Without PyYAML the scripts degrade to their defaults.",
+                     "PyYAML is used when present."):
+            with self.subTest(soft=soft):
+                said = _pyyaml_statements([soft])
+                self.assertTrue([s for s in said if _calls_pyyaml_optional(s)])
+                self.assertEqual([], [s for s in said if _calls_pyyaml_required(s)])
+        for held in ("A missing PyYAML is refused, never read as defaults.",
+                     "A command without PyYAML refuses rather than answering from the defaults.",
+                     "**Context:** PyYAML was a soft dependency.",
+                     "PyYAML is required; `lizard` is soft and degrades to defaults."):
+            with self.subTest(held=held):
+                said = _pyyaml_statements([held])
+                self.assertEqual([], [s for s in said if _calls_pyyaml_optional(s)])
         for page in SPEC_PAGES:
             text = _read(page).split("\n## Revision History", 1)[0]
             units = _units(text)
+            said = _pyyaml_statements(units)
             with self.subTest(page=page.name):
                 self.assertEqual([], [u for u in units if _STDLIB_ONLY.search(u)])
-                self.assertTrue([u for u in units if "PyYAML" in u and "required" in u],
+                self.assertEqual([], [s for s in said if _calls_pyyaml_optional(s)])
+                self.assertTrue([s for s in said if _calls_pyyaml_required(s)],
                                 f"{page.name} names PyYAML nowhere as required")
         wont = _section(_trd_body(), "Won't Have (This Version)")
         for bullet in re.split(r"\n(?=- )", wont):

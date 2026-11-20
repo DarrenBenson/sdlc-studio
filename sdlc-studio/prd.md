@@ -853,6 +853,7 @@ none.
 | 2026-11-16 | 6.3.0 | The 6.4 work on `main` (US1172): the Feature Inventory gains a row each for the evidence annex and committed run record, the release evidence pack and evidence page, escaped-defect tracing, each seat's record, persona learnings, the risk class and second seat, the cost forecast and dispatch effort, and the resume brief and handoff; the flags table gains `risk.components`, `routing.effort`, `pricing.copilot_billing` and the `personas.memory` keys at the defaults `reference-config.md` states |
 | 2026-11-16 | 6.4.0 | Release cut (US1173): the Coverage note and the Feature Inventory baseline read v6.4.0 as cut, plus the 6.5 work on `main` |
 | 2026-11-19 | 6.4.0 | PRD truth repairs (BG1525, BG1526, BG1527, BG1528, BG1162, BG1168, BG1180, BG1553, BG1554, BG1555): section 9 names the gate keys that ship off and the right defaults, the status note, Context, Security and Integration passages say what the code does, the Environment Variables table lists every variable the scripts read, the close-down row describes the hand-wired reminder, one account of the sprint close names every chain step, and the PRD tests check each of these and the Changelog's row for every change |
+| 2026-11-20 | 6.4.0 | PyYAML required (US1299): the tech stack bullet, the Performance requirement and the Third-Party Dependencies section name PyYAML as the one required third-party package, which the installers and the gate's prerequisite check refuse a machine without, and the earlier standard-library wording is gone |
 
 ---
 
