@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0487: Route every round two to the reviewer who rejected round one: resume that reviewer by SendMessage with a fresh `critic.py brief`**
+- **L-0486: A builder that edits a `reference-*.md` page runs `docgen.py reading-guides` and `tools/lint-style.sh` before hand-in**
+- **L-0485: Before briefing any builder, commit the grooming, with every criterion carrying a Verify line**
 - **L-0484: When a unit adds a line to stderr of a command the tests call in-process, its builder runs `tools/run-suite.sh --noise-gate` on the modules…**
 - **L-0483: Run `verify_ac` after `critic.py record`, never between a brief and its record**
 - **L-0482: Give a landing the machine to itself: start no suite-sized job until `lane land` reports, at least until BG1610 makes a timed-out commit…**

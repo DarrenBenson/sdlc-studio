@@ -1,10 +1,37 @@
 # Project Lessons
 
-**Last Updated:** 2026-11-19
+**Last Updated:** 2026-11-20
 
 <!-- Append new entries at the top. Keep each entry under 10 lines. -->
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
+
+## L-0487: Route every round two to the reviewer who rejected round one: resume that reviewer by SendMessage with a fresh `critic.py brief`
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+Route every round two to the reviewer who rejected round one: resume that reviewer by SendMessage with a fresh `critic.py brief`.
+
+Recorded from retro RETRO0152.
+
+## L-0486: A builder that edits a `reference-*.md` page runs `docgen.py reading-guides` and `tools/lint-style.sh` before hand-in
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+A builder that edits a `reference-*.md` page runs `docgen.py reading-guides` and `tools/lint-style.sh` before hand-in. The budgets and style lanes each refused a landing on a check the builder could have run.
+
+Recorded from retro RETRO0152.
+
+## L-0485: Before briefing any builder, commit the grooming, with every criterion carrying a Verify line
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+Before briefing any builder, commit the grooming, with every criterion carrying a Verify line. US1299's AC3 had none and blocked Done after two approved rounds (D0551).
+
+Recorded from retro RETRO0152.
 
 ## L-0484: When a unit adds a line to stderr of a command the tests call in-process, its builder runs `tools/run-suite.sh --noise-gate` on the modules…
 
