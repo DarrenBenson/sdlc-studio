@@ -23,9 +23,12 @@ Drop both keys from `persona_cards`' return value, or derive them from goals whe
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: BG1660's engineering review (RUN-01M7VNR0) found that after b730b6c7 nothing in the shipped scripts reads `goal_verify` (sprint.py around 11785) or...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: grep -n `goal_verify` and `goal_applies_to` across .claude/skills/sdlc-studio/scripts: the only writes are in `persona_cards` and no caller reads either key.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Drop both keys from `persona_cards`' return value, or derive them from goals where a caller needs them, with a test that a card numbered 1.
+- [ ] **AC1** Given a persona card, when `sprint.persona_cards` reads it, then each entry carries `name`, `role`, `end_goals` and `goals` only, with no number-keyed `goal_verify` or `goal_applies_to` map, and the docstring names only those keys
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_persona_cards_returns_no_number_keyed_goal_map
+- [ ] **AC2** BG1660's checks still pass: goals numbered alike keep their own Verify, an empty code-span Verify is no check, and the traced listing names each persona's role
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests
+
+AC1 must fail on: a `persona_cards` that still returns either map, or a test that only greps the source for the key names rather than calling `persona_cards` on a fixture card.
 
 ## Revision History
 
