@@ -121,7 +121,8 @@ class PersonaStandardModeTests(unittest.TestCase):
                 self.assertEqual({"personas": {"staleness_days": 30, "standard": "report"}},
                                  yaml.safe_load(text))
                 self.assertTrue(text.startswith("# this project's own settings\n"), text)
-                applied = [ln for ln in out.splitlines() if "personas.standard" in ln]
+                applied = [ln for ln in out.splitlines() if "personas.standard" in ln
+                           and ln.lstrip().startswith("+ ")]
                 self.assertEqual(1, len(applied), out)
                 self.assertTrue(applied[0].lstrip().startswith("+ set personas.standard: report"),
                                 applied[0])
@@ -160,6 +161,103 @@ class PersonaStandardModeTests(unittest.TestCase):
             self.assertIn(word, named[0])
         self.assertNotIn(FRAMED["resolve"], out)
 
+    def test_the_dry_run_lists_the_config_write_apply_performs(self) -> None:
+        """Mutants: the dry run's auto-correctable list leaving out the write `--apply` makes;
+        listing it for a project with no cards of its own or a value set; the dry run writing."""
+        projects = {"seat": ("seat", ""), "bare": ("", ""), "set": ("seat persona", "block")}
+        dry, applied = {}, {}
+        with tempfile.TemporaryDirectory() as d:
+            for name, (cards, standard) in projects.items():
+                root = Path(d) / name
+                root.mkdir()
+                _upgradable(root, cards, standard)
+                cfg = root / "sdlc-studio" / ".config.yaml"
+                before = cfg.read_bytes()
+                dry[name] = pb._cli(root, "project_upgrade.py", "--root", str(root))
+                self.assertEqual(before, cfg.read_bytes(), f"{name}: the dry run wrote")
+                applied[name] = pb._cli(root, "project_upgrade.py", "--apply", "--root",
+                                        str(root))
+        rc, out, err = dry["seat"]
+        self.assertEqual(0, rc, err)
+        auto = [ln.strip() for ln in out.splitlines() if ln.strip().startswith("[auto]")]
+        write = [ln for ln in auto if "personas.standard" in ln]
+        self.assertEqual(1, len(write), out)
+        self.assertTrue(write[0].startswith("[auto]   set personas.standard: report in "
+                                            "sdlc-studio/.config.yaml"), write[0])
+        # The preview and the change `--apply` reports are the same words.
+        done = [ln.strip() for ln in applied["seat"][1].splitlines()
+                if ln.strip().startswith("+ ") and "personas.standard" in ln]
+        self.assertEqual([write[0].removeprefix("[auto]").strip()],
+                         [ln.removeprefix("+").strip() for ln in done])
+        for name in ("bare", "set"):
+            with self.subTest(project=name):
+                self.assertNotIn("personas.standard", dry[name][1])
+
+    def test_the_config_write_keeps_the_project_s_own_layout(self) -> None:
+        """Mutants: the key always indented two spaces, breaking a four-space block; a one-line
+        `personas:` read as no block, so a second block is appended and PyYAML keeps only it,
+        losing `staleness_days`; a one-line block listed under Applied as though written; a
+        second `--apply` adding the key again."""
+        configs = {"four": "personas:\n    staleness_days: 30\n",
+                   "one-line": "personas: {staleness_days: 30}\n"}
+        runs, texts = {}, {}
+        with tempfile.TemporaryDirectory() as d:
+            for name, config in configs.items():
+                root = Path(d) / name
+                root.mkdir()
+                _upgradable(root, "seat")
+                cfg = root / "sdlc-studio" / ".config.yaml"
+                cfg.write_text(config, encoding="utf-8")
+                runs[name] = [pb._cli(root, "project_upgrade.py", *extra, "--root", str(root))
+                              for extra in ((), ("--apply",), ("--apply",))]
+                texts[name] = cfg.read_text(encoding="utf-8")
+        self.assertEqual({"personas": {"staleness_days": 30, "standard": "report"}},
+                         yaml.safe_load(texts["four"]))
+        self.assertIn("\n    standard: report\n", texts["four"])
+        self.assertEqual(1, texts["four"].count("standard: report"))
+        self.assertNotIn("personas.standard", runs["four"][2][1])
+        # A one-line block is never rewritten: it is reported for a person, never as applied.
+        self.assertEqual(configs["one-line"], texts["one-line"])
+        for rc, out, err in runs["one-line"]:
+            self.assertEqual(0, rc, err)
+            self.assertEqual([], [ln for ln in out.splitlines() if "personas.standard" in ln
+                                  and not ln.strip().startswith("[manual]")])
+            manual = [ln for ln in out.splitlines() if ln.strip().startswith("[manual]")
+                      and "personas.standard" in ln]
+            self.assertEqual(1, len(manual), out)
+            self.assertIn("standard: report", manual[0])
+
+    def test_a_sibling_seat_card_that_is_not_utf8_leaves_both_modes_working(self) -> None:
+        """Mutants: a seat card's declared role read as strict UTF-8 again, so the resolver's
+        walk over every seat card tracebacks on the engineering card; that card's hold ignored,
+        so the remedy names the engineering seat, first in the roster, rather than product.
+        (`critic.py brief` reads every seat card itself and refuses such a tree cleanly,
+        BG1667's ground, so only the resolver runs.)"""
+        results = {}
+        for standard in ("report", "block"):
+            with tempfile.TemporaryDirectory() as d:
+                root = Path(d) / "proj"
+                root.mkdir()
+                _project(root, standard)
+                card = root / pb.ENGINEERING
+                card.write_bytes(card.read_bytes().replace(b"reviews the work.",
+                                                           b"reviews S\xe3o's work."))
+                results[standard] = pb._resolve(root, "--render", "review")
+        rc, out, err = results["report"]
+        self.assertEqual(0, rc, err)
+        self.assertNotIn("Traceback", err)
+        self.assertIn(FRAMED["resolve"], out)
+        lines = _lines(err, REPORT)
+        self.assertEqual(1, len(lines), err)
+        self.assertIn(f" {pb.QA} ", lines[0])
+        remedy = pb.REMEDY_RE.search(lines[0])
+        self.assertIsNotNone(remedy, lines[0])
+        self.assertEqual("product", remedy.group(2))
+        rc, out, err = results["block"]
+        self.assertEqual(1, rc, err)
+        self.assertNotIn("Traceback", err)
+        self.assertIn("seat-demographic-fluff", err)
+        self.assertNotIn(FRAMED["resolve"], out)
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -57,13 +58,34 @@ def _pass(root: Path, rel: str, day: str) -> None:
                           today=day)
 
 
-def _owed(root: Path) -> tuple[int, list[str]]:
+_RUN_NEXT = ". Run next: "
+
+
+def _owed_run(root: Path) -> tuple[int, str]:
     out, err = io.StringIO(), io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = persona_review.main(["owed", "--root", str(root)])
     assert err.getvalue() == "", err.getvalue()
-    return rc, [ln for ln in out.getvalue().splitlines()
-                if ln.startswith("persona review owed:")]
+    return rc, out.getvalue()
+
+
+def _owed(root: Path) -> tuple[int, list[str]]:
+    """The exit code and each `persona review owed:` line, its remedy checked and cut off."""
+    rc, out = _owed_run(root)
+    return rc, _heads([ln for ln in out.splitlines() if ln.startswith("persona review owed:")])
+
+
+def _heads(lines: list[str]) -> list[str]:
+    """Each owed line up to its remedy, asserting the remedy is the brief that runs for that
+    card, never a placeholder."""
+    heads = []
+    for ln in lines:
+        head, sep, run = ln.partition(_RUN_NEXT)
+        card = head.split(" ")[3]
+        assert sep and re.fullmatch(rf"python3 \S+persona_review\.py brief --card "
+                                    rf"{re.escape(card)} --seat [a-z]+", run), ln
+        heads.append(head)
+    return heads
 
 
 def _commit(root: Path, message: str, when: str) -> None:
@@ -91,11 +113,12 @@ def _cut_fixture(root: Path) -> None:
     _write(root, "changelog.d/US0001.md", "<!-- section: Added -->\n\nA change.\n")
 
 
-def _cut(root: Path) -> tuple[int, list[str]]:
+def _cut(root: Path) -> tuple[int, list[str], list[str]]:
+    """The cut's exit code, its stdout lines and its stderr lines."""
     out, err = io.StringIO(), io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = release_cut.main(["changelog-cut", "--version", "9.9.9", "--root", str(root)])
-    return rc, (out.getvalue() + err.getvalue()).splitlines()
+    return rc, out.getvalue().splitlines(), err.getvalue().splitlines()
 
 
 class PersonaReviewOwedTests(unittest.TestCase):
@@ -189,12 +212,13 @@ class PersonaReviewOwedTests(unittest.TestCase):
                         _pass(root, f"sdlc-studio/personas/{card}.md", "2026-11-02")
                 plan = _plan_both(root)
                 skipped = _plan(root, "--skip-personas")
-                cut_rc, cut_lines = _cut(root)
+                cut_rc, cut_lines, cut_err = _cut(root)
+                self.assertEqual([], [ln for ln in cut_err if ln.startswith("persona ")])
                 changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
                 results[name] = (plan, cut_rc, cut_lines, changelog, skipped)
         (rc, batch, text_rc, lines), cut_rc, cut_lines, changelog, skipped = results["owed"]
         (rc0, batch0, text_rc0, lines0), cut_rc0, cut_lines0, changelog0, _ = results["clear"]
-        # --skip-personas reads no card, so it names neither a blocked card nor an owed review.
+        # With no Sprint Goal, --skip-personas names neither a blocked card nor an owed review.
         self.assertEqual(0, skipped[0], skipped[2])
         self.assertEqual([], [ln for ln in (skipped[1] + skipped[2]).splitlines()
                               if ln.startswith("persona ")])
@@ -210,10 +234,159 @@ class PersonaReviewOwedTests(unittest.TestCase):
         self.assertEqual(
             ["persona review owed: sdlc-studio/personas/maya-okafor.md - never reviewed",
              "persona review owed: sdlc-studio/personas/trevor-hale.md - never reviewed"],
-            [ln for ln in cut_lines if ln.startswith("persona review owed:")])
+            _heads([ln for ln in cut_lines if ln.startswith("persona review owed:")]))
         self.assertEqual([], [ln for ln in cut_lines0 if ln.startswith("persona review")])
         self.assertEqual(changelog0, changelog)
         self.assertNotIn("persona", changelog)
+
+    def test_a_card_that_is_not_utf8_is_named_and_the_plan_still_plans(self) -> None:
+        """Mutants: the plan reaching the validators' strict UTF-8 read again (a
+        UnicodeDecodeError traceback, exit 1); the unreadable card named by no line; its line
+        without the remedy that saves it as UTF-8."""
+        cases = {"control": (_QA, b""), "seat": (_QA, b"Quinn\x92s "),
+                 "persona": ("sdlc-studio/personas/bad.md", b"\xff")}
+        results = {}
+        with tempfile.TemporaryDirectory() as d:
+            for name, (rel, raw) in cases.items():
+                root = Path(d) / name
+                root.mkdir()
+                s1._project(root)
+                _write(root, _QA, _seat())
+                if raw:
+                    card = root / rel
+                    text = card.read_bytes() if card.exists() else _persona("Bo Hale").encode()
+                    card.write_bytes(text.replace(b"Quinn Lake reviews", raw + b"reviews")
+                                     if rel == _QA else text + raw + b"\n")
+                results[name] = _plan_both(root)
+        rc0, batch0, text_rc0, lines0 = results["control"]
+        self.assertEqual([], [ln for ln in lines0 if ln.startswith("persona card blocked:")])
+        for name in ("seat", "persona"):
+            with self.subTest(card=name):
+                rel = cases[name][0]
+                rc, batch, text_rc, lines = results[name]
+                self.assertEqual((rc0, batch0, text_rc0), (rc, batch, text_rc))
+                blocked = [ln for ln in lines if ln.startswith("persona card blocked:")]
+                self.assertEqual(1, len(blocked), "\n".join(lines))
+                self.assertIn(f"persona card blocked: {rel} breaks the persona standard - "
+                              "card-not-utf8 (line ", blocked[0])
+                self.assertIn(f"Run next: save {rel} as UTF-8", blocked[0])
+
+    def test_the_plan_names_every_rule_and_counts_each_owed_card_once(self) -> None:
+        """Mutants: the blocked line keeping only its first rule; the owed count adding the
+        blocked cards to the owed ones."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            s1._project(root)
+            _write(root, _QA, _seat(f" {_UNKNOWN} She is married."))
+            _rc, _batch, _text_rc, lines = _plan_both(root)
+            _rc, owed_out = _owed_run(root)
+        blocked = [ln for ln in lines if ln.startswith("persona card blocked:")]
+        self.assertEqual(1, len(blocked), "\n".join(lines))
+        self.assertIn("seat-demographic-fluff", blocked[0])
+        self.assertIn("seat-persona-unknown", blocked[0])
+        # Maya, Trevor and the qa card are each never reviewed: three owed, the blocked card
+        # counted once, as `owed` lists it.
+        self.assertEqual(3, owed_out.count("persona review owed:"), owed_out)
+        owed = [ln for ln in lines if ln.startswith("persona reviews owed:")]
+        self.assertEqual(1, len(owed), "\n".join(lines))
+        self.assertTrue(owed[0].startswith("persona reviews owed: 3 "), owed[0])
+        self.assertNotIn("<card>", owed_out)
+        self.assertNotIn("<a seat not its own>", owed_out)
+
+    def test_the_plan_names_a_held_persona_card_with_no_goal_set(self) -> None:
+        """Mutant: the plan judging only seat cards, so a persona card a FAIL holds goes
+        unnamed when no Sprint Goal traces to it."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            s1._project(root)
+            persona_review.record(root, "sdlc-studio/personas/maya-okafor.md", "fail",
+                                  "Rowan Hart (engineering)", run_by="Tess Moreau",
+                                  rules=["persona-evidence"], today="2026-11-02")
+            _rc, _batch, _text_rc, lines = _plan_both(root)
+        blocked = [ln for ln in lines if ln.startswith("persona card blocked:")]
+        self.assertEqual(1, len(blocked), "\n".join(lines))
+        self.assertIn("persona card blocked: sdlc-studio/personas/maya-okafor.md breaks the "
+                      "persona standard - persona-evidence", blocked[0])
+
+    def test_owed_reads_the_latest_row_skips_a_fail_and_reaches_check_and_brief(self) -> None:
+        """Mutants: the first ledger row read instead of the latest; a FAIL then edited card
+        named as changed; `check` and the review brief leaving out `persona-review-owed`."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            again = _write(root, "sdlc-studio/personas/ada-lane.md", _persona("Ada Lane"))
+            failed = _write(root, "sdlc-studio/personas/ben-ode.md", _persona("Ben Ode"))
+            _write(root, "sdlc-studio/personas/cy-park.md", _persona("Cy Park"))
+            _pass(root, "sdlc-studio/personas/ada-lane.md", "2026-11-02")
+            again.write_text(_persona("Ada Lane", "Somebody else."), encoding="utf-8")
+            _pass(root, "sdlc-studio/personas/ada-lane.md", "2026-11-03")
+            persona_review.record(root, "sdlc-studio/personas/ben-ode.md", "fail",
+                                  "Rowan Hart (engineering)", run_by="Tess Moreau",
+                                  rules=["persona-evidence"], today="2026-11-03")
+            failed.write_text(_persona("Ben Ode", "Somebody else."), encoding="utf-8")
+            rc, lines = _owed(root)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                persona_review.main(["check", "--root", str(root)])
+            brief = persona_review.brief(root, "sdlc-studio/personas/cy-park.md", "qa")
+        self.assertEqual(0, rc)
+        self.assertEqual(["persona review owed: sdlc-studio/personas/cy-park.md - never "
+                          "reviewed"], lines)
+        owed_rows = [ln for ln in out.getvalue().splitlines() if "persona-review-owed" in ln]
+        self.assertEqual(1, len(owed_rows), out.getvalue())
+        self.assertIn("sdlc-studio/personas/cy-park.md: never reviewed", owed_rows[0])
+        self.assertTrue(owed_rows[0].startswith("reported "), owed_rows[0])
+        self.assertIn("persona-review-owed (Freshness): never reviewed", brief)
+
+    def test_only_a_version_tag_counts_as_the_release(self) -> None:
+        """Mutant: any tag read as the newest release, so a later `deploy-latest` tag makes a
+        PASS dated after the version tag read as owed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            gitutil.git(["init", "-q"], root)
+            _write(root, "sdlc-studio/personas/eve-ruiz.md", _persona("Eve Ruiz"))
+            _commit(root, "first", "2026-11-01T10:00:00+0000")
+            gitutil.git(["tag", "v1.0.0"], root)
+            _write(root, "README.md", "x\n")
+            _commit(root, "second", "2026-11-20T10:00:00+0000")
+            gitutil.git(["tag", "deploy-latest"], root)
+            _pass(root, "sdlc-studio/personas/eve-ruiz.md", "2026-11-05")
+            rc, lines = _owed(root)
+            tag = persona_review.release_tag(root)
+        self.assertEqual(0, rc)
+        self.assertEqual(("v1.0.0", "2026-11-01"), tag)
+        self.assertEqual([], lines)
+
+    def test_a_review_of_a_card_that_is_not_utf8_is_refused_not_a_traceback(self) -> None:
+        """Mutant: `record` hashing the card as strict UTF-8 again, so a FAIL for it tracebacks;
+        the refusal without the line or the remedy; a row written for it."""
+        results = {}
+        with tempfile.TemporaryDirectory() as d:
+            for name, raw in (("utf-8", "S\u00e3o".encode("utf-8")), ("cp1252", b"S\xe3o")):
+                root = Path(d) / name
+                root.mkdir()
+                card = root / "sdlc-studio/personas/bo-hale.md"
+                card.parent.mkdir(parents=True)
+                card.write_bytes(_persona("Bo Hale", "Bo from BAD.").encode("utf-8")
+                                 .replace(b"BAD", raw))
+                out, err = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    rc = persona_review.main([
+                        "record", "--card", "sdlc-studio/personas/bo-hale.md", "--outcome",
+                        "fail", "--rule", "persona-evidence", "--reviewer",
+                        "Rowan Hart (engineering)", "--run-by", "Tess Moreau",
+                        "--root", str(root)])
+                results[name] = (rc, err.getvalue(),
+                                 (root / persona_review.LEDGER_REL).exists())
+        self.assertEqual((0, "", True), results["utf-8"])
+        rc, err, written = results["cp1252"]
+        self.assertEqual(2, rc, err)
+        self.assertFalse(written)
+        line = _persona("Bo Hale", "Bo from BAD.").splitlines().index("Bo from BAD.") + 1
+        self.assertTrue(err.startswith("persona_review record refused: sdlc-studio/personas/"
+                                       "bo-hale.md cannot be reviewed as written: byte 0xe3 "
+                                       f"on line {line} is not UTF-8"), err)
+        self.assertIn("save it as UTF-8", err)
 
 
 if __name__ == "__main__":

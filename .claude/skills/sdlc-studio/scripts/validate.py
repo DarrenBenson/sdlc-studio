@@ -1287,6 +1287,26 @@ def _persona_goal_findings(path: Path, text: str) -> list[dict]:
                 persona_goals.end_goals(text), verify_ac.lint_verifier)]
 
 
+def read_card(path: Path, severity: str) -> tuple[str, dict | None]:
+    """A persona, seat or stakeholder card's text and None; or, when its bytes are not UTF-8, its
+    text with each such byte replaced and a `card-not-utf8` finding at `severity` naming the card
+    and the line of its first such byte, so one such card never stops every other card being
+    checked. Newlines read as `read_text` reads them. The rule's name is the persona standard's
+    (`persona_review.NOT_UTF8`), which holds such a card. Raises OSError as a read does."""
+    import persona_review  # noqa: PLC0415 - deferred: persona_review imports validate
+    data = path.read_bytes()
+    try:
+        text, finding = data.decode("utf-8"), None
+    except UnicodeDecodeError as exc:
+        line = data.count(b"\n", 0, exc.start) + 1
+        text = data.decode("utf-8", errors="replace")
+        finding = {"severity": severity, "rule": persona_review.NOT_UTF8, "file": str(path),
+                   "line": line,
+                   "message": f"byte 0x{data[exc.start]:02x} on line {line} is not UTF-8, so "
+                              "no rule can read the card as written: save it as UTF-8"}
+    return text.replace("\r\n", "\n").replace("\r", "\n"), finding
+
+
 def check_personas(root: Path) -> list[dict]:
     """Cast-role-aware well-formedness check for goal-directed personas.
 
@@ -1317,9 +1337,11 @@ def check_personas(root: Path) -> list[dict]:
         if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} or p.name.startswith("_"):
             continue
         try:
-            text = p.read_text(encoding="utf-8")
+            text, unreadable = read_card(p, "warning")
         except OSError:
             continue
+        if unreadable:
+            out.append(unreadable)
         inspected += 1
         role = _persona_cast_role(text)
         hs = _headings(text)
@@ -1378,9 +1400,11 @@ def check_personas(root: Path) -> list[dict]:
             if p.name.startswith("_") or p.name.lower() in {"index.md", "readme.md"}:
                 continue
             try:
-                text = p.read_text(encoding="utf-8")
+                text, unreadable = read_card(p, "warning")
             except OSError:
                 continue
+            if unreadable:
+                out.append(unreadable)
             m = _STAKEHOLDER_TYPE_RE.search(text)
             if not m or m.group(1).lower() not in STAKEHOLDER_TYPES_ALLOWED:
                 out.append({"severity": "warning", "rule": "stakeholder-type", "file": str(p),
@@ -1437,7 +1461,7 @@ def _check_legacy_personas_md(root: Path) -> list[dict]:
                        "(reference-persona.md)"}]
     try:
         text = flat.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         out.append({"severity": "warning", "rule": "persona-legacy", "file": str(flat),
                     "message": f"personas.md exists but cannot be read ({exc})"})
         return out
@@ -1636,7 +1660,10 @@ def _seat_cast(root: Path) -> tuple[dict[str, str | None], dict[str, str] | None
     for p in sorted(pdir.glob("*.md")) if pdir.is_dir() else ():
         if p.name.lower() in {"index.md", "readme.md", "consult-guide.md"} or p.name.startswith("_"):
             continue
-        text = sdlc_md.read_text_safe(p)
+        try:
+            text = read_card(p, "warning")[0]
+        except OSError:
+            text = ""
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
         if m and "{{" not in m.group(1):
             cards[m.group(1).split(" - ")[0].strip()] = _persona_cast_role(text)
@@ -1734,11 +1761,13 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
     cast = _seat_cast(root) if cards else ({}, None)
     for p in cards:
         try:
-            text = p.read_text(encoding="utf-8")
+            text, unreadable = read_card(p, "error")
         except OSError as exc:
             out.append({"severity": "error", "rule": "seat-unreadable", "file": str(p),
                         "message": f"unreadable seat card: {exc}"})
             continue
+        if unreadable:
+            out.append(unreadable)
         out.extend(_seat_persona_findings(p, text, cast))
         m = _SEAT_ROLE_RE.search(text)
         if not m:
@@ -1794,9 +1823,11 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
     if stakedir.is_dir():
         for p in sorted(stakedir.glob("*.md")):
             try:
-                text = p.read_text(encoding="utf-8")
+                text, unreadable = read_card(p, "error")
             except OSError:
                 continue
+            if unreadable:
+                out.append(unreadable)
             for ln in text.splitlines():
                 if (_PROVENANCE_LINE_RE.search(ln)
                         and not persona_gen.STAMP_RE.search(ln)
@@ -1816,7 +1847,10 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
             continue
         required_seen.add(res)
         try:
-            text = res.read_text(encoding="utf-8")
+            text, unreadable = read_card(res, "error")
+            # Named once: the stakeholder loop above names a `.md` card it read the same way.
+            if unreadable and unreadable not in out:
+                out.append(unreadable)
         except OSError as exc:
             out.append({"severity": "error", "rule": "seat-unreadable", "file": str(orig),
                         "message": f"unreadable stakeholder card: {exc}"})

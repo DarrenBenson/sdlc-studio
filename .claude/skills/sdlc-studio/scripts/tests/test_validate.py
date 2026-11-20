@@ -2967,5 +2967,107 @@ class UnresolvableVerifySelectorSweepTests(unittest.TestCase):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class CardNotUtf8Tests(unittest.TestCase):
+    """A persona, seat or stakeholder card whose bytes are not UTF-8 is named, with the line of
+    its first such byte, and every other card is still checked: `validate.py personas` and
+    `validate.py seats` never traceback on it."""
+
+    PERSONA = ("# {name}\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
+               "| **Cast role** | Secondary |\n\n## Who They Are\n\n{who}\n")
+    SEAT = ("<!-- role: {role} -->\n# {name} - reviewing seat\n\n## Who They Are\n\n"
+            "{who}\n\n## Lens\n\n- x\n\n## Pushes Back When\n\n- x\n\n## Shadow\n\nx\n")
+
+    def _tree(self, root: Path, bad: bytes) -> None:
+        """Ada and Ben (persona cards), a qa seat naming Ben and carrying a demographic token,
+        a product seat and a stakeholder card; Ben, product and the stakeholder carry `bad`."""
+        _write(root, "sdlc-studio/personas/ada-lane.md",
+               self.PERSONA.format(name="Ada Lane", who="Somebody."))
+        _write(root, "sdlc-studio/personas/seats/qa.md", self.SEAT.format(
+            role="qa", name="Quinn Lake", who="Quinn is married. Ben Ode (Secondary) is who "
+                                               "we serve."))
+        for rel, text in (
+                ("sdlc-studio/personas/ben-ode.md",
+                 self.PERSONA.format(name="Ben Ode", who="Somebody from BAD.")),
+                ("sdlc-studio/personas/seats/product.md",
+                 self.SEAT.format(role="product", name="Pat Roe", who="Pat from BAD.")),
+                ("sdlc-studio/personas/stakeholders/sam-fee.md",
+                 "# Sam Fee\n\nSam from BAD.\n")):
+            path = root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(text.encode("utf-8").replace(b"BAD", bad))
+
+    def _run(self, root: Path, verb: str) -> tuple[int, list[dict], str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            rc = validate.main([verb, "--root", str(root), "--format", "json"])
+        found = json.loads(out.getvalue())["violations"]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            validate.main([verb, "--root", str(root)])
+        return rc, found, out.getvalue()
+
+    def test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked(self) -> None:
+        """Mutants: the strict read again (a UnicodeDecodeError traceback); the card skipped
+        with no finding; the finding without its line; a persona card it cannot read dropped
+        from the cast, so the seat naming that persona is flagged as naming nobody."""
+        runs = {}
+        with tempfile.TemporaryDirectory() as d:
+            for name, bad in (("utf-8", "S\u00e3o".encode("utf-8")), ("cp1252", b"S\xe3o")):
+                root = Path(d) / name
+                self._tree(root, bad)
+                runs[name] = {verb: self._run(root, verb) for verb in ("personas", "seats")}
+        for verb in ("personas", "seats"):
+            with self.subTest(verb=verb):
+                ok_rc, ok, _ = runs["utf-8"][verb]
+                bad_rc, found, text = runs["cp1252"][verb]
+                self.assertEqual([], [v for v in ok if v["rule"] == "card-not-utf8"])
+                # Every finding the UTF-8 tree draws is still drawn: no other card goes unread.
+                key = {(Path(v["file"]).name, v["rule"]) for v in ok}
+                self.assertLessEqual(key, {(Path(v["file"]).name, v["rule"]) for v in found})
+                # Seats stay an error-level floor (the qa card's token); personas stay advisory.
+                self.assertEqual((1, 1) if verb == "seats" else (0, 0), (ok_rc, bad_rc))
+                self.assertNotIn("seat-persona-unknown", {v["rule"] for v in found})
+                named = {Path(v["file"]).name: v for v in found if v["rule"] == "card-not-utf8"}
+                cards = {"personas": {"ben-ode.md", "sam-fee.md"},
+                         "seats": {"product.md", "sam-fee.md"}}[verb]
+                self.assertEqual(cards, set(named))
+                # The line of the byte: Ben's Who They Are text, Pat's, and Sam's body line.
+                lines = {"ben-ode.md": 11, "product.md": 6, "sam-fee.md": 3}
+                for card, v in named.items():
+                    self.assertEqual(lines[card], v["line"], v)
+                    self.assertIn(f"byte 0xe3 on line {lines[card]} is not UTF-8", v["message"])
+                    self.assertIn("save it as UTF-8", v["message"])
+                self.assertIn("[card-not-utf8] (blocks resolve)", text)
+
+
+    def test_a_legacy_personas_md_that_is_not_utf8_is_named_unreadable(self) -> None:
+        """Mutant: the legacy file's read catching only OSError, so a byte that is not UTF-8
+        tracebacks `validate.py personas` where no personas/ cards exist."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sdlc-studio").mkdir()
+            (root / "sdlc-studio" / "personas.md").write_bytes(b"# Personas\n\n## S\xe3o\n")
+            rc, found, _text = self._run(root, "personas")
+        self.assertEqual(0, rc)
+        legacy = [v for v in found if v["rule"] == "persona-legacy"]
+        self.assertEqual(1, len(legacy), found)
+        self.assertIn("cannot be read", legacy[0]["message"])
+
+    def test_a_required_stakeholder_card_that_is_not_utf8_is_named_once(self) -> None:
+        """Mutant: the required-path read naming the card again, so `--require-stamp` prints
+        two `card-not-utf8` findings for one card."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root, b"S\xe3o")
+            sam = root / "sdlc-studio/personas/stakeholders/sam-fee.md"
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                validate.main(["seats", "--root", str(root), "--format", "json",
+                               "--require-stamp", str(sam)])
+        found = json.loads(out.getvalue())["violations"]
+        self.assertEqual(1, len([v for v in found if v["rule"] == "card-not-utf8"
+                                 and Path(v["file"]).name == "sam-fee.md"]), found)
+
+
 if __name__ == "__main__":
     unittest.main()

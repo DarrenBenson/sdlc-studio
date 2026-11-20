@@ -11,10 +11,13 @@ every other rule is reported. `validate.py seats` and `validate.py personas` rea
 `check [--card PATH] [--format text|json]` reports each card under `sdlc-studio/personas/`
 (design personas) and `sdlc-studio/personas/seats/` (review seats) against every rule: the
 findings of `validate.check_personas` and `validate.check_seats`, plus the two this script
-adds, `persona-evidence` and `persona-registry-role`. It exits 1 when any printed finding
-blocks, 0 when every one is reported or none is, and 2 when `--card` names no card. Other
-scripts call `check(root, card=None)`, which returns the same findings as dicts carrying
-`rule`, `severity`, `heading`, `file` and `message`. Read-only.
+adds, `persona-evidence` and `persona-registry-role`. A card whose bytes are not UTF-8 is held
+outside the table as `card-not-utf8`, which blocks: the validators name it with the line of its
+first such byte and read it with each such byte replaced, so it never stops every other card
+being judged. It exits 1 when any printed finding blocks, 0 when every one is
+reported or none is, and 2 when `--card` names no card. Other scripts call
+`check(root, card=None)`, which returns the same findings as dicts carrying `rule`,
+`severity`, `heading`, `file` and `message`. Read-only.
 
 `brief --card PATH --seat ROLE` frames a review of one card by a seat other than its own: the
 seat card to adopt, the standard page, the card, every finding `check` reports for it with its
@@ -37,7 +40,7 @@ run it, the card's own seat, or a PASS while a rule that blocks still fails on t
 breaks, and its latest ledger row when that row is a FAIL, whatever the card's bytes are now,
 until a later PASS. `persona_resolve` calls it for every project seat card it resolves and
 raises `refusal`'s text, which names the card, each rule and `remedy`, the one command to run
-next. `review_owed` names a card with no review row, or one changed since its PASS: it still
+next (for a card that is not UTF-8, saving it as UTF-8 and the `check` that judges it). `review_owed` names a card with no review row, or one changed since its PASS: it still
 frames the brief. `standard_mode` reads `personas.standard` from the project's config: `block`,
 the default, refuses such a card; `report` frames it, and `report_line` is the one stderr line
 naming it, its rules and the remedy. Any other value is read as `block`, with one stderr line
@@ -45,12 +48,12 @@ naming the key and its two values. `project_upgrade.py --apply` sets `report` fo
 holds its own cards and has no value.
 
 `owed [--format text|json]` names each card owed a review, one `persona review owed:` line
-each: never reviewed, changed since its PASS (by the recorded body hash, never the file's time
-or git history), or a PASS dated before the commit date of the newest release tag (by the
-commit's date, not the tag's name; compared by day). A FAIL is not owed: `blocking` holds the
-card. It exits 0, owed or not: an owed review is reported, never refused. `check` reports the
-same cards under `persona-review-owed`, and `sprint.py plan` and `release_cut.py changelog-cut`
-name them too.
+each, ending in the `remedy` line that briefs its review: never reviewed, changed since its PASS
+(by the recorded body hash, never the file's time or git history), or a PASS dated before the
+commit date of the newest release tag (by the commit's date, not the tag's name; compared by
+day). A FAIL is not owed: `blocking` holds the card. It exits 0, owed or not: an owed review is
+reported, never refused. `check` reports the same cards under `persona-review-owed`,
+`release_cut.py changelog-cut` prints each line, and `sprint.py plan` prints only their count.
 """
 from __future__ import annotations
 
@@ -105,6 +108,11 @@ OUTSIDE: dict[str, str] = {
 #: with no row here is seen rather than dropped.
 UNCLASSIFIED = "unclassified"
 
+#: The hold on a card whose bytes are not UTF-8, which `validate.read_card` names. No rule of the
+#: table can judge such a card, so like a FAIL review it holds the card from outside the table,
+#: under Format, and it always blocks.
+NOT_UTF8 = "card-not-utf8"
+
 _SKIP = {"index.md", "readme.md", "consult-guide.md"}
 _EVIDENCE_HEAD_RE = re.compile(r"^##\s+Evidence\b.*$", re.M)
 _NEXT_HEAD_RE = re.compile(r"^#{1,2}\s", re.M)
@@ -139,9 +147,16 @@ class ReviewRefused(ValueError):
     """A brief or a record the review cannot stand behind; the message names the reason."""
 
 
+def _classify(rule: str) -> tuple[str, str]:
+    """`(heading, severity)` for a rule: the table's row, the not-UTF-8 hold's own (Format,
+    blocks), or unclassified and reported for a rule the table does not hold."""
+    return ("Format", BLOCKS) if rule == NOT_UTF8 else RULES.get(rule, (UNCLASSIFIED, REPORTED))
+
+
 def severity_of(rule: str) -> str:
-    """`blocks` or `reported` for a rule; a rule the table does not hold is reported."""
-    return RULES.get(rule, (UNCLASSIFIED, REPORTED))[1]
+    """`blocks` or `reported` for a rule; a rule the table does not hold is reported, and the
+    not-UTF-8 hold blocks."""
+    return _classify(rule)[1]
 
 
 def blocks(rule: str) -> bool:
@@ -266,7 +281,7 @@ def check(root: Path | str, card: Path | str | None = None, *,
             continue
         if card is not None and path != Path(card).resolve():
             continue
-        heading, severity = RULES.get(f["rule"], (UNCLASSIFIED, REPORTED))
+        heading, severity = _classify(f["rule"])
         row = {"rule": f["rule"], "severity": severity, "heading": heading,
                "file": str(path), "message": f["message"]}
         row.update({k: f[k] for k in ("line", "goal") if k in f})
@@ -321,17 +336,32 @@ def release_tag(root: Path | str) -> tuple[str, str] | None:
     return (best[1], best[2]) if best else None
 
 
-def owed(root: Path | str) -> list[dict]:
-    """Each persona and seat card owed a review, in card order: `{card, why, line}`, `card`
-    relative to the root and `line` the one `persona review owed:` line naming it. Owed when it
-    has no review row, when its latest review is a PASS of other bytes (the body hash, so the
-    reviewed marker is no change and a reverted edit is none), or when that PASS is dated before
-    the newest release tag's commit, compared by day. A FAIL is held by `blocking`, not owed."""
-    import persona_gen  # noqa: PLC0415 - sibling; the one card hash
+def owed(root: Path | str, findings: list[dict] | None = None) -> list[dict]:
+    """Each persona and seat card owed a review, in card order: `{card, why, remedy, line}`,
+    `card` relative to the root, `remedy` the `remedy` line briefing its review and `line` the
+    one `persona review owed:` line naming it and ending in that remedy. Owed when it has no
+    review row, when its latest review is a PASS of other bytes (the body hash, so the reviewed
+    marker is no change and a reverted edit is none), or when that PASS is dated before the
+    newest release tag's commit, compared by day. A FAIL is held by `blocking`, not owed.
+    `findings` passes a `blocking_findings` already read, so the remedies read none again."""
     root = Path(root).resolve()
+    rows = _owed_why(root)
+    if rows and findings is None:
+        findings = blocking_findings(root)
+    out: list[dict] = []
+    for path, rel, why in rows:
+        run = remedy(root, path, findings)
+        out.append({"card": rel, "why": why, "remedy": run,
+                    "line": f"persona review owed: {rel} - {why}. {run}"})
+    return out
+
+
+def _owed_why(root: Path) -> list[tuple[Path, str, str]]:
+    """`(card path, card relative to the root, why it is owed)` for each card `owed` names."""
+    import persona_gen  # noqa: PLC0415 - sibling; the one card hash
     latest = {r["card"]: r for r in ledger_rows(root)}
     tag = release_tag(root)
-    out: list[dict] = []
+    out: list[tuple[Path, str, str]] = []
     for path in _persona_cards(root) + _seat_cards(root):
         rel = _rel(str(path.resolve()), root)
         last = latest.get(rel)
@@ -347,14 +377,14 @@ def owed(root: Path | str) -> list[dict]:
                    "commit's date)")
         else:
             continue
-        out.append({"card": rel, "why": why, "line": f"persona review owed: {rel} - {why}"})
+        out.append((path.resolve(), rel, why))
     return out
 
 
 def _owed_findings(root: Path) -> list[dict]:
     """`persona-review-owed`: each card `owed` names."""
-    return [{"rule": "persona-review-owed", "file": str(root / o["card"]), "message": o["why"]}
-            for o in owed(root)]
+    return [{"rule": "persona-review-owed", "file": str(path), "message": why}
+            for path, _rel_path, why in _owed_why(root)]
 
 
 def _rel(path: str, root: Path) -> str:
@@ -437,9 +467,14 @@ def record(root: Path | str, card: Path | str, outcome: str, reviewer: str,
     import critic  # noqa: PLC0415 - sibling; the one reader of a recorded seat
     import persona_gen  # noqa: PLC0415 - sibling; the one card hash and the accept path
     import persona_resolve  # noqa: PLC0415
+    import validate  # noqa: PLC0415 - deferred: validate imports this module for its labels
     root = Path(root).resolve()
     path = _review_card(root, card)
     rel = _rel(str(path), root)
+    unreadable = validate.read_card(path, "error")[1]
+    if unreadable:
+        raise ReviewRefused(f"{rel} cannot be reviewed as written: {unreadable['message']}, "
+                            "then record its review")
     outcome = outcome.strip().upper()
     if outcome not in ("PASS", "FAIL"):
         raise ReviewRefused(f"--outcome is pass or fail, not {outcome.lower()!r}")
@@ -530,30 +565,35 @@ def _held(root: Path, path: Path, findings: list[dict]) -> list[dict]:
     return held
 
 
-def remedy(root: Path | str, card: Path | str) -> str:
+def remedy(root: Path | str, card: Path | str, findings: list[dict] | None = None) -> str:
     """The line naming what to run next for `card`: `Run next:` and the command briefing a
     seat other than its own to review it, the first in the roster whose own card nothing holds.
     When every other seat's card is held too, no brief can run, so the line says so and names
-    the way out instead of a command that would be refused."""
+    the way out instead of a command that would be refused. A card that is not UTF-8 is saved
+    as UTF-8 first, so its line names that and the `check` that then judges it. `findings`
+    passes a `blocking_findings` already read."""
     import persona_resolve  # noqa: PLC0415 - sibling; the seat roster
     root, path = Path(root).resolve(), Path(card).resolve()
+    script = _rel(str(Path(__file__).resolve()), root)
+    rel = _rel(str(path), root)
+    if findings is None:
+        findings = check(root, evidence=blocks("persona-evidence"))
+    if any(f["rule"] == NOT_UTF8 and Path(f["file"]) == path for f in findings):
+        return f"Run next: save {rel} as UTF-8, then python3 {script} check --card {rel}"
     own = _own_seat(root, path)
     others = [s for s in persona_resolve.seat_roster(root) if s != own]
-    seats = [p.resolve() for p in _seat_cards(root)]
-    findings = check(root, evidence=blocks("persona-evidence"))
+    roles = {p.resolve(): persona_resolve.card_role(p) for p in _seat_cards(root)}
 
     def clear(seat: str) -> bool:
-        return all(not _held(root, p, findings) for p in seats
-                   if persona_resolve.card_role(p) == seat)
+        return all(not _held(root, p, findings) for p, role in roles.items() if role == seat)
     seat = next((s for s in others if clear(s)), None)
-    script = _rel(str(Path(__file__).resolve()), root)
     if seat is None:
         held = " and ".join([", ".join(others[:-1]), others[-1]] if len(others) > 1 else others)
         return (f"No other seat is clear to review it: the {held} seat cards are each held "
                 "too. Lift one first (fix what breaks the standard on it, or record a PASS for "
                 f"it with `python3 {script} record` where a FAIL holds it), then brief that "
-                f"seat on {_rel(str(path), root)}.")
-    return f"Run next: python3 {script} brief --card {_rel(str(path), root)} --seat {seat}"
+                f"seat on {rel}.")
+    return f"Run next: python3 {script} brief --card {rel} --seat {seat}"
 
 
 def refusal(root: Path | str, card: Path | str, held: list[dict]) -> str:
@@ -673,8 +713,8 @@ def cmd_owed(args: argparse.Namespace) -> int:
         return 0
     for o in found:
         print(o["line"])
-    print(f"persona reviews owed: {len(found)} (reported, never refused; brief a review with "
-          "persona_review.py brief --card <card> --seat <a seat not its own>)")
+    print(f"persona reviews owed: {len(found)} (reported, never refused; each line ends in the "
+          "command that briefs its review)")
     return 0
 
 

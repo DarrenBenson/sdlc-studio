@@ -492,6 +492,12 @@ def audit(root: Path | str) -> dict:
         auto.append({"kind": "seed-instructions", "target": seed["target"],
                      "template": seed["template"],
                      "detail": f"no {seed['target']} - seed it from {seed['template']}"})
+    standard = report_mode_plan(root)
+    if standard["write"] is not None:
+        # `auto`, so the dry run previews the config write `--apply` makes, in the same words.
+        auto.append({"kind": "persona-standard", "detail": standard["detail"]})
+    elif standard["manual"]:
+        manual.append({"kind": "persona-standard", "detail": standard["manual"]})
     ignore = runtime_gitignore_plan(root)
     if ignore["write"] is not None:
         auto.append({"kind": "runtime-state-gitignore", "detail": ignore["detail"]})
@@ -587,9 +593,10 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
         ver.write_text(_bump_version_text(ver.read_text(encoding="utf-8"), installed, prev_skill,
                                           today, schema=stamp), encoding="utf-8")
         actions.append(f"repaired sdlc-studio/.version (schema -> {stamp})")
-    standard = _set_report_mode(root)
-    if standard:
-        actions.append(standard)
+    standard = report_mode_plan(root)
+    if standard["write"] is not None:
+        _write_consumer_file(cfg, standard["write"])
+        actions.append(standard["detail"])
     # Agent-instructions seed. A project adopting the skill on an existing repo has no AGENTS.md,
     # and the file that establishes how the project is run is exactly what such a project needs
     # first. Writing an absent file is deterministic and reversible; an existing one is left
@@ -689,25 +696,32 @@ def apply(root: Path | str, with_reconcile: bool = False, today: str | None = No
     return actions
 
 
-def _set_report_mode(root: Path) -> str | None:
-    """Set `personas.standard: report` in `.config.yaml` for a project holding its own persona
-    or seat cards and setting no value, inserted into its `personas:` block (or appended as one)
-    so every other line is kept; return the action, or None when nothing is written. A value
-    already set, block or report or anything else, is the project's and is left alone."""
+def report_mode_plan(root: Path | str) -> dict:
+    """What `personas.standard` the upgrade owes `.config.yaml`, decided once for audit and apply.
+
+    `{"write": text | None, "detail": str, "manual": str | None}`. A project holding its own
+    persona or seat cards and setting no value gets `standard: report`, inserted into its
+    `personas:` block at the indent of that block's first child (or appended as a block), so
+    every other line is kept. A `personas:` written on one line is never rewritten: it is
+    reported for a person instead. A value already set, block or report or anything else, is
+    the project's and is left alone, as is a project with no cards of its own."""
     import persona_review  # noqa: PLC0415 - sibling; the one reader of a project's own cards
+    root = Path(root)
+    none = {"write": None, "detail": "", "manual": None}
     cfg = _sdlc(root) / ".config.yaml"
     if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):
-        return None
+        return none
     if sdlc_md.project_override(root, persona_review.STANDARD_KEY) is not None:
-        return None
+        return none
     text = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
     lines = text.splitlines(keepends=True)
     at = next((i for i, ln in enumerate(lines) if re.match(r"personas:\s*(#.*)?$", ln)), None)
     if at is None:
         if re.search(r"(?m)^personas:", text):
-            return ("personas.standard NOT set: sdlc-studio/.config.yaml writes `personas:` on "
-                    "one line - add `standard: report` to it by hand, or `standard: block` to "
-                    "refuse cards that break the persona standard")
+            return {**none, "manual": "personas.standard NOT set: sdlc-studio/.config.yaml "
+                                      "writes `personas:` on one line - add `standard: report` "
+                                      "to it by hand, or `standard: block` to refuse cards that "
+                                      "break the persona standard"}
         lines.append(("" if not text or text.endswith("\n") else "\n")
                      + "personas:\n  standard: report\n")
     else:
@@ -716,10 +730,11 @@ def _set_report_mode(root: Path) -> str | None:
         indent = (child[:len(child) - len(child.lstrip())] if child[:1] in (" ", "\t")
                   else "  ")
         lines.insert(at + 1, f"{indent}standard: report\n")
-    _write_consumer_file(cfg, "".join(lines))
-    return ("set personas.standard: report in sdlc-studio/.config.yaml - this project holds its "
-            "own persona cards, so the persona standard names each one that breaks it on stderr "
-            "instead of refusing it; set personas.standard: block to switch the standard on")
+    return {**none, "write": "".join(lines),
+            "detail": "set personas.standard: report in sdlc-studio/.config.yaml - this project "
+                      "holds its own persona cards, so the persona standard names each one that "
+                      "breaks it on stderr instead of refusing it; set personas.standard: block "
+                      "to switch the standard on"}
 
 
 _VER_HEAD_RE = re.compile(rf"^##\s*\[({version_check.VERSION})\]")

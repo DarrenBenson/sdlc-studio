@@ -219,15 +219,17 @@ PASS, still frames, and one stderr line names it as owed its persona review.
 `persona_review.py owed` lists every card owed a review, and exits 0 whatever it finds:
 
 ```text
-persona review owed: sdlc-studio/personas/seats/qa.md - changed since its review of 2026-11-02
-persona review owed: sdlc-studio/personas/jonah-reyes.md - never reviewed
-persona reviews owed: 2 (reported, never refused; brief a review with ...)
+persona review owed: sdlc-studio/personas/seats/qa.md - changed since its review of 2026-11-02. Run next: python3 scripts/persona_review.py brief --card sdlc-studio/personas/seats/qa.md --seat engineering
+persona review owed: sdlc-studio/personas/jonah-reyes.md - never reviewed. Run next: python3 scripts/persona_review.py brief --card sdlc-studio/personas/jonah-reyes.md --seat engineering
+persona reviews owed: 2 (reported, never refused; each line ends in the command that briefs its review)
 ```
 
 A card last passed before the newest release tag's commit is owed too, compared by day.
 `sprint.py plan` prints the count as `persona reviews owed: <count>` and one `persona card
 blocked:` line for each card the standard holds, with its remedy; `release_cut.py
-changelog-cut` prints each owed card. Neither refuses for an owed review.
+changelog-cut` prints each owed card. Neither refuses for an owed review. A card whose bytes
+are not UTF-8 is held as `card-not-utf8`, naming the line of its first such byte, and its
+remedy is to save it as UTF-8; every other card is still judged.
 
 ---
 

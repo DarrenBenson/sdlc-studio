@@ -45,6 +45,10 @@ reviewer could read past; under this standard each blocks.
 The reviewing seat asks: is every section filled with this person's specifics, or with
 template prose renamed?
 
+A card whose bytes are not UTF-8 is held as `card-not-utf8` before any rule reads it. No rule
+can judge it, so, like a FAIL review, it holds the card from outside the table and always
+blocks, until the card is saved as UTF-8.
+
 ## Identity
 
 | Rule | Severity |

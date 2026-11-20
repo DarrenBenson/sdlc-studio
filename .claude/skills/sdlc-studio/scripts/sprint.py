@@ -11807,7 +11807,7 @@ def _refused_personas(root: Path | str, entries: list[tuple[Path, dict]],
     held = persona_review.held_cards(root, list(paths.values()), findings)
     base = Path(root).resolve()
     return [{"name": n, "card": persona_review._rel(str(paths[n]), base), "held": held[paths[n]],
-             "remedy": persona_review.remedy(root, paths[n])}
+             "remedy": persona_review.remedy(root, paths[n], findings)}
             for n in names if n in paths and paths[n] in held]
 
 
@@ -11960,9 +11960,9 @@ def persona_standard_status(root: Path | str) -> dict | None:
     findings = persona_review.blocking_findings(root)
     base = Path(root).resolve()
     blocked = [{"card": persona_review._rel(str(path), base), "held": held,
-                "remedy": persona_review.remedy(root, path)}
+                "remedy": persona_review.remedy(root, path, findings)}
                for path, held in persona_review.held_cards(root, findings=findings).items()]
-    owed = len(persona_review.owed(root))
+    owed = len(persona_review.owed(root, findings))
     return {"blocked": blocked, "owed": owed} if blocked or owed else None
 
 

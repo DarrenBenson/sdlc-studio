@@ -93,9 +93,11 @@ def card_role(path: Path | str) -> str | None:
     """The declared role of a card from its `<!-- role: ... -->` field, lower-cased, or None.
 
     Reads the declared field only - never the H1 prose or the filename - so resolution is
-    deterministic at the boundary (a renamed heading or a person-named file cannot mislead it)."""
+    deterministic at the boundary (a renamed heading or a person-named file cannot mislead it).
+    The field is ASCII, so a byte elsewhere on the card that is not UTF-8 is read as replaced
+    and never hides it, nor stops a roster read over every card."""
     try:
-        text = Path(path).read_text(encoding="utf-8")
+        text = Path(path).read_bytes().decode("utf-8", errors="replace")
     except OSError:
         return None
     m = _ROLE_RE.search(text)

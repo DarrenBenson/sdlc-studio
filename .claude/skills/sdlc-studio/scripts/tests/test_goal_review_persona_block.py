@@ -26,6 +26,7 @@ sprint = loader.load_script("sprint")
 persona_review = loader.load_script("persona_review")
 
 _MAYA = "sdlc-studio/personas/maya-okafor.md"
+_JONAH = "sdlc-studio/personas/jonah-reyes.md"
 _MAYA_GOALS = ("Maya drives the batch to done", "Maya pauses only for her own decisions")
 _JONAH_GOALS = ("Jonah upgrades without a surprise",)
 _MAYA_GOAL = "Maya Okafor drives the batch to done"
@@ -133,6 +134,81 @@ class GoalReviewPersonaBlockTests(unittest.TestCase):
         self.assertEqual(["Maya Okafor (Primary)"],
                          [f"{s['name']} ({s['role'].capitalize()})" for s in trace["serves"]
                           if s["kind"] == "persona"])
+
+    def test_a_card_that_is_not_utf8_is_named_and_nothing_tracebacks(self) -> None:
+        """Mutants: the strict UTF-8 read reached again from the brief or the plan (a
+        UnicodeDecodeError traceback); the unreadable card judged by no rule, so the plan names
+        nothing; its line without the remedy that saves it as UTF-8."""
+        runs = {}
+        with tempfile.TemporaryDirectory() as d:
+            for name in ("utf-8", "cp1252"):
+                root = Path(d) / name
+                root.mkdir()
+                _project(root)
+                if name == "cp1252":
+                    card = root / _JONAH
+                    card.write_bytes(card.read_bytes().replace(b"Somebody.", b"Jos\xe9."))
+                runs[name] = {
+                    "brief": _brief(root, _MAYA_GOAL),
+                    "plan": _plan(root, _MAYA_GOAL, "--format", "json"),
+                    "text": _plan(root, _MAYA_GOAL),
+                    "skip": _plan(root, _MAYA_GOAL, "--skip-personas"),
+                }
+        ok, bad = runs["utf-8"], runs["cp1252"]
+        # The UTF-8 control briefs and plans; the same tree with one cp1252 byte does too.
+        for key in ("brief", "plan", "text", "skip"):
+            with self.subTest(run=key):
+                self.assertEqual(0, ok[key][0], ok[key][2])
+                self.assertEqual(0, bad[key][0], bad[key][2])
+                self.assertNotIn("Traceback", bad[key][1] + bad[key][2])
+        self.assertIn(_MAYA_GOALS[0], bad["brief"][1])
+        self.assertEqual([u["id"] for u in json.loads(ok["plan"][1])["batch"]],
+                         [u["id"] for u in json.loads(bad["plan"][1])["batch"]])
+        # The plan names the card it cannot read, the byte's line and how to fix it.
+        named = [ln for ln in (bad["text"][1] + bad["text"][2]).splitlines() if _JONAH in ln]
+        self.assertEqual(1, len(named), bad["text"][1] + bad["text"][2])
+        self.assertTrue(named[0].startswith(f"persona card blocked: {_JONAH} breaks the "
+                                            "persona standard - card-not-utf8 (line "), named[0])
+        self.assertIn("0xe9", named[0])
+        self.assertIn(f"Run next: save {_JONAH} as UTF-8", named[0])
+        self.assertEqual([], [ln for ln in (ok["text"][1] + ok["text"][2]).splitlines()
+                              if ln.startswith("persona card blocked:")])
+
+    def test_a_goal_naming_a_held_card_and_a_passing_one_is_refused(self) -> None:
+        """Mutant: refuse only when no traced persona is left to read (`and "end_goals" not in
+        trace`), so a goal naming Maya beside a passing Jonah is briefed."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root)
+            _record(root, "sdlc-studio/personas/jonah-reyes.md", "pass")
+            _record(root, _MAYA, "fail", "persona-evidence")
+            rc, out, err = _brief(root, "Maya Okafor and Jonah Reyes upgrade without a surprise")
+        self.assertEqual(2, rc, out)
+        self.assertEqual("", out)
+        self.assertIn(f"traces to Maya Okafor, whose card the persona standard refuses", err)
+        self.assertNotIn("traces to Jonah Reyes", err)
+
+    def test_a_card_the_registry_contradicts_is_refused_without_a_fail(self) -> None:
+        """Mutant: the refusal reads only the ledger (no blocking findings passed to
+        `held_cards`), so a card breaking a blocking rule frames the brief."""
+        registry = ("# Persona Index\n\n## Primary\n\n- [Maya Okafor](maya-okafor.md) - x\n\n"
+                    "## {role}\n\n- [Jonah Reyes](jonah-reyes.md) - y\n")
+        results = {}
+        with tempfile.TemporaryDirectory() as d:
+            for role in ("Secondary", "Primary"):
+                root = Path(d) / role
+                root.mkdir()
+                _project(root)
+                (root / "sdlc-studio" / "personas" / "index.md").write_text(
+                    registry.format(role=role), encoding="utf-8")
+                results[role] = _brief(root, _JONAH_GOAL)
+        # Positive control: the registry agreeing with Jonah's card, the goal is briefed.
+        self.assertEqual(0, results["Secondary"][0], results["Secondary"][2])
+        rc, out, err = results["Primary"]
+        self.assertEqual(2, rc, out)
+        self.assertEqual("", out)
+        self.assertIn(_JONAH, err)
+        self.assertIn("persona-registry-role", err)
 
 
 if __name__ == "__main__":
