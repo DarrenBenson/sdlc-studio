@@ -22,8 +22,8 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 - [x] [US1053: persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes](../stories/US1053-persona-review-briefs-another-seat-to-review-a.md)
 - [x] [US1054: The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade](../stories/US1054-the-shipped-product-card-names-no-primary-so.md)
 - [x] [US1055: A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy](../stories/US1055-a-persona-card-that-fails-the-standard-is.md)
-- [ ] [US1056: The goal review refuses to brief from a traced persona card that fails the standard](../stories/US1056-the-goal-review-refuses-to-brief-from-a.md)
-- [ ] [US1057: Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews](../stories/US1057-sprint-plan-names-each-blocked-persona-card-with.md)
+- [x] [US1056: The goal review refuses to brief from a traced persona card that fails the standard](../stories/US1056-the-goal-review-refuses-to-brief-from-a.md)
+- [x] [US1057: Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews](../stories/US1057-sprint-plan-names-each-blocked-persona-card-with.md)
 - [x] [US1058: persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card](../stories/US1058-persona-memory-py-keeps-each-persona-s-evidenced.md)
 - [x] [US1059: A persona's brief carries its own live learnings, capped and ranked, and never another persona's](../stories/US1059-a-persona-s-brief-carries-its-own-live.md)
 - [ ] [US1060: A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems](../stories/US1060-a-learning-past-its-horizon-is-reported-at.md)
@@ -41,7 +41,7 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 - [ ] [US1072: The close records each traced persona's served-goal outcome in its memory, with its run](../stories/US1072-the-close-records-each-traced-persona-s-served.md)
 - [ ] [US1073: A user persona writes its learning from its usage evidence, approved by a seat, and the goal review carries it](../stories/US1073-a-user-persona-writes-its-learning-from-its.md)
 - [ ] [US1074: A generalisable seat learning is promoted into the skill source's shipped amigo card, and refused into an installed copy](../stories/US1074-a-generalisable-seat-learning-is-promoted-into-the.md)
-- [ ] [US1322: A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on](../stories/US1322-a-project-upgrading-to-the-persona-standard-is.md)
+- [x] [US1322: A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on](../stories/US1322-a-project-upgrading-to-the-persona-standard-is.md)
 
 ## Acceptance Criteria (Epic Level)
 

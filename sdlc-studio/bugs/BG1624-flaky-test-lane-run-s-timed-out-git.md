@@ -28,6 +28,8 @@ Make the test independent of the grace window (wait for the loop's git add to fi
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run .claude/skills/sdlc-studio/scripts/tests/`test_lane_run.py`::LaneTimeoutTermsFirstTests under the push boundary's parallel full suite on a loaded host: it...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Make the test independent of the grace window (wait for the loop's git add to finish a write before the timeout, or give the lane a timeout and grace the host...
 
+- Recurred in run twenty (RUN-01M7VNR0, 2026-11-20): the commit lane of `lane land` for the US1056/US1057/US1322 repair failed on `LaneTimeoutTermsFirstTests::test_a_timed_out_git_add_loop_leaves_no_index_lock` (index.lock left) with 4406 other tests green, locally under load during a 1017s selection; the landing was re-run with `--resume`.
+
 ## Revision History
 
 | Date | Author | Change |

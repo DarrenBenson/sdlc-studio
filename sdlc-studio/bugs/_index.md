@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 468 |
+| Open | 473 |
 | In Progress | 0 |
 | Fixed | 1000 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1670** |
+| **Total** | **1675** |
 
 ## All Bugs
 
@@ -746,6 +746,11 @@
 | [BG1668](BG1668-personas-standard-report-does-not-cover-the-goal.md) | personas.standard: report does not cover the goal review's refusal of a traced persona card, which still refuses under report mode | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1669](BG1669-reference-scripts-review-md-does-not-describe-persona.md) | reference-scripts-review.md does not describe persona_review.py owed | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1670](BG1670-persona-review-remedy-names-a-brief-command-for.md) | persona_review.remedy names a brief command for a card held by a blocking rule, whose PASS persona_review.py record then refuses | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1671](BG1671-init-py-writes-no-personas-standard-so-a.md) | init.py writes no personas.standard, so a project created at the persona-standard release is switched to report mode by its first later project upgrade | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1672](BG1672-changelog-d-us1057-md-says-validate-py-personas.md) | changelog.d/US1057.md says validate.py personas and seats exited with a UnicodeDecodeError traceback, though they printed a one-line Error and aborted the check | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1673](BG1673-verdict-polarity-reads-a-seat-s-partial-as.md) | verdict_polarity reads a seat's 'partial' as unclear, so a goal clause every seat answered partial reads UNANSWERED at the close | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1674](BG1674-no-test-pins-card-not-utf8-s-severity.md) | No test pins card-not-utf8's severity split (a warning for persona cards, an error for seat cards) or the exit code validate.py seats gives for it | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

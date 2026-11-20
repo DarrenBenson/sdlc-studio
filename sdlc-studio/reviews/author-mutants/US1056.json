@@ -1,86 +1,59 @@
 {
   "unit": "US1056",
-  "digest": "b2dfb8a45637675b at 63f0e65c51b8",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1056-mutation-edits.json",
+  "digest": "3dae756577b19995 at 95eb3f92b338",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a6acb4731baa88da9/US1056-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "trace never asks the standard (brief)",
+      "mutant": "refusal only when no traced persona is left (qa reviewer)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
-      "new": "    refused = []\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "old": "    if trace and trace.get(\"refused\"):\n        raise persona_resolve.StandardRefused(",
+      "new": "    if trace and trace.get(\"refused\") and \"end_goals\" not in trace:\n        raise persona_resolve.StandardRefused(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_naming_a_held_card_and_a_passing_one_is_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "trace never asks the standard (plan)",
+      "mutant": "no blocking findings passed to held_cards (engineering reviewer)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
-      "new": "    refused = []\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
+      "old": "    held = persona_review.held_cards(root, list(paths.values()), findings)",
+      "new": "    held = persona_review.held_cards(root, list(paths.values()), [])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_card_the_registry_contradicts_is_refused_without_a_fail",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "refusal fires on an untraced persona",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
-      "new": "    refused = _refused_personas(root, entries, [c[\"name\"] for c in cards]) if traced else []\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "designed-for listing reads a held card",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            if c[\"name\"] in held:\n",
-      "new": "            if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "brief prints despite the refusal",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if trace and trace.get(\"refused\"):\n",
-      "new": "    if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "refused card keeps its End goals in the trace",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        traced = [n for n in traced if n not in {r[\"name\"] for r in refused}]",
-      "new": "        traced = list(traced)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "plan prints no line for the traced refused card",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        for r in trace.get(\"refused\") or []:\n            print(_refused_line(",
-      "new": "        for r in []:\n            print(_refused_line(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "held_cards holds nothing",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "        if held:\n            out[path] = held",
-      "new": "        if False:\n            out[path] = held",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the FAIL names one rule only",
+      "mutant": "test: the cp1252 fixture byte written as ASCII",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py",
-      "old": "            _record(root, _MAYA, \"fail\", \"persona-evidence\", \"persona-goal-scope\")",
-      "new": "            _record(root, _MAYA, \"fail\", \"persona-evidence\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "old": "card.write_bytes(card.read_bytes().replace(b\"Somebody.\", b\"Jos\\xe9.\"))",
+      "new": "card.write_bytes(card.read_bytes().replace(b\"Somebody.\", b\"Jose.\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_card_that_is_not_utf8_is_named_and_nothing_tracebacks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the plan's remedies read the findings again (no pass-through)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "             \"remedy\": persona_review.remedy(root, paths[n], findings)}",
+      "new": "             \"remedy\": persona_review.remedy(root, paths[n])}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
+      "result": "survived",
+      "answer": "Equivalent by construction: remedy reads the same blocking findings itself when none are passed, so only the cost differs (one extra check per refused card); no output can tell them apart."
+    },
+    {
+      "mutant": "the not-UTF-8 hold reported, not blocking",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    return (\"Format\", BLOCKS) if rule == NOT_UTF8 else",
+      "new": "    return (\"Format\", REPORTED) if rule == NOT_UTF8 else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_card_that_is_not_utf8_is_named_and_nothing_tracebacks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "remedy for a card that is not UTF-8 names a review brief",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if any(f[\"rule\"] == NOT_UTF8 and Path(f[\"file\"]) == path for f in findings):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_card_that_is_not_utf8_is_named_and_nothing_tracebacks",
       "result": "killed",
       "answer": ""
     }

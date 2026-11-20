@@ -1,6 +1,6 @@
 # US1056: The goal review refuses to brief from a traced persona card that fails the standard
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given a Sprint Goal naming Maya Okafor, whose card's latest persona review is FAIL, when `sprint.py goal-review brief --goal` runs, then it exits 2 naming Maya's card, the failed rules and the remedy and prints no brief, while a goal naming only Jonah Reyes, whose card passes, is briefed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given the same goal, when `sprint.py plan --sprint-goal` runs, then it prints one line naming Maya's card as refused by the persona standard and lists none of its End goals, with the plan's exit code and batch unchanged.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

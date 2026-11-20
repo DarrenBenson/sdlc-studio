@@ -1,131 +1,86 @@
 {
   "unit": "US1322",
-  "digest": "b60d21a0071716f0 at 63f0e65c51b8",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1322-mutation-edits.json",
+  "digest": "8f2f97d89e6c3b53 at 95eb3f92b338",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a6acb4731baa88da9/US1322-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "report mode refuses as block",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
-      "old": "        if persona_review.standard_mode(root) != \"report\":\n",
-      "new": "        if True:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "report mode prints no line",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
-      "old": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
-      "new": "        pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "report line printed twice",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
-      "old": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
-      "new": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unset key reads as report",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "    if value is None:\n        return \"block\"",
-      "new": "    if value is None:\n        return \"report\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unknown value reads as report",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "          \"block\", file=sys.stderr)\n    return \"block\"",
-      "new": "          \"block\", file=sys.stderr)\n    return \"report\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unknown value warns nobody",
-      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "    print(f\"{STANDARD_KEY} is {value!r}, which is neither block nor report",
-      "new": "    (lambda *a, **k: None)(f\"{STANDARD_KEY} is {value!r}, which is neither block nor report",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "upgrade writes for a project with no cards",
+      "mutant": "the dry run leaves the config write out of its auto list (qa)",
       "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
-      "old": "    if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):\n        return None",
-      "new": "    if False:\n        return None",
+      "old": "    if standard[\"write\"] is not None:\n        # `auto`, so the dry run",
+      "new": "    if False:\n        # `auto`, so the dry run",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_dry_run_lists_the_config_write_apply_performs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the preview words differ from the applied words",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "        auto.append({\"kind\": \"persona-standard\", \"detail\": standard[\"detail\"]})",
+      "new": "        auto.append({\"kind\": \"persona-standard\", \"detail\": \"set personas.standard: report in sdlc-studio/.config.yaml\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_dry_run_lists_the_config_write_apply_performs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the key always indented two spaces (qa)",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "        lines.insert(at + 1, f\"{indent}standard: report\\n\")",
+      "new": "        lines.insert(at + 1, \"  standard: report\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_config_write_keeps_the_project_s_own_layout",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the one-line personas: branch silenced, so a second block is appended (qa)",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "        if re.search(r\"(?m)^personas:\", text):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_config_write_keeps_the_project_s_own_layout",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a one-line block not reported for a person",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    elif standard[\"manual\"]:\n        manual.append(",
+      "new": "    elif False:\n        manual.append(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_config_write_keeps_the_project_s_own_layout",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "apply previews the write but never makes it",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "        _write_consumer_file(cfg, standard[\"write\"])\n        actions.append(standard",
+      "new": "        actions.append(standard",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "upgrade never sets the key",
-      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
-      "old": "    standard = _set_report_mode(root)\n",
-      "new": "    standard = None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "upgrade loses the rest of the config",
-      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
-      "old": "    _write_consumer_file(cfg, \"\".join(lines))",
-      "new": "    _write_consumer_file(cfg, \"personas:\\n  standard: report\\n\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "defaults ship report",
-      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
-      "old": "  standard: block\n",
-      "new": "  standard: report\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reference row gives report as the default",
-      "file": ".claude/skills/sdlc-studio/reference-config.md",
-      "old": "| `personas.standard` | `block` |",
-      "new": "| `personas.standard` | `report` |",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "only a seat card counts as the project's own",
-      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
-      "old": "    if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):",
-      "new": "    if not persona_review._seat_cards(root):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a value the project set is overwritten",
-      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
-      "old": "    if sdlc_md.project_override(root, persona_review.STANDARD_KEY) is not None:\n        return None",
-      "new": "    if False:\n        return None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the seat project holds no card",
+      "mutant": "test: the dry-run fixture's carded project holds no card",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py",
-      "old": "        projects = {\"seat\": (\"seat\", \"\"),",
-      "new": "        projects = {\"seat\": (\"\", \"\"),",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "old": "        projects = {\"seat\": (\"seat\", \"\"), \"bare\": (\"\", \"\"), \"set\": (\"seat persona\", \"block\")}\n        dry, applied = {}, {}",
+      "new": "        projects = {\"seat\": (\"\", \"\"), \"bare\": (\"\", \"\"), \"set\": (\"seat persona\", \"block\")}\n        dry, applied = {}, {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_dry_run_lists_the_config_write_apply_performs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a seat card's declared role read as strict UTF-8 again",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "        text = Path(path).read_bytes().decode(\"utf-8\", errors=\"replace\")",
+      "new": "        text = Path(path).read_text(encoding=\"utf-8\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_a_sibling_seat_card_that_is_not_utf8_leaves_both_modes_working",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the not-UTF-8 hold reported, so the held engineering card counts as clear",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    return (\"Format\", BLOCKS) if rule == NOT_UTF8 else",
+      "new": "    return (\"Format\", REPORTED) if rule == NOT_UTF8 else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_a_sibling_seat_card_that_is_not_utf8_leaves_both_modes_working",
       "result": "killed",
       "answer": ""
     }

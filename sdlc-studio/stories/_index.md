@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 164 |
+| Draft | 161 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 971 |
+| Done | 974 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -93,8 +93,8 @@
 | [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Done | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Done | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Superseded | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1059](US1059-a-persona-s-brief-carries-its-own-live.md) | A persona's brief carries its own live learnings, capped and ranked, and never another persona's | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1060](US1060-a-learning-past-its-horizon-is-reported-at.md) | A learning past its horizon is reported at the close until it is revalidated or retired, and the persona review reports memory problems | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
@@ -359,7 +359,7 @@
 | [US1319](US1319-the-skill-md-description-and-compatibility-line-and.md) | The SKILL.md description and compatibility line and llms.txt are harness-neutral, and --agentic states its fallback outside Claude Code | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1320](US1320-a-sweep-of-the-public-docs-leaves-no.md) | A sweep of the public docs leaves no generic Claude Code or Anthropic requirement, INSTALL.md links the harness page, and a guard keeps the public docs that way | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1321](US1321-the-evidence-page-shows-the-model-each-signed.md) | The evidence page shows the model each signed run used, regenerated through RPT0035 | Done | EP0377 | 2026-11-18 | 2026-11-18 |
-| [US1322](US1322-a-project-upgrading-to-the-persona-standard-is.md) | A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on | Draft | EP0287 | 2026-11-20 | 2026-11-20 |
+| [US1322](US1322-a-project-upgrading-to-the-persona-standard-is.md) | A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on | Done | EP0287 | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

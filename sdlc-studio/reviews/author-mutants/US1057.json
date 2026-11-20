@@ -1,115 +1,232 @@
 {
   "unit": "US1057",
-  "digest": "daf1adf53dc090a1 at 63f0e65c51b8",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1057-mutation-edits.json",
+  "digest": "62c23ef3344f7fe5 at 95eb3f92b338",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a6acb4731baa88da9/US1057-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "plan lists no blocked card",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if b[\"card\"] not in named:\n            print(",
-      "new": "        if False:\n            print(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_each_blocked_card_with_its_remedy",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "blocked line drops the line number",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "(f\" (line {f['line']})\" if f.get(\"line\") else \"\")",
-      "new": "\"\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_each_blocked_card_with_its_remedy",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "plan refuses when the standard has a finding",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if standard is not None:\n        data[\"persona_standard\"] = standard",
-      "new": "    if standard is not None:\n        return 2",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "change read from the file time as well as the hash",
+      "mutant": "check command leaves out persona-review-owed (qa a)",
       "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "        elif last[\"hash\"] != persona_gen.body_hash(sdlc_md.read_text_safe(path)):",
-      "new": "        elif last[\"hash\"] != persona_gen.body_hash(sdlc_md.read_text_safe(path)) or path.stat().st_mtime > 1_900_000_000:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed",
+      "old": "    findings = check(root, card, owed=True)",
+      "new": "    findings = check(root, card)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_owed_reads_the_latest_row_skips_a_fail_and_reaches_check_and_brief",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a never-reviewed card is not owed",
+      "mutant": "review brief leaves out persona-review-owed (qa a)",
       "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "            why = \"never reviewed\"",
-      "new": "            continue",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed",
+      "old": "              for f in check(root, path, owed=True)] or [\"  none\"]",
+      "new": "              for f in check(root, path)] or [\"  none\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_owed_reads_the_latest_row_skips_a_fail_and_reaches_check_and_brief",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "newest tag by name, not commit date",
+      "mutant": "a FAIL then edited card is owed (qa b)",
       "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "        if when.isdigit() and (best is None or int(when) > best[0]):",
-      "new": "        if when.isdigit() and (best is None or parts[0] > best[1]):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "old": "        elif last[\"outcome\"].upper() != \"PASS\":\n            continue\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_owed_reads_the_latest_row_skips_a_fail_and_reaches_check_and_brief",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "tag date read from the tag, not its commit",
+      "mutant": "any tag counts as the release (qa c)",
       "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "    fmt = (\"%(refname:short)%09%(*committerdate:unix)%09%(*committerdate:short)\"",
-      "new": "    fmt = (\"%(refname:short)%09%(creatordate:unix)%09%(creatordate:short)\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "old": "        if len(parts) != 5 or not _RELEASE_TAG_RE.match(parts[0]):",
+      "new": "        if len(parts) != 5:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_only_a_version_tag_counts_as_the_release",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a same-day PASS counts as before the tag",
+      "mutant": "the first ledger row read, not the latest (engineering)",
       "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
-      "old": "        elif tag is not None and last[\"date\"] < tag[1]:",
-      "new": "        elif tag is not None and last[\"date\"] <= tag[1]:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "old": "    latest = {r[\"card\"]: r for r in ledger_rows(root)}",
+      "new": "    latest = {r[\"card\"]: r for r in reversed(ledger_rows(root))}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_owed_reads_the_latest_row_skips_a_fail_and_reaches_check_and_brief",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "plan prints no owed count",
+      "mutant": "blocked line keeps only its first rule (qa d)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if std[\"owed\"]:\n        print(",
-      "new": "    if False:\n        print(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "old": "                      + f\": {f['message']}\" for f in held)",
+      "new": "                      + f\": {f['message']}\" for f in held[:1])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_every_rule_and_counts_each_owed_card_once",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "skip-personas still reads the standard",
+      "mutant": "owed count adds the blocked cards (qa d)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    standard = (None if getattr(args, \"skip_personas\", False)",
-      "new": "    standard = (None if False",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "old": "    owed = len(persona_review.owed(root, findings))",
+      "new": "    owed = len(persona_review.owed(root, findings)) + len(blocked)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_every_rule_and_counts_each_owed_card_once",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the cut names no owed card",
+      "mutant": "the plan judges only seat cards (engineering)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "               for path, held in persona_review.held_cards(root, findings=findings).items()]",
+      "new": "               for path, held in persona_review.held_cards(root, persona_review._seat_cards(root), findings).items()]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_a_held_persona_card_with_no_goal_set",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cut prints owed lines on stderr (engineering)",
       "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
-      "old": "    for owed in persona_review.owed(args.root):",
-      "new": "    for owed in []:",
+      "old": "        print(owed[\"line\"])",
+      "new": "        print(owed[\"line\"], file=sys.stderr)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the annotated tag dated on its commit's day",
+      "mutant": "owed lines without their remedy",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "                    \"line\": f\"persona review owed: {rel} - {why}. {run}\"})",
+      "new": "                    \"line\": f\"persona review owed: {rel} - {why}\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "owed summary keeps its placeholder",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "\"command that briefs its review)\")",
+      "new": "\"command that briefs its review; brief --card <card> --seat <a seat not its own>)\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_every_rule_and_counts_each_owed_card_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the cp1252 seat byte written as ASCII",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py",
-      "old": "                        env_extra={\"GIT_COMMITTER_DATE\": \"2026-11-12T09:00:00+0000\"})",
-      "new": "                        env_extra={\"GIT_COMMITTER_DATE\": \"2026-11-10T15:00:00+0000\"})",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
-      "result": "survived",
-      "answer": "Expected to survive: the shipped code reads the tag commit's date whatever day the tag was made, so dating the tag on its commit's day changes nothing it reads. The two-day gap is what kills the code mutant 'tag date read from the tag, not its commit' (killed in this report); this row shows the gap is load-bearing for that mutant and for nothing else."
+      "old": "cases = {\"control\": (_QA, b\"\"), \"seat\": (_QA, b\"Quinn\\x92s \"),",
+      "new": "cases = {\"control\": (_QA, b\"\"), \"seat\": (_QA, b\"Quinns \"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_that_is_not_utf8_is_named_and_the_plan_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the not-UTF-8 hold reported, not blocking",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    return (\"Format\", BLOCKS) if rule == NOT_UTF8 else",
+      "new": "    return (\"Format\", REPORTED) if rule == NOT_UTF8 else",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_that_is_not_utf8_is_named_and_the_plan_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "remedy for a card that is not UTF-8 names a review brief",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if any(f[\"rule\"] == NOT_UTF8 and Path(f[\"file\"]) == path for f in findings):",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_that_is_not_utf8_is_named_and_the_plan_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record hashes a card that is not UTF-8 (a traceback)",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if unreadable:\n        raise ReviewRefused(f\"{rel} cannot be reviewed",
+      "new": "    if False:\n        raise ReviewRefused(f\"{rel} cannot be reviewed",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_review_of_a_card_that_is_not_utf8_is_refused_not_a_traceback",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona cards read as strict UTF-8 again",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            text, unreadable = read_card(p, \"warning\")\n        except OSError:\n            continue\n        if unreadable:\n            out.append(unreadable)\n        inspected += 1",
+      "new": "            text, unreadable = p.read_text(encoding=\"utf-8\"), None\n        except OSError:\n            continue\n        if unreadable:\n            out.append(unreadable)\n        inspected += 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a persona card that is not UTF-8 named by no finding",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        if unreadable:\n            out.append(unreadable)\n        inspected += 1",
+      "new": "        inspected += 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat cards read as strict UTF-8 again",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            text, unreadable = read_card(p, \"error\")\n        except OSError as exc:",
+      "new": "            text, unreadable = p.read_text(encoding=\"utf-8\"), None\n        except OSError as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cast drops a persona card that is not UTF-8",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            text = read_card(p, \"warning\")[0]\n        except OSError:\n            text = \"\"",
+      "new": "            text = sdlc_md.read_text_safe(p)\n        except OSError:\n            text = \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the finding names line 1 whatever the byte",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        line = data.count(b\"\\n\", 0, exc.start) + 1",
+      "new": "        line = 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a stakeholder card that is not UTF-8 unnamed by personas",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            if unreadable:\n                out.append(unreadable)\n            m = _STAKEHOLDER_TYPE_RE.search(text)",
+      "new": "            m = _STAKEHOLDER_TYPE_RE.search(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a stakeholder card that is not UTF-8 unnamed by seats",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            if unreadable:\n                out.append(unreadable)\n            for ln in text.splitlines():",
+      "new": "            for ln in text.splitlines():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the legacy personas.md read catching only OSError",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    except (OSError, UnicodeDecodeError) as exc:\n        out.append({\"severity\": \"warning\", \"rule\": \"persona-legacy\"",
+      "new": "    except OSError as exc:\n        out.append({\"severity\": \"warning\", \"rule\": \"persona-legacy\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_legacy_personas_md_that_is_not_utf8_is_named_unreadable",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a required stakeholder card named twice",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            if unreadable and unreadable not in out:",
+      "new": "            if unreadable:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_required_stakeholder_card_that_is_not_utf8_is_named_once",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the validate fixture's cp1252 byte written as UTF-8",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py",
+      "old": "(\"utf-8\", \"S\\u00e3o\".encode(\"utf-8\")), (\"cp1252\", b\"S\\xe3o\")):\n                root = Path(d) / name\n                self._tree(root, bad)",
+      "new": "(\"utf-8\", \"S\\u00e3o\".encode(\"utf-8\")), (\"cp1252\", \"S\\u00e3o\".encode(\"utf-8\"))):\n                root = Path(d) / name\n                self._tree(root, bad)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate.py::CardNotUtf8Tests::test_a_card_that_is_not_utf8_is_named_and_every_other_card_is_checked",
+      "result": "killed",
+      "answer": ""
     }
   ]
 }
