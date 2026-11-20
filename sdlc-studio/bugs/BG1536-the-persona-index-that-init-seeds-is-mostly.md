@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/templates/personas/persona-index-template.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py, changelog.d/BG1536.md
+> **Affects:** .claude/skills/sdlc-studio/templates/personas/persona-index-template.md, .claude/skills/sdlc-studio/scripts/tests/test_init.py, changelog.d/BG1536.md, .claude/skills/sdlc-studio/scripts/init.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py
 > **Evidence:** audit AUDIT-2026-11-17, project profile, personas lens, survived 3 of 3 refute votes; observed at .claude/skills/sdlc-studio/templates/personas/persona-index-template.md Sections 'Team Personas', 'Stakeholder Personas', 'Consultation Defaults', 'Custom Personas', 'Usage', 'Persona Sources' and the final 'See reference-persona.md' line (lines 26-133)
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -13,6 +13,8 @@
 ## Summary
 
 `init.py` seeds `sdlc-studio/personas/index.md` in every consuming project from `persona-index-template.md`. Only the Primary, Secondary and Negative headings of that template are read by anything, through `sdlc_md.persona_registry`. The other sections (Team Personas, Stakeholder Personas, Consultation Defaults, Custom Personas, Usage and Persona Sources, lines 26 to 133) are copied verbatim, leaving 32 literal placeholders in a project file, and no script or reference page reads any of those tables. The Team Personas section contradicts this repository's own index, which says the review seats are not personas. The closing link to `reference-persona.md` uses a relative path that, from the seeded location, resolves to the project root, where no such file exists. The template also offers three cast headings while `persona-template.md` declares six cast roles.
+
+**Widened in run twenty (RUN-01M7VNR0):** the builder found that a seeded index with no `{{...}}` placeholder reads as authored to `init.py`'s singleton draft check, so guided onboarding stops showing the personas stage and `test_lean_guided_personas_seed.py` fails. The fix includes `init.py` and that test.
 
 ## Steps to Reproduce
 
