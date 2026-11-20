@@ -1,0 +1,52 @@
+{
+  "unit": "BG1180",
+  "digest": "0851a2141da86530 at 44d85d3511ce",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aa5b06572edcc5b40/BG1180-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "harmless-words-never-match",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "_HARMLESS_RE = re.compile(r\"\\bbest[- ]effort\\b|\\bignor(?:e|ed|es)\\b|\\bswallow\\w*\", re.I)",
+      "new": "_HARMLESS_RE = re.compile(r\"(?!x)x\")",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "failure-without-unverified-allowed",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "(_HARMLESS_RE.search(passage) or (\n                _FAILURE_RE.search(passage) and not re.search(r\"\\bunverified\\b\", passage, re.I)))",
+      "new": "_HARMLESS_RE.search(passage)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "failure-word-narrowed",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "_FAILURE_RE = re.compile(r\"\\bfail(?:s|ed|ure|ing)?\\b\", re.I)",
+      "new": "_FAILURE_RE = re.compile(r\"\\bfailure\\b\", re.I)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unnamed-fetch-not-read",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "_DRIFT_FETCH_RE = re.compile(r\"`git fetch origin`|\\bfetch\\w*\\b.*`sprint boundary`\", re.I)",
+      "new": "_DRIFT_FETCH_RE = re.compile(r\"`git fetch origin`\", re.I)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-old-parenthetical-back",
+      "file": "sdlc-studio/prd.md",
+      "old": "(skipped with no remote; a failed fetch marks the\n  comparison unverified, and under `--strict` the plan is refused or the run stops).",
+      "new": "(best-effort; failure ignored, skipped with no remote).",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

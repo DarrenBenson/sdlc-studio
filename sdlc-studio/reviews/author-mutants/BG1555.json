@@ -1,0 +1,34 @@
+{
+  "unit": "BG1555",
+  "digest": "cfc62fe85694215a at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1555-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "persona memory dropped from the account",
+      "file": "sdlc-studio/prd.md",
+      "old": "persona memory, the lessons summary",
+      "new": "the lessons summary",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_every_close_chain_step_is_named",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "goal verdict listed among the row's chain steps",
+      "file": "sdlc-studio/prd.md",
+      "old": "(the steps are listed in section 4)",
+      "new": "(goal verdict, retro, lessons, gate, reconcile)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_the_goal_verdict_is_a_precondition_in_all_three_passages",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: a retro step is named by the word retro alone",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "else \"retro\" in account and _RETRO_STEPS[step] in account)",
+      "new": "else \"retro\" in account)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_a_dropped_chain_step_is_named",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

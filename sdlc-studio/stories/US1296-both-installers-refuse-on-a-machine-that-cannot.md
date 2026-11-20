@@ -1,12 +1,12 @@
 # US1296: Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it
 
-> **Status:** Draft
+> **Status:** Done
 > **Risk-class:** standard
 > **Delivers:** CR0731
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** install.sh, install.ps1, docs/INSTALL.md, tools/tests/test_install_requires_pyyaml.py
+> **Affects:** install.sh, install.ps1, docs/INSTALL.md, tools/tests/test_install_requires_pyyaml.py, tools/tests/test_install_copilot_global.py, tools/tests/test_install_atomic.py, tools/tests/test_install_sweep.py, .github/workflows/lint.yml, changelog.d/US1296.md
 > **Epic:** EP0368
 > **Points:** 3
 > **Persona:** Abena Osei
@@ -25,6 +25,7 @@
 - **When** `install.sh` is run for a local install
 - **Then** it exits non-zero before copying anything, stderr names PyYAML and a command that installs it, and the target holds no skill file. Fails on: an install that completes without PyYAML, or a refusal that leaves a partial copy behind
 - **Verify:** pytest tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported
+- **Verified:** yes (2026-11-19)
 
 ### AC2: install.sh still installs where PyYAML imports
 
@@ -32,6 +33,7 @@
 - **When** the same install is run
 - **Then** it exits 0 and the skill is installed as before. Fails on: a check that refuses every machine
 - **Verify:** pytest tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_installs_when_pyyaml_imports
+- **Verified:** yes (2026-11-19)
 
 ### AC3: install.ps1 makes the same refusal before its first copy
 
@@ -39,6 +41,7 @@
 - **When** it is run under `pwsh` with a Python that cannot import `yaml`, or, where `pwsh` is not installed, its source is read
 - **Then** the import check comes before the first copy or download step, a failed check stops the script with a non-zero exit, and the message names PyYAML and the install command. Fails on: a PowerShell install that completes without PyYAML while the shell install refuses
 - **Verify:** pytest tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_ps1_checks_pyyaml_before_its_first_copy
+- **Verified:** yes (2026-11-19)
 
 ### AC4: The install page names PyYAML as required
 
@@ -46,6 +49,7 @@
 - **When** its requirements are read
 - **Then** PyYAML is listed as required with its install command, and no sentence calls it optional, says the scripts degrade to built-in defaults without it, or calls the helpers pure standard library. Fails on: the page as it stands at grooming, which lists PyYAML as an optional dependency
 - **Verify:** pytest tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_the_install_page_names_pyyaml_as_required
+- **Verified:** yes (2026-11-19)
 
 ## Revision History
 

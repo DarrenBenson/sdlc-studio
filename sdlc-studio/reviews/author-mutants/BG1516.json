@@ -1,0 +1,70 @@
+{
+  "unit": "BG1516",
+  "digest": "180eab19ca6decfb at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1516-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "drop-force-flag",
+      "file": "sdlc-studio/trd.md",
+      "old": "| `--trust` and `--force` |",
+      "new": "| `--trust` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_every_headless_harness_is_named_with_its_flags",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop-add-dir",
+      "file": "sdlc-studio/trd.md",
+      "old": "`--sandbox workspace-write`, widened with `--add-dir` to",
+      "new": "`--sandbox workspace-write`, widened to",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_every_headless_harness_is_named_with_its_flags",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "opencode-flags-not-none",
+      "file": "sdlc-studio/trd.md",
+      "old": "| `opencode` | none:",
+      "new": "| `opencode` | all:",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_every_headless_harness_is_named_with_its_flags",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "waves-the-one-part",
+      "file": "sdlc-studio/trd.md",
+      "old": "The Agent-tool fan-out is one of two harness-specific parts of the skill and is",
+      "new": "This is the one part of the skill and is",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_agentic_waves_are_not_called_the_only_harness_specific_part",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "q3-names-no-harnesses",
+      "file": "sdlc-studio/trd.md",
+      "old": "`copilot` and `opencode` (see Headless",
+      "new": "(see Headless",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_agentic_waves_are_not_called_the_only_harness_specific_part",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "threat-row-no-sandbox",
+      "file": "sdlc-studio/trd.md",
+      "old": "Codex is sandboxed to `workspace-write`",
+      "new": "Codex is confined to `workspace-write`",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_the_spawned_agent_has_a_network_row_and_a_threat_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "network-row-no-bound",
+      "file": "sdlc-studio/trd.md",
+      "old": "bounded by the tool set and sandbox flags",
+      "new": "held by the tool set and sandbox flags",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_the_spawned_agent_has_a_network_row_and_a_threat_row",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

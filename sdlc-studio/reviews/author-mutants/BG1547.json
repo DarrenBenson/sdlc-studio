@@ -1,0 +1,88 @@
+{
+  "unit": "BG1547",
+  "digest": "7fa8f78e179e7fc0 at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0d14f4cb3f8a2d5d/BG1547-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the identity guard removed (HEAD)",
+      "file": "install.sh",
+      "old": "if [[ -d \"$dest\" ]] && ! is_skill_copy \"$dest\" && [[ -n \"$(ls -A \"$dest\" 2>/dev/null)\" ]]; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "new": "if false; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_foreign_folder_is_left_alone_and_said_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty folder refused",
+      "file": "install.sh",
+      "old": "if [[ -d \"$dest\" ]] && ! is_skill_copy \"$dest\" && [[ -n \"$(ls -A \"$dest\" 2>/dev/null)\" ]]; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "new": "if [[ -d \"$dest\" ]] && ! is_skill_copy \"$dest\"; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_real_copy_and_an_empty_folder_are_removed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a real copy refused",
+      "file": "install.sh",
+      "old": "if [[ -d \"$dest\" ]] && ! is_skill_copy \"$dest\" && [[ -n \"$(ls -A \"$dest\" 2>/dev/null)\" ]]; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "new": "if [[ -d \"$dest\" ]]; then\n        warn \"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_real_copy_and_an_empty_folder_are_removed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the link followed and its target deleted",
+      "file": "install.sh",
+      "old": "    rm -rf \"$dest\"; success \"removed: $dest\"\n}",
+      "new": "    rm -rf \"$dest/\"; success \"removed: $dest\"\n}",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_symbolic_link_is_removed_and_its_target_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a link to a skill copy refused as not present",
+      "file": "install.sh",
+      "old": "if [[ ! -d \"$dest\" && ! -L \"$dest\" ]]; then info \"not present: $dest\"; return; fi",
+      "new": "if [[ -L \"$dest\" ]]; then info \"not present: $dest\"; return; fi",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_symbolic_link_is_removed_and_its_target_kept",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closing line says complete when nothing was removed",
+      "file": "install.sh",
+      "old": "if [[ \"$UNINSTALL_REMOVED\" -gt 0 ]]; then",
+      "new": "if true; then",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_foreign_folder_is_left_alone_and_said_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closing line says nothing removed after a removal",
+      "file": "install.sh",
+      "old": "if [[ \"$UNINSTALL_REMOVED\" -gt 0 ]]; then",
+      "new": "if false; then",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_real_copy_and_an_empty_folder_are_removed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page silent on the guard",
+      "file": "docs/INSTALL.md",
+      "old": "Either installer's uninstall removes only a\n  folder that is an sdlc-studio copy or is empty:",
+      "new": "Either installer's uninstall removes a\n  folder:",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_the_install_page_states_the_uninstall_guard",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the AC1 fixture is a real copy, not a foreign folder",
+      "file": "tools/tests/test_install_uninstall_guard.py",
+      "old": "(self.dest / \"notes.txt\").write_text(\"mine\\n\", encoding=\"utf-8\")\n        proc",
+      "new": "(self.dest / \"SKILL.md\").write_text(SKILL_MD, encoding=\"utf-8\")\n        proc",
+      "test": "tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_foreign_folder_is_left_alone_and_said_so",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

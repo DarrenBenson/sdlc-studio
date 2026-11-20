@@ -1,0 +1,52 @@
+{
+  "unit": "BG1529",
+  "digest": "f39ade0aae07b9cc at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1529-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "restore-sub-second-row",
+      "file": "sdlc-studio/trd.md",
+      "old": "| No fixed target: census cost scales with artefact count. Measured",
+      "new": "| Sub-second. Measured",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_no_unmeasured_sub_second_target_for_reconcile_or_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop-status-figure",
+      "file": "sdlc-studio/trd.md",
+      "old": "`status.py` 5.8 s, pre-commit",
+      "new": "`status.py` fast, pre-commit",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_no_unmeasured_sub_second_target_for_reconcile_or_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop-settle-cost",
+      "file": "sdlc-studio/trd.md",
+      "old": "pre-commit `settle` 4.7 s",
+      "new": "pre-commit step 4.7 s",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_no_unmeasured_sub_second_target_for_reconcile_or_status",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "resplice-cost-model",
+      "file": "sdlc-studio/trd.md",
+      "old": "a script\ncannot observe token spend itself, so it reads the harness's own record. The meter reads",
+      "new": "a script\nthe meter reads",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_the_spliced_cost_model_sentence_is_repaired",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "drop-live-command-row",
+      "file": "sdlc-studio/trd.md",
+      "old": "`time python3 <skill>/scripts/reconcile.py detect` (or `status.py`) prints",
+      "new": "`reconcile.py detect` (or `status.py`) prints",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdPerformanceClaimTests::test_no_unmeasured_sub_second_target_for_reconcile_or_status",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

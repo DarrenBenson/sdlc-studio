@@ -1,0 +1,70 @@
+{
+  "unit": "BG1531",
+  "digest": "3cb35192241c49d3 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1531-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "gate-back-in-read-only-list",
+      "file": "sdlc-studio/trd.md",
+      "old": "`validate`, `next_id`, `critic show`) never mutate",
+      "new": "`validate`, `next_id`, `gate`, `critic show`) never mutate",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-2-read-only-layer",
+      "file": "sdlc-studio/trd.md",
+      "old": "with a Python script layer for",
+      "new": "with a read-only Python script layer for",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "briefs-jsonl-no-tracking",
+      "file": "sdlc-studio/trd.md",
+      "old": "`sdlc-studio/.local/briefs.jsonl` (untracked)",
+      "new": "`sdlc-studio/.local/briefs.jsonl`",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "s9-row-no-writers",
+      "file": "sdlc-studio/trd.md",
+      "old": "`critic brief`, `gate` and `review_prep close` write only the state \u00a75 rule 5 names, and every",
+      "new": "and every",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "review-prep-in-split-list",
+      "file": "sdlc-studio/trd.md",
+      "old": "`status`, `validate`, `next_id`, `critic show`) emit JSON",
+      "new": "`status`, `validate`, `next_id`, `review_prep`, `critic show`) emit JSON",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "audit-listed-with-no-assertion",
+      "file": "sdlc-studio/trd.md",
+      "old": "`validate`, `next_id`, `critic show`) never mutate",
+      "new": "`validate`, `next_id`, `audit`, `critic show`) never mutate",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_every_helper_called_read_only_has_a_confinement_assertion",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "snapshot-blind-to-directories",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
+      "old": "\"(directory)\" if p.is_dir() else hashlib",
+      "new": "hashlib",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::WritingHelperConfinementTests::test_each_writing_helper_writes_only_its_named_state",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "unit": "BG1527",
+  "digest": "30174c6f419afe31 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1527-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "shipped forecast called a falsified hypothesis",
+      "file": "sdlc-studio/prd.md",
+      "old": "cleared the bar set",
+      "new": "is a falsified hypothesis set",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_status_note_does_not_call_the_shipped_forecast_falsified",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section 10 pointer dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "its data was seen (see \u00a710).",
+      "new": "its data was seen.",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_status_note_does_not_call_the_shipped_forecast_falsified",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the falsified-hypothesis check is switched off",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "if \"falsified hypothesis\" in note:",
+      "new": "if False:",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_status_note_does_not_call_the_shipped_forecast_falsified",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

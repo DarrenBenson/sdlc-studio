@@ -1,0 +1,52 @@
+{
+  "unit": "BG1631",
+  "digest": "8284971beee08eab at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0d14f4cb3f8a2d5d/BG1631-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the uninstall guard removed (HEAD)",
+      "file": "install.ps1",
+      "old": "if (-not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {",
+      "new": "if ($false) {",
+      "test": "tools/tests/test_install_uninstall_guard.py::InstallPs1UninstallGuardTests::test_ps1_uninstall_removes_only_a_folder_whose_skill_md_names_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the guard warns and still removes",
+      "file": "install.ps1",
+      "old": "                $kept++\n                continue\n",
+      "new": "                $kept++\n",
+      "test": "tools/tests/test_install_uninstall_guard.py::InstallPs1UninstallGuardTests::test_ps1_uninstall_removes_only_a_folder_whose_skill_md_names_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the guard tests the path, not the SKILL.md",
+      "file": "install.ps1",
+      "old": "if (-not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {",
+      "new": "if (-not (Test-Path $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {",
+      "test": "tools/tests/test_install_uninstall_guard.py::InstallPs1UninstallGuardTests::test_ps1_uninstall_removes_only_a_folder_whose_skill_md_names_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the skip is not reported",
+      "file": "install.ps1",
+      "old": "\"skipping $dest (no sdlc-studio SKILL.md - not an sdlc-studio copy, so it is left alone)\"",
+      "new": "\"skipping $dest\"",
+      "test": "tools/tests/test_install_uninstall_guard.py::InstallPs1UninstallGuardTests::test_ps1_uninstall_removes_only_a_folder_whose_skill_md_names_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty folder is refused too",
+      "file": "install.ps1",
+      "old": "if (-not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {",
+      "new": "if (-not (Test-SkillCopy $dest)) {",
+      "test": "tools/tests/test_install_uninstall_guard.py::InstallPs1UninstallGuardTests::test_ps1_uninstall_removes_only_a_folder_whose_skill_md_names_the_skill",
+      "result": "survived",
+      "answer": "answer: AC1 names no empty-folder case; the clause mirrors install.sh, whose empty-folder removal BG1547 AC2 pins by execution, and with no pwsh here only the source is read"
+    }
+  ]
+}

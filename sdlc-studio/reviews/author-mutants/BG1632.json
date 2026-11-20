@@ -1,0 +1,61 @@
+{
+  "unit": "BG1632",
+  "digest": "993e0482c657c4f5 at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0d14f4cb3f8a2d5d/BG1632-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the install guard removed (HEAD)",
+      "file": "install.ps1",
+      "old": "if ((Test-Path $dest) -and -not (Test-SkillCopy $dest) -and @(Get-ChildItem -Force -LiteralPath $dest).Count -gt 0) {",
+      "new": "if ($false) {",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the guard warns and still replaces",
+      "file": "install.ps1",
+      "old": "                $skippedDests += (Join-Path (Resolve-Path $parent).Path $SkillName)\n                continue\n",
+      "new": "                $skippedDests += (Join-Path (Resolve-Path $parent).Path $SkillName)\n",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the banner names every requested target",
+      "file": "install.ps1",
+      "old": "Write-Ok \"SDLC Studio installed for: $($installedTargets -join ' ')\"",
+      "new": "Write-Ok \"SDLC Studio installed for: $($targets -join ' ')\"",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a run that wrote nothing is not refused",
+      "file": "install.ps1",
+      "old": "throw \"Nothing was installed. $($skipped -join",
+      "new": "Write-Warn2 \"Nothing was installed. $($skipped -join",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the skip is not reported",
+      "file": "install.ps1",
+      "old": "\"skipping $dest (no sdlc-studio SKILL.md - not touching it)\"\n                $skipped",
+      "new": "\"skipping $dest\"\n                $skipped",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every requested target counted as written",
+      "file": "install.ps1",
+      "old": "$installedTargets = @($targets | Where-Object { $writtenDirs -contains $Map[$_].$Scope })",
+      "new": "$installedTargets = @($targets)",
+      "test": "tools/tests/test_install_atomic.py::InstallPs1ExistingFolderTests::test_ps1_install_skips_an_existing_folder_that_is_not_the_skill",
+      "result": "survived",
+      "answer": "answer: only a real install under pwsh can show which targets the banner names; this host has no pwsh, the CI runners do, and the source read pins the banner reading $installedTargets, not how it is built"
+    }
+  ]
+}

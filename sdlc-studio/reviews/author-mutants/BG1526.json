@@ -1,0 +1,43 @@
+{
+  "unit": "BG1526",
+  "digest": "316324acd87812b8 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1526-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "lessons.loop back at loop",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `lessons.loop` | `enforce` |",
+      "new": "| `lessons.loop` | `loop` |",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "schema_version says init stamps 2",
+      "file": "sdlc-studio/prd.md",
+      "old": "`init` stamps 3 on a new project",
+      "new": "`init` stamps 2 on a new project",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "schema_version default back at 3",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `schema_version` | 2 (",
+      "new": "| `schema_version` | 3 (",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the init-stamp check is switched off",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "if f\"`init` stamps {stamped} on a new project\" not in default:",
+      "new": "if False:",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_the_lessons_loop_and_schema_version_rows_match_the_defaults_file",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

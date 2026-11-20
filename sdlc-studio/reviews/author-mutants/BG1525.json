@@ -1,0 +1,79 @@
+{
+  "unit": "BG1525",
+  "digest": "6c271795c56fab93 at 44d85d3511ce",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aa5b06572edcc5b40/BG1525-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "inline-modes-ignored",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "modes = set(re.findall(r\"\\w+\", note.split(\" - \")[0])) if note and \"|\" in note",
+      "new": "modes = set() if note and \"|\" in note",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "mode-lines-ignored",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "modes |= {w for c in comments for w in re.findall(r\"^\\s*#\\s{2,}(\\w+)\", c)}",
+      "new": "modes |= set()",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "code-fallback-dropped",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "keys.setdefault(key, \"false\")",
+      "new": "pass",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "require-prefix-dropped",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "return leaf == \"enforce\" or leaf.startswith(\"require_\")",
+      "new": "return leaf == \"enforce\"",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "enforce-not-blocking",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "_BLOCKING_VALUES = (\"block\", \"enforce\", \"true\")",
+      "new": "_BLOCKING_VALUES = (\"block\", \"true\")",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-fresh-session-reason-dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "`sprint.fresh_session` (`warn`: a session over the threshold is named with its re-read cost\nand goes on, so no project is refused `resume` until it asks for `block`),",
+      "new": "`sprint.fresh_session`,",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-provenance-dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "`provenance.enforce` (`false`: `provenance check` names an unstamped artefact and exits 0\nuntil the project opts in), ",
+      "new": "",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_section_9_names_every_gate_key_that_ships_off",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-provenance-dropped",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "`constitution.enforce`, `provenance.enforce`, `sprint.affects_check`",
+      "new": "`constitution.enforce`, `sprint.affects_check`",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdFlagDefaultsTests::test_reference_config_does_not_claim_a_single_exception",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

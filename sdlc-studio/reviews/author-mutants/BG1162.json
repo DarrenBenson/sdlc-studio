@@ -1,0 +1,52 @@
+{
+  "unit": "BG1162",
+  "digest": "8af757ddd94c27c1 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1162-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "test: a git pull is no longer a network call",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "fetch|pull|push|clone",
+      "new": "fetch|push|clone",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_rules_nfrs_and_cost_model_match_the_code",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "override named before the measured rate",
+      "file": "sdlc-studio/prd.md",
+      "old": "A plan prices from the project's own measured rate:",
+      "new": "A plan prices from `estimate.tokens_per_point` unless the project has a measured rate:",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_override_is_said_to_beat_the_measured_rate",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Verify AC criterion reassigned to BG0959",
+      "file": "sdlc-studio/prd.md",
+      "old": "Held by BG1023: the vitest",
+      "new": "Held by BG0959: the vitest",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "breakdown rule back to a story or bug",
+      "file": "sdlc-studio/prd.md",
+      "old": "and any pointed unit, a CR included, is pointed",
+      "new": "and is pointed",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_breakdown_rule_names_the_split_ceiling_for_any_pointed_unit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: a better-matching holder is never reported",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "if n > scores[bug])",
+      "new": "if n > scores[bug] + 99)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_a_held_criterion_names_the_bug_its_words_describe",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "unit": "BG1543",
+  "digest": "defaafa572a74c4f at bda739d427f8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a574c06689d3312f3/BG1543-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "ps1 refusal -or $Url -eq $AssetUrl as -and $Url -ne $AssetUrl (the REJECT's fail-open on the release asset's sidecar)",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($code -ne 404 -and $Url -ne $AssetUrl) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ps1 refusal -or as -and (a transport fault on the fallback read as an absence)",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($code -ne 404 -and $Url -eq $AssetUrl) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ps1 refusal -eq as -ne (every 404 beside the source archive or main refused)",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($code -ne 404 -or $Url -ne $AssetUrl) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ps1 refusal drops the asset clause (a 404 beside the release asset read as an absence)",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($code -ne 404) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ps1 refusal takes 403 for the absence status instead of 404",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($code -ne 403 -or $Url -eq $AssetUrl) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ps1 catch reads any failure as no sidecar (the refusal never taken)",
+      "file": "install.ps1",
+      "old": "if ($code -ne 404 -or $Url -eq $AssetUrl) {",
+      "new": "if ($false) {",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test maps -eq to Python != (the evaluator's operator map inverted)",
+      "file": "tools/tests/test_install_sidecar_fault.py",
+      "old": "\"-ne\": \"!=\", \"-eq\": \"==\",",
+      "new": "\"-ne\": \"!=\", \"-eq\": \"!=\",",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test maps -or to Python and",
+      "file": "tools/tests/test_install_sidecar_fault.py",
+      "old": "\"-or\": \"or\", \"-and\": \"and\",",
+      "new": "\"-or\": \"and\", \"-and\": \"and\",",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test expects a 404 beside the source archive to refuse",
+      "file": "tools/tests/test_install_sidecar_fault.py",
+      "old": "    (404, PS_ARCHIVE, PS_ASSET, False),",
+      "new": "    (404, PS_ARCHIVE, PS_ASSET, True),",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drops the guard on -and beside -or",
+      "file": "tools/tests/test_install_sidecar_fault.py",
+      "old": "if \"-and\" in tokens and \"-or\" in tokens:",
+      "new": "if False:",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "survived",
+      "answer": "Survives by design: the shipped condition has no -and, so the guard is inert on it. It refuses a future condition mixing -and and -or, which PowerShell evaluates left to right at equal precedence and Python would not, rather than deciding that condition under the wrong precedence."
+    },
+    {
+      "mutant": "test drops the refusal of a token the read does not model",
+      "file": "tools/tests/test_install_sidecar_fault.py",
+      "old": "        if not m:\n            raise AssertionError(",
+      "new": "        if False:\n            raise AssertionError(",
+      "test": "tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence",
+      "result": "survived",
+      "answer": "Survives by design: every token of the shipped condition is in the modelled set, so the refusal never fires on it. Without it a future unmodelled token fails with an AttributeError rather than a message naming the construct; the test still fails, only less legibly."
+    }
+  ]
+}

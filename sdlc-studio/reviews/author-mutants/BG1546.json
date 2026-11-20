@@ -1,0 +1,124 @@
+{
+  "unit": "BG1546",
+  "digest": "8e393e9d68b398be at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0d14f4cb3f8a2d5d/BG1546-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every target counted as written (HEAD)",
+      "file": "install.sh",
+      "old": "if [[ \"$INSTALL_RESULT\" == installed ]]; then",
+      "new": "if true; then",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no nothing-installed branch",
+      "file": "install.sh",
+      "old": "elif [[ -z \"$installed_targets\" ]]; then",
+      "new": "elif false; then",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_skipped_foreign_folder_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the closing line drops the reason",
+      "file": "install.sh",
+      "old": "error \"Nothing was installed. ${skipped[*]}\"",
+      "new": "error \"Nothing was installed.\"",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_skipped_foreign_folder_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nothing installed still exits 0",
+      "file": "install.sh",
+      "old": "        exit 1\n    else\n        success \"SDLC Studio installed",
+      "new": "        exit 0\n    else\n        success \"SDLC Studio installed",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_refused_downgrade_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "next steps built from every requested target",
+      "file": "install.sh",
+      "old": "for t in $installed_targets; do",
+      "new": "for t in $targets; do",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "banner names every requested target",
+      "file": "install.sh",
+      "old": "success \"SDLC Studio installed for: $installed_targets\"\n",
+      "new": "success \"SDLC Studio installed for: $targets\"\n",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a skipped target left unnamed after the banner",
+      "file": "install.sh",
+      "old": "success \"SDLC Studio installed for: $installed_targets\"\n        for s in \"${skipped[@]}\"; do warn \"not installed for $s\"; done\n",
+      "new": "success \"SDLC Studio installed for: $installed_targets\"\n",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a refused downgrade reported as installed",
+      "file": "install.sh",
+      "old": "        return 0   # refused:",
+      "new": "        INSTALL_RESULT=installed; return 0   # refused:",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_refused_downgrade_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a skipped target handed to the sweep as written",
+      "file": "install.sh",
+      "old": "skipped_dests=\"$skipped_dests $(canon \"${item#*:}\")/$SKILL_NAME\"",
+      "new": "installed_dests=\"$installed_dests $(canon \"${item#*:}\")/$SKILL_NAME\"",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every install reported as nothing installed",
+      "file": "install.sh",
+      "old": "    success \"installed: $dest\"\n    INSTALL_RESULT=installed\n",
+      "new": "    success \"installed: $dest\"\n",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_clean_install_still_prints_the_banner_and_exits_zero",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every requested target matched to a written dir",
+      "file": "install.sh",
+      "old": "if [[ \"$p\" == \"$parent\" ]]; then",
+      "new": "if true; then",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_partly_skipped_run_names_only_what_it_wrote",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the foreign fixture holds nothing, so it is installed into",
+      "file": "tools/tests/test_install_atomic.py",
+      "old": "        (dest / \"notes.txt\").write_text(\"mine\\n\", encoding=\"utf-8\")\n        return dest",
+      "new": "        return dest",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_skipped_foreign_folder_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the downgrade fixture stamped older than the source",
+      "file": "tools/tests/test_install_atomic.py",
+      "old": "stamp.write_text('skill_version: \"99.0.0\"\\n'",
+      "new": "stamp.write_text('skill_version: \"1.0.0\"\\n'",
+      "test": "tools/tests/test_install_atomic.py::NothingInstalledOutcome::test_a_refused_downgrade_ends_with_no_banner_and_a_failing_exit",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

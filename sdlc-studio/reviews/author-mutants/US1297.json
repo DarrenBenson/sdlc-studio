@@ -1,0 +1,142 @@
+{
+  "unit": "US1297",
+  "digest": "81de81b7630aa24a at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a1bf0ffd6917ee203/US1297-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 reader warns and returns the default without PyYAML (HEAD behaviour)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "    yaml = require_pyyaml(cfg_path)   # before the cache, so no cached parse answers without it\n",
+      "new": "    try:\n        import yaml\n    except ImportError:\n        _warn_unhonoured(cfg_path, \"PyYAML is not installed\")\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_present_config_is_refused_not_defaulted_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 the refusal is an Exception (RuntimeError), which a broad except swallows",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "class PyYamlRequired(SystemExit):",
+      "new": "class PyYamlRequired(RuntimeError):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_present_config_is_refused_not_defaulted_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 the refusal is an Exception, run through the shipped command",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "class PyYamlRequired(SystemExit):",
+      "new": "class PyYamlRequired(RuntimeError):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_shipped_command_exits_non_zero_with_one_refusal_line",
+      "result": "survived",
+      "answer": "equivalent for this command: status.py's __main__ guard prints any Exception as one 'error:' line at exit 1, so AC3's contract holds either way; the same edit is killed as M2 by AC1's broad-except check"
+    },
+    {
+      "mutant": "M4 the refusal names no install command",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "PYYAML_INSTALL = \"python3 -m pip install pyyaml\"",
+      "new": "PYYAML_INSTALL = \"your package manager\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_present_config_is_refused_not_defaulted_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M5 an absent config is refused too, not only a present one",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        return default          # absent: silently the default, as it always was",
+      "new": "        require_pyyaml(cfg_path)\n        return default",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_present_config_is_refused_not_defaulted_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 a malformed config is refused instead of warned and degraded",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        _warn_unhonoured(cfg_path, f\"it could not be parsed ({exc})\")\n        parsed = None",
+      "new": "        raise PyYamlRequired(cfg_path)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_readable_config_is_still_honoured_with_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 every present config is refused, PyYAML or not",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/sdlc_md.py",
+      "old": "        import yaml  # noqa: PLC0415 - required (D0505), imported where a config is read\n    except ImportError:",
+      "new": "        import yaml  # noqa: PLC0415 - required (D0505), imported where a config is read\n        raise ImportError\n    except ImportError:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_readable_config_is_still_honoured_with_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M8 config.load_config keeps the RuntimeError, so get warns and defaults",
+      "file": ".claude/skills/sdlc-studio/scripts/config.py",
+      "old": "    yaml = sdlc_md.require_pyyaml(override) if override.exists() else _yaml()",
+      "new": "    yaml = _yaml()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_config.py::RequiredPyYamlTests::test_config_refuses_without_pyyaml_and_prints_no_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M9 load_config answers from the defaults when it cannot read the override",
+      "file": ".claude/skills/sdlc-studio/scripts/config.py",
+      "old": "    yaml = sdlc_md.require_pyyaml(override) if override.exists() else _yaml()\n",
+      "new": "    try:\n        yaml = sdlc_md.require_pyyaml(override) if override.exists() else _yaml()\n    except SystemExit:\n        return {\"require_ac_verification\": False}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_config.py::RequiredPyYamlTests::test_config_refuses_without_pyyaml_and_prints_no_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 test: the shim is written under another name, so the child is not denied PyYAML",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "old": "        (hidden / \"yaml.py\").write_text(",
+      "new": "        (hidden / \"yaml_unused.py\").write_text(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_shipped_command_exits_non_zero_with_one_refusal_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 test: the in-process block is dropped, so yaml imports",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "old": "            with mock.patch.dict(sys.modules, {\"yaml\": None}), contextlib.redirect_stderr(err):\n                with self.assertRaises(sdlc_md.PyYamlRequired) as cm:",
+      "new": "            with mock.patch.dict(sys.modules, {}), contextlib.redirect_stderr(err):\n                with self.assertRaises(sdlc_md.PyYamlRequired) as cm:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_present_config_is_refused_not_defaulted_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 test: the malformed fixture is well formed, so config_unparseable reads false",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py",
+      "old": "            cfg.write_text(\"profile: [unclosed\\n\", encoding=\"utf-8\")",
+      "new": "            cfg.write_text(\"profile: full\\n\", encoding=\"utf-8\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sdlc_md.py::RequiredPyYamlTests::test_a_readable_config_is_still_honoured_with_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T4 test: the AC2 fixture writes its config under another name, so nothing is present to refuse",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_config.py",
+      "old": "            (root / \"sdlc-studio\" / \".config.yaml\").write_text(self.CONFIG, encoding=\"utf-8\")\n            err = io.StringIO()\n            with mock.patch.dict(sys.modules, {\"yaml\": None}), contextlib.redirect_stderr(err):\n                with self.assertRaises(config.sdlc_md.PyYamlRequired) as cm:",
+      "new": "            (root / \"sdlc-studio\" / \".config.yml\").write_text(self.CONFIG, encoding=\"utf-8\")\n            err = io.StringIO()\n            with mock.patch.dict(sys.modules, {\"yaml\": None}), contextlib.redirect_stderr(err):\n                with self.assertRaises(config.sdlc_md.PyYamlRequired) as cm:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_config.py::RequiredPyYamlTests::test_config_refuses_without_pyyaml_and_prints_no_defaults",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M10 migrate's retired-key pass keeps the no-parser hand-back instead of refusing",
+      "file": ".claude/skills/sdlc-studio/scripts/migrate.py",
+      "old": "    yaml = sdlc_md.require_pyyaml(path)\n",
+      "new": "    try:\n        import yaml\n    except ImportError:\n        suspects = [k for k in retired if re.search(\n            rf\"(?<![\\w.-]){re.escape(k.rsplit('.', 1)[-1])}\\s*:\", text)]\n        return [], ([{\"kind\": \"retired-config-key\", \"command\": None, \"detail\":\n                      f\".config.yaml: remove {', '.join(suspects)} by hand if present\"}]\n                    if suspects else []), {}\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_without_a_parser_migrate_refuses_and_writes_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T5 test: the migrate test no longer hides yaml, so nothing is refused",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py",
+      "old": "                with mock.patch.dict(sys.modules, {\"yaml\": None}):\n                    with self.assertRaises(sdlc_md.PyYamlRequired):\n                        migrate.migrate(",
+      "new": "                with mock.patch.dict(sys.modules, {}):\n                    with self.assertRaises(sdlc_md.PyYamlRequired):\n                        migrate.migrate(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_migrate_config.py::MigrateConfigTests::test_without_a_parser_migrate_refuses_and_writes_nothing",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

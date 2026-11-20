@@ -1,0 +1,70 @@
+{
+  "unit": "BG1530",
+  "digest": "d050101ba085ab10 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1530-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "status-not-yet-built",
+      "file": "sdlc-studio/trd.md",
+      "old": "; the learning loop is built, the review standard is not",
+      "new": "; not yet built",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "built-drops-us1067",
+      "file": "sdlc-studio/trd.md",
+      "old": "the retro (US1067) and a learning",
+      "new": "the retro and a learning",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "restore-no-learning-live",
+      "file": "sdlc-studio/trd.md",
+      "old": "card to no review standard.\n**Not yet built:**",
+      "new": "card to no review standard, so no learning is live yet.\n**Not yet built:**",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "not-built-lists-us1066",
+      "file": "sdlc-studio/trd.md",
+      "old": "and `persona_review.py` (US1052).",
+      "new": "and `persona_review.py` (US1066).",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "history-row-no-us1068",
+      "file": "sdlc-studio/trd.md",
+      "old": "signed-close gate (US1068) as built. BG1531",
+      "new": "signed-close gate as built. BG1531",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_adr_012_names_the_built_learning_stories_as_built",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "check-reads-draft-as-done",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "if _story_status(s, stories) == \"Done\")",
+      "new": "if _story_status(s, stories) == \"Draft\")",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_a_done_story_called_open_fails_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "check-reads-no-open-claim",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "_OPEN_CLAIM = re.compile(r\"\\bopen\\b\", re.I)",
+      "new": "_OPEN_CLAIM = re.compile(r\"\\bopened\\b\", re.I)",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdAdr012Tests::test_a_done_story_called_open_fails_the_check",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

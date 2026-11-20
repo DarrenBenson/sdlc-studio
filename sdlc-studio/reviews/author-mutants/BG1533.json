@@ -1,0 +1,61 @@
+{
+  "unit": "BG1533",
+  "digest": "5aca4c149ef08720 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1533-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "adr5-enforces",
+      "file": "sdlc-studio/trd.md",
+      "old": "`validate.py instructions` reports the hygiene",
+      "new": "`validate.py instructions` enforces the hygiene",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_adrs_do_not_call_the_advisory_check_enforcement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "adr5-not-a-gate-dropped",
+      "file": "sdlc-studio/trd.md",
+      "old": "It is advisory and not a gate: it exits 0",
+      "new": "It is advisory: it exits 0",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_adrs_do_not_call_the_advisory_check_enforcement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "adr1-sync-enforced",
+      "file": "sdlc-studio/trd.md",
+      "old": "guide and the type tables in sync. `tools/check_links.py` checks",
+      "new": "guide and the type tables in sync (enforced partly by `validate.py instructions`). `tools/check_links.py` checks",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_adrs_do_not_call_the_advisory_check_enforcement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "agents-no-doctrine-pointer",
+      "file": "AGENTS.md",
+      "old": "The operating doctrine is [reference-doctrine.md](.claude/skills/sdlc-studio/reference-doctrine.md);\nread it, do not restate it.\n\n",
+      "new": "",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_instructions_check_reports_no_warning_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "agents-no-integration-rule",
+      "file": "AGENTS.md",
+      "old": "**Integrate continuously.** Commit each unit",
+      "new": "Commit each unit",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_instructions_check_reports_no_warning_here",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "agents-past-its-cap",
+      "file": "AGENTS.md",
+      "old": "read a red main before pushing again (D0181).",
+      "new": "read a red main before pushing again (D0181). padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_agents_md_stays_within_its_character_cap",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

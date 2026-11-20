@@ -1,0 +1,151 @@
+{
+  "unit": "BG1634",
+  "digest": "4241948cc86f336b at bda739d427f8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a574c06689d3312f3/BG1634-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "reference-config.md back on its removed passage (config.get degrades to the built-in default)",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "**PyYAML dependency (required):** parsing `.config.yaml` needs PyYAML (`python3 -m pip install\npyyaml`). When PyYAML will not import, a command that reads a present `.config.yaml` refuses\n(exit 1) with one stderr line naming the file and that install command.\n",
+      "new": "**PyYAML dependency (graceful):** parsing `.config.yaml` needs PyYAML (`pip install pyyaml`).\nWithout it, the scripts do not crash: `config.get` degrades to the built-in default with a\none-line stderr warning, so a stdlib-only machine runs on the defaults. A project that ships a\n`.config.yaml` should install PyYAML so its declared conventions are actually applied.\n",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-upgrade.md back on its removed passage (migrate without PyYAML writes nothing and reports the keys)",
+      "file": ".claude/skills/sdlc-studio/reference-upgrade.md",
+      "old": "a layout that cannot be edited line by line (a flow mapping) gets\n   nothing written and the keys reported. When PyYAML will not import, the upgrade refuses\n   (exit 1) on a present `.config.yaml` and leaves it untouched. The ids and keys come from\n",
+      "new": "a layout that cannot be edited line by line (a flow mapping), or\n   a machine without PyYAML, gets nothing written and the keys reported. The ids and keys come\n",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-scripts-domain.md back on its removed passage (config.py degrading without PyYAML)",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
+      "old": "`sdlc-studio/.config.yaml`, refusing (exit 1) a present one when PyYAML will not import; the source",
+      "new": "`sdlc-studio/.config.yaml` (degrading without PyYAML); the source",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-scripts-domain.md pvd paragraph names PyYAML again without the refusal",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-domain.md",
+      "old": "`product-manifest.yaml` (stdlib only); the parser",
+      "new": "`product-manifest.yaml` (no PyYAML); the parser",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-config.md drops the exit status from the refusal",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "refuses\n(exit 1) with one stderr line",
+      "new": "refuses\nwith one stderr line",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-upgrade.md keeps the refusal and adds the absence report as its own sentence",
+      "file": ".claude/skills/sdlc-studio/reference-upgrade.md",
+      "old": "and leaves it untouched. The ids",
+      "new": "and leaves it untouched. A machine without PyYAML gets the keys reported. The ids",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-config.md keeps the refusal and adds a fallback to the built-in defaults",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "naming the file and that install command.\n",
+      "new": "naming the file and that install command. Otherwise it falls back to the built-in defaults.\n",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test's PyYAML matcher never matches (every page judged over no paragraphs)",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "_NAMES_PYYAML = re.compile(r\"(?<![\\w-])pyyaml(?![\\w-])\", re.I)",
+      "new": "_NAMES_PYYAML = re.compile(r\"(?<![\\w-])pyyamlx(?![\\w-])\", re.I)",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drops the negation allowance (a negated fallback read as a claim)",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "            if not _NEGATED.search(before.rstrip()):",
+      "new": "            if True:",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_a_restored_fallback_passage_fails_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drops the sentence rule (absence without the refusal)",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "            if _ABSENT.search(s) and not _REFUSES.search(s):",
+      "new": "            if False:",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_a_restored_fallback_passage_fails_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drops the carry-on lexicon",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "        for m in _CARRIES_ON.finditer(para):",
+      "new": "        for m in ():",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_a_restored_fallback_passage_fails_the_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drops the positive refusal rule",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "        if not any(_ABSENT.search(s) and _REFUSES.search(s) and _EXIT_1.search(s)\n                   and _NAMES_CONFIG.search(s) for s in sentences):",
+      "new": "        if False:",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test's positive rule no longer needs the exit status",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "and _REFUSES.search(s) and _EXIT_1.search(s)\n",
+      "new": "and _REFUSES.search(s)\n",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test's positive rule no longer needs a config read",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "                   and _NAMES_CONFIG.search(s) for s in sentences):",
+      "new": "                   for s in sentences):",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test's positive rule no longer needs the absence clause",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "        if not any(_ABSENT.search(s) and _REFUSES.search(s)",
+      "new": "        if not any(_REFUSES.search(s)",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test's paragraph split ignores list items (a numbered item judged with its neighbours)",
+      "file": "tools/tests/test_lean_migrate_config.py",
+      "old": "        if not line.strip() or _BREAK.match(line):",
+      "new": "        if not line.strip():",
+      "test": "tools/tests/test_lean_migrate_config.py::ReferencePagesPyYamlTests::test_every_pyyaml_paragraph_says_the_command_refuses",
+      "result": "survived",
+      "answer": "Survives on these pages: the PyYAML item in reference-upgrade.md's numbered list is the only item in its block naming PyYAML, so judging it with items 1 to 3 finds nothing extra. The split keeps a refusal stated in one list item from licensing a fallback claimed in another; no page carries that shape today."
+    }
+  ]
+}

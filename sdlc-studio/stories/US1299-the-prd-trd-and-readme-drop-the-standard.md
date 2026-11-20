@@ -6,7 +6,7 @@
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, README.md, docs/known-issues.md, tools/tests/test_lean_trd_refresh.py
+> **Affects:** sdlc-studio/prd.md, sdlc-studio/trd.md, README.md, docs/known-issues.md, tools/tests/test_lean_trd_refresh.py, changelog.d/US1299.md, sdlc-studio/tsd.md
 > **Epic:** EP0368
 > **Points:** 2
 > **Persona:** Abena Osei

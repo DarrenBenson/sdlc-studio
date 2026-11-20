@@ -1,6 +1,6 @@
 # BG1543: install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** install.sh, install.ps1, docs/INSTALL.md, tools/tests/test_install_sidecar_fault.py, changelog.d/BG1543.md
@@ -30,10 +30,13 @@ Fetch the sidecar with the same three-way status reader `download_to` uses, so a
 
 - [ ] **AC1** Given a local server answering 200 for the release asset and 503 for the same address with .sha256 appended, when install.sh runs with neither `SDLC_STUDIO_SHA256` nor `SDLC_STUDIO_REQUIRE_CHECKSUM` set, then it refuses, saying the digest could not be fetched and naming the fault, installs nothing and exits non-zero. Fails on: the 'no sha256 published' warning followed by an unverified install.
   - **Verify:** pytest tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_a_faulted_sidecar_beside_a_good_asset_refuses_the_install
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given the sidecar answering 404 on the source archive fallback, when install.sh runs, then it warns that no digest is published and proceeds; and given a correct sidecar beside the release asset, the install verifies and completes. Fails on: a refusal of a true absence on the fallback, or the absence warning printed for anything but a 404.
   - **Verify:** pytest tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_a_true_absence_still_warns_and_a_good_sidecar_verifies
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given install.ps1 and docs/INSTALL.md, when their handling of the digest is read, then install.ps1 tells a failed fetch of the sidecar from a 404 and refuses on the former, and the install page states that a digest which cannot be fetched refuses the install. Fails on: the PowerShell installer reading a transport fault as an absence, or the page claiming verification the default path can skip.
   - **Verify:** pytest tools/tests/test_install_sidecar_fault.py::InstallSidecarFaultTests::test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

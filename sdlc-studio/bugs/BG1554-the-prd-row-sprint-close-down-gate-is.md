@@ -1,6 +1,6 @@
 # BG1554: The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1554.md
@@ -30,8 +30,10 @@ Reword the row in sdlc-studio/prd.md to say what ships: a close-owed detector, t
 
 - [ ] **AC1** Given the Section 3 row of sdlc-studio/prd.md that describes the sprint close-down nudge, when it is read, then it describes an optional Stop hook a project wires by hand that reminds once at a turn end without locking, names scripts/hooks/`close_guard.py` in its source column, and its feature name no longer calls the advisory a gate. Fails on: the row crediting a Stop-hook installer, or saying the hook redefines when a sprint is done.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_close_down_row_describes_the_hand_wired_reminder
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** Given the shipped scripts, when the test searches them for a writer of a Stop hook entry into a settings file and finds none, then the PRD contains no claim of a Stop-hook installer; with such a writer present the claim is allowed. Fails on: the PRD naming an installer while no script installs the hook.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_no_stop_hook_installer_is_claimed_while_none_ships
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1547: install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** install.sh, docs/INSTALL.md, tools/tests/test_install_uninstall_guard.py, changelog.d/BG1547.md
@@ -31,12 +31,16 @@ Gate the removal in `uninstall_from` on `is_skill_copy`, allowing an empty folde
 
 - [ ] **AC1** Given a scratch HOME whose .claude/skills/sdlc-studio holds only notes.txt and no SKILL.md, when install.sh runs with `--uninstall --target claude`, then it warns that the folder is not an sdlc-studio copy, leaves the folder and notes.txt in place and its closing line says nothing was removed. Fails on: the folder deleted and reported as removed.
   - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_foreign_folder_is_left_alone_and_said_so
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** Given a real installed copy, and separately an empty folder of that name, when the same uninstall runs, then each is removed and reported as removed. Fails on: the guard refusing the installer's own copy or an empty folder.
   - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_real_copy_and_an_empty_folder_are_removed
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC3** Given the target path is a symbolic link to a skill copy elsewhere, when the uninstall runs, then the link is removed and the directory it pointed at is intact. Fails on: the uninstall following the link and deleting its target.
   - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_a_symbolic_link_is_removed_and_its_target_kept
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC4** Given docs/INSTALL.md, when its uninstall section is read, then it states that uninstall removes only a folder that is an sdlc-studio copy or is empty. Fails on: the page silent on the guard.
   - **Verify:** pytest tools/tests/test_install_uninstall_guard.py::UninstallGuardTests::test_the_install_page_states_the_uninstall_guard
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

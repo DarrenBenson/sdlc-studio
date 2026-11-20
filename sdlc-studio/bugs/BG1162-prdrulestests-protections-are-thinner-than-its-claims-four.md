@@ -1,9 +1,9 @@
 # BG1162: PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
-> **Affects:** tools/tests/test_lean_prd_refresh.py, sdlc-studio/prd.md, changelog.d/US1104.md, changelog.d/BG1162.md
+> **Affects:** tools/tests/test_lean_prd_refresh.py, sdlc-studio/prd.md, changelog.d/BG1162.md
 > **Evidence:** sdlc-studio/reviews/critic-verdicts.md, US1104 APPROVE by qa-seat-US1104-r1 (brief d21783422d23).
 > **Created:** 2026-11-01
 > **Created-by:** sdlc-studio file
@@ -29,10 +29,13 @@ Widen the network scan to any subprocess call whose argv names gh or a network g
 
 - [ ] **AC1** A script given a git ls-remote or a gh tuple call fails the Security NFR check until the PRD lists it.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** The PRD's breakdown rule and US1104's fragment name the split ceiling for any pointed unit.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC3** Reversing the override-versus-rate order, or reassigning a held criterion to another open bug, fails PrdRulesTests.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-19)
 
 ## Impact
 

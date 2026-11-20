@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-19
+**Last Updated:** 2026-11-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 467 |
+| Open | 460 |
 | In Progress | 0 |
-| Fixed | 961 |
+| Fixed | 981 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1630** |
+| **Total** | **1643** |
 
 ## All Bugs
 
@@ -237,13 +237,13 @@
 | [BG1159](BG1159-supersede-s-reference-omits-brief-and-row-brief.md) | supersede's reference omits --brief and row-brief, two of its new guarantees are unpinned, and a no-match refusal contradicts itself | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1160](BG1160-gate-py-run-tests-prints-no-tests-ran.md) | gate.py --run-tests prints 'no tests ran' and exits 0 when one of its modules is missing, even if a real module beside it fails | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1161](BG1161-a-clean-checkout-gate-py-run-judges-conformance.md) | A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time | Open | Low | 2026-11-01 | 2026-11-01 |
-| [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1162](BG1162-prdrulestests-protections-are-thinner-than-its-claims-four.md) | PrdRulesTests' protections are thinner than its claims: four PRD facts can drift past it | Fixed | Low | 2026-11-01 | 2026-11-01 |
 | [BG1163](BG1163-the-trd-s-lifecycle-table-states-a-tracked.md) | The TRD's lifecycle table states a tracked record is filed on every close, which --file-and-close does not do, and the .local writer pin accepts an orphaned writer | Fixed | Medium | 2026-11-01 | 2026-11-01 |
 | [BG1164](BG1164-adr-009-omits-the-generic-persona-rung-the.md) | ADR-009 omits the generic persona rung, the TRD gh-caller scan reads only a literal argv, and sprint's fetch-failure reason is garbled | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1165](BG1165-the-tsd-s-security-testing-section-says-the.md) | The TSD's Security Testing section says the script contract forbids network calls except the gh wrapper, but a version-check GET and git fetch origin also call out | Superseded | Low | 2026-11-01 | 2026-11-01 |
 | [BG1166](BG1166-two-tests-this-run-added-fail-only-at.md) | Two tests this run added fail only at the push gate: one shells out to git unconfined, one reads ignore rules through the gate host's symlinked .local | Fixed | High | 2026-11-01 | 2026-11-01 |
 | [BG1167](BG1167-conformance-re-derives-a-closed-unit-s-risk.md) | Conformance re-derives a closed unit's risk band from today's tree, so a later unit's edit to a shared file fails a light APPROVE that was right when given, and the census names the wrong remedy | Fixed | Medium | 2026-11-01 | 2026-11-01 |
-| [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Open | Low | 2026-11-01 | 2026-11-01 |
+| [BG1168](BG1168-the-prd-test-s-unreleased-marker-check-strips.md) | The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row | Fixed | Low | 2026-11-01 | 2026-11-01 |
 | [BG1169](BG1169-mutation-py-s-drop-ignored-ignores-git-check.md) | mutation.py's _drop_ignored ignores git check-ignore's exit code, so one path git refuses leaves the rest partly filtered | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1170](BG1170-the-tsd-and-trd-refresh-tests-leave-low.md) | The TSD and TRD refresh tests leave low residual gaps their round-2 and BG1166 reviews named | Open | Low | 2026-11-01 | 2026-11-01 |
 | [BG1171](BG1171-reconcile-settle-closes-an-epic-in-the-pre.md) | reconcile settle closes an epic in the pre-commit hook but leaves the requests that close made derivable, so the same commit's gate refuses on that drift | Open | Low | 2026-11-01 | 2026-11-01 |
@@ -255,7 +255,7 @@
 | [BG1177](BG1177-readme-s-6-2-0-line-and-the.md) | README's 6.2.0 line and the notes' theme heading say a reviewer judges only self-checked work, though the shipped default only reports a missing self-check | Fixed | Low | 2026-11-02 | 2026-11-02 |
 | [BG1178](BG1178-known-issues-py-check-compares-the-page-with.md) | known_issues.py check compares the page with the corpus but never reads the release notes' count sentence, so a hand edit of that line goes unchecked until the tag | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1179](BG1179-the-trd-refresh-test-pins-vocabulary-rather-than.md) | The TRD refresh test pins vocabulary rather than US1101's corrected claims: the ADR-012 row, the ADR sentences and an aliased urlopen all slip past it | Open | Low | 2026-11-02 | 2026-11-02 |
-| [BG1180](BG1180-the-prd-s-section-8-says-git-fetch.md) | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches | Open | Low | 2026-11-02 | 2026-11-02 |
+| [BG1180](BG1180-the-prd-s-section-8-says-git-fetch.md) | The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches | Fixed | Low | 2026-11-02 | 2026-11-02 |
 | [BG1181](BG1181-gate-prereqs-py-check-reports-every-prerequisite-present.md) | gate_prereqs.py check reports every prerequisite present on a machine with no Python 3.10, which the release gate's US0908 lane needs | Won't Fix | Low | 2026-11-02 | 2026-11-02 |
 | [BG1182](BG1182-test-agents-md-full-suite-rule-s-problems.md) | `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops early | Open | Low | 2026-11-02 | 2026-11-02 |
 | [BG1183](BG1183-two-done-criteria-outrun-the-release-gate-s.md) | Two Done criteria outrun the release gate's verify ceilings: US0940's test takes up to 535 s and US0926's migrate dry run 180 s | Fixed | Low | 2026-11-02 | 2026-11-02 |
@@ -600,15 +600,15 @@
 | [BG1522](BG1522-the-commit-gate-reuses-a-selected-green-suite.md) | The commit gate reuses a selected green suite verdict for a different selection, skipping the second commit's tests | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1523](BG1523-the-second-review-seat-shipped-in-6-4.md) | The second review seat shipped in 6.4 on the single-sequence round ledger that earlier decisions call unsafe for it | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1524](BG1524-the-evidence-pack-accepts-an-edited-report-as.md) | The evidence pack accepts an edited report as signed because it never checks the fingerprint or the run record | Fixed | High | 2026-11-17 | 2026-11-17 |
-| [BG1525](BG1525-prd-section-9-says-every-gate-bearing-key.md) | PRD section 9 says every gate-bearing key defaults on with one exception, but several shipped gate keys default off | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1526](BG1526-the-prd-flags-table-gives-wrong-defaults-for.md) | The PRD flags table gives wrong defaults for lessons.loop and schema_version | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1527](BG1527-the-prd-section-3-status-note-still-calls.md) | The PRD section 3 status note still calls the shipped token forecast a falsified hypothesis | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1528](BG1528-the-prd-context-section-still-calls-the-installed.md) | The PRD Context section still calls the installed copy the back-port source and cites CLAUDE.md for it | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1529](BG1529-the-trd-promises-sub-second-reconcile-and-status.md) | The TRD promises sub-second reconcile and status, which this repository misses by more than tenfold | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1530](BG1530-adr-012-says-persona-learning-approval-close-listing.md) | ADR-012 says persona learning approval, close listing and signature are unbuilt while they are Done and shipped | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1525](BG1525-prd-section-9-says-every-gate-bearing-key.md) | PRD section 9 says every gate-bearing key defaults on with one exception, but several shipped gate keys default off | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1526](BG1526-the-prd-flags-table-gives-wrong-defaults-for.md) | The PRD flags table gives wrong defaults for lessons.loop and schema_version | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1527](BG1527-the-prd-section-3-status-note-still-calls.md) | The PRD section 3 status note still calls the shipped token forecast a falsified hypothesis | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1528](BG1528-the-prd-context-section-still-calls-the-installed.md) | The PRD Context section still calls the installed copy the back-port source and cites CLAUDE.md for it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1529](BG1529-the-trd-promises-sub-second-reconcile-and-status.md) | The TRD promises sub-second reconcile and status, which this repository misses by more than tenfold | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1530](BG1530-adr-012-says-persona-learning-approval-close-listing.md) | ADR-012 says persona learning approval, close listing and signature are unbuilt while they are Done and shipped | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -618,19 +618,19 @@
 | [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1543](BG1543-install-sh-reads-a-failed-fetch-of-the.md) | install.sh reads a failed fetch of the sha256 sidecar as no digest published and installs unverified | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1544](BG1544-changelog-cut-reports-nothing-cut-after-it-has.md) | changelog-cut reports nothing cut after it has already folded and deleted every pending fragment | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1545](BG1545-the-tag-push-gate-never-compares-the-pushed.md) | The tag push gate never compares the pushed tag name with the version the tagged tree declares | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1546](BG1546-install-sh-prints-the-installed-banner-and-exits.md) | install.sh prints the installed banner and exits 0 when every target was skipped or refused | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1547](BG1547-install-sh-uninstall-deletes-any-folder-named-sdlc.md) | install.sh uninstall deletes any folder named sdlc-studio without the identity guard the install paths apply | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1548](BG1548-rfc0063-and-rfc0064-read-accepted-while-their-decision.md) | RFC0063 and RFC0064 read Accepted while their Decision sections still say pending and four workstreams have no CR | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1549](BG1549-the-public-why-page-says-a-bug-reaches.md) | The public why page says a bug reaches Fixed only when its criteria pass, but the gate accepts a Verify line never run | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1550](BG1550-public-docs-say-the-evidence-pack-refuses-to.md) | Public docs say the evidence pack refuses to name an agent as accountable, but the check is a word match on agent | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1551](BG1551-ep0246-stands-at-done-with-all-four-stories.md) | EP0246 stands at Done with all four stories Superseded, and reconcile detect reports no drift on a terminal epic | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1552](BG1552-ep0287-and-ep0312-stand-at-draft-with-stories.md) | EP0287 and EP0312 stand at Draft with stories Done and shipped in 6.4.0, and reconcile detect reports no drift | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1555](BG1555-the-prd-gives-three-different-accounts-of-what.md) | The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Fixed | Low | 2026-11-17 | 2026-11-17 |
+| [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Fixed | Low | 2026-11-17 | 2026-11-17 |
+| [BG1555](BG1555-the-prd-gives-three-different-accounts-of-what.md) | The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1556](BG1556-the-trd-storage-inventory-omits-both-committed-decision.md) | The TRD storage inventory omits both committed decision stores and does not tell the two decisions ledgers apart | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1557](BG1557-stale-summary-sentences-and-tables-in-the-trd.md) | Stale summary sentences and tables in the TRD contradict its own detailed sections and the code | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1558](BG1558-ts0001-is-recorded-complete-while-its-own-check.md) | TS0001 is recorded Complete while its own check reports 28 findings and nothing runs that check | Open | Low | 2026-11-17 | 2026-11-17 |
@@ -706,6 +706,19 @@
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1630](BG1630-lessons-add-global-writes-only-the-lesson-section.md) | lessons add --global writes only the Lesson section and ships the template's other sections as placeholders | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1631](BG1631-install-ps1-uninstall-deletes-any-folder-named-sdlc.md) | install.ps1 -Uninstall deletes any folder named sdlc-studio under a target, with none of the guard BG1547 gives install.sh | Fixed | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1632](BG1632-install-ps1-replaces-an-existing-folder-named-sdlc.md) | install.ps1 replaces an existing folder named sdlc-studio that is not an SDLC Studio install, where install.sh skips it | Fixed | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1633](BG1633-gate-py-refuses-a-missing-pyyaml-before-its.md) | gate.py refuses a missing PyYAML before its lanes run, but --suite-decision, --run-tests, --record-suite-verdict and --red-run still read config defaults silently | Fixed | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1634](BG1634-three-reference-pages-still-say-the-scripts-fall.md) | Three reference pages still say the scripts fall back to defaults without PyYAML | Fixed | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1635](BG1635-the-installer-tests-source-reads-accept-dead-or.md) | The installer tests' source reads accept dead or inverted install.ps1 guards | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1636](BG1636-installer-tests-that-run-install-sh-on-path.md) | Installer tests that run install.sh on PATH=/usr/bin:/bin fail where the system python3 cannot import yaml | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1637](BG1637-gate-py-s-pyyaml-refusal-says-a-config.md) | gate.py's PyYAML refusal says a config is read as defaults, and its release and json routes are unpinned | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1638](BG1638-config-defaults-yaml-still-calls-two-backlog-enforce.md) | config-defaults.yaml still calls two_backlog.enforce the one gate-bearing key that ships off | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1639](BG1639-the-prd-drift-checkers-accept-rewordings-of-the.md) | The PRD drift checkers accept rewordings of the claims they exist to refuse | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1640](BG1640-install-sh-s-sidecar-refusals-for-an-empty.md) | install.sh's sidecar refusals for an empty body, a transport fault and wget are unpinned | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1641](BG1641-a-repair-s-qa-brief-does-not-name.md) | A repair's QA brief does not name the reviewer whose REJECT it answers, so a fresh reviewer's round two is refused at record | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1642](BG1642-config-py-show-prints-a-runtimeerror-traceback-without.md) | config.py show prints a RuntimeError traceback without PyYAML instead of the one-line refusal | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1643](BG1643-the-trd-checks-left-by-run-nineteen-s.md) | The TRD checks left by run nineteen's TRD repairs accept rewordings and leave three claims unpinned | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

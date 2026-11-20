@@ -1,6 +1,6 @@
 # BG1533: ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, AGENTS.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1533.md
@@ -31,10 +31,13 @@ Correct both ADRs in `sdlc-studio/trd.md`: ADR-005 should say `validate.py instr
 
 - [ ] **AC1** Given ADR-001 and ADR-005 in `sdlc-studio/trd.md`, when they are read, then ADR-005 says `validate.py instructions` reports the AGENTS.md hygiene as warnings at init and upgrade and is not a gate, and ADR-001 no longer says it keeps the loading guide and type tables in sync, naming the check that does or stating that none does. Fails on: the word enforces used for a check that exits 0 on its own warnings.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_adrs_do_not_call_the_advisory_check_enforcement
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** Given this repository, when `validate.py instructions` runs from its root, then it reports no warning, with the doctrine pointer and the integration rule present in `AGENTS.md`. Fails on: `no-doctrine-pointer` or `no-integration-rule` still reported.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_the_instructions_check_reports_no_warning_here
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC3** Given `AGENTS.md` after the two additions, when its length is measured, then it stays within the 7,000 character cap the page states for itself. Fails on: the warnings cleared by growing the page past its cap.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdInstructionsCheckTests::test_agents_md_stays_within_its_character_cap
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

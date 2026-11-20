@@ -1,0 +1,43 @@
+{
+  "unit": "BG1554",
+  "digest": "4c0482179099a58d at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1554-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "row credits a Stop-hook installer",
+      "file": "sdlc-studio/prd.md",
+      "old": "An optional Stop hook, `close_guard.py`, a project wires into its own settings by hand",
+      "new": "A Stop-hook installer, `close_guard.py`, a project wires into its own settings by hand",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_no_stop_hook_installer_is_claimed_while_none_ships",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "feature name calls the advisory a gate",
+      "file": "sdlc-studio/prd.md",
+      "old": "| Sprint close-down reminder |",
+      "new": "| Sprint close-down gate |",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_close_down_row_describes_the_hand_wired_reminder",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: an installs-the-hook claim is not recognised",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "r\"\\binstalls? (?:the |a )?(?:\\w+ )?Stop",
+      "new": "r\"\\bXinstalls? (?:the |a )?(?:\\w+ )?Stop",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_no_stop_hook_installer_is_claimed_while_none_ships",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: a Stop entry with no settings file counts as a writer",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "and re.search(r\"settings(?:\\.json)?\", src)",
+      "new": "and True",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_no_stop_hook_installer_is_claimed_while_none_ships",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

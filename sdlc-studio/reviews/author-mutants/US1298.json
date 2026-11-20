@@ -1,0 +1,133 @@
+{
+  "unit": "US1298",
+  "digest": "23cc55568d40cf79 at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aee4047e27fbd21fe/US1298-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "check-never-called",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n",
+      "new": "    refusal = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-exits-zero",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "warn-and-run-lanes",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    if refusal:\n        print(refusal, file=sys.stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refuse-only-with-config",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    if refusal and (Path(args.root) / 'sdlc-studio' / '.config.yaml').exists():\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_without_pyyaml_even_with_no_project_config",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refuse-only-off-boundary",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    if refusal and not getattr(args, 'boundary', None):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-on-stdout",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    if refusal:\n        print(refusal)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refuses-every-machine",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "        import yaml  # noqa: F401 - the prerequisite itself\n",
+      "new": "        import yaml_not_a_module  # noqa: F401 - the prerequisite itself\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_runs_its_lanes_when_pyyaml_imports",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prints-on-pass",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    return None\n\n\ndef cmd_gate",
+      "new": "    print('gate: PyYAML ok', file=sys.stderr)\n    return None\n\n\ndef cmd_gate",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_runs_its_lanes_when_pyyaml_imports",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-install-command",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "                f\"Install it with `{PYYAML_INSTALL}`; without it a project's .config.yaml \"\n",
+      "new": "                f\"Without it a project's .config.yaml \"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "narrow-to-importerror",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    except Exception as exc:  # noqa: BLE001 - a broken install cannot be imported either\n",
+      "new": "    except ImportError as exc:  # noqa: BLE001 - a broken install cannot be imported either\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_a_pyyaml_that_fails_on_import_is_refused_too",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-leaves-yaml-importable",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "            if not yaml_imports:\n                stack.enter_context(_yaml_unimportable())\n            stack.enter_context(contextlib.redirect_stdout(out))\n",
+      "new": "            if False:\n                stack.enter_context(_yaml_unimportable())\n            stack.enter_context(contextlib.redirect_stdout(out))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_before_any_lane_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-none-entry-never-set",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "    sys.modules[\"yaml\"] = None          # a None entry makes the import statement raise\n",
+      "new": "    pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_refuses_without_pyyaml_even_with_no_project_config",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-config-switches-nothing-on",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "    CONFIG = \"constitution:\\n  enforce: true\\n\"\n",
+      "new": "    CONFIG = \"constitution:\\n  enforce: false\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_runs_its_lanes_when_pyyaml_imports",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-recorder-records-nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "            self.ran.append(name)\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::RequiredPyYamlTests::test_the_gate_runs_its_lanes_when_pyyaml_imports",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

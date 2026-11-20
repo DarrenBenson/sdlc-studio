@@ -1,6 +1,6 @@
 # BG1168: The PRD test's unreleased-marker check strips code spans from the whole row, and PRD edits land with no Revision History row
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_prd_refresh.py, sdlc-studio/prd.md, changelog.d/BG1168.md
@@ -27,8 +27,10 @@ Exempt a code span only inside the Description cell. Add a check, or a `doc_fres
 
 - [ ] **AC1** A Status cell or details Status line that carries the unreleased marker inside a code span fails `test_lean_prd_refresh.py`, and the release-cut row's Description still passes.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** The PRD's Revision History holds a row for every commit since 6.1.0 that changed its content.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-19)
 
 ## Impact
 

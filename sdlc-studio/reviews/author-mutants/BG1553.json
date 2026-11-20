@@ -1,0 +1,61 @@
+{
+  "unit": "BG1553",
+  "digest": "a9ab29a5d606fdf4 at 44d85d3511ce",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aa5b06572edcc5b40/BG1553-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "comprehension-not-bound",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "        if isinstance(node, (ast.For, ast.comprehension)):",
+      "new": "        if isinstance(node, ast.For):",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parameter-not-bound",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "        for call in calls.get(func.name, ()):",
+      "new": "        for call in calls.get(None, ()):",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "method-self-not-skipped",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "offset = 1 if params[:1] in ([\"self\"], [\"cls\"]) else 0",
+      "new": "offset = 0",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "attribute-constant-unresolved",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "        return constants.get(key.attr, set())",
+      "new": "        return set()",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unresolved-read-not-reported",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "                unresolved.append(f\"{file}: {ast.unparse(node)}\")",
+      "new": "                pass",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-pytest-addopts-row-dropped",
+      "file": "sdlc-studio/prd.md",
+      "old": "| `PYTEST_ADDOPTS` | Extended, never replaced, by `migrate.py` while it collects a project's tests, with `-p no:cacheprovider`, and restored after | No | unset |\n",
+      "new": "",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

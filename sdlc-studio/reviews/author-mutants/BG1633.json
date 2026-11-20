@@ -1,0 +1,88 @@
+{
+  "unit": "BG1633",
+  "digest": "e0b94b50a064982f at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aee4047e27fbd21fe/BG1633-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "check-after-the-verbs",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n    if getattr(args, \"red_run\", None):\n        return cmd_red_run(args)\n    if getattr(args, \"run_tests\", None):\n        return cmd_run_tests(args)\n    if getattr(args, \"record_suite_verdict\", None):\n        return cmd_record_suite_verdict(args)\n    if getattr(args, \"suite_decision\", False):\n        return cmd_suite_decision(args)\n",
+      "new": "    if getattr(args, \"red_run\", None):\n        return cmd_red_run(args)\n    if getattr(args, \"run_tests\", None):\n        return cmd_run_tests(args)\n    if getattr(args, \"record_suite_verdict\", None):\n        return cmd_record_suite_verdict(args)\n    if getattr(args, \"suite_decision\", False):\n        return cmd_suite_decision(args)\n    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "red-run-exempt",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    refusal = pyyaml_refusal()\n    if refusal and not getattr(args, 'red_run', None):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "suite-decision-exempt",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    refusal = pyyaml_refusal()\n    if refusal and not getattr(args, 'suite_decision', False):\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-exits-one",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "config-read-before-check",
+      "file": ".claude/skills/sdlc-studio/scripts/gate.py",
+      "old": "    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "new": "    sdlc_md.project_override(args.root, 'ci.rerun_limit', None)\n    refusal = pyyaml_refusal()\n    if refusal:\n        print(refusal, file=sys.stderr)\n        return 2\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-routes-leave-yaml-importable",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "            if not yaml_imports:\n                stack.enter_context(_yaml_unimportable())\n            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))\n",
+      "new": "            if False:\n                stack.enter_context(_yaml_unimportable())\n            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-verb-recorder-records-nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "            return lambda args: reached.append(name) or 0\n",
+      "new": "            return lambda args: 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-route-argv-reaches-the-lanes",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "        \"cmd_run_tests\": (\"--run-tests\", \"tests/test_example.py\"),\n",
+      "new": "        \"cmd_run_tests\": (\"--only\", \"reconcile\"),\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-config-spy-records-nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py",
+      "old": "            return lambda *a, **k: reads.append(a) or real(*a, **k)\n",
+      "new": "            return lambda *a, **k: real(*a, **k)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_gate.py::GatePyYamlEveryRouteTests::test_every_config_reading_route_refuses_without_pyyaml",
+      "result": "survived",
+      "answer": "Survives by construction against the shipped code: with every verb a recorder, nothing between main() and the dispatch reads the config, so the spy has nothing to see. It guards a read added ahead of the check, and mutant config-read-before-check, which adds one, is killed by it."
+    }
+  ]
+}

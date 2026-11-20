@@ -1,6 +1,6 @@
 # BG1180: The PRD's section 8 says git fetch origin serves remote-aware id allocation, which section 5 and next_id.py contradict: id allocation never fetches
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1180.md
@@ -26,6 +26,7 @@ Reword section 8 to name what does fetch (`sprint.origin_drift`) and say id allo
 
 - [ ] **AC1** No PRD sentence says id allocation fetches, and the PRD refresh test fails if one does.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py
+  - **Verified:** yes (2026-11-20)
 
 ## Impact
 

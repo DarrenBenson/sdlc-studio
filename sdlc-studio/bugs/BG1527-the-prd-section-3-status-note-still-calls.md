@@ -1,6 +1,6 @@
 # BG1527: The PRD section 3 status note still calls the shipped token forecast a falsified hypothesis
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1527.md
@@ -29,6 +29,7 @@ Rewrite the note so it keeps the distinction between Complete and calibrated but
 
 - [ ] **AC1** Given the Complete versus calibrated note in section 3 of `sdlc-studio/prd.md`, when it is read, then it keeps that distinction and describes the present state: the earlier token predictor was falsified and replaced, the points-based forecast cleared the pre-registered bar, and the section 10 reference stays. Fails on: the phrase falsified hypothesis describing the shipped forecast.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_status_note_does_not_call_the_shipped_forecast_falsified
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

@@ -1,6 +1,6 @@
 # BG1555: The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1555.md
@@ -31,10 +31,13 @@ State the close once in the PRD and make the other two passages agree with it. N
 
 - [ ] **AC1** Given `_CLOSE_CHAIN` in `sprint.py`, when the test reads it and the PRD's single account of the sprint close, then every chain step is named in that account (the three retro steps may be grouped where the grouping is said), including persona-memory, checklist and review-anchor. Fails on: a shipped chain step absent from the PRD's account.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_every_close_chain_step_is_named
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC2** Given the Mission paragraph, the Sprint report and sign row and Section 4 Core Behaviours, when each is read, then the sprint goal and the goal verdict are described as preconditions that refuse the close, none lists the goal verdict as a chain step, and the rule that a failed chain step is carried to the report is kept. Fails on: any passage listing the goal verdict among the chain steps, or two passages giving different step lists.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_the_goal_verdict_is_a_precondition_in_all_three_passages
+  - **Verified:** yes (2026-11-19)
 - [ ] **AC3** Given a copy of the PRD with one chain step's name removed from the account, when the same check runs over it, then it names the missing step. Fails on: a check that passes a PRD the chain has outgrown.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdCloseChainTests::test_a_dropped_chain_step_is_named
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

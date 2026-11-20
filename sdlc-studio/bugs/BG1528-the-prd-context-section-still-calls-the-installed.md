@@ -1,6 +1,6 @@
 # BG1528: The PRD Context section still calls the installed copy the back-port source and cites CLAUDE.md for it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1528.md
@@ -30,6 +30,7 @@ Rewrite the Context sentence in `sdlc-studio/prd.md` to say this repository is t
 
 - [ ] **AC1** Given the Context paragraph of section 2 of `sdlc-studio/prd.md`, when it is read, then it says this repository is the source, that fixes land here and are mirrored to the installed copy by `tools/forward-port.sh`, and cites the Forward-porting section of `AGENTS.md`. Fails on: the phrase back-port source, or a PRD that does not name `forward-port.sh`.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdRefreshTests::test_the_context_names_forward_port_as_the_direction_of_flow
+  - **Verified:** yes (2026-11-19)
 
 ## Revision History
 

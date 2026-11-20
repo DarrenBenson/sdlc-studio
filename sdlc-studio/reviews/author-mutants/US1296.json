@@ -1,0 +1,115 @@
+{
+  "unit": "US1296",
+  "digest": "6cdd49e509e6cef7 at 2c4dfa8ae9e9",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0d14f4cb3f8a2d5d/US1296-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no PyYAML check in install.sh",
+      "file": "install.sh",
+      "old": "    if [[ \"$UNINSTALL\" == false && \"$DRY_RUN\" == false ]]; then require_pyyaml; fi\n",
+      "new": "",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a check of command -v python3 alone",
+      "file": "install.sh",
+      "old": "if ! python3 -c 'import yaml' >/dev/null 2>&1; then",
+      "new": "if false; then",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a check that refuses every machine",
+      "file": "install.sh",
+      "old": "if ! python3 -c 'import yaml' >/dev/null 2>&1; then",
+      "new": "if true; then",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_installs_when_pyyaml_imports",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal names no install command",
+      "file": "install.sh",
+      "old": "local how=\"Install it with: python3 -m pip install pyyaml",
+      "new": "local how=\"Install it with: python3 -m pip",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no python3 at all is let through",
+      "file": "install.sh",
+      "old": "Install Python 3, then PyYAML. $how\"\n        exit 1",
+      "new": "Install Python 3, then PyYAML. $how\"\n        return 0",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no PyYAML check in install.ps1",
+      "file": "install.ps1",
+      "old": "if (-not $Uninstall -and -not $DryRun -and -not (Test-PyYaml)) {",
+      "new": "if ($false) {",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_ps1_checks_pyyaml_before_its_first_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "install.ps1's check imports something else",
+      "file": "install.ps1",
+      "old": "-c 'import yaml' 2>$null",
+      "new": "-c 'import sys' 2>$null",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_ps1_checks_pyyaml_before_its_first_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "install.ps1 warns and carries on",
+      "file": "install.ps1",
+      "old": "        throw \"PyYAML is required",
+      "new": "        Write-Warn2 \"PyYAML is required",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_ps1_checks_pyyaml_before_its_first_copy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page calls PyYAML optional again",
+      "file": "docs/INSTALL.md",
+      "old": "PyYAML is required, and both installers",
+      "new": "PyYAML is optional, and both installers",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_the_install_page_names_pyyaml_as_required",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the broken yaml module imports",
+      "file": "tools/tests/test_install_requires_pyyaml.py",
+      "old": "\"\" if importable else \"raise ImportError(\\\"No module named 'yaml'\\\")\\n\"",
+      "new": "\"\"",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the no-python PATH keeps python3",
+      "file": "tools/tests/test_install_requires_pyyaml.py",
+      "old": "if entry.name.startswith(\"python\") or",
+      "new": "if entry.name.startswith(\"no-such-prefix\") or",
+      "test": "tools/tests/test_install_requires_pyyaml.py::InstallRequiresPyYamlTests::test_install_sh_refuses_when_pyyaml_cannot_be_imported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the curated PATH loses its python3",
+      "file": "tools/tests/test_install_copilot_global.py",
+      "old": "    python3.chmod(0o755)\n",
+      "new": "    python3.unlink()\n",
+      "test": "tools/tests/test_install_copilot_global.py::UndetectedHintTests::test_no_hint_for_an_explicit_target",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

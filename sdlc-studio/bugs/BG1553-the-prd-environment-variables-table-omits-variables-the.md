@@ -1,6 +1,6 @@
 # BG1553: The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py, changelog.d/BG1553.md
@@ -30,10 +30,13 @@ Add a row to the Section 9 table for each variable the shipped scripts read and 
 
 - [ ] **AC1** Given the Section 9 Environment Variables table of sdlc-studio/prd.md, when the test collects every environment variable name the shipped scripts and their lib folder read, then each one has a row in the table, including `SDLC_STUDIO_HARNESS`, `CURSOR_API_KEY`, `SDLC_STUDIO_CURSOR_AGENT_ID` and `SDLC_STUDIO_CURSOR_API`. Fails on: a variable a shipped script reads having no row, which is how the table fell behind the Cursor meter.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_every_variable_the_scripts_read_has_a_row
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given the same table, when the rows for `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_API` are read, then the first is marked as a secret and the second as a network endpoint override, and the `CLAUDE_SKILL_DIR` row says the harness sets it and no script reads it. Fails on: the one secret the skill sends being listed as an ordinary setting, or a row claiming a script reads a variable none does.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_the_secret_and_the_endpoint_override_are_marked
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given a copy of the PRD with one variable's row removed, when the same collector runs over it, then it names the missing variable; and a row naming a variable no script reads and the PRD does not mark as harness-set is reported too. Fails on: a collector that passes whatever the table holds.
   - **Verify:** pytest tools/tests/test_lean_prd_refresh.py::PrdEnvironmentVariablesTests::test_a_dropped_row_is_named
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

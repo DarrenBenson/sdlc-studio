@@ -1,0 +1,43 @@
+{
+  "unit": "BG1168",
+  "digest": "c224eef3366e1642 at 6d3cd7e6d36c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad61e9a00ba0fb2ee/BG1168-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "test: a code span exempts the marker in any cell",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "UNRELEASED in (_CODE_SPAN_RE.sub(\"\", v) if k == \"Description\" else v)",
+      "new": "UNRELEASED in _CODE_SPAN_RE.sub(\"\", v)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdBaselineTests::test_no_shipped_row_is_unreleased",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the details Status line is span-stripped too",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "if UNRELEASED in status.group(0) or UNRELEASED in",
+      "new": "if UNRELEASED in _CODE_SPAN_RE.sub('', status.group(0)) or UNRELEASED in",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdBaselineTests::test_no_shipped_row_is_unreleased",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "US1148 named in no Changelog row",
+      "file": "sdlc-studio/prd.md",
+      "old": "(US1146, US1147, US1148)",
+      "new": "(US1146, US1147)",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_every_prd_change_since_6_1_0_has_a_changelog_row",
+      "result": "survived",
+      "answer": "The runner's scratch copy holds no git history, so the history half of the test skips there. In the clone it is killed: the dropped US1148 leaves commit 77edb628 with no row, and revision_problems names it (shown by running the check over the mutated PRD, recorded in the hand-in)."
+    },
+    {
+      "mutant": "test: no commit is ever missing a row",
+      "file": "tools/tests/test_lean_prd_refresh.py",
+      "old": "and sha[:8] not in table:",
+      "new": "and sha[:8] not in table and False:",
+      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_every_prd_change_since_6_1_0_has_a_changelog_row",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
