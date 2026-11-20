@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 165 |
+| Draft | 164 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 970 |
+| Done | 971 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -92,7 +92,7 @@
 | [US1052](US1052-the-persona-standard-names-every-rule-a-card.md) | The persona standard names every rule a card is held to, and persona_review check reports each card against it | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Done | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1058](US1058-persona-memory-py-keeps-each-persona-s-evidenced.md) | persona_memory.py keeps each persona's evidenced learnings in a committed memory file beside its card | Superseded | EP0287 | 2026-10-12 | 2026-10-12 |

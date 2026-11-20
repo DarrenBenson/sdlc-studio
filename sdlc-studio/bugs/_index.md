@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 464 |
+| Open | 466 |
 | In Progress | 0 |
 | Fixed | 999 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1665** |
+| **Total** | **1667** |
 
 ## All Bugs
 
@@ -741,6 +741,8 @@
 | [BG1663](BG1663-bg1655-did-not-converge-in-review-round-2.md) | BG1655 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1664](BG1664-persona-cards-still-builds-the-number-keyed-goal.md) | persona_cards still builds the number-keyed goal_verify and goal_applies_to maps that nothing reads after BG1660 | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1665](BG1665-critic-py-record-refuses-a-parallel-second-seat.md) | critic.py record refuses a parallel second seat's verdict once the first seat's REJECT is recorded, so its REJECT never reaches the ledger | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1666](BG1666-this-repository-s-seven-persona-and-seat-cards.md) | This repository's seven persona and seat cards carry no Evidence section, so persona_review.py check reports persona-evidence on each | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1667](BG1667-persona-resolve-py-resolve-tracebacks-with-unicodedecodeerror-on.md) | persona_resolve.py resolve tracebacks with UnicodeDecodeError on a seat card that is not valid UTF-8, where critic.py brief refuses it cleanly | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

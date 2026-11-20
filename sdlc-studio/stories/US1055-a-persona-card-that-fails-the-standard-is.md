@@ -1,6 +1,6 @@
 # US1055: A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,14 +21,19 @@
 
 - **AC1:** Given a project qa seat card carrying a demographic token, when `persona_resolve.py resolve --seat qa` runs with `--render review` and with `--render build`, `resolve-consult --role qa` runs, `critic.py brief --unit US0001 --seat qa` runs and `refine.py apply` and `triage.py` run in dry-run on fixture requests, then resolve and resolve-consult exit 1 and the other three exit 2, each naming the card, seat-demographic-fluff and the remedy as one command to run next (`persona_review.py brief --card <card> --seat <another seat>`), printing no framing or brief and never naming the shipped qa card.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py::PersonaReviewBlockTests::test_a_card_breaking_a_blocking_rule_is_refused_at_every_entry_point
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given a card that passes every blocking rule but whose latest row in the review ledger is a FAIL naming persona-evidence, when the card is edited and `persona_resolve.py resolve --seat qa` runs, then it is still refused naming that review's reviewer, date and rule, and once a PASS is recorded for the edited card it resolves.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py::PersonaReviewBlockTests::test_a_failed_review_holds_until_a_later_review_passes
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given a card with no review row, and another edited since its PASS, both passing every blocking rule but reported persona-evidence, when `persona_resolve.py resolve --seat qa` runs on each, then each frames the card with exit 0 and prints one stderr line naming the persona review as owed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py::PersonaReviewBlockTests::test_an_unreviewed_card_resolves_and_is_named_owed
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given `--skip-personas`, and a project with no qa card so the shipped default resolves, when `persona_resolve.py resolve --seat qa` runs with a FAIL row in the ledger for a since-deleted card, then each prints exactly what it prints with no ledger present.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py::PersonaReviewBlockTests::test_the_default_card_and_skip_personas_are_untouched
+  - **Verified:** yes (2026-11-20)
 - **AC5:** Given this repository's own cards under `sdlc-studio/personas/` and `sdlc-studio/personas/seats/`, when `persona_review.py check` runs over them on the commit that turns the refusal on, then no card breaks a blocking rule, so no review brief, refine or triage in this repository is refused by its own cards; the check runs in a test the push gate's full suite selects. Fails on: one of this repository's seat cards carrying a demographic token, or the test reading a fixture in place of the repository's own cards.
   - **Verify:** pytest tools/tests/test_own_persona_cards_pass_standard.py::OwnPersonaCardsTests::test_this_repositorys_cards_break_no_blocking_rule
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 
