@@ -17,7 +17,7 @@ Decomposed from CR0621. Delivers the work CR0621 requested.
 ## Story Breakdown
 
 - [x] [US1039: A persona End goal can carry Verify and Applies-to lines, and validate personas checks them](../stories/US1039-a-persona-end-goal-can-carry-verify-and.md)
-- [ ] [US1040: The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check](../stories/US1040-the-goal-review-lists-each-traced-persona-s.md)
+- [x] [US1040: The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check](../stories/US1040-the-goal-review-lists-each-traced-persona-s.md)
 - [ ] [US1041: Sprint plan names a batch story or bug that touches a standing End goal's files without carrying it](../stories/US1041-sprint-plan-names-a-batch-story-or-bug.md)
 - [ ] [US1042: A standing End goal is seeded onto every story minted to touch its files](../stories/US1042-a-standing-end-goal-is-seeded-onto-every.md)
 - [ ] [US1043: A story's Serves line names the End goal it serves, and validate serves checks it is on the card](../stories/US1043-a-story-s-serves-line-names-the-end.md)

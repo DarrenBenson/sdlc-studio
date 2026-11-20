@@ -10,9 +10,9 @@
 | Draft | 165 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 969 |
+| Done | 970 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -77,7 +77,7 @@
 | [US1037](US1037-each-seat-s-goal-review-brief-carries-that.md) | Each seat's goal-review brief carries that seat's own questions | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1038](US1038-the-qa-seat-s-goal-review-brief-lists.md) | The QA seat's goal-review brief lists the batch criteria no executable check covers | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1039](US1039-a-persona-end-goal-can-carry-verify-and.md) | A persona End goal can carry Verify and Applies-to lines, and validate personas checks them | Done | EP0285 | 2026-10-09 | 2026-10-09 |
-| [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | In Progress | EP0285 | 2026-10-09 | 2026-10-09 |
+| [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | Done | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1041](US1041-sprint-plan-names-a-batch-story-or-bug.md) | Sprint plan names a batch story or bug that touches a standing End goal's files without carrying it | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1042](US1042-a-standing-end-goal-is-seeded-onto-every.md) | A standing End goal is seeded onto every story minted to touch its files | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1043](US1043-a-story-s-serves-line-names-the-end.md) | A story's Serves line names the End goal it serves, and validate serves checks it is on the card | Draft | EP0285 | 2026-10-09 | 2026-10-09 |

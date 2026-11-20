@@ -1,0 +1,115 @@
+{
+  "unit": "BG1663",
+  "digest": "5be8757e3fca42c4 at 28b067c9435e",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0903db655c09f620/BG1663-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the lone unknown Sam after a comma moved into the warn clause",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`the Primary persona is Maya Smith` warn; `the Primary persona is Maya`, `the Primary persona, Sam`, ",
+      "new": "`the Primary persona is Maya Smith` and `the Primary persona, Sam` warn; `the Primary persona is Maya`, ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Sam before a bracketed role moved into the warn clause",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`Zed Quill (Primary)`, `the primary persona (Darren)`",
+      "new": "`Zed Quill (Primary)`, `Sam (Primary)`, `the primary persona (Darren)`",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bracketed Darren moved into the silent clause",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`the primary persona (Darren)` and `the Primary persona is Maya Smith` warn; ",
+      "new": "`the Primary persona is Maya Smith` warn; `the primary persona (Darren)`, ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Zed Quill after a colon moved into the silent clause",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`the Primary persona: Zed Quill`, `Zed Quill (Primary)`, `the primary persona (Darren)` and `the Primary persona is Maya Smith` warn; `the Primary persona is Maya`, ",
+      "new": "`Zed Quill (Primary)`, `the primary persona (Darren)` and `the Primary persona is Maya Smith` warn; `the Primary persona: Zed Quill`, `the Primary persona is Maya`, ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the old colon clause restored",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "or holding an acronym, is no name unless",
+      "new": "holding an acronym, or a word opening a clause after a colon is no name unless",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the two-word rule cut from the stated rule",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "is two or more capitalised words,",
+      "new": "is a full name,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the bracket form cut from the stated rule",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "or is one word alone in brackets straight after the role;",
+      "new": "or is a bracketed word;",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the silent clause's examples dropped",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "`the Primary persona is Maya`, `the Primary persona, Sam`, `Sam (Primary)`, `the Primary persona: She decides`, `the Primary persona: The Admin Team` and `the Web UI (Primary)` stay silent",
+      "new": "nothing else is read",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the silent clause no longer says silent",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "stay silent, so",
+      "new": "stay quiet, so",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the test reads every example as warning",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "\"silent\" not in clause)",
+      "new": "True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the test splits clauses only at full stops",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "re.split(r\"[;.](?:\\s|$)\", masked)",
+      "new": "re.split(r\"[.](?:\\s|$)\", masked)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the fixture cast is not the cast the row names",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "_personas(root, {\"Maya Okafor\": \"Primary\"}, {\"Primary\": [\"Maya Okafor\"]})\n            for example, warns",
+      "new": "_personas(root, {\"Maya Smith\": \"Primary\"}, {\"Primary\": [\"Maya Smith\"]})\n            for example, warns",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1663: BG1655 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py, changelog.d/BG1663.md
@@ -25,14 +25,19 @@ Fix each finding above, then deliver BG1655 again in a later run.
 
 - [ ] **AC1** Given `reference-persona.md`'s `seat-persona-unknown` row, when its stated rule and each backticked example in it are run through `validate.py seats` against a fixture cast, then the row states the shipped rule (a name is read only where a run resolves to a cast member, is two or more capitalised words, or is a lone word in brackets after a role, per D0554 and D0556) and every example warns or stays silent as the row says
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ReferenceRowTests::test_the_seat_persona_unknown_row_examples_behave_as_stated
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** BG1655 AC1 still passes: Given a cast of Maya Okafor (Primary) and a seat card holding `Ask the Primary persona: Is it simpler?`, `the Primary persona: When they arrive` and `Serve the CLI (Primary) before the web UI`, when `validate.py seats` runs, then it prints no `seat-persona-unknown` finding; and a card holding `the Primary persona, Zed Quill` still warns `seat-persona-unknown` naming Zed Quill
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_word_after_the_role_that_is_no_name_is_not_read_as_one
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** BG1655 AC2 still passes: Given the cast holds only Maya Okafor, when a seat card says `the Primary persona is Maya Smith`, then `validate.py seats` warns `seat-persona-unknown` naming Maya Smith, while `the Primary persona is Maya` and `the Primary persona is Maya Okafor` resolve with no finding
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_first_name_with_the_wrong_surname_is_unknown
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC4** BG1655 AC3 still passes: Given a `personas/index.md` that omits Hana Ito while her card's Cast role is Primary, when a seat card says `the Secondary persona, Hana`, then `validate.py seats` warns `seat-persona-role` naming Primary and Secondary
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_a_card_the_registry_omits_is_role_checked_against_its_card
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC5** BG1655 AC4 still passes: Given a cast of Maya Okafor and Jonah Reyes and a seat card holding `As the Primary persona, I want a quick start.`, `Lead with the Primary persona, She decides.`, `the Primary persona, If pressed`, `the Primary persona, Then the rest` and `the Primary persona is Not yet chosen`, when `validate.py seats` runs, then it prints no `seat-persona-unknown` finding; and `Primary persona: Zed Quill` and `Ask the Primary persona: Zed Quill would refuse this.` each warn `seat-persona-unknown` naming Zed Quill, and `the primary persona (Darren)` still warns naming Darren (D0554, D0556)
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatClaimNameTests::test_only_a_cast_name_or_a_full_name_run_is_read_as_a_name
+  - **Verified:** yes (2026-11-20)
 
 AC1 must fail on: a row that keeps an example the rule no longer warns on (a lone unknown first name such as `the Primary persona, Sam`), or a test that checks the row's wording without running its examples. BG1662 (a two-word product surface before a bracketed role) is a separate Low and not this bug's to fix.
 

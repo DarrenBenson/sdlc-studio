@@ -1,6 +1,6 @@
 # BG1660: US1040 did not converge in review: round 2 REJECT findings
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/lib/persona_goals.py, changelog.d/BG1660.md
@@ -25,18 +25,25 @@ Fix each finding above, then deliver US1040 again in a later run.
 
 - [ ] **AC1** Given a traced persona whose End goals are numbered `1.` `1.` `1.` (Markdown's repeated-number list style) with goal one carrying no Verify, goal two an executable Verify and goal three `Verify: manual walk each room`, when `sprint.py goal-review brief` and `plan --format json` run, then each goal is listed with its own check exactly as for the same card numbered `1.` `2.` `3.`, and `goal_trace.checkable` is true
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_goals_numbered_alike_keep_their_own_checks
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given an End goal whose Verify is an empty code span (two backticks), when the brief lists it, then it reads as carrying no check, as a goal with no Verify does
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_an_empty_code_span_verify_is_no_check
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given two traced personas of different Cast roles, when the brief prints its Traced End goals listing, then each persona's block names that persona's role
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_the_traced_listing_names_each_personas_role
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC4** US1040 AC1 still passes: Given a traced persona whose End goal 1 carries no Verify, End goal 2 an executable Verify and End goal 3 `Verify: manual walk each room`, when `sprint.py goal-review brief --goal` runs on a goal naming that persona, then End goal 2 is listed with its Verify, End goal 3 as checked by hand and End goal 1 as not testable, each under its number as on the card.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC5** US1040 AC2 still passes: Given a Sprint Goal that traces to one or more personas none of whose End goals carries an executable Verify, when the goal-review brief and `sprint.py plan --sprint-goal` run, then each prints one goal-check line naming those personas and saying nothing can check the goal, while the plan's exit code and batch are the same as without the line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC6** US1040 AC3 still passes: Given a goal tracing to Maya Okafor, whose End goals carry no Verify, while an untraced persona's End goal carries one, when `sprint.py plan --format json` runs, then `goal_trace.checkable` is false, and once Maya's End goal 1 gains an executable Verify the same plan reports it true and names that goal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_checkable_reads_only_the_traced_personas
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC7** US1040 AC4 still passes: Given a goal that traces only to a PRD outcome, and a goal that traces to nothing, in a project whose End goals carry no Verify lines, when the goal-review brief and `sprint.py plan` run, then the outcome-only goal prints no goal-check line, and the untraced goal prints only today's single `Goal serves: NONE` line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check
+  - **Verified:** yes (2026-11-20)
 
 AC1 must fail on: a join keyed by the number written on the card, so repeated numbers hand every goal the last goal's Verify. BG1650 (a nested Verify attaching to the last goal) is a separate, pre-existing Low and is not this bug's to fix.
 

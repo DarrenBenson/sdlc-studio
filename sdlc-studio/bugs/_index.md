@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 465 |
+| Open | 463 |
 | In Progress | 0 |
-| Fixed | 996 |
+| Fixed | 999 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1663** |
+| **Total** | **1664** |
 
 ## All Bugs
 
@@ -730,15 +730,16 @@
 | [BG1652](BG1652-five-behaviours-persona-goals-and-its-reference-state.md) | Five behaviours persona_goals and its reference state have no test: a mutant of each survives | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1653](BG1653-bg1002-s-live-run-comment-claims-a-missing.md) | BG1002's _live_run comment claims a missing run state is handled, and four branches of the live-run read have no test | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1654](BG1654-a-reviewer-cannot-check-a-verdict-file-before.md) | A reviewer cannot check a verdict file before hand-back: critic.py record refuses an odd backtick count only when the operator records it | Open | Low | 2026-11-20 | 2026-11-20 |
-| [BG1655](BG1655-seat-persona-unknown-reads-a-capitalised-word-after.md) | seat-persona-unknown reads a capitalised word after a seat card's role phrase as a persona name, and US1052's standard makes the rule block | Open | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1655](BG1655-seat-persona-unknown-reads-a-capitalised-word-after.md) | seat-persona-unknown reads a capitalised word after a seat card's role phrase as a persona name, and US1052's standard makes the rule block | Fixed | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1656](BG1656-the-consult-s-load-step-never-classifies-a.md) | The consult's load step never classifies a flat Served card, and BG1535's tests accept the stakeholder declaration anywhere on the card | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1658](BG1658-the-goal-brief-s-no-current-batch-answer.md) | The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1659](BG1659-five-behaviours-persona-review-py-and-its-reference.md) | Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py | Open | Low | 2026-11-20 | 2026-11-20 |
-| [BG1660](BG1660-us1040-did-not-converge-in-review-round-2.md) | US1040 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1660](BG1660-us1040-did-not-converge-in-review-round-2.md) | US1040 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1661](BG1661-a-high-risk-unit-moves-to-done-on.md) | A high-risk unit moves to Done on the first seat's APPROVE, so the second seat's REJECT lands past the round cap and carries the unit instead of repairing it | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1662](BG1662-seat-persona-unknown-still-reads-a-two-word.md) | seat-persona-unknown still reads a two-word product surface marked with a role, such as Ship the Admin Console (Primary), as an unknown persona | Open | Low | 2026-11-20 | 2026-11-20 |
-| [BG1663](BG1663-bg1655-did-not-converge-in-review-round-2.md) | BG1655 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1663](BG1663-bg1655-did-not-converge-in-review-round-2.md) | BG1655 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1664](BG1664-persona-cards-still-builds-the-number-keyed-goal.md) | persona_cards still builds the number-keyed goal_verify and goal_applies_to maps that nothing reads after BG1660 | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

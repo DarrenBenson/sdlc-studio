@@ -1,6 +1,6 @@
 # US1040: The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check
 
-> **Status:** In Progress
+> **Status:** Done
 > **Delivers:** CR0621
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new

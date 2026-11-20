@@ -1,0 +1,79 @@
+{
+  "unit": "BG1660",
+  "digest": "35bb08c56aea9842 at b730b6c7fefa",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a050d455cdd06b433/BG1660-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "M1 join each End goal to its Verify by the number on the card",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            name: [{\"number\": g.number, \"text\": g.text, \"verify\": g.verify,\n                    \"check\": _end_goal_check(g.verify)}\n                   for g in by_name[name][\"goals\"]]",
+      "new": "            name: [{\"number\": n, \"text\": text, \"verify\": by_name[name][\"goal_verify\"].get(n),\n                    \"check\": _end_goal_check(by_name[name][\"goal_verify\"].get(n))}\n                   for n, text in by_name[name][\"end_goals\"]]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_goals_numbered_alike_keep_their_own_checks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 read an End goal's Verify without stripping its backticks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "expr = (verify or \"\").strip(\"`\").strip()",
+      "new": "expr = (verify or \"\").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_an_empty_code_span_verify_is_no_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 label every traced persona Primary in the listing",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lines.append(f\"  {name} ({(roles.get(name) or 'no cast role').capitalize()}):\")",
+      "new": "lines.append(f\"  {name} (Primary):\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_the_traced_listing_names_each_personas_role",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 hand goal_trace the End goals out of card order",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "\"goals\": goals,",
+      "new": "\"goals\": goals[::-1],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T1 AC1's fixture numbers its goals 1 2 3 instead of repeating 1",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "alike_block, alike = self._read(root, [\"1\", \"1\", \"1\"])",
+      "new": "alike_block, alike = self._read(root, None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_goals_numbered_alike_keep_their_own_checks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T2 AC1 expects the repeated-number card to read uncheckable",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "self.assertTrue(alike[\"checkable\"])",
+      "new": "self.assertFalse(alike[\"checkable\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_goals_numbered_alike_keep_their_own_checks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T3 AC2's fixture carries no Verify where it should carry an empty code span",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "\"``\"), (\"Every room is lit\", None)",
+      "new": "None), (\"Every room is lit\", None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_an_empty_code_span_verify_is_no_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "T4 AC3's second persona is Primary too, so both roles agree by construction",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "_write_card(root, \"Maya Okafor\", \"Primary\", [(\"Walk in to a warm house\", None)])\n            _write_card(root, \"Hana Ito\", \"Secondary\",",
+      "new": "_write_card(root, \"Maya Okafor\", \"Primary\", [(\"Walk in to a warm house\", None)])\n            _write_card(root, \"Hana Ito\", \"Primary\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_the_traced_listing_names_each_personas_role",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
