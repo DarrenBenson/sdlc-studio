@@ -3075,9 +3075,33 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
         'grep -R "x" .claude/skills/sdlc-studio/help/',
     ]
 
+    #: The prose each escape names, rebuilt markdown-only under a temporary root. A directory
+    #: verdict depends on what the directory holds, so judging the escapes against the live
+    #: repository made the test's result a fact about whatever `sdlc-studio/reviews/` held that
+    #: day: it went red the first time a JSON record was committed there.
+    ESCAPE_FIXTURE_FILES = [
+        "sdlc-studio/reviews/LATEST.md",
+        "sdlc-studio/reviews/runs/RUN-0001.md",
+        ".claude/skills/sdlc-studio/reference-sprint.md",
+        ".claude/skills/sdlc-studio/best-practices/testing.md",
+        ".claude/skills/sdlc-studio/reference-cr.md",
+        ".claude/skills/sdlc-studio/reference-rfc.md",
+        ".claude/skills/sdlc-studio/help/sprint.md",
+    ]
+
     @staticmethod
     def _root() -> Path:
         return Path(__file__).resolve().parents[5]
+
+    def _escape_root(self) -> Path:
+        """A temporary root holding a markdown-only stand-in for every path an escape names."""
+        root = Path(tempfile.mkdtemp(prefix="verify_ac_escapes_"))
+        self.addCleanup(shutil.rmtree, root, ignore_errors=True)
+        for name in self.ESCAPE_FIXTURE_FILES:
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("the window refuses anything\n")
+        return root
 
     def test_every_verifier_us0310_shipped_is_refused(self) -> None:
         for expr in self.US0310_SHIPPED_VERIFIERS:
@@ -3085,9 +3109,32 @@ class MarkdownEvidenceLintTests(unittest.TestCase):
                 self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))
 
     def test_every_escape_found_by_review_is_refused(self) -> None:
+        root = self._escape_root()
         for expr in self.ESCAPES_FOUND_BY_REVIEW:
             with self.subTest(expr=expr):
-                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))
+                # The path the escape names exists in the fixture, so the refusal is the prose
+                # rule and not a missing operand, which refuses on its own.
+                named = shlex.split(expr)[-1].rstrip("*")
+                self.assertTrue((root / named).exists(), named)
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
+
+    def test_a_reviews_tree_holding_a_json_record_is_not_refused(self) -> None:
+        # The positive control: the same greps over the same fixture once its reviews/ holds a
+        # JSON record read a non-markdown file, so the guard lets them through. No one tree can
+        # give both verdicts, so the pair cannot pass against the live repository, whatever it
+        # happens to hold.
+        greps = [e for e in self.ESCAPES_FOUND_BY_REVIEW if "sdlc-studio/reviews/" in e]
+        self.assertEqual(len(greps), 2, greps)
+        root = self._escape_root()
+        for expr in greps:
+            with self.subTest(markdown_only=expr):
+                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))
+        record = root / "sdlc-studio" / "reviews" / "author-mutants" / "US0001.json"
+        record.parent.mkdir(parents=True)
+        record.write_text('{"unit": "US0001", "mutants": []}\n')
+        for expr in greps:
+            with self.subTest(json_record=expr):
+                self.assertIsNone(verify_ac.lint_markdown_evidence(expr, root))
 
     def test_a_behavioural_verifier_is_untouched(self) -> None:
         root = self._root()
