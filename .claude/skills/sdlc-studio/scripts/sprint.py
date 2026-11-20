@@ -11796,7 +11796,12 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
     """Which PRD outcome or persona the goal serves: named by `--serves` values or as a whole
     word in the goal. None when there is nothing to trace: no goal and no `--serves`, or no
     outcomes, no persona cards and no `--serves`. `flagged` when it serves none, or only a Negative persona; `unknown` holds
-    the `--serves` values nothing on disk names."""
+    the `--serves` values nothing on disk names.
+
+    When it traces to a persona other than a Negative one, it also carries `end_goals` (each
+    such persona's End goals, numbered as on the card, with their Verify and `check`:
+    `executable`, `manual` or `none`), `checked_by` (the executable ones) and `checkable`
+    (whether any is); a trace naming no such persona carries none of the three."""
     wanted = [s.strip() for v in (serves or []) for s in v.split(",") if s.strip()]
     outcomes, cards = prd_outcomes(root), persona_cards(root)
     if not ((goal or "").strip() or wanted) or not (outcomes or cards or wanted):
@@ -11826,10 +11831,61 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
         if _names_persona(goal, card["name"]):
             _add({"kind": "persona", "name": card["name"], "role": card["role"]})
     designed_for = [s for s in served if s.get("role") != "negative"]
-    return {"goal": goal or None, "serves": served, "unknown": unknown,
-            "flagged": not designed_for,
-            "could_serve": {"outcomes": list(outcomes),
-                            "personas": [c["name"] for c in cards if c["role"] != "negative"]}}
+    trace = {"goal": goal or None, "serves": served, "unknown": unknown,
+             "flagged": not designed_for,
+             "could_serve": {"outcomes": list(outcomes),
+                             "personas": [c["name"] for c in cards if c["role"] != "negative"]}}
+    # Only the personas the goal traces to are read: an untraced persona's testable End goal
+    # checks nothing about this goal. A Negative persona's End goals are stated to exclude.
+    traced = [s["name"] for s in designed_for if s["kind"] == "persona"]
+    if traced:
+        by_name = {c["name"]: c for c in cards}
+        trace["end_goals"] = {
+            name: [{"number": n, "text": text, "verify": by_name[name]["goal_verify"].get(n),
+                    "check": _end_goal_check(by_name[name]["goal_verify"].get(n))}
+                   for n, text in by_name[name]["end_goals"]]
+            for name in traced}
+        trace["checked_by"] = [{"persona": name, "number": g["number"], "text": g["text"],
+                                "verify": g["verify"]}
+                               for name, goals in trace["end_goals"].items()
+                               for g in goals if g["check"] == "executable"]
+        trace["checkable"] = bool(trace["checked_by"])
+    return trace
+
+
+def _end_goal_check(verify: str | None) -> str:
+    """What checks one End goal: `executable` for a Verify a runner can execute, `manual` for a
+    `Verify: manual ...` (checked by hand, never counted as testable), and `none` for no Verify
+    or one that names no check (empty, or an unfilled placeholder)."""
+    expr = (verify or "").strip("`").strip()
+    if not expr or "{{" in expr:
+        return "none"
+    import verify_ac  # noqa: PLC0415 - sibling; the one reader of a manual Verify
+    return "manual" if verify_ac._is_manual(expr) else "executable"
+
+
+def _end_goal_label(goal: dict) -> str:
+    """One traced End goal as the brief lists it: its number as on the card, its text and what
+    checks it."""
+    if goal["check"] == "executable":
+        how = f"Verify: {goal['verify']}"
+    elif goal["check"] == "manual":
+        how = f"checked by hand: {goal['verify']}"
+    else:
+        how = ("not testable: no Verify line" if goal["verify"] is None
+               else "not testable: its Verify names no check")
+    return f"{goal['number']}. {goal['text']} - {how}"
+
+
+def _goal_check_line(trace: dict) -> str | None:
+    """`NONE - ...` when the goal traces to a persona and no End goal of the traced personas
+    carries an executable Verify; None when one does, or when the trace names no persona."""
+    if trace.get("checkable", True):
+        return None
+    names = ", ".join(trace["end_goals"])
+    return (f"NONE - nothing can check this goal: no End goal of {names} carries an executable "
+            f"Verify (a manual one is checked by hand and does not count); give one a "
+            f"`- **Verify:**` line")
 
 
 def _trace_label(s: dict) -> str:
@@ -11857,6 +11913,9 @@ def _render_goal_trace(data: dict) -> None:
     if not trace["flagged"]:
         for s in trace["serves"]:
             print(f"goal serves: {_trace_label(s)}")
+        check = _goal_check_line(trace)
+        if check:
+            print(f"goal check: {check} (advice: the plan is not refused)")
     else:
         print(f"goal serves: NONE - {_trace_none_why(trace)}. Name one with "
               f"--serves <O-id|persona> or in the goal (advice: the plan is not refused)")
@@ -12960,6 +13019,16 @@ def _goal_served_lines(root: Path, goal: str | None,
     elif not trace["flagged"]:
         lines.append("Goal serves (the plan's own trace): "
                      + "; ".join(_trace_label(s) for s in trace["serves"]))
+        if "end_goals" in trace:
+            roles = {s["name"]: s.get("role") for s in trace["serves"] if s["kind"] == "persona"}
+            lines.append("Traced End goals (numbered as on the card, with what checks each):")
+            for name, goals in trace["end_goals"].items():
+                lines.append(f"  {name} ({(roles.get(name) or 'no cast role').capitalize()}):")
+                lines.extend([f"    {_end_goal_label(g)}" for g in goals]
+                             or ["    (no End goals on the card)"])
+        check = _goal_check_line(trace)
+        if check:
+            lines.append(f"Goal check: {check} (reading, not a refusal)")
     else:
         lines.append(f"Goal serves: NONE - {_trace_none_why(trace)}. Name the outcome or End "
                      f"goal it serves in your done_means or note (reading, not a refusal)")
