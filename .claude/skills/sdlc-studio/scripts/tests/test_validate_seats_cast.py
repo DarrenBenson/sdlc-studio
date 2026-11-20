@@ -361,5 +361,54 @@ class SeatClaimNameTests(unittest.TestCase):
             self.assertEqual([f["rule"] for f in _seats(root)[1]], ["seat-persona-role"])
 
 
+REFERENCE = loader.SCRIPTS_DIR.parent / "reference-persona.md"
+
+
+def _row_examples(cell: str) -> list[tuple[str, bool]]:
+    """Each backticked example in a rule's Fires-when cell, and whether the row says it warns:
+    an example in a clause (split at a semicolon or a full stop) that says `silent` stays
+    silent, and any other fires, as the column's heading says."""
+    spans = re.findall(r"`([^`]*)`", cell)
+    numbers = iter(range(len(spans)))
+    masked = re.sub(r"`[^`]*`", lambda _m: f"<{next(numbers)}>", cell)
+    return [(spans[int(i)], "silent" not in clause)
+            for clause in re.split(r"[;.](?:\s|$)", masked)
+            for i in re.findall(r"<(\d+)>", clause)]
+
+
+class ReferenceRowTests(unittest.TestCase):
+    """The reference page's `seat-persona-unknown` row is where the rule is defined, so each
+    example it gives is run through the check against the cast the row names."""
+
+    def test_the_seat_persona_unknown_row_examples_behave_as_stated(self) -> None:
+        """AC1. Every backticked example in the row, written alone on a seat card with Maya
+        Okafor the only cast member, warns or stays silent as the row's clause says; the row
+        states the three ways a run reads as a name and no longer says a word after a colon is
+        no name. Mutants: an example moved into the other clause; the old row restored (its
+        `the Primary persona, Sam` and `Sam (Primary)` fire nothing); a stated rule cut; the
+        examples dropped from one clause."""
+        row = next(ln for ln in REFERENCE.read_text(encoding="utf-8").splitlines()
+                   if ln.startswith("| `seat-persona-unknown` |"))
+        cell = row.strip().strip("|").split(" | ")[2]
+        examples = _row_examples(cell)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _personas(root, {"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]})
+            for example, warns in examples:
+                with self.subTest(example=example, row_says="warns" if warns else "silent"):
+                    _seat(root, "product", "Lena Park", lens=f"- {example}")
+                    found = _seats(root)[1]
+                    self.assertEqual([f["rule"] for f in found],
+                                     ["seat-persona-unknown"] if warns else [], found)
+        stated = [warns for _, warns in examples]
+        self.assertGreaterEqual(stated.count(True), 3, examples)
+        self.assertGreaterEqual(stated.count(False), 3, examples)
+        for rule in ("Maya Okafor the only cast member", "resolves to a cast member",
+                     "two or more capitalised words",
+                     "one word alone in brackets straight after the role"):
+            self.assertIn(rule, cell)
+        self.assertNotIn("after a colon is no name", cell)
+
+
 if __name__ == "__main__":
     unittest.main()
