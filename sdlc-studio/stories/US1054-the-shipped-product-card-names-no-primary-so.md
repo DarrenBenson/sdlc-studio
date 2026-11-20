@@ -1,6 +1,6 @@
 # US1054: The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -21,8 +21,10 @@
 
 - **AC1:** Given a fixture project upgraded with `project_upgrade.py --apply --with-default-amigos` and a cast with no persona named Sam, when `persona_review.py check` runs, then no blocking rule fires on any of the three copied cards.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_an_upgraded_projects_copied_cards_trip_no_blocking_rule
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given the reworded shipped product card copied into a project, when `validate.py seats` runs, then it reports errors=0 and no seat-persona finding, and the card still carries its Scenario and every review-render section.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_shipped_card_passes_standard.py::ShippedCardStandardTests::test_the_reworded_card_keeps_its_scenario_and_review_render
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

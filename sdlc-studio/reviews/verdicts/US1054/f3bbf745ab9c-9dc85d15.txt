@@ -1,0 +1,6 @@
+UNIT: US1054
+BRIEF: f3bbf745ab9c-9dc85d15
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Both ACs pass under verify_ac --dry-run and the two named tests pass (2 passed\, 8 subtests). The shipped product card names no persona in its Scenario at HEAD, and the old Sam sentence is a positive control that blocks as seat-persona-unknown. Remark, not a finding: the card rewording itself landed in ff97be63 (US1052's commit, confirmed by git log -S); c6af0e05 carries only US1054's tests and fragment, so the reworded card is held by US1054's tests but was not changed by them. The surviving author mutant (seat-file filter) is covered by the rc equals 0 assertion beside it.

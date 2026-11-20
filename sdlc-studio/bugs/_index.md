@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 461 |
+| Open | 463 |
 | In Progress | 0 |
 | Fixed | 996 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1659** |
+| **Total** | **1661** |
 
 ## All Bugs
 
@@ -735,6 +735,8 @@
 | [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1658](BG1658-the-goal-brief-s-no-current-batch-answer.md) | The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1659](BG1659-five-behaviours-persona-review-py-and-its-reference.md) | Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1660](BG1660-us1040-did-not-converge-in-review-round-2.md) | US1040 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1661](BG1661-a-high-risk-unit-moves-to-done-on.md) | A high-risk unit moves to Done on the first seat's APPROVE, so the second seat's REJECT lands past the round cap and carries the unit instead of repairing it | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

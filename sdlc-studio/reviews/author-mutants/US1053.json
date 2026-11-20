@@ -1,0 +1,178 @@
+{
+  "unit": "US1053",
+  "digest": "1aaf574951b64b09 at 850b1c4d9ba5",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aa7e49c4d4b4b9324/US1053-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "brief and record accept the card's own seat",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if own is not None and own == seat:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_brief_frames_another_seat_with_the_cards_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief leaves out the card's findings",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "              for f in check(root, path)] or [\"  none\"]",
+      "new": "              for f in []] or [\"  none\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_brief_frames_another_seat_with_the_cards_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the raw file is hashed",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "\"hash\": persona_gen.body_hash(path.read_text(encoding=\"utf-8\")),",
+      "new": "\"hash\": persona_gen.hashlib.sha256(path.read_bytes()).hexdigest()[:16],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Seat cell is the card's role",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "\"reviewer\": reviewer.strip(), \"seat\": seat,",
+      "new": "\"reviewer\": reviewer.strip(), \"seat\": _own_seat(root, path) or seat,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no git user.name default for run-by",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "who = (run_by if run_by is not None else _git_user(root) or \"\").strip()",
+      "new": "who = (run_by or \"\").strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp drops a trailing blank line again",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_gen.py",
+      "old": "sdlc_md.atomic_write(p, \"\".join(lines))",
+      "new": "sdlc_md.atomic_write(p, \"\".join(lines).rstrip(\"\\n\") + \"\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a PASS over a blocking rule is allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        if held:\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the seat is read from free text",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "seat = critic.recorded_seat(reviewer)",
+      "new": "seat = reviewer.split()[-1].strip(\"()\").lower() or None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a FAIL may name no rule",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if outcome == \"FAIL\" and not rules:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a rule the standard lacks is accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "unknown = [r for r in rules if r not in RULES]",
+      "new": "unknown = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a role-only run-by is accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "if not _ROLE_GROUP_RE.sub(\"\", who).strip():",
+      "new": "if not who.strip():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a PASS leaves the card provisional",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "row[\"accepted\"] = outcome == \"PASS\" and persona_gen.accept(path, row[\"date\"])",
+      "new": "row[\"accepted\"] = False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_pass_clears_a_generated_cards_provisional_stamp",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a FAIL also clears the stamp",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "row[\"accepted\"] = outcome == \"PASS\" and persona_gen.accept(path, row[\"date\"])",
+      "new": "row[\"accepted\"] = persona_gen.accept(path, row[\"date\"]) and outcome == \"PASS\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_pass_clears_a_generated_cards_provisional_stamp",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the ledger is written under personas/",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "LEDGER_REL = Path(\"sdlc-studio\") / \"reviews\" / \"persona-reviews.md\"",
+      "new": "LEDGER_REL = Path(\"sdlc-studio\") / \"personas\" / \"persona-reviews.md\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_review_ledger_is_never_read_as_a_persona_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record writes outside the ledger",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    ledger = root / LEDGER_REL\n",
+      "new": "    ledger = root / \"sdlc-studio\" / \"persona-reviews.md\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::MajorWriterConfinementTests::test_persona_review_confines_its_writes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the expected Seat cell is the card's role",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py",
+      "old": "\"FAIL\", \"Lena Marsh (product)\", \"product\",",
+      "new": "\"FAIL\", \"Lena Marsh (product)\", \"qa\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_a_review_is_recorded_against_the_cards_body_hash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the expected trace also names the ledger",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py",
+      "old": "[\"Goal serves (the plan's own trace): Maya Okafor (Primary)\"]",
+      "new": "[\"Goal serves (the plan's own trace): Maya Okafor (Primary); Persona Reviews (No cast role)\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_the_review_ledger_is_never_read_as_a_persona_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the blocking refusal names another rule",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py",
+      "old": "\"seat-demographic-fluff blocks\": (",
+      "new": "\"persona-evidence blocks\": (",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_record.py::PersonaReviewRecordTests::test_an_unsound_review_is_refused_and_nothing_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the confinement case drops the card target",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
+      "old": "                           \"sdlc-studio/personas/seats/engineering.md\"}),",
+      "new": "                           }),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::MajorWriterConfinementTests::test_persona_review_confines_its_writes",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 168 |
+| Draft | 166 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 0 |
+| In Progress | 1 |
 | Review | 0 |
-| Done | 967 |
+| Done | 968 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -77,7 +77,7 @@
 | [US1037](US1037-each-seat-s-goal-review-brief-carries-that.md) | Each seat's goal-review brief carries that seat's own questions | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1038](US1038-the-qa-seat-s-goal-review-brief-lists.md) | The QA seat's goal-review brief lists the batch criteria no executable check covers | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1039](US1039-a-persona-end-goal-can-carry-verify-and.md) | A persona End goal can carry Verify and Applies-to lines, and validate personas checks them | Done | EP0285 | 2026-10-09 | 2026-10-09 |
-| [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
+| [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | In Progress | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1041](US1041-sprint-plan-names-a-batch-story-or-bug.md) | Sprint plan names a batch story or bug that touches a standing End goal's files without carrying it | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1042](US1042-a-standing-end-goal-is-seeded-onto-every.md) | A standing End goal is seeded onto every story minted to touch its files | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1043](US1043-a-story-s-serves-line-names-the-end.md) | A story's Serves line names the End goal it serves, and validate serves checks it is on the card | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
@@ -91,7 +91,7 @@
 | [US1051](US1051-the-small-change-path-is-written-down-once.md) | The small-change path is written down once, and every step is a runbook command that runs end to end | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1052](US1052-the-persona-standard-names-every-rule-a-card.md) | The persona standard names every rule a card is held to, and persona_review check reports each card against it | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1053](US1053-persona-review-briefs-another-seat-to-review-a.md) | persona_review briefs another seat to review a card against the standard and records its verdict against the card's bytes | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
-| [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
+| [US1054](US1054-the-shipped-product-card-names-no-primary-so.md) | The shipped product card names no Primary, so a project's copy of it passes the standard after an upgrade | Done | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1055](US1055-a-persona-card-that-fails-the-standard-is.md) | A persona card that fails the standard is refused at every entry point that resolves it, naming each failed rule and its remedy | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1056](US1056-the-goal-review-refuses-to-brief-from-a.md) | The goal review refuses to brief from a traced persona card that fails the standard | Draft | EP0287 | 2026-10-12 | 2026-10-12 |
 | [US1057](US1057-sprint-plan-names-each-blocked-persona-card-with.md) | Sprint plan names each blocked persona card with its remedy and each card owed a review, and the release cut names the owed reviews | Draft | EP0287 | 2026-10-12 | 2026-10-12 |

@@ -1,0 +1,6 @@
+UNIT: US1040
+BRIEF: ef80f690e141-50c82229
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: The builder's choice to keep checkable, checked_by and end_goals off the persona serves entries serves the criteria: AC3 names goal_trace.checkable at the top level of the trace, which the diff sets\, and test_lean_goal_trace.py:102 pins the serves shape exactly (kind, name, role)\, so adding fields there would break an existing pin for no criterion. Executed in a throwaway fixture through goal-review brief --brief-worklist and sprint.py plan: a Verify of manual walk each room and a backticked Manual: eyeball both list as checked by hand\, a card goal with no Verify lists as not testable\, the goal-check line prints on brief and plan with exit 0\, the JSON plan reports checkable false then true naming the executable goal once one is added\, and a Negative-only trace prints no goal-check line. The four ACs pass under verify_ac --dry-run and the 22 tests across the goal-review and goal-trace modules pass; all 17 recorded author mutants replayed killed.

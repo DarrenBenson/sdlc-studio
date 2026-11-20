@@ -1,6 +1,6 @@
 # US1040: The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Delivers:** CR0621
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -21,12 +21,16 @@
 
 - **AC1:** Given a traced persona whose End goal 1 carries no Verify, End goal 2 an executable Verify and End goal 3 `Verify: manual walk each room`, when `sprint.py goal-review brief --goal` runs on a goal naming that persona, then End goal 2 is listed with its Verify, End goal 3 as checked by hand and End goal 1 as not testable, each under its number as on the card.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::TestableListingTests::test_brief_lists_each_end_goal_with_its_check
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given a Sprint Goal that traces to one or more personas none of whose End goals carries an executable Verify, when the goal-review brief and `sprint.py plan --sprint-goal` run, then each prints one goal-check line naming those personas and saying nothing can check the goal, while the plan's exit code and batch are the same as without the line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_goal_with_no_executable_end_goal_is_named_on_brief_and_plan
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given a goal tracing to Maya Okafor, whose End goals carry no Verify, while an untraced persona's End goal carries one, when `sprint.py plan --format json` runs, then `goal_trace.checkable` is false, and once Maya's End goal 1 gains an executable Verify the same plan reports it true and names that goal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckTests::test_checkable_reads_only_the_traced_personas
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given a goal that traces only to a PRD outcome, and a goal that traces to nothing, in a project whose End goals carry no Verify lines, when the goal-review brief and `sprint.py plan` run, then the outcome-only goal prints no goal-check line, and the untraced goal prints only today's single `Goal serves: NONE` line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::GoalCheckBoundaryTests::test_outcome_only_and_untraced_goals_print_no_goal_check
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 
