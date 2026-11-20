@@ -109,8 +109,8 @@ curl -fsSL https://raw.githubusercontent.com/DarrenBenson/sdlc-studio/main/insta
 
 What it verifies: [Verifying the download](docs/INSTALL.md#verifying-the-download).
 
-Then ask in plain language. Each phrase has a command if you prefer it, and Python 3.10 or later
-runs the bundled scripts ([requirements](docs/INSTALL.md#requirements)).
+Then ask in plain language; each phrase also has a command. The scripts need Python 3.10 or later
+and PyYAML, both required ([requirements](docs/INSTALL.md#requirements)).
 
 ```text
 "start a new project"                                 →  /sdlc-studio init, then prd create

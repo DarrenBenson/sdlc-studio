@@ -138,10 +138,11 @@ discipline stays.
   the `SKILL.md` router, about 55 reference files (`reference-*.md`), about 45 help
   files (`help/*.md`), about 90 templates, about 20 best-practice guides and a
   cross-project lessons registry. No runtime beyond the agent reading them.
-- **Python 3.10+ (stdlib only)** – about 70 scripts under `scripts/`, deterministic
+- **Python 3.10+ and PyYAML** – about 70 scripts under `scripts/`, deterministic
   helpers sharing a `lib/` package whose parsing core is `lib/sdlc_md.py`.
-  Pure stdlib; no third-party packages required (PyYAML is used for config when
-  present and degrades to the caller's default when absent).
+  PyYAML is a required dependency, the one third-party package they need: it reads
+  the project config, and the installers and the gate's prerequisite check refuse a
+  machine without it (`python3 -m pip install pyyaml` installs it).
 - **Soft runtime deps** – `gh` CLI (sync), `pytest`/`jest`/`vitest`/`go`/`curl`/
   `jq`/`rg` (whichever a project's AC Verify lines invoke), `git` (id allocation,
   the engagement floor's commit attribution).
@@ -496,9 +497,10 @@ honestly size, so a plan is never false authority over unsized work.
 
 ### Performance
 
-Scripts are pure stdlib. `status.py`, `next_id.py`, `readiness.py` and
-`handoff.py` write nothing in the workspace; the release check `status` runs keeps
-its cache in the skill's own `.local/`. The authoring and repair scripts
+Scripts run on Python 3.10+ with PyYAML, their one required package. `status.py`,
+`next_id.py`, `readiness.py` and `handoff.py` write nothing in the workspace; the
+release check `status` runs keeps its cache in the skill's own `.local/`. The
+authoring and repair scripts
 (`artifact`, `file_finding`, `transition`, `reconcile apply`, `verify_ac`,
 `archive`, `lessons`, `retro`) write within a tested, bounded surface, and some
 scripts that mostly read also write: `critic.py` appends each `critic record`
@@ -638,8 +640,9 @@ The release check is an unauthenticated public GET. The Cursor usage request sen
 
 ### Third-Party Dependencies
 
-None at the skill level (stdlib Python, `urllib` for the release check). Soft runtime
-tools listed in §1.
+PyYAML is required at the skill level: the installers and the gate's prerequisite check
+refuse a machine that cannot import it. No other package is: the release check uses Python's
+own `urllib`, and the soft runtime tools are listed in §1.
 
 ---
 

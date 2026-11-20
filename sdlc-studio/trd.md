@@ -47,8 +47,10 @@ each project's TRD).
 - Progressive-disclosure router: `SKILL.md` is the only always-loaded file; all
   detail loads on demand through a loading guide. (ADR-001)
 - Determinism in scripts, judgement in the agent: side-effecting and mechanical
-  work is delegated to pure-stdlib Python helpers that emit JSON; the agent
+  work is delegated to deterministic Python helpers that emit JSON; the agent
   reasons over JSON, not raw markdown. (ADR-002)
+- PyYAML is the one required third-party package: the installers and the gate's
+  prerequisite check refuse a machine that cannot import it. (ADR-014)
 - Files are the source of truth; indexes and statuses are derived and reconciled
   from a disk census. (ADR-003)
 - GitHub integration through the `gh` CLI, the release check's GET the one exception -
@@ -101,8 +103,11 @@ executes the workflow using its built-in tools (Read, Glob, Grep, Write, Edit,
 Bash, Agent - see the `allowed-tools` line in `SKILL.md`). For mechanical or
 side-effecting steps the agent shells out to the bundled Python scripts. All
 durable state is plain files in the consuming repository under `sdlc-studio/`;
-runtime state is JSON under `sdlc-studio/.local/` (gitignored). The only external
-service is GitHub, reached through the `gh` CLI.
+runtime state is JSON under `sdlc-studio/.local/` (gitignored). The external services
+are GitHub Issues and GitHub Actions, reached through the `gh` CLI; GitHub Releases,
+read by a direct HTTPS GET to `api.github.com` for the release check; and the Cursor
+usage API, read by a direct HTTPS GET to `api.cursor.com` only when the Cursor meter is
+selected (§5 Network paths, §7 External Services).
 
 ### Architecture Pattern
 
@@ -125,14 +130,14 @@ ADR-002.
 | `templates/` | Document and code templates with `{{placeholder}}` syntax; loaded only when creating artifacts. Includes the persona/seat and stakeholder card schemas. | Markdown / text | - |
 | `best-practices/` | Quality guidelines consulted before producing artifacts. | Markdown | - |
 | `lessons/` | Cross-project lessons registry (`_index.md`, `LL{NNNN}-*.md`), ranked and printed into every sprint plan (ADR-010). | Markdown | - |
-| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+ stdlib | Pure stdlib, Python 3.10+. Every workspace write is bounded and tested (§5 rule 5), going through `atomic_write` for shared files. Every script has unit tests. |
-| `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ stdlib | `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a second module re-hardcoding the status vocabulary or the id grammar is a defect, not a convenience. |
+| `scripts/` (60+ scripts) | Deterministic Python helpers emitting JSON. The read path is read-only; a bounded, tested set writes artefacts, indexes and gate state (see §5 rule 5). | Python 3.10+, PyYAML | Python 3.10+ with PyYAML, the one required third-party package (ADR-014); no other package is required. Every workspace write is bounded and tested (§5 rule 5), going through `atomic_write` for shared files. Every script has unit tests. |
+| `scripts/lib/` | Shared library. `sdlc_md.py` is the parsing core and the single source of truth for markdown conventions; `conventions.py`, `xrepo.py` and the rest carry per-domain shared logic. | Python 3.10+ | `lib/sdlc_md.py` remains the single source of truth for markdown conventions; a second module re-hardcoding the status vocabulary or the id grammar is a defect, not a convenience. |
 | `scripts/tests/` | Unit tests for the script layer; `python3 -m unittest discover` gives the live count. The repo-only `tools/` checkers have their own suite under `tools/tests/`. | `unittest` | - |
 | `tools/` | Repo CI guards (style, links, skill frontmatter, versions, budgets, neutrality, action pins) plus the eval runner. Not part of the shipped payload. | Python / Bash | - |
 | `install.sh` / `install.ps1` | Cross-harness installers for six targets. | Bash / PowerShell | - |
 
 > **C4 Diagrams:** not generated for this brownfield extraction. Use
-> `trd create --with-diagrams` or see `modules/trd/c4-diagrams.md` if formal C4
+> `trd create --with-diagrams` or see `templates/modules/trd/c4-diagrams.md` if formal C4
 > views are wanted.
 
 #### Progressive-disclosure loading
@@ -234,7 +239,7 @@ Python and Node the gate runs, which `~/sdlc-gate/gate-env.sh` on the host may p
 | Category | Technology | Version | Rationale |
 | --- | --- | --- | --- |
 | Instruction language | Markdown + YAML frontmatter | n/a | The skill is read by an LLM; markdown is the native format for agent instruction files and templates. |
-| Script language | Python | 3.10+ | `str \| None` union syntax and `from **future** import annotations` are used in `lib/sdlc_md.py`. The shipped scripts are pure stdlib, with soft dependencies a feature degrades without: `PyYAML` reads `.config.yaml` (without it the readers warn and leave a key unhonoured, and `config.py show` refuses), `lizard` scores a non-Python file's complexity (without it the file is left unscored), and `coverage` serves `verify_ac run --coverage` (without it the run refuses under `block` and reports under `report`). |
+| Script language | Python | 3.10+ | `str \| None` union syntax and `from **future** import annotations` are used in `lib/sdlc_md.py`. The shipped scripts need one third-party package, `PyYAML`, which is required: it reads `.config.yaml`, both installers refuse a machine that cannot import it, the gate's prerequisite check exits 2 without it, and a command that reads a present config refuses without it (ADR-014). Their soft dependencies, which a feature degrades without, are `lizard`, which scores a non-Python file's complexity (without it the file is left unscored), and `coverage`, which serves `verify_ac run --coverage`: without it the run names the module absent and exits 2, whatever `review.line_coverage` says, and the split is the Done gate's in `transition.py`, which refuses under `block` and reports under `report`. |
 | Templating | `{{placeholder}}` convention | n/a | Tool-neutral, plain-text substitution the agent fills in. |
 | Test framework | `unittest` tests, run by `pytest` with `pytest-xdist` | development only | The tests are stdlib `unittest`. The hooks and the push gate run them under `pytest`, in parallel with `pytest-xdist`. CI and `npm run test:skill` run the skill suite under `python3 -m unittest` through `tools/skill-tests.sh`, and `coverage` (7.10 or later) measures that run for the CI floor. `requirements-dev.txt` is the one Python dependency list (`PyYAML`, `pytest`, `pytest-xdist`, `coverage`): CI, the hooks' prerequisite check (`tools/gate_prereqs.py`) and the gate host's doctor all read it. |
 
@@ -289,8 +294,11 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    (tracked, once a verdict is written in it) and appends a note to
    `sdlc-studio/.local/briefs.jsonl` (untracked); `gate.py` writes only the untracked files
    under `sdlc-studio/.local/` that the gate tier lists; `review_prep.py close` writes
-   `sdlc-studio/.local/review-state.json` (untracked), the review's row in `reviews/_index.md`
-   and, given `--latest-body`, `reviews/LATEST.md` (both tracked). `review_prep.py prep` writes
+   `sdlc-studio/.local/review-state.json` (untracked), then through `reconcile.apply_meta` adds
+   a row to the `_index.md` of each meta folder, `reviews/`, `retros/`, `handoffs/` and
+   `reports/`, for every record that index lacks, the review's own among them, creating a
+   missing index from its template where its folder holds a record, and, given
+   `--latest-body`, writes `reviews/LATEST.md` (all tracked). `review_prep.py prep` writes
    nothing. The deterministic-authoring helpers DO write, each within a tested boundary:
    `artifact.py` creates artefact files and appends index rows; `file_finding.py` files
    findings; `reconcile apply` rewrites `_index.md` rows and counts; `transition.py`
@@ -298,8 +306,9 @@ Every script in `scripts/` obeys a fixed contract (`reference-scripts.md`):
    the `GitHub Issue` metadata line; `verify_ac.py` rewrites the `Verified:` line;
    `migrate_v3.py` renames files and rewrites ids/links; `plan.py archive` moves plan
    files; `archive.py` relocates a type's terminal index rows into its `archive/`
-   sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends to the
-   decisions ledger; `retro.py` writes the batch retro artefact and the committed
+   sub-index; `lessons.py add --global` writes a lesson; `decisions.py` appends a D-numbered
+   decision to the decision log `sdlc-studio/decisions.md`; `ledger.py record` appends a
+   ruling to its tranche's ledger `sdlc-studio/decisions/<tranche>.md`; `retro.py` writes the batch retro artefact and the committed
    `VELOCITY.md` history row; `persona_gen.py stamp` and `accept` rewrite the provenance
    stamp on a card the generation flow wrote (ADR-009); `critic record` appends to the committed verdict log (the
    evidence and per-unit sign-off logs are frozen history nothing writes). This list names
@@ -342,7 +351,7 @@ every shipped script that imports `urllib.request`.
 | The release check | `version_check.py` | `latest_release` | HTTPS GET to `api.github.com`, 5 s timeout | exception | Reads as offline and says nothing; `version_check.enabled: false` turns it off |
 | Origin drift | `sprint.py` | `origin_drift` | `git fetch origin` | not GitHub | Marks the comparison unverified, naming why |
 | Cursor usage | `lib/meter_cursor.py` | `call` | Sent by `call`, nested in `_get`: HTTPS GET `/v1/agents/{id}/usage` on `https://api.cursor.com` (`SDLC_STUDIO_CURSOR_API` overrides it: https, or http on a loopback IP address only), 5 s timeout, redirect refused, `CURSOR_API_KEY` in its `Authorization` header | not GitHub | Reads tokens None with the reason; made only when the Cursor meter is selected and both `CURSOR_API_KEY` and `SDLC_STUDIO_CURSOR_AGENT_ID` are set |
-| Lane runner's agent CLI | `lib/lanes.py` | `_run_in_group` | The harness CLI `headless_command` builds (`claude`, `cursor-agent`, `codex`, `copilot`, `opencode`), a networked process holding write tools | spawned process | Ends at the lane timeout with its process group killed and no lane recorded; bounded by the tool set and sandbox flags in Headless lane runner, the lane worktree and the landing review, not by a network filter |
+| Lane runner's agent CLI | `lib/lanes.py` | `_run_in_group` | The harness CLI `headless_command` builds (`claude`, `cursor-agent`, `codex`, `copilot`, `opencode`), a networked process holding write tools | spawned process | At the lane timeout its process group is killed and the lane is recorded unmetered (`timeout`), its worktree and staged work left as they are; bounded only by the tool set and sandbox flags in Headless lane runner and the review of what lands, not by a network filter |
 
 The consuming project's own Verify-line tools reach the network too; `SDLC_VERIFY_HTTP_HOSTS`
 is unset by default, applies to the `http` verb only and bounds nothing until a project sets it.
@@ -547,8 +556,9 @@ a half-written decomposition never certifies clean.
 
 `tools/tests/test_lean_trd_refresh.py` reads each path below from its writer's code, and checks
 every tracked file under `sdlc-studio/retros/evidence/`, `sdlc-studio/reports/`,
-`sdlc-studio/reviews/verdicts/` and `sdlc-studio/personas/memory/` against it. A `<placeholder>`
-in a path stands for any name.
+`sdlc-studio/reviews/verdicts/`, `sdlc-studio/personas/memory/` and `sdlc-studio/decisions/`,
+and the decision log `sdlc-studio/decisions.md`, against it. A `<placeholder>` in a path stands
+for any name.
 
 | Record | Path | Writer | Purpose |
 | --- | --- | --- | --- |
@@ -560,6 +570,9 @@ in a path stands for any name.
 | Delivery verdicts | `sdlc-studio/reviews/critic-verdicts.md` | `critic.py record` | The verdict ledger: whether a unit was reviewed is read from it. |
 | Plan-review verdicts | `sdlc-studio/reviews/plan-review-verdicts.md` | none: plan review is retired | The historical plan ledger, kept readable. |
 | Author self-checks | `sdlc-studio/reviews/author-self-checks.md` | `critic.py self-check record` | The author's claims and mutants for a unit's diff, which `critic.py brief` requires under `review.author_self_check: block`. |
+| Author mutant lists | `sdlc-studio/reviews/author-mutants/<id>.json` | `critic.py self-check record --mutants-from` | Each unit's whole mutant list from the runner's report (file, old and new text, test, verdict and answer), kept beside its self-check row; `critic.py brief` reads it, and the QA brief replays the author's mutants from it. A self-check recorded without a report removes the file. |
+| Decision log | `sdlc-studio/decisions.md` | `decisions.py` | The project's D-numbered decisions, dated and append-only, which the ADRs and revision rows cite as their authority. |
+| Per-tranche ledgers | `sdlc-studio/decisions/<tranche>.md` | `ledger.py` | One append-only ledger per tranche of work, each row a ruling with its time and rationale, so a run's rulings survive a context reset. |
 | Run reports | `sdlc-studio/reports/RPT*.json` | `sprint_report.py`, through `sprint.py close` and `sprint.py sign` | The report of record for a run, which the sign writes its signature onto. |
 | Report twins | `sdlc-studio/reports/RPT*-*.md` | `sprint_report.py` | The Markdown rendering of each report, re-rendered whenever the JSON is written. |
 | Run records | `sdlc-studio/reports/runs/*.json` | `run_state.py`, through `sprint.py close` and `sprint.py sign` | The tracked run state below. |
@@ -693,9 +706,13 @@ merged PRs.
 `epic implement` / `project implement` fan out work to subagents via the harness's
 Agent tool, bounded into waves with quality gates (`reference-agentic-lessons.md`,
 `reference-agent-prompt-template.md`). Wave prompts begin from a `repo_map`-derived
-file list. The Agent-tool fan-out is one of two harness-specific parts of the skill and is
-flagged Claude-Code-only in the `compatibility` frontmatter; the other is the headless lane
-runner below, which drives five harness CLIs. Nothing else in the skill is tied to one harness.
+file list. The Agent-tool fan-out is one of the skill's harness-specific parts. The
+`compatibility` frontmatter says the skill needs no particular harness: `--agentic` runs its
+waves in parallel where the harness has sub-agents with worktree isolation, and the same stories
+one at a time in dependency order elsewhere. Other harness-specific parts include the headless
+lane runner below, which drives five harness CLIs; `plan.py`, which manages the plan-mode files
+Claude Code keeps under `~/.claude/plans`; and the token meters in `lib/token_meters.py`, which
+read a sprint's cost from the store the running harness keeps.
 
 ### Headless lane runner
 
@@ -703,8 +720,11 @@ runner below, which drives five harness CLIs. Nothing else in the skill is tied 
 process (`lib/lanes.py`, `headless_command` and `_run_in_group`). The process runs in a
 worktree of its own, `lane-<unit>` under `sdlc-studio/.local/worktrees/`, with its working
 directory set there and its stdin closed. It leads its own process group, which is ended on a
-timeout or an interrupt, and its usage is read back from the CLI's JSON output. Nothing the
-runner starts commits or pushes: `sprint lane land` commits what the lane staged.
+timeout or an interrupt, and its usage is read back from the CLI's JSON output. The runner
+does not stop the CLI committing, pushing or writing outside its worktree: the brief tells the
+builder to stage its unit's Affects and not commit, an instruction rather than a control.
+`sprint lane land` commits what the lane staged through the repository's hooks, and a commit
+the builder made on the lane's branch is rebased and lands with it.
 `headless_command` builds a command for five harnesses, each given the permission flags below:
 
 | Harness | Binary | Permission flags it is given |
@@ -729,8 +749,8 @@ into one or more of six targets:
 | --- | --- |
 | Claude Code | `.claude/skills/sdlc-studio/` |
 | Codex | `.agents/skills/sdlc-studio/` (shared with `agents`) |
-| Gemini CLI | `~/.gemini/skills/sdlc-studio/` |
-| opencode | `~/.config/opencode/skills/sdlc-studio/` |
+| Gemini CLI | `.gemini/skills/sdlc-studio/` |
+| opencode | `.opencode/skills/sdlc-studio/` |
 | GitHub Copilot | `.github/skills/sdlc-studio/` |
 | `agents` (generic) | `.agents/skills/sdlc-studio/` (shared with Codex) |
 
@@ -797,8 +817,9 @@ cross-machine clash is caught at merge (ADR-008).
 | Token leakage via GitHub integration | L | M | No GitHub token handling: every GitHub call but the release check goes through `gh`, which owns auth, and the release check sends none (ADR-004). |
 | Credential leakage via the Cursor meter | L | M | The skill stores no secret. `CURSOR_API_KEY` is read from the environment and sent only in the Cursor usage request's `Authorization` header, over https or http to a loopback IP address, with a redirect refused so the key never follows one; no reading carries it (US0989). |
 | Malformed artifact crashing a script | M | L | `lib/sdlc_md.py` JSON helpers never raise (return a default); parsers tolerate legacy forms. |
-| Supply-chain risk from third-party deps | L | M | Pure stdlib; no third-party packages to compromise. |
-| Lane runner's agent CLI writing outside its lane | M | H | The runner spawns a networked agent CLI that holds write tools (Headless lane runner). Its control: it runs in its own worktree with stdin closed, Claude Code gets only the six named tools, Codex is sandboxed to `workspace-write`, and a timeout kills its process group; it never commits or pushes, `sprint lane land` stages from the lane's declared Affects and an independent reviewer judges the diff. The limit: `--force`, `--trust` and `--allow-all-tools` widen Cursor and Copilot and OpenCode takes no flag, so those lanes are bounded by the worktree and the review alone. |
+| Supply-chain risk from third-party deps | L | M | One runtime package, PyYAML, is required (ADR-014). The operator installs it from their own package index and the skill pins no version or hash of it, so a compromised PyYAML runs with the scripts' rights; `lizard` and `coverage` are soft and run only where a project installs them. |
+| Missing or tampered PyYAML | L | H | A missing PyYAML is refused, never read as defaults: `install.sh` and `install.ps1` refuse before any download or copy, the gate's prerequisite check exits 2 before any verb, and a command that reads a present `.config.yaml` refuses naming PyYAML (ADR-014). A tampered PyYAML is not detected: the scripts import whatever the interpreter finds, and every config read goes through `yaml.safe_load`, which builds no arbitrary Python object from the file. |
+| Lane runner's agent CLI writing outside its lane | M | H | The runner spawns a networked agent CLI that holds write tools (Headless lane runner). Its control: it starts in its own worktree with stdin closed, Claude Code gets only the six named tools, Codex is sandboxed to `workspace-write`, a timeout kills its process group, `sprint lane land` commits what the lane staged through the repository's hooks, and an independent reviewer judges the diff. The limit: nothing in the runner stops the CLI committing, pushing or writing outside its worktree, since the brief's instruction not to commit is a prompt and a commit the builder makes lands with the lane; Claude Code's six tools include Bash, `--force`, `--trust` and `--allow-all-tools` widen Cursor and Copilot, and OpenCode takes no flag, so only Codex runs under a sandbox and every lane is bounded in the end by the review. |
 | Verifier running artefact text through a shell | M | H | `verify_ac.py` runs a `- **Verify:**` line from artefact text through a shell. Its control: an artefact stamped `Provenance: external` has its shell verbs refused, `--no-shell` refuses them for every artefact, and `--allow-external` is the explicit override. The limit: the stamp is self-declared by whoever wrote the artefact and an absent stamp permits shell, so the control protects only artefacts that say they are external. |
 | Network exfiltration | L | H | Only the outbound paths §5 Network paths lists, each with what it does when it gets no answer, plus the consuming project's own Verify-line tools, which are bounded by nothing until a project sets `SDLC_VERIFY_HTTP_HOSTS`, an allow-list that is unset by default and applies to the `http` verb only (it bounds nothing until a project sets it, and any other Verify-line tool is never bounded by it). See §5 rule 6. |
 
@@ -831,10 +852,13 @@ progressive disclosure rather than by a runtime metric.
 **The cost model, and how it is recorded.** The sprint planner forecasts a batch's
 token cost as `sum(Points) x the measured tokens-per-point rate`. Modified Fibonacci
 points replaced the falsified file-complexity predictor (RFC0038): in a blind
-re-estimation of 20 delivered units they scored **r = +0.682 pooled** (+0.782 on
-units <= 8), clearing a bar fixed before the data was seen. A point measures about
-25,000 tokens, flat across the bands, seeded from that study and replaced by the
-project's own rate once it has enough delivered units. The forecast is **recorded at
+re-estimation of 21 delivered units, 19 of them with measured actuals, they scored
+**r = +0.682 pooled** (+0.782 on units <= 8), clearing a bar fixed before the data was
+seen. A point measures about 25,000 tokens, flat across the bands, seeded from that
+study and replaced by the project's own rate once it has enough delivered units. The
+seed holds for the build, not for a whole sprint: it was measured on per-unit actuals
+with no sprint ceremony, review rounds or close in them, so a forecast prices the
+build and leaves a sprint's ceremony out (`NO_BASE_TERM_CONDITION` in `sprint.py`). The forecast is **recorded at
 plan time** to `retros/evidence/forecasts-*.jsonl` (`telemetry.forecasts`), stamped
 with the points and the estimator rate constants that produced it, so `retro
 accuracy` judges that recorded number and never re-derives one - the loop can falsify
@@ -885,8 +909,8 @@ loads.
 markdown, counted artifacts, allocated IDs, and detected drift in-context. This was
 non-deterministic, token-expensive, and re-derived state every session.
 
-**Decision:** Move mechanical, high-frequency, or side-effecting work into pure-
-stdlib Python scripts under `scripts/`, sharing `lib/sdlc_md.py`. Read-only helpers
+**Decision:** Move mechanical, high-frequency, or side-effecting work into Python
+scripts under `scripts/`, sharing `lib/sdlc_md.py`. Read-only helpers
 emit JSON the agent consumes; the agent keeps the judgement (drift adjudication,
 body edits, dashboards, the five-leg review verdict). "Determinism in scripts,
 judgement in the agent."
@@ -949,7 +973,7 @@ turns it off.
 
 **Consequences:**
 
-- Positive: keeps the script layer pure stdlib; the skill stores no secret, and the one it
+- Positive: adds no GitHub client package to the script layer; the skill stores no secret, and the one it
   sends, the Cursor meter's `CURSOR_API_KEY`, goes to Cursor, not GitHub.
 - Sync FAILS LOUD, by design: with `gh` absent `github_sync.py` aborts non-zero (127)
   and names the missing CLI. It does NOT degrade gracefully - a silent no-op would let a
@@ -1297,13 +1321,14 @@ generalisable learning reaches the shipped amigos only by deliberate promotion. 
 CR0631 (review), CR0632 (memory), CR0633 (the learning loop), CR0634 (user personas and
 promotion).
 
-**Built so far:** the memory, the brief side of it and the loop that makes a learning live.
-`persona_memory.py` (US1058) records a persona's evidenced learnings as proposed in its
-committed memory file and lists them, and a review brief and every `persona_resolve.py`
-framing carry the seat's live learnings, capped and ranked (US1059). Another seat approves or
-rejects each proposed learning (US1066), the close lists every learning about to go live on
-the retro (US1067) and a learning reaches a brief only once a signed close has listed it, one
-the operator strikes at the signature never doing so (US1068). `persona_gen.py` still holds a
+**Built so far:** the memory, the brief side of it and the loop that makes a learning live,
+all shipped in 6.4.0. `persona_memory.py` (US1058) records a persona's evidenced learnings as
+proposed in its committed memory file and lists them, and a review brief and every
+`persona_resolve.py` framing carry the seat's live learnings, capped and ranked (US1059). A
+seat proposes a learning in its own words from a brief carrying its record (US1065), another
+seat approves or rejects each proposed learning (US1066), the close lists every learning about
+to go live on the retro (US1067) and a learning reaches a brief only once the run is signed,
+one the operator strikes at the signature never doing so (US1068). `persona_gen.py` still holds a
 card to no review standard.
 **Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning)
 and `persona_review.py` (US1052).
@@ -1377,6 +1402,41 @@ key.
 - RFC0060's D6 is closed by this ruling. D0504 keeps the signatures already on RPT0030 to
   RPT0034, each with a line naming the decision that authorised it (CR0730).
 
+---
+
+### ADR-014: PyYAML is a required dependency, refused at install and at the gate
+
+**Status:** Accepted (RFC0066, D0505, 2026-11-17)
+
+**Context:** PyYAML was a soft dependency. On a machine without it a project's `.config.yaml`
+could not be read, so every gate the project had switched on fell back to the shipped default
+with one warning and an unchanged exit code: the opted-in bar was disarmed and the run looked
+green.
+
+**Alternatives considered:**
+
+- *Keep it soft, with a louder warning.* No install breaks, but a warning is read as noise
+  and the disarmed gate still passes.
+- *Parse a YAML subset in the standard library.* No dependency, but a second parser to
+  maintain, and a config it cannot parse is the same disarmed gate.
+- *Require PyYAML and refuse without it.*
+
+**Decision:** The third. `install.sh` and `install.ps1` refuse a machine whose Python cannot
+import PyYAML, before any release lookup, download or copy (a dry run, `--list-targets` and an
+uninstall skip the check). The gate's prerequisite check (`gate.py`) refuses with exit 2
+before any verb or lane runs, and a command that reads a present `.config.yaml` without PyYAML
+refuses naming it rather than answering from the defaults. Each refusal names PyYAML and the
+command that installs it.
+
+**Consequences:**
+
+- Positive: a project's configuration is never read as the shipped defaults, so a gate it
+  switched on is never silently off.
+- Negative: a machine without PyYAML can no longer install or run the skill until it is
+  installed, a breaking change for that machine; the scripts now need a third-party
+  package, so the supply chain carries one (§9).
+- `lizard` and `coverage` stay soft dependencies, which a feature degrades without.
+
 ## 12. Open Technical Questions
 
 - [ ] **Q:** Should the markdown command flows get executable conformance tests, or
@@ -1396,7 +1456,8 @@ key.
 - [x] **Q:** Is there a plan-time predictor of delivery cost at all? **Resolved
   (RFC0038).** The file-complexity predictor was falsified out-of-sample (0.55x); its
   replacement, modified Fibonacci points, cleared a pre-registered bar in a blind
-  re-estimation of 20 delivered units (r = +0.682 pooled, +0.782 on units <= 8). The
+  re-estimation of 21 delivered units, 19 of them with measured actuals (r = +0.682
+  pooled, +0.782 on units <= 8); the figure holds for the build, not for a whole sprint. The
   shipped forecast is `sum(Points) x the measured tokens-per-point rate`, recorded when
   the plan is made (not re-derived at retro time), so the loop is now falsifiable.
 - [ ] **Q:** Should the meta artefacts (retro, review, handoff) join `ARTIFACT_TYPES`?
@@ -1428,8 +1489,7 @@ touches the component. The constraints below span components.
 ### Won't Have (This Version)
 
 - A network service, UI, or database.
-- A required third-party Python dependency (PyYAML is used when present and degrades to
-  the caller's default when absent).
+- A required third-party Python dependency other than PyYAML (ADR-014).
 - Executable conformance tests for the markdown command flows (the eval scenarios are a
   partial stand-in, not a replacement).
 - Full agentic-wave parity outside Claude Code.
@@ -1475,6 +1535,7 @@ touches the component. The constraints below span components.
 | 2026-11-16 | 6.4.0 | US1173: the release cut. The Coverage line reads v6.4.0 as cut, plus the 6.5 work on `main` |
 | 2026-11-18 | 6.4.0 | US1293: ADR-013 records D0503 (RFC0065): a closed run waits for the operator's signature and the next run opens on top of it, and a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack. §6's run lifecycle plan row no longer says the plan refuses while a record awaits its signature |
 | 2026-11-19 | 6.4.0 | BG1516: §7 gains the headless lane runner and its five harnesses, and §5 and §9 gain the agent CLI it spawns. BG1517: §5 and §9 say `SDLC_VERIFY_HTTP_HOSTS` is unset by default and bounds the `http` verb only, and §9 gains the Verify-line shell row. BG1529: §8 and §10 drop the sub-second claim for the census and give measured figures. BG1530: ADR-012's Status and Built so far name approval (US1066), the close's listing (US1067) and the signed-close gate (US1068) as built. BG1531: `critic brief`, `gate` and `review_prep close` leave every read-only list. BG1533: ADR-001 and ADR-005 stop calling `validate.py instructions` enforcement |
+| 2026-11-19 | 6.4.0 | BG1516: the lane runner's network row says a timed-out lane is recorded unmetered, and Headless lane runner and its threat row say nothing in the runner stops a lane committing, pushing or writing outside its worktree. BG1531: rule 5 names every meta index `review_prep.py close` backfills through `reconcile.apply_meta`. BG1096: the coverage clause gives the run's exit 2 and names the Done gate as the block/report split. BG1556: §6 lists the decision log and the per-tranche ledgers, and rule 5 names `decisions.py` and `ledger.py` each with its own store. BG1557: System Context names every external service, the C4 note and the install table give paths that exist, and §10 and §12 cite 21 units with 19 measured and the build-only condition. BG1565: ADR-012's Built so far names US1065 beside US1058, US1059 and US1066 to US1068, as 6.4.0 ships them. BG1621: §6 lists the author mutant lists. US1299: ADR-014 records D0505, §9 gains the PyYAML threat row, and no section calls the scripts standard library only |
 
 ---
 

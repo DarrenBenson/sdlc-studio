@@ -116,11 +116,19 @@ class WritingHelperConfinementTests(unittest.TestCase):
 
     def test_each_writing_helper_writes_only_its_named_state(self) -> None:
         """Mutants: a helper writing outside its named paths (a `LATEST.md` from `prep`, a
-        tracked file from `brief`); a named path the helper no longer writes."""
+        tracked file from `brief`, a stray file under `.local/` from `close`); a named path the
+        helper no longer writes (`close` adding no index row, or no `LATEST.md` given
+        `--latest-body`, or not backfilling a meta index that lacks a record)."""
         def review(root: Path) -> None:
             (root / "sdlc-studio" / "reviews").mkdir()
             (root / "sdlc-studio" / "reviews" / "RV0001-x.md").write_text(
                 "# RV0001: a review\n\n> **Status:** Complete\n", encoding="utf-8")
+
+        def unindexed_retro(root: Path) -> None:
+            review(root)
+            (root / "sdlc-studio" / "retros").mkdir()
+            (root / "sdlc-studio" / "retros" / "RETRO0001-x.md").write_text(
+                "# RETRO0001: a retro\n\n> **Status:** Complete\n", encoding="utf-8")
 
         brief, rc = self._changed(["critic.py", "brief", "--unit", "US0001", "--seat",
                                    "engineering"])
@@ -140,11 +148,21 @@ class WritingHelperConfinementTests(unittest.TestCase):
         prep, rc = self._changed(["review_prep.py", "prep"], review)
         self.assertEqual((set(), 0), (prep, rc))
 
+        # The state file, and through `reconcile.apply_meta` the `_index.md` of each meta folder
+        # holding a record its index lacks: the review's own, and here a retro's.
+        state = {"sdlc-studio/.local/", "sdlc-studio/.local/review-state.json",
+                 "sdlc-studio/reviews/_index.md"}
         close, rc = self._changed(["review_prep.py", "close", "--rv", "RV0001"], review)
-        self.assertEqual(0, rc)
-        self.assertIn("sdlc-studio/.local/review-state.json", close)
-        self.assertEqual(set(), {c for c in close if not c.startswith("sdlc-studio/.local/")
-                                 and c not in ("sdlc-studio/reviews/_index.md",)})
+        self.assertEqual((state, 0), (close, rc))
+        close, rc = self._changed(["review_prep.py", "close", "--rv", "RV0001"], unindexed_retro)
+        self.assertEqual((state | {"sdlc-studio/retros/_index.md"}, 0), (close, rc))
+        def anchor_body(root: Path) -> None:
+            review(root)
+            (root / "latest.md").write_text("See RV0001.\n", encoding="utf-8")
+
+        close, rc = self._changed(["review_prep.py", "close", "--rv", "RV0001", "--latest-body",
+                                   "latest.md"], anchor_body)
+        self.assertEqual((state | {"sdlc-studio/reviews/LATEST.md"}, 0), (close, rc))
 
 
 class SideEffectConfinementTests(unittest.TestCase):

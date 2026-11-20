@@ -24,6 +24,8 @@ import contextlib
 import fnmatch
 import functools
 import io
+import json
+import os
 import re
 import subprocess
 import sys
@@ -42,10 +44,13 @@ sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SCRIPTS / "tests"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import critic  # noqa: E402
+import decisions  # noqa: E402
 import doc_freshness  # noqa: E402
 import evidence_pack  # noqa: E402
 import file_finding  # noqa: E402
+import gate  # noqa: E402
 import gitutil  # noqa: E402 - confined git for the scratch and fixture repositories
+import ledger  # noqa: E402
 import lessons  # noqa: E402
 import persona_gen  # noqa: E402
 import persona_memory  # noqa: E402
@@ -270,10 +275,18 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
                     self.assertRegex(why, rf"\b{re.escape(member)}\b")
                 self.assertEqual([], _narrower_than(why, self.executes))
 
+    #: A passage that widens the allow-list past the `http` verb, naming every or all of the
+    #: Verify-line tools or saying the list bounds every, all or any of them, or that says it
+    #: bounds only until a project sets it.
+    WIDENED = re.compile(r"\b(?:every|all)\b(?:\s+other)?\s+Verify-line tools?\b|"
+                         r"\bbounds?\s+(?:every|all|any)\b|\bbounds?\s+only\s+until\b", re.I)
+
     def test_the_http_allow_list_is_described_as_unset_and_http_only(self) -> None:
         """Mutants: the Network paths prose or the exfiltration row saying a project's
         Verify-line tools are bounded to the hosts the variable names; either dropping `unset by
-        default`, the `http` verb or `bounds nothing until`; the code reading a default list."""
+        default`, the `http` verb or `bounds nothing until`; either widening the list past the
+        `http` verb (to every other Verify-line tool, or bounding every one once set); `bounds
+        nothing until` turned into `bounds only until`; the code reading a default list."""
         var = "SDLC_VERIFY_HTTP_HOSTS"
         with mock.patch.dict("os.environ", clear=False) as env:
             env.pop(var, None)
@@ -290,9 +303,10 @@ class TrdVerifierAuthorityTests(unittest.TestCase):
             with self.subTest(passage=name):
                 self.assertIn(var, flat)
                 self.assertIn("unset by default", flat)
-                self.assertIn("`http` verb", flat)
-                self.assertRegex(flat, r"bound[s]? (?:nothing|only) until a project sets it")
+                self.assertIn("applies to the `http` verb only", flat)
+                self.assertIn("bounds nothing until a project sets it", flat)
                 self.assertNotRegex(flat, r"bounded to the hosts|host-bounded by")
+                self.assertNotRegex(flat, self.WIDENED)
 
     def test_the_threat_model_has_a_verify_line_execution_row(self) -> None:
         """Mutants: the row removed; the stamp, `--no-shell` or `--allow-external` left out of
@@ -366,12 +380,30 @@ def _glob(path: str) -> str:
     return re.sub(r"<[^<>]+>", "*", path)
 
 
+def decision_stores() -> list[str]:
+    """The decision log `decisions.py` appends to and the directory of per-tranche ledgers
+    `ledger.py` writes, each read from its writer's code."""
+    return [decisions.LOG_REL, ledger.ledger_path("", "x").parent.as_posix()]
+
+
 def committed_trees() -> list[str]:
     """The directories whose every tracked file a committed record's row must match, each read
-    from its writer's code: the evidence shards, the reports, the verdict files a brief issues
-    and the persona memory files."""
+    from its writer's code: the evidence shards, the reports, the verdict files a brief issues,
+    the persona memory files and the per-tranche decision ledgers."""
     return [telemetry.EVIDENCE.as_posix(), sprint_report.report_dir("").as_posix(),
-            critic.VERDICTS_DIR_REL.as_posix(), persona_memory.MEMORY_REL]
+            critic.VERDICTS_DIR_REL.as_posix(), persona_memory.MEMORY_REL,
+            ledger.ledger_path("", "x").parent.as_posix()]
+
+
+def committed_files() -> list[str]:
+    """The single committed files a row must list beside those directories, each read from its
+    writer's code: the decision log."""
+    return [decisions.LOG_REL]
+
+
+#: The committed file `critic.py self-check record --mutants-from` keeps a unit's mutants in.
+AUTHOR_MUTANTS = (Path("sdlc-studio") / "reviews" / critic.AUTHOR_MUTANTS_DIR
+                  / "<id>.json").as_posix()
 
 
 def unlisted(files: list[str], listed: set[str]) -> list[str]:
@@ -535,7 +567,7 @@ class TrdStorageTests(unittest.TestCase):
         # Records the code writes that need not be tracked yet: no learning has been recorded and
         # no release's pack written here, so each is held to its row and not to a tracked file.
         pending = {persona_memory.memory_path("", "<persona>").as_posix(),
-                   evidence_pack.pack_rel("<version>")}
+                   evidence_pack.pack_rel("<version>"), AUTHOR_MUTANTS}
         self.assertIn("sdlc-studio/lessons.jsonl", expected)
         self.assertEqual(sdlc_md.META_TYPES["report"][0], report_dir.as_posix())
         tracked = _tracked("sdlc-studio")
@@ -549,7 +581,7 @@ class TrdStorageTests(unittest.TestCase):
         # The reports directory's `_index.md` is an index registry, which the Storage Strategy
         # table gives its own row.
         self.assertIn("`_index.md`", _section(_trd_body(), "Storage Strategy"))
-        swept = _tracked(*committed_trees())
+        swept = _tracked(*committed_trees(), *committed_files())
         self.assertTrue(fnmatch.filter(swept, telemetry.actuals_path("", "*").as_posix()))
         self.assertTrue(fnmatch.filter(swept, f"{critic.VERDICTS_DIR_REL.as_posix()}/*"))
         for f in unlisted(swept, listed):
@@ -559,6 +591,72 @@ class TrdStorageTests(unittest.TestCase):
             with self.subTest(listed=p):
                 self.assertTrue(fnmatch.filter(tracked, _glob(p)),
                                 f"the TRD lists {p}, which tracks nothing")
+
+    def _records(self) -> tuple[list[str], list[list[str]]]:
+        table = _one_table(_section(_trd_body(), "Committed evidence and records"), "Record")
+        return table[0], table[1:]
+
+    def _row(self, path: str) -> dict[str, str]:
+        """The one row of the committed records table listing `path`, by column name."""
+        header, rows = self._records()
+        found = [r for r in rows if path in _spans(r[header.index("Path")])]
+        self.assertEqual(1, len(found), f"{len(found)} rows list {path}")
+        return dict(zip(header, found[0]))
+
+    def test_both_decision_stores_are_listed_with_their_writers(self) -> None:
+        """BG1556 AC1. Mutants: either store's row dropped; the log credited to `ledger.py` or
+        the per-tranche ledger to `decisions.py`; a row with no purpose."""
+        log = self._row(decisions.LOG_REL)
+        tranche = self._row(ledger.ledger_path("", "<tranche>").as_posix())
+        self.assertEqual({"decisions.py"}, {s for s in _spans(log["Writer"]) if s.endswith(".py")})
+        self.assertEqual({"ledger.py"}, {s for s in _spans(tranche["Writer"])
+                                         if s.endswith(".py")})
+        for row in (log, tranche):
+            with self.subTest(record=row["Record"]):
+                self.assertGreater(len(row["Purpose"].split()), 8, row["Purpose"])
+
+    def test_every_tracked_decision_file_matches_a_listed_path(self) -> None:
+        """BG1556 AC2. Mutants: the decision stores left out of the swept paths (exempt by
+        enumeration); a tracked decision file no listed path matches."""
+        stores = decision_stores()
+        self.assertLessEqual(set(stores), set(committed_trees()) | set(committed_files()))
+        tracked = _tracked(*stores)
+        self.assertIn(decisions.LOG_REL, tracked, "premise: git tracks the decision log")
+        self.assertTrue([f for f in tracked if f.startswith(stores[1] + "/")],
+                        "premise: git tracks a per-tranche ledger")
+        header, rows = self._records()
+        listed = set().union(*(_spans(r[header.index("Path")]) for r in rows))
+        self.assertEqual([], unlisted(tracked, listed))
+        self.assertEqual(["sdlc-studio/decisions.json"],
+                         unlisted(["sdlc-studio/decisions.json", "sdlc-studio/decisions/T1.md"],
+                                  listed), "premise: a file beside the stores is not listed")
+
+    def test_rule_five_names_each_script_with_its_own_store(self) -> None:
+        """BG1556 AC3. Mutants: `decisions.py` credited with the per-tranche ledger, or
+        `ledger.py` with the log; `ledger.py` dropped from the write surface."""
+        contract = " ".join(_section(_trd_body(), "Script CLI contract").split())
+        rule5 = contract.split(" 5. ", 1)[1].split(" 6. ", 1)[0]
+        clauses = re.split(r";\s*", rule5)
+        log = [c for c in clauses if "`decisions.py`" in c]
+        tranche = [c for c in clauses if "`ledger.py" in c]
+        self.assertEqual(1, len(log), "rule 5 names `decisions.py` in one clause")
+        self.assertEqual(1, len(tranche), "rule 5 names `ledger.py` in one clause")
+        self.assertIn(f"`{decisions.LOG_REL}`", log[0])
+        self.assertNotIn("`sdlc-studio/decisions/", log[0])
+        self.assertIn(f"`{ledger.ledger_path('', '<tranche>').as_posix()}`", tranche[0])
+        self.assertNotIn(f"`{decisions.LOG_REL}`", tranche[0])
+
+    def test_the_committed_records_table_lists_the_author_mutant_lists(self) -> None:
+        """BG1621 AC1. Mutants: the row dropped, or at another path than the code keeps the list
+        at; its writer not naming `--mutants-from`; its purpose not naming the QA brief's replay."""
+        self.assertEqual(Path(AUTHOR_MUTANTS).parent,
+                         critic.author_mutants_path("", "US0001").parent)
+        self.assertEqual(".json", critic.author_mutants_path("", "US0001").suffix)
+        row = self._row(AUTHOR_MUTANTS)
+        self.assertIn("`critic.py self-check record --mutants-from`", row["Writer"])
+        purpose = " ".join(row["Purpose"].split())
+        self.assertRegex(purpose, r"QA brief")
+        self.assertRegex(purpose, r"replays? the author's mutants")
 
     def test_the_run_lifecycle_reaches_sign(self) -> None:
         """Mutants: the run state shown as `.local` only (the tracked record dropped, or kept in
@@ -1155,6 +1253,43 @@ def _network_rows() -> list[list[str]]:
     return _one_table(_section(_trd_body(), "Network paths"), "Path")[1:]
 
 
+@functools.lru_cache(maxsize=None)
+def _lane_runs() -> dict[str, dict]:
+    """What `lanes.run` does with a stub `claude` on PATH, in a scratch repository and worktree:
+    `hang` runs past a 1 s timeout, `commit` commits in its worktree and exits 0. Each gives
+    the run's exit status, the lane records it left and the worktree's last commit subject."""
+    out: dict[str, dict] = {}
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        root, wt, bin_ = base / "repo", base / "wt", base / "bin"
+        root.mkdir()
+        bin_.mkdir()
+        (root / "a.txt").write_text("a\n", encoding="utf-8")
+        gitutil.git(["init", "-q", "-b", "main", "--template="], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", "init"], root)
+        gitutil.git(["worktree", "add", "-q", "-b", "lane", str(wt)], root)
+        stub = bin_ / "claude"
+        stub.write_text('#!/bin/sh\nif [ "$STUB" = hang ]; then exec sleep 30; fi\n'
+                        'exec git -c user.name=t -c user.email=t@t -c commit.gpgsign=false '
+                        'commit -q --allow-empty -m "builder commit"\n', encoding="utf-8")
+        stub.chmod(0o755)
+        for mode in ("hang", "commit"):
+            unit = f"US000{len(out) + 1}"
+            env = {"STUB": mode, "PATH": os.pathsep.join((str(bin_), "/usr/bin", "/bin")),
+                   "HOME": str(base / "home"), "XDG_DATA_HOME": str(base / "xdg"),
+                   "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+            with mock.patch.dict(os.environ, env), \
+                    contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                rc = lanes.run(root, unit, "claude", "BRIEF", worktree=wt, timeout=1)
+            records = sorted((root / lanes.RUN_RECORDS / unit).glob("*.json"))
+            subject = gitutil.git(["log", "-1", "--format=%s"], wt, text=True).stdout.strip()
+            out[mode] = {"rc": rc, "subject": subject,
+                         "records": [json.loads(r.read_text(encoding="utf-8")) for r in records]}
+    return out
+
+
 class TrdLaneRunnerTests(unittest.TestCase):
     """BG1516: the TRD names the headless lane runner, the five CLIs it drives and the flags it
     gives them, and no longer calls the Agent-tool fan-out the one harness-specific part."""
@@ -1163,64 +1298,141 @@ class TrdLaneRunnerTests(unittest.TestCase):
     NOT_PERMISSIONS = {"-p", "--output-format", "--format", "--json", "-s", "--skip-git-repo-check",
                        "--model", "-m"}
 
+    #: A sentence saying the runner, or what it starts, never commits or pushes.
+    NO_COMMIT = re.compile(r"nothing the runner starts commits|never commits or pushes|"
+                           r"commits or pushes nothing", re.I)
+
+    def _permissions(self, cmd: list[str], brief: str) -> list[tuple[str, str | None]]:
+        """Each permission flag in `cmd`, with the argument after it as its value where that is
+        neither another flag nor the brief, else None."""
+        args = cmd[1:]
+        out = []
+        for i, arg in enumerate(args):
+            if not arg.startswith("-") or arg in self.NOT_PERMISSIONS:
+                continue
+            nxt = args[i + 1] if i + 1 < len(args) else None
+            out.append((arg, nxt if nxt and not nxt.startswith("-") and nxt != brief else None))
+        return out
+
     def test_every_headless_harness_is_named_with_its_flags(self) -> None:
         """Mutants: no lane runner subsection; a harness `BINARIES` lists left out of its table;
-        a flag `headless_command` gives a harness left out of its row; `none` for a harness the
-        code gives flags; the subsection not saying where the runner runs."""
+        a flag `headless_command` gives a harness left out of its row, or given another value
+        than its row names (Codex's `--sandbox` widened to `danger-full-access`); `none` for a
+        harness the code gives flags; the subsection not saying where the runner runs; the
+        subsection saying nothing the runner starts commits or pushes, where a lane's CLI
+        commits in its worktree and the run exits 0."""
         section = _section(_trd_body(), "Headless lane runner")
         self.assertIn("`sprint.py lane run`", section)
         self.assertIn("worktree", section)
+        flat = " ".join(section.split())
+        self.assertEqual((0, "builder commit"),
+                         (_lane_runs()["commit"]["rc"], _lane_runs()["commit"]["subject"]),
+                         "premise: the runner lets a lane's CLI commit")
+        self.assertNotRegex(flat, self.NO_COMMIT)
+        self.assertRegex(flat, r"does not stop the CLI committing, pushing or writing outside "
+                               r"(?:its|the) worktree")
         rows = _one_table(section, "Harness")[1:]
         self.assertGreaterEqual(len(lanes.BINARIES), 5)
         scratch = tempfile.TemporaryDirectory()
         self.addCleanup(scratch.cleanup)
         # A real repository, so Codex's `--add-dir` (the git directory) is part of its command.
         gitutil.git(["init", "-q", "--template="], Path(scratch.name))
+        git_dir = (Path(scratch.name) / ".git").resolve()
         for harness, binary in sorted(lanes.BINARIES.items()):
             cmd = lanes.headless_command(harness, "BRIEF", None, Path(scratch.name))
             self.assertEqual(binary, cmd[0])
             named = [r for r in rows if binary in _spans(r[1])]
             with self.subTest(harness=harness):
                 self.assertEqual(1, len(named), f"{binary} is named by {len(named)} rows")
-                flags = [a for a in cmd[1:] if a.startswith("-")
-                         and a not in self.NOT_PERMISSIONS]
-                if flags:
-                    for flag in flags:
-                        self.assertIn(flag, named[0][2])
-                else:
-                    self.assertRegex(named[0][2], r"^none\b")
+                flags = self._permissions(cmd, "BRIEF")
+                cell = named[0][2]
+                for flag, value in flags:
+                    self.assertIn(flag, cell)
+                    if value is None:
+                        continue
+                    if Path(value).is_absolute() and Path(value).resolve() == git_dir:
+                        self.assertIn("git directory", cell)
+                    elif "," in value:
+                        for part in value.split(","):
+                            self.assertRegex(cell, rf"\b{re.escape(part)}\b")
+                    else:
+                        self.assertIn(f"`{flag} {value}`", cell)
+                if not flags:
+                    self.assertRegex(cell, r"^none\b")
         with self.assertRaises(ValueError):
             lanes.headless_command("nonesuch", "BRIEF", None, Path(scratch.name))
 
     def test_agentic_waves_are_not_called_the_only_harness_specific_part(self) -> None:
         """Mutants: either passage restored to calling the wave fan-out the one or only
-        harness-specific part; question 3 left open with no word of the lane runner."""
+        harness-specific part, with or without words between (`the only harness-specific
+        part`, `the one part`); question 3 left open with no word of the lane runner; the
+        Agentic passage saying the `compatibility` frontmatter flags the fan-out Claude-Code-only,
+        or not saying what that frontmatter says; the passage saying nothing else is tied to one
+        harness, or leaving out `plan.py` and the plan-mode folder it manages."""
         body = _trd_body()
         agentic = _section(body, "Agentic execution")
         bullets = re.split(r"\n(?=- \[)", _section(body, "12. Open Technical Questions"))
         q3 = next(b for b in bullets if "agentic wave" in b)
-        only = re.compile(r"\b(?:the\s+)?(?:one|only)\s+(?:part|feature|non-neutral)\b|"
+        only = re.compile(r"\b(?:one|only|sole|single)\b(?!\s+of\b)(?:\s+[\w-]+){0,3}?\s+"
+                          r"(?:part|feature|non-neutral)s?\b|"
                           r"\bthe\s+rest\s+is\s+harness-neutral\b", re.I)
         for name, text in (("Agentic execution", agentic), ("question 3", q3)):
             with self.subTest(passage=name):
                 self.assertIsNone(only.search(" ".join(text.split())), text)
-        self.assertIn("headless lane runner", " ".join(agentic.split()))
+        flat_agentic = " ".join(agentic.split())
+        self.assertIn("headless lane runner", flat_agentic)
+        compat = re.search(r'^compatibility:\s*"(.*)"\s*$',
+                           (SCRIPTS.parent / "SKILL.md").read_text(encoding="utf-8"), re.M)
+        said = "Needs no particular harness: "
+        self.assertIn(said, compat.group(1), "premise: the frontmatter's harness clause")
+        self.assertNotRegex(flat_agentic, r"(?i)claude[- ]code[- ]only",
+                            "the passage says the frontmatter flags the fan-out Claude-Code-only")
+        self.assertIn(said.lower().rstrip(": "), flat_agentic.lower())
+        self.assertIn(compat.group(1).split(said, 1)[1].rstrip("."),
+                      flat_agentic.replace("`", ""),
+                      "the passage does not say what the compatibility frontmatter says")
+        self.assertNotRegex(flat_agentic, r"(?i)\bnothing else\b|\bno other part\b",
+                            "the passage closes the list of harness-specific parts")
+        plans = re.search(r'^DEFAULT_PLANS_DIR = "([^"]+)"',
+                          (SCRIPTS / "plan.py").read_text(encoding="utf-8"), re.M).group(1)
+        for named in ("`plan.py`", f"`{plans}`"):
+            self.assertIn(named, flat_agentic, "plan.py's plan-mode files are not named")
         flat = " ".join(q3.split())
         self.assertTrue(q3.startswith("- [x]") or all(b in flat for b in lanes.BINARIES.values()),
                         "question 3 is open and does not name the harnesses the runner drives")
 
     def test_the_spawned_agent_has_a_network_row_and_a_threat_row(self) -> None:
         """Mutants: either row removed; the network row's last cell or the threat row's
-        mitigation emptied; the threat row dropping the limit it states."""
+        mitigation emptied; the threat row dropping the limit it states; the network row saying
+        a timed-out lane is not recorded, where `lanes.run` records it unmetered; the threat row
+        counting a bar on commits or pushes, or a landing that stages the Affects, among its
+        controls, or its limit leaving out that a lane can commit, push and write outside its
+        worktree, or that Claude Code's tools include Bash."""
+        runs = _lane_runs()
+        hang = runs["hang"]
+        self.assertEqual((1, [lanes.TIMED_OUT]),
+                         (hang["rc"], [r["unmetered"] for r in hang["records"]]),
+                         "premise: a timed-out lane is recorded unmetered")
+        self.assertEqual((0, "builder commit"), (runs["commit"]["rc"], runs["commit"]["subject"]),
+                         "premise: the runner lets a lane's CLI commit")
+        self.assertIn("Bash", lanes.CLAUDE_LANE_TOOLS)
         net = [r for r in _network_rows() if "lib/lanes.py" in r[1]]
         self.assertEqual(1, len(net), "the Network paths table has no row for the lane runner")
         self.assertTrue(net[0][-1].strip(), "the network row names no bound")
-        self.assertIn("bounded by", net[0][-1])
+        cell = " ".join(net[0][-1].split())
+        self.assertIn("bounded", cell)
+        self.assertNotRegex(cell, r"no lane (?:is )?recorded")
+        self.assertIn(f"recorded unmetered (`{lanes.TIMED_OUT}`)", cell)
         threat = [r for r in _threat_rows() if "agent CLI" in r[0]]
         self.assertEqual(1, len(threat), "the Threat Model has no row for the spawned agent CLI")
-        control = threat[0][3]
+        control = " ".join(threat[0][3].split())
         for word in ("worktree", "timeout", "sandbox", "reviewer", "limit"):
             self.assertIn(word, control)
+        self.assertNotRegex(control, self.NO_COMMIT)
+        self.assertNotRegex(control, r"land\S*`? stages")
+        limit = control.split("The limit:", 1)[1]
+        for named in ("committing", "pushing", "outside its worktree", "Bash"):
+            self.assertIn(named, limit)
 
 
 class TrdPerformanceClaimTests(unittest.TestCase):
@@ -1353,8 +1565,10 @@ class TrdReadOnlyHelperTests(unittest.TestCase):
 
     def test_the_writing_helpers_are_not_listed_as_read_only(self) -> None:
         """Mutants: any of the three put back in a read-only list; section 2 calling the script
-        layer read-only; the files and their tracking left out of section 5; the section 9
-        mitigation not citing the lists."""
+        layer read-only; the files and their tracking left out of section 5; `review_prep.py
+        close` named without the meta indexes `reconcile.apply_meta` backfills, or without one
+        of the `sdlc_md.META_TYPES` folders it reaches; the section 9 mitigation not citing the
+        lists."""
         body = _trd_body()
         lists = self._lists()
         self.assertGreaterEqual(len(lists), 2, "premise: the split rule and rule 5 list helpers")
@@ -1368,8 +1582,15 @@ class TrdReadOnlyHelperTests(unittest.TestCase):
         for named in ("`critic.py brief`", "`sdlc-studio/reviews/verdicts/<UNIT>/`",
                       "`sdlc-studio/.local/briefs.jsonl` (untracked)", "`gate.py`",
                       "`review_prep.py close`", "`sdlc-studio/.local/review-state.json` (untracked)",
-                      "`reviews/LATEST.md`", "(both tracked)"):
+                      "`reviews/LATEST.md`", "(all tracked)"):
             self.assertIn(named, contract)
+        close = contract.split("`review_prep.py close`", 1)[1].split("`review_prep.py prep`")[0]
+        self.assertIn("`reconcile.apply_meta`", close)
+        self.assertIn("`_index.md`", close)
+        self.assertGreaterEqual(len(sdlc_md.META_TYPES), 4, "premise: the meta folders were read")
+        for rel, _prefix in sorted(sdlc_md.META_TYPES.values()):
+            with self.subTest(meta=rel):
+                self.assertIn(f"`{rel.removeprefix('sdlc-studio/')}/`", close)
         self.assertIn("gate-cost.json", _section(body, "The gate tier"))
         row = next(r for r in _threat_rows() if r[0].startswith("Script mutating"))
         self.assertIn("§5 rule 5", row[3])
@@ -1448,6 +1669,226 @@ class TrdInstructionsCheckTests(unittest.TestCase):
         cap = int(stated.group(1).replace(",", ""))
         self.assertEqual(7000, cap)
         self.assertLessEqual(len(text), cap)
+
+
+# --- BG1557, BG1565, US1299: the summaries, the built state and the PyYAML ruling ---
+
+
+class TrdSummaryAgreementTests(unittest.TestCase):
+    """BG1557: the TRD's summaries agree with its own detail and with the code: System Context
+    names every external service, section 2 does not call the script layer read-only, the C4
+    note names a path that exists, the install table gives `install.sh`'s local directories and
+    the cost model cites the shipped basis."""
+
+    #: The Deployment Topology table's target names, as `install.sh` names each target.
+    TARGETS = {"Claude Code": "claude", "Codex": "codex", "Gemini CLI": "gemini",
+               "opencode": "opencode", "GitHub Copilot": "copilot", "`agents` (generic)": "agents"}
+
+    def test_the_summary_names_every_external_service_the_detail_lists(self) -> None:
+        """AC1. Mutants: System Context saying the only external service is GitHub through
+        `gh`; a service the External Services table lists left out of it; section 2 calling
+        the script layer read-only."""
+        body = _trd_body()
+        context = " ".join(_section(body, "System Context").split())
+        self.assertNotRegex(context, r"(?i)only external service")
+        services = _one_table(_section(body, "External Services"), "Service")[1:]
+        self.assertTrue([r for r in services if r[0] == "Cursor usage API"],
+                        "premise: the External Services table lists the Cursor usage API")
+        for row in services:
+            with self.subTest(service=row[0]):
+                self.assertIn(row[0], context)
+        hosts = {m for r in _network_rows() for m in re.findall(r"`(api\.[\w.]+)`", r[3])}
+        self.assertIn("api.github.com", hosts, "premise: the network table names the release GET")
+        self.assertIn("`api.github.com`", context)
+        self.assertIn("`gh` CLI", context)
+        pattern = " ".join(_section(body, "2. Project Classification").split())
+        self.assertNotIn("read-only", pattern)
+        self.assertIn("§5 rule 5", pattern)
+
+    def test_the_c4_path_exists_and_the_install_table_matches_install_sh(self) -> None:
+        """AC2. Mutants: the C4 note naming `modules/trd/c4-diagrams.md`, which does not exist;
+        a row giving a home-directory path under the local heading; a row giving another
+        target's directory; a target `install.sh` installs left out of the table."""
+        body = _trd_body()
+        note = next(p for p in _section(body, "Component Overview").split("\n\n")
+                    if "C4 Diagrams" in p)
+        paths = [s for s in _spans(note) if s.endswith(".md")]
+        self.assertEqual(1, len(paths), note)
+        self.assertTrue((SCRIPTS.parent / paths[0]).is_file(), f"{paths[0]} does not exist")
+        install = _read(REPO / "install.sh")
+        local = dict(re.findall(r'^\s*(\w+):local\)\s+echo "([^"]+)"', install, re.M))
+        targets = re.search(r'^ALL_TARGETS="([^"]+)"', install, re.M).group(1).split()
+        self.assertEqual(set(targets), set(local), "premise: install.sh's local cases were read")
+        self.assertEqual(".gemini/skills", local["gemini"])
+        table = _one_table(_section(body, "Deployment Topology"), "Target")
+        header, rows = table[0], table[1:]
+        self.assertEqual(sorted(targets), sorted(self.TARGETS[r[0]] for r in rows))
+        for row in rows:
+            target = self.TARGETS[row[0]]
+            for column, cell in zip(header[1:], row[1:]):
+                if re.search(r"(?i)\bglobal\b", column):
+                    continue
+                with self.subTest(target=target, column=column):
+                    self.assertRegex(column, r"(?i)\blocal\b")
+                    self.assertNotIn("~", cell)
+                    self.assertEqual(f"{local[target]}/sdlc-studio/",
+                                     re.findall(r"`([^`]+)`", cell)[0])
+
+    def test_the_cost_model_count_matches_the_shipped_basis(self) -> None:
+        """AC3. Mutants: either passage citing 20 units, or not the measured count the basis
+        holds; either dropping the build-only condition."""
+        basis = sprint.POINTS_RATE_SEED_BASIS
+        units = re.search(r"re-estimation of (\d+) delivered units", basis).group(1)
+        measured = re.search(r"(\d+) had measured actuals", basis).group(1)
+        self.assertIn(sprint.NO_BASE_TERM_CONDITION, basis)
+        self.assertRegex(sprint.NO_BASE_TERM_CONDITION,
+                         r"holds for the BUILD, not for a whole sprint")
+        body = _trd_body()
+        cost = next(p for p in _section(body, "10. Performance Requirements").split("\n\n")
+                    if p.startswith("**The cost model"))
+        q = next(b for b in re.split(r"\n(?=- \[)", _section(body, "12. Open Technical Questions"))
+                 if "plan-time predictor" in b)
+        for name, text in (("section 10", cost), ("section 12", q)):
+            flat = " ".join(text.split())
+            with self.subTest(passage=name):
+                self.assertIn(f"re-estimation of {units} delivered units", flat)
+                self.assertRegex(flat, rf"\b{measured} (?:of them )?with measured actuals")
+                self.assertRegex(flat, r"(?i)holds for the build, not for a whole sprint")
+
+
+#: A sentence calling a story open or unbuilt.
+_UNBUILT_CLAIM = re.compile(r"\bopen\b|\bnot yet built\b|\bunbuilt\b", re.I)
+
+
+def _stories_called_unbuilt(text: str) -> set[str]:
+    """The story ids `text` names in a sentence (`_units`) that calls something open or unbuilt."""
+    return {s for unit in _units(text) if _UNBUILT_CLAIM.search(unit)
+            for s in _STORY_ID.findall(unit)}
+
+
+def _done_stories_called_unbuilt(text: str, stories: Path) -> list[str]:
+    """Those of `_stories_called_unbuilt(text)` whose file under `stories` reads Done."""
+    return sorted(s for s in _stories_called_unbuilt(text)
+                  if _story_status(s, stories) == "Done")
+
+
+class TrdBuiltStateTests(unittest.TestCase):
+    """BG1565: ADR-012 states the learning loop 6.4.0 ships, and no story the TRD calls open or
+    not yet built reads Done."""
+
+    STORIES = REPO / "sdlc-studio" / "stories"
+    LOOP = ("US1058", "US1059", "US1065", "US1066", "US1067", "US1068")
+
+    def test_adr_012_states_the_learning_loop_as_shipped(self) -> None:
+        """AC1. Mutants: Built so far saying approval and signing are open stories, or that no
+        learning is live; a loop story left out; a step of the loop (propose, approve or
+        reject, the close's listing, the signed gate) left out; no Revision History row."""
+        flat = " ".join(_adr(_trd_body(), "012").split())
+        self.assertNotRegex(flat, r"(?i)open stor(?:y|ies)|no learning is live")
+        built = flat.split("**Built so far:**", 1)[1].split("**Not yet built:**", 1)[0]
+        for story in self.LOOP:
+            with self.subTest(story=story):
+                self.assertIn(story, built)
+        for step in (r"proposes? (?:a|its) learning", r"approves or rejects",
+                     r"lists every learning about to go live",
+                     r"reaches a brief only once (?:the run is signed|a signed close)"):
+            with self.subTest(step=step):
+                self.assertRegex(built, step)
+        history = _one_table(_section(_read(TRD), "Revision History"), "Date")
+        self.assertTrue([r for r in history[1:] if "BG1565" in r[2] and "ADR-012" in r[2]
+                         and "US1065" in r[2]],
+                        "no Revision History row names BG1565's change to ADR-012")
+
+    def test_no_story_called_open_reads_done(self) -> None:
+        """AC2. Mutants: ADR-012 calling a Done loop story open or not yet built; the check
+        reading no claim (the Not yet built story is its premise)."""
+        body = _trd_body()
+        self.assertIn("US1052", _stories_called_unbuilt(body), "premise: the claims were read")
+        self.assertEqual([], _done_stories_called_unbuilt(body, self.STORIES))
+
+    def test_a_done_story_called_open_is_reported_and_a_draft_one_passes(self) -> None:
+        """AC3. Mutants: the check reporting every story it reads; passing the stale claim;
+        reading `not yet built` as no claim."""
+        with tempfile.TemporaryDirectory() as d:
+            stories = Path(d)
+            (stories / "US9001-done.md").write_text("# US9001: a\n\n> **Status:** Done\n",
+                                                    encoding="utf-8")
+            (stories / "US9002-draft.md").write_text("# US9002: b\n\n> **Status:** Draft\n",
+                                                     encoding="utf-8")
+            self.assertEqual(["US9001"], _done_stories_called_unbuilt(
+                "US9001 and US9002 are open stories.", stories))
+            self.assertEqual(["US9001"], _done_stories_called_unbuilt(
+                "**Not yet built:** US9001, US9002.", stories))
+            self.assertEqual([], _done_stories_called_unbuilt("US9002 is still open.", stories))
+            self.assertEqual([], _done_stories_called_unbuilt("US9001 shipped.", stories))
+
+
+#: The spec pages that must not call the runtime standard library only.
+SPEC_PAGES = (REPO / "sdlc-studio" / "prd.md", TRD, REPO / "sdlc-studio" / "tsd.md",
+              REPO / "README.md")
+#: A claim that the scripts need only the standard library, or that PyYAML is optional.
+_STDLIB_ONLY = re.compile(
+    r"\bpure[- ]stdlib\b|\bstdlib[- ]only\b|standard[- ]library[- ]only|pure standard library|"
+    r"only the standard library|no third-party packages?|free of third-party|"
+    r"PyYAML is used (?:for config )?when present|degrades? to (?:the caller's |built-in )?"
+    r"defaults? when absent", re.I)
+
+
+class TrdRequiredPyYamlTests(unittest.TestCase):
+    """US1299: the PRD, TRD and README name PyYAML as required and none calls the runtime
+    standard library only; the TRD records the ruling as an ADR and carries the threat row."""
+
+    def test_no_spec_page_claims_a_standard_library_only_runtime(self) -> None:
+        """AC1, over the PRD, TRD, TSD and README. Mutants: the PRD's `stdlib only` tech stack
+        line; the TSD's pure-stdlib supply-chain sentence; the TRD's Won't Have bullet
+        ruling out a required third-party dependency; a page that names PyYAML nowhere as
+        required."""
+        self.assertIsNotNone(_STDLIB_ONLY.search("- **Python 3.10+ (stdlib only)**"))
+        for page in SPEC_PAGES:
+            text = _read(page).split("\n## Revision History", 1)[0]
+            units = _units(text)
+            with self.subTest(page=page.name):
+                self.assertEqual([], [u for u in units if _STDLIB_ONLY.search(u)])
+                self.assertTrue([u for u in units if "PyYAML" in u and "required" in u],
+                                f"{page.name} names PyYAML nowhere as required")
+        wont = _section(_trd_body(), "Won't Have (This Version)")
+        for bullet in re.split(r"\n(?=- )", wont):
+            if re.search(r"(?i)required third-party", bullet):
+                with self.subTest(bullet=bullet[:60]):
+                    self.assertRegex(bullet, r"other than PyYAML")
+
+    def test_the_trd_records_the_pyyaml_ruling_and_its_threat_row(self) -> None:
+        """AC2. Mutants: no ADR citing D0505 and RFC0066, or one not Accepted, or not saying
+        the installers and the prerequisite check refuse; no threat row for a missing or
+        tampered PyYAML, or one with no mitigation; the supply-chain row still reading pure
+        stdlib with no package to compromise; a shipped script loading YAML other than through
+        `yaml.safe_load`, which the threat row says it never does."""
+        with mock.patch.dict(sys.modules, {"yaml": None}):
+            self.assertIn("PyYAML is required", gate.pyyaml_refusal() or "")
+        body = _trd_body()
+        adrs = re.split(r"\n(?=### ADR-\d{3}:)", _section(body, "11. Architecture Decision Records"))
+        cited = [a for a in adrs if "D0505" in a and "RFC0066" in a]
+        self.assertEqual(1, len(cited), "one ADR cites D0505 and RFC0066")
+        status = re.search(r"^\*\*Status:\*\*\s*(.*)$", cited[0], re.M)
+        self.assertTrue(status and status.group(1).startswith("Accepted"))
+        flat = " ".join(cited[0].split())
+        self.assertRegex(flat, r"`install\.sh` and `install\.ps1` refuse")
+        self.assertRegex(flat, r"prerequisite check \(`gate\.py`\) refuses")
+        rows = [r for r in _threat_rows() if "PyYAML" in r[0]]
+        self.assertEqual(1, len(rows), "no Threat Model row for PyYAML")
+        self.assertRegex(rows[0][0], r"(?i)missing")
+        self.assertRegex(rows[0][0], r"(?i)tampered")
+        mitigation = " ".join(rows[0][3].split())
+        self.assertIn("`yaml.safe_load`", mitigation)
+        self.assertIn("refuse", mitigation)
+        supply = next(r for r in _threat_rows() if r[0].startswith("Supply-chain"))
+        self.assertNotRegex(supply[3], r"(?i)pure stdlib|no third-party packages? to compromise")
+        self.assertIn("PyYAML", supply[3])
+        loads = [f"{path.name}:{n}" for path in _shipped_scripts()
+                 for n, line in enumerate(_read(path).splitlines(), 1)
+                 if re.search(r"\byaml\.(?:load|unsafe_load|full_load|load_all)\(|yaml\.Loader\b",
+                              line)]
+        self.assertEqual([], loads, "a shipped script loads YAML past `yaml.safe_load`")
 
 
 if __name__ == "__main__":
