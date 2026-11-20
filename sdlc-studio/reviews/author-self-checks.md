@@ -464,3 +464,4 @@
 | US1040 | Dani Okafor (engineering) | 2026-11-20 | TRUE 20, FALSE 0, UNVERIFIABLE 0 | killed 17, survived 0 | 1a28dc73fc21b617 at 96f53a41ff7a |
 | US1054 | Dani Okafor (engineering) | 2026-11-20 | TRUE 22, FALSE 0, UNVERIFIABLE 0 | killed 13, survived 1 | b86d6f012df25132 at c6af0e052df1 |
 | US1053 | Dani Okafor (engineering) | 2026-11-20 | TRUE 23, FALSE 0, UNVERIFIABLE 1 | killed 19, survived 0 | 1aaf574951b64b09 at 850b1c4d9ba5 |
+| BG1655 | Dani Okafor (engineering) | 2026-11-20 | TRUE 15, FALSE 0, UNVERIFIABLE 0 | killed 14, survived 0 | 0e3d600e0794a5d9 at cfb2a4fd028f |

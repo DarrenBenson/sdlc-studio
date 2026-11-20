@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 463 |
+| Open | 465 |
 | In Progress | 0 |
 | Fixed | 996 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1661** |
+| **Total** | **1663** |
 
 ## All Bugs
 
@@ -737,6 +737,8 @@
 | [BG1659](BG1659-five-behaviours-persona-review-py-and-its-reference.md) | Five behaviours persona_review.py and its reference page state have no test: a mutant of each passes test_persona_standard.py | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1660](BG1660-us1040-did-not-converge-in-review-round-2.md) | US1040 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-20 | 2026-11-20 |
 | [BG1661](BG1661-a-high-risk-unit-moves-to-done-on.md) | A high-risk unit moves to Done on the first seat's APPROVE, so the second seat's REJECT lands past the round cap and carries the unit instead of repairing it | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1662](BG1662-seat-persona-unknown-still-reads-a-two-word.md) | seat-persona-unknown still reads a two-word product surface marked with a role, such as Ship the Admin Console (Primary), as an unknown persona | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1663](BG1663-bg1655-did-not-converge-in-review-round-2.md) | BG1655 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 
