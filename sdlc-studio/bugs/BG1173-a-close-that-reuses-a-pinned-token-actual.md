@@ -14,6 +14,8 @@
 
 2026-11-02, RUN-01M6A3K2's close. RETRO0137's token actual had been pinned with `retro.py accuracy --tokens 22817311`. The close's retro-accuracy step reused it (`SOURCE_UNCHANGED)` and wrote '**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with' into the retro's accuracy block. The reason starts lower-case after a full stop and carries no closing stop (retro.py `_priced_lines` and the `SOURCE_UNCHANGED` reason). RPT0023 from the same close states the priced cost as 111,425,278, so the retro and the report disagree on whether the run's cost is known.
 
+Also on sign, 2026-11-19 and 2026-11-20: `sprint sign` takes the same reuse path after a close that measured the cost, and replaces the measured paragraph with 'Priced cost: not stated' (RETRO0151 at RUN-01M7SS62's sign, RETRO0152 at RUN-01M7TTK3's sign, commit b43b4e65), while RPT0038 keeps the figure ($139.29, 54,390,408 priced). The fix must keep a measured priced line through the sign as well as the close.
+
 ## Steps to Reproduce
 
 1. Pin a retro's token actual with `retro.py accuracy --id <retro> --tokens N --write`.

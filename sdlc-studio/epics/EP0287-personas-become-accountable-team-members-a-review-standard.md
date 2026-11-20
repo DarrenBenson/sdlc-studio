@@ -5,7 +5,7 @@
 > **Parent:** CR0629
 > **Parent:** CR0633
 > **Parent:** CR0632
-> **Derived Point Total:** 93
+> **Derived Point Total:** 96
 > **Parent:** CR0631
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
@@ -41,6 +41,7 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 - [ ] [US1072: The close records each traced persona's served-goal outcome in its memory, with its run](../stories/US1072-the-close-records-each-traced-persona-s-served.md)
 - [ ] [US1073: A user persona writes its learning from its usage evidence, approved by a seat, and the goal review carries it](../stories/US1073-a-user-persona-writes-its-learning-from-its.md)
 - [ ] [US1074: A generalisable seat learning is promoted into the skill source's shipped amigo card, and refused into an installed copy](../stories/US1074-a-generalisable-seat-learning-is-promoted-into-the.md)
+- [ ] [US1322: A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on](../stories/US1322-a-project-upgrading-to-the-persona-standard-is.md)
 
 ## Acceptance Criteria (Epic Level)
 
@@ -74,7 +75,7 @@ Decomposed from CR0631. Delivers the work CR0631 requested.
 
 Kept (D0387). To plan it:
 
-- the D0374 stakeholder consult for EP0287 has not run; it is owed before any of its stories is built
+- the D0374 stakeholder consult for EP0287 ran on 2026-11-20 (reviews/consult-EP0287-stakeholders-2026-11-20.md); its rulings are D0553, which amended US1053, US1055 and US1057 and added US1322
 
 ## Revision History
 

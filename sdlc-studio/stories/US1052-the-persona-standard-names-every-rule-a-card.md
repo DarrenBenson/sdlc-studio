@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/best-practices/README.md, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/templates/personas/amigo-template.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py, changelog.d/US1052.md
+> **Affects:** .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/best-practices/README.md, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/templates/personas/amigo-template.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py, changelog.d/US1052.md, sdlc-studio/reviews/root-census.md, sdlc-studio/reviews/command-audit.md
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1039, US1046

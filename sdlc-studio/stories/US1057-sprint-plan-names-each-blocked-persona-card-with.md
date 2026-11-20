@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py, changelog.d/US1057.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py, changelog.d/US1057.md, tools/check_budgets.py
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1055
@@ -23,12 +23,14 @@
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_each_blocked_card_with_its_remedy
 - **AC2:** Given three cards in a repository with no tags, one with a PASS at its current bytes, one edited since its PASS and one never reviewed, when `persona_review.py owed` runs, then it names the second as changed since its review of that date and the third as never reviewed, and not the first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed
-- **AC3:** Given a card whose PASS is dated the day before the newest release tag's commit, and an unchanged card whose PASS is dated the tag commit's own day, when `persona_review.py owed` runs, then it names the first as not reviewed since that tag and not the second.
+- **AC3:** Given a card whose PASS is dated the day before the newest release tag's commit, and an unchanged card whose PASS is dated the tag commit's own day, when `persona_review.py owed` runs, then it names the first as not reviewed since that tag and not the second, and the line says the comparison is by day (the PASS date against the tag commit's date).
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day
-- **AC4:** Given an owed card, when `sprint.py plan` and `release_cut.py changelog-cut --version 9.9.9` run, then each prints one `persona review owed:` line naming it, and the plan's exit code and batch and the cut's CHANGELOG.md are the same as with no card owed.
+- **AC4:** Given an owed card, when `sprint.py plan` and `release_cut.py changelog-cut --version 9.9.9` run, then the plan prints one `persona reviews owed: <count>` line naming `persona_review.py owed` as the command that lists them, the cut prints one `persona review owed:` line per owed card, and the plan's exit code and batch and the cut's CHANGELOG.md are the same as with no card owed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews
 
 ## Notes
+
+- D0374 consult, 2026-11-20 (D0553): owed reviews are one count line at plan so an advisory rule is not repeated per card on every plan (Maya Okafor); the release cut still names each card. The owed list stays out of the cut's CHANGELOG; a change board reads it in the evidence pack (CR0704), not here (Abena Osei).
 
 - Release: 6.3 (D0388; was 6.2) (D0355 breakdown G13, reviewed by the refine panel; see the request's revision history).
 - AC1 must fail on: the plan silent about a card every review in the run will refuse, so the stop lands mid-run in `critic.py brief`, which has no --skip-personas

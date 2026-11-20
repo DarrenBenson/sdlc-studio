@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 455 |
+| Open | 456 |
 | In Progress | 0 |
 | Fixed | 991 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1648** |
+| **Total** | **1649** |
 
 ## All Bugs
 
@@ -724,6 +724,7 @@
 | [BG1646](BG1646-the-prd-changelog-row-check-reads-committed-history.md) | The PRD changelog-row check reads committed history, so a commit that changes the PRD without a row passes its own hooks | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1647](BG1647-trdcoveragesoftdependencytests-done-gate-half-misses-its-patch-in.md) | TrdCoverageSoftDependencyTests' Done-gate half misses its patch in the gate's parallel run, so the push gate goes red | Fixed | High | 2026-11-20 | 2026-11-20 |
 | [BG1648](BG1648-a-test-leaves-a-second-verify-ac-module.md) | A test leaves a second verify_ac module in sys.modules, so later tests patch an object the code no longer imports | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1649](BG1649-lane-accept-returns-before-lane-return-when-its.md) | lane accept returns before lane return when its transition fails, so a unit finished by hand stays in flight and its span reads NOT MEASURED | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

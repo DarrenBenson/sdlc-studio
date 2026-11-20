@@ -1,13 +1,13 @@
 # Story Index
 
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 171 |
+| Draft | 172 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
@@ -17,7 +17,7 @@
 | Deferred | 0 |
 | Superseded | 94 |
 | Blocked | 0 |
-| **Total** | **1321** |
+| **Total** | **1322** |
 
 ## All Stories
 
@@ -359,6 +359,7 @@
 | [US1319](US1319-the-skill-md-description-and-compatibility-line-and.md) | The SKILL.md description and compatibility line and llms.txt are harness-neutral, and --agentic states its fallback outside Claude Code | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1320](US1320-a-sweep-of-the-public-docs-leaves-no.md) | A sweep of the public docs leaves no generic Claude Code or Anthropic requirement, INSTALL.md links the harness page, and a guard keeps the public docs that way | Done | EP0377 | 2026-11-18 | 2026-11-18 |
 | [US1321](US1321-the-evidence-page-shows-the-model-each-signed.md) | The evidence page shows the model each signed run used, regenerated through RPT0035 | Done | EP0377 | 2026-11-18 | 2026-11-18 |
+| [US1322](US1322-a-project-upgrading-to-the-persona-standard-is.md) | A project upgrading to the persona standard is set to report mode, so its own cards are named, not refused, until it switches the standard on | Draft | EP0287 | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

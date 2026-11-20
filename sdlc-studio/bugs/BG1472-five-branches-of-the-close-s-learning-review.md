@@ -31,6 +31,7 @@ Add one test per branch through the shipped entry point, each killing its mutant
 - [ ] **AC3** Given a signed run that struck a learning, when the run is closed again, then the close's list of learnings about to go live does not name the struck one. Fails on: the Struck-field check in `standing` removed with every test still green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_reclose_does_not_list_a_struck_learning
 - [ ] **AC4** Given US1068's story note that defines a live learning, when it is read, then it says the Listed-in run's tracked record is signed, per D0488, not sealed. Fails on: the note still calling a sealed record live.
+  - **Verify:** manual sdlc-studio/stories/US1068-a-learning-reaches-a-brief-only-once-a.md: its note defining a live learning says the Listed-in run's tracked record is signed, per D0488, and never calls a sealed record live
 
 ## Revision History
 
