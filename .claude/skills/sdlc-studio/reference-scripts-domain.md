@@ -175,7 +175,7 @@ PVD projection + drift. `sync` projects the one writable master
 Product Vision Document into a child repo read-only (copy in dev, symlink in prod);
 `drift` compares a projected copy against the master (in-sync / stale / behind / missing /
 error) via sha256 + version. An unreadable/missing master reports `error`, never a vacuous
-in-sync. `read_manifest` parses `product-manifest.yaml` (no PyYAML); the parser itself lives in
+in-sync. `read_manifest` parses `product-manifest.yaml` (stdlib only); the parser itself lives in
 `lib/xrepo` beside the cross-repo id resolver that reads it, so the manifest has one reader.
 See `reference-pvd.md`.
 
@@ -382,7 +382,7 @@ Difficulty-aware model-tier routing, **advisory - no gate reads a tier**, no mod
 
 ### `config.py`
 
-Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-studio/.config.yaml` (degrading without PyYAML); the source of `status_vocab`, adoption cutoffs, `complexity`, `constitution`, `version_check`, `provenance`, etc.
+Merged per-project configuration reader. Layers `templates/config-defaults.yaml` under the project's `sdlc-studio/.config.yaml`, refusing (exit 1) a present one when PyYAML will not import; the source of `status_vocab`, adoption cutoffs, `complexity`, `constitution`, `version_check`, `provenance`, etc.
 
 ### `loop_guard.py`
 

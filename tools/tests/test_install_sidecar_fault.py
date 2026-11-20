@@ -40,6 +40,45 @@ REFUSAL = "could not fetch the published sha256"
 #: A route answered by closing the connection with no reply: a transport fault, not a status.
 RESET = "reset"
 
+PS_ASSET = f"https://github.com/DarrenBenson/sdlc-studio/releases/download/{TAG}/sdlc-studio-{TAG}.zip"
+PS_ARCHIVE = f"https://github.com/DarrenBenson/sdlc-studio/archive/refs/tags/{TAG}.zip"
+PS_MAIN = "https://github.com/DarrenBenson/sdlc-studio/archive/refs/heads/main.zip"
+#: What install.ps1's sidecar refusal must decide, as (status, $Url, $AssetUrl, refuses). A
+#: status of None is a fetch with no response (a dropped connection or an empty sidecar). Only
+#: a 404 beside the source archive or `main`, where no sidecar is published, is an absence;
+#: the release asset's sidecar is published with it, so even its 404 refuses.
+SIDECAR_CASES = (
+    (404, PS_ARCHIVE, PS_ASSET, False),
+    (404, PS_MAIN, None, False),
+    (404, PS_ASSET, PS_ASSET, True),
+    (503, PS_ASSET, PS_ASSET, True),
+    (503, PS_ARCHIVE, PS_ASSET, True),
+    (429, PS_MAIN, None, True),
+    (None, PS_ASSET, PS_ASSET, True),
+    (None, PS_ARCHIVE, PS_ASSET, True),
+)
+_PS_TOKEN = re.compile(r"\s*(\$code|\$Url|\$AssetUrl|\$null|-ne|-eq|-or|-and|-not|\d+|[()])")
+_PS_PYTHON = {"$code": "code", "$Url": "url", "$AssetUrl": "asset", "$null": "None",
+              "-ne": "!=", "-eq": "==", "-or": "or", "-and": "and", "-not": "not"}
+
+
+def ps_refuses(condition: str, code: int | None, url: str, asset: str | None) -> bool:
+    """Decide install.ps1's PowerShell refusal condition for one case, its operators read as
+    Python's. A token outside that small set, or `-and` beside `-or` (equal precedence in
+    PowerShell, not in Python), fails the read rather than being guessed at."""
+    tokens, pos = [], 0
+    while pos < len(condition.rstrip()):
+        m = _PS_TOKEN.match(condition, pos)
+        if not m:
+            raise AssertionError(f"install.ps1's refusal condition has a construct this read "
+                                 f"does not model at {condition[pos:]!r}")
+        tokens.append(m.group(1))
+        pos = m.end()
+    if "-and" in tokens and "-or" in tokens:
+        raise AssertionError(f"install.ps1's refusal condition mixes -and and -or: {condition!r}")
+    expr = " ".join(_PS_PYTHON.get(t, t) for t in tokens)
+    return bool(eval(expr, {"__builtins__": {}}, {"code": code, "url": url, "asset": asset}))
+
 
 def _tarball(marker: str) -> bytes:
     """A release asset shaped as the installer extracts it: one sdlc-studio-<ver>/ at the top."""
@@ -184,18 +223,28 @@ class InstallSidecarFaultTests(unittest.TestCase):
     def test_install_ps1_and_the_install_page_tell_a_fault_from_an_absence(self) -> None:
         """AC3. MUTANT: HEAD's `catch { $expected = $null }`, which reads any failure as no
         sidecar. MUTANT: a catch that refuses a 404 on the fallback too. MUTANT: the page's
-        claim that, without REQUIRE_CHECKSUM, an unverifiable download warns and proceeds."""
+        claim that, without REQUIRE_CHECKSUM, an unverifiable download warns and proceeds.
+        MUTANT: the refusal's `-or $Url -eq $AssetUrl` as `-and $Url -ne $AssetUrl`, as
+        `-and $Url -eq $AssetUrl`, or as `-or $Url -ne $AssetUrl`."""
         src = INSTALL_PS1.read_text(encoding="utf-8")
         read = re.search(r'Invoke-WebRequest -Uri "\$Url\.sha256".*?\} catch \{(.*?)'
                          r'\n\s*if \(\$expected\) \{', src, re.S)
         self.assertIsNotNone(read, "install.ps1's sidecar read moved")
         catch = read.group(1)
         self.assertIn("$_.Exception.Response.StatusCode", catch, "the sidecar's status is not read")
-        refusal = re.search(r"if \(\$code -ne 404[^\n]*\)\s*\{\s*throw \(?\"Could not fetch the "
+        refusal = re.search(r"if \((?P<cond>[^\n]*)\)\s*\{\s*throw \(?\"Could not fetch the "
                             r"published sha256", catch)
-        self.assertIsNotNone(refusal, "a failed sidecar fetch other than a 404 is not refused")
+        self.assertIsNotNone(refusal, "a failed sidecar fetch is not refused")
         self.assertIn("$expected = $null", catch[refusal.end():],
                       "a 404 on the fallback no longer reads as an absence")
+        # The whole condition is decided, case by case, rather than matched by its first
+        # clause: a regex on `$code -ne 404` passed `-and $Url -ne $AssetUrl`, which reads a
+        # 503 on the release asset's own sidecar as no digest and installs unverified.
+        for code, url, asset, refuses in SIDECAR_CASES:
+            with self.subTest(status=code, sidecar_of=url, asset=asset):
+                self.assertEqual(refuses, ps_refuses(refusal.group("cond"), code, url, asset),
+                                 f"install.ps1 `if ({refusal.group('cond')})` decides a "
+                                 f"{code or 'transport fault'} on the {url} sidecar wrongly")
 
         page = " ".join(INSTALL_MD.read_text(encoding="utf-8").split())
         sentences = re.split(r"(?<=[.!?])\s+", page)
