@@ -45,8 +45,8 @@
 - AC4 must fail on: the strike checked after the seal is written, or a partial strike applied
 - Serves: Maya Okafor #3.
 - Checked at HEAD: `cmd_sign` (sprint.py:9708) takes no strike, and the sign refuses a tree changed since the close (`tree_moved_since_close`, :9671), so a strike made by editing the retro or memory after the close would cost a re-close.
-- Live = approved, within its horizon, not retired, and its Listed-in run's tracked record (`run_state.file_tracked`, sprint.py:9809, held by every clone) is sealed and does not strike it. 'Signed' is read from that record and never written into memory, so a reopen holds the run's learnings until the re-sign, which may strike them (panel's reopen boundary).
-- The struck ids are part of what the signature writes, after the page check, kept on the sealed run record (a key the annex tolerates, US0994) and not on the report, so the report's fingerprint and US0992's catalogue are untouched. Every refusal runs before anything is written.
+- Live = approved, within its horizon, not retired, and its Listed-in run's tracked record (`run_state.file_tracked`, sprint.py:9809, held by every clone) is signed, per D0488, and does not strike it; a run ended with no signature, by `sprint boundary`, `--file-and-close` or a stop, holds its learnings (`run_state.signed_record`). 'Signed' is read from that record and never written into memory, so a reopen holds the run's learnings until the re-sign, which may strike them (panel's reopen boundary).
+- The struck ids are part of what the signature writes, after the page check, kept on the signed run record (a key the annex tolerates, US0994) and not on the report, so the report's fingerprint and US0992's catalogue are untouched. Every refusal runs before anything is written.
 - `cmd_sign` is also edited by US1018 (later); whichever lands second rebases.
 
 ## Triage (2026-10-21)
@@ -68,3 +68,4 @@ Kept (D0387). To plan it:
 | 2026-11-15 | Claude Opus 5.5 (run thirteen grooming, D0479) | Groomed for run thirteen: Persona Abena Osei, Affects with the existing tests that pin what it changes, Depends-on reduced to real dependencies, notes |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen planning, D0479) | Affects gains the registry files a new verb imply (the mechanics-verb list, the command surface): run twelve lost five lands to their absence |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen) | Affects gains test_persona_memory_brief.py: a learning goes live only once a signed close lists it, so US1059's brief fixtures need a Listed-in field and a signed run |
+| 2026-11-20 | Claude Opus 5.5 (run twenty, BG1472) | The note defining a live learning says the Listed-in run's tracked record is signed, per D0488, not sealed |

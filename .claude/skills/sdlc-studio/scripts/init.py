@@ -385,6 +385,12 @@ def _seeded(root: Path, template: Path) -> str:
     return seed_text(template, seed_fields(root, date.today().isoformat()))
 
 
+def _undated(text: str) -> str:
+    """`text` with every ISO date removed and its ends stripped, so a seeded body compares equal
+    to the seed whichever day each was written."""
+    return re.sub(r"\d{4}-\d{2}-\d{2}", "", text).strip()
+
+
 def _draft_tokens(root: Path, template: Path) -> set[str]:
     """The placeholders a freshly seeded file still carries: those `seed_text` leaves unfilled.
     Derived from the seeded body, not the raw template, so a field seeding always fills
@@ -451,7 +457,14 @@ def stage_output_exists(root: Path | str, stage: str) -> bool:
                 and carries_doctrine(root))
     if stage in _SINGLETON_STAGES:
         tmpl, rel = _singleton(stage)
-        return _authored(root, root / rel, tmpl)
+        if not _authored(root, root / rel, tmpl):
+            return False
+        if stage == "personas":
+            # The seeded persona index holds no placeholder, so it is the draft while it is
+            # still the body seeding wrote, whichever day that was; any edit authors it.
+            text = _read(root / rel)
+            return text is not None and _undated(text) != _undated(_seeded(root, tmpl))
+        return True
     if stage == "decompose":
         # `epic`, THEN `story` - the stage directs both, so epics alone is half done.
         return (any((root / SDLC / "epics").glob("EP*.md"))

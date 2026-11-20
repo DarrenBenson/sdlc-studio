@@ -280,8 +280,14 @@ def frame(card: Path | None, seat: str, render: str, *, root: Path | str | None 
 
 
 def cmd_resolve(args: argparse.Namespace) -> int:
-    if args.seat not in SEATS:
-        print(f"unknown seat '{args.seat}' (expected: {', '.join(SEATS)})", file=sys.stderr)
+    # A worker can be framed for a shipped seat or any role a project seat card declares
+    # (`seat_roster`, the list `critic.py brief` names when it refuses a seat); a card that
+    # declares no role is named, since the role its author meant is never listed.
+    roster = seat_roster(args.root)
+    if args.seat not in roster:
+        roleless = "".join(f"; {p} declares no role" for p in roleless_cards(args.root))
+        print(f"unknown seat '{args.seat}' (expected: {', '.join(roster)}{roleless})",
+              file=sys.stderr)
         return 2
     try:
         card = resolve_card(args.root, args.seat, args.skip_personas, args.render)
@@ -395,7 +401,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Resolve the worker amigo for a delegated sub-agent.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("resolve", help="Print the framing for a seat (most-specific-first).")
-    r.add_argument("--seat", required=True, help=f"one of: {', '.join(SEATS)}")
+    r.add_argument("--seat", required=True,
+                   help=f"a shipped seat ({', '.join(SEATS)}) or a role a project seat card "
+                        f"declares")
     r.add_argument("--render", default="build", choices=RENDERS, help="dual-render: build or review")
     r.add_argument("--root", default=".", help="project root")
     r.add_argument("--skip-personas", action="store_true", help="force the generic path (no framing)")

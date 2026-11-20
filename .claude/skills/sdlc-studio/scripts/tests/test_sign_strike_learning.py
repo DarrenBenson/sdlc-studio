@@ -208,6 +208,67 @@ class StrikeLearningTests(unittest.TestCase):
         self.assertNotIn(self.qa, brief)
         self.assertIn("1 approved learning awaits its run's signature", brief)
 
+    def test_a_run_sealed_without_a_signature_holds_its_learning(self) -> None:
+        """A run its close filed and listed, then sealed with no signature, as a `sprint
+        boundary` stop seals it (`blocked`) and as `--file-and-close` seals it
+        (`closed-outstanding`), holds its learning: a sealed record is not a signed one.
+        MUTANT: the signature check in `signed_record` removed, so the sealed record carries
+        the learning it lists into the brief before anyone signs."""
+        seals = {
+            "sprint boundary stop": lambda root: _live("sprint")._boundary_stop(
+                root, "close-gate", "the close gate is red", "fix the gate"),
+            "file-and-close": lambda root: _live("sprint").run_state.close_run(
+                root, _live("sprint").run_state.CLOSED_OUTSTANDING),
+        }
+        for route, seal in seals.items():
+            with self.subTest(route=route), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                _project(root)
+                qa = _learning(root, "qa", "A retry loop hides a race", PRODUCT)
+                _close(root)
+                with contextlib.redirect_stderr(io.StringIO()):
+                    seal(root)
+                record = _record(root)
+                self.assertIn(record.get("outcome"), _live("sprint").run_state.CLOSED,
+                              "the seal left the record running, so this pins nothing")
+                self.assertIsNone(record.get("signature"))
+                self.assertEqual([qa], record.get("persona_learnings_listed"))
+                brief = _brief(root, "qa")
+                self.assertNotIn(qa, brief, f"{route}: an unsigned run's learning is carried")
+                self.assertIn("1 approved learning awaits its run's signature", brief)
+
+    def test_a_reclose_does_not_list_a_struck_learning(self) -> None:
+        """A signed run that struck a learning, reopened and closed again, lists only what is
+        still to go live: the struck learning is not named again for the next signature, and
+        the unstruck one is. MUTANT: the Struck-field check in `standing` removed, so the
+        reopened run's unsigned record lets the struck learning back onto the listing."""
+        root = self.root
+        _close(root)
+        rc, out, err = _sign(root, "--strike", self.qa, "--strike-reason", "it loosens the bar")
+        self.assertEqual(0, rc, out + err)
+        rc, out, err = _cli(root, "reopen", "--reason", "a late review belongs to this run")
+        self.assertEqual(0, rc, out + err)
+        mod = _live("sprint")
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(unittest.mock.patch.object(mod, "_report_holds",
+                                                           lambda *a, **k: []))
+            for name in mod._CLOSE_CHAIN:
+                if name != "persona-memory":
+                    stack.enter_context(unittest.mock.patch.object(
+                        mod, "_close_" + name.replace("-", "_"),
+                        lambda *a, _n=name, **k: (True, f"{_n} ok", "")))
+            rc, out, err = _cli(root, "close", "--retro", "RETRO0001")
+        self.assertEqual(0, rc, out + err)
+        listing = [ln for ln in out.splitlines() if "M-" in ln]
+        self.assertTrue(any(self.product in ln for ln in listing), out)
+        self.assertFalse(any(self.qa in ln for ln in listing),
+                         f"the re-close lists the struck {self.qa}:\n{out}")
+        block = (root / "sdlc-studio" / "retros" / "RETRO0001-run.md").read_text(
+            encoding="utf-8").split("<!-- persona-learnings:begin", 1)[1]
+        self.assertIn(self.product, block)
+        self.assertNotIn(self.qa, block)
+        self.assertEqual([self.product], _record(root).get("persona_learnings_listed"))
+
     def test_a_reopened_run_holds_its_learnings_until_resigned(self) -> None:
         """AC3. MUTANTS: signed stamped into memory at the seal, so a reopened run's learnings
         stay live while the signature they relied on is broken; the re-sign's strike dropped

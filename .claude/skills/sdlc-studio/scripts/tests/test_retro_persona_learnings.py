@@ -12,6 +12,7 @@ import contextlib
 import importlib
 import io
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -228,6 +229,57 @@ class RetroLearningsTests(unittest.TestCase):
                 self.assertNotIn("qa", named[0])
                 self.assertIn("2 of 5 verdict rows name no seat", text)
         self.assertNotIn("qa", block, "a quiet seat is named on the retro")
+
+    def test_each_adverse_kind_is_named_and_a_learned_seat_is_not(self) -> None:
+        """Product missed BG0002 and has a learning listed, so it owes none; qa approved
+        US0102 before a later round found a new defect at a line nobody had cited; engineering
+        approved US0101 over the finding BG0002's Evidence credits to its review. MUTANTS: the
+        `role not in learned` qualifier dropped, so product is named though it learned; the
+        found-after-approval keys dropped, so qa is not named; the approved-over-own-finding
+        keys dropped, so engineering is not named."""
+        root = self.root
+        _project(root, [
+            ("US0101", "APPROVE", PRODUCT, BUILDER, "none blocking"),
+            ("US0101", "APPROVE", "Ola Byrne (engineering)", BUILDER,
+             "[pre-existing] the widget drops its input at src/widget.py:3"),
+            ("US0102", "APPROVE", QA, BUILDER, "none blocking"),
+            ("US0102", "REJECT", "a reviewer", BUILDER,
+             "[new] the widget loses the last key at src/widget.py:12")])
+        _write(root, "sdlc-studio/bugs/BG0002-widget-drops-input.md",
+               "# BG0002: widget drops input\n\n> **Status:** Open\n"
+               "> **Affects:** src/widget.py\n> **Created:** 2026-11-15\n"
+               "> **Evidence:** the engineering review of US0101 raised it and approved\n\n"
+               "## Summary\n\nUS0101 shipped a widget that drops its input.\n")
+        learned = _learning(root, "product", "Read the input path end to end", approver=QA,
+                            addresses="bug:BG0002")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(0, _live("retro").main(
+                ["--root", str(root), "seats", "--id", "RETRO0001", "--format", "json"]))
+        seats = json.loads(out.getvalue())["seats"]
+        # The fixture holds what the docstring says: qa and engineering each hold one kind alone.
+        self.assertEqual(["BG0002"], [m["bug"] for m in seats["product"]["missed"]])
+        self.assertEqual(["round:US0102r2"],
+                         [f["key"] for f in seats["qa"]["found_after_approval"]])
+        self.assertEqual([], seats["qa"]["missed"] + seats["qa"]["approved_over_own_finding"])
+        self.assertEqual(["BG0002"],
+                         [m["bug"] for m in seats["engineering"]["approved_over_own_finding"]])
+        self.assertEqual([], seats["engineering"]["missed"]
+                         + seats["engineering"]["found_after_approval"])
+
+        rc, out, err = _close(root)
+
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(learned, _block(_retro(root)))
+        for where, text in (("close output", out), ("block", _block(_retro(root)))):
+            with self.subTest(where=where):
+                named = {m.group(1): ln for ln in text.splitlines()
+                         if (m := re.search(r"(\S+) has adverse evidence", ln))}
+                self.assertEqual({"qa", "engineering"}, set(named), text)
+                self.assertIn("round:US0102r2", named["qa"])
+                self.assertIn("bug:BG0002", named["engineering"])
+                self.assertFalse(any("product has adverse" in ln for ln in text.splitlines()),
+                                 text)
 
     def test_a_wholly_unattributed_run_is_owed_not_clean(self) -> None:
         """BG1520 AC3. A closed run whose every verdict row names no seat, as `lane accept`

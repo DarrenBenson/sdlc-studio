@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import re
 import sys
 import tempfile
 import unittest
@@ -880,6 +881,90 @@ class AgentDefinitionStageTests(unittest.TestCase):
         for rel in self.DEFINITIONS:
             self.assertIn(rel, " ".join(stage.split()), "help/init.md's agents stage omits " + rel)
         self.assertIn("already has", stage)
+
+
+class SeededPersonaIndexTests(unittest.TestCase):
+    """The persona index `init.py run --scaffold` seeds into a consuming project holds what the
+    persona registry reads and nothing a project is left to delete: no unfilled placeholder, no
+    section without a reader, no link that resolves to nothing from where it is seeded."""
+
+    #: The unread tables the index once seeded, by their headings.
+    UNREAD = ("Team Personas", "Stakeholder Personas", "Consultation Defaults",
+              "Custom Personas", "Persona Sources")
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            rc = init.main(["run", "--root", str(self.root), "--scaffold"])
+        self.assertEqual(0, rc)
+        self.index = self.root / "sdlc-studio" / "personas" / "index.md"
+        self.assertTrue(self.index.is_file(), "the scaffold seeded no persona index")
+        self.text = self.index.read_text(encoding="utf-8")
+
+    def _headings(self) -> list[tuple[int, str]]:
+        """Every Markdown heading in the seeded index outside a fenced block, (level, text)."""
+        out, fence = [], None
+        for line in self.text.splitlines():
+            fence, is_fence = sdlc_md.fence_step(line.lstrip(), fence)
+            if is_fence or fence is not None:
+                continue
+            m = re.match(r"^(#{1,6})\s+(.*?)\s*#*\s*$", line)
+            if m:
+                out.append((len(m.group(1)), m.group(2)))
+        return out
+
+    def test_the_seeded_index_holds_no_placeholder(self) -> None:
+        left = re.findall(r"\{\{[^{}]*\}\}", self.text)
+        self.assertEqual([], left, f"the seeded index keeps placeholders:\n{self.text}")
+        self.assertIn(self.root.resolve().name, self.text, "the project name was not filled")
+
+    def test_every_seeded_heading_is_one_the_registry_reads(self) -> None:
+        heads = self._headings()
+        titles = [h for level, h in heads if level == 1]
+        self.assertEqual(1, len(titles), f"the index carries one title: {heads}")
+        sections = [h for level, h in heads if level > 1]
+        self.assertTrue(sections, "the seeded index has no cast heading")
+        template = (SCR.parent / "templates" / "personas" / "persona-template.md").read_text(
+            encoding="utf-8")
+        row = re.search(r"\*\*Cast role\*\*\s*\|\s*\{\{([^}]*)\}\}", template)
+        self.assertIsNotNone(row, "persona-template.md declares no cast role row")
+        declared = {r.strip().lower() for r in row.group(1).split("/")}
+        # The registry reads a heading by the bullet under it: one probe bullet per section,
+        # each registered under its own section's role, or the section has no reader.
+        out = []
+        for line in self.text.splitlines():
+            out.append(line)
+            m = re.match(r"^#{2,6}\s+(.*?)\s*$", line)
+            if m:
+                out.append(f"- [Probe {m.group(1)}](probe.md) - a bullet under it")
+        self.index.write_text("\n".join(out) + "\n", encoding="utf-8")
+        reg = sdlc_md.persona_registry(self.root)
+        self.assertTrue(reg.available, reg.reason)
+        self.assertEqual(len(sections), len(reg.entries),
+                         f"a seeded section the registry does not read: {sections} -> "
+                         f"{[(e.name, e.role) for e in reg.entries]}")
+        for heading, entry in zip(sections, reg.entries):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, entry.name)
+                self.assertIn(entry.role, declared,
+                              f"{heading} is a role persona-template.md does not declare")
+        for gone in self.UNREAD:
+            self.assertNotIn(gone, self.text)
+
+    def test_no_seeded_link_resolves_to_a_missing_file(self) -> None:
+        # A link quoted in a code span is an example of the bullet shape, never followed.
+        links = re.findall(r"\]\(([^)\s]+)\)", re.sub(r"`[^`\n]*`", "", self.text))
+        for href in links:
+            with self.subTest(href=href):
+                if re.match(r"^[a-z][a-z0-9+.-]*:", href) or href.startswith("#"):
+                    continue
+                target = (self.index.parent / href.split("#", 1)[0]).resolve()
+                self.assertTrue(target.exists(), f"{href} resolves to {target}, which is missing")
+        # The skill's own page is named, never linked by a path a project does not hold.
+        self.assertIn("reference-persona.md", self.text)
+        self.assertNotIn("](../../reference-persona.md)", self.text)
 
 
 if __name__ == "__main__":

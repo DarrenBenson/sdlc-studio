@@ -81,8 +81,11 @@ class ResolutionTests(unittest.TestCase):
             self.assertIn("review render", out)              # the requested render
 
     def test_unknown_seat_exits_nonzero(self) -> None:
+        # The roster now includes the project's declared roles, so the refusal is judged
+        # against a scratch root rather than whatever tree the suite runs from.
         mod = _load()
-        self.assertEqual(mod.main(["resolve", "--seat", "marketing"]), 2)
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(mod.main(["resolve", "--seat", "marketing", "--root", d]), 2)
 
     def test_cli_path_only_prints_resolved_path(self) -> None:
         import io

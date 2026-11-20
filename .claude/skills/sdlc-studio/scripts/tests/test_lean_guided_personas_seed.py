@@ -73,6 +73,37 @@ class GuidedPersonasSeedTests(unittest.TestCase):
                                 "--format", "json").stdout)
         self.assertEqual("personas", again["current"])
 
+    def test_the_seeded_index_is_a_draft_until_it_is_authored(self) -> None:
+        """The seeded index holds no placeholder, so it reads as the stage's draft while it is
+        still the body seeding wrote, on whatever day it was seeded; once a persona is written
+        into it the stage's output exists and guided onboarding moves past it unconfirmed. An
+        index written by hand is authored work whether or not it declares anybody. MUTANTS: the
+        placeholder test alone, so the seeded index is authored the moment it is written; the
+        seed compared with its date, so an index seeded on an earlier day reads authored; any
+        index declaring nobody read as a draft, so a hand-written index reopens the stage."""
+        self._guided_to_personas()
+        self.assertFalse(init.stage_output_exists(self.root, "personas"))
+        index = self.root / "sdlc-studio" / "personas" / "index.md"
+        text = index.read_text(encoding="utf-8")
+        today = sdlc_md.now_date()
+        self.assertIn(today, text)
+        index.write_text(text.replace(today, "2020-01-01"), encoding="utf-8")
+        self.assertFalse(init.stage_output_exists(self.root, "personas"),
+                         "an index seeded on an earlier day reads as authored")
+        index.write_text(text.replace("## Primary\n", "## Primary\n\n- [Maya Okafor](maya.md)"
+                                      " - a founder-engineer\n", 1), encoding="utf-8")
+        self.assertTrue(init.stage_output_exists(self.root, "personas"))
+        moved = json.loads(_cli("init.py", "guided", "--root", str(self.root),
+                                "--format", "json").stdout)
+        self.assertNotEqual("personas", moved["current"], moved)
+        for written in ("# Personas\n\nMaya Okafor, a founder-engineer, is who we build for.\n",
+                        "# personas\n\n## Primary\n"):
+            with self.subTest(written=written):
+                index.write_text(written, encoding="utf-8")
+                self.assertEqual((), sdlc_md.persona_registry(self.root).entries)
+                self.assertTrue(init.stage_output_exists(self.root, "personas"),
+                                "a hand-written index declaring nobody reads as a draft")
+
     def _epic(self) -> str:
         spec = self.root / "spec.json"
         spec.write_text(json.dumps([{"title": "An epic"}]), encoding="utf-8")

@@ -162,7 +162,9 @@ strike. A strike naming an id no memory file holds, or one this run's close did 
 refused with every reason named, and nothing is sealed or written. Signed is read from the
 run's tracked record in `sdlc-studio/reports/runs/`, never written into memory, so `sprint.py
 reopen` holds the run's learnings until it is signed again: at once in the checkout that
-reopened it, and in every clone once the re-close files the record.
+reopened it, and in every clone once the re-close files the record. Sealed is not signed: a
+run ended with no signature, by a `sprint boundary` stop or `--file-and-close`, holds its
+learnings, and a re-close lists again only those not yet live and never one already struck.
 
 ---
 
