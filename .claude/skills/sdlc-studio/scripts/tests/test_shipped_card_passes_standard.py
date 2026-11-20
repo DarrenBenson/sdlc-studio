@@ -4,7 +4,7 @@
 project's `personas/seats/`. The product card's worked example judges its story against the End
 goal of the Primary for the interface without naming a Primary, so no copy names a persona the
 project's cast lacks, and `persona_review.py check` finds nothing on the three copies that blocks.
-A worked example that named one (the Primary persona, Sam the new shopper) is a true
+A worked example that named one (the Primary persona, Sam Patel the new shopper) is a true
 seat-persona-unknown, which blocks, in every project whose cast holds no Sam.
 
 Driven through each script's `main`, the shipped entry points, in throwaway projects.
@@ -35,7 +35,8 @@ PERSONA_RULES = {"seat-persona-unknown", "seat-persona-role"}
 #: The worked example the product card shipped before it stopped naming a cast member.
 OLD_SCENARIO = (
     'A "default list for first-time users" story is proposed with five acceptance criteria. Lena'
-    ' checks it\nagainst the Primary persona, Sam the new shopper, whose End goal is "add my first'
+    ' checks it\nagainst the Primary persona, Sam Patel the new shopper, whose End goal is'
+    ' "add my first'
     ' item in seconds."\nFour ACs serve that; the fifth - a configurable default-list naming scheme'
     ' - serves no persona. She\ncuts it to a follow-up, sharpens AC1 to "first run lands on a usable'
     ' list with a visible add box",\nand marks the story Ready against Sam\'s goal.\n\n')
@@ -112,7 +113,7 @@ def _review_render_headings(card: Path) -> list[str]:
 class ShippedCardStandardTests(unittest.TestCase):
 
     def test_an_upgraded_projects_copied_cards_trip_no_blocking_rule(self) -> None:
-        """AC1. Mutants: the shipped scenario keeps the Primary persona, Sam the new shopper;
+        """AC1. Mutants: the shipped scenario names in full a persona the cast lacks;
         a check that never reads the copies (the old-sentence control); an upgrade that copies
         some other card than the shipped one."""
         for cast, registry in CASTS:

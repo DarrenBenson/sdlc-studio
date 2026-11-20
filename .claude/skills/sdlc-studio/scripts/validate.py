@@ -1590,13 +1590,24 @@ _CLAIM_NOT_NAMES = {"The", "A", "An", "This", "That", "These", "Those", "Each", 
                     "Must"}
 
 
+#: One word alone in brackets straight after the role: `the primary persona (Darren)`.
+_CLAIM_BRACKETED_WORD_RE = re.compile(rf"{_CLAIM_WORD}[ \t]*\)")
+
+
 def _reads_as_name(words: list[str], m: re.Match, leading: bool) -> bool:
-    """Whether a claim's words, naming no cast member, read as a name the cast lacks: not a word
-    from `_CLAIM_NOT_NAMES`, not an acronym (`CLI`), and not the word opening a clause after a
-    colon (`persona: When they arrive`), where a capital marks the clause, not a name."""
+    """Whether a claim's capitalised run, naming no cast member, reads as a name the cast lacks:
+    two or more words (`Zed Quill`), or one word alone in brackets straight after the role
+    (`persona (Darren)`), where the bracket marks it a name. A lone word after `is`, a comma or
+    a colon is no name, as a capital there marks a pronoun, a conjunction or a clause (`persona,
+    If pressed`, `persona: She decides`). Nor is a run opening on a word from `_CLAIM_NOT_NAMES`
+    (`persona: The Admin Team`) or holding an acronym (`the Web UI (Primary)`)."""
     first = words[0]
-    return not (first in _CLAIM_NOT_NAMES or (len(first) > 1 and first.isupper())
-                or (leading and ":" in m.group("sep")))
+    if first in _CLAIM_NOT_NAMES or any(len(w) > 1 and w.isupper() for w in words):
+        return False
+    if len(words) > 1:
+        return True
+    return (leading and m.group("sep").strip() == "("
+            and _CLAIM_BRACKETED_WORD_RE.match(m.string, m.start("name")) is not None)
 
 
 def _claimed_name(m: re.Match, leading: bool) -> tuple[list[str], int] | None:

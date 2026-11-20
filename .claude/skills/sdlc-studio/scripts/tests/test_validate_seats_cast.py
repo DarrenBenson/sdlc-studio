@@ -207,12 +207,13 @@ class ShippedCardTests(unittest.TestCase):
         """The true positive the shipped cards no longer carry: a copy of the product card whose
         Scenario still judges the story against `the Primary persona, Sam the new shopper` warns
         at the line where Sam is named in every cast holding no Sam, and draws nothing where
-        Sam is a Primary. Mutants: a pattern that reads no worked example at all, so the
-        shipped cards' clean run proves nothing; a bare first name no longer resolving."""
+        Sam is a Primary. The example names Sam in full, as a lone first name outside brackets
+        is no name. Mutants: a pattern that reads no worked example at all, so the shipped
+        cards' clean run proves nothing."""
         old = ('A "default list for first-time users" story is proposed with five acceptance'
-               ' criteria. Lena checks it\nagainst the Primary persona, Sam the new shopper, whose'
-               ' End goal is "add my first item in seconds."\nFour ACs serve that, and the story'
-               ' is marked Ready against Sam\'s goal.\n\n')
+               ' criteria. Lena checks it\nagainst the Primary persona, Sam Patel the new shopper,'
+               ' whose End goal is "add my first item in seconds."\nFour ACs serve that, and'
+               ' the story is marked Ready against Sam\'s goal.\n\n')
         for cast, registry, warns in (
                 ({"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]}, True),
                 ({"Maya Okafor": "Primary"}, None, True),
@@ -249,7 +250,8 @@ class SeatClaimNameTests(unittest.TestCase):
     def test_a_word_after_the_role_that_is_no_name_is_not_read_as_one(self) -> None:
         """AC1. Mutants: a stop list of the criterion's three words, so another question word
         (`Does`), another acronym (`API`) or another word opening a clause after a colon
-        (`Everything`) is still read as a name; no name read at all (the Zed Quill control)."""
+        (`Everything`) is still read as a name; no name read at all, or none after a colon (the
+        Zed Quill controls, one after a comma and one after a colon)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _personas(root, {"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]})
@@ -268,6 +270,11 @@ class SeatClaimNameTests(unittest.TestCase):
             self.assertEqual([(f["rule"], Path(f["file"]).name, f["line"]) for f in found],
                              [("seat-persona-unknown", card.name, _line_of(card, "Zed Quill"))])
             self.assertIn("Zed Quill", found[0]["message"])
+            card.write_text(card.read_text(encoding="utf-8").replace(
+                "Primary persona, Zed Quill,", "Primary persona: Zed Quill, then"),
+                encoding="utf-8")
+            self.assertEqual([(f["rule"], f["line"]) for f in _seats(root)[1]],
+                             [("seat-persona-unknown", _line_of(card, "persona: Zed Quill"))])
 
     def test_a_first_name_with_the_wrong_surname_is_unknown(self) -> None:
         """AC2. Mutants: any first-name match passing whatever surname follows; a bare first
@@ -288,6 +295,45 @@ class SeatClaimNameTests(unittest.TestCase):
                         "is Maya Smith", f"is {named}").replace("is Maya Okafor", f"is {named}"),
                         encoding="utf-8")
                     self.assertEqual(_seats(root), (0, []))
+
+    def test_only_a_cast_name_or_a_full_name_run_is_read_as_a_name(self) -> None:
+        """AC4. A run that names no cast member is a name only when it is two or more
+        capitalised words, or one word alone in brackets straight after the role. Mutants: a
+        rule reading every lone word (the pronoun, conjunction and `Not` lines warn); a rule
+        skipping every name after a colon (Zed Quill goes silent); the bracket form dropped
+        (Darren goes silent) or not held to a closing bracket (`Speed matters` warns); the
+        not-name word read at the run's end (`The Admin Team` warns); the acronym guard dropped
+        (`Web UI` warns) or a lone initial taken for an acronym (`Zed J Quill` goes silent);
+        the bracket form read for a lone word before `(Primary)` (`the Admin (Primary)`)."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _personas(root, {"Maya Okafor": "Primary", "Jonah Reyes": "Primary"},
+                      {"Primary": ["Maya Okafor", "Jonah Reyes"]})
+            _seat(root, "product", "Lena Park", lens=(
+                "- As the Primary persona, I want a quick start.\n"
+                "- Lead with the Primary persona, She decides.\n"
+                "- Ask the Primary persona, If pressed, what goes first?\n"
+                "- Serve the Primary persona, Then the rest.\n"
+                "- The Secondary persona is Not yet chosen.\n"
+                "- Weigh the Primary persona (Speed matters most) first.\n"
+                "- Ask the Primary persona: The Admin Team decides.\n"
+                "- Serve the Web UI (Primary) before the rest.\n"
+                "- Ship the Admin (Primary) view first."))
+            self.assertEqual(_seats(root), (0, []))
+            card = _seat(root, "qa", "Sam Eriksson", lens=(
+                "- Primary persona: Zed Quill\n"
+                "- Ask the Primary persona: Zed Quill would refuse this.\n"
+                "- Cold on the primary persona (Darren) and his goals.\n"
+                "- The Primary persona is Zed J Quill, not the rest."))
+            rc, found = _seats(root)
+            self.assertEqual(rc, 0, found)
+            self.assertEqual([(f["rule"], f["line"]) for f in found],
+                             [("seat-persona-unknown", _line_of(card, "Primary persona: Zed")),
+                              ("seat-persona-unknown", _line_of(card, "Ask the Primary")),
+                              ("seat-persona-unknown", _line_of(card, "(Darren)")),
+                              ("seat-persona-unknown", _line_of(card, "Zed J Quill"))], found)
+            for f, name in zip(found, ("Zed Quill", "Zed Quill", "Darren", "Zed J Quill")):
+                self.assertIn(f"calls {name} the", f["message"])
 
     def test_a_card_the_registry_omits_is_role_checked_against_its_card(self) -> None:
         """AC3. Mutants: a name the registry omits skipping the role check; the omitted
