@@ -12,6 +12,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import io
 import sys
 import tempfile
@@ -49,24 +50,49 @@ def _clause() -> str:
 
 class TrdCoverageSoftDependencyTests(unittest.TestCase):
 
-    def _absent(self) -> contextlib.AbstractContextManager:
-        return mock.patch.object(verify_ac, "coverage_report", side_effect=(
-            verify_ac.CoverageUnavailable(f"{verify_ac.COVERAGE_ABSENT} on python")))
+    @contextlib.contextmanager
+    def _absent(self):
+        """The coverage module absent, as `coverage_report` reports it, on the module object
+        `transition.line_coverage_lane` imports at call time: `sys.modules['verify_ac']` is held
+        to this test's import for the block, since a test elsewhere in the run may have left a
+        second one there. The stand-in keeps the real measurement's first refusal, a base ref
+        that does not resolve, so a fixture root without a commit fails as it would there."""
+        def measure(root, unit_path, unit, *, base_ref=None, **_kw):
+            if base_ref and not verify_ac._ref_exists(root, base_ref):
+                raise verify_ac.CoverageUnavailable(
+                    f"coverage: not measured - base ref `{base_ref}` does not resolve here")
+            raise verify_ac.CoverageUnavailable(f"{verify_ac.COVERAGE_ABSENT} on python")
+
+        held = sys.modules.get("verify_ac")
+        sys.modules["verify_ac"] = verify_ac
+        try:
+            with mock.patch.object(verify_ac, "coverage_report", side_effect=measure):
+                yield
+        finally:
+            if held is None:
+                sys.modules.pop("verify_ac", None)
+            else:
+                sys.modules["verify_ac"] = held
+
+    @staticmethod
+    def _fixture(root: Path, config: str = "") -> None:
+        """A committed fixture repository holding the story, so `HEAD` resolves at `root`."""
+        (root / "a.txt").write_text("a\n", encoding="utf-8")
+        sd = root / "sdlc-studio"
+        (sd / "stories").mkdir(parents=True)
+        (sd / "stories" / f"{UNIT}-a.md").write_text(STORY, encoding="utf-8")
+        if config:
+            (sd / ".config.yaml").write_text(config, encoding="utf-8")
+        gitutil.git(["init", "-q", "--template="], root)
+        gitutil.git(["add", "-A"], root)
+        gitutil.git(["commit", "-q", "-m", f"fix({UNIT}): a"], root)
 
     def _run_exit(self, mode: str) -> tuple[int, str]:
         """`verify_ac.py run --coverage` on a fixture whose config sets `review.line_coverage`
         to `mode`, with the coverage module absent."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "a.txt").write_text("a\n", encoding="utf-8")
-            sd = root / "sdlc-studio"
-            (sd / "stories").mkdir(parents=True)
-            (sd / "stories" / f"{UNIT}-a.md").write_text(STORY, encoding="utf-8")
-            (sd / ".config.yaml").write_text(f"review:\n  line_coverage: {mode}\n",
-                                             encoding="utf-8")
-            gitutil.git(["init", "-q", "--template="], root)
-            gitutil.git(["add", "-A"], root)
-            gitutil.git(["commit", "-q", "-m", f"fix({UNIT}): a"], root)
+            self._fixture(root, f"review:\n  line_coverage: {mode}\n")
             err = io.StringIO()
             with self._absent(), contextlib.redirect_stdout(io.StringIO()), \
                     contextlib.redirect_stderr(err):
@@ -75,11 +101,16 @@ class TrdCoverageSoftDependencyTests(unittest.TestCase):
         return rc, err.getvalue()
 
     def _gate(self, mode: str) -> dict:
-        """The Done gate's coverage lane under `mode`, with the coverage module absent."""
-        with tempfile.TemporaryDirectory() as d, self._absent(), \
-                mock.patch.object(transition, "line_coverage_mode", return_value=mode):
-            return transition.line_coverage_lane(d, UNIT, STORY, "story", Path(d) / "s.md",
-                                                 base_ref="HEAD")
+        """The Done gate's coverage lane under `mode` on a committed fixture, with the coverage
+        module absent."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._fixture(root)
+            with self._absent(), \
+                    mock.patch.object(transition, "line_coverage_mode", return_value=mode):
+                return transition.line_coverage_lane(
+                    d, UNIT, STORY, "story", root / "sdlc-studio" / "stories" / f"{UNIT}-a.md",
+                    base_ref="HEAD")
 
     def test_the_run_exits_2_and_the_done_gate_splits_block_from_report(self) -> None:
         """Mutants: the clause saying the run refuses under `block` and reports under
@@ -103,6 +134,32 @@ class TrdCoverageSoftDependencyTests(unittest.TestCase):
                                  r"whatever `review\.line_coverage` says")
         self.assertRegex(clause, r"Done gate[^;)]*`transition\.py`[^;)]*refuses under `block` "
                                  r"and reports under `report`")
+
+    def test_the_gate_half_holds_when_verify_ac_is_reimported(self) -> None:
+        """A test elsewhere in the run that loads `verify_ac` afresh leaves a second module
+        object in `sys.modules`, and `transition.line_coverage_lane` imports that one at call
+        time. The gate half still sees the absent module under `block` and the report-mode note
+        under `report`. Mutants: the hidden module patched only on this test's import, not on
+        the object the lane imports; the fixture root left without a commit."""
+        spec = importlib.util.spec_from_file_location("verify_ac", SCRIPTS / "verify_ac.py")
+        fresh = importlib.util.module_from_spec(spec)
+        held = sys.modules.get("verify_ac")
+        sys.modules["verify_ac"] = fresh      # registered first: its dataclasses look it up
+        try:
+            spec.loader.exec_module(fresh)
+            self.assertIsNot(verify_ac, sys.modules["verify_ac"])
+            block = self._gate("block")
+            self.assertTrue(block["blocks"], block)
+            self.assertIn(verify_ac.COVERAGE_ABSENT, block["blocks"][0])
+            report = self._gate("report")
+            self.assertEqual([], report["blocks"])
+            self.assertEqual(transition.LINE_COVERAGE_ABSENT_REPORT, report["warning"])
+            self.assertIs(fresh, sys.modules["verify_ac"])
+        finally:
+            if held is None:
+                sys.modules.pop("verify_ac", None)
+            else:
+                sys.modules["verify_ac"] = held
 
 
 if __name__ == "__main__":
