@@ -142,7 +142,8 @@ class GoalSeatPrdTests(unittest.TestCase):
             root = Path(d)
             worklist = _fixture(root, prd="# PRD\n\n## 1. Project Overview\n\nNo outcomes.\n",
                                 cards=False)
-            lines = _brief(root, goal).rstrip("\n").split("\n")
+            *lines, pointer = _brief(root, goal).rstrip("\n").split("\n")
+            self.assertTrue(pointer.startswith("Review seats: "), pointer)
             plan = sprint.build_plan(root, worklist=str(worklist), skip_personas=True)
             before = sprint._compose_seat_brief(
                 plan, goal, sprint.lessons.phase_digest(root, "review")).split("\n")

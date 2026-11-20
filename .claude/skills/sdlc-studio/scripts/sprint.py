@@ -12986,7 +12986,7 @@ def _persisted_plan_is_stale(root: Path, plan: dict) -> str | None:
 
 
 def seat_brief(repo_root: Path | str, worklist: str | None = None,
-               goal: str | None = None) -> str:
+               goal: str | None = None, seat: str | None = None) -> str:
     """The context a review seat is GIVEN before it judges the Sprint Goal: what the batch is, the
     grooming state the first live review turned on (placeholder ACs, shared-file clusters, the
     reachable end state), what the product serves (the PRD outcomes, the personas' End goals and
@@ -12996,27 +12996,52 @@ def seat_brief(repo_root: Path | str, worklist: str | None = None,
     Give it the batch it is to brief (`worklist`) and it composes from a DRY plan of exactly that
     batch. Without one it falls back to the persisted plan, and REFUSES to render a stale one as
     current - the goal review gates `plan --write`, so on a new sprint the persisted plan is the
-    previous sprint's by construction."""
+    previous sprint's by construction.
+
+    Given a `seat`, the brief opens by naming that seat and the card it adopts, by the path
+    `persona_resolve.review_card` resolves, as `critic.py brief` does; a seat no card fills
+    raises its UnknownSeat before any brief is composed. Without one, the brief ends by naming the
+    review seats and the `--seat <role>` form that frames one. A stale-plan answer is neither."""
+    import persona_resolve  # noqa: PLC0415 - sibling; the resolver both review briefs call
     root = Path(repo_root)
+    card = persona_resolve.review_card(root, seat) if seat is not None else None
+    body, current = _seat_brief_body(root, worklist, goal)
+    if not current:
+        return body
+    if card is not None:
+        return (f"You are the {seat} review seat. Read and adopt the charter at\n{card} (the "
+                f"review render). It frames how you read the goal and the batch below; they are "
+                f"the record, and your stance never overrides them.\n\n{body}")
+    return (f"{body}\nReview seats: {', '.join(persona_resolve.seat_roster(root))} - this brief "
+            f"frames none of them; brief each through its own card with "
+            f"`sprint.py goal-review brief --seat <role>`.")
+
+
+def _seat_brief_body(root: Path, worklist: str | None, goal: str | None) -> tuple[str, bool]:
+    """`seat_brief`'s goal brief before any seat frames it, and whether it is one: False with the
+    answer that there is no current batch to brief, which no seat is framed for."""
     injected = lessons.phase_digest(root, "review")
     live = _live_run(root)
     serves = live.get("sprint_serves") or None
     if worklist:
         plan = build_plan(root, worklist=worklist, skip_personas=True)
         goal = _brief_goal(root, goal, plan)
-        return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal, serves))
+        return _compose_seat_brief(plan, goal, injected,
+                                   _goal_served_lines(root, goal, serves)), True
     plan = sdlc_md.read_json(_plan_path(root), {})
     stale = _persisted_plan_is_stale(root, plan)
     if stale:
         return (f"NO CURRENT BATCH TO BRIEF: {stale}. Give the brief the batch it is to describe "
                 f"(`goal-review brief --worklist <file>`); the previous run's plan is not rendered "
-                f"here, because a brief describing the wrong batch cannot be told from a right one.")
+                f"here, because a brief describing the wrong batch cannot be told from a right one."
+                ), False
     goal = _brief_goal(root, goal, plan)
     if isinstance(live.get("batch"), list):
         # The batch under review is the live run's: `batch add` after `plan --write` grows it,
         # and the persisted plan still holds the count it was written with.
         plan = {**plan, "count": len(live["batch"])}
-    return _compose_seat_brief(plan, goal, injected, _goal_served_lines(root, goal, serves))
+    return _compose_seat_brief(plan, goal, injected,
+                               _goal_served_lines(root, goal, serves)), True
 
 
 def _live_run(root: Path) -> dict:
@@ -13107,10 +13132,24 @@ def cmd_goal_review(args) -> int:
     """
     root = Path(args.root)
     if args.action == "brief":
+        # `--seat` appends because `record` takes several verdicts; a brief frames one role, so
+        # a second value or a record spec is refused rather than one of them dropped.
+        seats = getattr(args, "seat", None) or []
+        if len(seats) > 1 or any("|" in s for s in seats):
+            print(f"goal-review brief refused: --seat names one role per brief (got "
+                  f"{', '.join(repr(s) for s in seats)}); run the brief once for each seat",
+                  file=sys.stderr)
+            return 2
         # The CLI's --goal reaches the brief. It never did, which is the whole of BG0381:
         # the flag was accepted, documented and silently discarded.
-        print(seat_brief(root, worklist=getattr(args, "brief_worklist", None),
-                         goal=getattr(args, "goal", None)))
+        import persona_resolve  # noqa: PLC0415 - sibling; its refusal names the seat roster
+        try:
+            text = seat_brief(root, worklist=getattr(args, "brief_worklist", None),
+                              goal=getattr(args, "goal", None), seat=seats[0] if seats else None)
+        except persona_resolve.UnknownSeat as exc:
+            print(f"goal-review brief refused: {exc}", file=sys.stderr)
+            return 2
+        print(text)
         return 0
     if args.action == "show":
         rec = goal_review(root)
@@ -13971,7 +14010,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the Sprint Goal the seats reviewed, verbatim - a verdict carries "
                          "the goal it judged, so a stale file cannot discharge a new goal")
     gr.add_argument("--seat", action="append", metavar="SPEC",
-                    help="repeatable: 'role|achievable|what done means|one increment"
+                    help="(brief) one role: frame the brief for that seat through its own "
+                         "card. (record) repeatable: 'role|achievable|what done means|one increment"
                          "[|note[|rereview]]' - rereview yes asks to read an amended goal again "
                          "rather than have this verdict carried to it. A last field of exactly "
                          "yes or no is that answer, so a note that itself ends in |yes or |no "

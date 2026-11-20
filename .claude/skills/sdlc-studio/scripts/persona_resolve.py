@@ -51,6 +51,12 @@ class RenderError(RuntimeError):
     error, never a silent fallback to the generic default."""
 
 
+class UnknownSeat(ValueError):
+    """No card fills the seat a review brief was asked to frame: the project declares no such
+    role and the skill ships none. A ValueError, so a caller that refuses a bad seat as it
+    refuses any bad value keeps doing so."""
+
+
 def card_role(path: Path | str) -> str | None:
     """The declared role of a card from its `<!-- role: ... -->` field, lower-cased, or None.
 
@@ -173,6 +179,21 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
                 f"the resolver will not silently fall back to the generic default.")
         return card
     return default_card(seat)
+
+
+def review_card(root: Path | str, seat: str) -> Path:
+    """The charter a review seat adopts, for each review brief that frames one (`critic.py
+    brief` and `sprint.py goal-review brief --seat`): the project card whose declared `role:` is
+    the seat, else the shipped default, so a fresh project briefs its review on the shipped team.
+    The card's sections are not judged here. A seat with no card anywhere raises UnknownSeat
+    naming the seats that have one (`seat_roster`) and any card that declares no role, rather
+    than letting a brief go out without a charter."""
+    card = resolve_card(root, seat)
+    if card is None:
+        roleless = "".join(f"; {p} declares no role" for p in roleless_cards(root))
+        raise UnknownSeat(f"no seat card for {seat!r} - neither the project nor the skill "
+                          f"carries one (seats: {', '.join(seat_roster(root))}{roleless})")
+    return card
 
 
 def resolve_consult(root: Path | str, role: str) -> Path | None:

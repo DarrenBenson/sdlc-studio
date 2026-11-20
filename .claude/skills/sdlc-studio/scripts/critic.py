@@ -3679,22 +3679,6 @@ def _risk_class_block(root: Path, text: str, unit: str, seat: str) -> str:
             f"two independent review seats. {role}\n\n")
 
 
-def _review_seat_card(root: Path, seat: str) -> Path:
-    """The seat's charter, by persona_resolve's one resolver: the project card whose declared
-    `role:` is the seat, else the shipped default, so a fresh project briefs its review on the
-    shipped team. The brief never judged a card's sections and does not start here; a seat with
-    no card anywhere is refused rather than briefed without a charter."""
-    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
-    card = persona_resolve.resolve_card(root, seat)
-    if card is None:
-        roleless = "".join(f"; {p} declares no role"
-                           for p in persona_resolve.roleless_cards(root))
-        raise ValueError(f"no seat card for {seat!r} - neither the project nor the skill "
-                         f"carries one (seats: {', '.join(persona_resolve.seat_roster(root))}"
-                         f"{roleless})")
-    return card
-
-
 def _brief_criteria(text: str) -> str:
     """The criteria a brief quotes, by the SAME heading rule as the runner's `criteria_blocks`:
     case-insensitive, more words allowed."""
@@ -4125,7 +4109,10 @@ def _brief(repo_root: Path | str, unit: str, seat: str, tier: str) -> str:
         raise ValueError(f"no artefact with id {unit!r} - brief needs a real unit")
     path, _type = found
     text = sdlc_md.read_text_safe(path)
-    card = _review_seat_card(root, seat)
+    # The seat's charter, by the one resolver both review briefs call; a seat with
+    # no card anywhere is refused rather than briefed without a charter.
+    import persona_resolve  # noqa: PLC0415 - sibling; one resolver for every seat reader
+    card = persona_resolve.review_card(root, seat)
     acs = _brief_criteria(text)
     affects = sdlc_md.affects_files(text)
     scope = (", ".join(affects) if affects
