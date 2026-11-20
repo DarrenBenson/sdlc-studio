@@ -1,6 +1,6 @@
 # BG1664: persona_cards still builds the number-keyed goal_verify and goal_applies_to maps that nothing reads after BG1660
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -25,8 +25,10 @@ Drop both keys from `persona_cards`' return value, or derive them from goals whe
 
 - [ ] **AC1** Given a persona card, when `sprint.persona_cards` reads it, then each entry carries `name`, `role`, `end_goals` and `goals` only, with no number-keyed `goal_verify` or `goal_applies_to` map, and the docstring names only those keys
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_persona_cards_returns_no_number_keyed_goal_map
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** BG1660's checks still pass: goals numbered alike keep their own Verify, an empty code-span Verify is no check, and the traced listing names each persona's role
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests
+  - **Verified:** yes (2026-11-20)
 
 AC1 must fail on: a `persona_cards` that still returns either map, or a test that only greps the source for the key names rather than calling `persona_cards` on a fixture card.
 

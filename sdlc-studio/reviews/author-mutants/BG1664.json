@@ -1,0 +1,43 @@
+{
+  "unit": "BG1664",
+  "digest": "1cdd0af865dce281 at 63f0e65c51b8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/BG1664-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "number-keyed goal_verify map back",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                              \"goals\": goals}))",
+      "new": "                              \"goals\": goals, \"goal_verify\": {g.number: g.verify for g in goals}}))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_persona_cards_returns_no_number_keyed_goal_map",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "docstring names goal_verify again",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    \"\"\"`[{name, role, end_goals, goals}]` for each persona card",
+      "new": "    \"\"\"`[{name, role, end_goals, goals, goal_verify}]` for each persona card",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_persona_cards_returns_no_number_keyed_goal_map",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trace re-joins each Verify on its number",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            name: [{\"number\": g.number, \"text\": g.text, \"verify\": g.verify,",
+      "new": "            name: [{\"number\": g.number, \"text\": g.text, \"verify\": {x.number: x.verify for x in by_name[name][\"goals\"]}[g.number],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test fixture drops its Applies-to line",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py",
+      "old": "        text += \"   - **Applies-to:** `app/bugs/`\\n\"",
+      "new": "        text += \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_testable_goals.py::RepeatedNumberTests::test_persona_cards_returns_no_number_keyed_goal_map",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

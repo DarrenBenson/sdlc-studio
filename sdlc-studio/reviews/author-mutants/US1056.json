@@ -1,0 +1,88 @@
+{
+  "unit": "US1056",
+  "digest": "b2dfb8a45637675b at 63f0e65c51b8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1056-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "trace never asks the standard (brief)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
+      "new": "    refused = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trace never asks the standard (plan)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
+      "new": "    refused = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal fires on an untraced persona",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    refused = _refused_personas(root, entries, traced) if traced else []\n",
+      "new": "    refused = _refused_personas(root, entries, [c[\"name\"] for c in cards]) if traced else []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "designed-for listing reads a held card",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            if c[\"name\"] in held:\n",
+      "new": "            if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "brief prints despite the refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if trace and trace.get(\"refused\"):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refused card keeps its End goals in the trace",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        traced = [n for n in traced if n not in {r[\"name\"] for r in refused}]",
+      "new": "        traced = list(traced)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan prints no line for the traced refused card",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        for r in trace.get(\"refused\") or []:\n            print(_refused_line(",
+      "new": "        for r in []:\n            print(_refused_line(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_the_plan_names_the_refused_card_and_still_plans",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "held_cards holds nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        if held:\n            out[path] = held",
+      "new": "        if False:\n            out[path] = held",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the FAIL names one rule only",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py",
+      "old": "            _record(root, _MAYA, \"fail\", \"persona-evidence\", \"persona-goal-scope\")",
+      "new": "            _record(root, _MAYA, \"fail\", \"persona-evidence\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_persona_block.py::GoalReviewPersonaBlockTests::test_a_goal_traced_to_a_failed_card_is_not_briefed",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

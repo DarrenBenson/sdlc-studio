@@ -1,0 +1,115 @@
+{
+  "unit": "US1057",
+  "digest": "daf1adf53dc090a1 at 63f0e65c51b8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1057-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "plan lists no blocked card",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if b[\"card\"] not in named:\n            print(",
+      "new": "        if False:\n            print(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_each_blocked_card_with_its_remedy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blocked line drops the line number",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "(f\" (line {f['line']})\" if f.get(\"line\") else \"\")",
+      "new": "\"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_names_each_blocked_card_with_its_remedy",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan refuses when the standard has a finding",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if standard is not None:\n        data[\"persona_standard\"] = standard",
+      "new": "    if standard is not None:\n        return 2",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "change read from the file time as well as the hash",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        elif last[\"hash\"] != persona_gen.body_hash(sdlc_md.read_text_safe(path)):",
+      "new": "        elif last[\"hash\"] != persona_gen.body_hash(sdlc_md.read_text_safe(path)) or path.stat().st_mtime > 1_900_000_000:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a never-reviewed card is not owed",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "            why = \"never reviewed\"",
+      "new": "            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_changed_and_unreviewed_cards_are_owed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "newest tag by name, not commit date",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        if when.isdigit() and (best is None or int(when) > best[0]):",
+      "new": "        if when.isdigit() and (best is None or parts[0] > best[1]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "tag date read from the tag, not its commit",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    fmt = (\"%(refname:short)%09%(*committerdate:unix)%09%(*committerdate:short)\"",
+      "new": "    fmt = (\"%(refname:short)%09%(creatordate:unix)%09%(creatordate:short)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a same-day PASS counts as before the tag",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "        elif tag is not None and last[\"date\"] < tag[1]:",
+      "new": "        elif tag is not None and last[\"date\"] <= tag[1]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "plan prints no owed count",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if std[\"owed\"]:\n        print(",
+      "new": "    if False:\n        print(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skip-personas still reads the standard",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    standard = (None if getattr(args, \"skip_personas\", False)",
+      "new": "    standard = (None if False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the cut names no owed card",
+      "file": ".claude/skills/sdlc-studio/scripts/release_cut.py",
+      "old": "    for owed in persona_review.owed(args.root):",
+      "new": "    for owed in []:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_the_plan_and_the_release_cut_name_owed_reviews",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the annotated tag dated on its commit's day",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py",
+      "old": "                        env_extra={\"GIT_COMMITTER_DATE\": \"2026-11-12T09:00:00+0000\"})",
+      "new": "                        env_extra={\"GIT_COMMITTER_DATE\": \"2026-11-10T15:00:00+0000\"})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py::PersonaReviewOwedTests::test_a_card_not_reviewed_since_the_latest_tag_is_owed_by_day",
+      "result": "survived",
+      "answer": "Expected to survive: the shipped code reads the tag commit's date whatever day the tag was made, so dating the tag on its commit's day changes nothing it reads. The two-day gap is what kills the code mutant 'tag date read from the tag, not its commit' (killed in this report); this row shows the gap is load-bearing for that mutant and for nothing else."
+    }
+  ]
+}

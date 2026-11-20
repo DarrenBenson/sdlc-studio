@@ -1,0 +1,133 @@
+{
+  "unit": "US1322",
+  "digest": "b60d21a0071716f0 at 63f0e65c51b8",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a902f6a2347d7ed0a/US1322-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "report mode refuses as block",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "        if persona_review.standard_mode(root) != \"report\":\n",
+      "new": "        if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report mode prints no line",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "report line printed twice",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
+      "new": "        print(persona_review.report_line(root, card, held), file=sys.stderr)\n        print(persona_review.report_line(root, card, held), file=sys.stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unset key reads as report",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    if value is None:\n        return \"block\"",
+      "new": "    if value is None:\n        return \"report\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_report_mode_names_a_blocked_card_and_frames_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unknown value reads as report",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "          \"block\", file=sys.stderr)\n    return \"block\"",
+      "new": "          \"block\", file=sys.stderr)\n    return \"report\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unknown value warns nobody",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_review.py",
+      "old": "    print(f\"{STANDARD_KEY} is {value!r}, which is neither block nor report",
+      "new": "    (lambda *a, **k: None)(f\"{STANDARD_KEY} is {value!r}, which is neither block nor report",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade writes for a project with no cards",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):\n        return None",
+      "new": "    if False:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade never sets the key",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    standard = _set_report_mode(root)\n",
+      "new": "    standard = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "upgrade loses the rest of the config",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    _write_consumer_file(cfg, \"\".join(lines))",
+      "new": "    _write_consumer_file(cfg, \"personas:\\n  standard: report\\n\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "defaults ship report",
+      "file": ".claude/skills/sdlc-studio/templates/config-defaults.yaml",
+      "old": "  standard: block\n",
+      "new": "  standard: report\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference row gives report as the default",
+      "file": ".claude/skills/sdlc-studio/reference-config.md",
+      "old": "| `personas.standard` | `block` |",
+      "new": "| `personas.standard` | `report` |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_the_key_is_documented_and_an_unknown_value_fails_safe",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only a seat card counts as the project's own",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    if not (persona_review._persona_cards(root) or persona_review._seat_cards(root)):",
+      "new": "    if not persona_review._seat_cards(root):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a value the project set is overwritten",
+      "file": ".claude/skills/sdlc-studio/scripts/project_upgrade.py",
+      "old": "    if sdlc_md.project_override(root, persona_review.STANDARD_KEY) is not None:\n        return None",
+      "new": "    if False:\n        return None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the seat project holds no card",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py",
+      "old": "        projects = {\"seat\": (\"seat\", \"\"),",
+      "new": "        projects = {\"seat\": (\"\", \"\"),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_standard_mode.py::PersonaStandardModeTests::test_an_upgrade_sets_report_mode_only_for_a_project_with_its_own_cards",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
