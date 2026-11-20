@@ -5,11 +5,13 @@
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py, changelog.d/US1036.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py, changelog.d/US1036.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_goal_seat_prd.py
 > **Epic:** EP0284
 > **Points:** 3
 > **Depends on:** BG1002, BG1015
 > **Persona:** Maya Okafor
+
+**Widened in run twenty (RUN-01M7VNR0):** AC3's closing line changes the unframed brief, and `test_lean_goal_seat_prd.py`'s no-PRD test compares the brief line for line with `_compose_seat_brief`, so the fix includes that test.
 
 ## User Story
 
