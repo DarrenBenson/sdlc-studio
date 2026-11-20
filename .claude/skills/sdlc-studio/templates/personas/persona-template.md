@@ -66,6 +66,14 @@ one segment. `**` is not part of it: write `app/bookings/`, not `app/bookings/**
 
 {{One short paragraph: the trigger, what they do, the outcome they need. Concrete.}}
 
+## Evidence
+
+*What grounds this card - each id resolves to an artefact, a decisions row or a lesson; a review
+checks every claim above against them.*
+
+- {{e.g. the story or interview record this person was drawn from, by id}}
+- {{e.g. the decision that cast them in this role, by id}}
+
 ---
 
 ## Cast-role variants

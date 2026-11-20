@@ -23,6 +23,7 @@ Quality checklists for AI assistants creating artifacts in any project.
 | Claude skill | `claude-skill.md` |
 | Claude command | `command.md` |
 | Settings / config files | `settings.md` |
+| Persona or seat card | `persona.md` |
 | Test spec / closing a bug | `testing.md` |
 
 ## How to Use
@@ -62,3 +63,4 @@ Quality checklists for AI assistants creating artifacts in any project.
 | `claude-skill.md` | Claude Code skill standards |
 | `command.md` | Claude Code command standards |
 | `settings.md` | Settings and configuration file standards |
+| `persona.md` | Persona and seat card standard: each rule, blocks or reported |

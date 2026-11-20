@@ -96,3 +96,8 @@ contract (not their memory of it), and notices the rollback case has no negative
 that test first - assert the item reappears and an error shows on a 500 - watch it fail, implement
 the reconcile, and only then the happy path. The diff is four files, all in scope, gate green. They
 log one line: "rollback uses immediate revert; auto-retry deferred, flagged for Product."
+
+## Evidence
+
+- LL0008 - a deterministic tool must fail loud, never report success it did not achieve
+- LL0042 - derive a message from the guard, never restate the rule beside it

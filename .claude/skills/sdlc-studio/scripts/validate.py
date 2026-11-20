@@ -1574,13 +1574,29 @@ _CLAIM_ROLES = r"(?P<role>(?i:primary|secondary|negative))"
 _CLAIM_WORD = r"[^\W\d_][\w'’-]*"
 _CLAIM_GAP = r"(?:[ \t]+|[ \t]*\n[ \t]*)"
 _SEAT_CLAIM_RE = re.compile(
-    rf"\b{_CLAIM_ROLES}\s+(?i:design\s+)?(?i:persona)(?:\s+is\s+|\s*[,:(]\s*)"
+    rf"\b{_CLAIM_ROLES}\s+(?i:design\s+)?(?i:persona)(?P<sep>\s+is\s+|\s*[,:(]\s*)"
     rf"(?P<name>{_CLAIM_WORD}(?:{_CLAIM_GAP}{_CLAIM_WORD}){{0,3}})")
 _SEAT_NAMED_ROLE_RE = re.compile(
     rf"(?P<name>(?:{_CLAIM_WORD}{_CLAIM_GAP}){{0,3}}{_CLAIM_WORD})[ \t]*\({_CLAIM_ROLES}\)")
-#: A capitalised word that opens a phrase rather than a name (`the Primary persona: The one who`).
+#: A capitalised word that opens a phrase rather than naming someone: a determiner (`the Primary
+#: persona: The one who`), or a question or auxiliary word (`the Primary persona, Does it`), each
+#: drawn from a closed class rather than from any one card. A cast member whose name is one of
+#: them still resolves: the cast is read before this set.
 _CLAIM_NOT_NAMES = {"The", "A", "An", "This", "That", "These", "Those", "Each", "Every", "Any",
-                    "Its", "Their", "Our", "Your", "No", "One"}
+                    "Its", "Their", "Our", "Your", "No", "One",
+                    "Who", "Whom", "Whose", "What", "Which", "When", "Where", "Why", "How",
+                    "Is", "Are", "Was", "Were", "Am", "Be", "Do", "Does", "Did", "Has", "Have",
+                    "Had", "Can", "Could", "Shall", "Should", "Will", "Would", "May", "Might",
+                    "Must"}
+
+
+def _reads_as_name(words: list[str], m: re.Match, leading: bool) -> bool:
+    """Whether a claim's words, naming no cast member, read as a name the cast lacks: not a word
+    from `_CLAIM_NOT_NAMES`, not an acronym (`CLI`), and not the word opening a clause after a
+    colon (`persona: When they arrive`), where a capital marks the clause, not a name."""
+    first = words[0]
+    return not (first in _CLAIM_NOT_NAMES or (len(first) > 1 and first.isupper())
+                or (leading and ":" in m.group("sep")))
 
 
 def _claimed_name(m: re.Match, leading: bool) -> tuple[list[str], int] | None:
@@ -1596,7 +1612,7 @@ def _claimed_name(m: re.Match, leading: bool) -> tuple[list[str], int] | None:
         n = next((i for i, c in enumerate(reversed(caps)) if not c), len(caps))
         run = words[len(words) - n:]
     run = [(re.sub(r"['’]s$", "", w), at) for w, at in run]
-    if not run or run[0][0] in _CLAIM_NOT_NAMES:
+    if not run:
         return None
     return [w for w, _ in run], run[0][1]
 
@@ -1619,17 +1635,25 @@ def _seat_cast(root: Path) -> tuple[dict[str, str | None], dict[str, str] | None
 
 def _resolve_claim(words: list[str], names: list[str]) -> str | None:
     """The cast name a claim's words name: a full name running in them first, else a first
-    name among them."""
+    name among them that ends the run or is followed by that person's own surname, so `Maya`
+    names Maya Okafor and `Maya Smith` names nobody."""
     joined = " ".join(words)
-    return (next((n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", joined)), None)
-            or next((n for n in names if n.split()[0] in words), None))
+    full = next((n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", joined)), None)
+    if full:
+        return full
+    for n in names:
+        first, *rest = n.split()
+        if any(w == first and (i + 1 == len(words) or rest[:1] == words[i + 1:i + 2])
+               for i, w in enumerate(words)):
+            return n
+    return None
 
 
 def _seat_persona_findings(path: Path, text: str, cast: tuple[dict, dict | None]) -> list[dict]:
     """A warning for each claim on a seat card naming a persona the cast does not declare
     (`seat-persona-unknown`) or declares in another role (`seat-persona-role`), at the line its
-    name starts. The declared role is the registry's, and the card's Cast role only when there is
-    no registry to read. HTML comments are read; fenced code is not."""
+    name starts. The declared role is the registry's, and the card's Cast role when the registry
+    does not name them or there is none to read. HTML comments are read; fenced code is not."""
     cards, registry = cast
     names = list(dict.fromkeys([*(registry or {}), *cards]))
     fence = None
@@ -1652,13 +1676,15 @@ def _seat_persona_findings(path: Path, text: str, cast: tuple[dict, dict | None]
         lineno = body.count("\n", 0, at) + 1
         where = f"line {lineno} (`{lines[lineno - 1].strip()}`)"
         who = _resolve_claim(words, names)
+        if who is None and not _reads_as_name(words, m, leading):
+            continue
         if who is None:
             out.append({"severity": "warning", "rule": "seat-persona-unknown", "file": str(path),
                         "line": lineno,
                         "message": f"{where} calls {' '.join(words)} the {claimed.capitalize()} "
                                    "persona, but no persona card or registry entry names them"})
             continue
-        declared, source = ((registry.get(who), "personas/index.md") if registry is not None
+        declared, source = ((registry[who], "personas/index.md") if who in (registry or {})
                             else (cards.get(who), f"{who}'s card Cast role"))
         if declared and declared != claimed:
             out.append({"severity": "warning", "rule": "seat-persona-role", "file": str(path),
@@ -1810,6 +1836,14 @@ def check_seats(root: Path, require_stamp: list[Path] | None = None) -> list[dic
     return out
 
 
+def _standard_label(rule: str) -> str:
+    """` (blocks resolve)` beside a rule the persona standard's table marks as blocking. Read
+    from `persona_review.RULES`, so validate holds no list of its own; its severity words and
+    exit codes stay its own."""
+    import persona_review  # noqa: PLC0415 - deferred: persona_review imports validate
+    return " (blocks resolve)" if persona_review.blocks(rule) else ""
+
+
 def cmd_seats(args: argparse.Namespace) -> int:
     """Error-level seat-card check; exits 1 on any error (the generation flow's floor)."""
     required = [Path(f) for f in (getattr(args, "require_stamp", None) or [])]
@@ -1821,7 +1855,8 @@ def cmd_seats(args: argparse.Namespace) -> int:
                                       "warnings": len(violations) - errors}}, indent=2))
     else:
         for v in violations:
-            print(f"{v['severity'].upper():7} [{v['rule']}] {v['file']}: {v['message']}")
+            print(f"{v['severity'].upper():7} [{v['rule']}]{_standard_label(v['rule'])} "
+                  f"{v['file']}: {v['message']}")
         print(f"seats: errors={errors} warnings={len(violations) - errors}")
     return 1 if errors else 0
 
@@ -1837,7 +1872,8 @@ def cmd_personas(args: argparse.Namespace) -> int:
                                       "warnings": len(violations) - errors}}, indent=2))
     else:
         for v in violations:
-            print(f"{v['severity'].upper():7} {v['file']}: [{v['rule']}] {v['message']}")
+            print(f"{v['severity'].upper():7} {v['file']}: [{v['rule']}]"
+                  f"{_standard_label(v['rule'])} {v['message']}")
         print("personas look well-formed." if not violations
               else f"errors={errors} warnings={len(violations) - errors}")
     return 1 if errors else 0  # advisory except the same-Interface duplicate Primary

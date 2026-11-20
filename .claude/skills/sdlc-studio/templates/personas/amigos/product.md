@@ -96,7 +96,12 @@ asked for, each defended by someone in the room.
 ## Scenario
 
 A "default list for first-time users" story is proposed with five acceptance criteria. Lena checks it
-against the Primary persona, Sam the new shopper, whose End goal is "add my first item in seconds."
-Four ACs serve that; the fifth - a configurable default-list naming scheme - serves no persona. She
-cuts it to a follow-up, sharpens AC1 to "first run lands on a usable list with a visible add box",
-and marks the story Ready against Sam's goal.
+against the End goal of the Primary for that interface, a new shopper who wants to "add my first item
+in seconds." Four ACs serve that; the fifth - a configurable default-list naming scheme - serves no
+persona. She cuts it to a follow-up, sharpens AC1 to "first run lands on a usable list with a visible
+add box", and marks the story Ready against that goal.
+
+## Evidence
+
+- LL0007 - plan from the value a story delivers to a user's goal, not from its bare priority
+- LL0013 - an acceptance criterion that enumerates what it checks silently exempts what it forgot

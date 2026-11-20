@@ -220,6 +220,7 @@ lists every script with a one-line summary; open the linked page for the full en
   `to-class` turns a confirmed escape's written Root Cause into a failure class in
   `sdlc-studio/lessons.jsonl` through `lessons.py class-add`, carrying the bug's Affects as `files`
 - `persona_memory.py` - Keeps each persona's evidenced learnings in a committed memory file beside its card: `add`, `list`, `recall`.
+- `persona_review.py` - Holds every persona and seat card to the persona standard (`best-practices/persona.md`): `check` reports each rule as blocks or reported from one table, exiting 1 on a block.
 
 ### Upgrade, deploy & version - [reference-scripts-upgrade.md](reference-scripts-upgrade.md)
 

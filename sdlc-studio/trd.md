@@ -1329,9 +1329,10 @@ seat proposes a learning in its own words from a brief carrying its record (US10
 seat approves or rejects each proposed learning (US1066), the close lists every learning about
 to go live on the retro (US1067) and a learning reaches a brief only once the run is signed,
 one the operator strikes at the signature never doing so (US1068). `persona_gen.py` still holds a
-card to no review standard.
-**Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning)
-and `persona_review.py` (US1052).
+card to no review standard; `persona_review.py` (US1052) does, reporting each persona and seat
+card against `best-practices/persona.md` rule by rule, each rule blocking or reported.
+**Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning),
+and the refusal to frame a brief from a card that breaks a blocking rule (US1055).
 
 **Consequences:**
 
@@ -1536,6 +1537,7 @@ touches the component. The constraints below span components.
 | 2026-11-18 | 6.4.0 | US1293: ADR-013 records D0503 (RFC0065): a closed run waits for the operator's signature and the next run opens on top of it, and a delegated signature records its authorising decision and is disclosed in the signature block, the report and the evidence pack. §6's run lifecycle plan row no longer says the plan refuses while a record awaits its signature |
 | 2026-11-19 | 6.4.0 | BG1516: §7 gains the headless lane runner and its five harnesses, and §5 and §9 gain the agent CLI it spawns. BG1517: §5 and §9 say `SDLC_VERIFY_HTTP_HOSTS` is unset by default and bounds the `http` verb only, and §9 gains the Verify-line shell row. BG1529: §8 and §10 drop the sub-second claim for the census and give measured figures. BG1530: ADR-012's Status and Built so far name approval (US1066), the close's listing (US1067) and the signed-close gate (US1068) as built. BG1531: `critic brief`, `gate` and `review_prep close` leave every read-only list. BG1533: ADR-001 and ADR-005 stop calling `validate.py instructions` enforcement |
 | 2026-11-19 | 6.4.0 | BG1516: the lane runner's network row says a timed-out lane is recorded unmetered, and Headless lane runner and its threat row say nothing in the runner stops a lane committing, pushing or writing outside its worktree. BG1531: rule 5 names every meta index `review_prep.py close` backfills through `reconcile.apply_meta`. BG1096: the coverage clause gives the run's exit 2 and names the Done gate as the block/report split. BG1556: §6 lists the decision log and the per-tranche ledgers, and rule 5 names `decisions.py` and `ledger.py` each with its own store. BG1557: System Context names every external service, the C4 note and the install table give paths that exist, and §10 and §12 cite 21 units with 19 measured and the build-only condition. BG1565: ADR-012's Built so far names US1065 beside US1058, US1059 and US1066 to US1068, as 6.4.0 ships them. BG1621: §6 lists the author mutant lists. US1299: ADR-014 records D0505, §9 gains the PyYAML threat row, and no section calls the scripts standard library only |
+| 2026-11-20 | 6.4.0 | US1052: ADR-012's Built so far names `persona_review.py` and the persona standard it reports cards against, and Not yet built keeps the memory directory and names the refusal of a card that breaks a blocking rule (US1055) |
 
 ---
 

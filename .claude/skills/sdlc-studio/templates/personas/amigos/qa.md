@@ -91,3 +91,8 @@ A "clear checked items" story arrives marked green. Sam re-reads the canonical A
 "idempotent: clearing an empty list is a safe no-op" - has a test that only ran on a populated list.
 They add the empty-list case, watch it fail (the handler threw), hand it back to Engineering, and
 only mark coverage complete once the oracle returns green on all eight ACs.
+
+## Evidence
+
+- LL0023 - a gate that checks an artefact exists, not what is in it, is satisfied by touch
+- LL0043 - an enumeration of a rule is a lower bound, not a boundary

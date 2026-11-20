@@ -1803,7 +1803,7 @@ class TrdBuiltStateTests(unittest.TestCase):
         """AC2. Mutants: ADR-012 calling a Done loop story open or not yet built; the check
         reading no claim (the Not yet built story is its premise)."""
         body = _trd_body()
-        self.assertIn("US1052", _stories_called_unbuilt(body), "premise: the claims were read")
+        self.assertIn("US1055", _stories_called_unbuilt(body), "premise: the claims were read")
         self.assertEqual([], _done_stories_called_unbuilt(body, self.STORIES))
 
     def test_a_done_story_called_open_is_reported_and_a_draft_one_passes(self) -> None:

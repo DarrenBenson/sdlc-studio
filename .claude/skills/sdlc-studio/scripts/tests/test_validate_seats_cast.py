@@ -3,7 +3,8 @@ declares in a different role than the card claims.
 
 A claim is read over whitespace-joined text (a wrapped sentence counts), reported at the line
 where the name starts, and judged against the registry's declared role, falling back to the
-persona card's Cast role only when there is no registry. Warnings only: the seat check's errors
+persona card's Cast role when the registry does not name them or there is none. A word that
+opens a clause, asks a question or abbreviates is no name. Warnings only: the seat check's errors
 are the team-generation floor, and a persona claim never fails it.
 
 Driven through `validate.main`, the shipped entry point, in throwaway trees.
@@ -181,14 +182,17 @@ class SeatCastTests(unittest.TestCase):
 class ShippedCardTests(unittest.TestCase):
 
     def test_shipped_amigo_cards_read_without_false_positives(self) -> None:
-        """Mutants: a pattern tuned to these fixtures that misreads the shipped cards' prose,
-        either way: a false warning against a cast that has Sam, or none against one that
-        does not."""
+        """The shipped cards name no cast member, so a project copying them into its own
+        `personas/seats/` draws no persona warning whatever its cast. Mutants: a pattern tuned
+        to these fixtures that misreads the shipped cards' prose as a claim; a worked example
+        naming a persona."""
         cards = sorted(AMIGOS.glob("*.md"))
         self.assertEqual([p.name for p in cards], ["engineering.md", "product.md", "qa.md"])
         for cast, registry in (({"Sam Patel": "Primary"}, {"Primary": ["Sam Patel"]}),
-                               ({"Sam Patel": "Primary"}, None)):
-            with self.subTest(registry=registry is not None), \
+                               ({"Sam Patel": "Primary"}, None),
+                               ({"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]}),
+                               ({}, None)):
+            with self.subTest(cast=sorted(cast), registry=registry is not None), \
                     tempfile.TemporaryDirectory() as d:
                 root = Path(d)
                 _personas(root, cast, registry)
@@ -197,19 +201,79 @@ class ShippedCardTests(unittest.TestCase):
                 for p in cards:
                     shutil.copy(p, sdir / p.name)
                 self.assertEqual(_seats(root)[1], [])
+
+
+class SeatClaimNameTests(unittest.TestCase):
+    """A claim's name is a cast member's, or a capitalised name the cast lacks; a word that
+    opens a clause, asks a question or abbreviates is no name."""
+
+    def test_a_word_after_the_role_that_is_no_name_is_not_read_as_one(self) -> None:
+        """AC1. Mutants: a stop list of the criterion's three words, so another question word
+        (`Does`), another acronym (`API`) or another word opening a clause after a colon
+        (`Everything`) is still read as a name; no name read at all (the Zed Quill control)."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _personas(root, {"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]})
-            sdir = root / "sdlc-studio" / "personas" / "seats"
-            sdir.mkdir(parents=True)
-            for p in cards:
-                shutil.copy(p, sdir / p.name)
-            found = _seats(root)[1]
-            product = sdir / "product.md"
+            _seat(root, "product", "Lena Park", lens=(
+                "- Ask the Primary persona: Is it simpler?\n"
+                "- Meet the Primary persona: When they arrive, the list is ready.\n"
+                "- Serve the CLI (Primary) before the web UI.\n"
+                "- Ask the Primary persona, Does it hold up offline?\n"
+                "- Ship the API (Primary) first.\n"
+                "- Weigh the Primary persona: Everything else waits."))
+            self.assertEqual(_seats(root), (0, []))
+            card = _seat(root, "qa", "Sam Eriksson",
+                         lens="- Would the Primary persona, Zed Quill, approve?")
+            rc, found = _seats(root)
+            self.assertEqual(rc, 0)
             self.assertEqual([(f["rule"], Path(f["file"]).name, f["line"]) for f in found],
-                             [("seat-persona-unknown", "product.md",
-                               _line_of(product, "Primary persona, Sam"))], found)
-            self.assertIn("Sam", found[0]["message"])
+                             [("seat-persona-unknown", card.name, _line_of(card, "Zed Quill"))])
+            self.assertIn("Zed Quill", found[0]["message"])
+
+    def test_a_first_name_with_the_wrong_surname_is_unknown(self) -> None:
+        """AC2. Mutants: any first-name match passing whatever surname follows; a bare first
+        name or the full name no longer resolving."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _personas(root, {"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]})
+            card = _seat(root, "product", "Lena Park",
+                         lens="- Judge it as the Primary persona is Maya Smith would.")
+            rc, found = _seats(root)
+            self.assertEqual(rc, 0)
+            self.assertEqual([(f["rule"], f["line"]) for f in found],
+                             [("seat-persona-unknown", _line_of(card, "Maya Smith"))])
+            self.assertIn("Maya Smith", found[0]["message"])
+            for named in ("Maya", "Maya Okafor"):
+                with self.subTest(named=named):
+                    card.write_text(card.read_text(encoding="utf-8").replace(
+                        "is Maya Smith", f"is {named}").replace("is Maya Okafor", f"is {named}"),
+                        encoding="utf-8")
+                    self.assertEqual(_seats(root), (0, []))
+
+    def test_a_card_the_registry_omits_is_role_checked_against_its_card(self) -> None:
+        """AC3. Mutants: a name the registry omits skipping the role check; the omitted
+        name's card role read for a name the registry does declare."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _personas(root, {"Maya Okafor": "Primary", "Hana Ito": "Primary"},
+                      {"Secondary": ["Maya Okafor"]})
+            card = _seat(root, "ux", "Uma Reed",
+                         lens="- Serve the Secondary persona, Hana, after the rest.")
+            rc, found = _seats(root)
+            self.assertEqual(rc, 0)
+            self.assertEqual([(f["rule"], f["line"]) for f in found],
+                             [("seat-persona-role", _line_of(card, "persona, Hana"))])
+            for role in ("Hana Ito", "Primary", "Secondary"):
+                self.assertIn(role, found[0]["message"])
+            # Maya's card says Primary, but the registry, which declares her, wins.
+            card.write_text(card.read_text(encoding="utf-8").replace(
+                "Secondary persona, Hana", "Secondary persona, Maya"), encoding="utf-8")
+            self.assertEqual(_seats(root), (0, []))
+            # A cast member whose name is also a question word is read as the cast member.
+            _personas(root, {"Will Ito": "Primary"}, None)
+            card.write_text(card.read_text(encoding="utf-8").replace(
+                "persona, Maya", "persona, Will"), encoding="utf-8")
+            self.assertEqual([f["rule"] for f in _seats(root)[1]], ["seat-persona-role"])
 
 
 if __name__ == "__main__":

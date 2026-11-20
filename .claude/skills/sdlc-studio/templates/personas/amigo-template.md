@@ -107,3 +107,11 @@ reverts to the base model's agreeableness; naming the failure mode keeps the pre
 outcome.*
 
 {{One short paragraph.}}
+
+## Evidence
+
+*What grounds this card - each id resolves to an artefact, a decisions row or a lesson; a review
+checks every claim above against them.*
+
+- {{e.g. the lesson this seat's Pushes Back When was learned from, by id}}
+- {{e.g. the decision that gave this seat its authority, by id}}
