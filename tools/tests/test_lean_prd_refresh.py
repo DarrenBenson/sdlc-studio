@@ -1169,13 +1169,26 @@ def network_scripts(sources: dict[str, str]) -> dict[str, set[str]]:
 #: A sentence's word for fetching, and the negation that says a thing does not (BG1180).
 _FETCH_RE = re.compile(r"\bfetch(?:es|ed|ing)?\b", re.I)
 _NO_FETCH_RE = re.compile(r"\b(?:never|not|no|without)\s+(?:\w+\s+)?fetch", re.I)
+#: A passage on the fetch the origin-drift check makes, and what it must not say of a failed one:
+#: the fetch at the plan's preflight and at each boundary marks the comparison unverified, which
+#: `--strict` refuses on, so it is neither ignored nor best-effort.
+_DRIFT_FETCH_RE = re.compile(r"`git fetch origin`|\bfetch\w*\b.*`sprint boundary`", re.I)
+_FAILURE_RE = re.compile(r"\bfail(?:s|ed|ure|ing)?\b", re.I)
+_HARMLESS_RE = re.compile(r"\bbest[- ]effort\b|\bignor(?:e|ed|es)\b|\bswallow\w*", re.I)
+
+
+def passages(prd: str) -> list[str]:
+    """The PRD above its Changelog as paragraphs, list items and table rows, each folded."""
+    text = prd.split("\n## Changelog", 1)[0]
+    return [flat(p) for p in re.split(r"\n\s*\n|\n(?=\s*(?:[-*] |\||#))", text) if p.strip()]
 
 
 def network_problems(prd: str, sources: dict[str, str]) -> list[str]:
     """Why the Security NFR's list of scripts that reach the network differs from the scripts
     whose source makes a network call, or why any sentence of the PRD says id allocation fetches
-    when `next_id.py` makes no fetch (or that it never does, when it makes one); empty when
-    they agree."""
+    when `next_id.py` makes no fetch (or that it never does, when it makes one), or why a
+    passage on the origin-drift fetch calls a failed fetch ignored or best-effort, or names its
+    failure without saying it leaves the comparison unverified; empty when they agree."""
     security = section(prd, "### Security")
     found = set().union(*network_scripts(sources).values())
     named = set(re.findall(r"`([a-z_]+\.py)`", security))
@@ -1188,6 +1201,11 @@ def network_problems(prd: str, sources: dict[str, str]) -> list[str]:
         if re.search(r"\bid allocation\b", sentence, re.I) and _FETCH_RE.search(sentence) and \
                 (not _NO_FETCH_RE.search(sentence)) != fetches:
             problems.append(f"the PRD misstates whether id allocation fetches: {sentence!r}")
+    for passage in passages(prd):
+        if _DRIFT_FETCH_RE.search(passage) and (_HARMLESS_RE.search(passage) or (
+                _FAILURE_RE.search(passage) and not re.search(r"\bunverified\b", passage, re.I))):
+            problems.append("the PRD says a failed origin fetch is harmless, when it marks the "
+                            f"drift comparison unverified: {passage!r}")
     return problems
 
 
@@ -1522,6 +1540,25 @@ class PrdRulesTests(unittest.TestCase):
                                                         "first."), self.sources)
         self.assertEqual(1, len(section8), section8)
         self.assertIn("misstates whether id allocation fetches", section8[0])
+        # a failed origin fetch is not harmless: it marks the comparison unverified (BG1180)
+        bullet = ("(skipped with no remote; a failed fetch marks the\n  comparison unverified, "
+                  "and under `--strict` the plan is refused or the run stops).")
+        self.assertIn(bullet, self.prd)
+        for new in ("(best-effort; failure ignored, skipped with no remote).",
+                    "(best-effort, skipped with no remote).",
+                    "(skipped with no remote; a failed fetch leaves the plan as it was)."):
+            harmless = network_problems(self.mutate(bullet, new), self.sources)
+            self.assertEqual(1, len(harmless), (new, harmless))
+            self.assertIn("a failed origin fetch is harmless", harmless[0])
+        unnamed = self.mutate(bullet, "(best-effort, skipped with no remote).").replace(
+            "(`git fetch origin`) in `sprint plan`", "(a fetch from origin) in `sprint plan`", 1)
+        self.assertEqual(1, len(network_problems(unnamed, self.sources)))
+        security = "where a failed fetch marks the comparison\n  unverified rather than up to date;"
+        self.assertIn(security, self.prd)
+        nfr = network_problems(self.mutate(security, "where a failed fetch is skipped;"),
+                               self.sources)
+        self.assertEqual(1, len(nfr), nfr)
+        self.assertIn("a failed origin fetch is harmless", nfr[0])
         # a script given a network call the PRD does not list fails the check (BG1162 AC1)
         for call, kind in (('subprocess.run(["git", "ls-remote", "origin"])\n', "git-verb"),
                            ('subprocess.run(("gh", "api", "repos"))\n', "gh"),
@@ -1714,17 +1751,57 @@ class PrdRulesTests(unittest.TestCase):
 
 DEFAULTS = SKILL / "templates" / "config-defaults.yaml"
 REFERENCE_CONFIG = SKILL / "reference-config.md"
-#: Each gate-bearing key that ships off or advisory, with where its off value is written and the
-#: pattern that finds it there (BG1525). `quality.require_full_sections` is documented in the
-#: reference, whose example block holds it; the defaults file holds the other five.
-GATE_KEYS_OFF = {
-    "review.line_coverage": (DEFAULTS, r"^  line_coverage: off\b"),
-    "review.author_self_check": (DEFAULTS, r"^  author_self_check: report\b"),
-    "require_ac_verification": (DEFAULTS, r"^require_ac_verification: false\b"),
-    "constitution.enforce": (DEFAULTS, r"^constitution:\s*\n(?:\s*#[^\n]*\n)*  enforce: false\b"),
-    "two_backlog.enforce": (DEFAULTS, r"^two_backlog:\s*\n(?:\s*#[^\n]*\n)*  enforce: false\b"),
-    "quality.require_full_sections": (REFERENCE_CONFIG, r"^  require_full_sections: false\b"),
-}
+#: The keys the incremental-adoption account has always named, and the three the defaults file
+#: ships advisory beside them: what `gate_keys_off` must find, so it is not vacuous.
+NAMED_GATE_KEYS = ("review.line_coverage", "review.author_self_check", "require_ac_verification",
+                   "constitution.enforce", "two_backlog.enforce", "quality.require_full_sections",
+                   "provenance.enforce", "sprint.affects_check", "sprint.fresh_session")
+_BLOCKING_VALUES = ("block", "enforce", "true")
+_KEY_LINE_RE = re.compile(r"^( *)([a-z_]+):(?:[ \t]+([^#\s][^#]*?))?[ \t]*(?:#[ \t]*(.*))?$")
+_OFF_FALLBACK_RE = re.compile(r"(?:project_override|config\.get)\(\s*[^,()]+,\s*\"([a-z_.]+)\",\s*False\b")
+
+
+def _is_gate_name(key: str) -> bool:
+    """Whether `key` names a switch by the defaults file's convention: `enforce`, `require_*`."""
+    leaf = key.rsplit(".", 1)[-1]
+    return leaf == "enforce" or leaf.startswith("require_")
+
+
+def gate_keys_off(defaults: str, sources: dict[str, str]) -> dict[str, str]:
+    """Each gate-bearing key that ships off or advisory, with the value it ships. From `defaults`
+    (the defaults file's text): a key named `enforce` or `require_*` that ships `false`, or one
+    whose modes (its inline `# a | b` comment, or the indented `#   mode` lines directly above
+    it) include `block` or `enforce` and that ships another. From `sources` (the scripts): a
+    key named the same way that a script reads with a `False` fallback and the defaults file
+    does not hold."""
+    keys: dict[str, str] = {}
+    parent, comments = None, []
+    for line in defaults.splitlines():
+        if line.lstrip().startswith("#"):
+            comments.append(line)
+            continue
+        m = _KEY_LINE_RE.match(line)
+        if m:
+            indent, name, value, note = m.groups()
+            if not indent:
+                parent = None if value else name
+            key = f"{parent}.{name}" if indent and parent else name
+            if value:
+                modes = set(re.findall(r"\w+", note.split(" - ")[0])) if note and "|" in note \
+                    else set()
+                modes |= {w for c in comments for w in re.findall(r"^\s*#\s{2,}(\w+)", c)}
+                if (_is_gate_name(key) or modes & {"block", "enforce"}) \
+                        and value not in _BLOCKING_VALUES:
+                    keys[key] = value
+        comments = []
+    for source in sources.values():
+        for key in _OFF_FALLBACK_RE.findall(source):
+            if _is_gate_name(key) and not re.search(rf"^ *{re.escape(key.rsplit('.', 1)[-1])}:",
+                                                    defaults, re.M):
+                keys.setdefault(key, "false")
+    return keys
+
+
 #: A sentence that makes `two_backlog.enforce` the only gate-bearing key that ships off.
 _SINGLE_EXCEPTION_RE = re.compile(r"\b(?:the one|the only|one deliberate|single) "
                                   r"(?:deliberate )?(?:exception|gate-bearing key)\b|"
@@ -1736,14 +1813,15 @@ def flag_intro(prd: str) -> str:
     return flat(section(prd, "### Feature Flags").split("\n| Key", 1)[0])
 
 
-def flag_intro_problems(prd: str) -> list[str]:
-    """Why section 9's Feature Flags introduction names fewer default-off gate keys than
-    `GATE_KEYS_OFF`, gives one no reason, or still calls one the single exception."""
+def flag_intro_problems(prd: str, keys) -> list[str]:
+    """Why section 9's Feature Flags introduction names fewer of the gate keys `keys` (those
+    `gate_keys_off` finds) than there are, gives one no reason, or still calls one the single
+    exception."""
     intro = flag_intro(prd)
-    problems = [f"the introduction does not name `{key}`" for key in GATE_KEYS_OFF
+    problems = [f"the introduction does not name `{key}`" for key in keys
                 if f"`{key}`" not in intro]
     problems += [f"the introduction gives `{key}` no incremental-adoption reason"
-                 for key in GATE_KEYS_OFF
+                 for key in keys
                  if re.search(rf"`{re.escape(key)}` \(`[^`]+`: [^)]{{12,}}\)", intro) is None]
     if _SINGLE_EXCEPTION_RE.search(intro):
         problems.append("the introduction still calls one key the single exception")
@@ -1757,35 +1835,57 @@ class PrdFlagDefaultsTests(unittest.TestCase):
         self.prd = PRD.read_text(encoding="utf-8")
 
     def test_section_9_names_every_gate_key_that_ships_off(self):
-        """BG1525 AC1. Mutants: one key dropped from the introduction; one named without its
-        reason; the single-exception sentence put back."""
-        for key, (path, pattern) in GATE_KEYS_OFF.items():
-            self.assertRegex(path.read_text(encoding="utf-8"), re.compile(pattern, re.M),
-                             f"{path.name} does not hold {key} off")
-        self.assertEqual([], flag_intro_problems(self.prd))
+        """BG1525 AC1. The keys are read from the defaults file and the scripts, not kept by
+        hand. Mutants: the defaults file shipping `sprint.breakdown` as `judgement`, or adding a
+        block whose `enforce` is false; a script reading `quality.require_full_sections` on;
+        one key dropped from the introduction; one named without its reason; the single-
+        exception sentence put back."""
+        defaults = DEFAULTS.read_text(encoding="utf-8")
+        sources = script_sources()
+        off = gate_keys_off(defaults, sources)
+        self.assertEqual(set(NAMED_GATE_KEYS), set(NAMED_GATE_KEYS) & set(off), off)
+        self.assertEqual([], flag_intro_problems(self.prd, off))
+        for old, new, key in (
+                ("  breakdown: enforce ", "  breakdown: judgement ", "sprint.breakdown"),
+                ("\nconstitution:\n  enforce: false\n", "\nconstitution:\n  enforce: false\n\n"
+                 "lint_gate:\n  enforce: false\n", "lint_gate.enforce")):
+            self.assertIn(old, defaults)
+            grown = gate_keys_off(defaults.replace(old, new, 1), sources)
+            self.assertEqual({key}, set(grown) - set(off), key)
+            self.assertEqual([f"the introduction does not name `{key}`",
+                              f"the introduction gives `{key}` no incremental-adoption reason"],
+                             flag_intro_problems(self.prd, grown), key)
+        on = {**sources, "tiers.py": sources["tiers.py"].replace(
+            '"quality.require_full_sections", False)', '"quality.require_full_sections", True)')}
+        self.assertNotEqual(on, sources)
+        self.assertEqual({"quality.require_full_sections"},
+                         set(off) - set(gate_keys_off(defaults, on)))
         intro = section(self.prd, "### Feature Flags")
-        for key in GATE_KEYS_OFF:
+        for key in off:
             mutant = self.prd.replace(intro, intro.replace(f"`{key}`", "a key", 1), 1)
             self.assertEqual([f"the introduction does not name `{key}`",
                               f"the introduction gives `{key}` no incremental-adoption reason"],
-                             flag_intro_problems(mutant), key)
+                             flag_intro_problems(mutant, off), key)
         bare = self.prd.replace("`constitution.enforce` (`false`: a violation is advisory "
                                 "until the project opts in)", "`constitution.enforce`", 1)
         self.assertEqual(["the introduction gives `constitution.enforce` no incremental-"
-                          "adoption reason"], flag_intro_problems(bare))
+                          "adoption reason"], flag_intro_problems(bare, off))
         old = ("The one deliberate exception is `two_backlog.enforce`, which defaults **OFF**")
         put_back = flag_intro_problems(self.prd.replace(
-            "Six ship **OFF** or advisory", old, 1))
+            "Nine ship **OFF** or advisory", old, 1), off)
         self.assertEqual(["the introduction still calls one key the single exception"],
                          put_back)
 
     def test_reference_config_does_not_claim_a_single_exception(self):
-        """BG1525 AC2. Mutants: the old row and sentence put back."""
+        """BG1525 AC2. Mutants: the old row and sentence put back; a key the defaults file ships
+        advisory left out of the rule's list."""
         text = REFERENCE_CONFIG.read_text(encoding="utf-8")
         self.assertIsNone(_SINGLE_EXCEPTION_RE.search(text))
         self.assertNotIn("the one gate-bearing key", text)
         rule = section(text, "## Two-Backlog Enforcement {#two-backlog}")
-        for key in GATE_KEYS_OFF:
+        off = gate_keys_off(DEFAULTS.read_text(encoding="utf-8"), script_sources())
+        self.assertEqual(set(NAMED_GATE_KEYS), set(NAMED_GATE_KEYS) & set(off), off)
+        for key in off:
             self.assertIn(f"`{key}`", rule, key)
         old_row = "Deliberately OFF - the one gate-bearing key whose absence does not block"
         self.assertIsNotNone(_SINGLE_EXCEPTION_RE.search(old_row))
@@ -1854,6 +1954,11 @@ _ENV_NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,}$")
 _NOT_A_SCRIPT_READ_RE = re.compile(r"\bthe harness sets\b|\bread by the installer\b", re.I)
 
 
+#: The environment reads whose key the collector cannot resolve, each with the rule that
+#: collects the names it reads; any other unresolved read fails the table's test.
+_INDIRECT_READS = {"token_meters.py: env.get(v)": "the names a `SIGNALS` table lists"}
+
+
 def _is_env_expr(node: ast.AST) -> bool:
     """Whether `node` is an environment mapping: `os.environ`, `env`, `self.env`, `child_env`."""
     while isinstance(node, ast.Attribute):
@@ -1864,28 +1969,135 @@ def _is_env_expr(node: ast.AST) -> bool:
                                            or node.id.endswith("_env"))
 
 
-def env_variables(sources: dict[str, str]) -> set[str]:
-    """Every environment variable name the shipped scripts and their lib folder read: a `get` or
-    subscript on an environment mapping, an `in` test against one, a module constant whose name
-    ends `_ENV`, and the names a `SIGNALS` table lists."""
+def _literal_strings(node: ast.AST) -> set[str]:
+    """The strings a constant's value holds when it is a literal: a string, a tuple, list, set or
+    mapping of them, or one passed to `tuple`, `frozenset`, `set` or `list`."""
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+            and node.func.id in ("tuple", "frozenset", "set", "list") and node.args:
+        node = node.args[0]
+    if not isinstance(node, (ast.Constant, ast.Tuple, ast.List, ast.Set, ast.Dict)):
+        return set()
+    return {n.value for n in ast.walk(node)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+
+
+def _constants(walked: dict[str, list[ast.AST]]) -> dict[str, set[str]]:
+    """Each module- or class-level name bound to a literal string or collection of strings in
+    the shipped sources (`walked`: each source's nodes), with the strings it holds: what a key
+    named by a constant can be."""
+    table: dict[str, set[str]] = {}
+    for nodes in walked.values():
+        for scope in nodes:
+            if isinstance(scope, (ast.Module, ast.ClassDef)):
+                for stmt in scope.body:
+                    if isinstance(stmt, (ast.Assign, ast.AnnAssign)) and stmt.value is not None:
+                        for target in (stmt.targets if isinstance(stmt, ast.Assign)
+                                       else [stmt.target]):
+                            if isinstance(target, ast.Name):
+                                table.setdefault(target.id, set()).update(
+                                    _literal_strings(stmt.value))
+    return table
+
+
+def _key_names(key: ast.AST, constants: dict[str, set[str]],
+               bound: dict[str, set[str]]) -> set[str]:
+    """The names an environment read's key can be: a string literal, the strings of the constant
+    it names (by name, or by attribute from another module), or what `bound` says a loop
+    variable or a parameter is bound to; a collection, a subscript, `.items()` and the like are
+    read through to what they hold."""
+    if isinstance(key, ast.Constant):
+        return {key.value} if isinstance(key.value, str) else set()
+    if isinstance(key, ast.Name):
+        return bound.get(key.id) or constants.get(key.id, set())
+    if isinstance(key, ast.Attribute):
+        return constants.get(key.attr, set())
+    if isinstance(key, ast.Subscript):
+        return _key_names(key.value, constants, bound)
+    if isinstance(key, ast.Call) and isinstance(key.func, ast.Attribute) \
+            and key.func.attr in ("items", "keys", "values"):
+        return _key_names(key.func.value, constants, bound)
+    if isinstance(key, ast.Call) and isinstance(key.func, ast.Name) and key.args \
+            and key.func.id in ("sorted", "list", "tuple", "set", "frozenset"):
+        return _key_names(key.args[0], constants, bound)
+    parts = key.elts if isinstance(key, (ast.Tuple, ast.List, ast.Set)) else \
+        key.values if isinstance(key, ast.BoolOp) else []
+    return set().union(*(_key_names(p, constants, {}) for p in parts))
+
+
+def _bound_names(nodes: list[ast.AST], constants: dict[str, set[str]]) -> dict[str, set[str]]:
+    """What each loop variable and each parameter in one source (`nodes`, its tree walked) can
+    hold: a `for` or comprehension target, the strings its iterable resolves to; a function's
+    parameter, the strings the arguments its callers in the same source pass it resolve to."""
+    bound: dict[str, set[str]] = {}
+    for node in nodes:
+        if isinstance(node, (ast.For, ast.comprehension)):
+            names = _key_names(node.iter, constants, {})
+            for target in ast.walk(node.target):
+                if isinstance(target, ast.Name) and names:
+                    bound.setdefault(target.id, set()).update(names)
+    calls: dict[str, list[ast.Call]] = {}
+    for call in (n for n in nodes if isinstance(n, ast.Call)):
+        called = call.func.id if isinstance(call.func, ast.Name) else \
+            call.func.attr if isinstance(call.func, ast.Attribute) else None
+        calls.setdefault(called, []).append(call)
+    for func in nodes:
+        if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        params = [a.arg for a in func.args.posonlyargs + func.args.args]
+        for call in calls.get(func.name, ()):
+            offset = 1 if params[:1] in (["self"], ["cls"]) else 0
+            for i, arg in enumerate(call.args):
+                if i + offset < len(params):
+                    names = _key_names(arg, constants, {})
+                    if names:
+                        bound.setdefault(params[i + offset], set()).update(names)
+            for kw in call.keywords:
+                names = _key_names(kw.value, constants, {}) if kw.arg in params else set()
+                if names:
+                    bound.setdefault(kw.arg, set()).update(names)
+    return bound
+
+
+def _env_key(node: ast.AST) -> ast.AST | None:
+    """The key of an environment read, or None when `node` is not one: a `get` or `getenv`
+    call, a subscript load on an environment mapping, or an `in` test against one."""
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+            and node.func.attr in ("get", "getenv") and node.args \
+            and (node.func.attr == "getenv" or _is_env_expr(node.func.value)):
+        return node.args[0]
+    if isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) \
+            and _is_env_expr(node.value):
+        return node.slice
+    if isinstance(node, ast.Compare) and any(isinstance(o, (ast.In, ast.NotIn)) for o in node.ops) \
+            and any(_is_env_expr(c) for c in node.comparators):
+        return node.left
+    return None
+
+
+def env_reads(sources: dict[str, str]) -> tuple[set[str], list[str]]:
+    """Every environment variable name the shipped scripts and their lib folder read, and each
+    read whose key resolves to no such name. A read is a `get` or subscript on an environment
+    mapping or an `in` test against one; its key is a literal, a constant, a loop variable over
+    constants or a parameter its callers pass a constant, each resolved to the names it can be.
+    A module constant whose name ends `_ENV`, and the names a `SIGNALS` table lists, are read
+    too. An unresolved read is named `file: expression`, so a new indirection is reported, not
+    passed over."""
+    walked = {file: list(ast.walk(ast.parse(source))) for file, source in sources.items()}
+    constants = _constants(walked)
     names: set[str] = set()
-    for source in sources.values():
-        tree = ast.parse(source)
-        for node in ast.walk(tree):
-            literal = None
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
-                    and node.func.attr in ("get", "getenv") and node.args \
-                    and (node.func.attr == "getenv" or _is_env_expr(node.func.value)):
-                literal = node.args[0]
-            elif isinstance(node, ast.Subscript) and isinstance(node.ctx, ast.Load) \
-                    and _is_env_expr(node.value):
-                literal = node.slice
-            elif isinstance(node, ast.Compare) and any(isinstance(o, (ast.In, ast.NotIn))
-                                                       for o in node.ops) \
-                    and any(_is_env_expr(c) for c in node.comparators):
-                literal = node.left
-            if isinstance(literal, ast.Constant) and isinstance(literal.value, str):
-                names.add(literal.value)
+    unresolved: list[str] = []
+    for file, nodes in walked.items():
+        tree = nodes[0]
+        bound = _bound_names(nodes, constants)
+        for node in nodes:
+            key = _env_key(node)
+            if key is None:
+                continue
+            found = {n for n in _key_names(key, constants, bound) if _ENV_NAME_RE.match(n)}
+            if found:
+                names |= found
+            else:
+                unresolved.append(f"{file}: {ast.unparse(node)}")
         for node in tree.body:
             if isinstance(node, ast.Assign) and len(node.targets) == 1 \
                     and isinstance(node.targets[0], ast.Name) \
@@ -1894,7 +2106,12 @@ def env_variables(sources: dict[str, str]) -> set[str]:
                          or node.targets[0].id == "SIGNALS"):
                 names |= {n.value for n in ast.walk(node.value)
                           if isinstance(n, ast.Constant) and isinstance(n.value, str)}
-    return {n for n in names if _ENV_NAME_RE.match(n)}
+    return {n for n in names if _ENV_NAME_RE.match(n)}, sorted(set(unresolved))
+
+
+def env_variables(sources: dict[str, str]) -> set[str]:
+    """The names `env_reads` finds the shipped scripts read."""
+    return env_reads(sources)[0]
 
 
 def env_rows(prd: str) -> dict[str, str]:
@@ -1927,19 +2144,38 @@ class PrdEnvironmentVariablesTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sources = script_sources()
-        cls.read = env_variables(cls.sources)
+        cls.read, cls.unresolved = env_reads(cls.sources)
 
     def setUp(self):
         self.prd = PRD.read_text(encoding="utf-8")
 
     def test_every_variable_the_scripts_read_has_a_row(self):
         """AC1. The collector is not vacuous: it finds the four the Cursor meter and the
-        harness switch added, and each of the variables has a row."""
+        harness switch added, and the three `migrate.py` reads through a loop over its `_KEYS`,
+        and each of the variables has a row. Every read whose key it cannot resolve is one
+        `_INDIRECT_READS` names. Mutants: a read through a loop variable, a parameter or another
+        module's constant left unresolved; an unresolved read let pass."""
         for name in ("SDLC_STUDIO_HARNESS", "CURSOR_API_KEY", "SDLC_STUDIO_CURSOR_AGENT_ID",
-                     "SDLC_STUDIO_CURSOR_API", "SDLC_AUTHOR", "SDLC_DEBUG", "HOME"):
+                     "SDLC_STUDIO_CURSOR_API", "SDLC_AUTHOR", "SDLC_DEBUG", "HOME",
+                     "PYTEST_ADDOPTS", "PYTHONDONTWRITEBYTECODE", "PYTHONPYCACHEPREFIX"):
             self.assertIn(name, self.read)
         self.assertGreater(len(self.read), 25, sorted(self.read))
+        self.assertEqual(sorted(_INDIRECT_READS), self.unresolved)
         self.assertEqual([], env_problems(self.prd, self.read))
+        # a key that is not a literal resolves: a loop over a class tuple, a parameter its
+        # caller passes a constant (a method's, past `self`), another module's constant; one
+        # that cannot is named
+        shapes = {"a.py": 'import os\nLIMIT = "CCC_PARAM"\nDDD_NAME = "DDD_ATTR"\n'
+                          'class Q:\n    _KEYS = ("AAA_LOOP", "BBB_LOOP")\n'
+                          '    def on(self):\n'
+                          '        return {k: os.environ.get(k) for k in self._KEYS}\n'
+                          'def ceiling(env, default):\n    return os.environ.get(env)\n'
+                          'ceiling(LIMIT, 1)\nclass R:\n    def read(self, name):\n'
+                          '        return os.environ.get(name)\nR().read("EEE_METHOD")\n',
+                  "b.py": 'import os, a\nx = os.environ.get(a.DDD_NAME)\n'
+                          'y = os.environ.get(name())\n'}
+        self.assertEqual(({"AAA_LOOP", "BBB_LOOP", "CCC_PARAM", "DDD_ATTR", "EEE_METHOD"},
+                          ["b.py: os.environ.get(name())"]), env_reads(shapes))
 
     def test_the_secret_and_the_endpoint_override_are_marked(self):
         """AC2. Mutants: the key's row with `secret` taken out; the override's row with its

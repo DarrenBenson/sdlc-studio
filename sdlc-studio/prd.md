@@ -623,7 +623,8 @@ Plain files in the repo (`sdlc-studio/`), user-local runtime state in
   skill self-update check (`version_check.py`; default on, `version_check.enabled`
   opt-out, 5s timeout, silent on any failure).
 - **The git remote** (`git fetch origin`) in `sprint plan`'s origin-drift preflight
-  and at each `sprint boundary` (best-effort; failure ignored, skipped with no remote).
+  and at each `sprint boundary` (skipped with no remote; a failed fetch marks the
+  comparison unverified, and under `--strict` the plan is refused or the run stops).
   Id allocation reads `origin/main` with `git ls-tree` and does not fetch.
 - **The Cursor usage API** (`api.cursor.com`) via a direct stdlib HTTPS GET from
   `meter_cursor.py`, made only when the Cursor token meter is selected and its key and
@@ -674,6 +675,9 @@ tools listed in §1.
 | `GIT_CONFIG_GLOBAL` | Git's own: the global config file the author identity is read from, alone, when set | No | unset |
 | `GIT_INDEX_FILE` | Git's own: the index a commit hook reads and stages | No | set by git |
 | `PYTHONPATH` | Extended, never replaced, when the verify lane and the gate run a child under a temporary first entry | No | unset |
+| `PYTEST_ADDOPTS` | Extended, never replaced, by `migrate.py` while it collects a project's tests, with `-p no:cacheprovider`, and restored after | No | unset |
+| `PYTHONDONTWRITEBYTECODE` | Cleared by `migrate.py` while it collects a project's tests, and restored after | No | unset |
+| `PYTHONPYCACHEPREFIX` | Set by `migrate.py` to a private temporary directory while it collects a project's tests, and restored after | No | unset |
 | `SDLC_VERIFY_TIMEOUT` | The ceiling in seconds for one criterion's verifier | No | 300 |
 | `SDLC_VERIFY_BATCH_TIMEOUT` | The ceiling in seconds for the pytest batch the verify lane runs | No | 3600 |
 | `SDLC_VERIFY_WORKERS` | How many stories the verify lane runs at once | No | the core count, at most 8 |
@@ -692,12 +696,17 @@ unconditionally under `--strict`, and the one escape is `git commit --no-verify`
 Project config (`sdlc-studio/.config.yaml`, defaults in
 `templates/config-defaults.yaml`). The gate-bearing keys are the ones that matter.
 Most share one shape: the default is ON, the opt-out is a recorded value, and an
-**absent** config blocks rather than disarms. Six ship **OFF** or advisory, each for
+**absent** config blocks rather than disarms. Nine ship **OFF** or advisory, each for
 incremental adoption: `review.line_coverage` (`off`: a close pays for coverage only in a
 project that asked, and `coverage` is an optional dependency), `review.author_self_check`
 (`report`: a project upgrading is not refused on its first review),
 `require_ac_verification` (`false`: leave it off while seeding `Verify:` lines),
 `constitution.enforce` (`false`: a violation is advisory until the project opts in),
+`provenance.enforce` (`false`: `provenance check` names an unstamped artefact and exits 0
+until the project opts in), `sprint.affects_check` (`warn`: an `Affects` naming a file the
+unit will create is legitimate, and refusing it would refuse ordinary work),
+`sprint.fresh_session` (`warn`: a session over the threshold is named with its re-read cost
+and goes on, so no project is refused `resume` until it asks for `block`),
 `two_backlog.enforce` (`false`: an existing project pulling a newer skill keeps its old
 flow until it opts in, since the release must not break it) and
 `quality.require_full_sections` (`false`: an unstamped story is structurally identical to
