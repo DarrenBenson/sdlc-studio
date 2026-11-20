@@ -14,6 +14,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -201,6 +202,44 @@ class ShippedCardTests(unittest.TestCase):
                 for p in cards:
                     shutil.copy(p, sdir / p.name)
                 self.assertEqual(_seats(root)[1], [])
+
+    def test_a_copy_carrying_the_old_worked_example_names_sam(self) -> None:
+        """The true positive the shipped cards no longer carry: a copy of the product card whose
+        Scenario still judges the story against `the Primary persona, Sam the new shopper` warns
+        at the line where Sam is named in every cast holding no Sam, and draws nothing where
+        Sam is a Primary. Mutants: a pattern that reads no worked example at all, so the
+        shipped cards' clean run proves nothing; a bare first name no longer resolving."""
+        old = ('A "default list for first-time users" story is proposed with five acceptance'
+               ' criteria. Lena checks it\nagainst the Primary persona, Sam the new shopper, whose'
+               ' End goal is "add my first item in seconds."\nFour ACs serve that, and the story'
+               ' is marked Ready against Sam\'s goal.\n\n')
+        for cast, registry, warns in (
+                ({"Maya Okafor": "Primary"}, {"Primary": ["Maya Okafor"]}, True),
+                ({"Maya Okafor": "Primary"}, None, True),
+                ({}, None, True),
+                ({"Sam Patel": "Primary"}, {"Primary": ["Sam Patel"]}, False),
+                ({"Sam Patel": "Primary"}, None, False)):
+            with self.subTest(cast=sorted(cast), registry=registry is not None), \
+                    tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _personas(root, cast, registry)
+                sdir = root / "sdlc-studio" / "personas" / "seats"
+                sdir.mkdir(parents=True)
+                for p in sorted(AMIGOS.glob("*.md")):
+                    shutil.copy(p, sdir / p.name)
+                card = sdir / "product.md"
+                text = card.read_text(encoding="utf-8")
+                card.write_text(re.sub(r"(?ms)^(## Scenario\n\n).*?(?=^## )",
+                                       lambda m: m.group(1) + old, text, count=1),
+                                encoding="utf-8")
+                rc, found = _seats(root)
+                self.assertEqual(rc, 0, found)
+                want = ([("seat-persona-unknown", card.name, _line_of(card, "persona, Sam"))]
+                        if warns else [])
+                self.assertEqual([(f["rule"], Path(f["file"]).name, f["line"]) for f in found],
+                                 want, found)
+                if warns:
+                    self.assertIn("Sam", found[0]["message"])
 
 
 class SeatClaimNameTests(unittest.TestCase):
