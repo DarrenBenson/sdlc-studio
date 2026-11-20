@@ -1,6 +1,6 @@
 # CR-0731: Make PyYAML a required dependency, refused at install and at the prerequisite check
 
-> **Status:** In Progress
+> **Status:** Complete
 > **Supersedes:** CR0714
 > **Decomposed-into:** EP0368
 > **Parent:** RFC0066

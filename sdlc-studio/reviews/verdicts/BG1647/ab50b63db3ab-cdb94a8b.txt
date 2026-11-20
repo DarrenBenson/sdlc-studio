@@ -1,0 +1,6 @@
+UNIT: BG1647
+BRIEF: ab50b63db3ab-cdb94a8b
+VERDICT: APPROVE
+ISSUES: [pre-existing] BG1648 a test leaves a second verify_ac module in sys.modules, the stray-module source this fix hardens against, not changed by this diff
+BLOCKING: none
+RULINGS: AC1 held: in a throwaway copy of HEAD both tests pass under pytest and python3 -m unittest. AC2 exercised: with sys.modules['verify_ac'] replaced by a freshly executed module the gate half still sees the absent-module refusal under block and the report-mode note under report. Mutant in the copy dropping the sys.modules hold in _absent: the reimport test fails (blocks empty under block) while the other passes, so the pin is real. The author's survived mutant standin-ref-check-dropped is equivalent on the committed fixture, as answered, since fixture-uncommitted and fixture-dropped are killed.

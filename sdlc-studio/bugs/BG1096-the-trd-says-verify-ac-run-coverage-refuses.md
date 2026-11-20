@@ -1,6 +1,6 @@
 # BG1096: The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_trd_coverage_soft_dependency.py, changelog.d/BG1096.md
@@ -26,6 +26,7 @@ Say the run reports the module absent, and the Done gate refuses under block and
 
 - [ ] **AC1** The TRD's coverage clause names the Done gate as the block/report split, and the run's own exit without coverage
   - **Verify:** pytest tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests
+  - **Verified:** yes (2026-11-20)
 
 ## Impact
 

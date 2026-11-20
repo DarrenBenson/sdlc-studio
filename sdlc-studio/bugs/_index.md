@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 460 |
+| Open | 455 |
 | In Progress | 0 |
-| Fixed | 981 |
+| Fixed | 991 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1643** |
+| **Total** | **1648** |
 
 ## All Bugs
 
@@ -171,7 +171,7 @@
 | [BG1093](BG1093-bg1061-s-heading-checks-read-a-heading-s.md) | BG1061's heading checks read a heading's trailing space as its last character, so a mark left behind a space passes | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1094](BG1094-a-lesson-that-is-only-punctuation-gets-an.md) | A lesson that is only punctuation gets an empty heading title since BG1061 | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1095](BG1095-us1086-did-not-converge-in-review-round-2.md) | US1086 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-19 | 2026-10-19 |
-| [BG1096](BG1096-the-trd-says-verify-ac-run-coverage-refuses.md) | The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's | Open | Low | 2026-10-19 | 2026-10-19 |
+| [BG1096](BG1096-the-trd-says-verify-ac-run-coverage-refuses.md) | The TRD says verify_ac run --coverage refuses under block and reports under report when coverage is absent; the split is the Done gate's | Fixed | Low | 2026-10-19 | 2026-10-19 |
 | [BG1097](BG1097-us1085-s-toolchain-doc-tests-leave-coverage-unpinned.md) | US1085's toolchain-doc tests leave coverage unpinned, still pass three counted phrasings, and fail at collection without PyYAML | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1098](BG1098-agents-md-gives-the-local-boundary-push-series.md) | AGENTS.md gives the local boundary-push series as the push's cost on a clone that names a gate host | Open | Low | 2026-10-19 | 2026-10-19 |
 | [BG1099](BG1099-us1084-s-tsd-rewording-broke-us0253-ac3-s.md) | US1084's TSD rewording broke US0253 AC3's verifier, which greps for the test-noise leg running in CI | Fixed | Medium | 2026-10-20 | 2026-10-20 |
@@ -591,8 +591,8 @@
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Open | Low | 2026-11-16 | 2026-11-16 |
-| [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Open | High | 2026-11-17 | 2026-11-17 |
-| [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Open | High | 2026-11-17 | 2026-11-17 |
+| [BG1516](BG1516-the-trd-calls-agentic-waves-the-only-harness.md) | The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner | Fixed | High | 2026-11-17 | 2026-11-17 |
+| [BG1517](BG1517-the-trd-threat-model-omits-verify-line-shell.md) | The TRD threat model omits Verify-line shell execution and wrongly says Verify tools are host-bounded | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1518](BG1518-no-gate-reads-the-weekly-corpus-verify-run.md) | No gate reads the weekly corpus-verify run, the only automated run of every Verify line | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1519](BG1519-the-push-gate-s-full-suite-lane-and.md) | The push gate's full-suite lane and gate.py --run-tests pass a run in which no test ran | Fixed | High | 2026-11-17 | 2026-11-17 |
 | [BG1520](BG1520-verdicts-recorded-through-lane-accept-name-no-seat.md) | Verdicts recorded through lane accept name no seat, so the seat learning loop has never been fed | Fixed | High | 2026-11-17 | 2026-11-17 |
@@ -606,7 +606,7 @@
 | [BG1528](BG1528-the-prd-context-section-still-calls-the-installed.md) | The PRD Context section still calls the installed copy the back-port source and cites CLAUDE.md for it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1529](BG1529-the-trd-promises-sub-second-reconcile-and-status.md) | The TRD promises sub-second reconcile and status, which this repository misses by more than tenfold | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1530](BG1530-adr-012-says-persona-learning-approval-close-listing.md) | ADR-012 says persona learning approval, close listing and signature are unbuilt while they are Done and shipped | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -631,8 +631,8 @@
 | [BG1553](BG1553-the-prd-environment-variables-table-omits-variables-the.md) | The PRD Environment Variables table omits variables the PRD itself relies on, including the one secret the skill sends | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1554](BG1554-the-prd-row-sprint-close-down-gate-is.md) | The PRD row Sprint close-down gate is Complete but credits a Stop-hook installer that does not exist | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1555](BG1555-the-prd-gives-three-different-accounts-of-what.md) | The PRD gives three different accounts of what the sprint close runs and none matches the shipped chain | Fixed | Low | 2026-11-17 | 2026-11-17 |
-| [BG1556](BG1556-the-trd-storage-inventory-omits-both-committed-decision.md) | The TRD storage inventory omits both committed decision stores and does not tell the two decisions ledgers apart | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1557](BG1557-stale-summary-sentences-and-tables-in-the-trd.md) | Stale summary sentences and tables in the TRD contradict its own detailed sections and the code | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1556](BG1556-the-trd-storage-inventory-omits-both-committed-decision.md) | The TRD storage inventory omits both committed decision stores and does not tell the two decisions ledgers apart | Fixed | Low | 2026-11-17 | 2026-11-17 |
+| [BG1557](BG1557-stale-summary-sentences-and-tables-in-the-trd.md) | Stale summary sentences and tables in the TRD contradict its own detailed sections and the code | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1558](BG1558-ts0001-is-recorded-complete-while-its-own-check.md) | TS0001 is recorded Complete while its own check reports 28 findings and nothing runs that check | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1559](BG1559-the-skill-maintainer-persona-card-states-two-frustrations.md) | The skill maintainer persona card states two Frustrations as current that were fixed weeks ago | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1560](BG1560-the-superseded-personas-md-says-do-not-update.md) | The superseded personas.md says do not update it, has been edited on three later dates and keeps a false date | Open | Low | 2026-11-17 | 2026-11-17 |
@@ -640,7 +640,7 @@
 | [BG1562](BG1562-archive-py-builds-its-output-path-from-an.md) | archive.py builds its output path from an unvalidated release label and can write outside the workspace | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1563](BG1563-the-action-pin-guard-passes-a-workflow-step.md) | The action-pin guard passes a workflow step that uses a mutable docker image tag | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1564](BG1564-plan-py-archive-accepts-a-slug-with-parent.md) | plan.py archive accepts a slug with parent segments and moves a file from outside the plans directory | Open | Low | 2026-11-17 | 2026-11-17 |
-| [BG1565](BG1565-the-trd-stamped-6-4-0-still-says.md) | The TRD stamped 6.4.0 still says persona-learning approval and signing are open stories and no learning is live | Open | Low | 2026-11-17 | 2026-11-17 |
+| [BG1565](BG1565-the-trd-stamped-6-4-0-still-says.md) | The TRD stamped 6.4.0 still says persona-learning approval and signing are open stories and no learning is live | Fixed | Low | 2026-11-17 | 2026-11-17 |
 | [BG1566](BG1566-the-generated-reference-catalogue-in-help-references-md.md) | The generated reference catalogue in help/references.md links all 58 references to paths that do not exist | Open | Low | 2026-11-17 | 2026-11-17 |
 | [BG1567](BG1567-a-finding-from-the-default-project-audit-profile.md) | A finding from the default project audit profile cannot be attributed to its lens | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1568](BG1568-the-triage-session-cap-is-keyed-on-a.md) | The triage session cap is keyed on a run that is already closed and signed | Open | Low | 2026-11-17 | 2026-11-17 |
@@ -696,7 +696,7 @@
 | [BG1618](BG1618-the-plan-s-unmetered-warning-gives-a-false.md) | The plan's unmetered warning gives a false reason on a re-plan, one of its test assertions cannot fail, and a fallback sentence is reached by no test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1619](BG1619-sprint-sign-prints-nothing-when-its-retro-write.md) | sprint sign prints nothing when its retro write fails, so a mistyped --retro id now reaches that silence, and the close tail still prefers the scaffolded retro | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1620](BG1620-the-verbatim-repair-brief-loses-the-first-line.md) | The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Open | Low | 2026-11-19 | 2026-11-19 |
+| [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Fixed | High | 2026-11-19 | 2026-11-19 |
 | [BG1623](BG1623-sprint-drive-and-drive-step-an-oversized-brief.md) | sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1624](BG1624-flaky-test-lane-run-s-timed-out-git.md) | Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host | Open | Medium | 2026-11-19 | 2026-11-19 |
@@ -719,6 +719,11 @@
 | [BG1641](BG1641-a-repair-s-qa-brief-does-not-name.md) | A repair's QA brief does not name the reviewer whose REJECT it answers, so a fresh reviewer's round two is refused at record | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1642](BG1642-config-py-show-prints-a-runtimeerror-traceback-without.md) | config.py show prints a RuntimeError traceback without PyYAML instead of the one-line refusal | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1643](BG1643-the-trd-checks-left-by-run-nineteen-s.md) | The TRD checks left by run nineteen's TRD repairs accept rewordings and leave three claims unpinned | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1644](BG1644-markdownevidencelinttests-reads-the-live-sdlc-studio-reviews-tree.md) | MarkdownEvidenceLintTests reads the live sdlc-studio/reviews/ tree, so committing the author-mutant records turns the push gate red | Fixed | High | 2026-11-20 | 2026-11-20 |
+| [BG1645](BG1645-two-more-verify-ac-lint-tests-judge-the.md) | Two more verify_ac lint tests judge the live help/ directory, so a non-markdown file there turns them red | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1646](BG1646-the-prd-changelog-row-check-reads-committed-history.md) | The PRD changelog-row check reads committed history, so a commit that changes the PRD without a row passes its own hooks | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1647](BG1647-trdcoveragesoftdependencytests-done-gate-half-misses-its-patch-in.md) | TrdCoverageSoftDependencyTests' Done-gate half misses its patch in the gate's parallel run, so the push gate goes red | Fixed | High | 2026-11-20 | 2026-11-20 |
+| [BG1648](BG1648-a-test-leaves-a-second-verify-ac-module.md) | A test leaves a second verify_ac module in sys.modules, so later tests patch an object the code no longer imports | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

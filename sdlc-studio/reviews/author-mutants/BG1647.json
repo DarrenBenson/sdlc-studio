@@ -1,0 +1,61 @@
+{
+  "unit": "BG1647",
+  "digest": "619c9c755f3085bf at 4571566966d7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0b0cc90b5ecd7cbb/BG1647-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "pin-dropped: the hidden module patched only on this test's import, not on the object the lane imports",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "        sys.modules[\"verify_ac\"] = verify_ac\n        try:\n",
+      "new": "        try:\n",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_gate_half_holds_when_verify_ac_is_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-dropped: the gate half run on a plain temporary directory, as before the fix",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "            self._fixture(root)\n            with self._absent()",
+      "new": "            with self._absent()",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-uncommitted: the fixture root initialised but left without a commit",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "        gitutil.git([\"commit\", \"-q\", \"-m\", f\"fix({UNIT}): a\"], root)\n",
+      "new": "",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_gate_half_holds_when_verify_ac_is_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "restore-dropped: the held sys.modules entry not put back after the block",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "            if held is None:\n                sys.modules.pop(\"verify_ac\", None)\n            else:\n                sys.modules[\"verify_ac\"] = held\n\n    @staticmethod",
+      "new": "            pass\n\n    @staticmethod",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_gate_half_holds_when_verify_ac_is_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reimport-skipped: the new test never replaces sys.modules['verify_ac'] before the gate half",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "        sys.modules[\"verify_ac\"] = fresh      # registered first: its dataclasses look it up\n",
+      "new": "",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_gate_half_holds_when_verify_ac_is_reimported",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "standin-ref-check-dropped: the stand-in skips the real measurement's base-ref refusal",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "            if base_ref and not verify_ac._ref_exists(root, base_ref):",
+      "new": "            if False:",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_gate_half_holds_when_verify_ac_is_reimported",
+      "result": "survived",
+      "answer": "Equivalent on a committed fixture, the only one the module builds: the check is the guard that makes fixture-uncommitted and fixture-dropped die, and both are killed."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1516: The TRD calls agentic waves the only harness-specific feature and never describes the headless lane runner
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** High
 > **Points:** 3
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1516.md
@@ -29,10 +29,13 @@ Add a subsection to the TRD's execution architecture describing the lane runner:
 
 - [ ] **AC1** Given `sdlc-studio/trd.md`, when its execution architecture section is read, then it has a subsection for the headless lane runner that says what `sprint.py lane run` starts and in which worktree, and names every harness `headless_command` in `lib/lanes.py` builds a command for, with the permission flags each is given. Fails on: a harness the code drives that the TRD does not name, or a TRD with no lane runner subsection.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_every_headless_harness_is_named_with_its_flags
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given the Agentic execution subsection and open question 3 of the TRD, when they are read, then neither calls the Agent-tool wave fan-out the one or only harness-specific part of the skill, and open question 3 is closed or says which harnesses the lane runner already drives. Fails on: either passage still calling agentic waves the only part that is not harness-neutral.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_agentic_waves_are_not_called_the_only_harness_specific_part
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given the Network paths table in section 5 and the Threat Model table in section 9, when they are read, then each has a row for the agent CLI the lane runner spawns (a networked process holding write tools), and each row names the control that bounds it. Fails on: either table without the row, or a row whose control cell is empty.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdLaneRunnerTests::test_the_spawned_agent_has_a_network_row_and_a_threat_row
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

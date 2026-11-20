@@ -1,41 +1,41 @@
 {
   "unit": "BG1517",
-  "digest": "9043881656e2780b at 6d3cd7e6d36c",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1517-mutation-edits.json",
+  "digest": "2b7a9d6fd983dbc3 at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1517-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "prose-bounds-the-hosts",
+      "mutant": "prose widens the list to every other Verify-line tool (M1)",
       "file": "sdlc-studio/trd.md",
-      "old": "is unset by default and applies to the `http` verb only (it bounds nothing until",
-      "new": "is the allow-list and applies to the `http` verb only (it names hosts until",
+      "old": "applies to the `http` verb only and bounds nothing",
+      "new": "applies to the `http` verb and to every other Verify-line tool and bounds nothing",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_http_allow_list_is_described_as_unset_and_http_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "row-set-by-default",
+      "mutant": "row widens the list and bounds every tool once set (M1b)",
+      "file": "sdlc-studio/trd.md",
+      "old": "applies to the `http` verb only (it bounds nothing until a project sets it, and any other Verify-line tool is never bounded by it)",
+      "new": "applies to the `http` verb and every other Verify-line tool (it bounds nothing until a project sets it, and then bounds every Verify-line tool)",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_http_allow_list_is_described_as_unset_and_http_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prose says bounds only until (M2)",
+      "file": "sdlc-studio/trd.md",
+      "old": "and bounds nothing until a project sets it.",
+      "new": "and bounds only until a project sets it.",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_http_allow_list_is_described_as_unset_and_http_only",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "row drops unset by default",
       "file": "sdlc-studio/trd.md",
       "old": "an allow-list that is unset by default and applies",
-      "new": "an allow-list that is set by default and applies",
+      "new": "an allow-list that applies",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_http_allow_list_is_described_as_unset_and_http_only",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "verify-row-no-absent-limit",
-      "file": "sdlc-studio/trd.md",
-      "old": "and an absent stamp permits shell, so the control",
-      "new": "and an absent stamp is refused, so the control",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_threat_model_has_a_verify_line_execution_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "verify-row-no-allow-external",
-      "file": "sdlc-studio/trd.md",
-      "old": "and `--allow-external` is the explicit override.",
-      "new": "and an override is available.",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdVerifierAuthorityTests::test_the_threat_model_has_a_verify_line_execution_row",
       "result": "killed",
       "answer": ""
     }

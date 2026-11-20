@@ -1,0 +1,88 @@
+{
+  "unit": "BG1644",
+  "digest": "441a9664f73de599 at 682c34696387",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4840ed44c7317701/BG1644-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "ac1-lint-call-judges-the-live-root",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "self.assertTrue((root / named).exists(), named)\n                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))",
+      "new": "self.assertTrue((root / named).exists(), named)\n                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_every_escape_found_by_review_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ac1-root-is-the-live-repository",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "root = self._escape_root()\n        for expr in self.ESCAPES_FOUND_BY_REVIEW:",
+      "new": "root = self._root()\n        for expr in self.ESCAPES_FOUND_BY_REVIEW:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_every_escape_found_by_review_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-helper-returns-the-live-root",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "path.write_text(\"the window refuses anything\\n\")\n        return root",
+      "new": "path.write_text(\"the window refuses anything\\n\")\n        return self._root()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_every_escape_found_by_review_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-omits-the-help-directory",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "        \".claude/skills/sdlc-studio/help/sprint.md\",\n    ]",
+      "new": "    ]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_every_escape_found_by_review_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fixture-reviews-holds-a-non-markdown-file",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "\"sdlc-studio/reviews/LATEST.md\",",
+      "new": "\"sdlc-studio/reviews/LATEST.txt\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_every_escape_found_by_review_is_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ac2-markdown-half-judges-the-live-root",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "with self.subTest(markdown_only=expr):\n                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, root))",
+      "new": "with self.subTest(markdown_only=expr):\n                self.assertIsNotNone(verify_ac.lint_markdown_evidence(expr, self._root()))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_a_reviews_tree_holding_a_json_record_is_not_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ac2-json-half-judges-the-live-root",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "with self.subTest(json_record=expr):\n                self.assertIsNone(verify_ac.lint_markdown_evidence(expr, root))",
+      "new": "with self.subTest(json_record=expr):\n                self.assertIsNone(verify_ac.lint_markdown_evidence(expr, self._root()))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_a_reviews_tree_holding_a_json_record_is_not_refused",
+      "result": "survived",
+      "answer": "Survives by construction while the live repository's sdlc-studio/reviews/ holds committed JSON records, as it does at this HEAD: the live tree then licenses the grep exactly as the fixture does, so no assertion on this half can tell them apart. Pointing an escape back at the live root is killed where it matters, in the markdown-only half of the same test (ac2-markdown-half-judges-the-live-root) and in AC1 (ac1-lint-call-judges-the-live-root, ac1-root-is-the-live-repository); this mutant would go red the day the live tree held no non-markdown file, the original defect in reverse."
+    },
+    {
+      "mutant": "fixture-record-is-markdown-so-the-json-tree-is-refused",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "/ \"author-mutants\" / \"US0001.json\"",
+      "new": "/ \"author-mutants\" / \"US0001.md\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_a_reviews_tree_holding_a_json_record_is_not_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ac2-selects-no-reviews-grep",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "if \"sdlc-studio/reviews/\" in e]",
+      "new": "if \"sdlc-studio/reviewz/\" in e]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::MarkdownEvidenceLintTests::test_a_reviews_tree_holding_a_json_record_is_not_refused",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

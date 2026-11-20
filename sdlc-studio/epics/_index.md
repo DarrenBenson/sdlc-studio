@@ -6,11 +6,11 @@
 
 | Status | Count |
 | --- | --- |
-| Draft | 69 |
+| Draft | 68 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 275 |
+| Done | 276 |
 | Superseded | 33 |
 | **Total** | **377** |
 
@@ -118,7 +118,7 @@
 | [EP0365](EP0365-every-composed-changelog-entry-names-the-unit-its.md) | Every composed CHANGELOG entry names the unit its fragment was filed for | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0366](EP0366-a-run-awaiting-the-operator-signature-no-longer.md) | A run awaiting the operator signature no longer blocks the next, and a delegated signature is disclosed | Done | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0367](EP0367-the-reports-signed-under-a-per-trip-authorisation.md) | The reports signed under a per-trip authorisation disclose the decision that authorised each signature | Draft | 2 | -- | 2026-11-17 | 2026-11-17 |
-| [EP0368](EP0368-pyyaml-is-a-required-dependency-refused-at-install.md) | PyYAML is a required dependency, refused at install and at every gate, and the specs say so | Draft | 4 | -- | 2026-11-17 | 2026-11-17 |
+| [EP0368](EP0368-pyyaml-is-a-required-dependency-refused-at-install.md) | PyYAML is a required dependency, refused at install and at every gate, and the specs say so | Done | 4 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0369](EP0369-a-high-risk-unit-s-review-records-who.md) | A high-risk unit's review records who wrote and who judged it by model family, and a project can require the two to differ | Draft | 3 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0370](EP0370-the-handoff-says-how-much-work-remains-and.md) | The handoff says how much work remains and which seat it needs | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |
 | [EP0371](EP0371-the-sprint-report-prices-a-run-per-delivered.md) | The sprint report prices a run per delivered line as well as per point | Draft | 1 | -- | 2026-11-17 | 2026-11-17 |

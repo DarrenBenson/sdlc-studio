@@ -1,0 +1,43 @@
+{
+  "unit": "BG1556",
+  "digest": "7ac734e7d233e500 at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1556-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "decision log row dropped",
+      "file": "sdlc-studio/trd.md",
+      "old": "| Decision log | `sdlc-studio/decisions.md` | `decisions.py` |",
+      "new": "| Decision log | `sdlc-studio/decision-log.md` | `decisions.py` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_both_decision_stores_are_listed_with_their_writers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "log credited to ledger.py",
+      "file": "sdlc-studio/trd.md",
+      "old": "| `sdlc-studio/decisions.md` | `decisions.py` |",
+      "new": "| `sdlc-studio/decisions.md` | `ledger.py` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_both_decision_stores_are_listed_with_their_writers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule 5 credits decisions.py with the decisions ledger again",
+      "file": "sdlc-studio/trd.md",
+      "old": "`decisions.py` appends a D-numbered\n   decision to the decision log `sdlc-studio/decisions.md`",
+      "new": "`decisions.py` appends to the\n   decisions ledger",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_rule_five_names_each_script_with_its_own_store",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ledger.py dropped from rule 5",
+      "file": "sdlc-studio/trd.md",
+      "old": "`ledger.py record` appends a\n   ruling to its tranche's ledger `sdlc-studio/decisions/<tranche>.md`; ",
+      "new": "",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_rule_five_names_each_script_with_its_own_store",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

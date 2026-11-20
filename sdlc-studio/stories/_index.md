@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 172 |
+| Draft | 171 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 962 |
+| Done | 963 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -336,7 +336,7 @@
 | [US1296](US1296-both-installers-refuse-on-a-machine-that-cannot.md) | Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1297](US1297-the-config-reader-refuses-without-pyyaml-so-no.md) | The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1298](US1298-the-gate-prerequisite-check-and-every-gate-bearing.md) | The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent | Done | EP0368 | 2026-11-17 | 2026-11-17 |
-| [US1299](US1299-the-prd-trd-and-readme-drop-the-standard.md) | The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break | Draft | EP0368 | 2026-11-17 | 2026-11-17 |
+| [US1299](US1299-the-prd-trd-and-readme-drop-the-standard.md) | The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break | Done | EP0368 | 2026-11-17 | 2026-11-17 |
 | [US1300](US1300-critic-py-record-stores-the-author-s-and.md) | `critic.py record` stores the author's and reviewer's model ids on the verdict and derives each family from one shipped table, reporting an unknown id as unknown | Draft | EP0369 | 2026-11-17 | 2026-11-17 |
 | [US1301](US1301-review-cross-family-off-by-default-warn-block.md) | `review.cross_family` (off by default, warn, block) decides whether a same-family verdict counts as a high-risk unit's independent review | Draft | EP0369 | 2026-11-17 | 2026-11-17 |
 | [US1302](US1302-the-sprint-report-counts-the-high-risk-units.md) | The sprint report counts the high-risk units reviewed by a different model family, out of how many | Draft | EP0369 | 2026-11-17 | 2026-11-17 |

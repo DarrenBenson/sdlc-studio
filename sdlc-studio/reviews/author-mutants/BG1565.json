@@ -1,0 +1,61 @@
+{
+  "unit": "BG1565",
+  "digest": "d7c2b5bb4e31c5a2 at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1565-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "US1065 left out of Built so far",
+      "file": "sdlc-studio/trd.md",
+      "old": "from a brief carrying its record (US1065), another",
+      "new": "from a brief carrying its record, another",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_adr_012_states_the_learning_loop_as_shipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "approval step reduced to approves",
+      "file": "sdlc-studio/trd.md",
+      "old": "another\nseat approves or rejects each proposed learning (US1066)",
+      "new": "another\nseat approves each proposed learning (US1066)",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_adr_012_states_the_learning_loop_as_shipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no revision row names BG1565",
+      "file": "sdlc-studio/trd.md",
+      "old": "BG1565: ADR-012's Built so far names US1065",
+      "new": "ADR-012's Built so far names US1065",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_adr_012_states_the_learning_loop_as_shipped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Not yet built names a Done story",
+      "file": "sdlc-studio/trd.md",
+      "old": "and `persona_review.py` (US1052).",
+      "new": "and `persona_review.py` (US1052, US1066).",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_no_story_called_open_reads_done",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the check drops the not-yet-built claim",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "_UNBUILT_CLAIM = re.compile(r\"\\bopen\\b|\\bnot yet built\\b|\\bunbuilt\\b\", re.I)",
+      "new": "_UNBUILT_CLAIM = re.compile(r\"\\bopen\\b|\\bunbuilt\\b\", re.I)",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_a_done_story_called_open_is_reported_and_a_draft_one_passes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the check reports every story it reads",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "    return sorted(s for s in _stories_called_unbuilt(text)\n                  if _story_status(s, stories) == \"Done\")",
+      "new": "    return sorted(_stories_called_unbuilt(text))",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_a_done_story_called_open_is_reported_and_a_draft_one_passes",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

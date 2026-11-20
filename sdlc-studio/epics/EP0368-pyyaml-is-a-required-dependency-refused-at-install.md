@@ -1,6 +1,6 @@
 # EP0368: PyYAML is a required dependency, refused at install and at every gate, and the specs say so
 
-> **Status:** Draft
+> **Status:** Done
 > **Derived Point Total:** 13
 > **Parent:** CR0731
 > **Created:** 2026-11-17
@@ -17,7 +17,7 @@ Decomposed from CR0731. Delivers the work CR0731 requested.
 - [x] [US1296: Both installers refuse on a machine that cannot import PyYAML, naming it and how to install it](../stories/US1296-both-installers-refuse-on-a-machine-that-cannot.md)
 - [x] [US1297: The config reader refuses without PyYAML, so no command reads a present config as the shipped defaults](../stories/US1297-the-config-reader-refuses-without-pyyaml-so-no.md)
 - [x] [US1298: The gate prerequisite check and every gate-bearing command exit non-zero when PyYAML is absent](../stories/US1298-the-gate-prerequisite-check-and-every-gate-bearing.md)
-- [ ] [US1299: The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break](../stories/US1299-the-prd-trd-and-readme-drop-the-standard.md)
+- [x] [US1299: The PRD, TRD and README drop the standard-library-only claim, the TRD gains the ADR and the notes name the break](../stories/US1299-the-prd-trd-and-readme-drop-the-standard.md)
 
 ## Acceptance Criteria (Epic Level)
 

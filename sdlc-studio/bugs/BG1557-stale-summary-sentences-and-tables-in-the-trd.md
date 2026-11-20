@@ -1,6 +1,6 @@
 # BG1557: Stale summary sentences and tables in the TRD contradict its own detailed sections and the code
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1557.md
@@ -30,10 +30,13 @@ Correct each statement in sdlc-studio/trd.md to agree with the detail and the co
 
 - [ ] **AC1** Given section 3 System Context and section 2 Pattern Used of sdlc-studio/trd.md, when they are read against the external-service rows of sections 4, 5 and 7, then System Context names the Cursor usage API and the direct HTTPS request to the GitHub API, and section 2 no longer calls the script layer read-only. Fails on: the summary saying the only external service is GitHub through the `gh` CLI, or a read-only script layer beside a rule that says the scripts write.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_summary_names_every_external_service_the_detail_lists
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given the C4 note and the Deployment Topology table, when the test resolves the C4 path under the skill directory and reads the local install directory `install.sh` holds for each target, then the named path exists and each table row gives that target's local path (a global path only under a column labelled global). Fails on: a module path that does not exist, or a home-directory path under a local heading.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_c4_path_exists_and_the_install_table_matches_install_sh
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given `POINTS_RATE_SEED_BASIS` and `NO_BASE_TERM_CONDITION` in `sprint.py`, when the cost model in section 10 and its echo in section 12 are read, then both state the unit count and the measured count the basis string holds and carry the build-only condition. Fails on: the TRD citing 20 units where the shipped basis says 21 with 19 measured, or dropping the condition.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_cost_model_count_matches_the_shipped_basis
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

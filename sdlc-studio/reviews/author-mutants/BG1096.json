@@ -1,0 +1,52 @@
+{
+  "unit": "BG1096",
+  "digest": "c7c3cb4f30b7d467 at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1096-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "clause restored to the run refusing under block",
+      "file": "sdlc-studio/trd.md",
+      "old": "`verify_ac run --coverage`: without it the run names the module absent and exits 2, whatever `review.line_coverage` says, and the split is the Done gate's in `transition.py`, which refuses under `block` and reports under `report`.",
+      "new": "`verify_ac run --coverage` (without it the run refuses under `block` and reports under `report`).",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clause drops the run's exit",
+      "file": "sdlc-studio/trd.md",
+      "old": "names the module absent and exits 2, whatever",
+      "new": "names the module absent, whatever",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "clause credits the split to the run",
+      "file": "sdlc-studio/trd.md",
+      "old": "the split is the Done gate's in `transition.py`, which",
+      "new": "the split is the run's, which",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test drives the gate under report for block",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "block = self._gate(\"block\")",
+      "new": "block = self._gate(\"report\")",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test reads no coverage refusal (module present)",
+      "file": "tools/tests/test_trd_coverage_soft_dependency.py",
+      "old": "        with self._absent(), contextlib.redirect_stdout(io.StringIO()), \\",
+      "new": "        with contextlib.redirect_stdout(io.StringIO()), \\",
+      "test": "tools/tests/test_trd_coverage_soft_dependency.py::TrdCoverageSoftDependencyTests::test_the_run_exits_2_and_the_done_gate_splits_block_from_report",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

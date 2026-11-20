@@ -1,0 +1,34 @@
+{
+  "unit": "BG1621",
+  "digest": "0817acc027c4ae1f at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1621-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the author mutant lists row dropped",
+      "file": "sdlc-studio/trd.md",
+      "old": "| Author mutant lists | `sdlc-studio/reviews/author-mutants/<id>.json` |",
+      "new": "| Author mutant lists | `sdlc-studio/reviews/author-self-checks/<id>.json` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_committed_records_table_lists_the_author_mutant_lists",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "writer without --mutants-from",
+      "file": "sdlc-studio/trd.md",
+      "old": "| `critic.py self-check record --mutants-from` |",
+      "new": "| `critic.py self-check record` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_committed_records_table_lists_the_author_mutant_lists",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "purpose without the QA brief's replay",
+      "file": "sdlc-studio/trd.md",
+      "old": "`critic.py brief` reads it, and the QA brief replays the author's mutants from it.",
+      "new": "`critic.py brief` reads it.",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_committed_records_table_lists_the_author_mutant_lists",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

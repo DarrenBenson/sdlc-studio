@@ -1,0 +1,115 @@
+{
+  "unit": "US1299",
+  "digest": "ff4292172598729f at 2aa31057067e",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ac0fb656037eab0f6/US1299-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "readme-pyyaml-not-required",
+      "file": "README.md",
+      "old": "and PyYAML, both required ([requirements]",
+      "new": "but PyYAML is not required ([requirements]",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "readme-pyyaml-optional-falls-back",
+      "file": "README.md",
+      "old": "and PyYAML, both required ([requirements]",
+      "new": "and PyYAML, which is optional, and without it the scripts fall back to their defaults ([requirements]",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-pyyaml-optional-sentence",
+      "file": "sdlc-studio/prd.md",
+      "old": "Scripts run on Python 3.10+ with PyYAML, their one required package. `status.py`,",
+      "new": "Scripts run on Python 3.10+ with PyYAML, their one required package. PyYAML is optional: the scripts fall back to the defaults without it. `status.py`,",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prd-soft-runtime-deps-lists-pyyaml",
+      "file": "sdlc-studio/prd.md",
+      "old": "- **Soft runtime deps** \u2013 `gh` CLI (sync),",
+      "new": "- **Soft runtime deps** \u2013 `gh` CLI (sync), PyYAML (config),",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trd-adr-context-present-tense-soft",
+      "file": "sdlc-studio/trd.md",
+      "old": "**Context:** PyYAML was a soft dependency.",
+      "new": "**Context:** PyYAML is a soft dependency.",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "trd-threat-row-never-refused-read-as-defaults",
+      "file": "sdlc-studio/trd.md",
+      "old": "A missing PyYAML is refused, never read as defaults:",
+      "new": "A missing PyYAML is never refused and is read as defaults:",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-soft-term-dropped",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "r\"\\boptional(?:ly)?\\b|\\bsoft\\b|\\brecommended\\b|",
+      "new": "r\"\\boptional(?:ly)?\\b|\\brecommended\\b|",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-negation-reaches-no-word-back",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "|n't\\b)(?:\\s+\\S+){0,3}\\s*$\"",
+      "new": "|n't\\b)(?:\\s+\\S+){0,0}\\s*$\"",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-past-tense-not-read-as-history",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "    if _PYYAML_PAST.search(statement):\n        return False\n    return bool(",
+      "new": "    return bool(",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-semicolon-does-not-cut",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "_STATEMENT_CUT = re.compile(r\";|(?=",
+      "new": "_STATEMENT_CUT = re.compile(r\"(?=",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-required-ignores-negation",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "return not _PYYAML_PAST.search(statement) and bool(_terms(statement, _REQUIRED, False))",
+      "new": "return not _PYYAML_PAST.search(statement) and bool(_REQUIRED.search(statement))",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-denied-required-not-read-as-optional",
+      "file": "tools/tests/test_lean_trd_refresh.py",
+      "old": "_terms(statement, _MAY_BE_ABSENT, False) or _terms(statement, _REQUIRED, True)",
+      "new": "_terms(statement, _MAY_BE_ABSENT, False)",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdRequiredPyYamlTests::test_no_spec_page_claims_a_standard_library_only_runtime",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

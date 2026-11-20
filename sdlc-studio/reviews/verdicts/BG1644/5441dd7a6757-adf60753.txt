@@ -1,0 +1,6 @@
+UNIT: BG1644
+BRIEF: 5441dd7a6757-adf60753
+VERDICT: APPROVE
+ISSUES: [pre-existing] BG1645 two sibling verify_ac lint tests still judge the live help/ directory\; not part of this diff
+BLOCKING: none
+RULINGS: AC1 and AC2 hold: ran MarkdownEvidenceLintTests, 18 passed with 40 subtests. Fixture root is temporary, each named path is asserted to exist so the refusal is the prose rule, and the positive control flips from refused to not refused once a json record is added. The survived author mutant ac2-json-half-judges-the-live-root is explained by the live tree holding json records and is covered by the markdown-only half and AC1.

@@ -8,8 +8,8 @@
 | --- | --- |
 | Proposed | 7 |
 | Approved | 0 |
-| In Progress | 80 |
-| Complete | 561 |
+| In Progress | 79 |
+| Complete | 562 |
 | Rejected | 34 |
 | Deferred | 0 |
 | Superseded | 66 |
@@ -142,7 +142,7 @@
 | [CR-0728](CR0728-carry-each-changelog-fragment-s-unit-id-into.md) | Carry each changelog fragment's unit id into the composed CHANGELOG entry at the release cut | In Progress | Low | Improvement | 2026-11-17 | EP0365 |
 | [CR-0729](CR0729-a-run-closed-while-the-operator-is-away.md) | A run closed while the operator is away waits for signature, and a delegated signature is disclosed | Complete | High | Improvement | 2026-11-17 | EP0366 |
 | [CR-0730](CR0730-add-a-delegation-disclosure-line-to-the-reports.md) | Add a delegation disclosure line to the reports already signed under a per-trip authorisation | In Progress | Medium | Improvement | 2026-11-17 | EP0367 |
-| [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | In Progress | High | Improvement | 2026-11-17 | EP0368 |
+| [CR-0731](CR0731-make-pyyaml-a-required-dependency-refused-at-install.md) | Make PyYAML a required dependency, refused at install and at the prerequisite check | Complete | High | Improvement | 2026-11-17 | EP0368 |
 | [CR-0732](CR0732-a-high-risk-unit-s-review-records-the.md) | A high-risk unit's review records the model family of its author and its reviewer, and a project can require the two to differ | In Progress | Medium | Feature | 2026-11-17 | EP0369 |
 | [CR-0733](CR0733-the-handoff-states-each-remaining-item-s-points.md) | The handoff states each remaining item's points and the seat it needs, and totals them | In Progress | Low | Improvement | 2026-11-17 | EP0370 |
 | [CR-0734](CR0734-the-sprint-report-states-priced-cost-per-delivered.md) | The sprint report states priced cost per delivered line beside cost per point | In Progress | Low | Improvement | 2026-11-17 | EP0371 |

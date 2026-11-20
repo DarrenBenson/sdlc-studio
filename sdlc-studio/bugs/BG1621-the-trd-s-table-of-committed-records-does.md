@@ -1,6 +1,6 @@
 # BG1621: The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1621.md
@@ -26,6 +26,7 @@ Add a row for the author mutant lists to the committed-records table, naming the
 
 - [ ] **AC1** Given trd.md section 6's table of committed records, when it is read, then it has a row for `sdlc-studio/reviews/author-mutants/<id>.json` that names `critic.py self-check record --mutants-from` as its writer and the QA brief's replay of the author's mutants as its reader
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_the_committed_records_table_lists_the_author_mutant_lists
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

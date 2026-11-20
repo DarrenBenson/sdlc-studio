@@ -1,68 +1,68 @@
 {
   "unit": "BG1531",
-  "digest": "3cb35192241c49d3 at 6d3cd7e6d36c",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a21efa8f050531b5f/BG1531-mutation-edits.json",
+  "digest": "d6eb3e9d76b6c547 at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1531-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "gate-back-in-read-only-list",
+      "mutant": "close's meta list drops retros/",
       "file": "sdlc-studio/trd.md",
-      "old": "`validate`, `next_id`, `critic show`) never mutate",
-      "new": "`validate`, `next_id`, `gate`, `critic show`) never mutate",
+      "old": "`reviews/`, `retros/`, `handoffs/` and\n   `reports/`",
+      "new": "`reviews/`, `handoffs/` and\n   `reports/`",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "section-2-read-only-layer",
+      "mutant": "close named without reconcile.apply_meta",
       "file": "sdlc-studio/trd.md",
-      "old": "with a Python script layer for",
-      "new": "with a read-only Python script layer for",
+      "old": "then through `reconcile.apply_meta` adds",
+      "new": "then adds",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "briefs-jsonl-no-tracking",
+      "mutant": "tracking back to both tracked",
       "file": "sdlc-studio/trd.md",
-      "old": "`sdlc-studio/.local/briefs.jsonl` (untracked)",
-      "new": "`sdlc-studio/.local/briefs.jsonl`",
+      "old": "`reviews/LATEST.md` (all tracked)",
+      "new": "`reviews/LATEST.md` (both tracked)",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "s9-row-no-writers",
+      "mutant": "gate put back in the rule 5 read-only list",
       "file": "sdlc-studio/trd.md",
-      "old": "`critic brief`, `gate` and `review_prep close` write only the state \u00a75 rule 5 names, and every",
-      "new": "and every",
+      "old": "Read-only helpers (`reconcile detect`, `status`,",
+      "new": "Read-only helpers (`reconcile detect`, `gate`, `status`,",
       "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "review-prep-in-split-list",
-      "file": "sdlc-studio/trd.md",
-      "old": "`status`, `validate`, `next_id`, `critic show`) emit JSON",
-      "new": "`status`, `validate`, `next_id`, `review_prep`, `critic show`) emit JSON",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_the_writing_helpers_are_not_listed_as_read_only",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "audit-listed-with-no-assertion",
-      "file": "sdlc-studio/trd.md",
-      "old": "`validate`, `next_id`, `critic show`) never mutate",
-      "new": "`validate`, `next_id`, `audit`, `critic show`) never mutate",
-      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_every_helper_called_read_only_has_a_confinement_assertion",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "snapshot-blind-to-directories",
+      "mutant": "confinement expects no index row from close",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
-      "old": "\"(directory)\" if p.is_dir() else hashlib",
-      "new": "hashlib",
+      "old": "\"sdlc-studio/.local/review-state.json\",\n                 \"sdlc-studio/reviews/_index.md\"}",
+      "new": "\"sdlc-studio/.local/review-state.json\"}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::WritingHelperConfinementTests::test_each_writing_helper_writes_only_its_named_state",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "confinement expects no retro index for an unindexed retro",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py",
+      "old": "self.assertEqual((state | {\"sdlc-studio/retros/_index.md\"}, 0), (close, rc))",
+      "new": "self.assertEqual((state, 0), (close, rc))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_confinement.py::WritingHelperConfinementTests::test_each_writing_helper_writes_only_its_named_state",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a read-only helper with no confinement assertion",
+      "file": "sdlc-studio/trd.md",
+      "old": "Read-only helpers (`reconcile detect`, `status`,",
+      "new": "Read-only helpers (`reconcile detect`, `audit`, `status`,",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdReadOnlyHelperTests::test_every_helper_called_read_only_has_a_confinement_assertion",
       "result": "killed",
       "answer": ""
     }

@@ -1,0 +1,79 @@
+{
+  "unit": "BG1557",
+  "digest": "d8a5e3255571290e at 6aee7a425fe7",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7208572fa62d34f0/BG1557-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "System Context restored to GitHub only",
+      "file": "sdlc-studio/trd.md",
+      "old": "The external services\nare GitHub Issues and GitHub Actions",
+      "new": "The only external\nservice is GitHub, with GitHub Issues and GitHub Actions",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_summary_names_every_external_service_the_detail_lists",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "System Context drops the Cursor usage API",
+      "file": "sdlc-studio/trd.md",
+      "old": "and the Cursor\nusage API, read by",
+      "new": "and the Cursor\nmeter, read by",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_summary_names_every_external_service_the_detail_lists",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section 2 calls the script layer read-only",
+      "file": "sdlc-studio/trd.md",
+      "old": "a read path that mutates nothing",
+      "new": "a read-only script layer",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_summary_names_every_external_service_the_detail_lists",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "C4 note back at modules/trd",
+      "file": "sdlc-studio/trd.md",
+      "old": "see `templates/modules/trd/c4-diagrams.md`",
+      "new": "see `modules/trd/c4-diagrams.md`",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_c4_path_exists_and_the_install_table_matches_install_sh",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Gemini row back to its global path",
+      "file": "sdlc-studio/trd.md",
+      "old": "| Gemini CLI | `.gemini/skills/sdlc-studio/` |",
+      "new": "| Gemini CLI | `~/.gemini/skills/sdlc-studio/` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_c4_path_exists_and_the_install_table_matches_install_sh",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "opencode row gives another target's directory",
+      "file": "sdlc-studio/trd.md",
+      "old": "| opencode | `.opencode/skills/sdlc-studio/` |",
+      "new": "| opencode | `.agents/skills/sdlc-studio/` |",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_c4_path_exists_and_the_install_table_matches_install_sh",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section 10 back to 20 units",
+      "file": "sdlc-studio/trd.md",
+      "old": "re-estimation of 21 delivered units, 19 of them with measured actuals, they scored",
+      "new": "re-estimation of 20 delivered units they scored",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_cost_model_count_matches_the_shipped_basis",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section 12 drops the build-only condition",
+      "file": "sdlc-studio/trd.md",
+      "old": "; the figure holds for the build, not for a whole sprint. The",
+      "new": ". The",
+      "test": "tools/tests/test_lean_trd_refresh.py::TrdSummaryAgreementTests::test_the_cost_model_count_matches_the_shipped_basis",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

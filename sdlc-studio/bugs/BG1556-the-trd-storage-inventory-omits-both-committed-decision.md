@@ -1,6 +1,6 @@
 # BG1556: The TRD storage inventory omits both committed decision stores and does not tell the two decisions ledgers apart
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1556.md
@@ -31,10 +31,13 @@ Add two rows to the committed evidence and records table: the decision log at `s
 
 - [ ] **AC1** Given the committed evidence and records table in section 6 of sdlc-studio/trd.md, when it is read, then it holds a row for the decision log at sdlc-studio/decisions.md written by `decisions.py` and a row for the per-tranche ledger under sdlc-studio/decisions/ written by `ledger.py`, each with its purpose. Fails on: either decision store missing from the table.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_both_decision_stores_are_listed_with_their_writers
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given the tracked files under sdlc-studio/decisions/ and the decision log, when the storage test matches tracked files against the listed paths, then every one matches a listed path, as the four directories it already scans do. Fails on: the decision stores staying exempt from the scan by enumeration.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_every_tracked_decision_file_matches_a_listed_path
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given rule 5 of section 5, when it is read, then `decisions.py` is named with the decision log, `ledger.py` is named with the per-tranche ledger, and both appear in the write-surface list. Fails on: one script credited with the other's store, or `ledger.py` absent from the write surface.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdStorageTests::test_rule_five_names_each_script_with_its_own_store
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

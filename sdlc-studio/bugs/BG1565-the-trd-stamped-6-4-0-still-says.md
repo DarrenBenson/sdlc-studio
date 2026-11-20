@@ -1,6 +1,6 @@
 # BG1565: The TRD stamped 6.4.0 still says persona-learning approval and signing are open stories and no learning is live
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1565.md
@@ -30,10 +30,13 @@ Rewrite the Built so far paragraph of ADR-012 to state what 6.4.0 ships: a seat 
 
 - [ ] **AC1** Given the Built so far paragraph of ADR-012 in sdlc-studio/trd.md, when it is read, then it states what 6.4.0 ships (a seat proposes a learning, another seat approves or rejects it, the close lists every learning about to go live, and a learning reaches a brief only once the run is signed) and names US1065 to US1068 beside US1058 and US1059, with a revision row for the change. Fails on: the TRD saying approval and signing are open stories and no learning is live.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_adr_012_states_the_learning_loop_as_shipped
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given every story id the TRD calls open or not yet built, when the test reads each story's Status line, then none reads Done. Fails on: a story the TRD calls open whose file reads Done.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_no_story_called_open_reads_done
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given a fixture TRD passage calling one Done story open and one Draft story open, when the same check runs, then only the Done story is reported. Fails on: a check that reports every story id, or one that passes the stale claim.
   - **Verify:** pytest tools/tests/test_lean_trd_refresh.py::TrdBuiltStateTests::test_a_done_story_called_open_is_reported_and_a_draft_one_passes
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 
