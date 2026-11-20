@@ -38,9 +38,10 @@ STAMP_RE = re.compile(
 REVIEWED_RE = re.compile(r"<!--\s*provenance:\s*reviewed\s+(\d{4}-\d{2}-\d{2})\s*-->")
 
 
-def _body_hash(text: str) -> str:
+def body_hash(text: str) -> str:
     """Short content hash of a card EXCLUDING any provenance stamp line (stable across
-    stamp/re-stamp; whitespace-normalised at line ends only)."""
+    stamp/re-stamp; whitespace-normalised at line ends only). The one card hash: the generation
+    stamp carries it and `persona_review.py record` records a review against it."""
     lines = [ln for ln in text.splitlines()
              if not STAMP_RE.search(ln) and not REVIEWED_RE.search(ln)]
     canon = "\n".join(ln.rstrip() for ln in lines)
@@ -55,30 +56,30 @@ def classify(path: Path | str) -> str:
     m = STAMP_RE.search(text)
     if not m:
         return "authored"
-    return "generated-pristine" if m.group(1) == _body_hash(text) else "generated-edited"
+    return "generated-pristine" if m.group(1) == body_hash(text) else "generated-edited"
 
 
 def stamp(path: Path | str) -> str:
     """Mark a just-generated card provisional-unverified with its content hash. Replaces
     an existing stamp (re-stamp after regeneration); refuses to stamp over a `reviewed`
     marker - an accepted card that gets regenerated must first lose its acceptance
-    deliberately. Returns the class after stamping."""
+    deliberately. Returns the class after stamping. Every other line keeps its text and
+    its line ending, trailing blank lines included (a role line ending the file gains a
+    newline before the stamp), so stamping leaves the body hash as it was."""
     p = Path(path)
     text = p.read_text(encoding="utf-8")
     if REVIEWED_RE.search(text):
         raise ValueError(f"{p} carries a reviewed marker - it is an accepted card; "
                          "remove the marker deliberately before regenerating over it")
-    text = "\n".join(ln for ln in text.splitlines() if not STAMP_RE.search(ln))
-    line = f"<!-- provenance: generated provisional-unverified hash=sha256:{_body_hash(text)} -->"
+    lines = [ln for ln in text.splitlines(keepends=True) if not STAMP_RE.search(ln)]
+    line = (f"<!-- provenance: generated provisional-unverified "
+            f"hash=sha256:{body_hash(''.join(lines))} -->\n")
     # place beside the role comment when present, else at the top
-    lines = text.splitlines()
-    for i, ln in enumerate(lines):
-        if "<!-- role:" in ln:
-            lines.insert(i + 1, line)
-            break
-    else:
-        lines.insert(0, line)
-    sdlc_md.atomic_write(p, "\n".join(lines) + "\n")
+    at = next((i + 1 for i, ln in enumerate(lines) if "<!-- role:" in ln), 0)
+    if at and not lines[at - 1].endswith(("\n", "\r")):
+        lines[at - 1] += "\n"
+    lines.insert(at, line)
+    sdlc_md.atomic_write(p, "".join(lines))
     return classify(p)
 
 

@@ -228,13 +228,25 @@ class WriterCase:
     `targets` are fnmatch patterns (dated evidence logs carry the day in the name).
     A writer whose whole output lands in `.local/` declares `local_target` instead:
     the snapshot cannot see that tree, so without it an early exit would look
-    identical to a clean run.
+    identical to a clean run. `seed` adds `(path, text)` files to the fixture before the
+    snapshot, for a writer whose input the shared fixture does not carry.
     """
 
     argv: tuple[str, ...]
     targets: frozenset[str] = field(default_factory=frozenset)
     local_target: str | None = None
     drift: bool = False
+    seed: tuple[tuple[str, str], ...] = ()
+
+
+#: A generated engineering seat card still carrying its provisional stamp, clean against the
+#: persona standard (its Evidence cites the fixture's US0001), for `persona_review.py record`.
+_PROVISIONAL_SEAT = (
+    "<!-- role: engineering -->\n"
+    "<!-- provenance: generated provisional-unverified hash=sha256:0123456789abcdef -->\n"
+    "# Cal Dorn - engineering seat\n\n## Who They Are\n\nCal reviews the work.\n\n"
+    "## Lens\n\n- x\n\n## Pushes Back When\n\n- x\n\n## Shadow\n\nx\n\n"
+    "## Evidence\n\n- US0001: the story this card was drawn from\n")
 
 
 #: Every writer with a confinement snapshot. The roster sweep reads this as the
@@ -313,6 +325,16 @@ WRITER_CASES: dict[str, WriterCase] = {
         targets=frozenset({"sdlc-studio/retros/evidence/forecasts-*.jsonl"}),
         local_target="sdlc-studio/.local/sprint-plan.json",
     ),
+    "persona_review.py": WriterCase(
+        # `record` writes the review ledger and, on a PASS of a provisional card, that card's
+        # provenance line; `brief` and `check` are read-only. A PASS by another seat touches
+        # both, and nothing else in the tree may move.
+        argv=("record", "--card", "sdlc-studio/personas/seats/engineering.md",
+              "--outcome", "pass", "--reviewer", "Lena Marsh (product)", "--run-by", "Dana Fox"),
+        targets=frozenset({"sdlc-studio/reviews/persona-reviews.md",
+                           "sdlc-studio/personas/seats/engineering.md"}),
+        seed=(("sdlc-studio/personas/seats/engineering.md", _PROVISIONAL_SEAT),),
+    ),
 }
 
 
@@ -328,6 +350,9 @@ class MajorWriterConfinementTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _writer_fixture(root, drift=case.drift)
+            for rel, text in case.seed:
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(text, encoding="utf-8")
             before = _snapshot(root)
             proc = subprocess.run(
                 [sys.executable, "-B", str(SCRIPTS / script), *case.argv],

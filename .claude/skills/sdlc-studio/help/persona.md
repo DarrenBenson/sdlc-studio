@@ -182,10 +182,23 @@ Review and refine existing personas.
 
 **What happens:**
 
-1. Loads all persona files
-2. For each: asks about updates needed
-3. Asks if new personas needed
-4. Updates files and index
+1. Loads all persona files and runs `persona_review.py check` on them
+2. For each card, briefs a seat other than the card's own to review it against the standard
+3. Records each verdict in `sdlc-studio/reviews/persona-reviews.md`
+4. Asks if new personas are needed, then updates files and index
+
+```bash
+# Brief the product seat to review the qa seat's card (never the qa seat itself)
+python3 scripts/persona_review.py brief --card sdlc-studio/personas/seats/qa.md --seat product
+
+# Record its verdict against the card's body hash; a FAIL names each rule it failed
+python3 scripts/persona_review.py record --card sdlc-studio/personas/seats/qa.md \
+  --outcome fail --reviewer "Lena Marsh (product)" --run-by "Dana Fox" --rule persona-evidence
+```
+
+`--run-by` names the person who ran the review and defaults to `git config user.name`.
+A PASS is refused while a rule that blocks still fails on the card, and a PASS on a
+generated card clears its provisional stamp, as `persona_gen.py accept` does.
 
 ---
 
