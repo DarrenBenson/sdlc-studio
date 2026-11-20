@@ -11760,11 +11760,14 @@ def _end_goals(text: str) -> list[tuple[str, str]]:
 
 
 def persona_cards(root: Path | str) -> list[dict]:
-    """`[{name, role, end_goals, goal_verify, goal_applies_to}]` for each persona card in
+    """`[{name, role, end_goals, goals, goal_verify, goal_applies_to}]` for each persona card in
     `sdlc-studio/personas/` - the name from its `# ` heading, the role from its Quick Reference
     `Cast role` (None when undeclared), the End goals as `(number, text)` pairs numbered as on
-    the card, and, keyed by that number, the Verify each goal carries and its Applies-to
-    patterns (a goal carrying neither is absent from both)."""
+    the card, `goals` the same End goals in card order each with its own Verify and Applies-to
+    lines, and, keyed by the number, the Verify each goal carries and its Applies-to patterns (a
+    goal carrying neither is absent from both). A card may number several goals alike (every
+    item `1.`), where a number-keyed map keeps only the last, so a reader pairing a goal with
+    its own lines reads `goals`."""
     from validate import _persona_cast_role  # noqa: PLC0415 - the one cast-role reader
     pdir = Path(root) / "sdlc-studio" / "personas"
     cards = []
@@ -11778,6 +11781,7 @@ def persona_cards(root: Path | str) -> list[dict]:
             goals = persona_goals.end_goals(text)
             cards.append({"name": m.group(1), "role": _persona_cast_role(text),
                           "end_goals": [(g.number, g.text) for g in goals],
+                          "goals": goals,
                           "goal_verify": {g.number: g.verify for g in goals
                                           if g.verify is not None},
                           "goal_applies_to": {g.number: list(g.applies_to) for g in goals
@@ -11840,10 +11844,12 @@ def goal_trace(root: Path | str, goal: str | None, serves: list[str] | None = No
     traced = [s["name"] for s in designed_for if s["kind"] == "persona"]
     if traced:
         by_name = {c["name"]: c for c in cards}
+        # Each End goal carries its own Verify from the reader, never re-joined on its number:
+        # a card numbering every goal `1.` would hand each of them the last goal's Verify.
         trace["end_goals"] = {
-            name: [{"number": n, "text": text, "verify": by_name[name]["goal_verify"].get(n),
-                    "check": _end_goal_check(by_name[name]["goal_verify"].get(n))}
-                   for n, text in by_name[name]["end_goals"]]
+            name: [{"number": g.number, "text": g.text, "verify": g.verify,
+                    "check": _end_goal_check(g.verify)}
+                   for g in by_name[name]["goals"]]
             for name in traced}
         trace["checked_by"] = [{"persona": name, "number": g["number"], "text": g["text"],
                                 "verify": g["verify"]}

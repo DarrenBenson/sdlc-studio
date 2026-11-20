@@ -27,19 +27,23 @@ _HANA_VERIFY = "pytest tests/test_notice.py::NoticeTests::test_heard"
 _MANUAL = "manual walk each room"
 
 
-def _card(name: str, role: str, goals: list[tuple[str, str | None]]) -> str:
-    """A persona card whose `## End Goals` are `goals`, each `(text, verify or None)`."""
+def _card(name: str, role: str, goals: list[tuple[str, str | None]],
+          numbers: list[str] | None = None) -> str:
+    """A persona card whose `## End Goals` are `goals`, each `(text, verify or None)`, numbered
+    `1.` `2.` ... unless `numbers` gives the number each goal is written under."""
+    numbers = numbers or [str(n) for n in range(1, len(goals) + 1)]
     body = "".join(f"{n}. {text}\n" + (f"   - **Verify:** {verify}\n" if verify else "")
-                   for n, (text, verify) in enumerate(goals, 1))
+                   for n, (text, verify) in zip(numbers, goals, strict=True))
     return (f"# {name}\n\n## Quick Reference\n\n| Attribute | Value |\n| --- | --- |\n"
             f"| **Cast role** | {role} |\n\n## Who They Are\n\nSomebody.\n\n"
             f"## End Goals\n\n{body}")
 
 
-def _write_card(root: Path, name: str, role: str, goals: list[tuple[str, str | None]]) -> None:
+def _write_card(root: Path, name: str, role: str, goals: list[tuple[str, str | None]],
+                numbers: list[str] | None = None) -> None:
     slug = name.lower().replace(" ", "-")
-    (root / "sdlc-studio" / "personas" / f"{slug}.md").write_text(_card(name, role, goals),
-                                                                  encoding="utf-8")
+    (root / "sdlc-studio" / "personas" / f"{slug}.md").write_text(
+        _card(name, role, goals, numbers), encoding="utf-8")
 
 
 def _run(root: Path, *argv: str) -> tuple[int, str, str]:
@@ -236,6 +240,85 @@ class GoalCheckBoundaryTests(unittest.TestCase):
             self.assertEqual(1, len(_starting(_brief(root, persona_goal), "goal check")))
             self.assertEqual(1, len(_starting(_plan(root, persona_goal)[1].splitlines(),
                                               "goal check")))
+
+
+class RepeatedNumberTests(unittest.TestCase):
+    """Each End goal keeps its own check however the card numbers it, an empty code-span Verify
+    names no check, and the traced listing names each persona's own Cast role."""
+
+    _GOALS = (("Walk in to a warm house", None), ("Every open bug is fixed", _PYTEST),
+              ("Every room is lit", _MANUAL))
+
+    def _read(self, root: Path, numbers: list[str] | None) -> tuple[list[str], dict]:
+        """The traced block with each line's number dropped, and the plan's goal trace."""
+        _write_card(root, "Maya Okafor", "Primary", list(self._GOALS), numbers)
+        goal = "Maya Okafor sees every open bug fixed"
+        block = [ln.split(". ", 1)[-1] for ln in _traced_block(_brief(root, goal))]
+        rc, data = _plan_json(root, goal)
+        self.assertEqual(0, rc)
+        return block, data["goal_trace"]
+
+    def test_goals_numbered_alike_keep_their_own_checks(self) -> None:
+        """Mutant: join each End goal to its Verify by the number written on the card, so a card
+        numbering every goal `1.` hands each of them the last goal's Verify."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            s1._project(root)
+            alike_block, alike = self._read(root, ["1", "1", "1"])
+            counted_block, counted = self._read(root, None)
+        self.assertEqual(
+            ["  Maya Okafor (Primary):",
+             "Walk in to a warm house - not testable: no Verify line",
+             f"Every open bug is fixed - Verify: {_PYTEST}",
+             f"Every room is lit - checked by hand: {_MANUAL}"],
+            counted_block)
+        self.assertEqual(counted_block, alike_block)
+
+        def _checks(trace: dict) -> list[tuple]:
+            return [(g["text"], g["verify"], g["check"]) for g in trace["end_goals"]["Maya Okafor"]]
+
+        self.assertEqual(_checks(counted), _checks(alike))
+        self.assertEqual(["1", "1", "1"], [g["number"] for g in alike["end_goals"]["Maya Okafor"]])
+        self.assertTrue(alike["checkable"])
+        self.assertEqual([{"persona": "Maya Okafor", "number": "1",
+                           "text": "Every open bug is fixed", "verify": _PYTEST}],
+                         alike["checked_by"])
+
+    def test_an_empty_code_span_verify_is_no_check(self) -> None:
+        """Mutant: read the Verify without stripping its backticks, so two backticks and nothing
+        between read as an executable check."""
+        goal = "Maya Okafor sees every open bug fixed"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            s1._project(root)
+            _write_card(root, "Maya Okafor", "Primary",
+                        [("Walk in to a warm house", "``"), ("Every room is lit", None)])
+            lines = _brief(root, goal)
+            rc, data = _plan_json(root, goal)
+        self.assertEqual(
+            ["  Maya Okafor (Primary):",
+             "    1. Walk in to a warm house - not testable: its Verify names no check",
+             "    2. Every room is lit - not testable: no Verify line"],
+            _traced_block(lines))
+        self.assertEqual(1, len(_starting(lines, "Goal check")))
+        self.assertEqual(0, rc)
+        trace = data["goal_trace"]
+        self.assertEqual(["none", "none"],
+                         [g["check"] for g in trace["end_goals"]["Maya Okafor"]])
+        self.assertEqual("``", trace["end_goals"]["Maya Okafor"][0]["verify"])
+        self.assertFalse(trace["checkable"])
+
+    def test_the_traced_listing_names_each_personas_role(self) -> None:
+        """Mutant: label every traced persona Primary in the listing."""
+        goal = "Maya Okafor and Hana Ito see every open bug fixed"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            s1._project(root)
+            _write_card(root, "Maya Okafor", "Primary", [("Walk in to a warm house", None)])
+            _write_card(root, "Hana Ito", "Secondary", [("Hear about a change", _HANA_VERIFY)])
+            block = _traced_block(_brief(root, goal))
+        self.assertEqual(["  Hana Ito (Secondary):", "  Maya Okafor (Primary):"],
+                         sorted(ln for ln in block if not ln.startswith("    ")))
 
 
 if __name__ == "__main__":
