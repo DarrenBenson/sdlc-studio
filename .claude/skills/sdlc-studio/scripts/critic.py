@@ -5017,7 +5017,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
                   file=sys.stderr)
     except (OSError, ValueError, persona_resolve.RenderError) as exc:
         # RenderError: the seat's project card the persona standard refuses, named with the
-        # one command to run next, before any of the brief reaches stdout.
+        # line naming what to run next, before any of the brief reaches stdout.
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2
     return 0

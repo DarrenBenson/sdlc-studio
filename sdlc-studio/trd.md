@@ -1333,8 +1333,9 @@ card to no review standard; `persona_review.py` (US1052) does, reporting each pe
 card against `best-practices/persona.md` rule by rule, each rule blocking or reported. A
 project card that breaks a blocking rule, or whose latest review failed, frames no brief:
 `persona_resolve.py`, `critic.py brief` and the refine and triage panels refuse it, naming the
-card, each rule and the one command to run next, and a card with no review, or changed since
-its PASS, frames and is named as owed its review (US1055).
+card, each rule and the one command to run next (or that no other seat is clear to review
+it), and a card with no review, or changed since its PASS, frames and is named as owed its
+review (US1055).
 **Not yet built:** `sdlc-studio/personas/memory/` (no persona here has recorded a learning).
 
 **Consequences:**

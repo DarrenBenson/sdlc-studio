@@ -88,9 +88,9 @@ def _cli(root: Path, script: str, *argv: str) -> tuple[int, str, str]:
     return done.returncode, done.stdout, done.stderr
 
 
-def _record(root: Path, outcome: str, reviewer: str, date: str, rules=()) -> None:
+def _record(root: Path, outcome: str, reviewer: str, date: str, rules=(), card: str = QA) -> None:
     with mock.patch.dict(os.environ, gitutil.git_env(), clear=True):
-        persona_review.record(root, QA, outcome, reviewer, run_by="Dana Fox", rules=rules,
+        persona_review.record(root, card, outcome, reviewer, run_by="Dana Fox", rules=rules,
                               today=date)
 
 
@@ -180,6 +180,91 @@ class PersonaReviewBlockTests(unittest.TestCase):
                                      err)
                     shipped = SCRIPTS.parent / "templates" / "personas" / "amigos" / f"{role}.md"
                     self.assertNotIn(str(shipped), out + err)
+
+    def test_the_remedy_names_a_clear_seat_and_a_held_seat_is_refused_cleanly(self) -> None:
+        """AC1, the remedy itself. Mutants: the remedy naming the first other seat whatever
+        holds its own card; a seat's clearance read from every card's findings, not its own;
+        `persona_review.py brief` letting a held reviewing seat out as a traceback."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            root.mkdir()
+            _fixture(root, _seat("qa", "Ivy Cole", extra=" She is 42 years old."))
+            _write(root, ENGINEERING, _seat("engineering", "Cal Dorn", extra=" He is married."))
+            rc, out, err = _resolve(root)
+            self.assertEqual((1, ""), (rc, out.strip()), err)
+            # engineering is first in the roster and held; product is the seat that is clear.
+            self.assertEqual([(QA, "product")], REMEDY_RE.findall(err), err)
+            self.assertRegex(err.splitlines()[-1], r"^Run next: python3 \S+persona_review\.py "
+                             rf"brief --card {re.escape(QA)} --seat product$")
+            rc, out, err = _cli(root, "persona_review.py", "brief", "--card", QA, "--seat",
+                                "product", "--root", str(root))
+            self.assertEqual(0, rc, err)
+            self.assertIn(f"reviews {QA} against the persona standard", out)
+            # Briefing the held seat is refused with its own card's refusal, never a traceback.
+            rc, out, err = _cli(root, "persona_review.py", "brief", "--card", QA, "--seat",
+                                "engineering", "--root", str(root))
+            self.assertEqual(2, rc, err)
+            self.assertNotIn("Traceback", err)
+            self.assertEqual("", out.strip(), "a held reviewing seat frames no brief")
+            self.assertTrue(err.startswith("persona_review brief refused: "), err)
+            self.assertIn(f"{ENGINEERING} breaks the persona standard", err)
+            self.assertIn("seat-demographic-fluff", err)
+
+    def test_with_every_other_seat_held_the_remedy_names_no_brief(self) -> None:
+        """AC1, no seat clear. Mutants: the remedy falling back to a brief for a held seat,
+        which `persona_review.py brief` refuses; the owed line doing the same."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            root.mkdir()
+            _fixture(root, _seat("qa", "Ivy Cole", extra=" She is 42 years old."))
+            _write(root, ENGINEERING, _seat("engineering", "Cal Dorn", extra=" He is married."))
+            _write(root, PRODUCT, _seat("product", "Lena Marsh", extra=" She is 35 years old."))
+            for name, want, (rc, out, err) in (
+                    ("resolve", 1, _resolve(root)),
+                    ("critic brief", 2, _cli(root, "critic.py", "brief", "--unit", "US0001",
+                                             "--seat", "qa", "--root", str(root)))):
+                with self.subTest(entry=name):
+                    self.assertEqual(want, rc, err)
+                    self.assertNotIn("Traceback", err)
+                    self.assertEqual("", out.strip())
+                    self.assertIn(f"{QA} breaks the persona standard", err)
+                    self.assertEqual([], REMEDY_RE.findall(err), "no brief can run: " + err)
+                    self.assertIn("No other seat is clear to review it: the engineering and "
+                                  "product seat cards are each held too", err)
+                    self.assertIn("persona_review.py record", err)
+            # A clean qa card owed its review frames, and its one owed line names no brief.
+            _write(root, QA, _seat("qa", "Ivy Cole", evidence=False))
+            rc, out, err = _resolve(root)
+            self.assertEqual(0, rc, err)
+            self.assertIn("Ivy Cole reviews the work.", out)
+            lines = [ln for ln in err.splitlines() if ln.strip()]
+            self.assertEqual(1, len(lines), err)
+            self.assertIn("persona review owed", lines[0])
+            self.assertIn("No other seat is clear to review it", lines[0])
+            self.assertEqual([], REMEDY_RE.findall(err), err)
+
+    def test_a_failed_review_holds_only_its_own_card(self) -> None:
+        """AC2, the FAIL's scope. Mutant: the latest review read as the ledger's last row for
+        any card, so a FAIL on one seat card holds every other."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / "proj"
+            root.mkdir()
+            _fixture(root, _seat("qa", "Ivy Cole"))
+            _record(root, "fail", "Lena Marsh (product)", "2026-11-18", ["persona-evidence"],
+                    card=ENGINEERING)
+            rc, out, err = _cli(root, "persona_resolve.py", "resolve", "--seat", "engineering",
+                                "--root", str(root))
+            self.assertEqual(1, rc, "control: the FAIL holds its own card: " + err)
+            self.assertIn("Lena Marsh (product)", err)
+            rc, out, err = _resolve(root)
+            self.assertEqual(0, rc, err)
+            self.assertIn("Ivy Cole reviews the work.", out)
+            self.assertNotIn("Lena Marsh (product)", err)
+            lines = [ln for ln in err.splitlines() if ln.strip()]
+            self.assertEqual(1, len(lines), err)
+            self.assertIn(f"persona review owed: {QA} has no review recorded", lines[0])
+            self.assertRegex(lines[0], r"meanwhile\. Run next: python3 \S+persona_review\.py "
+                             rf"brief --card {re.escape(QA)} --seat product$")
 
     def test_a_failed_review_holds_until_a_later_review_passes(self) -> None:
         """AC2. Mutants: the FAIL honoured only while its hash equals the card's bytes; the

@@ -419,8 +419,8 @@ Review each card against the standard, by a seat that is not the card, and recor
      it has changed since, frames nothing: `persona_resolve.py resolve` and `resolve-consult`
      (exit 1), `critic.py brief`, `refine.py apply` and `triage.py apply` (exit 2) refuse it,
      naming the card, each rule and one command to run next, `persona_review.py brief --card
-     <card> --seat <another seat>`; no other card stands in, and only a later PASS lifts a
-     FAIL. A card with no row, or changed since its PASS, frames and is named on stderr as
+     <card> --seat <another seat>`, or that no seat is clear when every other seat's card is
+     held; no other card stands in, and only a later PASS lifts a FAIL. A card with no row, or changed since its PASS, frames and is named on stderr as
      owed its review. The shipped cards and `--skip-personas` never read the ledger
 
 5. **Check for New**

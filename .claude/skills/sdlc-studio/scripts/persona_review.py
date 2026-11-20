@@ -285,8 +285,10 @@ def _refuse_own_seat(root: Path, card: Path, seat: str) -> None:
 def brief(root: Path | str, card: Path | str, seat: str) -> str:
     """The brief that frames `seat` to review `card` against the standard: the seat card to
     adopt, the standard page, the card, each finding `check` reports for it with its severity,
-    and the `record` command. Raises ReviewRefused for the card's own seat, and
-    persona_resolve.UnknownSeat (a ValueError) for a seat no card fills."""
+    and the `record` command. Raises ReviewRefused for the card's own seat,
+    persona_resolve.UnknownSeat (a ValueError) for a seat no card fills, and
+    persona_resolve.StandardRefused (a RenderError) when the persona standard holds the
+    reviewing seat's own card."""
     import persona_resolve  # noqa: PLC0415 - sibling; the resolver every review brief calls
     root = Path(root).resolve()
     path = _review_card(root, card)
@@ -424,8 +426,10 @@ def _held(root: Path, path: Path, findings: list[dict]) -> list[dict]:
 
 
 def remedy(root: Path | str, card: Path | str) -> str:
-    """The one command to run next for `card`: brief a seat other than its own to review it,
-    the first in the roster whose own card nothing holds, else the first other seat."""
+    """The line naming what to run next for `card`: `Run next:` and the command briefing a
+    seat other than its own to review it, the first in the roster whose own card nothing holds.
+    When every other seat's card is held too, no brief can run, so the line says so and names
+    the way out instead of a command that would be refused."""
     import persona_resolve  # noqa: PLC0415 - sibling; the seat roster
     root, path = Path(root).resolve(), Path(card).resolve()
     own = _own_seat(root, path)
@@ -436,20 +440,26 @@ def remedy(root: Path | str, card: Path | str) -> str:
     def clear(seat: str) -> bool:
         return all(not _held(root, p, findings) for p in seats
                    if persona_resolve.card_role(p) == seat)
-    seat = next((s for s in others if clear(s)), others[0])
-    return (f"python3 {_rel(str(Path(__file__).resolve()), root)} brief "
-            f"--card {_rel(str(path), root)} --seat {seat}")
+    seat = next((s for s in others if clear(s)), None)
+    script = _rel(str(Path(__file__).resolve()), root)
+    if seat is None:
+        held = " and ".join([", ".join(others[:-1]), others[-1]] if len(others) > 1 else others)
+        return (f"No other seat is clear to review it: the {held} seat cards are each held "
+                "too. Lift one first (fix what breaks the standard on it, or record a PASS for "
+                f"it with `python3 {script} record` where a FAIL holds it), then brief that "
+                f"seat on {_rel(str(path), root)}.")
+    return f"Run next: python3 {script} brief --card {_rel(str(path), root)} --seat {seat}"
 
 
 def refusal(root: Path | str, card: Path | str, held: list[dict]) -> str:
     """The refusal for a card `blocking` holds: the card, each rule with its message, and the
-    one command to run next. Names no other card, since none stands in for it."""
+    `remedy` line. Names no other card, since none stands in for it."""
     root = Path(root).resolve()
     rel = _rel(str(Path(card).resolve()), root)
     lines = [f"{rel} breaks the persona standard (best-practices/persona.md), so it frames "
              "no brief and no other card stands in for it:"]
     lines += [f"  {f['rule']} ({f['heading']}): {f['message']}" for f in held]
-    lines += [f"Run next: {remedy(root, card)}"]
+    lines += [remedy(root, card)]
     return "\n".join(lines)
 
 
@@ -468,14 +478,17 @@ def review_owed(root: Path | str, card: Path | str) -> str | None:
     else:
         return None
     return (f"persona review owed: {_rel(str(path), root)} {why} in {LEDGER_REL}; it frames "
-            f"the brief meanwhile. Run next: {remedy(root, path)}")
+            f"the brief meanwhile. {remedy(root, path)}")
 
 
 def cmd_brief(args: argparse.Namespace) -> int:
-    """Print the review brief; exit 2 for the card's own seat or a seat no card fills."""
+    """Print the review brief; exit 2 for the card's own seat, a seat no card fills, or a
+    reviewing seat whose own card the persona standard holds (its refusal printed, with the
+    line naming what to run next for that card)."""
+    import persona_resolve  # noqa: PLC0415 - sibling; its RenderError is the standard's refusal
     try:
         print(brief(args.root, args.card, args.seat))
-    except ValueError as exc:
+    except (ValueError, persona_resolve.RenderError) as exc:
         print(f"persona_review brief refused: {exc}", file=sys.stderr)
         return 2
     return 0

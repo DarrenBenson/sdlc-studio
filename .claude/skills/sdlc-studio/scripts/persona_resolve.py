@@ -25,7 +25,8 @@ a role-matched project seat, else the skill default seat, else the generic enric
 Every project seat card either path resolves is held to the persona standard first
 (`persona_review.blocking`): a card that breaks a blocking rule, a missing review render among
 them, or whose latest review failed raises StandardRefused, naming the card, each rule and the
-one command to run next, and no other card stands in for it. `resolve` and `resolve-consult`
+one command to run next (or, when every other seat's card is held too, that no seat is clear),
+and no other card stands in for it. `resolve` and `resolve-consult`
 exit 1 on it; a card with no review, or changed since its PASS, frames as before with one
 stderr line naming its review as owed. The shipped default and `--skip-personas` are never
 judged and never read the review ledger.
@@ -62,7 +63,8 @@ class StandardRefused(RenderError):
     """A project seat card the persona standard holds from framing anything: it breaks a
     blocking rule or its latest review failed. A RenderError, so every caller that refuses a
     half-authored seat (refine, triage, the persona memory briefs) refuses this one the same
-    way; the message names the card, each rule and the one command to run next."""
+    way; the message names the card, each rule and the one command to run next, or that no
+    other seat is clear to review it."""
 
 
 class UnknownSeat(ValueError):

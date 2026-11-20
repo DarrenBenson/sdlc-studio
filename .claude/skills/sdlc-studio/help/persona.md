@@ -211,8 +211,10 @@ sdlc-studio/personas/seats/qa.md breaks the persona standard (best-practices/per
 Run next: python3 scripts/persona_review.py brief --card sdlc-studio/personas/seats/qa.md --seat engineering
 ```
 
-A card with no review, or changed since its PASS, still frames, and one stderr line names it
-as owed its persona review.
+When every other seat's own card is held too, that last line says no seat is clear and how
+to lift one, in place of a command; `persona_review.py brief` refuses a held reviewing seat
+with exit 2 and that seat card's own refusal. A card with no review, or changed since its
+PASS, still frames, and one stderr line names it as owed its persona review.
 
 ---
 
