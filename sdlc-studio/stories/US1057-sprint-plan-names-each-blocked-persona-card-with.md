@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py, changelog.d/US1057.md, tools/check_budgets.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/release_cut.py, .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-review.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/reference-scripts-domain.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_owed.py, changelog.d/US1057.md, tools/check_budgets.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1055
@@ -52,6 +52,7 @@ Kept (D0387). To plan it:
 - The Persona field does not match the As-a and Serves
 - Blocked on US1055 (Draft)
 - The 'Release: 6.2' note is stale under D0382
+- Widened in run twenty (RUN-01M7VNR0), at the round-one repair: both seats found that a persona or seat card that is not valid UTF-8 crashed `sprint.py plan` through `persona_review.blocking_findings`, which reaches `validate.check_personas` and `check_seats`, where each card is read as strict UTF-8 and only OSError is caught. `validate.py` and its test module join the Affects so the read is made safe where it happens, instead of wrapping `Path.read_text` while the validators run.
 
 ## Revision History
 

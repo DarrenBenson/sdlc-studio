@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 467 |
+| Open | 468 |
 | In Progress | 0 |
 | Fixed | 1000 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1669** |
+| **Total** | **1670** |
 
 ## All Bugs
 
@@ -745,6 +745,7 @@
 | [BG1667](BG1667-persona-resolve-py-resolve-tracebacks-with-unicodedecodeerror-on.md) | persona_resolve.py resolve tracebacks with UnicodeDecodeError on a seat card that is not valid UTF-8, where critic.py brief refuses it cleanly | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1668](BG1668-personas-standard-report-does-not-cover-the-goal.md) | personas.standard: report does not cover the goal review's refusal of a traced persona card, which still refuses under report mode | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1669](BG1669-reference-scripts-review-md-does-not-describe-persona.md) | reference-scripts-review.md does not describe persona_review.py owed | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1670](BG1670-persona-review-remedy-names-a-brief-command-for.md) | persona_review.remedy names a brief command for a card held by a blocking rule, whose PASS persona_review.py record then refuses | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 
