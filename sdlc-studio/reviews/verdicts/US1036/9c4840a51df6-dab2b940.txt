@@ -1,0 +1,6 @@
+UNIT: US1036
+BRIEF: 9c4840a51df6-dab2b940
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Executed verify_ac dry run (3 of 3 ACs pass) and the three test modules (15 passed). My own mutants on a clean HEAD copy all died: seat ignored, stale-plan answer framed, one-role guard removed, UnknownSeat handler narrowed (exit not 2), pointer line altered. Probes of an empty, upper-case, path-like and trailing-space seat are all refused naming the roster. The test_lean_goal_seat_prd.py change does not weaken the old test: the strict equality of the brief minus the no-PRD line against the plain composed brief is kept, the last line is split off, and it is now asserted to start with "Review seats: ", so the new closing line is pinned rather than dropped.

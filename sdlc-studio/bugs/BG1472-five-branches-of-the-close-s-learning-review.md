@@ -1,6 +1,6 @@
 # BG1472: Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, .claude/skills/sdlc-studio/reference-persona-learning.md, changelog.d/BG1472.md, sdlc-studio/stories/US1068-a-learning-reaches-a-brief-only-once-a.md
@@ -26,10 +26,13 @@ Add one test per branch through the shipped entry point, each killing its mutant
 
 - [ ] **AC1** Given a closed run in which one seat has adverse evidence and a learning, a second has only a round found after approval, and a third has only a bug it approved over its own finding, when the close writes its learning review, then the first seat is not named as owing a learning and the second and third each are. Fails on: the `role not in learned` qualifier, the found-after-approval keys or the approved-over-own-finding keys removed with every test still green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_each_adverse_kind_is_named_and_a_learned_seat_is_not
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given a run sealed STOPPED with no signature, by `sprint boundary` or `--file-and-close`, whose close listed a learning, when the seat is next briefed, then the learning is held as awaiting its run's signature and is not carried. Fails on: the signature check in `signed_record` removed, so a sealed, unsigned run's learning reaches the brief against D0488.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_run_sealed_without_a_signature_holds_its_learning
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC3** Given a signed run that struck a learning, when the run is closed again, then the close's list of learnings about to go live does not name the struck one. Fails on: the Struck-field check in `standing` removed with every test still green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_reclose_does_not_list_a_struck_learning
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC4** Given US1068's story note that defines a live learning, when it is read, then it says the Listed-in run's tracked record is signed, per D0488, not sealed. Fails on: the note still calling a sealed record live.
   - **Verify:** manual sdlc-studio/stories/US1068-a-learning-reaches-a-brief-only-once-a.md: its note defining a live learning says the Listed-in run's tracked record is signed, per D0488, and never calls a sealed record live
 

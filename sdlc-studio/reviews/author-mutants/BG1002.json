@@ -1,0 +1,61 @@
+{
+  "unit": "BG1002",
+  "digest": "7336d8faad0ebb68 at a011a415bb36",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aed0231debb9c22b2/BG1002-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "trace-ignores-declaration",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    trace = goal_trace(root, goal, serves)\n    if trace is None:",
+      "new": "    trace = goal_trace(root, goal)\n    if trace is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::ServesTests::test_serves_declared_at_plan_reaches_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "designed-for-primary-secondary-only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                or (c[\"name\"] in declared and c[\"role\"] != \"negative\")]",
+      "new": "                or False]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::ServesTests::test_serves_declared_at_plan_reaches_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "declaration-not-recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            extra[\"sprint_serves\"] = declared",
+      "new": "            extra[\"sprint_serves_unread\"] = declared",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::ServesTests::test_serves_declared_at_plan_reaches_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "closed-run-read",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return state if state.get(\"outcome\") == run_state.RUNNING else {}",
+      "new": "    return state",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::ServesTests::test_serves_declared_at_plan_reaches_the_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "batch-from-snapshot",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        plan = {**plan, \"count\": len(live[\"batch\"])}",
+      "new": "        plan = plan",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::BatchLineTests::test_batch_line_reads_the_live_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-adds-skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py",
+      "old": "            for uid in (\"BG0002\", \"BG0003\"):",
+      "new": "            for uid in ():",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py::BatchLineTests::test_batch_line_reads_the_live_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

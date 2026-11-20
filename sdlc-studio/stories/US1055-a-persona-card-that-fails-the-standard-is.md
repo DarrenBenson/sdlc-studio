@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/triage.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py, changelog.d/US1055.md, tools/tests/test_own_persona_cards_pass_standard.py, sdlc-studio/personas/seats/engineering.md, sdlc-studio/personas/seats/product.md, sdlc-studio/personas/seats/qa.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/refine.py, .claude/skills/sdlc-studio/scripts/triage.py, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/help/persona.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_review_block.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py, changelog.d/US1055.md, tools/tests/test_own_persona_cards_pass_standard.py, sdlc-studio/personas/seats/engineering.md, sdlc-studio/personas/seats/product.md, sdlc-studio/personas/seats/qa.md, sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1053, US1054, US1036
@@ -45,6 +45,8 @@
 - Retires the separate RenderError message: a missing review render is seat-no-review-render, refused through the same message (LC-008). RenderError's assertions in test_persona_resolve.py move to the new message; exit codes are the ones AC1 pins.
 - Every refusal prints the remedy: 'edit the named line of the card, or remove the card to brief from the shipped card for its role; `persona_review.py check` lists every blocked card'. The changelog fragment names the upgrade case (a project card already breaking a card-level `validate.py seats` error, or naming a persona the cast does not declare, stops resolving until fixed) with that remedy. Fragments are consumed at the release cut, so the printed remedy is what AC1 pins.
 - D0364: blocks any card failing a blocking rule, changed or not, no grace mode. A card with no review row is not refused; it is owed a review.
+
+- Widened in run twenty: after US1052, the TRD's ADR-012 lists US1055's brief refusal as not yet built, and `test_lean_trd_refresh.py`'s `test_no_story_called_open_reads_done` pins that. When this unit lands, move it to Built so far in `sdlc-studio/trd.md` and update that test.
 
 ## Triage (2026-10-21)
 

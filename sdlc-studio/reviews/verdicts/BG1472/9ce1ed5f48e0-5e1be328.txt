@@ -1,0 +1,6 @@
+UNIT: BG1472
+BRIEF: 9ce1ed5f48e0-5e1be328
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: AC4 manual check ruled MET: US1068's live-learning note (Listed-in run's tracked record is signed, per D0488, and a run ended with no signature holds its learnings via run_state.signed_record) no longer calls a sealed record live\; the remaining word sealed in its ACs concerns the strike seal, not liveness. Mutants in an isolated copy killed: signature check dropped in signed_record, the Struck-field check dropped in standing, the role-not-in-learned qualifier, the found-after-approval keys, dropping approved_over_own_finding. Two survivors, neither an AC claim: dropping missed from the bug-key kinds (adjacent branch, not named by AC1) and the strike-in-record check in standing (masked by the Struck field plus reopen, and the AC names the field check). Claim inventory TRUE by execution (signed_record, D0488 exists, changelog and reference text match behaviour).

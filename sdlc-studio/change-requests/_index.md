@@ -1,12 +1,12 @@
 # Change Request Index
 
-**Last Updated:** 2026-11-19
+**Last Updated:** 2026-11-20
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Proposed | 7 |
+| Proposed | 8 |
 | Approved | 0 |
 | In Progress | 79 |
 | Complete | 562 |
@@ -14,7 +14,7 @@
 | Deferred | 0 |
 | Superseded | 66 |
 | Blocked | 0 |
-| **Total** | **748** |
+| **Total** | **749** |
 
 ## All Changes
 
@@ -160,6 +160,7 @@
 | [CR-0746](CR0746-the-session-meter-finds-a-claude-code-session.md) | The session meter finds a Claude Code session's transcript store from the session id the harness exports, so a run driven from another repository is priced without SDLC_STUDIO_TRANSCRIPTS | Proposed | Medium | Feature | 2026-11-19 | -- |
 | [CR-0747](CR0747-critic-py-record-has-no-check-mode-so.md) | critic.py record has no check mode, so a reviewer cannot confirm its verdict file will record before handing back | Proposed | Low | Feature | 2026-11-19 | -- |
 | [CR-0748](CR0748-every-subagent-brief-the-skill-ships-carries-a.md) | Every subagent brief the skill ships carries a persona seat, not only the builder and reviewer briefs | Proposed | Medium | Feature | 2026-11-19 | -- |
+| [CR-0749](CR0749-sprint-plan-names-existing-tests-outside-a-unit.md) | sprint plan names existing tests outside a unit's Affects that exercise the code it changes, so grooming widens Affects before build | Proposed | Medium | Improvement | 2026-11-20 | -- |
 
 ## Archived Releases
 

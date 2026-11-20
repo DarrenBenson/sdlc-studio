@@ -1,0 +1,142 @@
+{
+  "unit": "US1036",
+  "digest": "1ebd0548497ba370 at b4bd2392c11c",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ade16780a5de065c6/US1036-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "seat-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    card = persona_resolve.review_card(root, seat) if seat is not None else None\n",
+      "new": "    card = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_each_seat_is_briefed_through_its_own_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown-seat-falls-back-unframed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    card = persona_resolve.review_card(root, seat) if seat is not None else None\n",
+      "new": "    card = persona_resolve.resolve_card(root, seat) if seat is not None else None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unframed-brief-no-pointer",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return (f\"{body}\\nReview seats:",
+      "new": "    return body\n    return (f\"{body}\\nReview seats:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_unframed_brief_names_the_per_seat_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "framed-brief-names-no-card-path",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "Read and adopt the charter at\\n{card} (the \"",
+      "new": "Read and adopt the charter at\\n(the \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_each_seat_is_briefed_through_its_own_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "pointer-names-shipped-seats-only",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "{', '.join(persona_resolve.seat_roster(root))} - this brief",
+      "new": "{', '.join(persona_resolve.SEATS)} - this brief",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_unframed_brief_names_the_per_seat_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "second-seat-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if len(seats) > 1 or any(\"|\" in s for s in seats):",
+      "new": "if any(\"|\" in s for s in seats):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_one_role_per_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "record-spec-read-as-role",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if len(seats) > 1 or any(\"|\" in s for s in seats):",
+      "new": "if len(seats) > 1:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_one_role_per_brief",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stale-answer-framed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not current:\n        return body\n",
+      "new": "    if False:\n        return body\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_a_stale_plan_answer_frames_no_seat",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown-seat-exits-0",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            print(f\"goal-review brief refused: {exc}\", file=sys.stderr)\n            return 2\n        print(text)",
+      "new": "            print(f\"goal-review brief refused: {exc}\", file=sys.stderr)\n            return 0\n        print(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "refusal-drops-roster",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "carries one (seats: {', '.join(seat_roster(root))}{roleless})",
+      "new": "carries one (seats: {roleless})",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "review-card-never-refuses",
+      "file": ".claude/skills/sdlc-studio/scripts/persona_resolve.py",
+      "old": "    card = resolve_card(root, seat)\n    if card is None:\n        roleless",
+      "new": "    card = resolve_card(root, seat)\n    if False:\n        roleless",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "critic-resolves-its-own-card",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    card = persona_resolve.review_card(root, seat)\n    acs = _brief_criteria(text)",
+      "new": "    card = persona_resolve.default_card(seat)\n    acs = _brief_criteria(text)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_review_brief_adopts_the_same_card",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac2-asks-a-carded-seat",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py",
+      "old": "_brief(root, \"--seat\", \"security\")",
+      "new": "_brief(root, \"--seat\", \"sre\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac3-reads-a-framed-brief",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py",
+      "old": "            rc, out, err = _brief(root)\n",
+      "new": "            rc, out, err = _brief(root, \"--seat\", \"qa\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_unframed_brief_names_the_per_seat_form",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-ac1-both-cards-one-role",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py",
+      "old": "(\"sre\", \"Sol Reyes\", \"SRE\"",
+      "new": "(\"qa\", \"Sol Reyes\", \"SRE\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_each_seat_is_briefed_through_its_own_card",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

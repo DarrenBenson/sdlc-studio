@@ -1,6 +1,6 @@
 # BG1002: goal-review brief ignores the plan's --serves and the batch changes made after plan --write
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1002.md
@@ -28,8 +28,10 @@ Read `serves` and the batch from the live run state (run-state.json), not the pl
 
 - [ ] **AC1** `sprint goal-review brief` names a persona the run declares with `plan --serves` as served, under "Goal serves" and among the personas designed for, whatever the goal's own wording traces to
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py -k serves_declared_at_plan_reaches_the_brief
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** The brief's batch line counts the live run's batch, including units added with `sprint batch add` after `plan --write`
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_live_state.py -k batch_line_reads_the_live_run
+  - **Verified:** yes (2026-11-20)
 
 ## Triage
 

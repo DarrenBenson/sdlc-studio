@@ -1,6 +1,6 @@
 # US1036: goal-review brief --seat briefs each seat through its own review card
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0627
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -23,10 +23,13 @@
 
 - **AC1:** Given a project with qa and sre seat cards, when `goal-review brief --seat qa` and `--seat sre` run over the same worklist and goal, then each brief names its own seat and card path and the two texts differ
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_each_seat_is_briefed_through_its_own_card
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given `--seat security` on a project and skill carrying no security card, when the brief runs, then it exits 2 naming the seats that have cards and prints no brief
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_an_unknown_seat_is_refused_naming_the_roster
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given no `--seat`, when the brief runs, then it ends by naming the project's review seats and the `--seat <role>` form that frames one
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_goal_review_brief_per_seat.py::GoalReviewSeatBriefTests::test_the_unframed_brief_names_the_per_seat_form
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

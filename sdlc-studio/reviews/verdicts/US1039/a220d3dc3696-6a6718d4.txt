@@ -1,0 +1,20 @@
+UNIT: US1039
+BRIEF: a220d3dc3696-6a6718d4
+VERDICT: APPROVE
+ISSUES: [new] the leading-`**` branch of `_without_globstar` (lib/persona_goals.py:117-120) names a replacement that still carries `**`. Executed: `**/rooms/**` gives "write `rooms/**`", so following the lint's advice draws the same warning again. The reviewer mutant that returns the pattern unchanged from that branch survives `test_persona_goal_lines.py`, so no test reaches it. BG1651 covers only the bare `**` to `/` case. Non-blocking: advisory lint, edge input;
+[new] the End Goals section boundary is unpinned. The mutant `inside = inside or bool(_SECTION_RE.match(line))` (lib/persona_goals.py:90), which never leaves End Goals once entered, survives `test_persona_goal_lines.py`. The AC1 Scenario fixture holds no numbered line, so the heading's `current = None` reset alone keeps the test green. A numbered list under Frustrations or Scenario would then be read, and listed on the goal-review brief, as End goals. Non-blocking: AC1's Fails-on case (every Verify line in the file read) is still killed;
+[new] the `**Verify**:` spelling (colon outside the bold) that `_NESTED_RE` accepts (lib/persona_goals.py:34) is unpinned: narrowing the alternation to `:**` only survives the test module. Non-blocking;
+[new] `sprint._end_goals` (sprint.py:11756) has no caller left, because `persona_cards` now reads `persona_goals.end_goals` directly (sprint.py:11778). It is dead code beside the one reader. Non-blocking;
+[pre-existing] BG1652: my own mutants of the reader and lint each survived `test_persona_goal_lines.py`, the same five that bug records. They are: fenced code not skipped (lib/persona_goals.py:68), an empty Verify left silent (:133), a backticked Verify not stripped (:132), a placeholder goal keeping the previous goal current (:104), and `persona_cards` dropping `goal_verify` (sprint.py:11781). The `goal_verify` mutant also survives `test_goal_review_brief_live_state.py`, `test_lean_goal_trace.py` and `test_lean_goal_seat_prd.py`. No test reads either new key;
+[pre-existing] BG1651: the scope message says `**` "matches one literal segment", and a bare `**` yields the replacement `/`;
+[pre-existing] BG1650: an unclosed `<!--` inside code swallows the card. It also records that a second Verify on one goal silently replaces the first (lib/persona_goals.py:98, read from the code, not executed).
+BLOCKING: none
+RULINGS: verify_ac run --id US1039 --dry-run: ac=4 pass=4 fail=0. Each AC's Verify test can fail on its own Fails-on case, so no AC is uncovered. The author's 13 recorded mutants replay killed. Of my mutants, the multi-line comment kept as text was killed, and the survivors are listed above.
+Claim inventory: the module docstring's comment and fence skipping is TRUE by a probe card (a fenced goal 5 and a commented goal 6 were not read). Nothing nested under a `{{...}}` goal attaching above is TRUE (goal 4's Verify did not reach goal 3).
+The rule-table rows are TRUE against validate.py: every rule `validate.py personas` prints has a row (cast-role, section, one-primary error and warning, layout, legacy, stakeholder-type, stakeholder-section, stakeholder-cast, goal-verify, goal-scope).
+The dialect examples are TRUE: `_component_names` gives `ha/rooms/` against `ha/rooms/up/bed.yaml` True, against `other/ha/rooms/x.yaml` True and against `ha/rooms-old/x.yaml` False, and is case-sensitive.
+The changelog's empty, placeholder and lint-flagged Verify warnings are TRUE by probe, as is the claim that a commented example no longer reaches the brief (AC3).
+"names the trailing-`/` form that replaces it" is FALSE for leading-`**` and bare-`**` patterns (the [new] finding above and BG1651).
+The sprint.py `sprint_serves` and `_live_run` hunks inside this unit's Affects belong to BG1002 and are judged there.
+`validate.py personas` over this repository prints "personas look well-formed".
+Regression sweep: every test module that reads the changed surfaces (77 modules across scripts/tests and tools/tests, test_sprint.py included) passes in a clean clone at a011a415: 3578 passed, 6 skipped.

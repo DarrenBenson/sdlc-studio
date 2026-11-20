@@ -1,0 +1,61 @@
+{
+  "unit": "BG1472",
+  "digest": "d9b349a0de187c34 at 475820d79bbd",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4e84ceeeb2c0a151/BG1472-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "test: the learning written for qa, not product",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py",
+      "old": "learned = _learning(root, \"product\", \"Read the input path end to end\"",
+      "new": "learned = _learning(root, \"qa\", \"Read the input path end to end\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_each_adverse_kind_is_named_and_a_learned_seat_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: engineering's approval raises nothing, so the bug is a miss",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py",
+      "old": "\"[pre-existing] the widget drops its input at src/widget.py:3\"",
+      "new": "\"none blocking\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_each_adverse_kind_is_named_and_a_learned_seat_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the later round's finding is not blocking",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py",
+      "old": "\"[new] the widget loses the last key at src/widget.py:12\"",
+      "new": "\"[pre-existing] the widget loses the last key at src/widget.py:12\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_persona_learnings.py::RetroLearningsTests::test_each_adverse_kind_is_named_and_a_learned_seat_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the run is never closed, only its listing stage run",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py",
+      "old": "                _close(root)\n                with contextlib.redirect_stderr(",
+      "new": "                _close_lists(root)\n                with contextlib.redirect_stderr(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_run_sealed_without_a_signature_holds_its_learning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the seal is a signature",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py",
+      "old": "                    seal(root)\n",
+      "new": "                    _sign(root)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_run_sealed_without_a_signature_holds_its_learning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the first signature strikes nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py",
+      "old": "        rc, out, err = _sign(root, \"--strike\", self.qa, \"--strike-reason\", \"it loosens the bar\")\n        self.assertEqual(0, rc, out + err)\n        rc, out, err = _cli(root, \"reopen\"",
+      "new": "        rc, out, err = _sign(root)\n        self.assertEqual(0, rc, out + err)\n        rc, out, err = _cli(root, \"reopen\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py::StrikeLearningTests::test_a_reclose_does_not_list_a_struck_learning",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

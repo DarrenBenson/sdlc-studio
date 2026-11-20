@@ -7,12 +7,12 @@
 | Status | Count |
 | --- | --- |
 | Proposed | 0 |
-| Draft | 172 |
+| Draft | 169 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 963 |
+| Done | 966 |
 | Won't Implement | 93 |
 | Deferred | 0 |
 | Superseded | 94 |
@@ -73,17 +73,17 @@
 | [US1033](US1033-two-seats-each-rejecting-once-is-two-repair.md) | Two seats each rejecting once is two repair rounds, not a non-converging unit | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1034](US1034-critic-py-seats-adds-a-second-different-seat.md) | critic.py seats adds a second, different seat to a high-risk unit | Superseded | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1035](US1035-the-sprint-report-names-a-high-risk-unit.md) | The sprint report names a high-risk unit only one seat reviewed | Superseded | EP0284 | 2026-10-09 | 2026-10-09 |
-| [US1036](US1036-goal-review-brief-seat-briefs-each-seat-through.md) | goal-review brief --seat briefs each seat through its own review card | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
+| [US1036](US1036-goal-review-brief-seat-briefs-each-seat-through.md) | goal-review brief --seat briefs each seat through its own review card | Done | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1037](US1037-each-seat-s-goal-review-brief-carries-that.md) | Each seat's goal-review brief carries that seat's own questions | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
 | [US1038](US1038-the-qa-seat-s-goal-review-brief-lists.md) | The QA seat's goal-review brief lists the batch criteria no executable check covers | Draft | EP0284 | 2026-10-09 | 2026-10-09 |
-| [US1039](US1039-a-persona-end-goal-can-carry-verify-and.md) | A persona End goal can carry Verify and Applies-to lines, and validate personas checks them | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
+| [US1039](US1039-a-persona-end-goal-can-carry-verify-and.md) | A persona End goal can carry Verify and Applies-to lines, and validate personas checks them | Done | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1040](US1040-the-goal-review-lists-each-traced-persona-s.md) | The goal review lists each traced persona's testable End goals and names a Sprint Goal nothing can check | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1041](US1041-sprint-plan-names-a-batch-story-or-bug.md) | Sprint plan names a batch story or bug that touches a standing End goal's files without carrying it | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1042](US1042-a-standing-end-goal-is-seeded-onto-every.md) | A standing End goal is seeded onto every story minted to touch its files | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1043](US1043-a-story-s-serves-line-names-the-end.md) | A story's Serves line names the End goal it serves, and validate serves checks it is on the card | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1044](US1044-artifact-new-writes-a-story-s-serves-line.md) | artifact new writes a story's Serves line from --serves | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1045](US1045-review-prep-reports-which-end-goals-each-persona.md) | Review prep reports which End goals each persona's stories serve | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
-| [US1046](US1046-validate-seats-warns-when-a-seat-card-names.md) | validate seats warns when a seat card names a persona the cast does not declare in that role | Draft | EP0285 | 2026-10-09 | 2026-10-09 |
+| [US1046](US1046-validate-seats-warns-when-a-seat-card-names.md) | validate seats warns when a seat card names a persona the cast does not declare in that role | Done | EP0285 | 2026-10-09 | 2026-10-09 |
 | [US1047](US1047-start-a-small-change-outside-a-run-with.md) | Start a small change outside a run with one command that records its base commit | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1048](US1048-the-small-change-check-refuses-a-change-the.md) | The small-change check refuses a change the path does not fit, naming every reason at once | Draft | EP0286 | 2026-10-09 | 2026-10-09 |
 | [US1049](US1049-the-review-brief-and-revert-check-diff-against.md) | The review brief and revert-check diff against the base a small change recorded | Draft | EP0286 | 2026-10-09 | 2026-10-09 |

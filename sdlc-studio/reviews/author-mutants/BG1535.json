@@ -1,0 +1,61 @@
+{
+  "unit": "BG1535",
+  "digest": "8a8667e20507b099 at a011a415bb36",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aed0231debb9c22b2/BG1535-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "consult-reads-folder-only",
+      "file": ".claude/skills/sdlc-studio/reference-consult.md",
+      "old": "     `consult stakeholders` reads: a card under `sdlc-studio/personas/stakeholders/`, or a\n     flat card in `sdlc-studio/personas/` whose Cast role is Customer or Served.",
+      "new": "     `consult stakeholders` reads: a card under `sdlc-studio/personas/stakeholders/`.",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_every_served_card_here_sits_where_the_consult_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "consult-names-extra-folder",
+      "file": ".claude/skills/sdlc-studio/reference-consult.md",
+      "old": "   - Read the panel. A Customer",
+      "new": "   - Read the panel and `sdlc-studio/personas/panel/`. A Customer",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_both_templates_and_the_consult_page_name_one_home_for_the_served_cast",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona-template-rule-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-template.md",
+      "old": "Experience Goals and Scenario are optional. A Customer or Served party sits on the one",
+      "new": "Experience Goals and Scenario are optional. A Customer or Served party sits on a",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_both_templates_and_the_consult_page_name_one_home_for_the_served_cast",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stakeholder-template-rule-dropped",
+      "file": ".claude/skills/sdlc-studio/templates/personas/stakeholder-template.md",
+      "old": "A Customer or Served party sits on the one stakeholder panel `consult stakeholders`\nreads:",
+      "new": "A Customer or Served party sits under `sdlc-studio/personas/stakeholders/`\nonly:",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_both_templates_and_the_consult_page_name_one_home_for_the_served_cast",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "served-card-untyped",
+      "file": "sdlc-studio/personas/graham-doyle-change-approver.md",
+      "old": "<!-- stakeholder: served -->\n",
+      "new": "",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_every_served_card_here_sits_where_the_consult_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "served-card-unknown-type",
+      "file": "sdlc-studio/personas/graham-doyle-change-approver.md",
+      "old": "<!-- stakeholder: served -->",
+      "new": "<!-- stakeholder: patron -->",
+      "test": "tools/tests/test_persona_coherence.py::ServedHomeTests::test_every_served_card_here_sits_where_the_consult_reads",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

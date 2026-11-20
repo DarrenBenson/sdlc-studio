@@ -1,6 +1,6 @@
 # BG1535: Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/templates/personas/stakeholder-template.md, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/reference-consult.md, sdlc-studio/personas/graham-doyle-change-approver.md, tools/tests/test_persona_coherence.py, changelog.d/BG1535.md
@@ -30,8 +30,10 @@ Decide and state one home for the Customer and Served cast. Either make `stakeho
 
 - [ ] **AC1** Given the shipped `persona-template.md`, `stakeholder-template.md` and `reference-consult.md`, when the three are read, then they name one and the same home and schema for a Customer or Served party, and the consult page's stakeholder review reads that home. Fails on: one template placing a Served party under `personas/stakeholders/` while the other makes it a flat design card, or the consult reading a folder neither template names.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedHomeTests::test_both_templates_and_the_consult_page_name_one_home_for_the_served_cast
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** Given this repository's persona cards, when every card declaring the Served or Customer cast is listed, then each sits where `reference-consult.md` says the stakeholder consult reads and carries the schema that home requires. Fails on: `graham-doyle-change-approver.md` sitting outside what the consult loads, so the D0374 consult has an empty panel.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::ServedHomeTests::test_every_served_card_here_sits_where_the_consult_reads
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

@@ -1,0 +1,106 @@
+{
+  "unit": "US1046",
+  "digest": "c07ac0aa33c10e03 at a011a415bb36",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aed0231debb9c22b2/US1046-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "unknown-is-error",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            out.append({\"severity\": \"warning\", \"rule\": \"seat-persona-unknown\",",
+      "new": "            out.append({\"severity\": \"error\", \"rule\": \"seat-persona-unknown\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_unknown_primary_named_with_card_and_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unknown-no-line",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "\"seat-persona-unknown\", \"file\": str(path),\n                        \"line\": lineno,",
+      "new": "\"seat-persona-unknown\", \"file\": str(path),\n                        \"row\": lineno,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_unknown_primary_named_with_card_and_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role-from-card",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "(registry.get(who), \"personas/index.md\") if registry is not None",
+      "new": "(registry.get(who), \"personas/index.md\") if False",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_role_the_registry_does_not_declare_warns",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "role-never-compared",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        if declared and declared != claimed:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_role_the_registry_does_not_declare_warns",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "single-line-claim",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "rf\"\\b{_CLAIM_ROLES}\\s+(?i:design\\s+)?",
+      "new": "rf\"\\b{_CLAIM_ROLES}[ \\t]+(?i:design[ \\t]+)?",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "possessive-read-as-claim",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "(?i:persona)(?:\\s+is\\s+|\\s*[,:(]\\s*)",
+      "new": "(?i:persona)(?:\\s+is\\s+|['\u2019]s\\s+|\\s*[,:(]\\s*)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "full-name-only",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "            or next((n for n in names if n.split()[0] in words), None))",
+      "new": "            or None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fenced-read",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        kept.append(\"\" if is_fence or was_open else line)",
+      "new": "        kept.append(line)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "named-role-form-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    claims += [(m, False) for m in _SEAT_NAMED_ROLE_RE.finditer(body)]",
+      "new": "    claims += []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stopwords-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "    if not run or run[0][0] in _CLAIM_NOT_NAMES:",
+      "new": "    if not run:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-registry-agrees",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py",
+      "old": "_REGISTRY = {\"Primary\": [\"Maya Okafor\", \"Rowan Achterberg\"], \"Secondary\": [\"Jonah Reyes\"],",
+      "new": "_REGISTRY = {\"Primary\": [\"Maya Okafor\", \"Rowan Achterberg\", \"Jonah Reyes\"], \"Secondary\": [],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_role_the_registry_does_not_declare_warns",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

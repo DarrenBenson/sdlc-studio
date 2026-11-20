@@ -1,6 +1,6 @@
 # US1039: A persona End goal can carry Verify and Applies-to lines, and validate personas checks them
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0621
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a persona card whose End goal 1 carries an unfilled `{{...}}` Verify, End goal 2 a Verify `verify_ac` lint flags (`npm test`), End goal 3 a well-formed Verify, and a `- **Verify:**` line under its Scenario, when `validate.py personas` runs, then it warns `persona-goal-verify` for End goals 1 and 2 by card and number, and not for End goal 3 or the Scenario line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given End goals carrying `Applies-to: ha/rooms/` with no Verify, `Applies-to: ha/rooms/**` with a Verify, and `Applies-to: ha/rooms/` with a Verify, when `validate.py personas` runs, then it warns `persona-goal-scope` for the first (no check) and the second (naming `**` and the trailing-`/` form that replaces it), and not for the third.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalScopeLintTests::test_validate_personas_warns_on_an_unchecked_or_misdialected_scope
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given the End goal example `templates/personas/persona-template.md` carries in an `<!-- end-goal-example ... -->` comment under End Goals, when the test fills a fixture card's End Goals from it and runs `validate.py personas` and `sprint.py goal-review brief`, then the card draws no `persona-goal-*` warning, and a second card that keeps the comment unfilled lists only its own End goals in the brief.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::TemplateExampleTests::test_template_example_is_read_and_its_comment_is_not
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given the `persona-goal-*` rule names `validate.py personas --format json` prints for the fixtures above, when the test reads the persona rule table in `reference-persona.md`, then every printed rule has a row naming it and the Applies-to dialect is stated beside it.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::RuleTableTests::test_every_printed_persona_goal_rule_has_a_row
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

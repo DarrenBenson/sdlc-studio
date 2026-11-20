@@ -1,0 +1,97 @@
+{
+  "unit": "BG1536",
+  "digest": "851a5b5d55d18282 at 475820d79bbd",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4e84ceeeb2c0a151/BG1536-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "a placeholder seeding does not fill",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-index-template.md",
+      "old": "Personas for {{project_name}}:",
+      "new": "Personas for {{project_name}} ({{owner}}):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_the_seeded_index_holds_no_placeholder",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a Supplemental heading the registry cannot hold",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-index-template.md",
+      "old": "## Negative\n",
+      "new": "## Negative\n\n## Supplemental\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_every_seeded_heading_is_one_the_registry_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the Consultation Defaults section restored",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-index-template.md",
+      "old": "## Primary\n",
+      "new": "## Consultation Defaults\n\nDefault personas consulted.\n\n## Primary\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_every_seeded_heading_is_one_the_registry_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the relative link to reference-persona.md restored",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-index-template.md",
+      "old": "The skill's `reference-persona.md` covers",
+      "new": "The skill's [reference-persona.md](../../reference-persona.md) covers",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_no_seeded_link_resolves_to_a_missing_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the probe bullet in a shape the registry does not read",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_init.py",
+      "old": "out.append(f\"- [Probe {m.group(1)}](probe.md) - a bullet under it\")",
+      "new": "out.append(f\"Probe {m.group(1)}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_every_seeded_heading_is_one_the_registry_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: links quoted in a code span followed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_init.py",
+      "old": "re.sub(r\"`[^`\\n]*`\", \"\", self.text)",
+      "new": "self.text",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_init.py::SeededPersonaIndexTests::test_no_seeded_link_resolves_to_a_missing_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the placeholder test alone, so the seeded index is authored at once",
+      "file": ".claude/skills/sdlc-studio/scripts/init.py",
+      "old": "        if stage == \"personas\":\n",
+      "new": "        if stage == \"never\":\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_registry_is_seeded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the seed compared with its date",
+      "file": ".claude/skills/sdlc-studio/scripts/init.py",
+      "old": "    return re.sub(r\"\\d{4}-\\d{2}-\\d{2}\", \"\", text).strip()\n",
+      "new": "    return text.strip()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_seeded_index_is_a_draft_until_it_is_authored",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an index declaring nobody read as a draft",
+      "file": ".claude/skills/sdlc-studio/scripts/init.py",
+      "old": "            return text is not None and _undated(text) != _undated(_seeded(root, tmpl))\n",
+      "new": "            return bool(sdlc_md.persona_registry(root).entries)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_seeded_index_is_a_draft_until_it_is_authored",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the persona bullet written under no heading, so the index stays the seed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py",
+      "old": "index.write_text(text.replace(\"## Primary\\n\", \"## Primary\\n\\n- [Maya Okafor](maya.md)\"",
+      "new": "index.write_text(text.replace(\"## Nowhere\\n\", \"## Primary\\n\\n- [Maya Okafor](maya.md)\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_guided_personas_seed.py::GuidedPersonasSeedTests::test_the_seeded_index_is_a_draft_until_it_is_authored",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+UNIT: BG1015
+BRIEF: 0b52aba821a4-155bfd5c
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Claims run on a fixture: a declared sre card resolves (also with --skip-personas), SRE and an undeclared role exit 2 naming the roster and the role-less card, and the changelog claim holds. Both ACs pass via verify_ac. Own mutant (roster check reverted to the shipped three) was killed by test_a_declared_sre_seat_resolves.

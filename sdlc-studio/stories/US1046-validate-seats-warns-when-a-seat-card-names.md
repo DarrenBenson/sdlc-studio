@@ -1,6 +1,6 @@
 # US1046: validate seats warns when a seat card names a persona the cast does not declare in that role
 
-> **Status:** Draft
+> **Status:** Done
 > **Delivers:** CR0625
 > **Created:** 2026-10-09
 > **Created-by:** sdlc-studio new
@@ -20,12 +20,16 @@
 
 - **AC1:** Given a product seat card whose Proficiency line is cold on 'the primary persona (Darren)' and no persona card names Darren, when `validate.py seats` runs, then it warns `seat-persona-unknown` naming the card and that line, and exits 0.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_unknown_primary_named_with_card_and_line
+  - **Verified:** yes (2026-11-20)
 - **AC2:** Given a seat card calling Jonah Reyes the Primary persona while `personas/index.md` declares him Secondary and his card's Cast role says Primary, when `validate.py seats` runs, then it warns `seat-persona-role` naming the card, the line and Secondary as the role the registry declares.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_role_the_registry_does_not_declare_warns
+  - **Verified:** yes (2026-11-20)
 - **AC3:** Given seat cards consistent with the cast, including a claim wrapped across a line break ('the Primary' then 'design persona is Maya Okafor') and the phrase 'a Primary design persona's End goal', when `validate.py seats` runs, then no persona warning is printed.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::SeatCastTests::test_consistent_cards_draw_no_persona_warning
+  - **Verified:** yes (2026-11-20)
 - **AC4:** Given the three shipped amigo cards copied in as a project's seats, when `validate.py seats` runs against a cast whose Primary is named Sam, then no persona warning is printed, and against a cast with no Sam the product card's scenario draws `seat-persona-unknown`.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_validate_seats_cast.py::ShippedCardTests::test_shipped_amigo_cards_read_without_false_positives
+  - **Verified:** yes (2026-11-20)
 
 ## Notes
 

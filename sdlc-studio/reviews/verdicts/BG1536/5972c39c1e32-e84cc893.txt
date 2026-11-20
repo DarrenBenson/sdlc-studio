@@ -1,0 +1,6 @@
+UNIT: BG1536
+BRIEF: 5972c39c1e32-e84cc893
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: All 3 ACs pass via verify_ac, and test_init plus the lean guided seed test pass (64). init.py change judged on its own diff: the seeded index reads as a draft while undated-equal to the seed, and authored on any edit. Mutants killed in an isolated copy: the personas branch disabled, the date not stripped, any-index-declaring-nobody read as draft, the check forced True. Claims verified by execution: the old template held 34 placeholders, 32 after the name and date fill, and had a Usage section. Remark only: a project directory renamed after seeding changes the seeded name, so the index would read authored, a harmless false negative.

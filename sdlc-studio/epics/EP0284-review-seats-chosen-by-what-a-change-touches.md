@@ -23,7 +23,7 @@ Decomposed from CR0620. Delivers the work CR0620 requested.
 - [ ] [US1033: Two seats each rejecting once is two repair rounds, not a non-converging unit](../stories/US1033-two-seats-each-rejecting-once-is-two-repair.md)
 - [x] [US1034: critic.py seats adds a second, different seat to a high-risk unit](../stories/US1034-critic-py-seats-adds-a-second-different-seat.md)
 - [x] [US1035: The sprint report names a high-risk unit only one seat reviewed](../stories/US1035-the-sprint-report-names-a-high-risk-unit.md)
-- [ ] [US1036: goal-review brief --seat briefs each seat through its own review card](../stories/US1036-goal-review-brief-seat-briefs-each-seat-through.md)
+- [x] [US1036: goal-review brief --seat briefs each seat through its own review card](../stories/US1036-goal-review-brief-seat-briefs-each-seat-through.md)
 - [ ] [US1037: Each seat's goal-review brief carries that seat's own questions](../stories/US1037-each-seat-s-goal-review-brief-carries-that.md)
 - [ ] [US1038: The QA seat's goal-review brief lists the batch criteria no executable check covers](../stories/US1038-the-qa-seat-s-goal-review-brief-lists.md)
 

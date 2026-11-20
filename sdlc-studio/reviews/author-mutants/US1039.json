@@ -1,0 +1,124 @@
+{
+  "unit": "US1039",
+  "digest": "02ac284d2c34c768 at a011a415bb36",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-aed0231debb9c22b2/US1039-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "lint-never-run",
+      "file": ".claude/skills/sdlc-studio/scripts/validate.py",
+      "old": "        out.extend(_persona_goal_findings(p, text))\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            elif \"{{\" in expr:",
+      "new": "            elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "verify-lint-unused",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            elif (nudge := lint_verifier(expr)):",
+      "new": "            elif (nudge := None):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "section-never-left",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            inside, current = bool(_SECTION_RE.match(line)), None",
+      "new": "            inside = inside or bool(_SECTION_RE.match(line))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "comments-read",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "                start = rest.find(\"<!--\")",
+      "new": "                start = -1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::TemplateExampleTests::test_template_example_is_read_and_its_comment_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unchecked-scope-passes",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        if g.applies_to and g.verify is None:",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalScopeLintTests::test_validate_personas_warns_on_an_unchecked_or_misdialected_scope",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "globstar-silent",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "            if \"**\" in p:",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalScopeLintTests::test_validate_personas_warns_on_an_unchecked_or_misdialected_scope",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "replacement-loses-slash",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "        return head + \"/\"",
+      "new": "        return head",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalScopeLintTests::test_validate_personas_warns_on_an_unchecked_or_misdialected_scope",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nested-flat-allowed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/persona_goals.py",
+      "old": "_NESTED_RE = re.compile(r\"^\\s+[-*]",
+      "new": "_NESTED_RE = re.compile(r\"^\\s*[-*]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "template-verify-unnested",
+      "file": ".claude/skills/sdlc-studio/templates/personas/persona-template.md",
+      "old": "   - **Verify:** pytest tests/test_bookings.py",
+      "new": "- **Verify:** pytest tests/test_bookings.py",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::TemplateExampleTests::test_template_example_is_read_and_its_comment_is_not",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "rule-row-dropped",
+      "file": ".claude/skills/sdlc-studio/reference-persona.md",
+      "old": "| `persona-goal-scope` | warning |",
+      "new": "| `persona-goal-scoped` | warning |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::RuleTableTests::test_every_printed_persona_goal_rule_has_a_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-goal2-fixture-clean",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py",
+      "old": "   - **Verify:** npm test\n3.",
+      "new": "   - **Verify:** pytest t.py::T::t\n3.",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalVerifyLintTests::test_validate_personas_lints_each_end_goal_verify",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-scope-fixture-no-globstar",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py",
+      "old": "   - **Applies-to:** `ha/rooms/**`",
+      "new": "   - **Applies-to:** `ha/rooms/x/`",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_persona_goal_lines.py::GoalScopeLintTests::test_validate_personas_warns_on_an_unchecked_or_misdialected_scope",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # BG1015: persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/persona_resolve.py, .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve_declared_roles.py, changelog.d/BG1015.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve.py
@@ -26,8 +26,10 @@ Accept any role a project seat card declares, as the consult path and critic do,
 
 - [ ] **AC1** `persona_resolve.py resolve --seat <role>` frames a worker from a project seat card declaring that role, for a role outside the shipped three
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve_declared_roles.py::DeclaredRoleTests::test_a_declared_sre_seat_resolves
+  - **Verified:** yes (2026-11-20)
 - [ ] **AC2** A role no card declares and the skill does not ship is still refused, naming the declared roles
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_persona_resolve_declared_roles.py::DeclaredRoleTests::test_an_undeclared_role_is_refused
+  - **Verified:** yes (2026-11-20)
 
 ## Revision History
 

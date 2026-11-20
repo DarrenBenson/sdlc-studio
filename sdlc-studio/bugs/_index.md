@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 456 |
+| Open | 460 |
 | In Progress | 0 |
-| Fixed | 991 |
+| Fixed | 996 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 57 |
 | Superseded | 58 |
-| **Total** | **1649** |
+| **Total** | **1658** |
 
 ## All Bugs
 
@@ -77,7 +77,7 @@
 | [BG0999](BG0999-caller-check-cannot-resolve-a-skill-script-named.md) | Caller-check cannot resolve a skill script named as the consumer | Open | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1000](BG1000-the-commit-s-test-selection-does-not-recognise.md) | The commit's test selection does not recognise loader.load_script, so 71 of 77 loader edges are never selected and a commit touching sprint.py skips 22 modules that drive it | Fixed | High | 2026-10-08 | 2026-10-08 |
 | [BG1001](BG1001-a-clone-that-never-held-a-run-awaiting.md) | A clone that never held a run awaiting its signature can end it only by signing it: stop there says there is nothing to stop | Won't Fix | Low | 2026-10-08 | 2026-10-08 |
-| [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Open | Medium | 2026-10-08 | 2026-10-08 |
+| [BG1002](BG1002-goal-review-brief-ignores-the-plan-s-serves.md) | goal-review brief ignores the plan's --serves and the batch changes made after plan --write | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1003](BG1003-critic-record-refuses-a-review-round-the-operator.md) | critic record refuses a review round the operator authorised past the cap, so the ledger's last word on the unit is a superseded REJECT | Fixed | Medium | 2026-10-08 | 2026-10-08 |
 | [BG1004](BG1004-bg0993-s-tracked-run-record-tells-a-newer.md) | BG0993's tracked run record tells a newer copy by reopen count alone, so two reopens made at once overwrite each other; and the close preview's no-write guard is unpinned | Won't Fix | Low | 2026-10-09 | 2026-10-09 |
 | [BG1005](BG1005-a-pytest-verify-that-partly-skips-is-stamped.md) | A pytest Verify that PARTLY skips is stamped green - BG0317 closed only the all-skipped case | Fixed | Medium | 2026-10-09 | 2026-10-09 |
@@ -90,7 +90,7 @@
 | [BG1012](BG1012-the-sprint-checklist-reads-a-run-only-from.md) | The sprint checklist reads a run only from .local, so in any other clone a signed run's rows read 'no run record could be read' | Open | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1013](BG1013-the-waiver-remedy-the-close-and-the-checklist.md) | The waiver remedy the close and the checklist print omits --authorised-by, so the command as printed is refused | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1014](BG1014-revert-check-rewrites-production-files-in-place-without.md) | revert-check rewrites production files in place without declaring a rewrite window, so a commit made while it runs can stage a reverted file | Open | Low | 2026-10-09 | 2026-10-09 |
-| [BG1015](BG1015-persona-resolve-py-resolve-refuses-a-seat-role.md) | persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1015](BG1015-persona-resolve-py-resolve-refuses-a-seat-role.md) | persona_resolve.py resolve refuses a seat role the project declares (sre), though validate seats and critic.py brief accept it | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1016](BG1016-lessons-add-global-defaults-a-promoted-lesson-s.md) | lessons add --global defaults a promoted lesson's origin to the working directory's name, so a consuming project's directory name is written into a shipped lesson | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1017](BG1017-validate-warns-pseudo-verify-on-the-verify-line.md) | validate warns pseudo-verify on the Verify line a request's own writers put beneath each criterion | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
@@ -547,7 +547,7 @@
 | [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Fixed | Low | 2026-11-15 | 2026-11-15 |
 | [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Open | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Fixed | Medium | 2026-11-15 | 2026-11-15 |
-| [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1474](BG1474-the-close-retires-a-build-injected-lesson-class.md) | The close retires a build-injected lesson class as quiet, so every lane brief loses its builder traps and test_agent_definitions turns main red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1475](BG1475-sprint-close-dry-run-takes-about-half-an.md) | sprint close --dry-run takes about half an hour and prints nothing until it ends, mostly one git log per artefact in the review-current check | Open | Medium | 2026-11-15 | 2026-11-15 |
@@ -610,8 +610,8 @@
 | [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Fixed | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -725,6 +725,15 @@
 | [BG1647](BG1647-trdcoveragesoftdependencytests-done-gate-half-misses-its-patch-in.md) | TrdCoverageSoftDependencyTests' Done-gate half misses its patch in the gate's parallel run, so the push gate goes red | Fixed | High | 2026-11-20 | 2026-11-20 |
 | [BG1648](BG1648-a-test-leaves-a-second-verify-ac-module.md) | A test leaves a second verify_ac module in sys.modules, so later tests patch an object the code no longer imports | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1649](BG1649-lane-accept-returns-before-lane-return-when-its.md) | lane accept returns before lane return when its transition fails, so a unit finished by hand stays in flight and its span reads NOT MEASURED | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1650](BG1650-persona-goals-reads-an-unclosed-inside-code-as.md) | persona_goals reads an unclosed <!-- inside code as a comment that hides a card's End goals, and attaches a nested Verify to whichever goal came last | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1651](BG1651-the-end-goal-scope-lint-misdescribes-and-suggests.md) | The End-goal scope lint misdescribes `**` and suggests a replacement for a bare `**` that names no file | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1652](BG1652-five-behaviours-persona-goals-and-its-reference-state.md) | Five behaviours persona_goals and its reference state have no test: a mutant of each survives | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1653](BG1653-bg1002-s-live-run-comment-claims-a-missing.md) | BG1002's _live_run comment claims a missing run state is handled, and four branches of the live-run read have no test | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1654](BG1654-a-reviewer-cannot-check-a-verdict-file-before.md) | A reviewer cannot check a verdict file before hand-back: critic.py record refuses an odd backtick count only when the operator records it | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1655](BG1655-seat-persona-unknown-reads-a-capitalised-word-after.md) | seat-persona-unknown reads a capitalised word after a seat card's role phrase as a persona name, and US1052's standard makes the rule block | Open | Medium | 2026-11-20 | 2026-11-20 |
+| [BG1656](BG1656-the-consult-s-load-step-never-classifies-a.md) | The consult's load step never classifies a flat Served card, and BG1535's tests accept the stakeholder declaration anywhere on the card | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1657](BG1657-file-finding-writes-a-title-s-bare-double.md) | file_finding writes a title's bare double asterisk unescaped into the artefact and its index row, which markdownlint refuses | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1658](BG1658-the-goal-brief-s-no-current-batch-answer.md) | The goal brief's no-current-batch answer names a goal-review flag that does not exist, and two of US1036's framing branches have no test | Open | Low | 2026-11-20 | 2026-11-20 |
 
 ## Archived Releases
 

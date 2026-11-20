@@ -5,7 +5,7 @@
 > **Created:** 2026-10-12
 > **Created-by:** sdlc-studio new
 > **Raised-by:** sdlc-studio; agent; v1
-> **Affects:** .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/best-practices/README.md, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/templates/personas/amigo-template.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py, changelog.d/US1052.md, sdlc-studio/reviews/root-census.md, sdlc-studio/reviews/command-audit.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/templates/personas/amigos/engineering.md, .claude/skills/sdlc-studio/templates/personas/amigos/product.md, .claude/skills/sdlc-studio/templates/personas/amigos/qa.md
+> **Affects:** .claude/skills/sdlc-studio/best-practices/persona.md, .claude/skills/sdlc-studio/best-practices/README.md, .claude/skills/sdlc-studio/scripts/persona_review.py, .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/templates/personas/persona-template.md, .claude/skills/sdlc-studio/templates/personas/amigo-template.md, .claude/skills/sdlc-studio/reference-persona.md, .claude/skills/sdlc-studio/reference-scripts.md, .claude/skills/sdlc-studio/reference-scripts-review.md, .claude/skills/sdlc-studio/reference-scripts-surface.md, .claude/skills/sdlc-studio/scripts/tests/test_persona_standard.py, changelog.d/US1052.md, sdlc-studio/reviews/root-census.md, sdlc-studio/reviews/command-audit.md, sdlc-studio/trd.md, .claude/skills/sdlc-studio/templates/personas/amigos/engineering.md, .claude/skills/sdlc-studio/templates/personas/amigos/product.md, .claude/skills/sdlc-studio/templates/personas/amigos/qa.md, tools/tests/test_lean_trd_refresh.py
 > **Epic:** EP0287
 > **Points:** 5
 > **Depends on:** US1039, US1046
@@ -48,6 +48,8 @@
 - reference-persona.md is 522 of its 600-line budget (tools/check_budgets.py); this group adds about 20 lines there (two rule rows, the review workflow rewritten in place, the refusal and owed paragraphs). Memory and learning-loop docs go to the new reference-persona-learning.md, not here.
 - Edits validate.py, so not in parallel with US1039, US1043 or US1046. Builds first in the group.
 - Widened in run twenty (RUN-01M7VNR0): `sdlc-studio/trd.md`, as the note above asks, because landing `persona_review.py` turns `test_lean_trd_refresh.py`'s ADR-012 test red until the script moves to Built so far. The three shipped amigo cards, because the Evidence note says they cite skill lessons, and because a copy of the shipped product card in a project's `personas/seats/` is blocked by `seat-persona-unknown` on its worked example's persona ("Sam the new shopper", line 99), and copying is how a project customises a seat. Each shipped card copied into a project with no cast must pass `persona_review.py check` with no blocking finding.
+
+- Widened again in run twenty: `tools/tests/test_lean_trd_refresh.py`'s `test_no_story_called_open_reads_done` pins that the TRD calls US1052 not yet built. Once ADR-012 moves `persona_review.py` to Built so far, the brief refusal it still lists is US1055's, so the test names US1055.
 
 ## Triage (2026-10-21)
 
