@@ -87,7 +87,7 @@ class LaneAcceptTests(unittest.TestCase):
         _write(root, ".gitignore", "sdlc-studio/.local/\n")
         _write(root, "src/a.py", "A = 1\n")
         _write(root, "tests/test_a.py", "def test_a():\n    assert True\n")
-        _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam\n\ncharter\n")
+        _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
         _unit(root, GREEN, "true")
         _unit(root, RED, "false")
         _unit(root, BUG, "true")
@@ -292,7 +292,7 @@ class LaneAcceptTests(unittest.TestCase):
         independent); the self-review check dropped; the author the check reads not the one
         recorded; every unit's brief notes read, so a seat briefed for another unit passes."""
         _write(self.root, "sdlc-studio/personas/seats/engineering.md",
-               "<!-- role: engineering -->\n# Dani\n\ncharter\n")
+               "<!-- role: engineering -->\n# Dani\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
         notes = self.root / "sdlc-studio/.local/briefs.jsonl"
         notes.write_text(notes.read_text(encoding="utf-8") + json.dumps(
             {"fp": "fedcba987654", "unit": BUG, "seat": "engineering", "tier": "full"}) + "\n",

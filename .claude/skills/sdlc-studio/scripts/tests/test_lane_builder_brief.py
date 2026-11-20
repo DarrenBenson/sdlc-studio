@@ -42,10 +42,11 @@ BATCH = ("US0101", "US0102")
 # by `affects_files`, and the test file and fragment give the self-check something to name.
 AFFECTS = {"US0101": "src/other.py, tests/test_other.py",
            "US0102": "src/app.py (new), tests/test_app.py, changelog.d/US0102.md"}
-#: A project engineering seat with the work render and none of the review render's sections, so
-#: resolving it for `render="review"` raises rather than returning the same path.
+#: A project engineering seat with its work render and the review render's three sections, the
+#: floor the persona standard holds a seat card to before it frames any brief.
 PROJECT_SEAT = ("<!-- role: engineering -->\n# Ola - the project's engineer\n\n"
-                "## How They Work *(work render)*\n\nSmall diffs, test first.\n")
+                "## How They Work *(work render)*\n\nSmall diffs, test first.\n"
+                "\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
 
 
 def _live(name: str):
@@ -181,8 +182,7 @@ class BuilderBriefTests(_Isolated):
 
     def test_the_brief_names_the_engineering_seats_work_render(self) -> None:
         """AC3. MUTANTS: the shipped default's path hard-coded, which shadows the project's own
-        seat; the review render named, or the card resolved with `render="review"`, which
-        raises on a project card that carries only its work render."""
+        seat; the review render named."""
         root = _project(self._tmp.name)
         shipped = persona_resolve.resolve_card(root, "engineering", render="build")
         self.assertEqual(SKILL / "templates" / "personas" / "amigos" / "engineering.md",

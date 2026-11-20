@@ -42,7 +42,7 @@ def _project(root: Path, *units: str) -> None:
     (root / "src" / "unit.py").write_text("def u():\n    return 1\n", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True, exist_ok=True)
-    (seats / "qa.md").write_text("<!-- role: qa -->\n# Tomas Reinholt - QA amigo\n\ncharter\n",
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Tomas Reinholt - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                  encoding="utf-8")
     stories = root / "sdlc-studio" / "stories"
     stories.mkdir(parents=True, exist_ok=True)

@@ -129,7 +129,7 @@ class TrailingProseTests(unittest.TestCase):
                 "- **Verify:** shell echo ok\n", encoding="utf-8")
             seats = root / "sdlc-studio" / "personas" / "seats"
             seats.mkdir(parents=True)
-            (seats / "qa.md").write_text("# QA seat\n<!-- role: qa -->\n", encoding="utf-8")
+            (seats / "qa.md").write_text("# QA seat\n<!-- role: qa -->\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n", encoding="utf-8")
             (root / "prior.txt").write_text(prior, encoding="utf-8")
             b = _run("brief", "--unit", "US0001", "--seat", "qa", "--rejoinder",
                      str(root / "prior.txt"), "--root", str(root))

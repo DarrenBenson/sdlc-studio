@@ -20,8 +20,15 @@ by the critic author != reviewer gate. Read-only; pure stdlib.
 
 The `resolve-consult` subcommand exposes the same declared-role chain to the consult workflow, so an
 authored seat drives a consult too (not only a delegated worker). It resolves by declared role:
-a role-matched project seat, else the skill default seat, else the generic enriched seat schema; a
-consult needs the review render, so a matched project seat lacking it is a hard error.
+a role-matched project seat, else the skill default seat, else the generic enriched seat schema.
+
+Every project seat card either path resolves is held to the persona standard first
+(`persona_review.blocking`): a card that breaks a blocking rule, a missing review render among
+them, or whose latest review failed raises StandardRefused, naming the card, each rule and the
+one command to run next, and no other card stands in for it. `resolve` and `resolve-consult`
+exit 1 on it; a card with no review, or changed since its PASS, frames as before with one
+stderr line naming its review as owed. The shipped default and `--skip-personas` are never
+judged and never read the review ledger.
 """
 from __future__ import annotations
 
@@ -51,10 +58,30 @@ class RenderError(RuntimeError):
     error, never a silent fallback to the generic default."""
 
 
+class StandardRefused(RenderError):
+    """A project seat card the persona standard holds from framing anything: it breaks a
+    blocking rule or its latest review failed. A RenderError, so every caller that refuses a
+    half-authored seat (refine, triage, the persona memory briefs) refuses this one the same
+    way; the message names the card, each rule and the one command to run next."""
+
+
 class UnknownSeat(ValueError):
     """No card fills the seat a review brief was asked to frame: the project declares no such
     role and the skill ships none. A ValueError, so a caller that refuses a bad seat as it
     refuses any bad value keeps doing so."""
+
+
+def _judge(root: Path | str, card: Path) -> None:
+    """Hold a project seat card to the persona standard before it frames anything: raise
+    StandardRefused when `persona_review.blocking` holds it, else name its review on stderr when
+    one is owed."""
+    import persona_review  # noqa: PLC0415 - sibling; it imports this module for the roster
+    held = persona_review.blocking(root, card)
+    if held:
+        raise StandardRefused(persona_review.refusal(root, card, held))
+    owed = persona_review.review_owed(root, card)
+    if owed:
+        print(owed, file=sys.stderr)
 
 
 def card_role(path: Path | str) -> str | None:
@@ -145,9 +172,11 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
     only as a warned fallback when no seat claims the role; else the skill default,
     else None (generic). `skip_personas` short-circuits to None.
 
-    For `render="review"`, a resolved PROJECT seat card that lacks its review-render sections is a
-    HARD ERROR (RenderError) - never a silent fallback to the generic default. The
-    shipped default cards always carry the sections, so the error scopes to a half-authored seat."""
+    A resolved PROJECT seat card is held to the persona standard for either render (`_judge`):
+    one that breaks a blocking rule, a missing review render among them, or whose latest review
+    failed raises StandardRefused - never a silent fallback to the default. A legacy amigos
+    card lacking its review render raises RenderError for `render="review"`. The shipped
+    default cards are never judged."""
     if skip_personas:
         return None
     # Converged home: a declared-role seat card is THE project
@@ -155,6 +184,8 @@ def resolve_card(root: Path | str, seat: str, skip_personas: bool = False,
     # claims the role - the old amigos-first order silently shadowed every authored or
     # generated seat on projects that had been through `project upgrade`.
     card = seat_card(root, seat)
+    if card is not None:
+        _judge(root, card)
     if card is None:
         card = project_card(root, seat)
         if card is not None:
@@ -185,7 +216,8 @@ def review_card(root: Path | str, seat: str) -> Path:
     """The charter a review seat adopts, for each review brief that frames one (`critic.py
     brief` and `sprint.py goal-review brief --seat`): the project card whose declared `role:` is
     the seat, else the shipped default, so a fresh project briefs its review on the shipped team.
-    The card's sections are not judged here. A seat with no card anywhere raises UnknownSeat
+    A project card is held to the persona standard as `resolve_card` holds it, raising
+    StandardRefused. A seat with no card anywhere raises UnknownSeat
     naming the seats that have one (`seat_roster`) and any card that declares no role, rather
     than letting a brief go out without a charter."""
     card = resolve_card(root, seat)
@@ -203,16 +235,13 @@ def resolve_consult(root: Path | str, role: str) -> Path | None:
     declared field, never the filename or H1 prose), so consult and delegation honour the same
     authored seat.
 
-    A consult always critiques, so the resolved card needs its review render: a matched PROJECT seat
-    missing those sections is a HARD ERROR (RenderError), never a silent fallback to the generic
-    schema. The shipped default and the generic schema always carry the sections."""
+    A matched PROJECT seat is held to the persona standard first (`_judge`): one missing its
+    review render, breaking any other blocking rule or whose latest review failed raises
+    StandardRefused, never a silent fallback to the generic schema. The shipped default and the
+    generic schema are never judged."""
     card = seat_card(root, role)
     if card is not None:
-        if not _has_review_render(card):
-            raise RenderError(
-                f"seat card {card} (role '{role}') is missing its review render "
-                f"({', '.join(_REVIEW_SECTIONS)}); fill it or remove the card - "
-                f"a consult will not silently fall back to the generic schema.")
+        _judge(root, card)
         return card
     return default_card(role) or generic_schema()
 

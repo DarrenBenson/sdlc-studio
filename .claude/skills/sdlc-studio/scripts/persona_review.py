@@ -32,6 +32,13 @@ provisional stamp turns the stamp into the dated reviewed marker `persona_gen.py
 It exits 2, writing nothing, for a FAIL naming no rule, a rule the standard does not hold, a
 reviewer naming no `(role)` group or a role no seat card declares, no person to name as having
 run it, the card's own seat, or a PASS while a rule that blocks still fails on the card.
+
+`blocking(root, card)` is what holds a project card from framing a brief: each blocking rule it
+breaks, and its latest ledger row when that row is a FAIL, whatever the card's bytes are now,
+until a later PASS. `persona_resolve` calls it for every project seat card it resolves and
+raises `refusal`'s text, which names the card, each rule and `remedy`, the one command to run
+next. `review_owed` names a card with no review row, or one changed since its PASS: it still
+frames the brief.
 """
 from __future__ import annotations
 
@@ -217,16 +224,18 @@ def _registry_findings(root: Path, cards: list[Path]) -> list[dict]:
     return out
 
 
-def check(root: Path | str, card: Path | str | None = None) -> list[dict]:
+def check(root: Path | str, card: Path | str | None = None, *,
+          evidence: bool = True) -> list[dict]:
     """Every finding against the standard, one dict per finding: `rule`, `severity` (blocks or
     reported), `heading`, `file`, `message`, and `line` or `goal` where the check names one.
-    With `card`, only that card's findings; the cast-level ones sit on no card."""
+    With `card`, only that card's findings; the cast-level ones sit on no card. `evidence=False`
+    leaves out the `persona-evidence` rule, which reads the lessons and the artefact corpus."""
     import validate  # noqa: PLC0415 - deferred: validate imports this module for its labels
     root = Path(root).resolve()
     stakeholders = root / "sdlc-studio" / "personas" / "stakeholders"
     personas = _persona_cards(root)
     raw = [*validate.check_personas(root), *validate.check_seats(root),
-           *_evidence_findings(root, personas + _seat_cards(root)),
+           *(_evidence_findings(root, personas + _seat_cards(root)) if evidence else ()),
            *_registry_findings(root, personas)]
     out: list[dict] = []
     for f in raw:
@@ -373,6 +382,93 @@ def record(root: Path | str, card: Path | str, outcome: str, reviewer: str,
         sdlc_md.atomic_write(ledger, text + ("" if text.endswith("\n") else "\n") + line + "\n")
     row["accepted"] = outcome == "PASS" and persona_gen.accept(path, row["date"])
     return row
+
+
+def ledger_rows(root: Path | str) -> list[dict]:
+    """The review ledger's rows in the order they were appended, each keyed by its column
+    lower-cased (`card`, `hash`, `outcome`, `reviewer`, `seat`, `run by`, `date`, `rules`);
+    none when there is no ledger."""
+    text = sdlc_md.read_text_safe(Path(root) / LEDGER_REL)
+    keys = [c.lower() for c in LEDGER_COLUMNS]
+    rows = [sdlc_md.table_cells(ln) for ln in text.splitlines()]
+    return [dict(zip(keys, r)) for r in rows
+            if r and len(r) == len(keys) and r[0] != LEDGER_COLUMNS[0]]
+
+
+def latest_review(root: Path | str, card: Path | str) -> dict | None:
+    """The card's last row in the ledger, whatever hash it carries, or None when it has none."""
+    root = Path(root).resolve()
+    rel = _rel(str(Path(card).resolve()), root)
+    return next((r for r in reversed(ledger_rows(root)) if r["card"] == rel), None)
+
+
+def blocking(root: Path | str, card: Path | str) -> list[dict]:
+    """What holds `card` from framing a brief, as `check` rows: each rule that blocks and fails
+    on it, then its latest review when that review is a FAIL, held whatever the card's bytes are
+    now until a later PASS. Empty when the card may frame one."""
+    root, path = Path(root).resolve(), Path(card).resolve()
+    return _held(root, path, check(root, path, evidence=blocks("persona-evidence")))
+
+
+def _held(root: Path, path: Path, findings: list[dict]) -> list[dict]:
+    """`blocking` over findings already read: those on `path` that block, then its FAIL."""
+    held = [f for f in findings if f["severity"] == BLOCKS and Path(f["file"]) == path]
+    last = latest_review(root, path)
+    if last is not None and last["outcome"].upper() == "FAIL":
+        held.append({"rule": last["rules"], "severity": BLOCKS, "heading": "Review",
+                     "file": str(path),
+                     "message": f"its latest review is a FAIL by {last['reviewer']} on "
+                                f"{last['date']}, run by {last['run by']}; a PASS recorded "
+                                "for the card as it stands lifts it"})
+    return held
+
+
+def remedy(root: Path | str, card: Path | str) -> str:
+    """The one command to run next for `card`: brief a seat other than its own to review it,
+    the first in the roster whose own card nothing holds, else the first other seat."""
+    import persona_resolve  # noqa: PLC0415 - sibling; the seat roster
+    root, path = Path(root).resolve(), Path(card).resolve()
+    own = _own_seat(root, path)
+    others = [s for s in persona_resolve.seat_roster(root) if s != own]
+    seats = [p.resolve() for p in _seat_cards(root)]
+    findings = check(root, evidence=blocks("persona-evidence"))
+
+    def clear(seat: str) -> bool:
+        return all(not _held(root, p, findings) for p in seats
+                   if persona_resolve.card_role(p) == seat)
+    seat = next((s for s in others if clear(s)), others[0])
+    return (f"python3 {_rel(str(Path(__file__).resolve()), root)} brief "
+            f"--card {_rel(str(path), root)} --seat {seat}")
+
+
+def refusal(root: Path | str, card: Path | str, held: list[dict]) -> str:
+    """The refusal for a card `blocking` holds: the card, each rule with its message, and the
+    one command to run next. Names no other card, since none stands in for it."""
+    root = Path(root).resolve()
+    rel = _rel(str(Path(card).resolve()), root)
+    lines = [f"{rel} breaks the persona standard (best-practices/persona.md), so it frames "
+             "no brief and no other card stands in for it:"]
+    lines += [f"  {f['rule']} ({f['heading']}): {f['message']}" for f in held]
+    lines += [f"Run next: {remedy(root, card)}"]
+    return "\n".join(lines)
+
+
+def review_owed(root: Path | str, card: Path | str) -> str | None:
+    """One line naming `card` as owed its persona review, when it has no review row or has
+    changed since its PASS; None when a PASS covers it as it stands, or a FAIL holds it."""
+    import persona_gen  # noqa: PLC0415 - sibling; the one card hash
+    root, path = Path(root).resolve(), Path(card).resolve()
+    last = latest_review(root, path)
+    if last is None:
+        why = "has no review recorded"
+    elif last["outcome"].upper() != "PASS":
+        return None
+    elif last["hash"] != persona_gen.body_hash(path.read_text(encoding="utf-8")):
+        why = f"has changed since its PASS on {last['date']}"
+    else:
+        return None
+    return (f"persona review owed: {_rel(str(path), root)} {why} in {LEDGER_REL}; it frames "
+            f"the brief meanwhile. Run next: {remedy(root, path)}")
 
 
 def cmd_brief(args: argparse.Namespace) -> int:

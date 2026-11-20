@@ -1800,10 +1800,20 @@ class TrdBuiltStateTests(unittest.TestCase):
                         "no Revision History row names BG1565's change to ADR-012")
 
     def test_no_story_called_open_reads_done(self) -> None:
-        """AC2. Mutants: ADR-012 calling a Done loop story open or not yet built; the check
-        reading no claim (the Not yet built story is its premise)."""
+        """AC2. Mutants: ADR-012 calling a Done loop story open or not yet built; the brief
+        refusal (US1055) left in Not yet built, or out of Built so far, once it is built; the
+        check reading no claim (the Not yet built clause is its premise)."""
         body = _trd_body()
-        self.assertIn("US1055", _stories_called_unbuilt(body), "premise: the claims were read")
+        self.assertTrue([u for u in _units(body)
+                         if "**Not yet built:**" in u and _UNBUILT_CLAIM.search(u)],
+                        "premise: the claims were read")
+        self.assertNotIn("US1055", _stories_called_unbuilt(body))
+        flat = " ".join(_adr(body, "012").split())
+        built = flat.split("**Built so far:**", 1)[1].split("**Not yet built:**", 1)[0]
+        self.assertRegex(built, r"frames no brief.*?refuse it.*?\(US1055\)")
+        history = _one_table(_section(_read(TRD), "Revision History"), "Date")
+        self.assertTrue([r for r in history[1:] if "US1055" in r[2] and "ADR-012" in r[2]],
+                        "no Revision History row names US1055's change to ADR-012")
         self.assertEqual([], _done_stories_called_unbuilt(body, self.STORIES))
 
     def test_a_done_story_called_open_is_reported_and_a_draft_one_passes(self) -> None:

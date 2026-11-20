@@ -34,7 +34,7 @@ def _root(d: str) -> Path:
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True)
     for role in ("qa", "engineering"):
-        (seats / f"{role}.md").write_text(f"<!-- role: {role} -->\n# {role} seat\n\ncharter\n",
+        (seats / f"{role}.md").write_text(f"<!-- role: {role} -->\n# {role} seat\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                           encoding="utf-8")
     return root
 

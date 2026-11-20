@@ -53,7 +53,7 @@ def _write(root: Path, rel: str, body: str) -> None:
 def _project(root: Path, *units: str) -> None:
     """Stories with a QA seat card, in a throwaway project."""
     _write(root, "src/widget.py", "def w():\n    return 1\n")
-    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
+    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
     for unit in units or (UNIT,):
         _write(root, f"sdlc-studio/stories/{unit}-widget.md",
                f"# {unit}: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"

@@ -354,7 +354,7 @@ def _workspace(root: Path) -> None:
         "- **Then** z\n- **Verify:** shell true\n", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True, exist_ok=True)
-    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                  encoding="utf-8")
 
 
@@ -393,7 +393,7 @@ def _banded_unit(root: Path, uid: str, *, heavy: bool) -> None:
         f"## Acceptance Criteria\n\n{acs}", encoding="utf-8")
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True, exist_ok=True)
-    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                  encoding="utf-8")
 
 
@@ -880,7 +880,7 @@ class RejoinderTests(unittest.TestCase):
             "- **Verify:** shell echo ok\n", encoding="utf-8")
         seats = root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True)
-        (seats / "qa.md").write_text("# Sam Eriksson - QA seat\n<!-- role: qa -->\n",
+        (seats / "qa.md").write_text("# Sam Eriksson - QA seat\n<!-- role: qa -->\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                      encoding="utf-8")
 
     def test_rejoinder_quotes_prior_verdict_verbatim(self) -> None:
@@ -1061,7 +1061,7 @@ class NeutralBriefTests(unittest.TestCase):
         seats = root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True, exist_ok=True)
         (seats / "qa-seat.md").write_text(
-            "<!-- role: qa -->\n# QA seat\n\n## Lens\n\nAssertion integrity.\n",
+            "<!-- role: qa -->\n# QA seat\n\n## Lens\n\nAssertion integrity.\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
             encoding="utf-8")
         return root
 
@@ -2758,7 +2758,7 @@ class BriefProvenanceTests(unittest.TestCase):
         seats.mkdir(parents=True, exist_ok=True)
         for role in ("engineering", "qa", "product"):
             (seats / f"{role}.md").write_text(
-                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                 encoding="utf-8")
 
     def test_a_verdict_records_the_brief_it_was_given(self) -> None:
@@ -2964,7 +2964,7 @@ class ReviewRepairTests(unittest.TestCase):
         seats.mkdir(parents=True, exist_ok=True)
         for role in ("engineering", "qa", "product"):
             (seats / f"{role}.md").write_text(
-                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+                f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                 encoding="utf-8")
 
     def test_the_brief_command_emits_the_fingerprint(self) -> None:
@@ -3725,8 +3725,13 @@ class BriefRefusesMissingPracticeTests(unittest.TestCase):
             "- **Then** z\n- **Verify:** shell exit 0\n", encoding="utf-8")
         seats = root / "sdlc-studio" / "personas" / "seats"
         seats.mkdir(parents=True, exist_ok=True)
-        (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n",
+        (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter text\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                      encoding="utf-8")
+        # A PASS for the card as it stands, so the brief's stderr opens with its own refusal
+        # rather than a line naming the card's persona review as owed.
+        import persona_review  # noqa: PLC0415 - sibling; the shipped way to record a review
+        persona_review.record(root, seats / "qa.md", "pass", "Dani Okafor (engineering)",
+                              run_by="t")
         prior = root / "prior.txt"
         prior.write_text(self.PRIOR, encoding="utf-8")
         mod = _load()
@@ -3957,7 +3962,7 @@ class SeatCardResolutionTests(unittest.TestCase):
             self.assertIn(str(Path("templates") / "personas" / "amigos" / "qa.md"), out)
             self.assertNotIn(str(card), out)
             # the control: a card that declares its role is used, and nothing is said
-            card.write_text(f"<!-- role: qa -->\n# Sam - QA seat\n\n{self.ROLELESS}\n",
+            card.write_text(f"<!-- role: qa -->\n# Sam - QA seat\n\n{self.ROLELESS}\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                             encoding="utf-8")
             rc, out, err = self._brief(root, "qa")
             self.assertEqual(0, rc, err)
@@ -4017,7 +4022,7 @@ class BriefAuthorMutantsTests(unittest.TestCase):
         cls.base = Path(cls._tmp.name) / "repo"
         files = {
             "src/widget.py": cls.WIDGET, "tests/test_widget.py": cls.TESTS,
-            "sdlc-studio/personas/seats/qa.md": "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n",
+            "sdlc-studio/personas/seats/qa.md": "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
             "sdlc-studio/stories/US0101-widget.md": (
                 "# US0101: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"
                 "> **Affects:** src/widget.py, tests/test_widget.py, changelog.d/US0101.md\n\n"

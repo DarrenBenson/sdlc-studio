@@ -42,7 +42,7 @@ def _project(root: Path, unit: str, affects: str) -> None:
     """A unit with the given Affects and a QA seat card, in a throwaway project."""
     _write(root, "src/widget.py", "def w():\n    return 1\n")
     _write(root, "tests/test_widget.py", "def test_w():\n    assert True\n")
-    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
+    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
     kind = "bugs" if unit.startswith("BG") else "stories"
     _write(root, f"sdlc-studio/{kind}/{unit}-widget.md",
            f"# {unit}: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"

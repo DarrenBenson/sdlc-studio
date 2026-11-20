@@ -96,7 +96,7 @@ class _LaneFixture(unittest.TestCase):
         _write(self.root, "tests/test_a.py", "def test_a():\n    assert True\n")
         _write(self.root, ".gitignore", "sdlc-studio/.local/\n")
         _write(self.root, "sdlc-studio/personas/seats/qa.md",
-               "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
+               "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
         _write(self.root, "sdlc-studio/.config.yaml", "review:\n  author_self_check: block\n")
         _story(self.root, A, f"src/a.py, tests/test_a.py, changelog.d/{A}.md")
         _story(self.root, B, f"src/b.py, changelog.d/{B}.md")

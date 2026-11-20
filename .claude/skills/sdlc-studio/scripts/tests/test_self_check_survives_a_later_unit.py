@@ -59,7 +59,7 @@ def _project(root: Path, a_affects: str = A_AFFECTS, repo: bool = True) -> None:
     _write(root, "src/other.py", "def o():\n    return 1\n")
     _write(root, "tests/test_shared.py", "def test_s():\n    assert True\n")
     _write(root, "sdlc-studio/personas/seats/qa.md",
-           "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
+           "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
     _write(root, "sdlc-studio/.config.yaml", "review:\n  author_self_check: block\n")
     _story(root, A, a_affects)
     _story(root, B, f"{SHARED}, changelog.d/{B}.md")

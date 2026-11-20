@@ -283,7 +283,7 @@ class DocsV64Tests(unittest.TestCase):
             other = "engineering" if sprint.FIRST_REVIEW_SEAT != "engineering" else "product"
             for role in (sprint.FIRST_REVIEW_SEAT, other):
                 fx.write(f"sdlc-studio/personas/seats/{role}.md",
-                         f"<!-- role: {role} -->\n# {role} seat\n\ncharter\n")
+                         f"<!-- role: {role} -->\n# {role} seat\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
             first = fx.brief(sprint.FIRST_REVIEW_SEAT)
             self.assertEqual(first.returncode, 0, first.stderr)
             self.assertIn("first of two independent seats", first.stdout)

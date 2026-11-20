@@ -29,12 +29,13 @@ SKILL = loader.SCRIPTS_DIR.parent
 
 
 def _resolve(root: Path, seat: str, *extra: str) -> str:
-    out = io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+    # stderr apart: a card owed its persona review is named there, and the framing is stdout.
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         rc = persona_resolve.main(["resolve", "--seat", seat, "--render", "review",
                                    "--root", str(root), *extra])
     if rc != 0:
-        raise AssertionError(f"resolve --seat {seat} exited {rc}: {out.getvalue()}")
+        raise AssertionError(f"resolve --seat {seat} exited {rc}: {err.getvalue()}")
     return out.getvalue()
 
 

@@ -481,7 +481,7 @@ class AmigoDefaultsTests(unittest.TestCase):
             sdir = sd / "personas" / "seats"; sdir.mkdir(parents=True, exist_ok=True)
             (adir / "qa.md").write_text("<!-- role: qa -->\n# Legacy QA amigo\n",
                                         encoding="utf-8")
-            authored = "<!-- role: qa -->\n# Sara - authored QA seat\n"
+            authored = "<!-- role: qa -->\n# Sara - authored QA seat\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n"
             (sdir / "sara.md").write_text(authored, encoding="utf-8")
             actions = pu.apply(d)
             self.assertFalse((sdir / "qa.md").exists())          # never migrated into collision

@@ -10045,7 +10045,14 @@ def cmd_lane(args: argparse.Namespace) -> int:
                       f"ordinary brief.", file=sys.stderr)
                 return 2
         build_seat = getattr(args, "seat", None) or "engineering"
-        dispatch = lane_dispatch(root, units, build_seat)
+        import persona_resolve  # noqa: PLC0415 - sibling; the refusal its resolver raises
+        try:
+            dispatch = lane_dispatch(root, units, build_seat)
+        except persona_resolve.RenderError as exc:
+            # The building seat's project card the persona standard refuses: no brief is
+            # issued and nothing is recorded, and the shipped card does not stand in.
+            print(f"sprint lane {args.action} refused: {exc}", file=sys.stderr)
+            return 2
         if args.action == "run" and dispatch["refused"]:
             for ref in dispatch["refused"]:
                 print(f"REFUSED {ref['refusal']}", file=sys.stderr)
@@ -13221,7 +13228,8 @@ def cmd_goal_review(args) -> int:
         try:
             text = seat_brief(root, worklist=getattr(args, "brief_worklist", None),
                               goal=getattr(args, "goal", None), seat=seats[0] if seats else None)
-        except persona_resolve.UnknownSeat as exc:
+        except (persona_resolve.UnknownSeat, persona_resolve.RenderError) as exc:
+            # RenderError: the seat's project card the persona standard refuses.
             print(f"goal-review brief refused: {exc}", file=sys.stderr)
             return 2
         print(text)

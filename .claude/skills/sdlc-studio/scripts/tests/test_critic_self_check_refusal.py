@@ -49,7 +49,7 @@ def _project(root: Path, setting: str | None) -> None:
     `review.author_self_check` set to `setting` (left unset when None)."""
     _write(root, "src/widget.py", "def w():\n    return 1\n")
     _write(root, "tests/test_widget.py", "def test_w():\n    assert True\n")
-    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n")
+    _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam - QA amigo\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
     _write(root, "sdlc-studio/stories/US0101-widget.md",
            "# US0101: widget\n\n> **Status:** Review\n> **Points:** 2\n> **Epic:** EP0001\n"
            f"> **Affects:** {AFFECTS}\n\n## Acceptance Criteria\n\n### AC1: works\n"

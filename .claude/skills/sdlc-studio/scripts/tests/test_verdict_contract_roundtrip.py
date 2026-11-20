@@ -244,7 +244,7 @@ class VerdictContractRoundTripTests(unittest.TestCase):
                 "- **Verify:** shell echo ok\n", encoding="utf-8")
             seats = root / "sdlc-studio" / "personas" / "seats"
             seats.mkdir(parents=True)
-            (seats / "qa.md").write_text("# QA seat\n<!-- role: qa -->\n", encoding="utf-8")
+            (seats / "qa.md").write_text("# QA seat\n<!-- role: qa -->\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n", encoding="utf-8")
             prior = root / "prior.txt"
             prior.write_text("VERDICT: REJECT\nISSUES: [new] it does not work\n"
                              "BLOCKING: the failing case\n", encoding="utf-8")

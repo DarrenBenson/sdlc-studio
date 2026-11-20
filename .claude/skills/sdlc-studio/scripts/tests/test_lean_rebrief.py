@@ -41,7 +41,7 @@ def _project(root: Path) -> None:
     _story(root)
     seats = root / "sdlc-studio" / "personas" / "seats"
     seats.mkdir(parents=True)
-    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter\n",
+    (seats / "qa.md").write_text("<!-- role: qa -->\n# Sam - QA seat\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
                                  encoding="utf-8")
 
 

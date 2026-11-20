@@ -45,7 +45,7 @@ def _project(root: Path, run: bool = True) -> None:
     _write(root, "src/widget.py", "def w():\n    return 1\n")
     for role, holder in SEATS.items():
         _write(root, f"sdlc-studio/personas/seats/{role}.md",
-               f"<!-- role: {role} -->\n# {holder} - {role} seat\n\ncharter\n")
+               f"<!-- role: {role} -->\n# {holder} - {role} seat\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
     for uid in ("US0001", "US0002"):
         _write(root, f"sdlc-studio/stories/{uid}-widget.md",
                f"# {uid}: widget\n\n> **Status:** Ready\n> **Points:** 2\n> **Epic:** EP0001\n"

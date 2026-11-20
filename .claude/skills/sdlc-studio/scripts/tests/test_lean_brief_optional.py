@@ -75,7 +75,7 @@ def _seat_cards(root: Path) -> None:
     cards.mkdir(parents=True, exist_ok=True)
     for role in ("engineering", "product", "qa"):
         (cards / f"{role}.md").write_text(
-            f"<!-- role: {role} -->\n# The {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+            f"<!-- role: {role} -->\n# The {role} seat\n\n## Lens\n\nJudge as {role}.\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
             encoding="utf-8")
 
 

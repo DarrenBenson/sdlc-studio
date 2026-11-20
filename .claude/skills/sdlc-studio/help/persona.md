@@ -200,6 +200,20 @@ python3 scripts/persona_review.py record --card sdlc-studio/personas/seats/qa.md
 A PASS is refused while a rule that blocks still fails on the card, and a PASS on a
 generated card clears its provisional stamp, as `persona_gen.py accept` does.
 
+A project seat card that breaks a blocking rule, or whose latest review is a FAIL, frames
+nothing until it is fixed or a later PASS is recorded: `persona_resolve.py resolve` and
+`resolve-consult` exit 1, and `critic.py brief`, `refine.py apply` and `triage.py apply` exit
+2, each naming the card, the rule and the command to run next. No other card stands in:
+
+```text
+sdlc-studio/personas/seats/qa.md breaks the persona standard (best-practices/persona.md), ...
+  seat-demographic-fluff (Identity): demographic token '42 years old' - ...
+Run next: python3 scripts/persona_review.py brief --card sdlc-studio/personas/seats/qa.md --seat engineering
+```
+
+A card with no review, or changed since its PASS, still frames, and one stderr line names it
+as owed its persona review.
+
 ---
 
 ## Output Structure

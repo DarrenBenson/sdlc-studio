@@ -192,22 +192,30 @@ class SeatResolutionTests(unittest.TestCase):
             self.assertIn("anna.md", buf.getvalue())
 
     def test_render_less_review_seat_is_hard_error(self) -> None:
-        # RFC0021 D4: a resolved seat lacking its review render is a HARD ERROR for --render review,
-        # not a silent fallback to the generic default.
+        # A resolved seat lacking its review render breaks seat-no-review-render, a blocking
+        # rule of the persona standard: refused by name, never a fallback to the default.
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nno review sections\n")
-            with self.assertRaises(mod.RenderError):
+            with self.assertRaises(mod.StandardRefused) as ctx:
                 mod.resolve_card(root, "engineering", render="review")
+            self.assertIsInstance(ctx.exception, mod.RenderError)
+            self.assertIn("sdlc-studio/personas/seats/sarah.md", str(ctx.exception))
+            self.assertIn("seat-no-review-render", str(ctx.exception))
+            self.assertIn("persona_review.py brief --card sdlc-studio/personas/seats/sarah.md "
+                          "--seat ", str(ctx.exception))
 
-    def test_render_less_seat_ok_for_build(self) -> None:
-        # The hard error is render-scoped: a build render does not require the review sections.
+    def test_render_less_seat_is_refused_for_build_too(self) -> None:
+        # A blocking rule holds the card whichever render is asked for: the build render is
+        # refused through the same message, not framed from a card that cannot review.
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            seat = _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nbuild only\n")
-            self.assertEqual(mod.resolve_card(root, "engineering", render="build"), seat)
+            _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nbuild only\n")
+            with self.assertRaises(mod.StandardRefused) as ctx:
+                mod.resolve_card(root, "engineering", render="build")
+            self.assertIn("seat-no-review-render", str(ctx.exception))
 
 
 class IndependenceFloorTests(unittest.TestCase):
@@ -277,14 +285,16 @@ class ConsultResolutionTests(unittest.TestCase):
             self.assertIn("templates", str(card))
 
     def test_consult_render_less_seat_is_hard_error(self) -> None:
-        # RFC0021 D4: a consult needs the review render; a render-less authored seat is a hard error,
-        # never a silent fallback to the generic schema.
+        # A consult needs the review render; a render-less authored seat is refused through the
+        # persona standard's message, never a silent fallback to the generic schema.
         mod = _load()
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             _seat(root, "sarah.md", "<!-- role: engineering -->\n# Sarah\n\nno review sections\n")
-            with self.assertRaises(mod.RenderError):
+            with self.assertRaises(mod.StandardRefused) as ctx:
                 mod.resolve_consult(root, "engineering")
+            self.assertIn("seat-no-review-render", str(ctx.exception))
+            self.assertNotIn("amigo-template.md", str(ctx.exception))
 
     def test_consult_cli_path_only_prints_authored_seat(self) -> None:
         import io

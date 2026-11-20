@@ -4946,6 +4946,7 @@ def _record_footer(root: Path | str, unit: str, tier: str, explicit: bool, fp: s
 
 
 def cmd_brief(args: argparse.Namespace) -> int:
+    import persona_resolve  # noqa: PLC0415 - sibling; the refusal its resolver raises
     try:
         if getattr(args, "rejoinder", None):
             src, rebuilt, quoted = args.rejoinder, False, None
@@ -5014,7 +5015,9 @@ def cmd_brief(args: argparse.Namespace) -> int:
             # command: a tier printed and not recorded is the state this whole flag was in.
             print(_record_footer(args.root, args.unit, tier, explicit, fp, path, args.seat),
                   file=sys.stderr)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, persona_resolve.RenderError) as exc:
+        # RenderError: the seat's project card the persona standard refuses, named with the
+        # one command to run next, before any of the brief reaches stdout.
         print(f"brief refused: {exc}", file=sys.stderr)
         return 2
     return 0

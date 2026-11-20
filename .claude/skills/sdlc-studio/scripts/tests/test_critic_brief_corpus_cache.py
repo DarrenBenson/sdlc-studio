@@ -40,7 +40,7 @@ def _unit(root: Path) -> None:
     seats.mkdir(parents=True)
     for role in ("engineering", "qa", "product"):
         (seats / f"{role}.md").write_text(
-            f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n",
+            f"<!-- role: {role} -->\n# A {role} seat\n\n## Lens\n\nJudge as {role}.\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n",
             encoding="utf-8")
 
 

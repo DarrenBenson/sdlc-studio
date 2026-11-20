@@ -135,7 +135,7 @@ class _DriveFixture(unittest.TestCase):
         _write(root, ".gitignore", "sdlc-studio/.local/\n")
         for rel in ("src/a.py", "src/b.py", "src/c.py", "src/shared.py"):
             _write(root, rel, f"{Path(rel).stem.upper()} = 1\n")
-        _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam\n\ncharter\n")
+        _write(root, "sdlc-studio/personas/seats/qa.md", "<!-- role: qa -->\n# Sam\n\ncharter\n\n## Lens\n\nx\n\n## Pushes Back When\n\nx\n\n## Shadow\n\nx\n")
         _write(root, "sdlc-studio/.config.yaml", self.config())
         for unit, affects in self.UNITS.items():
             _write(root, f"sdlc-studio/stories/{unit}-drive.md",
