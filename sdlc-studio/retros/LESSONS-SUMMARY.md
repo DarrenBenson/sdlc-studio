@@ -2,6 +2,9 @@
 
 Rolling digest of still-valid project lessons, read at sprint start. The full log with closed entries lives in the project tier (`sdlc-studio/retros/LESSONS.md`); regenerate this with `lessons summary`.
 
+- **L-0490: When a unit adds a new caller of a reader or validator, probe the new path with a malformed input (a card that is not UTF-8, an empty card…**
+- **L-0489: Brief a high-risk unit's second seat only after the first seat's verdict is recorded, until BG1665 lets parallel seats on one delivery…**
+- **L-0488: At grooming, run the existing test modules that import each script a unit changes, and put any that write fixtures the change touches into…**
 - **L-0487: Route every round two to the reviewer who rejected round one: resume that reviewer by SendMessage with a fresh `critic.py brief`**
 - **L-0486: A builder that edits a `reference-*.md` page runs `docgen.py reading-guides` and `tools/lint-style.sh` before hand-in**
 - **L-0485: Before briefing any builder, commit the grooming, with every criterion carrying a Verify line**

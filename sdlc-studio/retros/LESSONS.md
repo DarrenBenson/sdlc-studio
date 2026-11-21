@@ -6,6 +6,33 @@
 <!-- Per-project tier (this repo only). Cross-project wisdom is promoted to the
      skill's lessons/ folder ONLY once it clearly generalises - see help/lessons.md. -->
 
+## L-0490: When a unit adds a new caller of a reader or validator, probe the new path with a malformed input (a card that is not UTF-8, an empty card…
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+When a unit adds a new caller of a reader or validator, probe the new path with a malformed input (a card that is not UTF-8, an empty card, a missing card) before hand-in. Both seats found US1056 and US1057's crash this way; the builder had not tried it.
+
+Recorded from retro RETRO0153.
+
+## L-0489: Brief a high-risk unit's second seat only after the first seat's verdict is recorded, until BG1665 lets parallel seats on one delivery…
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+Brief a high-risk unit's second seat only after the first seat's verdict is recorded, until BG1665 lets parallel seats on one delivery count as one round.
+
+Recorded from retro RETRO0153.
+
+## L-0488: At grooming, run the existing test modules that import each script a unit changes, and put any that write fixtures the change touches into…
+
+- **Added:** 2026-11-20
+- **Review-by:** 2027-02-18
+
+At grooming, run the existing test modules that import each script a unit changes, and put any that write fixtures the change touches into the Affects before the builder starts (CR0749).
+
+Recorded from retro RETRO0153.
+
 ## L-0487: Route every round two to the reviewer who rejected round one: resume that reviewer by SendMessage with a fresh `critic.py brief`
 
 - **Added:** 2026-11-20
