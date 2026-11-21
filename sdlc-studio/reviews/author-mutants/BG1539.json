@@ -1,50 +1,149 @@
 {
   "unit": "BG1539",
-  "digest": "7b4e00a12e1cb10c at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1539-mutation-edits.json",
+  "digest": "9753b7f27fbb0000 at b12e9b3e84d5",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a03e50cfa389a6273/BG1539-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the record copies the plan's stamp",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        \"effort\": carried, \"effort_stamped\": stamp, \"effort_reason\": not_applied,",
-      "new": "        \"effort\": stamp, \"effort_stamped\": stamp, \"effort_reason\": not_applied,",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the command never carries the flag the table names",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    cmd += effort_carried(harness, effort)[0]",
-      "new": "    cmd += []",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the report reads no lane record",
+      "mutant": "the not-applied counts in the order of their names",
       "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
-      "old": "    headless = lanes.effort_not_applied(root, state.get(\"run_id\"))",
-      "new": "    headless = {}",
+      "old": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v))]",
+      "new": "for v in sorted(by_stamp)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the not-applied counts reversed",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v))]",
+      "new": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v), reverse=True)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unknown stamp counted first",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v))]",
+      "new": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, -1), v))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "two unknown stamps in row order",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v))]",
+      "new": "for v in sorted(by_stamp, key=lambda v: rank.get(v, len(rank)))]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the inherit exemption dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "and stamp(r) and stamp(r) != \"inherit\"]",
+      "new": "and stamp(r)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_asking_for_no_effort_is_counted_as_stamped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit with no stamp counted apart",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "and stamp(r) and stamp(r) != \"inherit\"]",
+      "new": "and stamp(r) != \"inherit\"]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_asking_for_no_effort_is_counted_as_stamped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an absent stamp read as a mapping",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        return effort.get(\"builder\") if isinstance(effort, dict) else None\n\n    apart",
+      "new": "        return effort.get(\"builder\")\n\n    apart",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_asking_for_no_effort_is_counted_as_stamped",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the harnesses left out",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "built headless by `sprint lane run` ({', '.join(ran)}), whose",
+      "new": "built headless by `sprint lane run`, whose",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the harnesses in row order",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "ran = sorted({h for r in apart for h in headless[sdlc_md.norm_id(str(r.get(\"id\")))]})",
+      "new": "ran = list(dict.fromkeys(h for r in apart for h in headless[sdlc_md.norm_id(str(r.get(\"id\")))]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the in-session counts kept when none was built in session",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "parts = ([_effort_counts(kept, \"builder\")] if kept else []) + [",
+      "new": "parts = [_effort_counts(kept, \"builder\")] + [",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the stamp counted for every unit, as it was",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    if not apart:\n        return _effort_counts(rows, \"builder\")",
+      "new": "    if True:\n        return _effort_counts(rows, \"builder\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "another run's lane record counted",
+      "mutant": "the lane run's effort line left out",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id or rec.get(\"effort\"):",
-      "new": "        if not isinstance(rec, dict) or rec.get(\"effort\"):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed",
+      "old": "        _say(f\"  effort: not applied - {not_applied}\")",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a command that carried the effort counted as not applied",
+      "mutant": "the lane run's effort line printed for every lane",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id or rec.get(\"effort\"):",
-      "new": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id:",
+      "old": "    if not_applied:\n        _say(f\"  effort: not applied",
+      "new": "    if True:\n        _say(f\"  effort: not applied",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the guard on a run with no id dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if not run_id:\n        return out\n    for path in sorted((Path(root) / RUN_RECORDS).glob(\"*/*.json\")):",
+      "new": "    for path in sorted((Path(root) / RUN_RECORDS).glob(\"*/*.json\")):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_record_of_no_run_is_never_counted_as_not_applied",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a record whose command carried the effort counted as not applied",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "rec.get(\"run_id\") != run_id or rec.get(\"effort\"):",
+      "new": "rec.get(\"run_id\") != run_id:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_an_in_session_unit_still_reads_as_dispatched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the order expected as the names sort",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py",
+      "old": "for v in (\"low\", \"medium\", \"high\", \"xhigh\", \"max\", \"turbo\", \"ultra\"))",
+      "new": "for v in (\"high\", \"low\", \"max\", \"medium\", \"turbo\", \"ultra\", \"xhigh\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_run_built_wholly_headless_lists_each_stamp_lowest_first",
       "result": "killed",
       "answer": ""
     }

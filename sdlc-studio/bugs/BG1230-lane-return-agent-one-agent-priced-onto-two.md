@@ -36,3 +36,4 @@ The per-unit priced figures can double count, and the docs mislead.
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-05 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Evidence added: help/sprint.md:779 says "`--minutes` with no `--tokens` is not recorded and says so", which is false since `lane return --agent` with `--minutes` is recorded (reported by the BG1629 repair builder in run twenty-one) |

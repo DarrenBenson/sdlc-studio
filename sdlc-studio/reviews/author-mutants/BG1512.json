@@ -1,68 +1,86 @@
 {
   "unit": "BG1512",
-  "digest": "6eb3fac46a7de988 at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1512-mutation-edits.json",
+  "digest": "d43a7373781545b1 at b12e9b3e84d5",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a03e50cfa389a6273/BG1512-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "only the first refused value named",
+      "mutant": "K6 .md alone taken for a page",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        raise ValueError(\"; \".join(bad))",
-      "new": "        raise ValueError(bad[0])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_every_refused_value_is_named_with_the_values_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a result compared by its case",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        if result and result not in MUTANT_RESULTS:",
-      "new": "        if result and result.lower() not in MUTANT_RESULTS:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_every_refused_value_is_named_with_the_values_accepted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "no page accepted as a surface",
-      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    pages = [a for a in affects\n             if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]",
-      "new": "    pages = []",
+      "old": "CLAIM_PAGE_SUFFIXES = (\".md\", \".mdx\")",
+      "new": "CLAIM_PAGE_SUFFIXES = (\".md\",)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "any file the Affects declares accepted as a surface",
+      "mutant": "K5 the suffix compared with its case",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "             if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]",
-      "new": "             if a not in fragments]",
+      "old": "if a.lower().endswith(CLAIM_PAGE_SUFFIXES)",
+      "new": "if a.endswith(CLAIM_PAGE_SUFFIXES)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the land judges the hand-in only the first refusal deep",
+      "mutant": "K1 the ruling compared word for word",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        raise ValueError(\"; \".join(bad))",
-      "new": "        raise ValueError(bad[0])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_the_record_would_refuse_stops_the_land_before_the_commit",
+      "old": "ruling = str(entry.get(\"ruling\") or \"\").strip()\n        if ruling and ruling.upper() not in CLAIM_RULINGS:",
+      "new": "ruling = str(entry.get(\"ruling\") or \"\").strip()\n        if ruling and ruling not in CLAIM_RULINGS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_ruling_is_read_in_any_case",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the brief's rulings retyped, not read from the record",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "             f\"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, \"",
-      "new": "             f\"{'; '.join([*required, *optional])}; ruling: TRUE, FALSE, UNVERIFIABLE, \"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_lists_the_surfaces_rulings_and_results_the_record_accepts",
+      "mutant": "K3 an absent ruling named as a vocabulary refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "ruling = str(entry.get(\"ruling\") or \"\").strip()\n        if ruling and ruling.upper() not in CLAIM_RULINGS:",
+      "new": "ruling = str(entry.get(\"ruling\") or \"\").strip()\n        if ruling.upper() not in CLAIM_RULINGS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_absent_ruling_or_result_is_named_by_the_check_for_it",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the brief lists no Affects page",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    required, optional = critic.claim_surfaces(affects)\n    lines = [f\"Then, for {uid}",
-      "new": "    required, optional = critic.claim_surfaces(affects)\n    optional = list(critic.CLAIM_SURFACES)\n    lines = [f\"Then, for {uid}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_lists_the_surfaces_rulings_and_results_the_record_accepts",
+      "mutant": "a blank ruling not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "ruling = str(entry.get(\"ruling\") or \"\").strip()\n        if ruling and ruling.upper() not in CLAIM_RULINGS:",
+      "new": "ruling = str(entry.get(\"ruling\") or \"\")\n        if ruling and ruling.upper() not in CLAIM_RULINGS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_absent_ruling_or_result_is_named_by_the_check_for_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "K2 an absent result named as a vocabulary refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "result = str(entry.get(\"result\") or \"\").strip()\n        if result and result not in MUTANT_RESULTS:",
+      "new": "result = str(entry.get(\"result\") or \"\").strip()\n        if result not in MUTANT_RESULTS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_absent_ruling_or_result_is_named_by_the_check_for_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a blank result not stripped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "result = str(entry.get(\"result\") or \"\").strip()\n        if result and result not in MUTANT_RESULTS:",
+      "new": "result = str(entry.get(\"result\") or \"\")\n        if result and result not in MUTANT_RESULTS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_an_absent_ruling_or_result_is_named_by_the_check_for_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any page in the Affects, a changelog fragment included, taken as an optional page",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]",
+      "new": "if a.lower().endswith(CLAIM_PAGE_SUFFIXES)]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the .mdx page expected refused",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py",
+      "old": "\"an .mdx page\": \"docs/commands.mdx\"",
+      "new": "\"an .mdx page\": \"docs/commands.mdxx\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
       "result": "killed",
       "answer": ""
     }

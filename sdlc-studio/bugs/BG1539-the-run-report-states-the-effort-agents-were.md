@@ -1,6 +1,6 @@
 # BG1539: The run report states the effort agents were dispatched at, but a headless lane is never passed that effort
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/reference-config.md, .claude/skills/sdlc-studio/reference-sprint.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_report_effort.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1539.md
@@ -30,12 +30,16 @@ Make the claim true or make the report honest, in one change. Either extend `hea
 
 - [ ] **AC1** Given a project with `routing.effort.builder` set to low and a run whose lane ran headless on a command that carried no effort flag, when the report of record is written, then that unit's Effort line does not read as dispatched at low: it says the effort was configured and not applied, with the reason, unless the command did carry it. Fails on: the configured value reported as the effort the agent ran at.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** Given each harness `headless_command` supports and a plan row stamped with an effort, when the lane command is built and the lane row is recorded, then the row records exactly the effort the command carried: the flag and the record together, or neither. Fails on: a lane row recording an effort the command line does not carry, or a flag passed to a harness that does not accept one.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC3** Given a unit dispatched in session at the stamped effort, when the report is written, then its Effort line still reads as dispatched at that effort. Fails on: the correction for headless lanes degrading the line for a unit whose effort was applied.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_an_in_session_unit_still_reads_as_dispatched
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC4** Given `reference-evidence-schema.md`, `reference-config.md` and `reference-sprint.md`, when their accounts of `routing.effort` are read, then each says what a headless lane does with the setting and none describes the reported figure as the effort every agent was spawned at. Fails on: a page still presenting the stamped intent as the fact for a headless lane.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortDocsTests::test_the_three_pages_say_what_a_headless_lane_does_with_effort
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

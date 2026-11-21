@@ -1,6 +1,6 @@
 # BG1406: lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py, changelog.d/BG1406.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -26,6 +26,7 @@ Refuse it and parse the value exactly.
 
 - [ ] **AC1** Given a unit with Isolation: home, when `lane run` selects it, then it refuses or runs it in the main checkout, and 'no home' is not home. Fails on: a worktree run.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

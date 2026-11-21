@@ -1,6 +1,6 @@
 # BG1491: lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1491.md
@@ -28,10 +28,13 @@ Check every criterion has a Verify line before moving the unit, so accept either
 
 - [ ] **AC1** Given a landed bug in a batch with one criterion that has no Verify line, when `sprint.py lane accept` records an APPROVE for it, then accept refuses before any move, names the criterion, exits non-zero, and the bug's Status and the lane record are as they were. Fails on: the unit moved to Fixed and its return then reported blocked.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** Given the same bug with every criterion carrying a Verify line that passes, when `lane accept` records an APPROVE, then the unit moves to Fixed and its lane is returned in the one command. Fails on: the new check refusing a fully specified unit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_with_every_criterion_specified_transitions_and_returns
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC3** Given a unit with one criterion that has no Verify line, when `sprint.py batch add` or `sprint plan` takes it, then the output names the unit and the criterion that has no Verify line. Fails on: the gap first surfacing at accept, after the build.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_batch_add_and_plan_name_a_criterion_with_no_verify_line
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

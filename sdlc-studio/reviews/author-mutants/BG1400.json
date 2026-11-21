@@ -1,23 +1,122 @@
 {
   "unit": "BG1400",
-  "digest": "a6cfbf00caee11ed at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1400-mutation-edits.json",
+  "digest": "c87b975103b32698 at 77bcc66d0e02",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5688ee956795d00d/BG1400-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "another reviewer is taken for a carried unit",
+      "mutant": "the carried id given the seat group again, as in round 1",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if refused:\n            refusal = refusal or refused",
-      "new": "        if False:\n            refusal = refusal or refused",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_another_reviewer_is_refused_naming_the_one_who_rejected",
+      "old": "            reviewer, refusal = carried, None",
+      "new": "            reviewer, refusal = _lane_reviewer_cell(args.root, unit, carried)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_rejecter_recorded_bare_is_defaulted_to_as_recorded",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no default reviewer for a carried unit",
+      "mutant": "the carried id given the seat group again, a bare --reviewer named",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        elif carried != given and not refusal:",
-      "new": "        elif False:",
+      "old": "            reviewer, refusal = carried, None",
+      "new": "            reviewer, refusal = _lane_reviewer_cell(args.root, unit, carried)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_bare_rejecter_named_as_recorded_is_recorded_as_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the seat check's refusal kept over the carried id",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            reviewer, refusal = carried, None",
+      "new": "            reviewer, refusal = carried, refusal",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_rejecter_whose_id_names_no_seat_is_taken_as_recorded",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the carried value never used",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        elif carried:\n",
+      "new": "        elif False:\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_no_reviewer_defaults_to_the_one_who_rejected",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the --reviewer value returned rather than the recorded id it names",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if named:\n        return named, None",
+      "new": "    if named:\n        return reviewer, None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_the_rejecting_id_and_an_uncarried_unit_are_accepted_as_before",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the carry gate forced, so every unit is read as carried",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    bug = critic.carried_by(root, unit) if unit else None\n    if not bug:\n        return None, None",
+      "new": "    bug = \"BG9999\"\n    if not bug:\n        return None, None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_an_uncarried_unit_with_an_unanswered_reject_takes_no_default",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every live verdict row read as owed, not only the unanswered REJECTs",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    rows = critic._unanswered_rejects(critic._live_verdict_rows(root, unit))  # noqa: SLF001\n    # latest first",
+      "new": "    rows = critic._live_verdict_rows(root, unit)  # noqa: SLF001\n    # latest first",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_discharged_carry_takes_another_reviewer",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-seen order with its first id",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "for r in reversed(rows)\n",
+      "new": "for r in rows\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_the_default_is_the_reviewer_of_the_latest_unanswered_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first-seen order with its last id, as in round 1",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "for r in reversed(rows)\n                              if str(r.get(\"reviewer\") or \"\").strip()))\n    if not owed:\n        return None, None\n    if not reviewer or not reviewer.strip():\n        print(f\"{unit} was carried at the review cap ({bug} holds the findings): --reviewer \"\n              f\"defaults to {owed[0]}, whose REJECT it carried\", file=sys.stderr)\n        return owed[0], None",
+      "new": "for r in rows\n                              if str(r.get(\"reviewer\") or \"\").strip()))\n    if not owed:\n        return None, None\n    if not reviewer or not reviewer.strip():\n        print(f\"{unit} was carried at the review cap ({bug} holds the findings): --reviewer \"\n              f\"defaults to {owed[-1]}, whose REJECT it carried\", file=sys.stderr)\n        return owed[-1], None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_the_default_is_the_reviewer_of_the_latest_unanswered_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the default taken from the end of the latest-first list",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "defaults to {owed[0]}, whose REJECT it carried\", file=sys.stderr)\n        return owed[0], None",
+      "new": "defaults to {owed[-1]}, whose REJECT it carried\", file=sys.stderr)\n        return owed[-1], None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_the_default_is_the_reviewer_of_the_latest_unanswered_reject",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nothing owed not passed over",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if not owed:\n        return None, None\n    if not reviewer",
+      "new": "    if not reviewer",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_discharged_carry_takes_another_reviewer",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a None cell compared (the `given and` guard dropped)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                  if given and critic.same_identity(w, given)), None)",
+      "new": "                  if critic.same_identity(w, given)), None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_another_reviewer_is_refused_naming_the_one_who_rejected",
+      "result": "survived",
+      "answer": "equivalent: `critic.same_identity` reads None as the empty id through `_id(value or \"\")`, and an owed id is never empty (blank reviewers are filtered out of `owed`), so a None cell matches nothing either way"
+    },
+    {
+      "mutant": "test: the carry made under the grouped id, so bare and grouped agree by construction",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py",
+      "old": "        self._carry(BARE)\n        rc, out, err = self._accept(GREEN)\n",
+      "new": "        self._carry()\n        rc, out, err = self._accept(GREEN)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_a_rejecter_recorded_bare_is_defaulted_to_as_recorded",
       "result": "killed",
       "answer": ""
     }

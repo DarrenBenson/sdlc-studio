@@ -1,6 +1,6 @@
 # BG1629: lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1629.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py, .claude/skills/sdlc-studio/scripts/sprint.py
@@ -26,6 +26,7 @@ Have lane land record --delegated-minutes from the transcript's first and last m
 
 - [ ] **AC1** Given a unit landed, REJECTed and its repair landed with `sprint.py lane land`, when the run is closed, then the unit's Minutes cell shows minutes taken from the builder transcript's first and last message times, split by points as the tokens are, not NOT MEASURED. Fails on: the land records tokens but no `--delegated-minutes`, so the cell reads NOT MEASURED.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

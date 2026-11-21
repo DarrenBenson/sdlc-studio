@@ -1,6 +1,6 @@
 # BG1448: lane land spends its full hook run before a rebase conflict, and a replayed generated page merges into drift
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1448.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py
@@ -26,8 +26,10 @@ Rebase the lane onto main before the hook run so a conflict refuses first, and r
 
 - [ ] **AC1** Given a lane whose rebase onto main conflicts, when `lane land` runs, then it refuses before the commit hooks run. Fails on: a hook run spent first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** Given two lanes that each regenerated the surface page, when the second lands, then its commit carries the page regenerated over both. Fails on: a drift refusal.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

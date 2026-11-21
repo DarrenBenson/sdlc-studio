@@ -1,23 +1,86 @@
 {
   "unit": "BG1406",
-  "digest": "794c4c9d480162ff at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1406-mutation-edits.json",
+  "digest": "fcf7d0e311d0b7f8 at b12e9b3e84d5",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a03e50cfa389a6273/BG1406-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the headless run builds a home-isolated unit",
+      "mutant": "the first word of the value read",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                                              if b.get(\"home_isolated\")]):",
-      "new": "                                              if False]):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests::test_a_home_isolated_unit_is_refused_before_the_cli_runs",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return (raw.split() or [\"\"])[0].strip(\"`\").lower() == LANE_HOME",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the field read as containing home",
+      "mutant": "the old word search",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
-      "new": "    return LANE_HOME in raw.lower()",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests::test_the_field_is_read_exactly",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return LANE_HOME in raw.strip(\"`\").lower().split()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the value compared with its case",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return raw.strip().strip(\"`\").strip() == LANE_HOME",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the backticks kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return raw.strip().strip().lower() == LANE_HOME",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the spaces inside the backticks kept",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return raw.strip().strip(\"`\").lower() == LANE_HOME",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the outer strip dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "return raw.strip(\"`\").strip().lower() == LANE_HOME",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "survived",
+      "answer": "equivalent: `sdlc_md.extract_field` captures the value with `\\s*(.+?)\\s*`, so it never reaches the reader with leading or trailing whitespace; the strip is a guard for a caller that passes a raw value"
+    },
+    {
+      "mutant": "no refusal of a home-isolated unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if b.get(\"home_isolated\")]):",
+      "new": "if b.get(\"home_isolated\") and False]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: home only expected to be home",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py",
+      "old": "(\"home only\", False)",
+      "new": "(\"home only\", True)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the entry-point case run with plain home",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py",
+      "old": "self._isolation(\"home only\")",
+      "new": "self._isolation(\"home\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests",
       "result": "killed",
       "answer": ""
     }

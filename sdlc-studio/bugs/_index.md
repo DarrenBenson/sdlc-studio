@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 317 |
+| Open | 313 |
 | In Progress | 0 |
-| Fixed | 1036 |
+| Fixed | 1043 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1694** |
+| **Total** | **1697** |
 
 ## All Bugs
 
@@ -475,13 +475,13 @@
 | [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1398](BG1398-the-tool-call-budget-in-a-multi-unit.md) | The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Fixed | Medium | 2026-11-13 | 2026-11-13 |
-| [BG1400](BG1400-lane-accept-takes-reviewer-as-free-text-so.md) | lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1400](BG1400-lane-accept-takes-reviewer-as-free-text-so.md) | lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1401](BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md) | BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1402](BG1402-the-bg1333-integration-rule-counts-as-present-if.md) | The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1403](BG1403-retro-s-new-supplied-guard-and-its-declined.md) | retro's new `supplied` guard and its `declined` list have no tests | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1404](BG1404-critic-py-record-splits-a-verdict-s-issues.md) | critic.py record splits a verdict's ISSUES at every semicolon, so a semicolon inside one finding becomes an untagged finding and the record is refused | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1405](BG1405-nothing-pins-critic-s-live-rows-filter-the.md) | Nothing pins critic's 'live rows' filter, the carried-refusal wording or the stacked-criterion naming, and the BG1339 rejoinder path guards are untested | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1406](BG1406-lane-run-accepts-a-home-isolated-unit-and.md) | lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1406](BG1406-lane-run-accepts-a-home-isolated-unit-and.md) | lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1407](BG1407-a-builder-s-mutation-probe-in-a-scratch.md) | A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1408](BG1408-sprint-lane-land-s-hook-refusal-text-and.md) | sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
@@ -523,7 +523,7 @@
 | [BG1445](BG1445-lessons-py-class-add-declares-a-phase-flag.md) | lessons.py class-add declares a --phase flag, so the upgrade page's row for critic.py's retired --phase no longer matches and test_lean_upgrade_page_docs is red | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1446](BG1446-three-second-seat-behaviours-are-correct-but-unpinned.md) | Three second-seat behaviours are correct but unpinned: a story's risk tag read over its Affects, the brief's no-map default, and the first seat's latest verdict rather than its first | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
 | [BG1447](BG1447-tools-check-budgets-py-reports-every-file-within.md) | tools/check_budgets.py reports every file within budget while the pre-commit budgets lane fails the same tree on docgen drift | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
-| [BG1448](BG1448-lane-land-spends-its-full-hook-run-before.md) | lane land spends its full hook run before a rebase conflict, and a replayed generated page merges into drift | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1448](BG1448-lane-land-spends-its-full-hook-run-before.md) | lane land spends its full hook run before a rebase conflict, and a replayed generated page merges into drift | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1449](BG1449-lane-accept-refuses-to-record-a-reject-when.md) | lane accept refuses to record a REJECT when the unit's self-check is stale, though a REJECT moves nothing | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1450](BG1450-a-reviewer-s-verdict-file-is-refused-by.md) | A reviewer's verdict file is refused by critic.py record over one code span with a leading space, and the review brief does not warn | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1451](BG1451-the-commit-msg-hook-refuses-git-commit-amend.md) | The commit-msg hook refuses git commit --amend on a lane commit because it attributes only the newly staged files | Won't Fix | Low | 2026-11-15 | 2026-11-15 |
@@ -566,7 +566,7 @@
 | [BG1488](BG1488-reference-outputs-md-still-calls-deferred-a-story.md) | reference-outputs.md still calls Deferred a story terminal status at lines 134, 745 and 755, against its own Story row and sdlc_md.TERMINAL_STATUS | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1489](BG1489-github-ci-s-green-run-noise-gate-fails.md) | GitHub CI's green-run noise gate fails on main: critic record's new author-form warning leaks from passing tests, 112 diagnostic lines against a baseline of 104 | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1490](BG1490-test-critic-rejoinder-from-ledger-and-test-critic.md) | test_critic_rejoinder_from_ledger and test_critic_verdict_file_binding fail when run inside an agent session, because the harness session id reaches the verdict's source field | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
-| [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1491](BG1491-lane-accept-on-an-approve-prints-that-the.md) | lane accept on an APPROVE prints that the unit moved to Fixed and then that its return is blocked, when one criterion has no Verify line | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1492](BG1492-nothing-stops-the-orchestrator-committing-a-reviewer-s.md) | Nothing stops the orchestrator committing a reviewer's half-written verdict: git add of the records sweeps in a verdict file still being written | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1493](BG1493-the-pre-push-boundary-gate-does-not-run.md) | The pre-push boundary gate does not run CI's green-run noise gate, so a push that passes locally turns GitHub Lint red | Fixed | High | 2026-11-16 | 2026-11-16 |
 | [BG1494](BG1494-test-the-watchdog-sends-sigterm-and-waits-its.md) | test_the_watchdog_sends_sigterm_and_waits_its_grace reads the SIGTERM marker the moment it exists, before the trap has written TERM, and fails CI intermittently | Fixed | Medium | 2026-11-16 | 2026-11-16 |
@@ -587,7 +587,7 @@
 | [BG1509](BG1509-release-cut-never-restamps-the-releasing-repository-s.md) | release_cut never restamps the releasing repository's own sdlc-studio/.version, so each release needs a hand migrate --apply and CI's corpus check reds on US0926::AC1 until it gets one | Won't Fix | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1510](BG1510-the-generated-release-pages-and-the-evidence-pack.md) | The generated release pages and the evidence pack lag every signature and filing after the cut, and the release-gate workflow names no step to regenerate them before the tag | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1511](BG1511-a-test-that-swaps-a-module-in-sys.md) | A test that swaps a module in sys.modules without restoring it reads green alone and in a selection, and red only in the batched release gate | Open | Medium | 2026-11-16 | 2026-11-16 |
-| [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Open | Medium | 2026-11-16 | 2026-11-16 |
+| [BG1512](BG1512-a-lane-builder-s-self-check-hand-in.md) | A lane builder's self-check hand-in is refused only after lane land has committed the unit, for surfaces, rulings and mutant results the brief names only in passing | Fixed | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1513](BG1513-lane-return-agent-cannot-price-a-builder-spawned.md) | lane return --agent cannot price a builder spawned from another project's session: it looks for the transcript only under the lane repository's own projects directory | Open | Low | 2026-11-16 | 2026-11-16 |
 | [BG1514](BG1514-two-serial-phase-tests-go-red-in-the.md) | Two serial-phase tests go red in the release boundary's module-alone lane under load and pass alone on the same host, so a tag push can be refused by a flake | Open | Medium | 2026-11-16 | 2026-11-16 |
 | [BG1515](BG1515-file-finding-files-a-field-the-shell-hazard.md) | file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing | Won't Fix | Low | 2026-11-16 | 2026-11-16 |
@@ -614,7 +614,7 @@
 | [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1538](BG1538-us1168-cannot-be-built-as-written-because-the.md) | US1168 cannot be built as written because the D0495 ruling was never written back to the story or its epic | Open | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1539](BG1539-the-run-report-states-the-effort-agents-were.md) | The run report states the effort agents were dispatched at, but a headless lane is never passed that effort | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1540](BG1540-us1173-is-done-with-ac3-verified-yet-ac3.md) | US1173 is Done with AC3 verified, yet AC3 reads the live bug corpus and is red at HEAD | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1541](BG1541-filing-accepts-a-shipped-in-release-by-its.md) | Filing accepts a Shipped-in release by its CHANGELOG heading that escape.py trace then refuses as not a git tag | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1542](BG1542-release-cut-py-tag-check-passes-a-symbolic.md) | release_cut.py tag-check passes a symbolic ref recorded green at one commit and checked at another | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -704,7 +704,7 @@
 | [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1630](BG1630-lessons-add-global-writes-only-the-lesson-section.md) | lessons add --global writes only the Lesson section and ships the template's other sections as placeholders | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1631](BG1631-install-ps1-uninstall-deletes-any-folder-named-sdlc.md) | install.ps1 -Uninstall deletes any folder named sdlc-studio under a target, with none of the guard BG1547 gives install.sh | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1632](BG1632-install-ps1-replaces-an-existing-folder-named-sdlc.md) | install.ps1 replaces an existing folder named sdlc-studio that is not an SDLC Studio install, where install.sh skips it | Fixed | Medium | 2026-11-19 | 2026-11-19 |
@@ -770,6 +770,9 @@
 | [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1695](BG1695-lane-land-names-a-conflicting-path-that-holds.md) | lane land names a conflicting path that holds a space as two paths | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1696](BG1696-sprint-drive-s-headless-review-passes-no-effort.md) | sprint drive's headless review passes no effort, while the sprint report says the reviewer ran at the plan's stamp | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1697](BG1697-bg1477-did-not-converge-in-review-round-2.md) | BG1477 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 

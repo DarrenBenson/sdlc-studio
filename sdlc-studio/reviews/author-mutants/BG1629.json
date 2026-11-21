@@ -1,34 +1,115 @@
 {
   "unit": "BG1629",
-  "digest": "1a3dcdb3ace2612b at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1629-mutation-edits.json",
+  "digest": "68c9ef76cfae3776 at 77bcc66d0e02",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5688ee956795d00d/BG1629-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the land reads no minutes from the transcript",
+      "mutant": "minutes read only by the land, as in round 1, so the accept replaces them with none",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if land and reading is not None and minutes is None:",
-      "new": "    if False and land and reading is not None and minutes is None:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_repaired_unit_reads_both_builders_minutes",
+      "old": "    if shares is None and reading is not None and minutes is None:",
+      "new": "    if land and shares is None and reading is not None and minutes is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_the_documented_approve_naming_the_repairer_keeps_both_minutes",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the span read in hours, not minutes",
+      "mutant": "minutes read only by the land: a return after the land reads NOT MEASURED",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    return (max(times) - min(times)).total_seconds() / 60, \"\"",
-      "new": "    return (max(times) - min(times)).total_seconds() / 3600, \"\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_lane_of_two_units_splits_its_minutes_by_points",
+      "old": "    if shares is None and reading is not None and minutes is None:",
+      "new": "    if land and shares is None and reading is not None and minutes is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_return_after_the_land_reads_the_transcripts_minutes",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a transcript with no span records no warning",
+      "mutant": "the span read whatever --minutes says",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if shares is None and reading is not None and minutes is None:",
+      "new": "    if shares is None and reading is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_minutes_a_return_supplies_are_recorded_over_the_transcripts_span",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the transcript read when there is no reading",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if shares is None and reading is not None and minutes is None:",
+      "new": "    if shares is None and minutes is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_a_worktree_whose_transcript_cannot_be_read_still_lands_and_names_the_unit_unpriced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "times that do not move read as a span of 0.0 minutes",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if len(times) < 2 or max(times) <= min(times):",
+      "new": "    if len(times) < 2:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_transcript_whose_times_do_not_move_records_tokens_and_no_minutes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "fewer than two times not refused, so no times raises",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if len(times) < 2 or max(times) <= min(times):",
+      "new": "    if max(times) <= min(times):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_transcript_with_no_times_records_tokens_and_says_so",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the unreadable-transcript reason raised instead",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        return None, f\"the transcript {path} cannot be read for its message times ({exc})\"",
+      "new": "        raise",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_transcript_that_cannot_be_read_gives_its_reason",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the object guard dropped, so `.get` is called on a list",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        stamp = sdlc_md.parse_iso8601(rec.get(\"timestamp\")) if isinstance(rec, dict) else None",
+      "new": "        stamp = sdlc_md.parse_iso8601(rec.get(\"timestamp\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_line_that_is_not_json_or_not_an_object_is_passed_over",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a line that is not JSON re-raised",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            rec = json.loads(line)\n        except ValueError:\n            continue",
+      "new": "            rec = json.loads(line)\n        except ValueError:\n            raise",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_line_that_is_not_json_or_not_an_object_is_passed_over",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the land's no-minutes warning printed by every return",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if minutes is None and land:\n",
+      "new": "        if minutes is None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_return_of_a_transcript_with_no_times_records_tokens_and_says_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no minutes warning dropped at the land",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "            print(f\"WARNING no minutes were recorded beside the tokens: {why}\", file=sys.stderr)",
       "new": "            pass",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_transcript_with_no_times_records_tokens_and_says_so",
       "result": "killed",
       "answer": ""
+    },
+    {
+      "mutant": "test: the accept names no agent",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py",
+      "old": "        done = self._approve(A, \"--agent\", self.REPAIRER)",
+      "new": "        done = self._approve(A)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_the_documented_approve_naming_the_repairer_keeps_both_minutes",
+      "result": "survived",
+      "answer": "survives as it must: an accept naming no agent writes no record, so the two landed records stand and the cell reads 30.0 under round 1 and the fix alike; the --agent is what takes the test down the re-pricing path, where the code mutant `minutes read only by the land` is killed by this same test"
     }
   ]
 }

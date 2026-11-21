@@ -1,32 +1,104 @@
 {
   "unit": "BG1491",
-  "digest": "07ba6431d3a8add9 at b1d2369353ed",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1491-mutation-edits.json",
+  "digest": "221958b9a4608421 at 77bcc66d0e02",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5688ee956795d00d/BG1491-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the APPROVE on an unspecified criterion is taken",
+      "mutant": "the JSON plan returns before the criteria are read (round 1)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "                   or _lane_unspecified_refusal(args.root, unit, getattr(args, \"verdict\", None)))",
-      "new": "                   or None)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing",
+      "old": "        print(json.dumps({**data, \"unspecified_criteria\": unspecified}, indent=2))\n        _render_unspecified_criteria(unspecified, sys.stderr)",
+      "new": "        print(json.dumps(data, indent=2))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every verdict refused on an unspecified criterion, a REJECT too",
+      "mutant": "the JSON plan names them on stderr but carries no field",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    if str(said or \"\").strip().upper() != critic.APPROVE:",
-      "new": "    if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing",
+      "old": "        print(json.dumps({**data, \"unspecified_criteria\": unspecified}, indent=2))",
+      "new": "        print(json.dumps(data, indent=2))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the plan names no unspecified criterion",
+      "mutant": "the JSON plan carries the field but names nothing on stderr",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    _render_unspecified_criteria(data, args.root)",
-      "new": "    pass",
+      "old": "        _render_unspecified_criteria(unspecified, sys.stderr)\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the JSON plan's advisory printed to stdout, a second document",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        _render_unspecified_criteria(unspecified, sys.stderr)\n",
+      "new": "        _render_unspecified_criteria(unspecified)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the field holds every unit, a fully specified one included",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return {it[\"id\"]: missing for it in data.get(\"batch\") or []\n            if isinstance(it, dict) and it.get(\"id\")\n            and (missing := _unspecified_criteria(repo_root, it[\"id\"]))}",
+      "new": "    return {it[\"id\"]: _unspecified_criteria(repo_root, it[\"id\"]) for it in data.get(\"batch\") or []\n            if isinstance(it, dict) and it.get(\"id\")}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the header printed over no criteria",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    advisory adds nothing to the JSON it prints.\"\"\"\n    if unspecified:\n",
+      "new": "    advisory adds nothing to the JSON it prints.\"\"\"\n    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "N1 the batch add advisory printed to stdout whatever the format",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "              file=sys.stderr if getattr(args, \"format\", \"text\") == \"json\" else sys.stdout)",
+      "new": "              file=sys.stdout)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_batch_add_names_the_criterion_on_stderr_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the batch add advisory printed to stderr whatever the format",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "              file=sys.stderr if getattr(args, \"format\", \"text\") == \"json\" else sys.stdout)",
+      "new": "              file=sys.stderr)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_batch_add_names_the_criterion_on_stderr_alone",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the text plan's advisory printed to stderr",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    _render_unspecified_criteria(unspecified)\n    _render_triage(data)",
+      "new": "    _render_unspecified_criteria(unspecified, sys.stderr)\n    _render_triage(data)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the text plan's advisory dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    _render_unspecified_criteria(unspecified)\n    _render_triage(data)",
+      "new": "    _render_triage(data)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_batch_add_and_plan_name_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the JSON plan run over a fully specified worklist, so nothing is named either way",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py",
+      "old": "            (root / \"w.txt\").write_text(\"BG0001\\nBG0002\\n\", encoding=\"utf-8\")\n            rc, out, err = self._cli_apart(root, \"plan\", \"--worklist\", str(root / \"w.txt\"),\n                                           \"--no-fetch\", \"--format\", \"json\")",
+      "new": "            (root / \"w.txt\").write_text(\"BG0001\\n\", encoding=\"utf-8\")\n            rc, out, err = self._cli_apart(root, \"plan\", \"--worklist\", str(root / \"w.txt\"),\n                                           \"--no-fetch\", \"--format\", \"json\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_a_json_plan_names_a_criterion_with_no_verify_line",
       "result": "killed",
       "answer": ""
     }
