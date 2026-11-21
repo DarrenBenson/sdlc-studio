@@ -909,22 +909,28 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     gates enforced different independence rules, and the weaker one was the one guarding the
     honesty check.
 
-    A delivery verdict is the unit's CURRENT delivery's, as `delivery_rounds` counts it: in an
+    A REJECT no later APPROVE from its own reviewer answered is read from the whole ledger, so
+    it stands from any delivery: a carried unit is discharged only by its rejecting reviewer
+    (`REJECT_EXITS`), never by another reviewer's APPROVE in a later run. With none standing, a
+    delivery verdict is the unit's CURRENT delivery's, as `delivery_rounds` counts it: in an
     open run holding the unit, only the rows past its `REVIEW_BASE` (none while the run has not
     reviewed it), so an APPROVE an earlier delivery recorded never covers a unit re-delivered
     here. Outside such a run, or with a run state that cannot be read, the whole ledger.
     """
-    since = _delivery_base(repo_root, unit) if phase == "delivery" else 0
-    if since is None:
-        return None
-    seen = _live_verdict_rows(repo_root, unit, phase, since)
-    latest = seen[-1] if seen else None
+    seen = _live_verdict_rows(repo_root, unit, phase)
     unanswered = _unanswered_rejects(seen)
     # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
     # reporting the EARLIEST instead leaves 18 units non-conformant rather than 19, and the unit
     # it drops is US0671 - the first one this bug's own Steps to Reproduce names as masked. The
     # reading that gives the tidier number is the one that hides the example.
-    return unanswered[-1] if unanswered else latest
+    if unanswered:
+        return unanswered[-1]
+    since = _delivery_base(repo_root, unit) if phase == "delivery" else 0
+    if since is None:
+        return None
+    # Only a unit an open run holds and has reviewed skips rows; the rest keep the one read.
+    current = _live_verdict_rows(repo_root, unit, phase, since) if since else seen
+    return current[-1] if current else None
 
 
 def _delivery_base(repo_root: Path | str, unit: str) -> int | None:

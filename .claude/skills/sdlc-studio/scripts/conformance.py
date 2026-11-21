@@ -306,8 +306,8 @@ def unparseable_verifiers(text: str) -> list[tuple[str, str]]:
     """`(criterion id, the runner's message)` for each Verify line in the criteria
     `verify_ac.py run` judges (`verify_ac.criteria_blocks`) that its parser refuses as an invalid
     verifier (`verify_ac.parse_refusal`), every line of a criterion, in order. Empty when every
-    line parses, or when the runner's module cannot be imported, the fail-open the verifier leg
-    of `unit_is_ungroomed` already takes."""
+    line parses, or when the runner's module cannot be imported or its criteria reader raises,
+    the fail-open the verifier leg of `unit_is_ungroomed` already takes."""
     try:
         import verify_ac as _va  # noqa: PLC0415 - deferred; the module that executes them
         blocks = _va.criteria_blocks(text)

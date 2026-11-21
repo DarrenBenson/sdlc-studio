@@ -9,7 +9,10 @@ groomed by `sprint.py breakdown`, `sprint.py plan --write` opened a run on it, a
 MUTANTS, each of which a test here fails on: (1) the grooming predicate does not ask the runner's
 parser, so the unit is groomed; (2) the unit is ungroomed under a message of its own, not
 `verify_ac`'s; (3) `plan --write` opens the run anyway; (4) a `manual` marker, `shell` or a DSL
-verb is refused as unparseable; (5) only the first Verify line of a criterion is asked.
+verb is refused as unparseable; (5) only the first Verify line of a criterion is asked; (6) every
+block in the file is asked, not only the criteria the runner judges, so a line under a later
+heading the runner never runs refuses the unit; (7) a criteria reader that raises stops the gate
+rather than leaving the unit to the legs that could read it.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -133,6 +136,44 @@ class UnparseableVerifyTests(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertIsNone(va.parse_refusal(line))
         self.assertIsNotNone(va.parse_refusal("evaluate 1 + 1"))
+
+    def test_only_the_criteria_the_runner_judges_are_asked(self) -> None:
+        """MUTANT: ask every block in the file (`verify_ac.parse_story`) rather than the criteria
+        `verify_ac.py run` judges (`verify_ac.criteria_blocks`), so a backtick-wrapped line under
+        a later heading, which the runner never runs, refuses a unit whose criterion parses."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(d, {"US0021": "shell true\n\n## Superseded criteria\n\n"
+                                          "### AC2: it held once\n\n"
+                                          "- **Verify:** `file src/app.py`"})
+            text = next((root / "sdlc-studio" / "stories").glob("US0021-*.md")).read_text(
+                encoding="utf-8")
+            va = _live("verify_ac")
+            self.assertEqual(["AC1"], [b.ac_id for b in va.criteria_blocks(text)])
+            self.assertIn("AC2", [b.ac_id for b in va.parse_story(text)],
+                          "premise: the later heading's line is not a block in the file")
+            self.assertEqual([], _live("conformance").unparseable_verifiers(text))
+            bd = _breakdown(root)
+            self.assertEqual(["US0021"], bd["groomed"], bd)
+            self.assertEqual([], bd["ungroomed"], bd)
+
+    def test_a_criteria_reader_that_raises_fails_open(self) -> None:
+        """MUTANT: re-raise from `unparseable_verifiers`, so a criteria reader that raises stops
+        `unit_is_ungroomed`, and `sprint.py breakdown` with it, rather than leaving the unit to
+        the legs that could read it."""
+        import unittest.mock  # noqa: PLC0415
+        with tempfile.TemporaryDirectory() as d:
+            root = _project(d, {"US0022": UNPARSEABLE["US0001"][0]})
+            text = next((root / "sdlc-studio" / "stories").glob("US0022-*.md")).read_text(
+                encoding="utf-8")
+            conformance = _live("conformance")
+            self.assertEqual((True, "unparseable-verifier"),
+                             conformance.unit_is_ungroomed("story", text), "premise")
+            with unittest.mock.patch.object(_live("verify_ac"), "criteria_blocks",
+                                            side_effect=RuntimeError("the reader broke")):
+                self.assertEqual([], conformance.unparseable_verifiers(text))
+                self.assertEqual((False, ""), conformance.unit_is_ungroomed("story", text))
+                bd = _breakdown(root)
+            self.assertEqual(["US0022"], bd["groomed"], bd)
 
 
 if __name__ == "__main__":

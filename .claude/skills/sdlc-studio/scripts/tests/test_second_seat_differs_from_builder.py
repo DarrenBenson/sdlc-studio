@@ -11,7 +11,9 @@ the lane's recorded seat, the 'Dani Okafor (engineering)' that `lane land --auth
 
 MUTANTS, each of which a test here fails on: (1) the second seat skips only the first review
 seat, so it is engineering again; (2) the second seat is the first review seat, qa; (3) a project
-whose own seats are only qa and the building seat gets the building seat back.
+whose own seats are only qa and the building seat gets the building seat back; (4) the shipped
+seats are searched before the project's own, so a project whose own seats are engineering, qa
+and security gets product, a seat it does not hold.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -132,6 +134,19 @@ class SecondSeatNotBuilderTests(unittest.TestCase):
                                                   encoding="utf-8")
             self.assertEqual(["engineering", "qa"], sprint.review_seats(root)[0])
             self.assertEqual("product", sprint.second_review_seat(root))
+
+    def test_a_projects_own_seat_comes_before_the_shipped_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seats = root / "sdlc-studio" / "personas" / "seats"
+            seats.mkdir(parents=True)
+            for role in ("engineering", "qa", "security"):
+                (seats / f"{role}.md").write_text(f"<!-- role: {role} -->\n# {role} seat\n",
+                                                  encoding="utf-8")
+            self.assertEqual((["engineering", "qa", "security"], False),
+                             sprint.review_seats(root))
+            self.assertEqual("security", sprint.second_review_seat(root),
+                             "the second seat is a shipped seat the project does not hold")
 
 
 if __name__ == "__main__":
