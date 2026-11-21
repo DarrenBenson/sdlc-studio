@@ -272,15 +272,22 @@ def _loose(wt_top: Path) -> dict[str, str]:
     """Each path in the worktree that no commit of the lane would carry, as {path: "unstaged"
     or "untracked"}: a change to a tracked file left out of the index, or a file git does not
     track and does not ignore, from `git status`. Each path is decoded as the filesystem names
-    it (`os.fsdecode`), so a path that is not UTF-8 is named rather than stopping the land."""
+    it (`os.fsdecode`), so a path that is not UTF-8 is named rather than stopping the land.
+    A rename or copy, staged or made in the work tree, names its source after its target, and
+    that source is never read as an entry of its own. Only a rename made in the work tree
+    leaves its source deleted and unstaged, so only there is the source named too: a copy's
+    source is listed on its own wherever it changed, and a staged rename's source is deleted
+    in the index, which the commit carries."""
     out: dict[str, str] = {}
     listing = _raw(wt_top, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout
     parts, n = [os.fsdecode(raw) for raw in listing.split(b"\0") if raw], 0
     while n < len(parts):
         entry, n = parts[n], n + 1
         index, tree, path = entry[0], entry[1], entry[3:]  # `XY <path>`, as git prints each
-        if index in "RC":
-            n += 1  # a rename or copy names its source next, which is no path of its own
+        if index in "RC" or tree in "RC":
+            source, n = parts[n], n + 1
+            if tree == "R":
+                out[source] = "unstaged"
         if index == "?":
             out[path] = "untracked"
         elif tree != " ":

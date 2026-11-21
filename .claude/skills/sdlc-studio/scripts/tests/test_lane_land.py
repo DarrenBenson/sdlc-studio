@@ -81,6 +81,12 @@ def _git(cwd: Path, *args: str) -> str:
     return gitutil.git(list(args), cwd, text=True).stdout.strip()
 
 
+def _leftovers(stderr: str) -> str:
+    """The leftovers a land's refusal names, exactly as it lists them; empty where none is."""
+    hit = re.search(r"no commit of the lane carries: (.*?)\. Nothing was committed", stderr)
+    return hit.group(1) if hit else ""
+
+
 class _LaneFixture(unittest.TestCase):
     """The throwaway repository, its stub hook and the builder's worktree every case lands."""
 
@@ -395,13 +401,51 @@ class LaneLandTests(_LaneFixture):
         self.assertEqual("B = 9\n", (self.wt / "src/b.py").read_text(encoding="utf-8"))
         self.assertEqual([], critic.read_self_checks(self.root))
 
+    def _land_refused(self) -> str:
+        """Land the lane the case handed in beside its leftover, check `lane land` refused it
+        from its preflight before anything moved (exit 2, no traceback, no hook run, main where
+        it was, no hand-in copied), and return the leftovers the refusal names."""
+        main = _git(self.root, "rev-parse", "HEAD")
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(2, r.returncode, out)
+        self.assertNotIn("Traceback", out)
+        self.assertEqual(0, self._hook_runs_in_the_worktree(), "the hooks ran before the refusal")
+        self.assertEqual(main, _git(self.root, "rev-parse", "HEAD"))
+        self.assertFalse((self.root / LANE / "landed" / self.wt.name).exists(),
+                         "the hand-in was copied before the refusal")
+        return _leftovers(r.stderr)
+
+    def test_an_unstaged_deletion_is_refused_before_the_hooks_run(self) -> None:
+        """BG1470 AC2 for a tracked file deleted and not staged, which `git status` marks D in
+        its work-tree column: refused by name before any hook, and left deleted. MUTANT: only a
+        modification counted as unstaged (the hook runs, the lane commits, and the rebase after
+        it refuses over the deletion)."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        (self.wt / "src/b.py").unlink()
+        self.assertEqual("src/b.py (unstaged)", self._land_refused())
+        self.assertFalse((self.wt / "src/b.py").exists(), "the deletion was discarded")
+
+    def test_a_name_that_is_not_utf8_is_named_rather_than_stopping_the_land(self) -> None:
+        """BG1470 AC2 for an untracked file whose name holds the byte 0xff: the refusal names it
+        as the filesystem spells it, before any hook. MUTANT: the path decoded as strict UTF-8
+        (the land stops on a UnicodeDecodeError traceback, exit 1)."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        try:
+            (self.wt / os.fsdecode(b"src/stray-\xff.py")).write_text("S = 1\n", encoding="utf-8")
+        except OSError as exc:  # a filesystem that takes only UTF-8 names, as macOS's does
+            self.skipTest(f"this filesystem refuses a name that is not UTF-8: {exc}")
+        self.assertRegex(self._land_refused(), r"^src/stray-\S+\.py \(untracked\)$")
+
     def test_a_clean_lane_still_lands(self) -> None:
         """BG1470 AC3. The staged change, the hand-in and the unstaged verify edit to the unit's
         own story: it lands as before. MUTANT: the story's verify edit refused rather than
         discarded; the hand-in's own exemption is `test_a_hand_in_git_can_see_is_no_leftover`."""
         self._stage("src/a.py", "A = 2\n")
         self._hand_in()
-        story =self.wt / f"sdlc-studio/stories/{A}-lane.md"
+        story = self.wt / f"sdlc-studio/stories/{A}-lane.md"
         story.write_text(story.read_text(encoding="utf-8") + "\n<!-- verified -->\n",
                          encoding="utf-8")
         r = self._land(A)
@@ -445,6 +489,48 @@ class LaneLandTests(_LaneFixture):
         gitutil.git(["mv", "--", "src/b.py", "src/b2.py"], self.wt)
         _write(self.wt, "src/stray.py", "S = 1\n")
         self.assertEqual({"src/stray.py": "untracked"}, lanes._loose(self.wt))  # noqa: SLF001
+
+    def test_a_rename_made_in_the_work_tree_is_named_by_its_own_paths(self) -> None:
+        """A tracked file moved and its new path added with `git add -N`: `git status` reads that
+        as a rename in its work-tree column and names the source after the target. The refusal
+        names both, the source since it is deleted there, and a source whose name begins with C
+        or R is not misread as an entry of its own, so the untracked file after it is still
+        named. MUTANTS: the source skipped only after a rename in the index column (`/b.py` and
+        `NGES.txt` named, `src/stray.py` missed); the source not named."""
+        _write(self.root, "CHANGES.txt", "the changes\n")
+        gitutil.git(["add", "--", "CHANGES.txt"], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: a file whose name begins with C"], self.root)
+        gitutil.git(["merge", "-q", "--ff-only", "main"], self.wt)
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        (self.wt / "src/b.py").rename(self.wt / "src/b3.py")
+        gitutil.git(["add", "-N", "--", "src/b3.py"], self.wt)
+        with self.subTest("src/b.py moved to src/b3.py"):
+            self.assertEqual("src/b.py (unstaged), src/b3.py (unstaged)", self._land_refused())
+        gitutil.git(["reset", "-q", "--", "src/b3.py"], self.wt)
+        (self.wt / "src/b3.py").rename(self.wt / "src/b.py")
+        (self.wt / "CHANGES.txt").rename(self.wt / "tests/docs.txt")
+        gitutil.git(["add", "-N", "--", "tests/docs.txt"], self.wt)
+        _write(self.wt, "src/stray.py", "S = 1\n")
+        with self.subTest("CHANGES.txt moved to tests/docs.txt, beside an untracked file"):
+            self.assertEqual("CHANGES.txt (unstaged), src/stray.py (untracked), "
+                             "tests/docs.txt (unstaged)", self._land_refused())
+
+    def test_a_copy_names_its_source_only_where_it_changed(self) -> None:
+        """Where `status.renames` finds copies, `git status` names a copy's source after it in
+        either column and lists that source again on its own wherever it changed: a staged copy
+        leaves nothing loose, and a copy in the work tree is loose beside its edited source, with
+        no path misread from the source's name. MUTANTS: the source skipped only after a copy in
+        the work-tree column (`/b.py` named), or only after one in the index column (`/a.py`
+        named)."""
+        gitutil.git(["config", "status.renames", "copies"], self.root)
+        self._stage("src/b.py", "B = 2\n")
+        self._stage("src/b5.py", "B = 1\n")
+        _write(self.wt, "src/a.py", "A = 9\n")
+        _write(self.wt, "src/a4.py", "A = 1\n")
+        gitutil.git(["add", "-N", "--", "src/a4.py"], self.wt)
+        self.assertEqual({"src/a.py": "unstaged", "src/a4.py": "unstaged"},
+                         lanes._loose(self.wt))  # noqa: SLF001
 
     def test_a_hand_in_git_can_see_is_no_leftover(self) -> None:
         """BG1470 AC3 where the project ignores nothing, so the hand-in files are untracked in
@@ -933,6 +1019,28 @@ class LandSeveralWorktreesTests(_PricedFixture):
                 self.assertNotIn(run_state.APPORTIONED, recs[0])
                 self.assertIn(f"{unit}'s return priced from {wt.name}'s transcript", r.stdout)
         self.assertEqual(2, len(fingerprints), "the two units share one QA brief")
+
+    def test_a_leftover_in_a_later_worktree_is_refused_before_anything_moves(self) -> None:
+        """BG1470 AC2 for a landing of several worktrees: an untracked file in the second is
+        refused by the preflight, exit 2, before either hand-in is copied or a land record is
+        written. MUTANT: the several-worktree preflight check dropped (the commit step's own check
+        refuses it with exit 1, after both hand-ins are copied and the landing recorded)."""
+        head = _git(self.root, "rev-parse", "HEAD")
+        self._two_lanes()
+        _write(self.wt2, "src/stray.py", "S = 1\n")
+        r = self._land_both()
+        out = r.stdout + r.stderr
+        self.assertEqual(2, r.returncode, out)
+        self.assertEqual("src/stray.py (untracked)", _leftovers(r.stderr))
+        self.assertIn(str(self.wt2), r.stderr)
+        self.assertEqual(0, self._hook_runs(), out)
+        self.assertEqual(head, _git(self.root, "rev-parse", "HEAD"))
+        for wt in (self.wt, self.wt2):
+            self.assertFalse((self.root / LANE / "landed" / wt.name).exists(),
+                             f"{wt.name}'s hand-in was copied before the refusal")
+        self.assertFalse(lanes._record_file(self.root, self.wt.name).exists(),  # noqa: SLF001
+                         "the landing was recorded before the refusal")
+        self.assertEqual("S = 1\n", (self.wt2 / "src/stray.py").read_text(encoding="utf-8"))
 
     def test_a_conflict_or_a_refused_commit_lands_nothing(self) -> None:
         head = _git(self.root, "rev-parse", "HEAD")
