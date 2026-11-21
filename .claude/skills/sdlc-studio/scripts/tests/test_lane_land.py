@@ -224,7 +224,10 @@ class LaneLandTests(_LaneFixture):
                          "a self-check was recorded for a lane that never landed")
 
     def test_a_rebase_conflict_is_aborted_and_named(self) -> None:
+        """The conflict is met replaying the staged change, before the commit: the lane stays
+        staged and uncommitted, and no hook ran (`test_lane_land_replay` holds the criterion)."""
         moved = self._move_main("src/a.py", "A = 3\n")
+        lane_head = _git(self.wt, "rev-parse", "HEAD")
         self._stage("src/a.py", "A = 2\n")
         self._hand_in()
         r = self._land(A)
@@ -238,7 +241,9 @@ class LaneLandTests(_LaneFixture):
                                "--git-path", "rebase-merge"))
         self.assertFalse(rebase_dir.exists(), "the rebase was left in progress, not aborted")
         self.assertEqual("A = 2\n", (self.wt / "src/a.py").read_text(encoding="utf-8"))
-        self.assertEqual(f"feat({A}): a is two", _git(self.wt, "log", "-1", "--format=%s"))
+        self.assertEqual(lane_head, _git(self.wt, "rev-parse", "HEAD"), "the lane was committed")
+        self.assertEqual("src/a.py", _git(self.wt, "diff", "--cached", "--name-only"))
+        self.assertEqual(0, self._hook_runs_in_the_worktree())
         self.assertIn(BRANCH, self._branches())
 
     def test_each_landed_unit_gets_its_self_check_and_brief(self) -> None:
@@ -554,6 +559,33 @@ class LaneLandTests(_LaneFixture):
             lanes._refuse_leftovers([lane], 2)  # noqa: SLF001
         self.assertIn("src/stray.py (untracked)", str(refused.exception))
         self.assertNotIn(LANE, str(refused.exception))
+
+    def test_a_hand_in_the_record_would_refuse_stops_the_land_before_the_commit(self) -> None:
+        """BG1512 AC1. A surface, a ruling and a result the record refuses: the land refuses
+        before the commit hook runs, names each with the values accepted, and leaves main, the
+        worktree and its staged change as they were. MUTANTS: the hand-in judged after the
+        fast-forward, as it was; only the first refused value named."""
+        main = _git(self.root, "rev-parse", "HEAD")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        _write(self.wt, f"{LANE}/{A}-claims.json", json.dumps([
+            {"surface": "commit message", "claim": "a is two", "ruling": "TRUE"},
+            {"surface": f"changelog.d/{A}.md", "claim": "a is two", "ruling": "TRUE"},
+            {"surface": "page prose", "claim": "a is two", "ruling": "TRUE"},
+            {"surface": "docstrings", "claim": "a is two", "ruling": "TRUE in substance"}]))
+        _write(self.wt, f"{LANE}/{A}-mutants.json", json.dumps([
+            {"mutant": "a stays one", "test": "tests/test_a.py::test_a", "result": "SURVIVED",
+             "answer": "the test reads only a"}]))
+        r = self._land(A)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        for said in ("'page prose'", "'TRUE in substance'", "'SURVIVED'",
+                     "TRUE, FALSE, UNVERIFIABLE", "killed, survived", "commit message; "):
+            self.assertIn(said, r.stderr)
+        self.assertEqual(0, self._hook_runs_in_the_worktree(), "the commit hook ran first")
+        self.assertEqual(main, _git(self.root, "rev-parse", "HEAD"), "main moved")
+        self.assertEqual(main, _git(self.wt, "rev-parse", "HEAD"), "the worktree committed")
+        self.assertEqual("src/a.py", _git(self.wt, "diff", "--cached", "--name-only"))
+        self.assertEqual([], critic.read_self_checks(self.root))
 
     def test_a_brief_the_critic_refuses_is_named_and_none_is_written(self) -> None:
         """The one stubbed critic: a brief refused after its self-check recorded cannot be
@@ -913,6 +945,65 @@ class LandPricesTheBuilderTests(_PricedFixture):
         for key, whole in (("tokens", meter._tokens(parts)), ("priced", meter._priced(parts))):
             self.assertEqual(whole, sum(recs[0][key] for recs in shares.values()), key)
         self.assertNotIn("UNPRICED", r.stderr)
+
+    # -- BG1477: an accept naming the builder keeps the land's split -------------------------
+
+    def _accept(self, unit: str, *extra: str) -> subprocess.CompletedProcess:
+        """`sprint.py lane accept` of an APPROVE for `unit` against the brief its landing wrote,
+        under the briefed qa seat, with `extra` handed through to the return it ends with."""
+        verdict = Path(self._tmp.name) / f"{unit}-verdict.txt"
+        verdict.write_text("VERDICT: APPROVE\nISSUES: none\nBLOCKING: none\n", encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "accept", "--unit", unit, "--verdict",
+             str(verdict), "--reviewer", f"qa-seat-{unit}-r1", *extra, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+
+    def test_an_accept_naming_the_builder_keeps_the_lands_split(self) -> None:
+        """BG1477 AC1. A two-unit lane is priced by the land from its one transcript, split by
+        points; accepting each unit with `--agent <builder>` keeps each share, so the shares
+        still add up to the builder's whole total. MUTANT: the accept's return re-prices the
+        unit with the whole transcript, as it did, so each unit reads the builder's total."""
+        self._builder_says(BUILD_1, BUILD_2)
+        for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
+                          ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
+            self._stage(rel, body)
+        self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
+        r = self._land(A, B)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        landed = {unit: self._returns(unit) for unit in (A, B)}
+        parts = meter._sum(BUILD_1, BUILD_2)
+        for unit in (A, B):
+            with self.subTest(unit=unit):
+                done = self._accept(unit, "--agent", self.AGENT)
+                self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+                recs = self._returns(unit)
+                self.assertEqual(1, len(recs), done.stdout + done.stderr)
+                self.assertEqual(landed[unit][0]["tokens"], recs[0]["tokens"])
+                self.assertEqual(landed[unit][0]["priced"], recs[0]["priced"])
+                self.assertEqual(2, recs[0][run_state.APPORTIONED]["points"])
+                self.assertIn("kept the split", done.stdout + done.stderr)
+        for key, whole in (("tokens", meter._tokens(parts)), ("priced", meter._priced(parts))):
+            self.assertEqual(whole, sum(self._returns(u)[0][key] for u in (A, B)), key)
+
+    def test_an_accept_still_prices_a_unit_the_land_did_not(self) -> None:
+        """BG1477 AC2. The land found no transcript, so it priced nothing; the builder's
+        transcript is read by the accept's return, whole, as before. MUTANT: the accept refuses
+        or skips every `--agent`, so the unit is never priced."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual([], self._returns(), "the land priced a unit with no transcript")
+        self._builder_says(BUILD_1, BUILD_2)
+        done = self._accept(A, "--agent", self.AGENT)
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        parts = meter._sum(BUILD_1, BUILD_2)
+        recs = self._returns()
+        self.assertEqual(1, len(recs), done.stdout + done.stderr)
+        self.assertEqual((meter._tokens(parts), meter._priced(parts), None),
+                         (recs[0]["tokens"], recs[0]["priced"], recs[0].get(run_state.APPORTIONED)))
+        self.assertNotIn("kept the split", done.stdout + done.stderr)
 
 
 

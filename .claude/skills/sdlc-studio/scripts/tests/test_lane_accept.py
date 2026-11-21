@@ -21,6 +21,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import re
 import subprocess
 import sys
@@ -593,6 +594,62 @@ class LaneAcceptTests(unittest.TestCase):
                       f"{stale['date']} is stale", err)
         self.assertEqual(self._rows(GREEN)[-1][1], "APPROVE")
         self.assertEqual(_status(self.root, GREEN), "Done")
+
+    # -- BG1491: an APPROVE on a criterion with no Verify line moves nothing ----------------
+
+    def _two_criteria(self, second_verify: str) -> None:
+        """BUG with a second criterion, carrying `second_verify` as its Verify line or none."""
+        line = f"- **Verify:** {second_verify}\n" if second_verify else ""
+        _write(self.root, f"sdlc-studio/bugs/{BUG}-lane.md",
+               f"# {BUG}: lane\n\n> **Status:** In Progress\n> **Points:** 2\n"
+               f"> **Epic:** EP0001\n> **Severity:** Medium\n> **Affects:** src/a.py, "
+               f"tests/test_a.py, changelog.d/{BUG}.md\n\n## Acceptance Criteria\n\n"
+               f"### AC1: works\n- **Verify:** shell true\n\n### AC3: says so\n"
+               f"- **Then** it says so\n{line}")
+
+    def _briefed(self) -> None:
+        """An open run holding BUG, whose lane was briefed and has not returned."""
+        from lib import run_state  # noqa: PLC0415 - the fixture's own run record
+        with unittest.mock.patch.dict(os.environ, {
+                run_state.TRANSCRIPTS_ENV: str(self.root / "no-transcripts")}):
+            run_state.open_run(self.root, batch=[BUG], goal="g")
+        run_state.record_lane_start(self.root, BUG, "engineering")
+        self.assertEqual([BUG], self._in_flight())
+
+    def _in_flight(self) -> list:
+        from lib import run_state  # noqa: PLC0415 - the fixture's own run record
+        return [row["unit"] for row in run_state.lanes_in_flight(self.root)]
+
+    def test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing(self) -> None:
+        """BG1491 AC1. MUTANT: no check before the record, so the APPROVE is recorded, BUG is
+        moved to Fixed and its return then reports the lane blocked on AC3."""
+        self._two_criteria("")
+        self._briefed()
+        rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder")
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("AC3 (says so)", err)
+        self.assertIn("no Verify line", err)
+        self.assertEqual([], self.calls, "a script ran before the refusal")
+        self.assertFalse(critic.verdicts_path(self.root).exists(), "a verdict was recorded")
+        self.assertEqual("In Progress", _status(self.root, BUG))
+        self.assertEqual([BUG], self._in_flight(), "the lane record moved")
+        # a REJECT moves nothing, so it is recorded as before
+        rc, out, err = self._accept(BUG, REJECT, "--author", "bug-builder")
+        self.assertEqual(1, rc, out + err)
+        self.assertEqual("REJECT", self._rows(BUG)[-1][1])
+
+    def test_an_approve_with_every_criterion_specified_transitions_and_returns(self) -> None:
+        """BG1491 AC2. MUTANT: the check refuses whenever a unit has more than one criterion,
+        or counts a criterion's `Then` line as missing its Verify."""
+        self._two_criteria("shell true")
+        self._briefed()
+        rc, out, err = self._accept(BUG, APPROVE, "--author", "bug-builder")
+        self.assertEqual(0, rc, out + err)
+        self.assertEqual(["critic.py record", "verify_ac.py run", "transition.py set",
+                          "sprint.py lane"], self._scripts())
+        self.assertEqual("Fixed", _status(self.root, BUG))
+        self.assertEqual([], self._in_flight(), "the lane was not returned")
+        self.assertIn("AC3: passed", out)
 
 
 if __name__ == "__main__":

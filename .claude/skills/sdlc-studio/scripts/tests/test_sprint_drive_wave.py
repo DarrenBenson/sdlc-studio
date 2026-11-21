@@ -174,10 +174,12 @@ class SprintDriveWaveTests(walk._DriveFixture):  # noqa: SLF001
             self.assertFalse(list(git_dir.glob(f"worktrees/*/{left}")),
                              f"the lane was left mid-rebase: {left}")
         self.assertEqual("", walk._git(case.root, "status", "--porcelain", "--", "src"))  # noqa: SLF001
-        # the second lane stays committed in its worktree; nothing was retried or forced
+        # the second lane's conflict is met replaying its staged change, before its commit: it
+        # stays staged and uncommitted in its worktree; nothing was retried or forced
         wt = case.root / lanes.RUN_WORKTREES / f"lane-{B.lower()}"
         self.assertTrue(wt.is_dir())
-        self.assertEqual(f"feat({B}): {B} lands", walk._git(wt, "log", "-1", "--format=%s"))  # noqa: SLF001
+        self.assertNotEqual(f"feat({B}): {B} lands", walk._git(wt, "log", "-1", "--format=%s"))  # noqa: SLF001
+        self.assertIn("src/shared.py", walk._git(wt, "diff", "--cached", "--name-only").split())  # noqa: SLF001
         self.assertEqual(1, len(_sessions(case, B, "start")))
         # the conflict halts the wave, and a halted wave starts no unit still waiting, even one
         # whose earlier unit has landed

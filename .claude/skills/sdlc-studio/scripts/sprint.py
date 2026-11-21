@@ -3391,10 +3391,11 @@ def _lane_budget_line(uid: str, points: int | None) -> str:
 
 def lane_home_isolated(text: str) -> bool:
     """True when the unit's header declares `> **Isolation:** home`: its tests set a temporary
-    HOME, so its lane is the main checkout rather than a worktree. Any other value, or none,
-    leaves it a worktree lane."""
+    HOME, so its lane is the main checkout rather than a worktree. The value is read exactly,
+    in any case and with or without backticks: any other value, a sentence holding the word
+    (`no home`) included, or none, leaves it a worktree lane."""
     raw = sdlc_md.extract_field(text, LANE_ISOLATION_FIELD) or ""
-    return re.search(rf"\b{LANE_HOME}\b", raw, re.I) is not None
+    return raw.strip().strip("`").strip().lower() == LANE_HOME
 
 
 def _lane_builder_commands(uid: str, affects: list[str], points: int | None = None,
@@ -3404,8 +3405,12 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
     neither commits nor records its self-check; `sprint lane land` commits from the hand-in
     path, or, for a `main_checkout` lane, which `lane land` cannot land, the orchestrator does.
     The commit message's shape is the project's own, so only the unit id is asked of the
-    subject."""
+    subject. The values the hand-in may hold are listed word for word from what `critic.py
+    self-check record` accepts (`critic.claim_surfaces`, `CLAIM_RULINGS`, `MUTANT_RESULTS`), so
+    the list cannot drift from the record that judges it."""
+    import critic  # noqa: PLC0415 - deferred sibling; the record's own vocabulary
     claims, mutants = _lane_hand_in_files(uid)
+    required, optional = critic.claim_surfaces(affects)
     lines = [f"Then, for {uid} (the scripts are in {SKILL_ROOT / 'scripts'}):",
              # dry: a builder's run writes nothing into the unit's own file, outside its Affects
              f"  Run its criteria: verify_ac.py run --id {uid} --dry-run",
@@ -3416,6 +3421,9 @@ def _lane_builder_commands(uid: str, affects: list[str], points: int | None = No
              f"    {mutants} - for a mutant the runner cannot run, recorded beside the report "
              f"through --mutants, or for a unit with no test file, the mutation pass by hand, "
              f"each as {{mutant, test, result, answer}}",
+             f"    The values the record accepts, word for word, and no others - surface: "
+             f"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, "
+             f"bare, the evidence in the claim; result: {', '.join(critic.MUTANT_RESULTS)}",
              f"    {LANE_HAND_IN}/commit-msg.txt - the commit message, naming {uid} in its "
              f"subject, written last"]
     if not affects:
@@ -4654,6 +4662,39 @@ def _render_affects_advisories(data: dict, repo_root=None) -> None:
                   f"{', '.join(it['undeclared'])}")
 
 
+def _unspecified_criteria(root, uid: str) -> list[str]:
+    """Each criterion of `uid` with no Verify line, as `AC2 (its title)`, read by
+    `lane_contract`, the reader `lane return` judges with: such a criterion is counted
+    unspecified there, so the lane is reported blocked after an APPROVE has moved the unit. []
+    for a unit fully specified, or one whose criteria cannot be read (the plan's grooming
+    census names that)."""
+    try:
+        contract = lane_contract(Path(root), uid)
+    except (OSError, ValueError) as exc:
+        sdlc_md.debug("sprint._unspecified_criteria", exc)
+        return []
+    return [f"{crit['ac']} ({crit['title']})" for crit in contract.get("criteria") or []
+            if crit.get("verifier") is None]
+
+
+def _unspecified_line(uid: str, missing: list[str]) -> str:
+    """The line naming `uid`'s criteria with no Verify line, and what each costs later."""
+    return (f"  {uid}: {', '.join(missing)} {'has' if len(missing) == 1 else 'have'} no Verify "
+            f"line - `lane return` counts it unspecified and `lane accept` refuses its APPROVE; "
+            f"give it one before the unit is built")
+
+
+def _render_unspecified_criteria(data: dict, repo_root) -> None:
+    """The batch's criteria with no Verify line, named per unit when the plan is printed, so the
+    gap is met before a lane builds the unit rather than at `lane accept` after it."""
+    lines = [_unspecified_line(it["id"], missing) for it in data.get("batch") or []
+             if isinstance(it, dict) and it.get("id")
+             and (missing := _unspecified_criteria(repo_root, it["id"]))]
+    if lines:
+        print("  Unspecified criteria, each named below (advisory - nothing is refused here):")
+        print("\n".join(lines))
+
+
 def _render_registry_advisories(data: dict) -> None:
     """Registry files a unit's new script, verb, flag or page size implies, that its `Affects`
     omits. ADVISORY under every `sprint.affects_check` mode: a lane that misses one is refused at
@@ -5286,6 +5327,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_clusters(data)
     _render_affects_advisories(data, args.root)
     _render_registry_advisories(data)
+    _render_unspecified_criteria(data, args.root)
     _render_triage(data)
     _render_decompose(data)
     _render_downgrades(data)
@@ -9246,6 +9288,9 @@ def cmd_batch(args: argparse.Namespace) -> int:
                       f"{', '.join(it['undeclared'])}")
             # The `block` refusal now happens BEFORE the write, above - reaching here means
             # the mode is `warn`, so these are reported and nothing is refused.
+    if action == "add" and (missing := _unspecified_criteria(root, change["id"])):
+        print(_unspecified_line(change["id"], missing),
+              file=sys.stderr if getattr(args, "format", "text") == "json" else sys.stdout)
     return 0
 
 
@@ -9361,9 +9406,18 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     `--agent` names the builder's own transcript (`run_state.agent_transcript_tokens`): its
     priced cost and components land on the record, and its token sum is the total when no
     `--tokens` is given. An agent with no readable transcript is warned about, naming the id and
-    the directory searched, and the return records no priced cost."""
+    the directory searched, and the return records no priced cost.
+
+    A return of one unit naming `--agent` and no `--tokens`, whose unit `lane land` already
+    priced from that same transcript as its share of a lane split by points, keeps the land's
+    record rather than re-pricing the unit with the whole transcript (`_lane_landed_share`).
+
+    `args.land` is `lane land`'s own pricing (`_lane_land_price`): the minutes, when none are
+    given, are the transcript's span from its first to its last message time
+    (`_lane_transcript_minutes`), split by points as the tokens are, and no earlier record is
+    kept in place of the reading."""
     tokens, minutes = getattr(args, "tokens", None), getattr(args, "minutes", None)
-    agent = getattr(args, "agent", None)
+    agent, land = getattr(args, "agent", None), bool(getattr(args, "land", False))
     if tokens is None and minutes is None and agent is None:
         return
     if tokens is None and agent is None:
@@ -9388,6 +9442,15 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
             print(f"WARNING --agent {agent} was not priced: {reading['reason']}, so "
                   f"{whose} no priced cost", file=sys.stderr)
             reading = None
+    if reading is not None and tokens is None and len(results) == 1 and not land:
+        kept = _lane_landed_share(root, results[0]["unit"], reading)
+        if kept is not None:
+            results[0]["agent_total"] = kept
+            return
+    if land and reading is not None and minutes is None:
+        minutes, why = _lane_transcript_minutes(Path(reading["source"]))
+        if minutes is None:
+            print(f"WARNING no minutes were recorded beside the tokens: {why}", file=sys.stderr)
     if tokens is None and reading is None:
         if minutes is not None:
             print("WARNING --minutes was not recorded: no token total was supplied or read "
@@ -9429,18 +9492,70 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
                   f"shows it", file=sys.stderr)
 
 
+def _lane_transcript_minutes(path: Path) -> tuple[float | None, str]:
+    """The minutes a builder's transcript spans, from its first to its last message time, or
+    (None, why): a file that cannot be read as UTF-8, a line that is not JSON, and a record with
+    no `timestamp` or one `sdlc_md.parse_iso8601` cannot read are passed over, and a transcript
+    with fewer than two readable times, or whose times do not move, spans nothing to measure."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, f"the transcript {path} cannot be read for its message times ({exc})"
+    times = []
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        stamp = sdlc_md.parse_iso8601(rec.get("timestamp")) if isinstance(rec, dict) else None
+        if stamp is not None:
+            times.append(stamp)
+    if len(times) < 2 or max(times) <= min(times):
+        return None, (f"the transcript {path} carries {len(times)} message time(s) and no span "
+                      f"between a first and a last, so its minutes are not known")
+    return (max(times) - min(times)).total_seconds() / 60, ""
+
+
+def _lane_landed_share(root: Path, unit: str, reading: dict) -> dict | None:
+    """The delegated record `lane land` wrote for `unit` from the transcript `reading` names as
+    the unit's share of a lane split by points, or None when it wrote none: the record a return
+    naming the same builder keeps rather than re-pricing the unit with the whole transcript,
+    which would charge every unit of the lane the builder's whole total. A transcript that has
+    grown since the land split it is warned about, and the land's share is still the one kept."""
+    uid = sdlc_md.norm_id(unit)
+    state = _lane_run_state("landed_share", lambda: run_state.read(root), {},
+                            f"the run state could not be read, so whether {unit}'s landing "
+                            f"already priced it from the same transcript is UNKNOWN")
+    kept = next((r for r in reversed(state.get(run_state.DELEGATED) or [])
+                 if isinstance(r, dict) and r.get("unit") == uid
+                 and r.get("transcript") == reading.get("source")
+                 and isinstance(r.get(run_state.APPORTIONED), dict)), None)
+    if kept is None:
+        return None
+    part = kept[run_state.APPORTIONED]
+    print(f"{unit}: kept the split its landing recorded from {reading['source']}: "
+          f"{kept.get('tokens'):,} tokens, {part.get('points')} of {part.get('of')} points of "
+          f"{part.get('tokens'):,}; the whole transcript is not charged to it again")
+    if part.get("tokens") != reading.get("tokens"):
+        print(f"WARNING {unit}'s builder transcript now reads {reading.get('tokens'):,} tokens, "
+              f"not the {part.get('tokens'):,} its landing split between "
+              f"{part.get('units')} units, so the share kept is the landing's", file=sys.stderr)
+    return kept
+
+
 def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tuple[bool, str]]:
     """`lane land`'s pricing: the landed units' returns priced from builder `agent`'s own
     transcript through `_lane_agent_totals`, the record `lane return --agent` writes, so a later
     return reading the same transcript for the unit replaces it rather than counting it twice.
     Each unit answers (priced, what was said), the warnings `_lane_agent_totals` printed carried
     in what was said rather than printed beside it. Several units share one transcript, so each
-    is priced with its share of it, split between them by their Points."""
+    is priced with its share of it, split between them by their Points, and with its share of
+    the minutes the transcript spans, its first message time to its last."""
     results = [{"unit": u, "outcome": "landed"} for u in units]
     said = io.StringIO()
     with contextlib.redirect_stderr(said):
-        _lane_agent_totals(Path(root), argparse.Namespace(agent=agent, tokens=None, minutes=None),
-                           results)
+        _lane_agent_totals(Path(root), argparse.Namespace(agent=agent, tokens=None, minutes=None,
+                                                          land=True), results)
     warned = " ".join(said.getvalue().replace("WARNING ", "").split())
     out = {}
     for res in results:
@@ -9449,6 +9564,8 @@ def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tupl
             part = got.get(run_state.APPORTIONED)
             out[res["unit"]] = (True, f"{got['tokens']:,} tokens, {got['priced']:,} "
                                       f"{run_state.PRICED_LABEL}"
+                                      + (f", {got['minutes']:.1f} minutes"
+                                         if got.get("minutes") is not None else "")
                                       + (f", split by points ({part['points']} of "
                                          f"{part['of']})" if isinstance(part, dict) else "")
                                       + (f"; {warned}" if warned else ""))
@@ -10014,6 +10131,66 @@ def _lane_reviewer_cell(root, unit: str | None, reviewer: str | None) -> tuple:
                   f"--reviewer \"{briefed[-1]}-seat-{unit}-r1 ({briefed[-1]})\".")
 
 
+def _lane_carried_reviewer(root, unit: str | None, reviewer: str | None,
+                           cell: str | None) -> tuple:
+    """The reviewer `lane accept` records a carried unit's verdict under, as (value, None), or
+    (None, refusal). A unit carried at the review cap (`critic.carried_by`) reaches Done only on
+    an APPROVE from a reviewer whose REJECT it carried, and the later run that delivers it again
+    counts its rounds afresh, so `critic.py record` would take a verdict under any id there and
+    an APPROVE under another one would be stranded. With no `--reviewer` the value defaults to
+    the latest of those reviewers, as recorded; a `--reviewer` whose value, or whose Reviewer
+    cell (`_lane_reviewer_cell`), names none of them is refused, naming them. A unit never
+    carried, or one no unanswered REJECT stands against, passes `reviewer` as given."""
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    bug = critic.carried_by(root, unit) if unit else None
+    if not bug:
+        return reviewer, None
+    rows = critic._unanswered_rejects(critic._live_verdict_rows(root, unit))  # noqa: SLF001
+    owed = list(dict.fromkeys(str(r.get("reviewer") or "").strip() for r in rows
+                              if str(r.get("reviewer") or "").strip()))
+    if not owed:
+        return reviewer, None
+    if not reviewer or not reviewer.strip():
+        print(f"{unit} was carried at the review cap ({bug} holds the findings): --reviewer "
+              f"defaults to {owed[-1]}, whose REJECT it carried", file=sys.stderr)
+        return owed[-1], None
+    if any(critic.same_identity(w, given) for w in owed for given in (reviewer, cell) if given):
+        return reviewer, None
+    return None, (f"sprint lane accept refused: {unit} was carried at the review cap ({bug} "
+                  f"holds the findings) and reaches Done only on an APPROVE from the reviewer "
+                  f"whose REJECT it carried, so a verdict under --reviewer {reviewer.strip()!r} "
+                  f"would be stranded and nothing was recorded. Name "
+                  f"{' or '.join(repr(w) for w in owed)}, or leave --reviewer off to record "
+                  f"under {owed[-1]!r}.")
+
+
+def _lane_unspecified_refusal(root, unit: str | None, verdict) -> str | None:
+    """The refusal when the verdict file is an APPROVE and the unit holds a criterion with no
+    Verify line: the APPROVE would move the unit to Done or Fixed, and the `lane return` it
+    ends with would then count that criterion unspecified and report the lane blocked, leaving
+    the unit moved and its lane unreturned. Refused before anything is recorded, so the verdict,
+    the unit's Status and the run's lane record stay as they were. A REJECT moves nothing and
+    passes, as does a verdict file that cannot be read or parsed, which `lanes.accept` refuses."""
+    if not unit or not verdict:
+        return None
+    import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
+    try:
+        said, _issues = critic.parse_verdict_block(
+            Path(verdict).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+    if str(said or "").strip().upper() != critic.APPROVE:
+        return None
+    missing = _unspecified_criteria(root, unit)
+    if not missing:
+        return None
+    return (f"sprint lane accept refused: {unit}'s {', '.join(missing)} "
+            f"{'has' if len(missing) == 1 else 'have'} no Verify line, so the APPROVE would move "
+            f"it and its lane return would then report it blocked, the criterion counted "
+            f"unspecified; nothing was recorded or moved. Give each one a Verify line, then "
+            f"accept again.")
+
+
 def _lane_author(root, unit: str | None, author: str | None) -> str | None:
     """The author `lane accept` records a verdict against: `--author` as given, or else the
     author of the unit's latest recorded self-check, as `lanes.accept` would read it."""
@@ -10069,11 +10246,19 @@ def cmd_lane(args: argparse.Namespace) -> int:
         for flag, values in (("--proof", args.proof), ("--gap", args.gap)):
             passthrough += [arg for value in values or [] for arg in (flag, value)]
         unit = getattr(args, "unit", None)
-        reviewer, refusal = _lane_reviewer_cell(args.root, unit, getattr(args, "reviewer", None))
+        given = getattr(args, "reviewer", None)
+        reviewer, refusal = _lane_reviewer_cell(args.root, unit, given)
+        carried, refused = _lane_carried_reviewer(args.root, unit, given, reviewer)
+        if refused:
+            refusal = refusal or refused
+        elif carried != given and not refusal:
+            # a carried unit's default reviewer, given the seat group a --reviewer value gets
+            reviewer, refusal = _lane_reviewer_cell(args.root, unit, carried)
         # The author is read once, here, and handed on, so the self-review check and the row
         # `lanes.accept` records judge the same pair.
         author = _lane_author(args.root, unit, getattr(args, "author", None))
-        refusal = refusal or _lane_self_review(args.root, unit, reviewer, author)
+        refusal = (refusal or _lane_self_review(args.root, unit, reviewer, author)
+                   or _lane_unspecified_refusal(args.root, unit, getattr(args, "verdict", None)))
         if refusal:
             print(refusal, file=sys.stderr)
             return 2
@@ -10120,6 +10305,17 @@ def cmd_lane(args: argparse.Namespace) -> int:
         if args.action == "run" and dispatch["refused"]:
             for ref in dispatch["refused"]:
                 print(f"REFUSED {ref['refusal']}", file=sys.stderr)
+            return 2
+        if args.action == "run" and (home := [b["id"] for b in dispatch["briefs"]
+                                              if b.get("home_isolated")]):
+            # `lane run` always runs its CLI in a worktree, which this unit's lane is not
+            print(f"sprint lane run: {', '.join(home)} declares `{LANE_ISOLATION_FIELD}: "
+                  f"{LANE_HOME}`: its tests set a temporary HOME, which a worktree-isolated "
+                  f"agent's command check refuses, so its lane is the main checkout and a "
+                  f"headless lane run, which always runs in a worktree, cannot build it. "
+                  f"Brief it with `sprint.py lane brief --units {' '.join(home)}` and build it "
+                  f"in the main checkout as the wave's last lane. Nothing was started.",
+                  file=sys.stderr)
             return 2
         # An IN-FLIGHT marker per briefed unit, taken at dispatch and cleared at return. A lane
         # that dies mid-flight leaves real code in the working tree behind a unit still marked
@@ -14548,7 +14744,9 @@ def build_parser() -> argparse.ArgumentParser:
     ln.add_argument("--verdict", default=None, metavar="FILE",
                     help="(accept) the reviewer's returned VERDICT/ISSUES/BLOCKING block")
     ln.add_argument("--reviewer", default=None,
-                    help="(accept) the reviewer the verdict is recorded under")
+                    help="(accept) the reviewer the verdict is recorded under; for a unit "
+                         "carried at the review cap, the reviewer whose REJECT it carried, "
+                         "which is the default and the only id taken")
     ln.add_argument("--format", choices=("text", "json"), default="text")
     ln.add_argument("--root", default=".", help="Repo root (default: .)")
     ln.set_defaults(func=cmd_lane)

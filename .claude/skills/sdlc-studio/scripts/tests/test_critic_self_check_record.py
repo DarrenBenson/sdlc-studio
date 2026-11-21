@@ -273,6 +273,44 @@ class SelfCheckRecordTests(unittest.TestCase):
             self.assertEqual(0, r.returncode, r.stderr)
             self.assertIn("no test declared", critic.read_self_checks(root)[-1]["mutants"])
 
+    def test_a_page_in_the_unit_s_affects_is_a_claim_surface(self) -> None:
+        """BG1512 AC3. A docs-only unit's claims live in the page it writes, so a claim naming
+        that page by its path is recorded; a page outside its Affects, and a code file inside
+        them, are still refused, each named with the surfaces accepted. MUTANTS: pages not
+        accepted at all; any path accepted; any file the Affects declares accepted."""
+        claims = [*_covered("changelog.d/US0102.md"), _claim("docs/guide.md")]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0102", "docs/guide.md, changelog.d/US0102.md")
+            r = _record(root, "US0102", claims, [])
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual(["US0102"], [row["unit"] for row in critic.read_self_checks(root)])
+        for label, (affects, surface) in {
+                "a page outside the Affects": ("docs/guide.md, changelog.d/US0102.md",
+                                               "docs/other.md"),
+                "a code file inside the Affects": ("src/widget.py, docs/guide.md, "
+                                                   "changelog.d/US0102.md", "src/widget.py"),
+        }.items():
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, "US0102", affects)
+                r = _record(root, "US0102", [*claims, _claim(surface)], [])
+                self._refused(root, r, repr(surface), "docs/guide.md", "commit message")
+
+    def test_every_refused_value_is_named_with_the_values_accepted(self) -> None:
+        """BG1512 AC1, at the record. MUTANTS: only the first refused value named; a result
+        compared by its case, so `SURVIVED` is taken for `survived`; a ruling with prose after
+        the word taken for the word."""
+        claims = [*_covered(), _claim("page prose"), _claim("docstrings", "TRUE in substance")]
+        mutants = [{**KILLED[0], "result": "SURVIVED", "answer": "a"}]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0101", CODE_AND_TEST)
+            r = _record(root, "US0101", claims, mutants)
+            self._refused(root, r, "'page prose'", "'TRUE in substance'", "'SURVIVED'",
+                          "TRUE, FALSE, UNVERIFIABLE", "killed, survived",
+                          "commit message; changelog.d/US0101.md; Resolutions")
+
     def test_the_record_binds_the_affects_content(self) -> None:
         """AC4. Mutants: the digest computed over the Affects PATHS (or their sizes) rather than
         their content, so a same-length edit to a declared file leaves it unmoved; the paths

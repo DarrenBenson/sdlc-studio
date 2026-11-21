@@ -17,6 +17,7 @@ import contextlib
 import hashlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -191,6 +192,48 @@ class ReportEffortTests(unittest.TestCase):
         self.assertEqual("low (4 units)", self.cost(again)["effort_builder"]["value"])
         self.assertEqual(page["fingerprint"], again["fingerprint"])
 
+    # --- BG1539: a headless lane's effort is reported as it ran -------------------------------
+
+    def headless(self, unit: str, effort: str | None, harness: str = "claude",
+                 run_id: str = lean.RUN) -> None:
+        """A `sprint lane run` record of `unit` in the run, its command having carried
+        `effort` (None: no effort flag), as `lanes._run` writes it."""
+        path = self.root / "sdlc-studio" / ".local" / "lane-runs" / unit / f"s-{harness}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"unit": unit, "run_id": run_id, "harness": harness,
+                                    "effort": effort, "effort_stamped": "low"}),
+                        encoding="utf-8")
+
+    def test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed(self) -> None:
+        """BG1539 AC1. MUTANTS: the plan's stamp counted for every unit, as it was, so the two
+        headless units read as dispatched at low; the not-applied units named with no reason; a
+        lane record from another run, or one whose command carried the effort, counted as not
+        applied."""
+        self.plan({uid: _effort("low", "medium") for uid in UNITS})
+        self.headless("US0001", None)
+        self.headless("US0002", None, harness="codex")
+        self.headless("US0004", None, run_id="RUN-01OTHERRUN")
+        page, md, html = self.built()
+        value = self.cost(page)["effort_builder"]["value"]
+        self.assertTrue(value.startswith("low (2 units), "), value)
+        self.assertIn("low configured and not applied (2 units)", value)
+        self.assertIn("headless", value)
+        self.assertIn("no effort flag", value)
+        self.assertEqual("medium (4 units)", self.cost(page)["effort_reviewer"]["value"])
+        for rendered in (md, html):
+            self.assertIn(f"builder {value}; reviewer medium (4 units)", rendered)
+            self.assertNotIn("builder low (4 units)", rendered)
+
+    def test_an_in_session_unit_still_reads_as_dispatched(self) -> None:
+        """BG1539 AC3. MUTANTS: every unit read as not applied once any lane ran headless; a
+        headless command that did carry the effort read as not applied."""
+        self.plan({uid: _effort("low", "medium") for uid in UNITS})
+        self.headless("US0001", "low")
+        page, md, _html = self.built()
+        self.assertEqual("low (4 units)", self.cost(page)["effort_builder"]["value"])
+        self.assertIn("builder low (4 units); reviewer medium (4 units)", md)
+        self.assertNotIn("not applied", md)
+
     def test_an_unsigned_page_checks_valid_where_its_plan_is_not_held(self) -> None:
         """MUTANT: `revalidate` re-reading the plan for an unsigned page instead of replaying the
         page's own effort - a clone that holds no `.local/` plan reads NOT MEASURED and the page
@@ -202,6 +245,31 @@ class ReportEffortTests(unittest.TestCase):
         self.assertEqual(sr.NOT_MEASURED, self.cost(fresh)["effort_builder"]["value"])
         check = sr.revalidate(self.root, filed)
         self.assertTrue(check["valid"], check["changes"])
+
+
+class ReportEffortDocsTests(unittest.TestCase):
+    """BG1539 AC4: the three pages that account for `routing.effort` say what a headless lane
+    does with it, and none presents the reported figure as the effort every agent ran at."""
+
+    SKILL = Path(__file__).resolve().parents[2]
+    PAGES = ("reference-evidence-schema.md", "reference-config.md", "reference-sprint.md")
+
+    def test_the_three_pages_say_what_a_headless_lane_does_with_effort(self) -> None:
+        """MUTANTS: a page left saying only that agents are dispatched or spawned at the
+        stamped effort; a page naming headless lanes without saying the effort is not applied."""
+        for name in self.PAGES:
+            with self.subTest(page=name):
+                text = (self.SKILL / name).read_text(encoding="utf-8")
+                said = [para for para in re.split(r"\n\s*\n|\n\|", text)
+                        if "headless" in para and "effort" in para]
+                self.assertTrue(said, f"{name} says nothing of effort on a headless lane")
+                self.assertTrue(any("not applied" in para or "no effort flag" in para
+                                    for para in said),
+                                f"{name} does not say a headless lane leaves the effort unapplied")
+        schema = (self.SKILL / "reference-evidence-schema.md").read_text(encoding="utf-8")
+        rows = [ln for ln in schema.splitlines() if ln.startswith("| `cost` | `effort_builder`")]
+        self.assertEqual(1, len(rows))
+        self.assertIn("not applied", rows[0])
 
 
 if __name__ == "__main__":

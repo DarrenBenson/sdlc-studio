@@ -822,5 +822,53 @@ class LaneDiesWithItsCallerTests(_LaneCase):
         self.assertEqual("src/late.py", _git(wt, "diff", "--cached", "--name-only"))
 
 
+class HeadlessEffortTests(_LaneCase):
+    """BG1539 AC2: a headless lane's record holds exactly the effort its command carried."""
+
+    def _stamp(self, effort: str) -> None:
+        """The plan `sprint plan --write` writes, its row for the unit stamped with `effort`."""
+        _write(self.root, "sdlc-studio/.local/sprint-plan.json", json.dumps(
+            {"batch": [{"id": UNIT, "points": 2,
+                        "effort": {"builder": effort, "reviewer": "high"}}]}))
+
+    def _fresh_run(self, harness: str) -> tuple[int, str, dict]:
+        """Run `harness` with no earlier lane record left, so the one record is this run's."""
+        shutil.rmtree(self.root / lanes.RUN_RECORDS, ignore_errors=True)
+        rc, out = self._run(harness)
+        return rc, out, (self._record() if self._records() else {})
+
+    def test_the_lane_row_records_the_effort_the_command_carried(self) -> None:
+        """MUTANTS: the record copies the plan's stamp whatever the command carried, as the
+        report read it; an effort flag passed to a harness no flag table names; a harness the
+        table names given the flag but a record saying none."""
+        self._stamp("low")
+        for harness, (binary, _fixture, _flags, _model) in HARNESSES.items():
+            with self.subTest(harness=harness):
+                rc, out, record = self._fresh_run(harness)
+                self.assertEqual(0, rc, out)
+                argv = [a for a in self._called(binary)["argv"] if f"Unit: {UNIT}" not in a]
+                carried = [a for a in argv if "effort" in a.lower() or a == "low"]
+                self.assertEqual([], carried, f"{harness} was passed an effort flag: {argv}")
+                self.assertIsNone(record["effort"], record)
+                self.assertEqual("low", record["effort_stamped"])
+                self.assertIn(harness, record["effort_reason"])
+                self.assertIn("no effort flag", record["effort_reason"])
+        # the flag and the record together: a harness the table names carries both
+        with unittest.mock.patch.dict(lanes.HEADLESS_EFFORT_FLAGS, {"claude": "--effort"}):
+            rc, out, record = self._fresh_run("claude")
+        self.assertEqual(0, rc, out)
+        argv = self._called("claude")["argv"]
+        self.assertEqual("low", argv[argv.index("--effort") + 1])
+        self.assertEqual(("low", "low", None), tuple(record[k] for k in (
+            "effort", "effort_stamped", "effort_reason")))
+        # inherit, the session's own effort, asks the command for nothing to carry
+        self._stamp("inherit")
+        rc, out, record = self._fresh_run("claude")
+        self.assertEqual(0, rc, out)
+        self.assertNotIn("--effort", self._called("claude")["argv"])
+        self.assertEqual((None, "inherit", None), tuple(record[k] for k in (
+            "effort", "effort_stamped", "effort_reason")))
+
+
 if __name__ == "__main__":
     unittest.main()

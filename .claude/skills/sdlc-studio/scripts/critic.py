@@ -3002,9 +3002,51 @@ def _self_check_scope(repo_root: Path | str, unit: str) -> tuple[list[str], list
         raise ValueError(f"no artefact with id {unit!r} - the self-check needs a real unit")
     import file_finding  # noqa: PLC0415 - sibling; its test-path convention is the family's
     affects = sdlc_md.affects_files(sdlc_md.read_text_safe(found[0]))
-    fragments = [a for a in affects if a.startswith("changelog.d/") and a.endswith(".md")]
     tests = [a for a in affects if file_finding.is_test_path(a)]
-    return affects, fragments, tests
+    return affects, claim_surfaces(affects)[0][1:], tests
+
+
+#: A page a unit's Affects declares by one of these suffixes is a surface its claims may name by
+#: its path: a documentation unit's claims live in the page it writes.
+CLAIM_PAGE_SUFFIXES = (".md", ".mdx")
+
+
+def claim_surfaces(affects: list[str]) -> tuple[list[str], list[str]]:
+    """The claim surfaces a unit with these Affects paths names, as (required, optional): the
+    commit message and each changelog fragment the Affects declares are required; the four
+    prose surfaces (`CLAIM_SURFACES`) and each other page the Affects declares
+    (`CLAIM_PAGE_SUFFIXES`) are optional. `check_self_check` judges a claims file by these, and
+    the lane brief lists them, so the two cannot name different sets."""
+    fragments = [a for a in affects if a.startswith("changelog.d/") and a.endswith(".md")]
+    pages = [a for a in affects
+             if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]
+    return [COMMIT_SURFACE, *fragments], [*CLAIM_SURFACES, *pages]
+
+
+def vocabulary_refusals(named: dict, claims: list[dict], mutants: list[dict]) -> list[str]:
+    """Every value a claims and mutants file holds outside what the record accepts, each with
+    the values it accepts: a claim's surface outside `named` (keyed by `_surface_key`), a
+    ruling outside `CLAIM_RULINGS` and a mutant's result outside `MUTANT_RESULTS`, word for
+    word. An absent ruling or result is left to the checks that name it, as unruled or as
+    missing; [] when every value given is one the record accepts."""
+    out = []
+    for n, entry in enumerate(claims, 1):
+        surface = entry.get("surface")
+        if _surface_key(surface) not in named:
+            out.append(f"claim {n} names the surface {surface!r}, which the self-check does not "
+                       f"name - use one of: {'; '.join(named.values())}")
+        ruling = str(entry.get("ruling") or "").strip()
+        if ruling and ruling.upper() not in CLAIM_RULINGS:
+            out.append(f"claim {n} has the ruling {ruling!r} - use one of: "
+                       f"{', '.join(CLAIM_RULINGS)}, bare, with the evidence in the claim")
+    for n, entry in enumerate(mutants, 1):
+        name = str(entry.get("mutant") or "").strip()
+        result = str(entry.get("result") or "").strip()
+        if result and result not in MUTANT_RESULTS:
+            label = f"mutant {n} ({name!r})" if name else f"mutant {n}"
+            out.append(f"{label} has the result {result!r} - use one of: "
+                       f"{', '.join(MUTANT_RESULTS)}")
+    return out
 
 
 # --- The author's self-check, recorded ------------------------------------------------------
@@ -3237,11 +3279,18 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
     no command can tell which claims a diff's docstrings make.
 
     Mutants: each names a test in a test file the unit's Affects declares and a result of
-    killed or survived, and a survivor carries an answer. A unit declaring no test file records
-    an empty list; one that declares a test file and lists no mutant is refused."""
-    _affects, fragments, tests = _self_check_scope(repo_root, unit)
-    required = [COMMIT_SURFACE, *fragments]
-    named = {_surface_key(s): s for s in (*required, *CLAIM_SURFACES)}
+    killed or survived, word for word, and a survivor carries an answer. A unit declaring no
+    test file records an empty list; one that declares a test file and lists no mutant is
+    refused.
+
+    A page the unit's Affects declares (`claim_surfaces`) is an optional surface too, named by
+    its path. Every surface, ruling and result outside what is accepted is refused at once,
+    each named with the values accepted (`vocabulary_refusals`), before any other cause."""
+    affects, _fragments, tests = _self_check_scope(repo_root, unit)
+    required, optional = claim_surfaces(affects)
+    named = {_surface_key(s): s for s in (*required, *optional)}
+    if bad := vocabulary_refusals(named, claims, mutants):
+        raise ValueError("; ".join(bad))
     if not claims:
         raise ValueError(f"the claims file lists no claim - inventory the claims made by "
                          f"{', '.join(required)}")
@@ -3279,7 +3328,7 @@ def check_self_check(repo_root: Path | str, unit: str, claims: list[dict],
         name = str(entry.get("mutant") or "").strip()
         label = f"mutant {n} ({name!r})" if name else f"mutant {n}"
         test = str(entry.get("test") or "").strip()
-        result = str(entry.get("result") or "").strip().lower()
+        result = str(entry.get("result") or "").strip()
         if not name:
             raise ValueError(f"{label} names no production change")
         test_file = test.split("::", 1)[0].removeprefix("./")
@@ -5521,8 +5570,9 @@ def build_parser() -> argparse.ArgumentParser:
     scr.add_argument("--unit", required=True)
     scr.add_argument("--claims", required=True, metavar="CLAIMS.json",
                      help="a JSON list of {surface, claim, ruling}: the surface is the commit "
-                          "message, a changelog fragment the unit's Affects declares, or one of "
-                          "the brief's claim surfaces; the ruling TRUE, FALSE or UNVERIFIABLE")
+                          "message, a changelog fragment the unit's Affects declares, one of "
+                          "the brief's claim surfaces or a page its Affects declares, by its "
+                          "path; the ruling TRUE, FALSE or UNVERIFIABLE")
     # One of the two at least, or both: `cmd_self_check_record` refuses neither.
     scr.add_argument("--mutants-from", dest="mutants_from", metavar="REPORT.json",
                      help="the report `mutation.py run --edits <list> --scope <unit>` wrote: "

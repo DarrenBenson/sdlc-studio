@@ -345,16 +345,28 @@ def _refuse_leftovers(lanes_: list[_Lane], code: int) -> None:
                             f"Affects declares, remove the rest, then land again", code)
 
 
+def _paths(top: Path, *args: str) -> list[str]:
+    """The NUL-separated paths a `git -z` listing prints, each decoded as the filesystem names
+    it (`os.fsdecode`), so a path that is not UTF-8 is named rather than stopping the land."""
+    done = subprocess.run(["git", "-C", str(top), *args], capture_output=True,
+                          timeout=GIT_TIMEOUT, check=False)
+    return [os.fsdecode(raw) for raw in done.stdout.split(b"\0") if raw]
+
+
 def _carry(wt_top: Path, target: str) -> bool:
     """Replay the staged change onto `target` before it is committed, leaving it staged, so the
     hooks judge it on the code it lands on, not the base the builder started from. The replay
     goes through a scratch commit that nothing lands: it is unwound to a staged change again,
-    and the commit after it is the one the hooks judge. A replay git refuses (a conflict, an
-    unstaged edit) is undone, leaving the staged change on its old base for the commit and the
-    rebase after it to report as before. The builder's own commits are replayed as the rebase
-    after the commit replays them: one that `target` already holds, or that its change leaves
-    empty, is dropped, never kept as an empty commit. Whether a change is still staged: none is
-    when `target` already holds it."""
+    and the commit after it, the one the hooks judge, takes its place. A replay git refuses, a
+    conflict above all (an unstaged edit the commit step does not clear itself is refused before
+    it, `_refuse_leftovers`), is undone, leaving the staged change on its old base, and refused
+    with its conflicting files named before the commit is made, so the commit's hooks never
+    run: the rebase after the commit would refuse on the same conflict once they had. A
+    generated page the replayed change carries is regenerated over the tree it now lands on
+    (`_regenerate`). The builder's own commits are replayed as the rebase after the commit
+    replays them: one that `target` already holds, or that its change leaves empty, is dropped,
+    never kept as an empty commit. Whether a change is still staged: none is when `target`
+    already holds it."""
     if not _git(wt_top, "merge-base", "--is-ancestor", target, "HEAD").returncode:
         return True
     head = _git(wt_top, "rev-parse", "HEAD").stdout.strip()
@@ -370,10 +382,21 @@ def _carry(wt_top: Path, target: str) -> bool:
     ).stdout.strip()
     if not scratch or _git(wt_top, "reset", "--soft", scratch).returncode:
         return True
-    if _git(wt_top, "rebase", target).returncode:
+    replay = _git(wt_top, "rebase", target)
+    if replay.returncode:
+        conflicts = _git(wt_top, "diff", "--name-only", "--diff-filter=U").stdout.split()
         _git(wt_top, "rebase", "--abort")
         _git(wt_top, "reset", "--soft", head)
-        return True
+        named = ", ".join(conflicts) if conflicts else "none reported by git"
+        # git's own hints say to continue a rebase this has just aborted, so they are dropped
+        said = "\n".join(ln for ln in (replay.stdout + replay.stderr).splitlines()
+                         if not ln.startswith("hint:"))
+        raise LandError(f"rebasing the staged change onto {target}, to replay it before the "
+                        f"commit, failed, so the rebase was undone: nothing was committed, so "
+                        f"the commit's hooks never ran, and {target} is as it was. Conflicting "
+                        f"files: {named}. The lane stays staged in {wt_top} on its old base: "
+                        f"rebase it onto {target} there and resolve it, then re-run lane land.\n"
+                        f"{_tail(said)}")
     # the rebase drops the scratch commit when `target` holds its change, so it is taken back
     # out only when it is the commit the rebase ended on
     if _git(wt_top, "log", "-1", "--format=%ae", "HEAD").stdout.strip() == mark:
@@ -382,7 +405,61 @@ def _carry(wt_top: Path, target: str) -> bool:
         _say(f"the staged change is already on {target}: nothing is left to commit")
         return False
     _say(f"replayed the staged change onto {target} before the commit")
+    _regenerate(wt_top)
     return True
+
+
+#: The skill's directory in a checkout, and the generator of the pages under it.
+SKILL_DIR = ".claude/skills/sdlc-studio/"
+DOCGEN = SKILL_DIR + "scripts/docgen.py"
+#: A generator run walks every script's parser: seconds in a large tree, bounded here.
+DOCGEN_TIMEOUT = 600
+
+
+def _generated_verbs(staged: list[str]) -> list[str]:
+    """The `docgen.py` verbs that regenerate a page among the `staged` paths: `surface` for the
+    command surface page, `references` for the reference index and `reading-guides` for any
+    reference page, the checks the pre-commit hook runs over the same paths."""
+    verbs = []
+    if SKILL_DIR + "reference-scripts-surface.md" in staged:
+        verbs.append("surface")
+    if SKILL_DIR + "help/references.md" in staged:
+        verbs.append("references")
+    if any(re.fullmatch(re.escape(SKILL_DIR) + r"reference-[^/]*\.md", path) for path in staged):
+        verbs.append("reading-guides")
+    return verbs
+
+
+def _regenerate(wt_top: Path) -> None:
+    """Each generated page the replayed change carries, regenerated over the tree it now lands
+    on with the worktree's own `docgen.py` and staged again: a merge of two lanes' regenerated
+    pages keeps both lanes' rows under one lane's count, which the hook's drift check refuses
+    after its whole run. Only a page the lane staged is staged again; anything else a run
+    rewrites is put back, so the commit carries no path the lane did not stage. Nothing is done
+    where the worktree has no `docgen.py`, and a run that fails is said and left to the hook."""
+    staged = _paths(wt_top, "diff", "--cached", "--name-only", "-z")
+    verbs, docgen = _generated_verbs(staged), wt_top / DOCGEN
+    if not verbs or not docgen.is_file():
+        return
+    for verb in verbs:
+        try:
+            done = _bounded([sys.executable, str(docgen), verb, "--root", str(wt_top)],
+                            DOCGEN_TIMEOUT, cwd=str(wt_top), stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+        except subprocess.TimeoutExpired:
+            _say(f"WARNING docgen.py {verb} ran past {DOCGEN_TIMEOUT}s and was stopped, so the "
+                 f"replayed pages were not regenerated; the hook judges them", err=True)
+            break
+        if done.returncode:
+            _say(f"WARNING docgen.py {verb} failed (exit {done.returncode}), so its page was not "
+                 f"regenerated; the hook judges it: {_tail(done.stdout)}", err=True)
+    rewritten = _paths(wt_top, "diff", "--name-only", "-z")
+    if put_back := [p for p in rewritten if p not in staged]:
+        _git(wt_top, "checkout", "--", *put_back)
+    if again := [p for p in rewritten if p in staged]:
+        _git(wt_top, "add", "--", *again)
+        _say(f"regenerated {', '.join(again)} over the replayed change (docgen.py "
+             f"{', '.join(verbs)})")
 
 
 def _rebase(wt_top: Path, branch: str, target: str) -> None:
@@ -1310,10 +1387,53 @@ def _run_git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
                           timeout=GIT_TIMEOUT, check=False, env=_child_env())
 
 
-def headless_command(harness: str, brief: str, model: str | None, worktree: Path) -> list[str]:
+#: Each harness whose headless command takes a reasoning-effort flag, and the flag. None does in
+#: the headless form `headless_command` builds, so a headless lane runs at its harness's own
+#: default whatever effort `sprint plan` stamped, and its record says the stamp was not applied.
+HEADLESS_EFFORT_FLAGS: dict[str, str] = {}
+#: The plan `sprint plan --write` stamps each unit's `effort: {builder, reviewer}` on.
+PLAN = Path("sdlc-studio") / ".local" / "sprint-plan.json"
+#: The stamp that asks for the session's own effort, so there is nothing for a command to carry.
+EFFORT_INHERIT = "inherit"
+
+
+def stamped_effort(root: Path, unit: str) -> str | None:
+    """The builder effort the plan stamped on `unit`'s row, or None where there is no plan, no
+    row for the unit, no stamp on it, or a plan that cannot be read as UTF-8 JSON."""
+    try:
+        plan = json.loads((Path(root) / PLAN).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError):
+        return None
+    rows = plan.get("batch") if isinstance(plan, dict) else None
+    key = sdlc_md.norm_id(unit)
+    for row in rows if isinstance(rows, list) else []:
+        if isinstance(row, dict) and sdlc_md.norm_id(str(row.get("id") or "")) == key:
+            effort = row.get("effort")
+            value = effort.get("builder") if isinstance(effort, dict) else None
+            return value if isinstance(value, str) and value.strip() else None
+    return None
+
+
+def effort_carried(harness: str, effort: str | None) -> tuple[list[str], str | None, str | None]:
+    """What a headless command carries of the stamped `effort`, from the one table
+    `HEADLESS_EFFORT_FLAGS`, as (its flag arguments, the effort carried, why it was not): the
+    command and the lane record are built from the same answer, so the record holds an effort
+    exactly when the command carries its flag. No stamp, or `inherit`, asks for nothing."""
+    if not effort or effort == EFFORT_INHERIT:
+        return [], None, None
+    flag = HEADLESS_EFFORT_FLAGS.get(harness)
+    if flag:
+        return [flag, effort], effort, None
+    return [], None, (f"the {harness} lane command carries no effort flag, so the agent ran at "
+                      f"the harness's own default and the stamped {effort} was not applied")
+
+
+def headless_command(harness: str, brief: str, model: str | None, worktree: Path,
+                     effort: str | None = None) -> list[str]:
     """The argv that runs `brief` headless in `harness` with its usage printed as JSON, in each
     CLI's own form (its `--help`, 2026-11-06). Codex's sandbox is widened to the repository's
-    git directory, which a worktree keeps outside itself, so its builder can stage."""
+    git directory, which a worktree keeps outside itself, so its builder can stage. `effort`, the
+    plan's stamp, is carried only where `effort_carried` gives the harness a flag for it."""
     tools = ",".join(CLAUDE_LANE_TOOLS)
     if harness == "claude":
         cmd = ["claude", "-p", brief, "--output-format", "json", "--tools", tools,
@@ -1333,6 +1453,7 @@ def headless_command(harness: str, brief: str, model: str | None, worktree: Path
         raise ValueError(f"unknown harness {harness!r}; expected one of {', '.join(BINARIES)}")
     if model:
         cmd += ["-m" if harness in ("codex", "opencode") else "--model", model]
+    cmd += effort_carried(harness, effort)[0]
     if harness in ("cursor", "codex", "opencode"):
         cmd.append(brief)
     return cmd
@@ -1634,7 +1755,9 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
     root_top = _top(root, "the root")
     wt = Path(worktree).resolve() if worktree else _lane_worktree(root_top, unit)
     _resolve(root_top, wt)
-    cmd = headless_command(harness, brief, model, wt)
+    stamp = stamped_effort(root_top, unit)
+    _flag, carried, not_applied = effort_carried(harness, stamp)
+    cmd = headless_command(harness, brief, model, wt, effort=stamp)
     cmd[0] = binary
     started = sdlc_md.now_iso8601()
     try:
@@ -1653,6 +1776,7 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
     sdlc_md.atomic_write(out_path, stdout)
     record = {
         "unit": unit, "run_id": run_id, "harness": harness, "model": model,
+        "effort": carried, "effort_stamped": stamp, "effort_reason": not_applied,
         "command": ["<brief>" if a == brief else a for a in cmd], "worktree": str(wt),
         "started_at": started, "ended_at": sdlc_md.now_iso8601(), "timeout": timeout,
         "exit_code": code, "metered": usage.metered, "unmetered": usage.unmetered,
@@ -1681,6 +1805,8 @@ def _run(root: Path, unit: str, harness: str, brief: str, model: str | None,
              f"return records no priced cost", err=True)
         if stderr.strip():
             _say(_tail(stderr), err=True)
+    if not_applied:
+        _say(f"  effort: not applied - {not_applied}")
     _say(f"  staged: {', '.join(staged) if staged else 'nothing'}")
     _say(f"  record: {rec_path}")
     _say(f"  next: sprint.py lane land --worktree {wt} --units {unit}")
@@ -1703,6 +1829,28 @@ def run_readings(root: Path | str, unit: str,
     first rather than replacing it."""
     return [run_reading(path, unit, run_id)
             for path in sorted((Path(root) / RUN_RECORDS / unit).glob("*.json"))]
+
+
+def effort_not_applied(root: Path | str, run_id: str | None) -> dict[str, list[str]]:
+    """Each unit a headless lane ran in `run_id` whose command carried no effort flag, with the
+    harnesses that ran it so: a lane record of the run whose `effort` is empty. A record written
+    before the field was kept carried none either, since no headless command took the flag
+    then. A record that cannot be read as UTF-8 JSON, or is another run's, is passed over."""
+    out: dict[str, list[str]] = {}
+    if not run_id:
+        return out
+    for path in sorted((Path(root) / RUN_RECORDS).glob("*/*.json")):
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError):
+            continue
+        if not isinstance(rec, dict) or rec.get("run_id") != run_id or rec.get("effort"):
+            continue
+        harness = str(rec.get("harness") or "an unnamed harness")
+        unit = sdlc_md.norm_id(str(rec.get("unit") or path.parent.name))
+        if harness not in out.setdefault(unit, []):
+            out[unit].append(harness)
+    return out
 
 
 def run_reading(path: Path, unit: str, run_id: str | None) -> tuple[dict | None, str | None]:

@@ -236,6 +236,35 @@ class BuilderBriefTests(_Isolated):
         self.assertEqual([[]], [b["seams"] for b in printed["briefs"]])
         self.assertNotIn("Seam with", _brief(root, uid))
 
+    def test_the_brief_lists_the_surfaces_rulings_and_results_the_record_accepts(self) -> None:
+        """BG1512 AC2. MUTANTS: the list left out, or a surface, ruling or result named only in
+        passing; the values retyped in sprint.py, so the list keeps a value the record stops
+        accepting (the patched constants below); a page or a code file of the Affects listed
+        when the record would refuse it, or a page it would accept left off."""
+        affects = "src/app.py, tests/test_app.py, docs/guide.md, changelog.d/US0102.md"
+        root = _project(self._tmp.name, {"US0101": "src/other.py", "US0102": affects})
+
+        def listed(out: str) -> str:
+            lines = [ln for ln in out.splitlines() if "The values the record accepts" in ln]
+            self.assertEqual(1, len(lines), out)
+            return lines[0]
+
+        line = listed(_brief(root, "US0102"))
+        live = _live("critic")
+        required, optional = live.claim_surfaces(sdlc_md.affects_files(_unit_text(root, "US0102")))
+        self.assertEqual(["commit message", "changelog.d/US0102.md"], required, "premise")
+        self.assertEqual([*live.CLAIM_SURFACES, "docs/guide.md"], optional, "premise")
+        self.assertIn("surface: " + "; ".join([*required, *optional]) + ";", line)
+        self.assertIn("ruling: TRUE, FALSE, UNVERIFIABLE,", line)
+        self.assertIn("result: killed, survived", line)
+        self.assertNotIn("src/app.py", line)
+        self.assertNotIn("tests/test_app.py", line)
+        with unittest.mock.patch.object(live, "MUTANT_RESULTS", ("killed", "survived", "x")), \
+                unittest.mock.patch.object(live, "CLAIM_RULINGS", ("TRUE", "MAYBE")):
+            drifted = listed(_brief(root, "US0102"))
+        self.assertIn("result: killed, survived, x", drifted)
+        self.assertIn("ruling: TRUE, MAYBE,", drifted)
+
     def _seat_paths(self, out: str) -> list[str]:
         """The card each Seat line names as the work render to adopt."""
         seat = [ln for ln in out.splitlines() if ln.startswith("Seat: ")]

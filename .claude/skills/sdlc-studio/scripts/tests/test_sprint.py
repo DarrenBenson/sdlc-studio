@@ -17723,5 +17723,55 @@ class StopShipDischargeInUnansweredUnitsTests(unittest.TestCase):
             self.assertIn("US0101", held)
 
 
+
+class UnspecifiedCriterionNamedAtPlanTests(unittest.TestCase):
+    """BG1491: a criterion with no Verify line is named when the unit is planned or added to the
+    batch, before a lane builds it, not first at `lane accept` after the build, where its
+    return counts it unspecified and reports the lane blocked."""
+
+    def _repo(self, root: Path) -> None:
+        bugs = root / "sdlc-studio" / "bugs"
+        bugs.mkdir(parents=True)
+        for num, second in ((1, "- **Verify:** shell true\n"), (2, ""), (3, "")):
+            _affect(root, f"src/bg{num:04d}.py")
+            (bugs / f"BG{num:04d}-x.md").write_text(
+                f"# BG{num:04d}: b\n\n> **Status:** Open\n> **Severity:** Medium\n"
+                f"> **Affects:** src/bg{num:04d}.py\n> **Points:** 2\n\n"
+                f"## Acceptance Criteria\n\n### AC1: it works\n\n- **Verify:** shell true\n\n"
+                f"### AC2: it says so\n\n- **Then** it says so\n{second}", encoding="utf-8")
+
+    def _cli(self, root: Path, *argv: str) -> tuple[int, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with _no_transcript_store(root), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
+            rc = _load().main([*argv, "--root", str(root)])
+        return rc, out.getvalue() + err.getvalue()
+
+    def test_batch_add_and_plan_name_a_criterion_with_no_verify_line(self) -> None:
+        """MUTANTS: neither command reads the criteria, so the gap first shows at accept; a
+        unit named without its criterion; every criterion of the unit named, not the bare one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            (root / "w.txt").write_text("BG0001\nBG0002\n", encoding="utf-8")
+            rc, out = self._cli(root, "plan", "--worklist", str(root / "w.txt"), "--write",
+                                "--no-fetch")
+            self.assertEqual(0, rc, out)
+            named = [ln for ln in out.splitlines() if "no Verify line" in ln]
+            self.assertEqual(1, len(named), out)
+            self.assertIn("BG0002", named[0])
+            self.assertIn("AC2 (it says so)", named[0])
+            self.assertNotIn("AC1", named[0])
+            rc, out = self._cli(root, "batch", "add", "BG0003", "--reason", "t")
+            self.assertEqual(0, rc, out)
+            named = [ln for ln in out.splitlines() if "no Verify line" in ln]
+            self.assertEqual(1, len(named), out)
+            self.assertIn("BG0003", named[0])
+            self.assertIn("AC2 (it says so)", named[0])
+            rc, out = self._cli(root, "batch", "add", "BG0001", "--reason", "t")
+            self.assertEqual(0, rc, out)
+            self.assertNotIn("no Verify line", out, "a fully specified unit was named")
+
+
 if __name__ == "__main__":
     unittest.main()
