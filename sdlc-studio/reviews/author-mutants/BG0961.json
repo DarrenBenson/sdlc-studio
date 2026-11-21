@@ -1,95 +1,140 @@
 {
   "unit": "BG0961",
-  "digest": "62e654e9dacaea66 at a01317169922",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a319f9e262627ae6e/BG0961-mutation-edits.json",
+  "digest": "6eced398b617b329 at 67d57b454cf6",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0f2c83304e6e682f/BG0961-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "no expansion at run time",
+      "mutant": "reviewer: a single-quoted string never closes (stack.pop deleted)",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        cmd = _expand_skill_placeholder(cmd, sdlc_md.loaded_skill_dir())\n",
-      "new": "        cmd = cmd\n",
+      "old": "            if ch == \"'\":\n                stack.pop()\n            out.append(ch)\n            i += 1\n            continue\n        if command.startswith(SKILL_PLACEHOLDER, i):",
+      "new": "            out.append(ch)\n            i += 1\n            continue\n        if command.startswith(SKILL_PLACEHOLDER, i):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer: the double quote dropped from the double-quoted escape set",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "in_dq = re.sub(r'([\\\\$`\"])', ",
+      "new": "in_dq = re.sub(r'([\\\\$`])', ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer: the backslash dropped from the double-quoted escape set",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "in_dq = re.sub(r'([\\\\$`\"])', ",
+      "new": "in_dq = re.sub(r'([$`\"])', ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer: the nested-parenthesis branch inside $(...) deleted",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        elif ch == \"(\" and state == \"cs\":\n            stack.append(\"cs\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reviewer: ANSI-C $'...' not tracked",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if state != \"dq\" and command.startswith(\"$'\", i):",
+      "new": "        if False and command.startswith(\"$'\", i):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "ANSI-C opened inside double quotes too",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if state != \"dq\" and command.startswith(\"$'\", i):",
+      "new": "        if command.startswith(\"$'\", i):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a backslash inside $'...' escapes nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            if ch == \"\\\\\" and state == \"ansi\":",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the dollar dropped from the double-quoted escape set",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "in_dq = re.sub(r'([\\\\$`\"])', ",
+      "new": "in_dq = re.sub(r'([\\\\`\"])', ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "inside double quotes the bare form is used",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            out.append(in_dq if state == \"dq\" else bare)",
+      "new": "            out.append(bare)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "$(...) opens no fresh context",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if command.startswith(\"$(\", i):\n            stack.append(\"cs\")",
+      "new": "        if command.startswith(\"$(\", i):\n            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an escaped character is read as code",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if ch == \"\\\\\":\n            out.append(command[i:i + 2])\n            i += 2\n            continue\n        if command.startswith(\"$(\", i):",
+      "new": "        if command.startswith(\"$(\", i):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "single quotes expand the placeholder",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        elif ch == \"'\":\n            stack.append(\"sq\")",
+      "new": "        elif ch == \"'\":\n            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "placeholder never expanded",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if command.startswith(SKILL_PLACEHOLDER, i):\n            out.append(in_dq",
+      "new": "        if False:\n            out.append(in_dq",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_run_verifier_shell_pass_and_fail_resolves_the_skill_placeholder",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "expanded path left unquoted",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    bare = shlex.quote(str(skill_dir))\n",
-      "new": "    bare = str(skill_dir)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "double-quoted context gets the bare quoting",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            out.append(in_dq if state == \"dq\" else bare)\n",
-      "new": "            out.append(bare)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "single quotes no longer keep it literal",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        if state == \"sq\":\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "backslash escape not tracked",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        if ch == \"\\\\\":\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "command substitution not a fresh context",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        if command.startswith(\"$(\", i):\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "command substitution never closes",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        elif ch == \")\" and state == \"cs\":\n            stack.pop()\n",
-      "new": "        elif ch == \")\" and state == \"cs\":\n            pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "expansion written back into the artefact (test expects the install path)",
+      "mutant": "test: the ANSI-C expectation flipped to the old wrong expansion",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "            self.assertNotIn(skill, text, \"the install path was written into the artefact\")\n",
-      "new": "            self.assertIn(skill, text, \"the install path was written into the artefact\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_the_placeholder_is_never_written_back",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the should-fail check flipped to expect a pass",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "            self.assertFalse(verdict(\"shell test -f <skill>/scripts/missing.py\"))\n",
-      "new": "            self.assertTrue(verdict(\"shell test -f <skill>/scripts/missing.py\"))\n",
+      "old": "                             \"test $'a\\\\'b' = \\\"a'b\\\" && test -f '/s p'/x\")",
+      "new": "                             \"test $'a\\\\'b' = \\\"a'b\\\" && test -f /s p/x\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the failing check expected to fail on a redirect",
+      "mutant": "test: the quoted-pattern check expects failure",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "            self.assertEqual(bad.stderr, \"\", \"the check failed on a redirect, not on its test\")\n",
-      "new": "            self.assertIn(\"skill\", bad.stderr, \"the check failed on a redirect, not on its test\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_run_verifier_shell_pass_and_fail_resolves_the_skill_placeholder",
+      "old": "            self.assertTrue(verdict(\"shell grep -q 'marker' <skill>/scripts/verify_ac.py\"))",
+      "new": "            self.assertFalse(verdict(\"shell grep -q 'marker' <skill>/scripts/verify_ac.py\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
       "result": "killed",
       "answer": ""
     }

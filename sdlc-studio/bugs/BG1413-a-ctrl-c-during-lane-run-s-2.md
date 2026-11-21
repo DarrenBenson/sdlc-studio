@@ -1,6 +1,6 @@
 # BG1413: A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, changelog.d/BG1413.md
@@ -26,6 +26,7 @@ Make the SIGKILL unconditional in a finally.
 
 - [ ] **AC1** Given a child ignoring SIGTERM and a Ctrl-C in the grace, when lane run exits, then the child is SIGKILLed. Fails on: the child alive.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

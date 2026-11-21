@@ -6,9 +6,9 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 334 |
+| Open | 333 |
 | In Progress | 0 |
-| Fixed | 1004 |
+| Fixed | 1005 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
@@ -488,7 +488,7 @@
 | [BG1410](BG1410-bg1330-s-re-pointed-clean-run-test-lost.md) | BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1411](BG1411-the-unpriced-gap-remedy-lane-return-units-id.md) | The unpriced-gap remedy 'lane return --units <id> --agent A' cannot work after the close | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1412](BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md) | templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1413](BG1413-a-ctrl-c-during-lane-run-s-2.md) | A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1413](BG1413-a-ctrl-c-during-lane-run-s-2.md) | A Ctrl-C during lane run's 2 s kill grace drops the SIGKILL that follows, so a SIGTERM-ignoring child stages after the run, and nothing pins that SIGKILL | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1414](BG1414-the-bg1262-bg1261-changelog-headline-is-too-broad.md) | The BG1262/BG1261 changelog headline is too broad, the help line reads as SIGTERM-first for every death of sprint.py, and lanes._reaping sends SIGKILL first | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1415](BG1415-no-test-pins-the-line-number-verify-ac.md) | No test pins the line number verify_ac's lint prints | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1416](BG1416-help-verify-md-s-exit-3-row-in.md) | help/verify.md's exit-3 row in the revert-check table leaves out git failing to read the base blob | Open | Low | 2026-11-13 | 2026-11-13 |

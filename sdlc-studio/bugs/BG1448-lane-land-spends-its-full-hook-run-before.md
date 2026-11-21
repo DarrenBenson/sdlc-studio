@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 5
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1448.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1448.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_wave.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py
 > **Evidence:** Run twelve (RUN-01M7E52T) orchestrator friction log
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -35,3 +35,4 @@ Rebase the lane onto main before the hook run so a conflict refuses first, and r
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
 | 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | AC2 given an executable Verify line (run twenty-one goal review) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: its fix changes what two rebase-conflict tests assert: the second lane stays staged and uncommitted, and the abort message is named to match |
