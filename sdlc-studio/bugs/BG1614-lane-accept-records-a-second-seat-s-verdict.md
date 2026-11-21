@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1614.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1614.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py, .claude/skills/sdlc-studio/help/sprint.md, .claude/skills/sdlc-studio/reference-sprint-toolchain.md
 > **Evidence:** run eighteen also hit it with critic.py record: US1198's round-two record warned the criteria changed since brief bb6e1cb2124b (now 2c77fe936603) only because verify_ac run had stamped the criteria between the brief and the record; the warning cannot tell a stamp from a changed scope
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Have lane accept read the verdict file's BRIEF header and record against that br
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: the fix makes help/sprint.md and the toolchain runbook's 'accept records against the saved brief' false, so both are corrected inside the unit (D0561) |

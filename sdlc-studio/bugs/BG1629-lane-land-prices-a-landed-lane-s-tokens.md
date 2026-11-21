@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1629.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1629.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py, .claude/skills/sdlc-studio/scripts/sprint.py
 > **Evidence:** run eighteen, 2026-11-19: sdlc-studio/reports/RPT0037-sprint-report-run-01m7ss62.md Estimates table
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Have lane land record --delegated-minutes from the transcript's first and last m
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: recording minutes needs sprint.py _lane_land_price to pass them; moved to wave 2 lane X, after lane S lands sprint.py |

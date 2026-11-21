@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py, changelog.d/BG1399.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py, changelog.d/BG1399.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_resume.py
 > **Evidence:** RUN-01M78TKD, 2026-11-13: orchestrator
 > **Created:** 2026-11-13
 > **Created-by:** sdlc-studio file
@@ -40,3 +40,4 @@ bare word or the test a `path::name`, so the fix also names the allowed values i
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: its refusal before the commit changes the scenario test_lane_land_resume.py's stopped-after-fast-forward case relied on, so that case stops another way |

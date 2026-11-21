@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
 > **Evidence:** round two of the engineering seat on US1202 (sdlc-studio/reviews/verdicts/US1202/a035ef15c560-e539f377.txt): when the brief bound fires, the stop advises critic.py brief --unit <id> --seat qa (lib/lanes.py around 323), but lane accept still refuses with exit 2 afterwards because no saved QA brief exists; the advice must name a command that saves the brief lane accept reads
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Start critic.py brief in its own process group and end the group (SIGTERM, then 
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: the brief now runs through lanes._bounded, so the two BriefAuthorMutantsTests spies on subprocess.run move to it |

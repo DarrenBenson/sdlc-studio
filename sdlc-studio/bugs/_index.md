@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 334 |
+| Open | 335 |
 | In Progress | 0 |
 | Fixed | 1001 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1676** |
+| **Total** | **1677** |
 
 ## All Bugs
 
@@ -752,6 +752,7 @@
 | [BG1674](BG1674-no-test-pins-card-not-utf8-s-severity.md) | No test pins card-not-utf8's severity split (a warning for persona cards, an error for seat cards) or the exit code validate.py seats gives for it | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1676](BG1676-reconcile-stops-on-an-index-that-is-not.md) | reconcile stops on an index that is not UTF-8 without naming the file or how to fix it | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 
