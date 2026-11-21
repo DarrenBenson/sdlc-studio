@@ -12,7 +12,11 @@ fresh clone of it, with one open finding the run raised and the close left unrul
 MUTANTS, each of which a test here fails on: (1) the page is re-derived from the working tree,
 as before (the ruling refuses the seal); (2) the page check is dropped whenever sign judges
 against the close commit (the control's page, which its own close commit does not derive, is
-sealed); (3) the close commit's tree is left checked out beside the repository after sign.
+sealed); (3) the close commit's tree is left checked out beside the repository after sign;
+(4) every stale worktree of the repository is pruned with the scratch, so a moved linked
+worktree loses its registration; (5) the repository's post-checkout hook runs in the scratch;
+(6) a close commit that cannot be checked out drops the page check rather than judging the
+working tree's page.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -105,6 +109,11 @@ class SignJudgesPageFromCloseCommitTests(unittest.TestCase):
         rc, out, err = signing._sign(clone, REPORT)
         return rc, out + err, clone
 
+    def _clone(self, name: str) -> Path:
+        clone = self.base / name
+        self._git(self.base, "clone", "-q", f"file://{self.closer}", str(clone))
+        return clone
+
     def _record(self, root: Path) -> dict:
         return json.loads((root / RECORD).read_text(encoding="utf-8"))
 
@@ -137,6 +146,48 @@ class SignJudgesPageFromCloseCommitTests(unittest.TestCase):
         self.assertIn(retitled, text, "the refusal is not the close commit's derivation")
         self.assertNotIn("not-stop-ship, ruled by Maya", text,
                          "the refusal read the ruling the later commit made")
+        record = self._record(clone)
+        self.assertEqual(("running", None), (record["outcome"], record.get("signature")))
+
+    def test_the_scratch_worktree_is_the_only_thing_sign_touches(self) -> None:
+        """No hook of the repository runs in the scratch, and a linked worktree whose directory
+        was moved keeps its registration, so `git worktree repair` can still reconnect it."""
+        filed = self._close()
+        self._rule_after_the_close()
+        clone = self._clone("hooked")
+        marker = self.base / "post-checkout-ran"
+        hook = clone / ".git" / "hooks" / "post-checkout"
+        hook.write_text(f"#!/bin/sh\necho ran >> '{marker}'\n", encoding="utf-8")
+        hook.chmod(0o755)
+        self._git(clone, "worktree", "add", "-q", "--detach", str(self.base / "linked"), "HEAD")
+        self.assertTrue(marker.exists(), "the fixture's hook must run on a checkout, or this "
+                                         "proves nothing")
+        marker.unlink()
+        (self.base / "linked").rename(self.base / "moved")
+        rc, out, err = signing._sign(clone, REPORT)
+        self.assertIn(f"judged against {filed[:12]}", out + err)
+        self.assertEqual(0, rc, out + err)
+        self.assertFalse(marker.exists(), "the repository's post-checkout hook ran for sign")
+        listed = self._git(clone, "worktree", "list", "--porcelain").stdout
+        self.assertIn(f"worktree {self.base.resolve() / 'linked'}", listed,
+                      f"sign pruned a worktree it did not make:\n{listed}")
+        self.assertEqual(2, listed.count("worktree "),
+                         f"the close commit's tree was left checked out:\n{listed}")
+
+    def test_a_close_commit_that_cannot_be_checked_out_judges_the_working_tree(self) -> None:
+        """The stricter reading: with no scratch worktree to be had, the page is re-derived from
+        the working tree, so the ruling committed on top refuses the seal as it did before."""
+        filed = self._close()
+        self._rule_after_the_close()
+        clone = self._clone("unworkable")
+        (clone / ".git" / "worktrees").write_text("not a directory\n", encoding="utf-8")
+        rc, out, err = signing._sign(clone, REPORT)
+        text = out + err
+        self.assertIn(f"judged against {filed[:12]}", text)
+        self.assertIn(f"{filed[:12]} could not be checked out to re-derive the page from", text)
+        self.assertIn(STALE, text, "the working tree's page was not judged")
+        self.assertNotIn("signing on the report alone", text)
+        self.assertEqual(2, rc, text)
         record = self._record(clone)
         self.assertEqual(("running", None), (record["outcome"], record.get("signature")))
 

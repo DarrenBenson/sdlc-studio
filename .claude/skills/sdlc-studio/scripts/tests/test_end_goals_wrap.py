@@ -8,7 +8,8 @@ drive `sprint.py goal-review brief` through `sprint.main` on the goal-trace fixt
 MUTANTS, each of which a test here fails on: (1) the continuation lines are dropped, as before;
 (2) a nested `Verify` line is joined into the goal's text; (3) a blank line no longer ends the
 goal, so the paragraph after the list is read into its last goal; (4) a new numbered line is
-joined into the goal above it.
+joined into the goal above it; (5) a heading deeper than `##`, which leaves the End Goals
+section open, and the lines under it are joined into the goal above it.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -71,6 +72,15 @@ class EndGoalsWrapTests(unittest.TestCase):
         self.assertIn(f"1. {_FIRST}", out, out)
         self.assertIn(f"2. {_SECOND}", out, out)
         self.assertNotIn("gate host\n", out, "the brief still cuts the goal at the card's wrap")
+
+    def test_a_deeper_heading_ends_the_goal_above_it(self) -> None:
+        """A `###` or `####` heading does not end the End Goals section, so the goal after it
+        is still read, but it ends the wrapped goal above it: neither it nor its lines join."""
+        card = ("# X\n\n## End Goals\n\n1. Goal one wraps\n   onto here\n### Detail\nmore\n"
+                "2. Goal two wraps\n   onto there\n#### Deeper\nstill more\n")
+        self.assertEqual([("1", "Goal one wraps onto here"), ("2", "Goal two wraps onto there")],
+                         sprint._end_goals(card),
+                         "a heading, or a line under it, was read into the goal above it")
 
 
 if __name__ == "__main__":

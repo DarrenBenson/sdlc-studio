@@ -11708,8 +11708,10 @@ def _apply_strikes(root, ids: list, principal: str, reason: str) -> None:
 def _tree_of(root, commit: str):
     """The tree to re-derive a page from: `root` itself with no `commit`, else `commit` checked
     out detached in a scratch worktree of the same repository, removed on exit, so its history
-    is the repository's and nothing in `root` is touched. `root` again, said on stderr, when git
-    cannot check the commit out: the working tree then judges, the stricter reading."""
+    is the repository's. Nothing in `root` is touched beyond that worktree's own registration:
+    no hook of the repository runs, and no other worktree is pruned. `root` again, said on
+    stderr, when git cannot check the commit out: the working tree then judges, the stricter
+    reading."""
     import shutil  # noqa: PLC0415 - local; only this path makes a scratch tree
     import tempfile  # noqa: PLC0415
     if not commit:
@@ -11719,8 +11721,9 @@ def _tree_of(root, commit: str):
     tree = scratch / "tree"
 
     def git(*argv: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True,
-                              timeout=120)
+        # No hook of the repository runs for the scratch: it is sign's, not the operator's.
+        return subprocess.run(["git", "-C", str(root), "-c", f"core.hooksPath={os.devnull}",
+                               *argv], capture_output=True, text=True, timeout=120)
 
     try:
         try:
@@ -11735,10 +11738,11 @@ def _tree_of(root, commit: str):
             return
         yield tree
     finally:
+        # Only the scratch's own registration goes: a bare prune would drop every other
+        # worktree whose directory is missing, one `git worktree repair` could reconnect.
         with contextlib.suppress(OSError, subprocess.SubprocessError):
             if tree.exists():
                 git("worktree", "remove", "--force", str(tree))
-            git("worktree", "prune")
         shutil.rmtree(scratch, ignore_errors=True)
 
 
@@ -11907,7 +11911,9 @@ def _whole_end_goals(text: str) -> list:
             inside, joining = bool(persona_goals._SECTION_RE.match(line)), False
         elif inside and persona_goals._GOAL_RE.match(line):
             joining = True
-        elif inside and joining and line.strip() and not _LIST_ITEM_RE.match(line):
+        elif (inside and joining and line.strip() and not _LIST_ITEM_RE.match(line)
+              and not re.match(r"^#{1,6}\s", line)):
+            # A `###` or deeper heading leaves the section open but ends the goal above it.
             lines[-1] = f"{lines[-1].rstrip()} {line.strip()}"
             continue
         else:

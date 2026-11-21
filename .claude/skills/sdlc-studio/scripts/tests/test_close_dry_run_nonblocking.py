@@ -10,7 +10,8 @@ the pre-flight row is the only thing the preview can refuse on.
 MUTANTS, each of which a test here fails on: (1) every row is a refusal again; (2) the advisory
 row is dropped from the preview rather than shown; (3) every row is advisory, so a blocking row
 previews as a pass; (4) the gate step is left out whenever the pre-flight carries any gate row,
-blocking or not.
+blocking or not; (5) the advisory row loses its `note` icon; (6) the advisory row is shown
+without its remedy.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -52,8 +53,12 @@ class CloseDryRunNonBlockingTests(unittest.TestCase):
                             "blocking": False})
         self.assertNotIn("STOP", out, f"a row that holds nothing previews as a refusal:\n{out}")
         self.assertIn(ADVISORY, out, f"the advisory row is not shown at all:\n{out}")
-        self.assertIn("reported not blocking", out,
-                      f"the advisory row does not say it does not hold the close:\n{out}")
+        self.assertIn(f"  note gate, reported not blocking: {ADVISORY}\n", out,
+                      f"the advisory row is not a `note` line saying it does not hold the "
+                      f"close:\n{out}")
+        self.assertIn(f"  note gate, reported not blocking: {ADVISORY}\n"
+                      f"       -> refresh the anchor\n", out,
+                      f"the advisory row lost the remedy it carries:\n{out}")
         self.assertRegex(out, r"ok   gate: ", "the gate step went missing from the preview")
         self.assertIn("dry run CLEAN", out, out)
         self.assertNotIn("refusal(s)", out, out)

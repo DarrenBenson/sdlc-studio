@@ -11,7 +11,8 @@ stubbed) in a real git repository.
 MUTANTS, each of which a test here fails on: (1) the committed-close path skips the declared-file
 check, as before; (2) the check runs and sign seals anyway; (3) every uncommitted file is refused,
 so scratch the batch never declared stops the seal; (4) the check is made while a later run is
-open here, whose own work the working tree then holds.
+open here, whose own work the working tree then holds, by the helper or by `sign` passing it no
+later run.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -29,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gitutil  # noqa: E402
 import test_lean_close as lean  # noqa: E402 - the close fixture, shared
 import test_lean_sign as signing  # noqa: E402 - the stubbed seal, shared
+import test_run_open_across_checkouts as across  # noqa: E402 - the later run's plan
 
 REPORT = "RPT0001"
 LATER = "2099-01-01T00:00:00Z"
@@ -88,6 +90,10 @@ class SignRefusesUncommittedEditAfterCloseTests(unittest.TestCase):
 
     def test_the_committed_close_still_signs_over_undeclared_scratch(self) -> None:
         filed = self._closed_with_a_commit_on_top()
+        (self.root / "README.md").write_text("a tracked file no batch unit declares\n",
+                                             encoding="utf-8")
+        self._git("add", "README.md")
+        self._git("commit", "-q", "-m", "a file no batch unit declares")
         (self.root / "notes.txt").write_text("scratch\n", encoding="utf-8")
         (self.root / "README.md").write_text("an edit no batch unit declares\n", encoding="utf-8")
         rc, out, err = signing._sign(self.root, REPORT)
@@ -96,13 +102,28 @@ class SignRefusesUncommittedEditAfterCloseTests(unittest.TestCase):
         self.assertEqual("goal-reached", self._run_outcome()[0])
 
     def test_a_later_run_open_here_is_not_held_to_the_waiting_batch(self) -> None:
-        """The later run's own work sits in the tree, judged by that run's own close."""
-        sprint = lean._live("sprint")
-        self._closed_with_a_commit_on_top()
+        """The later run's own work sits in the tree, judged by that run's own close. The same
+        uncommitted edit is refused with no later run open, then sealed over once `sprint plan
+        --write` opens one here, the way `_open_later` opens it."""
+        filed = self._closed_with_a_commit_on_top()
         (self.root / "src" / "widget.py").write_text("x = 2\n", encoding="utf-8")
-        state = lean._read(self.root)
-        self.assertIn("src/widget.py", sprint._uncommitted_declared_refusal(self.root, state, ""))
-        self.assertEqual("", sprint._uncommitted_declared_refusal(self.root, state, "RUN-LATER"))
+        rc, out, err = signing._sign(self.root, REPORT)
+        self.assertEqual(2, rc, out + err)
+        self.assertIn("US0101: src/widget.py", err, "the control must refuse on the edit itself")
+        across.RunOpenAcrossCheckoutsTests._ready(self.root, "US0102")
+        rc, out, err = across.RunOpenAcrossCheckoutsTests._plan(self.root)
+        self.assertEqual(0, rc, out + err)
+        later = lean._read(self.root)
+        self.assertEqual(["US0102"], later.get("batch"), "no later run was opened here")
+        rc, out, err = signing._sign(self.root, REPORT)
+        self.assertEqual(0, rc, out + err)
+        self.assertIn(f"judged against {filed[:12]}", err)
+        self.assertIn("src/widget.py", self._git("diff", "--name-only").stdout.splitlines(),
+                      "the edit must still be uncommitted when the seal is made")
+        record = json.loads((self.root / RECORD).read_text(encoding="utf-8"))
+        self.assertEqual(("goal-reached", REPORT),
+                         (record["outcome"], (record.get("signature") or {}).get("report")))
+        self.assertEqual(later, lean._read(self.root), "the seal changed the later run")
 
 if __name__ == "__main__":
     unittest.main()
