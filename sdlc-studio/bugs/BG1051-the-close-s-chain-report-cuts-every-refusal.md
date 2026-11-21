@@ -1,6 +1,6 @@
 # BG1051: The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1051.md
@@ -26,6 +26,7 @@ Never cut a refusal: wrap long body and remedy lines, or give each unit of a lis
 
 - [ ] **AC1** Given a close whose known-issues refusal names three units with their reasons, when it runs with --dry-run, then each unit's id, status and reason is printed in full
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_every_unit_of_a_long_refusal_is_printed_whole
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

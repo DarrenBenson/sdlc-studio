@@ -1,0 +1,6 @@
+UNIT: BG1021
+BRIEF: 3ca5f58d7f16-abfdd170
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged only BG1021's share of 74436b8b: `DECOMPOSE_SIZES`, the `large` branch in `breakdown`, the new test module, the reference-sprint.md sentence and the fragment. The test_sprint.py hunk is BG0985's. verify_ac dry run 1/1 pass, and the breakdown and decompose tests pass (18). Claim inventory, each run in a throwaway tree: `sprint.py breakdown --crs Proposed --format json` lists Size L and XL CRs with `declared Size L` and `declared Size XL` and leaves S and M out (at 622cb415 it listed none). `sprint.py plan` prints the same two under "decompose into stories", so the fragment's "and the plan" is TRUE. reference-sprint.md's three signals are TRUE (Points 8 at ceiling 8 and Points 13 are listed, Points 5 is not, and a Size L CR with five files is listed). The code comments are TRUE. The author's four replayed mutants are killed. Remark, not a finding: `> **Size:** Large` spelled out reads as no size in `sdlc_md.read_size`, so that CR is refused as ungroomed rather than missed silently. The behaviour is the same at the base ref and no open bug covers it.

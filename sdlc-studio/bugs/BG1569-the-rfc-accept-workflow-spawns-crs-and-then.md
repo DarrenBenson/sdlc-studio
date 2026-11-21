@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Supersedes:** BG1020
 > **Severity:** Medium
-> **Points:** 8
+> **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md, changelog.d/BG1569.md, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/reference-schema.md, .claude/skills/sdlc-studio/templates/core/rfc.md, .claude/skills/sdlc-studio/templates/indexes/rfc.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py, .claude/skills/sdlc-studio/scripts/readiness.py, .claude/skills/sdlc-studio/scripts/handoff.py
 > **Evidence:** accepting RFC0065 and RFC0066 on 2026-11-17; the refusal transition.py printed, against reference-rfc.md section accept steps 3 and 4
 > **Created:** 2026-11-17
@@ -43,3 +43,4 @@ Decide which is right and make the two agree: either Accepted is the decided sta
 | 2026-11-17 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: D0513's Delivered status lives in the RFC vocabulary and terminal set (lib/sdlc_md.py) and the status tables and templates that state it; re-sized 3 to 5 for the vocabulary change |
 | 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Scope found in-run: lane T found the Delivered status needs more than the vocabulary: with it in, reconcile reports 56 drift items on this repo's own RFCs (36 request-derivable, 20 undecomposed), readiness.py MET and handoff.py DELIVERED_STATUSES still list Accepted, and the 20 RFCs with no change requests need a ruling on their status. Swapped out of run twenty-one for BG0981 and re-sized 5 to 8 for its own lane in run twenty-two; the work so far is kept as BG1569-wip.patch in the run's landed hand-in (agent-ad1bb647a0067e108) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Re-sized 8 to 5: 8 is the oversized ceiling (US0854 AC1 refused the push). The corpus migration and the ruling on the 20 RFCs with no change requests are split out as BG1678, which lands in the same commit as this unit |

@@ -1,6 +1,6 @@
 # BG1058: The close's dry run names a unit the run cannot end over that the real tree answers
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1058.md
@@ -26,6 +26,7 @@ Find which probe under `unanswered_units` or `seal_bar_unmet` reads the scratch 
 
 - [ ] **AC1** Given an open run whose every batch unit meets the seal bar on the real tree, when `sprint.py close --dry-run` runs, then its known-issues line names no unit the live predicate answers
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py::DryRunReadRootTests::test_the_dry_run_names_no_unit_the_live_predicate_answers
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

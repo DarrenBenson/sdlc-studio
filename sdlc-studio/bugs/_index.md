@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 335 |
+| Open | 334 |
 | In Progress | 0 |
-| Fixed | 1001 |
+| Fixed | 1004 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1677** |
+| **Total** | **1679** |
 
 ## All Bugs
 
@@ -96,7 +96,7 @@
 | [BG1018](BG1018-refine-apply-question-leaves-the-request-ending-on.md) | refine apply --question leaves the request ending on a blank line, which markdownlint refuses (MD012) | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1019](BG1019-artifact-py-retitle-refuses-in-every-consuming-project.md) | artifact.py retitle refuses in every consuming project: it loads tools/check_links.py from the operated repo or the skill's own source checkout, and an installed skill has neither | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1020](BG1020-transition-py-refuses-an-rfc-s-accepted-until.md) | transition.py refuses an RFC's Accepted until its spawned CRs are resolved, contradicting reference-rfc.md's accept step | Superseded | Low | 2026-10-09 | 2026-10-09 |
-| [BG1021](BG1021-a-cr-declared-size-l-is-not-flagged.md) | A CR declared Size L is not flagged for decomposition | Open | Medium | 2026-10-09 | 2026-10-09 |
+| [BG1021](BG1021-a-cr-declared-size-l-is-not-flagged.md) | A CR declared Size L is not flagged for decomposition | Fixed | Medium | 2026-10-09 | 2026-10-09 |
 | [BG1022](BG1022-a-stale-tsd-still-says-the-batch-does.md) | A stale TSD still says the batch does not deliver Unit Testing | Open | Low | 2026-10-09 | 2026-10-09 |
 | [BG1023](BG1023-verify-ac-s-vitest-and-jest-verbs-fold.md) | verify_ac's vitest and jest verbs fold the whole tail into the -t pattern and call a bare binary, so `vitest <file> -t "name"` can never select its test | Open | Medium | 2026-10-11 | 2026-10-11 |
 | [BG1024](BG1024-verify-ac-s-grep-verb-takes-a-leading.md) | verify_ac's grep verb takes a leading flag as the pattern, so `grep -q -e X file` and `grep -E ... file` Verify lines fail | Open | Low | 2026-10-11 | 2026-10-11 |
@@ -126,14 +126,14 @@
 | [BG1048](BG1048-forward-port-deletes-the-changelog-md-install-sh.md) | forward-port deletes the CHANGELOG.md install.sh ships into the installed copy | Superseded | Low | 2026-10-14 | 2026-10-14 |
 | [BG1049](BG1049-bg1044-s-ruling-record-tests-leave-the-date.md) | BG1044's ruling-record tests leave the date, the note's once-only rule, the heading anchor and the case boundary unpinned | Won't Fix | Low | 2026-10-14 | 2026-10-14 |
 | [BG1050](BG1050-a-reviewer-id-carrying-a-carriage-return-or.md) | A reviewer id carrying a carriage return or line separator tears its own verdict row | Open | Medium | 2026-10-14 | 2026-10-14 |
-| [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Open | Medium | 2026-10-14 | 2026-10-14 |
+| [BG1051](BG1051-the-close-s-chain-report-cuts-every-refusal.md) | The close's chain report cuts every refusal line at 160 characters, hiding which unit is blocked and why | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1052](BG1052-a-unit-whose-risk-band-rises-after-its.md) | A unit whose risk band rises after its review is found under-reviewed only at the close | Superseded | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1053](BG1053-us1004-did-not-converge-in-review-round-3.md) | US1004 did not converge in review: round 3 REJECT findings | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1054](BG1054-the-scheduled-corpus-verify-lane-reads-us0892-ac1.md) | The scheduled corpus-verify lane reads US0892 AC1 red because its job installs no pytest-xdist | Fixed | Medium | 2026-10-14 | 2026-10-14 |
 | [BG1055](BG1055-a-retro-scaffolded-by-the-close-and-committed.md) | A retro scaffolded by the close and committed before the close re-runs turns the release-verify lane red | Open | Low | 2026-10-15 | 2026-10-15 |
 | [BG1056](BG1056-bg1053-did-not-converge-in-review-round-2.md) | BG1053 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1057](BG1057-the-one-list-test-s-check-that-ci.md) | The one-list test's check that ci installs from requirements-dev.txt sits outside its self-tested rules | Won't Fix | Low | 2026-10-15 | 2026-10-15 |
-| [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Open | Medium | 2026-10-15 | 2026-10-15 |
+| [BG1058](BG1058-the-close-s-dry-run-names-a-unit.md) | The close's dry run names a unit the run cannot end over that the real tree answers | Fixed | Medium | 2026-10-15 | 2026-10-15 |
 | [BG1059](BG1059-a-retro-s-batch-field-is-never-compared.md) | A retro's Batch field is never compared with the run's batch, so a unit added after the retro was scaffolded is left out of the run's measurement and its close accounting | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1060](BG1060-retro-extract-starts-a-new-project-lessons-log.md) | retro extract starts a new project lessons log when the committed one is missing, though the committed digest lists the lessons that log holds | Open | Medium | 2026-10-16 | 2026-10-16 |
 | [BG1061](BG1061-the-committed-project-lessons-log-cannot-be-committed.md) | The committed project lessons log cannot be committed where markdownlint's defaults apply: every lesson heading ends in its sentence's punctuation, which MD026 refuses | Fixed | Medium | 2026-10-16 | 2026-10-16 |
@@ -753,6 +753,8 @@
 | [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1676](BG1676-reconcile-stops-on-an-index-that-is-not.md) | reconcile stops on an index that is not UTF-8 without naming the file or how to fix it | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 

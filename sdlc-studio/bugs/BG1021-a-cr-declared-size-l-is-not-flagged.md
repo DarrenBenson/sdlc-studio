@@ -1,6 +1,6 @@
 # BG1021: A CR declared Size L is not flagged for decomposition
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/reference-sprint.md, changelog.d/BG1021.md
@@ -26,6 +26,7 @@ Treat Size L and Size XL as the decompose signal the reference already names, al
 
 - [ ] **AC1** A Proposed CR declared Size L or XL, with one resolvable Affects path, no Points and no citing story, is listed by `sprint.py breakdown` for decomposition, while Size S and M are not
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py::SizeLDecomposeTests::test_a_size_l_cr_is_flagged_for_decomposition
+  - **Verified:** yes (2026-11-21)
 
 ## Triage
 

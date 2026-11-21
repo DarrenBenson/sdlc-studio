@@ -1,0 +1,6 @@
+UNIT: BG1051
+BRIEF: 2bd79f86c86e-2778cb01
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Judged only BG1051's share of 74436b8b: the four 160-character cuts removed from `dry_run_report` and its comment, the new test module and the fragment. The test_sprint.py hunk and the `advisory` icon are BG0985's. verify_ac dry run 1/1 pass. test_close_dry_run_uncut, test_close_dry_run_nonblocking, test_breakdown_size_l_decompose, test_sprint and test_lean_close pass (869). Both new tests fail at 622cb415 when copied there, so they catch the cut. Beyond the fixture, through `sprint.main(["close", "--dry-run"])` with the real checklist step and eight held units, the 853-character known-issues line and each unit's id, status and reason print whole. Claim inventory: the fragment, the new `dry_run_report` comment and the test module's docstring and mutant list are TRUE. At the base ref `[:160]` stood only in `dry_run_report`, so no other close output is left cut. The author's four replayed mutants are killed, one per cut. A mutant that caps at any length above the fixtures' longest line can never be killed by a finite fixture, so it is not read as a gap.
