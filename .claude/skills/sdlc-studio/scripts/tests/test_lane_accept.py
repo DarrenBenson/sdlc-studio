@@ -503,6 +503,22 @@ class LaneAcceptTests(unittest.TestCase):
                                            "transition.py set", "sprint.py lane"])
         self.assertEqual(_status(self.root, GREEN), "Done")
 
+    def test_a_headerless_verdict_at_a_rejoinder_s_issued_path_records_against_it(self) -> None:
+        """MUTANT: the headerless path match dropped, so a verdict a rejoinder brief issued that
+        opens with no BRIEF line is recorded against the saved brief at its tier."""
+        first, prior = self._round_one_rejected()
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        path, fp, tier = self._rejoinder(prior, "--tier", "full")
+        self.assertNotIn(fp, (first, saved), "the rejoinder brief shares a fingerprint")
+        rc, out, err = self._accept(GREEN, APPROVE, at=path)
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 2, against brief {fp} at the {tier} "
+                      f"tier", out)
+        row = self._rows(GREEN)[-1]
+        self.assertEqual([row[1], row[5], row[6]], ["APPROVE", fp, tier])
+
     def test_a_rejoinder_briefed_before_the_latest_landing_is_refused(self) -> None:
         _, prior = self._round_one_rejected()
         # briefed before the repair landed, so its reviewer read the round the REJECT judged

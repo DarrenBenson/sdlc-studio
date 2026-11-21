@@ -740,8 +740,8 @@ python3 <skill>/scripts/sprint.py lane accept --unit US0123 --verdict <file> --r
 `lane accept` records the verdict with `critic.py record` against the fingerprint and tier
 `critic.py brief` noted for the brief the reviewer answered: the saved QA brief, or, for a verdict
 file opening with a `BRIEF:` line, the brief that issued that file, a second seat's or a
-rejoinder's. A header naming no brief noted for the unit, or one noted before its latest landing,
-is refused. The verdict is recorded under the author of the unit's latest self-check unless
+rejoinder's. A header naming no brief noted for the unit, or one noted before the landing that
+saved the QA brief (a re-brief of its scope is not one), is refused. The verdict is recorded under the author of the unit's latest self-check unless
 `--author` names one. On an APPROVE it runs `verify_ac.py run`, moves a story to Done or a
 bug to Fixed, and calls `lane return`, passing `--agent`, `--tokens`, `--minutes`, `--proof` and
 `--gap` through. A REJECT moves nothing and prints the round and the BLOCKING findings, plus the

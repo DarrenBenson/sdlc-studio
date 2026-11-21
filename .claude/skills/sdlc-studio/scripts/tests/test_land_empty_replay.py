@@ -84,6 +84,48 @@ class LandEmptyReplayTests(base._LaneFixture):
         self.assertEqual(head, base._git(self.root, "rev-parse", "HEAD"))
         self.assertEqual([], _empty_commits(self.root), "an empty commit landed on main")
 
+    def test_a_builder_commit_main_holds_in_a_different_commit_is_dropped(self) -> None:
+        """MUTANT: the replay rebases with `--empty=keep` (main took the builder's change in a
+        commit carrying another change too, so git's cherry-pick detection does not drop it: the
+        builder commit is emptied by the rebase, kept, and lands)."""
+        base._write(self.wt, "src/b.py", "B = 2\n")
+        gitutil.git(["add", "--", "src/b.py"], self.wt)
+        gitutil.git(["commit", "-q", "-m", "fix: b is two, in the lane"], self.wt)
+        base._write(self.root, "src/b.py", "B = 2\n")
+        base._write(self.root, "src/c.py", "C = 1\n")
+        gitutil.git(["add", "--", "src/b.py", "src/c.py"], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: main takes b with c"], self.root)
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual([], _empty_commits(self.root), "an empty commit landed on main")
+        subjects = base._git(self.root, "log", "--format=%s", "main").splitlines()
+        self.assertNotIn("fix: b is two, in the lane", subjects)
+        self.assertEqual(f"feat({A}): a is two", subjects[0])
+
+    def test_a_prepare_commit_msg_hook_leaves_the_replay_off_main(self) -> None:
+        """The rebase of the replay runs a `prepare-commit-msg` hook on the scratch commit too,
+        so the scratch commit is not told by its message: the lane's own commit lands, through
+        the pre-commit hook, and no replay commit reaches main."""
+        hook = self.root.parent / "hooks" / "prepare-commit-msg"
+        hook.write_text("#!/bin/sh\nprintf '\\nPrepared-By: a hook\\n' >> \"$1\"\n",
+                        encoding="utf-8")
+        hook.chmod(0o755)
+        moved = self._move_main("src/b.py", "B = 2\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertEqual(1, self._hook_runs_in_the_worktree(), "the lane's commit ran no hook")
+        self.assertEqual(f"feat({A}): a is two", base._git(self.root, "log", "-1", "--format=%s"))
+        self.assertEqual(moved, base._git(self.root, "rev-parse", "HEAD^"))
+        self.assertNotIn("the staged change is already on main", out)
+        self.assertNotIn("lane land: the staged change, replayed",
+                         base._git(self.root, "log", "--format=%B", "main"))
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,9 @@ RUNS = 4
 #:          `git add` the grace cannot stop would;
 #:   deaf - the same child, taking no lock;
 #:   leave - take the worktree's `index.lock` itself, as a git of its own that crashed would
-#:           leave it, then wait to be stopped, ending on the SIGTERM, so no SIGKILL is sent.
+#:           leave it, then wait to be stopped, ending on the SIGTERM, so no SIGKILL is sent;
+#:   exit - start the lock-taking child of `lock`, then exit 0 without waiting on it, so the
+#:          lane ends on its own and its group, still holding the child, is sent SIGKILL.
 FAKE = r'''#!{python}
 import os, signal, subprocess, sys, time
 mode = os.environ["LOCK_FAKE"]
@@ -54,12 +56,15 @@ ready = os.path.join(os.environ["FAKE_LOG"], "ready")
 child = subprocess.Popen([sys.executable, "-c",
     "import signal, sys, time\n"
     "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
-    "if sys.argv[1] == 'lock':\n"
+    "if sys.argv[1] in ('lock', 'exit'):\n"
     "    open(sys.argv[2], 'x').close()\n"
     "open(sys.argv[3], 'w').close()\n"
-    "time.sleep(60)\n", mode, lock, ready])
+    "time.sleep(60)\n", mode, lock, ready],
+    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 while not os.path.exists(ready):
     time.sleep(0.01)
+if mode == "exit":
+    sys.exit(0)
 child.wait()
 '''
 
@@ -98,6 +103,20 @@ class TimedOutGitAddLeavesNoLockTests(base._LaneCase):
         wt = self._worktree()
         out = self._timed_out(wt, "lock", timeout="2")
         self.assertTrue((self.log / "ready").exists(), "the lock-holding child never started")
+        self.assertFalse(self._lock(wt).exists(), "the killed child's index.lock was left")
+        self.assertIn(f"removed {self._lock(wt)}", out)
+        self.assertEqual(0, gitutil.git(["add", "--", "src/a.py"], wt, check=False).returncode)
+
+    def test_a_lane_that_exits_on_its_own_has_its_killed_child_s_lock_removed(self) -> None:
+        """MUTANT: the lock cleared only on a timeout (a bare `_kill_group(proc)` once the CLI
+        has exited on its own). The CLI exits 0 well inside its bound, leaving a child that
+        ignores SIGTERM holding the worktree's `index.lock`, so the group is sent SIGKILL
+        after the CLI's own exit, not at a timeout."""
+        wt = self._worktree()
+        with unittest.mock.patch.dict(os.environ, {"LOCK_FAKE": "exit"}):
+            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "60")
+        self.assertTrue((self.log / "ready").exists(), "the lock-holding child never started")
+        self.assertNotEqual(lanes.TIMED_OUT, self._record().get("unmetered"), out)
         self.assertFalse(self._lock(wt).exists(), "the killed child's index.lock was left")
         self.assertIn(f"removed {self._lock(wt)}", out)
         self.assertEqual(0, gitutil.git(["add", "--", "src/a.py"], wt, check=False).returncode)

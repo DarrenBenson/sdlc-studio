@@ -160,6 +160,122 @@ class SelfCheckBeforeCommitTests(base._LaneFixture):
         self.assertIn(f"{A}: self-check NOT RECORDED", r.stderr)
 
 
+class SelfCheckLandedAffectsTests(base._LaneFixture):
+    """Which copy of the unit's Affects, and which hand-ins, the judgement before the commit
+    reads: the Affects the landing leaves on main, and a hand-in holding what a record needs."""
+
+    _lane = SelfCheckBeforeCommitTests._lane
+    _untouched = SelfCheckBeforeCommitTests._untouched
+
+    # -- the copy of the unit's Affects the landing records against ----------------------
+
+    def _restage_story(self, affects: str, edit=None) -> None:
+        """The lane's own copy of A's file staged with `affects`, or, given `edit`, the
+        worktree's copy passed through it and staged."""
+        story = f"sdlc-studio/stories/{A}-lane.md"
+        if edit is None:
+            base._story(self.wt, A, affects)
+        else:
+            path = self.wt / story
+            path.write_text(edit(path.read_text(encoding="utf-8")), encoding="utf-8")
+        gitutil.git(["add", "--", story], self.wt)
+
+    def _mutant_on(self, test: str) -> None:
+        base._write(self.wt, f"{LANE}/{A}-mutants.json", json.dumps(
+            [{"mutant": "a stays one", "test": test, "result": "killed"}]))
+
+    def _landed(self, r: subprocess.CompletedProcess) -> None:
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual([A], [row["unit"] for row in base.critic.read_self_checks(self.root)])
+        self.assertTrue((self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").is_file())
+
+    def test_a_lane_widening_its_own_affects_is_judged_on_the_copy_it_lands(self) -> None:
+        """The lane adds a test file to A's Affects and names its mutant against it: main's
+        copy before the landing does not declare that file, the landed copy does."""
+        self._lane()
+        self._stage("tests/test_c.py", "def test_c():\n    assert True\n")
+        self._restage_story(f"src/a.py, tests/test_a.py, tests/test_c.py, changelog.d/{A}.md")
+        self._mutant_on("tests/test_c.py::test_c")
+        self._landed(self._land(A))
+
+    def test_a_lane_dropping_a_fragment_from_its_own_affects_lands_without_it(self) -> None:
+        self._lane()
+        self._restage_story("src/a.py, tests/test_a.py")
+        base._write(self.wt, f"{LANE}/{A}-claims.json", json.dumps(NO_FRAGMENT))
+        self._landed(self._land(A))
+
+    def test_a_lane_narrowing_its_own_affects_is_refused_before_the_commit(self) -> None:
+        """The reverse: the landed copy declares no test file, so the mutant on the one it
+        dropped is refused while the worktree still holds the change, not after it landed."""
+        main = base._git(self.root, "rev-parse", "HEAD")
+        self._lane()
+        self._restage_story(f"src/a.py, changelog.d/{A}.md")
+        r = self._land(A)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn("not a test file the unit's Affects declares (no test file)", r.stderr)
+        self.assertEqual(0, self._hook_runs_in_the_worktree())
+        self.assertEqual(main, base._git(self.root, "rev-parse", "HEAD"))
+        self.assertTrue(self.wt.is_dir(), "the worktree was removed")
+        self.assertNotIn("self-check REFUSED", r.stderr)
+        self.assertEqual([], base.critic.read_self_checks(self.root))
+
+    def test_main_widening_the_affects_while_the_lane_edits_another_line(self) -> None:
+        """The lane's copy of A's file differs from main's on a line other than its Affects,
+        so the landed copy carries main's Affects, which declare the mutant's test file."""
+        base._story(self.root, A, f"src/a.py, tests/test_a.py, tests/test_c.py, changelog.d/{A}.md")
+        base._write(self.root, "tests/test_c.py", "def test_c():\n    assert True\n")
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: A widened in-run"], self.root)
+        self._lane()
+        self._restage_story("", edit=lambda text: text.replace("### AC1: works",
+                                                                "### AC1: works, and says so"))
+        self._mutant_on("tests/test_c.py::test_c")
+        self._landed(self._land(A))
+        self.assertIn("### AC1: works, and says so",
+                      (self.root / f"sdlc-studio/stories/{A}-lane.md").read_text(encoding="utf-8"))
+
+    def test_a_unit_filed_on_main_after_the_lane_branched_is_judged_on_main(self) -> None:
+        unit = "US0103"
+        base._story(self.root, unit, f"src/c.py, changelog.d/{unit}.md")
+        gitutil.git(["add", "-A"], self.root)
+        gitutil.git(["commit", "-q", "-m", f"chore: file {unit}"], self.root)
+        self._stage("src/c.py", "C = 1\n")
+        base._write(self.wt, f"{LANE}/commit-msg.txt", f"feat({unit}): c\n")
+        base._write(self.wt, f"{LANE}/{unit}-claims.json", json.dumps(
+            [*NO_FRAGMENT, {"surface": f"changelog.d/{unit}.md", "claim": "c", "ruling": "TRUE"}]))
+        base._write(self.wt, f"{LANE}/{unit}-mutants.json", "[]")
+        r = self._land(unit)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual([unit], [row["unit"] for row in base.critic.read_self_checks(self.root)])
+
+    # -- which hand-ins are judged before the commit --------------------------------------
+
+    def test_a_claims_file_and_the_runner_report_alone_are_judged(self) -> None:
+        """The runner's usual hand-in: a report beside the claims file and no mutants file."""
+        main = base._git(self.root, "rev-parse", "HEAD")
+        self._lane()
+        (self.wt / LANE / f"{A}-mutants.json").unlink()
+        base._write(self.wt, f"{LANE}/{A}-mutation-edits.json", json.dumps(
+            {"kind": "mutation-edits", "version": 1, "unit": B, "mutants": [], "counts": {}}))
+        r = self._land(A)
+        self._untouched(r, main)
+        self.assertIn(f"not {A}", r.stderr)
+
+    def test_a_claims_file_with_no_mutants_file_or_report_is_not_judged(self) -> None:
+        """A claims file alone is a hand-in missing what a record needs: it lands and the
+        self-check step names the missing file, not the critic's verdict on the claims."""
+        self._lane()
+        (self.wt / LANE / f"{A}-mutants.json").unlink()
+        base._write(self.wt, f"{LANE}/{A}-claims.json", json.dumps(NO_FRAGMENT))
+        r = self._land(A)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertIn(f"{A}: self-check NOT RECORDED", r.stderr)
+        self.assertIn(f"carries no {A}-mutants.json", r.stderr)
+        self.assertNotIn("no claim from", r.stderr)
+
+
 class SelfCheckBeforeCommitSeveralTests(base._LaneFixture):
     """Landing several worktrees as one commit judges every unit's self-check before it."""
 

@@ -5,7 +5,8 @@ A high-risk unit takes two independent seats. `sprint lane land` saves the unit'
 `critic.py brief --unit <id> --seat engineering`, whose verdict file opens with a `BRIEF:` line
 naming the file that brief issued. `lane accept` recorded that verdict against the saved qa
 brief, ignoring the header. Now it records it against the brief the header names, and refuses a
-header that names no brief noted for the unit, or one noted before the unit's latest landing.
+header that names no brief noted for the unit, or one noted before the landing that saved the
+QA brief, which a later re-brief of the same scope is not.
 
 The cases run on `test_lane_accept`'s throwaway repository, with a component map that puts the
 unit's Affects in the top risk class: `sprint.py lane land` lands each round for real, and
@@ -140,6 +141,28 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
                                     at=path, reviewer=ENGINEER)
         self.assertIn(f"against brief {fp}", out, err)
+
+    def test_a_re_brief_after_the_landing_reads_as_no_landing(self) -> None:
+        """MUTANT: the latest plain note of the saved brief's fingerprint is taken as the
+        landing, so a qa re-brief of the same scope after it reads as one, and the verdicts on
+        the saved brief and on a seat briefed between the two are refused."""
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        issued = Path(re.findall(r"^(/\S+\.txt)\nUNIT: ", self._brief().read_text(
+            encoding="utf-8"), re.M)[-1])
+        between, between_fp, _ = self._seat_brief()
+        again, again_fp, _ = self._seat_brief(seat="qa")
+        self.assertEqual(again_fp, saved, "the qa re-brief is not of the saved brief's scope")
+        self.assertNotEqual(again, issued)
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {issued.stem}\n{APPROVE}",
+                                    at=issued)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 1, against brief {saved}", out, err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["APPROVE", saved])
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {between.stem}\n{APPROVE}",
+                                    at=between, reviewer=ENGINEER)
+        self.assertIn(f"against brief {between_fp}", out, err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["APPROVE", between_fp])
 
     def test_a_verdict_file_that_is_not_utf8_is_refused(self) -> None:
         """A verdict file the reader cannot decode is a refusal naming it, not a traceback."""

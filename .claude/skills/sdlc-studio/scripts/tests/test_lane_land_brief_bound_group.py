@@ -18,6 +18,7 @@ import signal
 import subprocess
 import sys
 import unittest
+import unittest.mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -119,6 +120,23 @@ class LandBriefBoundKillsReplayTests(base._LaneFixture):
         self.assertEqual([], sorted(p.name for p in self.tmp.glob("mutation_edits_*")),
                          "the replay's scratch copy was left behind")
         self.assertFalse((self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").exists())
+
+    def test_the_brief_alone_is_given_critic_s_replay_stop_grace(self) -> None:
+        """MUTANT: the brief's bound given no grace of its own (`grace = None`, so KILL_GRACE:
+        two seconds, in which a runner stopping a real tree's pytest need not have removed its
+        scratch copy). Every other `critic.py` call keeps lane land's own bound and grace."""
+        seen = []
+
+        def bounded(cmd, timeout, grace=None, **popen):
+            seen.append((cmd[2], timeout, grace))
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+
+        with unittest.mock.patch.object(base.lanes, "_bounded", bounded):
+            base.lanes._critic(self.root, "brief", "--unit", A, "--seat", "qa")
+            base.lanes._critic(self.root, "self-check", "record", "--unit", A)
+        self.assertEqual([("brief", base.critic.BRIEF_TIMEOUT, base.critic.REPLAY_STOP_GRACE),
+                          ("self-check", base.lanes.CRITIC_TIMEOUT, None)], seen)
+        self.assertGreater(base.critic.REPLAY_STOP_GRACE, base.lanes.KILL_GRACE)
 
 
 if __name__ == "__main__":

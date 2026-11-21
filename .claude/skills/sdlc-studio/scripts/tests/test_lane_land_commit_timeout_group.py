@@ -134,6 +134,66 @@ class LandCommitTimeoutKillsHooksTests(base._LaneFixture):
             time.sleep(0.01)
         os.kill(os.getpid(), signal.SIGINT)
 
+    def test_a_land_stopped_while_the_hook_runs_leaves_neither_running(self) -> None:
+        """MUTANT: `_bounded` runs the commit with no watchdog. `lane land` stopped as a group
+        (a `timeout` around it, a harness ending the command) dies by the SIGTERM, and the
+        commit's own session kept its hook and the hook's child out of that group's reach."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        land = subprocess.Popen(
+            [sys.executable, "-B", str(base.SPRINT), "lane", "land", "--worktree", str(self.wt),
+             "--units", A, "--root", str(self.root)], cwd=str(self.root), env=self._env(),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        self.addCleanup(_sigkill, land.pid)
+        deadline = time.monotonic() + 60
+        while not (self.dir / "child.pid").exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        hook, child = self._pid("hook.pid"), self._pid("child.pid")
+        os.killpg(land.pid, signal.SIGTERM)
+        self.assertEqual(-signal.SIGTERM, land.wait(30), "the land outlived its own stop")
+        self.assertFalse(_outlives(hook, 5.0), "the commit-msg hook outlived the stopped land")
+        self.assertFalse(_outlives(child, 5.0), "the hook's child outlived the stopped land")
+
+    def test_the_bound_gives_the_group_kill_grace_before_the_sigkill(self) -> None:
+        """MUTANT: `_bounded` ends the group with no grace (SIGKILL straight after the SIGTERM).
+        The hook stops on the SIGTERM in half a second, inside KILL_GRACE, so only a group
+        given that grace lets it finish."""
+        (self.dir / "hooks" / "commit-msg").write_text(
+            "#!/bin/sh\n"
+            f"trap 'sleep 0.5; echo stopped > \"{self.dir}/hook.stopped\"; exit 1' TERM\n"
+            + HOOK.format(dir=self.dir).split("\n", 1)[1], encoding="utf-8")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land_bounded()
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"the commit's hooks ran past {BOUND}s and were stopped", r.stderr)
+        self.assertFalse(_outlives(self._pid("hook.pid")), "the hook outlived the land")
+        self.assertTrue((self.dir / "hook.stopped").is_file(),
+                        "the hook was killed before the grace let it stop")
+
+    def test_the_watchdog_gives_the_group_the_bound_s_own_grace(self) -> None:
+        """MUTANT: the watchdog is started with KILL_GRACE whatever grace `_bounded` was handed.
+        This process killed outright while the command runs, the watchdog's SIGTERM leaves a
+        member three seconds to stop, more than KILL_GRACE and less than the grace given."""
+        marker = self.dir / "stopped"
+        script = (f"trap 'sleep 3; echo stopped > \"{marker}\"; exit 0' TERM; "
+                  f"echo $$ > \"{self.dir}/hook.pid\"; sleep 300 & wait")
+        runner = ("import subprocess, sys\n"
+                  "sys.path.insert(0, sys.argv[1])\n"
+                  "from lib import lanes\n"
+                  "lanes._bounded(['sh', '-c', sys.argv[2]], 600, 6)\n")
+        held = subprocess.Popen([sys.executable, "-B", "-c", runner, str(base.SCRIPTS), script],
+                                env=self._env())
+        self.addCleanup(_sigkill, held.pid)
+        deadline = time.monotonic() + 30
+        while not (self.dir / "hook.pid").exists() and time.monotonic() < deadline:
+            time.sleep(0.02)
+        hook = self._pid("hook.pid")
+        held.kill()
+        held.wait(10)
+        self.assertFalse(_outlives(hook, 10.0), "the watchdog left the command running")
+        self.assertTrue(marker.is_file(), "the watchdog killed the group before its grace")
+
     def test_a_hook_that_ends_in_time_still_commits(self) -> None:
         """Positive control for the bound: a hook that returns well inside it lands the lane."""
         (self.dir / "hooks" / "commit-msg").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

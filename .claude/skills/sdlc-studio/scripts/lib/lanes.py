@@ -41,9 +41,11 @@ change and nothing landed. The commit's output is kept in every worktree's kept 
 refusal reaches each unit's repair brief.
 
 Before step 1, each unit's self-check its hand-in carries is judged as step 6 would record it,
-by the critic's own `check_self_check`, and one it would refuse, a required surface missing above
-all, stops the landing with exit 2 and nothing moved: the worktree, its staged change and the
-root's branch are as they were, so the builder repairs the hand-in in place.
+by the critic's own `check_self_check`, against the unit's Affects as the landing leaves them on
+the root: the lane's own copy where its change edits them, the root's otherwise. One it would
+refuse, a required surface missing above all, stops the landing with exit 2 and nothing moved:
+the worktree, its staged change and the root's branch are as they were, so the builder repairs
+the hand-in in place.
 
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
@@ -181,15 +183,20 @@ def _bounded(cmd: list[str], timeout: float, grace: float | None = None,
     """`cmd` run to its end as `subprocess.run(cmd, timeout=timeout, text=True, ...)` would run
     it, in a session of its own: past `timeout`, or on any exit that interrupts the wait (a
     Ctrl-C), its whole process group is ended (`_kill_group`: SIGTERM, up to `grace` seconds,
-    then SIGKILL) before `subprocess.TimeoutExpired` or the interruption propagates.
-    `subprocess.run` kills only `cmd`, so what it had started, a commit's hooks and the suites
-    they run, or the mutation runner a brief replays, ran on after the bound said it stopped."""
-    with subprocess.Popen(cmd, text=True, start_new_session=True, **popen) as proc:
-        try:
-            out, err = proc.communicate(timeout=timeout)
-        except BaseException:
-            _kill_group(proc, grace)
-            raise
+    KILL_GRACE when None, then SIGKILL) before `subprocess.TimeoutExpired` or the interruption
+    propagates. `subprocess.run` kills only `cmd`, so what it had started, a commit's hooks and
+    the suites they run, or the mutation runner a brief replays, ran on after the bound said it
+    stopped. Its own session puts the group out of reach of a kill sent to this process's
+    group, so a watchdog (`_watchdog`) ends it the same way, with the same grace, if this
+    process dies while `cmd` runs (a `timeout` around `lane land`, a harness ending it)."""
+    with _watchdog(grace) as arm:
+        with subprocess.Popen(cmd, text=True, start_new_session=True, **popen) as proc:
+            try:
+                arm(proc.pid)
+                out, err = proc.communicate(timeout=timeout)
+            except BaseException:
+                _kill_group(proc, grace)
+                raise
     return subprocess.CompletedProcess(proc.args, proc.returncode, out, err)
 
 
@@ -251,19 +258,26 @@ def _discard_own_artefacts(wt_top: Path, units: list[str]) -> None:
 def _carry(wt_top: Path, target: str) -> bool:
     """Replay the staged change onto `target` before it is committed, leaving it staged, so the
     hooks judge it on the code it lands on, not the base the builder started from. The replay
-    goes through a scratch commit no hook runs for and nothing lands: it is unwound to a staged
-    change again. A replay git refuses (a conflict, an unstaged edit) is undone, leaving the
-    staged change on its old base for the commit and the rebase after it to report as before.
-    The builder's own commits are replayed as the rebase after the commit replays them: one that
-    `target` already holds, or that its change leaves empty, is dropped, never kept as an empty
-    commit. Whether a change is still staged: none is when `target` already holds it."""
+    goes through a scratch commit that nothing lands: it is unwound to a staged change again,
+    and the commit after it is the one the hooks judge. A replay git refuses (a conflict, an
+    unstaged edit) is undone, leaving the staged change on its old base for the commit and the
+    rebase after it to report as before. The builder's own commits are replayed as the rebase
+    after the commit replays them: one that `target` already holds, or that its change leaves
+    empty, is dropped, never kept as an empty commit. Whether a change is still staged: none is
+    when `target` already holds it."""
     if not _git(wt_top, "merge-base", "--is-ancestor", target, "HEAD").returncode:
         return True
     head = _git(wt_top, "rev-parse", "HEAD").stdout.strip()
     tree = _git(wt_top, "write-tree").stdout.strip()
-    # the scratch commit's own mark, so it is told from a builder commit after the rebase
-    mark = f"lane land: the staged change, replayed ({uuid.uuid4().hex})"
-    scratch = _git(wt_top, "commit-tree", tree, "-p", head, "-m", mark).stdout.strip()
+    # the scratch commit is told from a builder commit after the rebase by its author, which a
+    # rebase keeps whatever a `prepare-commit-msg` hook it runs does to the message
+    mark = f"lane-land-replay-{uuid.uuid4().hex}@lane-land.invalid"
+    scratch = subprocess.run(
+        ["git", "-C", str(wt_top), "commit-tree", tree, "-p", head, "-m",
+         "lane land: the staged change, replayed"], capture_output=True, text=True,
+        timeout=GIT_TIMEOUT, check=False,
+        env={**os.environ, "GIT_AUTHOR_NAME": "lane land", "GIT_AUTHOR_EMAIL": mark},
+    ).stdout.strip()
     if not scratch or _git(wt_top, "reset", "--soft", scratch).returncode:
         return True
     if _git(wt_top, "rebase", target).returncode:
@@ -272,7 +286,7 @@ def _carry(wt_top: Path, target: str) -> bool:
         return True
     # the rebase drops the scratch commit when `target` holds its change, so it is taken back
     # out only when it is the commit the rebase ended on
-    if _git(wt_top, "log", "-1", "--format=%B", "HEAD").stdout.strip() == mark:
+    if _git(wt_top, "log", "-1", "--format=%ae", "HEAD").stdout.strip() == mark:
         _git(wt_top, "reset", "--soft", "HEAD~1")
     if _git(wt_top, "diff", "--cached", "--quiet").returncode == 0:
         _say(f"the staged change is already on {target}: nothing is left to commit")
@@ -593,27 +607,54 @@ def _read_record(path: Path) -> dict | None:
     return None
 
 
+def _landed_affects_in(root_top: Path, lane: _Lane, unit: str, scratch: Path) -> Path:
+    """The checkout holding the copy of `unit`'s own file whose Affects the landing records
+    the self-check against: the root, which step 6 reads once the lane has landed, unless the
+    lane's change carries a different Affects there (an edit to the line, or the file added or
+    removed) than the copy it branched from, when what it stages is written under `scratch`
+    (empty for a file it removes, which reads as no artefact, as no file would) and `scratch`
+    is that checkout. A file both changed the line of is a replay conflict, so nothing lands. A
+    lane holding no copy of the file is judged on the root's."""
+    hit = sdlc_md.find_by_id(lane.top, unit)
+    if not hit:
+        return root_top
+    rel = Path(hit[0]).relative_to(lane.top).as_posix()
+    base = _git(lane.top, "merge-base", lane.target, "HEAD").stdout.strip()
+    staged, was = (_raw(lane.top, "show", f"{at}:{rel}") for at in ("", base))
+    declared = [None if done.returncode else
+                sdlc_md.affects_files(done.stdout.decode("utf-8", "replace"))
+                for done in (staged, was)]
+    if declared[0] == declared[1]:
+        return root_top
+    (scratch / rel).parent.mkdir(parents=True, exist_ok=True)
+    (scratch / rel).write_bytes(staged.stdout)
+    return scratch
+
+
 def _self_check_refusal(root_top: Path, lane: _Lane, unit: str) -> str | None:
     """The cause `critic.py self-check record` would refuse `unit`'s self-check for, as `lane`'s
     hand-in carries it, or None. The claims file, mutants file and runner report are read and
     judged as `_record_and_brief` hands them to the critic, by the critic's own readers and
-    `check_self_check`, against the unit's Affects on the root (in the worktree for a unit whose
-    file only the lane holds). A hand-in missing the files a record needs is not judged here: the
-    self-check step names it once the lane has landed, as it always has."""
+    `check_self_check`, against the unit's Affects as the landing leaves them on the root
+    (`_landed_affects_in`). A hand-in missing the files a record needs (no claims file, or
+    neither a mutants file nor a runner report) is not judged here: the self-check step names
+    it once the lane has landed, as it always has."""
+    import tempfile  # noqa: PLC0415 - only a lane carrying its own Affects edit needs one
     hand_in = lane.top / HAND_IN
     claims, mutants = (hand_in / name for name in hand_in_names(unit))
     report = hand_in / report_hand_in_name(unit)
     if not claims.is_file() or not (mutants.is_file() or report.is_file()):
         return None
     import critic  # noqa: PLC0415 - sibling; its own readers judge what it would record
-    try:
-        said = critic._entries(str(claims), "claims")  # noqa: SLF001
-        by_hand = critic._entries(str(mutants), "mutants") if mutants.is_file() else []  # noqa: SLF001
-        listed = critic.mutants_from_report(report, unit) if report.is_file() else []
-        scope = root_top if sdlc_md.find_by_id(root_top, unit) else lane.top
-        critic.check_self_check(scope, unit, said, [*listed, *by_hand])
-    except (OSError, ValueError) as exc:
-        return str(exc)
+    with tempfile.TemporaryDirectory(prefix="lane-land-affects-") as scratch:
+        try:
+            said = critic._entries(str(claims), "claims")  # noqa: SLF001
+            by_hand = critic._entries(str(mutants), "mutants") if mutants.is_file() else []  # noqa: SLF001
+            listed = critic.mutants_from_report(report, unit) if report.is_file() else []
+            scope = _landed_affects_in(root_top, lane, unit, Path(scratch))
+            critic.check_self_check(scope, unit, said, [*listed, *by_hand])
+        except (OSError, ValueError) as exc:
+            return str(exc)
     return None
 
 
@@ -907,15 +948,17 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     (`--seat engineering`) or a rejoinder's (`--rejoinder`), since that brief, not the saved one,
     is what the reviewer read, and a header no note of the unit's names is refused. Without the
     header, a `verdict` at the path a rejoinder brief issued is matched by its path. A brief
-    other than the saved one, noted before the latest plain note of the saved brief's
-    fingerprint, may answer an earlier round, so it is refused. Under
+    noted before the landing that saved the brief, whose note is the one that issued the file
+    the saved brief names, may answer an earlier round, so it is refused; a brief noted at or
+    after it, a re-brief of the same scope among them, answers this round. Under
     `review.author_self_check: block` a unit with no
     current self-check (`critic.self_check_gap`) is refused; under `report` that is a warning;
     `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
     rel = BRIEFS / f"{unit}-qa.txt"
     try:
-        fp = critic.brief_fingerprint((root / rel).read_text(encoding="utf-8"))
+        saved = (root / rel).read_text(encoding="utf-8")
+        fp = critic.brief_fingerprint(saved)
     except OSError:
         try:
             why = (root / BRIEFS / NO_BRIEF.format(unit=unit)).read_text(encoding="utf-8")
@@ -949,10 +992,11 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
         notes = (root / critic.BRIEF_NOTES_REL).read_text(encoding="utf-8", errors="replace")
     except OSError:
         notes = ""
-    # the brief text repeats from round to round, so the LATEST plain note of the saved
-    # fingerprint is taken as the landing that saved it (a later re-brief of that scope too),
-    # and another brief noted before it is refused
+    # the brief text repeats from round to round, and a re-brief of the scope notes the same
+    # fingerprint, so the landing that saved the brief is told by the file it issued, which the
+    # saved brief names last; a brief noted before that note is refused
     stem = critic._header_lines(said.replace("\r\n", "\n")).get("BRIEF")  # noqa: SLF001
+    saved_stem = (re.findall(r"^BRIEF: (\S+)[ \t]*$", saved, re.M) or [None])[-1]
     landed_at, issued = None, None
     for n, line in enumerate(notes.splitlines()):
         try:
@@ -963,10 +1007,10 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
             continue
         if row.get("fp") == fp:
             tier = row.get("tier") or tier
-            if not row.get("rejoinder"):
-                landed_at = n
         if verdict is None or not row.get("verdict_file"):
             continue
+        if Path(str(row["verdict_file"])).stem == saved_stem:
+            landed_at = n
         if stem:
             if Path(str(row["verdict_file"])).stem == stem:
                 issued = (n, row)
@@ -1310,9 +1354,10 @@ except OSError:
 
 
 @contextlib.contextmanager
-def _watchdog():
+def _watchdog(grace: float | None = None):
     """A watchdog process, in a session of its own, that ends the lane's process group if this
-    process dies while the lane runs: the CLI's own session puts it out of reach of a kill sent
+    process dies while the lane runs, giving it `grace` seconds (KILL_GRACE when None) between
+    the SIGTERM and the SIGKILL: the CLI's own session puts it out of reach of a kill sent
     to this process's group, and no handler runs for SIGKILL. Yields `arm(pgid)`, which names
     the group to the watchdog; leaving the block stands the watchdog down and reaps it. Where
     `os.killpg` does not exist, no watchdog is started. A watchdog that cannot be started is a
@@ -1322,7 +1367,8 @@ def _watchdog():
         return
     read, write = os.pipe()
     try:
-        dog = subprocess.Popen([sys.executable, "-I", "-c", _WATCHDOG, str(KILL_GRACE)],
+        dog = subprocess.Popen([sys.executable, "-I", "-c", _WATCHDOG,
+                                str(KILL_GRACE if grace is None else grace)],
                                stdin=read, stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL, start_new_session=True)
     except OSError as exc:

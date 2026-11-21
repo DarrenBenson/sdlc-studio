@@ -100,6 +100,31 @@ class LaneLandResumeTests(lane_land._LaneFixture):
         self.assertFalse((self.root / lanes.BRIEFS / lanes.NO_BRIEF.format(unit=A)).exists())
         self.assertFalse(self.wt.exists(), "the resumed landing did not remove the worktree")
 
+    def test_a_self_check_the_critic_refuses_on_the_resume_is_named_and_writes_no_brief(
+            self) -> None:
+        """A resume records the kept hand-in without judging it again before the commit, so the
+        self-check step is still where a refused record is named: no brief, the stop kept."""
+        for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
+                          ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
+            self._stage(rel, body)
+        self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
+        (self.wt / LANE / f"{B}-claims.json").unlink()
+        self.assertEqual(1, self._land(A, B).returncode)
+        # no claim from the changelog fragment B's Affects declares: `critic.py` refuses it
+        (self._keep() / f"{B}-claims.json").write_text(json.dumps(
+            [{"surface": "commit message", "claim": "b is two", "ruling": "TRUE"}]),
+            encoding="utf-8")
+        r = self._resume(A, B)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"{B}: self-check REFUSED and no brief written", r.stderr)
+        self.assertIn(f"no claim from the changelog.d/{B}.md", r.stderr)
+        self.assertNotIn(f"{B}: self-check recorded", r.stderr)
+        self.assertEqual([A], [row["unit"] for row in critic.read_self_checks(self.root)])
+        self.assertFalse(self._brief(B).exists(), "a brief was written for a refused record")
+        self.assertIn("REFUSED", (self.root / lanes.BRIEFS / lanes.NO_BRIEF.format(unit=B))
+                      .read_text(encoding="utf-8"))
+        self.assertEqual("self-check", self._record()["stopped_at"])
+
     def test_a_landing_stopped_after_the_fast_forward_resumes_without_its_worktree(self) -> None:
         for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
                           ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
