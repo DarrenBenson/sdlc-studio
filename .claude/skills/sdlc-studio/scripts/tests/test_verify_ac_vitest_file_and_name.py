@@ -78,6 +78,17 @@ class VitestFileAndNameTests(unittest.TestCase):
         # A bare tail shlex cannot split is still the bare form, read as it always was.
         self.assertEqual(verify_ac._build_command("jest it's fine"),
                          ("jest", ["jest", "-t", "it's fine"]))
+        # A `--` ends the runner's options, so the name goes in front of it, where `-t` is
+        # still the name filter, and what the line put after it stays after it.
+        self.assertEqual(verify_ac._build_command(f"jest {FILE} -t name -- --ci"),
+                         ("jest", ["jest", FILE, "-t", "name", "--", "--ci"]))
+        self.assertEqual(verify_ac._build_command(f'vitest {FILE} -t "n" -- --reporter=dot'),
+                         ("vitest", ["vitest", "run", FILE, "-t", "n", "--", "--reporter=dot"]))
+        self.assertEqual(verify_ac._build_command(f"jest {FILE} --ci -t name -- extra"),
+                         ("jest", ["jest", FILE, "--ci", "-t", "name", "--", "extra"]))
+        # The `=` form keeps a name that holds an `=` of its own whole.
+        self.assertEqual(verify_ac._build_command(f'jest {FILE} "--testNamePattern=a=b"'),
+                         ("jest", ["jest", FILE, "-t", "a=b"]))
 
         # How each verb is launched, read back from the argv the runner received.
         for verb, expected in (("vitest", ["run", FILE, "-t", NAME]),
@@ -108,6 +119,29 @@ class VitestFileAndNameTests(unittest.TestCase):
                 self.assertEqual(_argv_seen(path_dir, verb), expected)
                 self.assertEqual(_argv_seen(local, verb), [], "the bare binary on PATH "
                                  "was passed over for the project-local one")
+            with self.subTest(verb=verb, launcher="local not executable"), \
+                    tempfile.TemporaryDirectory() as d:
+                # A project-local file that cannot run is passed over for npx.
+                project, path_dir = Path(d) / "proj", Path(d) / "path"
+                local = project / "node_modules" / ".bin"
+                _fake(local, verb).chmod(0o644)
+                _fake(path_dir, "npx")
+                r = self._run(project, path_dir, expr)
+                self.assertTrue(r.ok, r.stderr)
+                self.assertEqual(_argv_seen(path_dir, "npx"), ["--no-install", verb, *expected])
+            with self.subTest(verb=verb, launcher="none"), tempfile.TemporaryDirectory() as d:
+                # With no runner anywhere the bare binary runs, and the missing runner named
+                # is the verb's own, never npx.
+                project, empty = Path(d) / "proj", Path(d) / "empty-path"
+                project.mkdir()
+                empty.mkdir()
+                argv = verify_ac._build_command(expr)[1]
+                with unittest.mock.patch.dict(os.environ, {"PATH": str(empty)}):
+                    self.assertEqual(verify_ac._node_runner_argv(argv, project), argv)
+                r = self._run(project, empty, expr)
+                self.assertEqual(r.exit_code, 127, r.stderr)
+                self.assertIn(f"'{verb}'", r.stderr)
+                self.assertNotIn("npx", r.stderr)
 
     def test_a_metacharacter_in_the_name_is_literal_or_warned(self) -> None:
         title = r"renders (empty) [list] a.b+c? ^x$ {1} | \ *"
@@ -122,6 +156,12 @@ class VitestFileAndNameTests(unittest.TestCase):
                 self.assertIsNotNone(re.search(pattern, title), pattern)
                 self.assertIsNone(re.search(pattern, near_miss), pattern)
                 self.assertNotEqual(pattern, title, "a metacharacter reached -t unescaped")
+                # A pipe is escaped too, so a name holding one is not an alternation that
+                # selects a test named after either half.
+                _kind, piped = verify_ac._build_command(f"{verb} {FILE} -t 'x | y'")
+                pipe = piped[piped.index("-t") + 1]
+                self.assertIsNotNone(re.search(pipe, "x | y"), pipe)
+                self.assertIsNone(re.search(pipe, "renders y"), pipe)
                 # Positive control: a plain name reaches -t untouched.
                 _kind, plain = verify_ac._build_command(f'{verb} {FILE} -t "{NAME}"')
                 self.assertEqual(plain[plain.index("-t") + 1], NAME)
@@ -132,6 +172,9 @@ class VitestFileAndNameTests(unittest.TestCase):
         asserts = [{"name": f"{FILE} -t {NAME}", "ok": True}, {"name": NAME, "ok": True}]
         self.assertIsNone(verify_ac.resolve_jest_from_cache(f"jest {FILE} -t {NAME}", asserts))
         self.assertIsNotNone(verify_ac.resolve_jest_from_cache(f'jest "{NAME}"', asserts))
+        # A malformed file-and-name line is no cache verdict and no crash either: the
+        # per-criterion run reports it as the invalid verifier it is.
+        self.assertIsNone(verify_ac.resolve_jest_from_cache(f"jest {FILE} -t", asserts))
 
 
 if __name__ == "__main__":

@@ -424,7 +424,9 @@ class HardeningTests(unittest.TestCase):
 
     def test_a_skill_path_with_a_space_is_quoted(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            skill = Path(d) / "my skill's $HOME `x`"
+            # Every character the double-quoted form escapes, a backslash before a `$` among
+            # them, and the single quote it does not.
+            skill = Path(d) / "my skill's $HOME `x` \"q\" a\\$HOME"
             (skill / "scripts").mkdir(parents=True)
             (skill / "scripts" / "verify_ac.py").write_text("# marker\n", encoding="utf-8")
             run = Path(d) / "run"
@@ -435,13 +437,19 @@ class HardeningTests(unittest.TestCase):
                                                 return_value=skill):
                     return verify_ac.run_verifier(cmd, timeout=10, cwd=run).ok
 
-            # One argument, bare or inside double quotes, as a shell variable would be.
+            # One argument, bare or inside double quotes.
             self.assertTrue(verdict("shell set -- <skill>/scripts/verify_ac.py; "
                                     "test $# -eq 1 && test -f \"$1\""))
             self.assertTrue(verdict("shell test -f <skill>/scripts/verify_ac.py"))
             self.assertTrue(verdict('shell test -f "<skill>/scripts/verify_ac.py"'))
             self.assertTrue(verdict('shell test -f "$(echo <skill>)/scripts/verify_ac.py" '
                                     '&& test -f <skill>/scripts/verify_ac.py'))
+            # A quoted string closes where the shell closes it, so what follows it is bare.
+            self.assertTrue(verdict("shell grep -q 'marker' <skill>/scripts/verify_ac.py"))
+            self.assertTrue(verdict('shell grep -q "marker" <skill>/scripts/verify_ac.py'))
+            # A subshell's parenthesis inside `$(...)` does not close the substitution early.
+            self.assertTrue(verdict('shell test -f '
+                                    '"$( (true); echo <skill>)/scripts/verify_ac.py"'))
             # An escaped quote opens no quoted string, so what follows it is still bare.
             self.assertTrue(verdict('shell set -- \\" <skill>/scripts/verify_ac.py; '
                                     'test $# -eq 2 && test -f "$2"'))
@@ -450,6 +458,15 @@ class HardeningTests(unittest.TestCase):
             self.assertFalse(verdict('shell test -f "<skill>/scripts/missing.py"'))
             # Single quotes keep it literal, so a line can still search for the placeholder.
             self.assertTrue(verdict("shell test '<skill>' = \"<\"skill\">\""))
+            # ANSI-C quoting, `$'...'`, keeps it literal too, and its escaped quote does not
+            # close the string, so a placeholder after it is bare. Read from the expansion,
+            # because a POSIX `sh` need not know `$'...'` at all.
+            expand = verify_ac._expand_skill_placeholder
+            self.assertEqual(expand("test $'a\\'b' = \"a'b\" && test -f <skill>/x", "/s p"),
+                             "test $'a\\'b' = \"a'b\" && test -f '/s p'/x")
+            self.assertEqual(expand("echo $'<skill>\\\\' <skill>", "/s p"),
+                             "echo $'<skill>\\\\' '/s p'")
+            self.assertEqual(expand("echo \"$'<skill>'\"", "/s p"), "echo \"$'/s p'\"")
 
     def test_verify_story_preserves_non_ascii(self) -> None:
         tmp = Path(tempfile.mkdtemp(prefix="verify_ac_unicode_"))
@@ -1069,6 +1086,17 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
         (other / ".git").write_text("gitdir: /nowhere\n", encoding="utf-8")
         (other / "pkg" / "tests" / "test_elsewhere.py").write_text(
             "class ElsewhereTests:\n    def test_x(self):\n        pass\n", encoding="utf-8")
+        # A dependency tree is not walked either.
+        (root / "node_modules" / "x").mkdir(parents=True)
+        (root / "node_modules" / "x" / "test_nm.py").write_text(
+            "class E:\n    def test_x(self):\n        pass\n", encoding="utf-8")
+        # Two files of one name, each defining a different test, one carrying doctests.
+        for pkg, body in (("a", '"""Helpers.\n\n>>> 1 + 1\n2\n"""\n\n\n'
+                                'class T:\n    """>>> True\n    True\n    """\n\n'
+                                "    def test_a(self):\n        pass\n"),
+                          ("b", "class T:\n    def test_b(self):\n        pass\n")):
+            (root / "pkg" / pkg).mkdir(parents=True)
+            (root / "pkg" / pkg / "test_utils.py").write_text(body, encoding="utf-8")
         specs = root / "sdlc-studio" / "test-specs"
         specs.mkdir(parents=True)
         spec = specs / "TS0001-x.md"
@@ -1088,19 +1116,27 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0003 | AC2 | test gone | pkg/tests/test_real.py::RealTests::test_gone | Pass |\n"
                 "| US0004 | AC3 | file gone | test_absent.py::AbsentTests::test_x | Pass |\n"
                 "| US0005 | AC5 | other tree | test_elsewhere.py::ElsewhereTests::test_x | Pass |\n"
-                "| US0006 | AC1 | wrong dir | wrong/dir/test_real.py::RealTests::test_real | Pass |\n")
+                "| US0006 | AC1 | wrong dir | wrong/dir/test_real.py::RealTests::test_real | Pass |\n"
+                "| US0007 | AC2 | in neither | test_utils.py::T::test_c | Pass |\n"
+                "| US0008 | AC3 | deps only | test_nm.py::E::test_x | Pass |\n"
+                "| US0009 | AC4 | prose stop | see pkg/tests/test_real.py::test_gone. | Pass |\n"
+                "| US0010 | AC5 | doctest, file gone | test_gone_doc.py::test_gone_doc.T | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, out = self._ts_check(root, self._project(root, rows))
             self.assertEqual(rc, 1, out)
             self.assertNotIn("ts-check: 0 finding(s)", out)
-            self.assertIn("ts-check: 5 finding(s)", out)
+            self.assertIn("ts-check: 9 finding(s)", out)
             lines = out.splitlines()
             for story, ac, name in (("US0002", "AC4", "DeletedTests"),
                                     ("US0003", "AC2", "test_gone"),
                                     ("US0004", "AC3", "test_absent.py"),
                                     ("US0005", "AC5", "test_elsewhere.py"),
-                                    ("US0006", "AC1", "wrong/dir/test_real.py")):
+                                    ("US0006", "AC1", "wrong/dir/test_real.py"),
+                                    ("US0007", "AC2", "nor in the 1 other file(s) so named"),
+                                    ("US0008", "AC3", "test_nm.py"),
+                                    ("US0009", "AC4", "test_gone"),
+                                    ("US0010", "AC5", "test_gone_doc.py")):
                 hit = [ln for ln in lines if story in ln]
                 self.assertEqual(len(hit), 1, f"no single finding names row {story}:\n{out}")
                 self.assertTrue(hit[0].lstrip().startswith(f"{ac}:"), hit[0])
@@ -1113,6 +1149,17 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0001 | AC3 | param | `test_real.py::RealTests::test_real[case-1]` | Pass |\n"
                 "| US0001 | AC4 | inherited | test_real.py::ChildTests::test_shared | Pass |\n"
                 "| US0001 | AC5 | base unread | test_real.py::ImportedBaseTests::test_any | Pass |\n"
+                # A name two files share resolves when either file defines the test.
+                "| US0003 | AC1 | first of two | test_utils.py::T::test_a | Pass |\n"
+                "| US0003 | AC2 | second of two | test_utils.py::T::test_b | Pass |\n"
+                # pytest's doctest form names a docstring, not a test definition.
+                "| US0003 | AC3 | class doctest | pkg/a/test_utils.py::test_utils.T | Pass |\n"
+                "| US0003 | AC4 | module doctest | pkg/a/test_utils.py::test_utils | Pass |\n"
+                "| US0003 | AC5 | package doctest | pkg/a/test_utils.py::a.test_utils.T | Pass |\n"
+                # An explicit path resolves wherever it leads, though the walk skips the tree.
+                "| US0004 | AC1 | nested by path | "
+                ".claude/worktrees/other/pkg/tests/test_elsewhere.py::ElsewhereTests::test_x | Pass |\n"
+                "| US0004 | AC2 | deps by path | node_modules/x/test_nm.py::E::test_x | Pass |\n"
                 "| US0002 | AC1 | manual | manual: read the rendered page | Pass |\n"
                 "| US0002 | AC2 | shell | shell grep (see story Verify) | Pass |\n")
         with tempfile.TemporaryDirectory() as d:

@@ -815,24 +815,29 @@ SKILL_PLACEHOLDER = "<skill>"
 def _expand_skill_placeholder(command: str, skill_dir: Path | str) -> str:
     """`command` with every expandable skill placeholder replaced by `skill_dir`, quoted.
 
-    The placeholder behaves as a shell variable would: it expands bare and inside double
-    quotes, and stays literal inside single quotes, so a line can still search for the
-    placeholder itself. Bare, the shell would otherwise read it as an input
-    redirect from a file called `skill`. Each expansion is quoted for where it lands, so a
-    directory holding a space, a quote or a `$` reaches the command as one argument. A command
-    substitution, `$(...)`, opens a fresh context even inside double quotes. Old-style
-    backticks are not tracked, so a line that substitutes the placeholder writes `$(...)`.
+    It expands bare, inside double quotes and inside a command substitution, `$(...)`, which
+    opens a fresh context even inside double quotes. It stays literal inside single quotes and
+    inside ANSI-C quoting, `$'...'`, where a backslash escapes the next character, so a line
+    can still search for the placeholder itself. Bare, the shell would otherwise read it as an
+    input redirect from a file called `skill`. Each expansion is quoted for where it lands, so
+    a directory holding a space, a quote, a backslash or a `$` reaches the command as one
+    argument. Old-style backticks are not tracked, so a line that substitutes the placeholder
+    writes `$(...)`.
     """
     bare = shlex.quote(str(skill_dir))
     in_dq = re.sub(r'([\\$`"])', r"\\\1", str(skill_dir))
     out: list[str] = []
     # "code" the top level and "cs" inside `$(` (both read the placeholder bare), "dq" inside
-    # double quotes, "sq" inside single quotes.
+    # double quotes, "sq" inside single quotes, "ansi" inside `$'...'`.
     stack = ["code"]
     i, n = 0, len(command)
     while i < n:
         state, ch = stack[-1], command[i]
-        if state == "sq":
+        if state in ("sq", "ansi"):
+            if ch == "\\" and state == "ansi":
+                out.append(command[i:i + 2])
+                i += 2
+                continue
             if ch == "'":
                 stack.pop()
             out.append(ch)
@@ -849,6 +854,11 @@ def _expand_skill_placeholder(command: str, skill_dir: Path | str) -> str:
         if command.startswith("$(", i):
             stack.append("cs")
             out.append("$(")
+            i += 2
+            continue
+        if state != "dq" and command.startswith("$'", i):
+            stack.append("ansi")
+            out.append("$'")
             i += 2
             continue
         if state == "dq":
@@ -2181,7 +2191,9 @@ def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[s
             # The bare form: the whole tail is the name pattern, a regex, as it always was.
             return head, [*base, "-t", tail.strip('"\'')]
         rest, name = named
-        return head, [*base, *rest, "-t", _js_regex_literal(name)]
+        # The name goes in front of a `--`, after which the runner reads no option at all.
+        cut = rest.index("--") if "--" in rest else len(rest)
+        return head, [*base, *rest[:cut], "-t", _js_regex_literal(name), *rest[cut:]]
     if head == "go" and tail:
         # Format: go <path> -run <node>
         return "go", ["go", "test"] + shlex.split(tail)
@@ -3992,8 +4004,10 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
 
 
 # A pytest node id in a Test Cases cell: a `.py` file, then `::` and the names inside it. A
-# parametrisation suffix (`[case-1]`) is left off, since it names a case, not a definition.
-_NODE_ID_RE = re.compile(r"(?<![\w./-])((?:[\w.-]+/)*[\w.-]*\w\.py)((?:::[A-Za-z_]\w*)+)")
+# parametrisation suffix (`[case-1]`) is left off, since it names a case, not a definition. A
+# dotted name is read whole, since `file.py::module.name` is pytest's doctest form.
+_NODE_ID_RE = re.compile(
+    r"(?<![\w./-])((?:[\w.-]+/)*[\w.-]*\w\.py)((?:::[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)+)")
 # Directories never searched for a named test file: tool caches and dependency trees.
 _TREE_SKIP = {".git", "node_modules", "__pycache__", ".venv", "venv", ".tox", ".mypy_cache",
               ".pytest_cache", ".ruff_cache"}
@@ -4002,10 +4016,12 @@ _TREE_SKIP = {".git", "node_modules", "__pycache__", ".venv", "venv", ".tox", ".
 class _TestTree:
     """The project's own Python files, for resolving the node ids a test-spec matrix names.
 
-    A node id whose file part holds a `/` is looked up at that path from the root, or failing
-    that as the end of a longer path; a bare file name matches any file of that name. A nested
-    checkout (a directory holding its own `.git`, such as a worktree) is another tree, so what
-    only it defines does not resolve here. The walk is made once, and only when a name needs it.
+    A node id whose file part holds a `/` is looked up at that path from the root, wherever it
+    leads, or failing that as the end of a longer path among the walked files; a bare file name
+    matches any walked file of that name. The walk skips tool caches, dependency trees and
+    nested checkouts (a directory holding its own `.git`, such as a worktree), so what only
+    they define resolves through its explicit path alone. The walk is made once, and only when
+    a name needs it.
     """
 
     def __init__(self, root: Path) -> None:
@@ -4034,7 +4050,10 @@ class _TestTree:
                 if "/" not in name or f.as_posix().endswith(tail)]
 
     def unresolved(self, cell: str) -> list[tuple[str, str]]:
-        """`(node id, why)` for each node id in `cell` that nothing in the tree defines."""
+        """`(node id, why)` for each node id in `cell` that nothing in the tree defines.
+
+        pytest's doctest form, `file.py::module.name` or a module's own `file.py::module`, names
+        a docstring rather than a test definition, so only its file is resolved."""
         out = []
         for m in _NODE_ID_RE.finditer(cell or ""):
             found = self.files(m.group(1))
@@ -4042,6 +4061,8 @@ class _TestTree:
                 out.append((m.group(0), f"no file {m.group(1)} in the tree"))
                 continue
             names = m.group(2).split("::")[1:]
+            if "." in names[0] or names == [Path(m.group(1)).stem]:
+                continue
             whys = [_names_defined(self._parse(f), names) for f in found]
             if all(whys):
                 more = f" (nor in the {len(whys) - 1} other file(s) so named)" if len(whys) > 1 else ""

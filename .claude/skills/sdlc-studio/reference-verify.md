@@ -134,8 +134,8 @@ directory). Every verifier has a `--timeout` limit (default 120s).
 machine's install path. Write `<skill>` for the skill directory, as in
 `shell test -f <skill>/scripts/verify_ac.py`. Just before a `shell` verifier runs, verify_ac
 puts the directory it was loaded from in its place, quoted, so a path holding a space stays
-one argument; the artefact keeps the placeholder. It expands bare and inside double quotes, as
-a shell variable would, and stays literal inside single quotes.
+one argument; the artefact keeps the placeholder. It expands bare, inside double quotes and in
+`$(...)`, stays literal inside single quotes and `$'...'`, and backticks are not tracked.
 
 ## Writing Good Verifiers {#verify-writing-good}
 
