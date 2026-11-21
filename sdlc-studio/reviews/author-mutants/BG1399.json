@@ -1,0 +1,106 @@
+{
+  "unit": "BG1399",
+  "digest": "9cdec9edc04dc817 at 09cf0766d830",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1399-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "one worktree's self-check judged only after the commit, as before",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        lanes_[0].units = list(units)\n        _refuse_self_checks(root_top, lanes_)\n",
+      "new": "        lanes_[0].units = list(units)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "several worktrees' self-checks judged only after the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _refuse_overlap(lanes_, 2)\n    _refuse_self_checks(root_top, lanes_)\n",
+      "new": "    _refuse_overlap(lanes_, 2)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitSeveralTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a file the critic cannot read let through to the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except (OSError, ValueError) as exc:\n        return str(exc)\n    return None\n",
+      "new": "    except (OSError, ValueError) as exc:\n        return None\n    return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_every_cause_the_critic_refuses_is_judged_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the runner report left unjudged before the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        listed = critic.mutants_from_report(report, unit) if report.is_file() else []\n",
+      "new": "        listed = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_every_cause_the_critic_refuses_is_judged_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the mutants listed by hand left unjudged before the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        by_hand = critic._entries(str(mutants), \"mutants\") if mutants.is_file() else []  # noqa: SLF001\n",
+      "new": "        by_hand = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_every_cause_the_critic_refuses_is_judged_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a hand-in with no self-check files refused before the commit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if not claims.is_file() or not (mutants.is_file() or report.is_file()):\n        return None\n",
+      "new": "    if not claims.is_file() or not (mutants.is_file() or report.is_file()):\n        return \"no self-check handed in\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_a_hand_in_with_no_self_check_files_is_not_judged_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal exits 1, as a landing stopped part way",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"hand-in in the worktree and land again\", 2)\n",
+      "new": "f\"hand-in in the worktree and land again\", 1)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_a_self_check_missing_a_required_surface_is_refused_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "judged against the worktree's copy of the unit, not the root's",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        scope = root_top if sdlc_md.find_by_id(root_top, unit) else lane.top\n",
+      "new": "        scope = lane.top\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_the_self_check_is_judged_against_the_affects_on_the_root",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "judged against the root only, so a unit the lane adds is refused",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        scope = root_top if sdlc_md.find_by_id(root_top, unit) else lane.top\n",
+      "new": "        scope = root_top\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py::SelfCheckBeforeCommitTests::test_a_unit_only_the_lane_holds_is_judged_against_its_own_file",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: B's claims file kept whole, so the first landing completes and nothing is left to resume",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_resume.py",
+      "old": "        claims.unlink()\n",
+      "new": "        pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_resume.py::LaneLandResumeTests::test_a_landing_stopped_after_the_fast_forward_resumes_without_its_worktree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the refused landing's claims miss the fragment again, so the hook never runs",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py",
+      "old": "            [{\"surface\": \"commit message\", \"claim\": \"a\", \"ruling\": \"TRUE\"},\n             {\"surface\": f\"changelog.d/{UNIT}.md\", \"claim\": \"a\", \"ruling\": \"TRUE\"}]))\n",
+      "new": "            [{\"surface\": \"commit message\", \"claim\": \"a\", \"ruling\": \"TRUE\"}]))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py::LaneBriefRepairScopeTests::test_a_refused_landing_yields_a_repair_brief_with_the_refusal_verbatim",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

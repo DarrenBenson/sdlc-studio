@@ -1,0 +1,61 @@
+{
+  "unit": "BG1614",
+  "digest": "10758bf0acfbf78c at 09cf0766d830",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1614-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the BRIEF header ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    stem = critic._header_lines(said.replace(\"\\r\\n\", \"\\n\")).get(\"BRIEF\")  # noqa: SLF001\n",
+      "new": "    stem = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a header naming no noted brief falls back to the saved brief",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if stem and issued is None:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the header's brief taken whenever it was noted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if landed_at is None or n < landed_at:\n",
+      "new": "    if landed_at is None:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the header matched on another unit's notes too",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if not isinstance(row, dict) or row.get(\"unit\") != uid:\n            continue\n        if row.get(\"fp\") == fp:\n",
+      "new": "        if not isinstance(row, dict):\n            continue\n        if row.get(\"unit\") == uid and row.get(\"fp\") == fp:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a verdict file that is not UTF-8 ends in a traceback",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    except (OSError, UnicodeDecodeError) as exc:\n",
+      "new": "    except OSError as exc:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the second seat answers with no BRIEF header",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py",
+      "old": "        rc, out, err = self._accept(GREEN, f\"UNIT: {GREEN}\\nBRIEF: {path.stem}\\n{APPROVE}\",\n                                    at=path, reviewer=ENGINEER)\n        self.assertRegex(",
+      "new": "        rc, out, err = self._accept(GREEN, f\"UNIT: {GREEN}\\n{APPROVE}\",\n                                    at=path, reviewer=ENGINEER)\n        self.assertRegex(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_second_seat_verdict_records_against_the_brief_its_header_names",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

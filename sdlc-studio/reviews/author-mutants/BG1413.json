@@ -1,0 +1,34 @@
+{
+  "unit": "BG1413",
+  "digest": "0a25354548f1ca2f at 09cf0766d830",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1413-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the SIGKILL sent after the grace's wait, outside a finally",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    finally:\n        if not emptied:\n            with contextlib.suppress(OSError):\n                os.killpg(proc.pid, signal.SIGKILL)\n                killed = True\n        proc.wait()\n",
+      "new": "    except BaseException:\n        raise\n    if not emptied:\n        with contextlib.suppress(OSError):\n            os.killpg(proc.pid, signal.SIGKILL)\n            killed = True\n    proc.wait()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the leader left unreaped after an interrupted grace",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                os.killpg(proc.pid, signal.SIGKILL)\n                killed = True\n        proc.wait()\n",
+      "new": "                os.killpg(proc.pid, signal.SIGKILL)\n                killed = True\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests::test_an_interrupted_grace_sigkills_the_group_and_propagates",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the deaf child answers SIGTERM, so nothing is left for the SIGKILL",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py",
+      "old": "        \"signal.signal(signal.SIGTERM, signal.SIG_IGN)\\n\"\n",
+      "new": "        \"signal.signal(signal.SIGTERM, signal.SIG_DFL)\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py::KillGraceInterruptTests",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

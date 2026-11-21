@@ -1,0 +1,34 @@
+{
+  "unit": "BG1610",
+  "digest": "702bedea5d75c9d8 at 09cf0766d830",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1610-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the commit run with subprocess.run(timeout=...) again, killing only git",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        done = _bounded([\"git\", \"-C\", str(wt_top), \"commit\", \"-F\", str(msg)], COMMIT_TIMEOUT,\n                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\n",
+      "new": "        done = subprocess.run([\"git\", \"-C\", str(wt_top), \"commit\", \"-F\", str(msg)],\n                              timeout=COMMIT_TIMEOUT, text=True, check=False,\n                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only a timeout ends the group, not a Ctrl-C",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            out, err = proc.communicate(timeout=timeout)\n        except BaseException:\n",
+      "new": "            out, err = proc.communicate(timeout=timeout)\n        except subprocess.TimeoutExpired:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the hook does not wait on its child, so the commit ends inside the bound",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
+      "old": "echo $! > \"{dir}/child.pid\"\nwait\n",
+      "new": "echo $! > \"{dir}/child.pid\"\nexit 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_bound_stops_the_hook_and_its_child_and_commits_nothing",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}
