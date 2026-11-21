@@ -27,9 +27,11 @@ Rebase the lane onto main before the hook run so a conflict refuses first, and r
 - [ ] **AC1** Given a lane whose rebase onto main conflicts, when `lane land` runs, then it refuses before the commit hooks run. Fails on: a hook run spent first.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests
 - [ ] **AC2** Given two lanes that each regenerated the surface page, when the second lands, then its commit carries the page regenerated over both. Fails on: a drift refusal.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | AC2 given an executable Verify line (run twenty-one goal review) |

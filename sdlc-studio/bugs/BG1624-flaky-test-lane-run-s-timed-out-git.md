@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, changelog.d/BG1624.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, changelog.d/BG1624.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py
 > **Evidence:** run eighteen, 2026-11-19: push of 294770b0 refused, devserver1 boundary-suite-last.log lines 221-240; 1 failed, 9292 passed
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,14 +24,12 @@ Make the test independent of the grace window (wait for the loop's git add to fi
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: LaneTimeoutTermsFirstTests::`test_a_timed_out_git_add_loop_leaves_no_index_lock` failed once at the push boundary on devserver1 (commit 294770b0): 'a killed...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Run .claude/skills/sdlc-studio/scripts/tests/`test_lane_run.py`::LaneTimeoutTermsFirstTests under the push boundary's parallel full suite on a loaded host: it...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Make the test independent of the grace window (wait for the loop's git add to finish a write before the timeout, or give the lane a timeout and grace the host...
-
-- Recurred in run twenty (RUN-01M7VNR0, 2026-11-20): the commit lane of `lane land` for the US1056/US1057/US1322 repair failed on `LaneTimeoutTermsFirstTests::test_a_timed_out_git_add_loop_leaves_no_index_lock` (index.lock left) with 4406 other tests green, locally under load during a 1017s selection; the landing was re-run with `--resume`.
+- [ ] **AC1** Given a lane run with `--timeout 1` whose git add loop is killed under a loaded host's parallel suite, when `sprint.py lane run` stops it, then no `index.lock` is left in the worktree on any of repeated runs, and a SIGKILL-first kill order still fails the test. Fails on: a killed git add leaves index.lock, so the test fails intermittently on the gate host.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

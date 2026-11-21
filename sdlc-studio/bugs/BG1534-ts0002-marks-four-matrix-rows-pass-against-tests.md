@@ -33,9 +33,11 @@ Extend `ts_check` in `verify_ac.py` so that a matrix row marked with a pass word
 - [ ] **AC2** Given the same spec with one Pass row naming a test that exists in the tree and one whose Test Cases cell names no test file (a manual check), when `ts-check` reads it, then neither row is reported. Fails on: a finding against a resolvable row, or against a cell that names no file.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings
 - [ ] **AC3** Given `sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md` after the fix, when `ts-check --spec` reads it with the new resolution, then it reports no finding: the rows for US0052 AC4 and US0054 AC1, AC2 and AC4 match the stories' manual Verify lines after US0921 and the spec no longer describes a gate mutation lane as live. Fails on: a row still naming `MutationLaneTests` or `test_runner_error_not_a_kill`.
+  - **Verify:** shell python3 .claude/skills/sdlc-studio/scripts/verify_ac.py ts-check --spec sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md | grep -q 'ts-check: 0 finding(s)'
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | AC3 given an executable Verify line (run twenty-one goal review) |

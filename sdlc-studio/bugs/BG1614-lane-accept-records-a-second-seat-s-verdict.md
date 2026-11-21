@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1614.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1614.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py
 > **Evidence:** run eighteen also hit it with critic.py record: US1198's round-two record warned the criteria changed since brief bb6e1cb2124b (now 2c77fe936603) only because verify_ac run had stamped the criteria between the brief and the record; the warning cannot tell a stamp from a changed scope
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ Have lane accept read the verdict file's BRIEF header and record against that br
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint.py lane accept --unit <id> --verdict <file> --reviewer '<holder> (engineering)'` records the verdict against the qa brief lane land saved for the unit...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: For a high-risk unit, record the qa seat's APPROVE with `lane accept`, then run `critic.py brief --unit <id> --seat engineering`, have a reviewer write that...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Have lane accept read the verdict file's BRIEF header and record against that brief when it names a saved brief for the unit, refusing a header that names...
+- [ ] **AC1** Given a high-risk unit whose qa verdict is recorded and an engineering brief printed by `critic.py brief --unit <id> --seat engineering`, when `sprint.py lane accept --unit <id> --verdict <that brief's verdict file> --reviewer 'agent-x (engineering)'` runs, then the row is recorded against the brief the file's BRIEF header names, and a header naming no saved brief for the unit is refused. Fails on: the row is recorded against the saved qa brief's fingerprint, ignoring the BRIEF header.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

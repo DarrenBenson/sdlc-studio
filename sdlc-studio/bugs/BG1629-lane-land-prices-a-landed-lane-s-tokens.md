@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1629.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1629.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py
 > **Evidence:** run eighteen, 2026-11-19: sdlc-studio/reports/RPT0037-sprint-report-run-01m7ss62.md Estimates table
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ Have lane land record --delegated-minutes from the transcript's first and last m
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run eighteen's report (RPT0037) shows minutes NOT MEASURED for the seven units that had a repair round (US1192, US1196, US1197, US1198, US1201, US1202...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Land a unit, REJECT it, land its repair with lane land, close the run: the unit's Minutes cell reads NOT MEASURED.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Have lane land record --delegated-minutes from the transcript's first and last message times beside the tokens it prices, split by points as the tokens are.
+- [ ] **AC1** Given a unit landed, REJECTed and its repair landed with `sprint.py lane land`, when the run is closed, then the unit's Minutes cell shows minutes taken from the builder transcript's first and last message times, split by points as the tokens are, not NOT MEASURED. Fails on: the land records tokens but no `--delegated-minutes`, so the cell reads NOT MEASURED.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

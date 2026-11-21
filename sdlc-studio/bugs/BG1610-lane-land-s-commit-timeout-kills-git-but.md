@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1610.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1610.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py
 > **Evidence:** run eighteen, 2026-11-19, lane L1 (US1192, US1193): the land stopped at 1800s; 23 minutes later the orphaned commit-msg hook (parent 990) and eight pytest workers were still running in the lane's worktree, at load 15 on 8 cores, and were stopped by hand
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ Start the commit in its own session (`start_new_session=True`) and, on the timeo
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `lib/lanes.py` `_commit` runs `git commit` through `subprocess.run(..., timeout=COMMIT_TIMEOUT)`.
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: On a loaded host, run `sprint.py lane land --worktree <wt> --units <id>` whose commit hooks take longer than 1800s.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Start the commit in its own session (`start_new_session=True`) and, on the timeout, kill the whole process group before raising, so 'were stopped' is true; pin...
+- [ ] **AC1** Given a commit-msg hook stub that spawns a long-lived child and a shrunk `COMMIT_TIMEOUT`, when `sprint.py lane land --worktree <wt> --units <id>` runs and the bound fires, then it reports nothing committed and no hook or child process of the commit is left running, so 'were stopped' is true. Fails on: the hook and its children are reparented to init and keep running after the land exits.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

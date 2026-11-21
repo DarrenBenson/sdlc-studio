@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py
 > **Evidence:** round two of the engineering seat on US1202 (sdlc-studio/reviews/verdicts/US1202/a035ef15c560-e539f377.txt): when the brief bound fires, the stop advises critic.py brief --unit <id> --seat qa (lib/lanes.py around 323), but lane accept still refuses with exit 2 afterwards because no saved QA brief exists; the advice must name a command that saves the brief lane accept reads
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ Start critic.py brief in its own process group and end the group (SIGTERM, then 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: Run eighteen's repair of US1202 bounds the QA brief lane land asks for by `critic.BRIEF_TIMEOUT` (780s, above the replay's own 600s) and reports a timed-out...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Shrink `critic.BRIEF_TIMEOUT` below the replay's run time in a fixture and run sprint.py lane land: the land stops, and the runner and its pytest children...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Start critic.py brief in its own process group and end the group (SIGTERM, then SIGKILL after a grace) when the bound fires, so the runner removes its scratch...
+- [ ] **AC1** Given `critic.BRIEF_TIMEOUT` shrunk below the replay's run time in a fixture, when `sprint.py lane land` runs and the bound fires, then it stops and no mutation runner or pytest child the replay started outlives the stop, and the replay's scratch copy is removed. Fails on: only critic.py is killed, so the runner and its pytest children keep running and the scratch copy stays.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

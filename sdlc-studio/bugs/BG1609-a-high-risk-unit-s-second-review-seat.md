@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, changelog.d/BG1609.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, changelog.d/BG1609.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py
 > **Evidence:** run eighteen, 2026-11-19, US1238: `critic.py brief --unit US1238 --seat engineering` printed the record line with --reviewer 'Dani Okafor (engineering)' and the self-review note; runs sixteen and seventeen recorded only the QA seat on high-risk units
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -24,12 +24,12 @@ Choose the second seat as a seat other than the building seat (product when the 
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: `sprint plan` gives every high-risk unit a second review seat of engineering, and `sprint lane brief` builds every unit under the engineering seat by default...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Plan a batch holding a unit tagged Risk-class high, build it with `sprint lane brief` (no --seat) and `lane land --author 'Dani Okafor (engineering)'`, then...
-- [ ] **AC3** The proposed fix lands, pinned by a test: Choose the second seat as a seat other than the building seat (product when the builder is engineering), or have the lane brief name the building seat and the...
+- [ ] **AC1** Given a batch holding a unit tagged Risk-class high built with `sprint lane brief` (no --seat) and landed with `lane land --author 'Dani Okafor (engineering)'`, when `critic.py brief --unit <id> --seat <the planned second seat>` runs, then the printed `--reviewer` is not the building seat's holder and the output carries no self-review note. Fails on: the second seat is engineering, the building seat, so the record line names the author as reviewer and notes a self-review.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests
 
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |

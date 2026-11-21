@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1582.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1582.md, .claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py
 > **Evidence:** US1290 QA round-2 verdict, sdlc-studio/reviews/verdicts/US1290/b9e0f15856ad-b543e9a9.txt; ruling D0524.
 > **Created:** 2026-11-18
 > **Created-by:** sdlc-studio file
@@ -24,9 +24,8 @@ Keep the committed-close judgement, and also refuse an uncommitted change to a f
 
 ## Acceptance Criteria
 
-- [ ] **AC1** The behaviour described is corrected: US1290's repair (run sixteen) implements D0524: once HEAD has moved past the commit that filed the waiting run's record, sign judges the run against that...
-- [ ] **AC2** Following the recorded steps no longer reproduces the defect: Close a run, commit the close, add one empty commit, edit a file a batch unit declares without committing, run sprint sign: it seals.
-- [ ] **AC3** The proposed fix lands, pinned by a test: Keep the committed-close judgement, and also refuse an uncommitted change to a file the waiting batch declared, whatever HEAD is; or apply the committed-close...
+- [ ] **AC1** Given a run closed and committed, then one empty commit on top and no later run open, and an uncommitted edit to a file a batch unit declares, when `sprint.py sign --report <the run's report> --principal <operator>` runs, then it refuses and names the edited file, and seals nothing. Fails on: sign seals the run with the edit still uncommitted.
+  - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests
 
 ## Impact
 
@@ -37,3 +36,4 @@ A signature can attest a run whose working tree the report no longer describes, 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |
