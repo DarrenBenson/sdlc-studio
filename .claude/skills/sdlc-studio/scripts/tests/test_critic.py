@@ -4144,7 +4144,6 @@ class BriefAuthorMutantsTests(unittest.TestCase):
         """`sprint.py lane land`'s record-and-brief step over a hand-in of the fixture's claims
         and runner report: (ok, the unit's line, the bound each `critic.py brief` was given),
         that bound replaced by `brief_bound` when one is given. The commands run for real."""
-        import subprocess  # noqa: PLC0415
         from lib import lanes  # noqa: PLC0415
         keep = root.parent / "hand-in"
         keep.mkdir()
@@ -4152,16 +4151,18 @@ class BriefAuthorMutantsTests(unittest.TestCase):
         (keep / claims).write_text(json.dumps(self.CLAIMS), encoding="utf-8")
         shutil.copy(Path(self._tmp.name) / "report.json",
                     keep / lanes.report_hand_in_name("US0101"))
-        real, seen = subprocess.run, []
+        # lane land runs critic.py through `lanes._bounded(cmd, timeout, ...)`, in a session of
+        # its own so a bound that fires ends the replay's whole process group
+        real, seen = lanes._bounded, []
 
-        def run(argv, *args, **kwargs):
+        def bounded(argv, timeout, *args, **kwargs):
             if isinstance(argv, list) and str(lanes.CRITIC) in argv and "brief" in argv:
-                seen.append(kwargs.get("timeout"))
+                seen.append(timeout)
                 if brief_bound is not None:
-                    kwargs["timeout"] = brief_bound
-            return real(argv, *args, **kwargs)
+                    timeout = brief_bound
+            return real(argv, timeout, *args, **kwargs)
 
-        with unittest.mock.patch.object(subprocess, "run", run):
+        with unittest.mock.patch.object(lanes, "_bounded", bounded):
             good, line = lanes._record_and_brief(root, keep, "US0101", "builder-7")
         return good, line, seen
 

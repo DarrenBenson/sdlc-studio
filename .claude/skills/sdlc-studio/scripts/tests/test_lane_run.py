@@ -110,12 +110,6 @@ if trap:
     while not os.path.exists(trap + ".ready"):
         time.sleep(0.01)
     child.wait()
-grow = os.environ.get("FAKE_LOOP")
-while grow:
-    # stage a growing file until stopped, so a kill can land while git holds index.lock
-    with open(grow, "a") as fh:
-        fh.write("x" * 4096)
-    subprocess.run(["git", "add", "--", grow], check=False)
 out = os.environ.get("FAKE_OUT_" + name.replace("-", "_").upper())
 if out and os.environ.get("FAKE_MODE") != "silent":
     sys.stdout.write(open(out).read())
@@ -223,7 +217,7 @@ class _LaneCase(unittest.TestCase):
         patch.start()
         self.addCleanup(patch.stop)
         for k in ("FAKE_MODE", "FAKE_EXIT", "FAKE_STAGE", "FAKE_LATE", "FAKE_SIGNAL",
-                  "FAKE_LATE_SLEEP", "FAKE_ORPHAN", "FAKE_TRAP", "FAKE_LOOP"):
+                  "FAKE_LATE_SLEEP", "FAKE_ORPHAN", "FAKE_TRAP"):
             os.environ.pop(k, None)
         _write(base / "transcripts", "orchestrator.jsonl", json.dumps(
             {"type": "assistant", "cwd": str(self.root), "message": {
@@ -673,7 +667,9 @@ class LaneRunTests(_LaneCase):
 
 
 class LaneTimeoutTermsFirstTests(_LaneCase):
-    """BG1262 AC1: a timed-out lane's group is sent SIGTERM, given its grace, then SIGKILL."""
+    """BG1262 AC1: a timed-out lane's group is sent SIGTERM, given its grace, then SIGKILL. A
+    timed-out `git add` loop leaving no `index.lock` is `test_lane_timeout_index_lock`'s, run
+    there repeatedly in fresh worktrees."""
 
     def test_a_child_that_traps_sigterm_writes_its_marker_before_the_kill(self) -> None:
         """MUTANTS: SIGKILL with no SIGTERM first (the trap never runs, no marker); the grace
@@ -688,19 +684,6 @@ class LaneTimeoutTermsFirstTests(_LaneCase):
         self.assertTrue((self.log / "term.ready").exists(), "the trapping child never started")
         self.assertEqual("TERM", marker.read_text() if marker.exists() else None,
                          "the child was killed before its SIGTERM trap could write")
-
-    def test_a_timed_out_git_add_loop_leaves_no_index_lock(self) -> None:
-        """MUTANT: SIGKILL first (a `git add` killed mid-write leaves `index.lock`, and the
-        commit `lane land` needs refuses). Positive control: the loop staged its file."""
-        wt = self._worktree()
-        with unittest.mock.patch.dict(os.environ, {"FAKE_LOOP": str(wt / "src" / "grow.txt")}):
-            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "1")
-        self.assertEqual(1, rc, out)
-        self.assertIn("src/grow.txt", self._record()["staged"])
-        gitdir = Path(_git(wt, "rev-parse", "--absolute-git-dir"))
-        self.assertFalse((gitdir / "index.lock").exists(), "a killed git add left index.lock")
-        done = gitutil.git(["commit", "-q", "-m", "chore: the lane's work"], wt, check=False)
-        self.assertEqual(0, done.returncode, done.stderr)
 
 
 class LaneLeftoverChildTests(_LaneCase):

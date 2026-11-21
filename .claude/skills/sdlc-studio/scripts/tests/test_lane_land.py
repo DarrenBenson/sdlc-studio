@@ -316,16 +316,21 @@ class LaneLandTests(_LaneFixture):
         self.assertFalse((self.root / f"sdlc-studio/.local/briefs/{B}-qa.txt").exists())
 
     def test_a_self_check_the_critic_refuses_is_named_and_leaves_no_brief(self) -> None:
+        """Judged before the commit, so it is refused with nothing landed and the worktree kept
+        (`test_self_check_before_commit` holds the rest of that criterion)."""
+        main = _git(self.root, "rev-parse", "HEAD")
         self._stage("src/a.py", "A = 2\n")
         self._hand_in()
         # no claim from the changelog fragment A's Affects declares: `critic.py` refuses it
         _write(self.wt, f"sdlc-studio/.local/lane/{A}-claims.json", json.dumps(
             [{"surface": "commit message", "claim": "a is two", "ruling": "TRUE"}]))
         r = self._land(A)
-        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
-        self.assertIn(f"{A}: self-check REFUSED and no brief written", r.stderr)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"{A}'s self-check", r.stderr)
         self.assertIn(f"no claim from the changelog.d/{A}.md", r.stderr,
                       "the critic's own reason was not carried")
+        self.assertEqual(main, _git(self.root, "rev-parse", "HEAD"))
+        self.assertTrue(self.wt.is_dir())
         self.assertEqual([], critic.read_self_checks(self.root))
         self.assertFalse((self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").exists())
 

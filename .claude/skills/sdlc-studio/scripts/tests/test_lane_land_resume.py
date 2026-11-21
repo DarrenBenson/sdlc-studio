@@ -105,13 +105,16 @@ class LaneLandResumeTests(lane_land._LaneFixture):
                           ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
             self._stage(rel, body)
         self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
-        whole = (self.wt / LANE / f"{B}-claims.json").read_text(encoding="utf-8")
-        # no claim from the changelog fragment B's Affects declares: `critic.py` refuses it
-        _write(self.wt, f"{LANE}/{B}-claims.json", json.dumps(
-            [{"surface": "commit message", "claim": "b is two", "ruling": "TRUE"}]))
+        claims = self.wt / LANE / f"{B}-claims.json"
+        whole = claims.read_text(encoding="utf-8")
+        # B's hand-in carries no claims file: a self-check the critic would refuse is refused
+        # before the commit, so the one stop left after the fast-forward is a self-check the
+        # landing could not record at all
+        claims.unlink()
         r = self._land(A, B)
         self.assertEqual(1, r.returncode, r.stdout + r.stderr)
-        self.assertIn(f"{B}: self-check REFUSED", r.stderr)
+        self.assertIn(f"{B}: self-check NOT RECORDED", r.stderr)
+        self.assertEqual("self-check", self._record()["stopped_at"])
         self.assertFalse(self.wt.exists(), "the first landing did not remove the worktree")
         head, briefed = _git(self.root, "rev-parse", "HEAD"), self._brief(A).stat()
         self.assertFalse(self._brief(B).exists())

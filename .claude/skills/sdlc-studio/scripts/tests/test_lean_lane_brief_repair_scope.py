@@ -157,8 +157,10 @@ class LaneBriefRepairScopeTests(unittest.TestCase):
         gitutil.git(["add", "--", "src/refuse.py"], wt)
         lane = "sdlc-studio/.local/lane"
         _write(wt, f"{lane}/commit-msg.txt", f"feat({UNIT}): a refusal\n")
+        # a whole self-check: lane land judges it before the commit, so the hook is what refuses
         _write(wt, f"{lane}/{UNIT}-claims.json", json.dumps(
-            [{"surface": "commit message", "claim": "a", "ruling": "TRUE"}]))
+            [{"surface": "commit message", "claim": "a", "ruling": "TRUE"},
+             {"surface": f"changelog.d/{UNIT}.md", "claim": "a", "ruling": "TRUE"}]))
         _write(wt, f"{lane}/{UNIT}-mutants.json", "[]")
         r = subprocess.run([sys.executable, "-B", str(SCRIPTS / "sprint.py"), "lane", "land",
                             "--worktree", str(wt), "--units", UNIT, "--root", str(root)],

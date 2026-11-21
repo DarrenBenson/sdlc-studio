@@ -53,8 +53,6 @@ MUTANTS = [{"mutant": "a stays one", "test": "tests/test_a.py::test_a", "result"
 #: the worktree every round of the green story lands from, as `sprint lane run` names it
 LANE_WT = f"lane-{GREEN.lower()}"
 HAND_IN = "sdlc-studio/.local/lane"
-#: claims `critic.py self-check record` refuses: none is from the unit's changelog fragment
-REFUSED = [{"surface": "commit message", "claim": "a", "ruling": "TRUE"}]
 
 
 def _write(root: Path, rel: str, body: str) -> Path:
@@ -388,8 +386,9 @@ class LaneAcceptTests(unittest.TestCase):
         self.assertEqual(rc, 1, out + err)
         rows = self._rows(GREEN)
         self.assertEqual([rows[-1][1], rows[-1][5]], ["REJECT", first])
-        repairs = {"not recorded": ({"self_check": False}, "self-check NOT RECORDED"),
-                   "refused": ({"claims": REFUSED}, "self-check REFUSED")}
+        # a self-check the critic refuses is refused before the commit, so lands nothing and
+        # writes no brief (test_self_check_before_commit); one not handed in still lands
+        repairs = {"not recorded": ({"self_check": False}, "self-check NOT RECORDED")}
         for n, (name, (how, why)) in enumerate(repairs.items(), start=3):
             with self.subTest(name):
                 landed = self._land_round(f"A = {n}\n", f"fix({GREEN}): a is {n}", **how)
@@ -416,7 +415,6 @@ class LaneAcceptTests(unittest.TestCase):
         none = self.root / f"sdlc-studio/.local/briefs/{GREEN}-qa.none"
         self.assertFalse(none.exists(), "a landing that wrote the brief left a no-brief note")
         landings = {"no self-check handed in": {"self_check": False},
-                    "self-check refused": {"claims": REFUSED},
                     # stopped part way, at the rebase: the worktree is left, so this goes last
                     "stopped at the rebase": {"main_moves": True}}
         for n, (name, how) in enumerate(landings.items(), start=3):

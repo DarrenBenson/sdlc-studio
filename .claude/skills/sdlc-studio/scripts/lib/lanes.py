@@ -40,6 +40,11 @@ the hooks refuse, takes the added changes back out, so every worktree holds its 
 change and nothing landed. The commit's output is kept in every worktree's kept hand-in, so a
 refusal reaches each unit's repair brief.
 
+Before step 1, each unit's self-check its hand-in carries is judged as step 6 would record it,
+by the critic's own `check_self_check`, and one it would refuse, a required surface missing above
+all, stops the landing with exit 2 and nothing moved: the worktree, its staged change and the
+root's branch are as they were, so the builder repairs the hand-in in place.
+
 A failure in steps 2 to 4 stops the landing there and names the worktree to resume in. A hook
 refusal leaves the staged change, the worktree and the root's branch as they were; a conflict
 aborts the rebase and leaves the root's branch as it was. Re-running after a repair starts the
@@ -60,8 +65,9 @@ whose self-check or brief was not written, 0 a landed lane with every unit brief
 not.
 
 `sprint lane accept` finishes the unit once its reviewer has answered that brief: it records the
-verdict file with `critic.py record` against the brief's fingerprint and tier (a file a later
-`critic.py brief --rejoinder` issued against that rejoinder brief's), and on an APPROVE
+verdict file with `critic.py record` against the brief's fingerprint and tier (a file whose
+`BRIEF:` line names one a later `critic.py brief` issued, a second seat's or a rejoinder's,
+against that brief's, and one naming no brief of the unit is refused), and on an APPROVE
 runs `verify_ac.py run`, moves the unit with `transition.py set` and returns its lane with
 `sprint.py lane return`, each through its own entry point. Under `review.author_self_check:
 block` it refuses a unit with no current self-check (`critic.self_check_gap`, the check
@@ -170,28 +176,46 @@ def _resolve(root: Path, worktree: Path) -> tuple[Path, Path, str, str]:
     return root_top, wt_top, branch, target
 
 
+def _bounded(cmd: list[str], timeout: float, grace: float | None = None,
+             **popen) -> subprocess.CompletedProcess:
+    """`cmd` run to its end as `subprocess.run(cmd, timeout=timeout, text=True, ...)` would run
+    it, in a session of its own: past `timeout`, or on any exit that interrupts the wait (a
+    Ctrl-C), its whole process group is ended (`_kill_group`: SIGTERM, up to `grace` seconds,
+    then SIGKILL) before `subprocess.TimeoutExpired` or the interruption propagates.
+    `subprocess.run` kills only `cmd`, so what it had started, a commit's hooks and the suites
+    they run, or the mutation runner a brief replays, ran on after the bound said it stopped."""
+    with subprocess.Popen(cmd, text=True, start_new_session=True, **popen) as proc:
+        try:
+            out, err = proc.communicate(timeout=timeout)
+        except BaseException:
+            _kill_group(proc, grace)
+            raise
+    return subprocess.CompletedProcess(proc.args, proc.returncode, out, err)
+
+
 def _critic(root: Path, *args: str) -> subprocess.CompletedProcess:
     """`critic.py` through its own entry point, the command an operator would run by hand,
     bounded at CRITIC_TIMEOUT; a brief at critic's own BRIEF_TIMEOUT, which leaves the replay
     of the author's mutants in it room to end at its own bound, so a long replay is said in the
-    brief rather than this bound killing the brief with it."""
-    timeout = CRITIC_TIMEOUT
+    brief rather than this bound killing the brief with it. Past its bound the brief's whole
+    process group is sent SIGTERM and given critic's REPLAY_STOP_GRACE, the time critic gives
+    the runner to stop, so the runner stops its tests and removes its scratch copy (`_bounded`)."""
+    timeout, grace = CRITIC_TIMEOUT, None
     if args[:1] == ("brief",):
         import critic  # noqa: PLC0415 - sibling; its replay sets the brief's bound
-        timeout = critic.BRIEF_TIMEOUT
-    return subprocess.run([sys.executable, str(CRITIC), *args, "--root", str(root)],
-                          cwd=str(root), capture_output=True, text=True,
-                          timeout=timeout, check=False)
+        timeout, grace = critic.BRIEF_TIMEOUT, critic.REPLAY_STOP_GRACE
+    return _bounded([sys.executable, str(CRITIC), *args, "--root", str(root)], timeout, grace,
+                    cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def _commit(wt_top: Path, msg: Path, log: Path, target: str, where: str) -> str:
     """Commit the staged change in `wt_top` through the hooks with the message at `msg`; the
     short sha, or a LandError carrying the hook's own output. `where` names the worktrees a
-    refusal leaves to resume in."""
+    refusal leaves to resume in. Past COMMIT_TIMEOUT the commit's whole process group, git, its
+    hooks and what they started, is stopped before the LandError is raised (`_bounded`)."""
     try:
-        done = subprocess.run(["git", "-C", str(wt_top), "commit", "-F", str(msg)],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                              timeout=COMMIT_TIMEOUT, check=False)
+        done = _bounded(["git", "-C", str(wt_top), "commit", "-F", str(msg)], COMMIT_TIMEOUT,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except subprocess.TimeoutExpired:
         raise LandError(f"the commit's hooks ran past {COMMIT_TIMEOUT}s and were stopped, so "
                         f"nothing was committed and {target} is as it was. Resume in "
@@ -230,21 +254,26 @@ def _carry(wt_top: Path, target: str) -> bool:
     goes through a scratch commit no hook runs for and nothing lands: it is unwound to a staged
     change again. A replay git refuses (a conflict, an unstaged edit) is undone, leaving the
     staged change on its old base for the commit and the rebase after it to report as before.
-    Whether a change is still staged: none is when `target` already holds it."""
+    The builder's own commits are replayed as the rebase after the commit replays them: one that
+    `target` already holds, or that its change leaves empty, is dropped, never kept as an empty
+    commit. Whether a change is still staged: none is when `target` already holds it."""
     if not _git(wt_top, "merge-base", "--is-ancestor", target, "HEAD").returncode:
         return True
     head = _git(wt_top, "rev-parse", "HEAD").stdout.strip()
     tree = _git(wt_top, "write-tree").stdout.strip()
-    scratch = _git(wt_top, "commit-tree", tree, "-p", head, "-m",
-                   "lane land: the staged change, replayed").stdout.strip()
+    # the scratch commit's own mark, so it is told from a builder commit after the rebase
+    mark = f"lane land: the staged change, replayed ({uuid.uuid4().hex})"
+    scratch = _git(wt_top, "commit-tree", tree, "-p", head, "-m", mark).stdout.strip()
     if not scratch or _git(wt_top, "reset", "--soft", scratch).returncode:
         return True
-    # kept when empty and when main holds the same patch, so HEAD~1 is always what it replayed on
-    if _git(wt_top, "rebase", "--empty=keep", "--reapply-cherry-picks", target).returncode:
+    if _git(wt_top, "rebase", target).returncode:
         _git(wt_top, "rebase", "--abort")
         _git(wt_top, "reset", "--soft", head)
         return True
-    _git(wt_top, "reset", "--soft", "HEAD~1")
+    # the rebase drops the scratch commit when `target` holds its change, so it is taken back
+    # out only when it is the commit the rebase ended on
+    if _git(wt_top, "log", "-1", "--format=%B", "HEAD").stdout.strip() == mark:
+        _git(wt_top, "reset", "--soft", "HEAD~1")
     if _git(wt_top, "diff", "--cached", "--quiet").returncode == 0:
         _say(f"the staged change is already on {target}: nothing is left to commit")
         return False
@@ -564,12 +593,50 @@ def _read_record(path: Path) -> dict | None:
     return None
 
 
+def _self_check_refusal(root_top: Path, lane: _Lane, unit: str) -> str | None:
+    """The cause `critic.py self-check record` would refuse `unit`'s self-check for, as `lane`'s
+    hand-in carries it, or None. The claims file, mutants file and runner report are read and
+    judged as `_record_and_brief` hands them to the critic, by the critic's own readers and
+    `check_self_check`, against the unit's Affects on the root (in the worktree for a unit whose
+    file only the lane holds). A hand-in missing the files a record needs is not judged here: the
+    self-check step names it once the lane has landed, as it always has."""
+    hand_in = lane.top / HAND_IN
+    claims, mutants = (hand_in / name for name in hand_in_names(unit))
+    report = hand_in / report_hand_in_name(unit)
+    if not claims.is_file() or not (mutants.is_file() or report.is_file()):
+        return None
+    import critic  # noqa: PLC0415 - sibling; its own readers judge what it would record
+    try:
+        said = critic._entries(str(claims), "claims")  # noqa: SLF001
+        by_hand = critic._entries(str(mutants), "mutants") if mutants.is_file() else []  # noqa: SLF001
+        listed = critic.mutants_from_report(report, unit) if report.is_file() else []
+        scope = root_top if sdlc_md.find_by_id(root_top, unit) else lane.top
+        critic.check_self_check(scope, unit, said, [*listed, *by_hand])
+    except (OSError, ValueError) as exc:
+        return str(exc)
+    return None
+
+
+def _refuse_self_checks(root_top: Path, lanes_: list[_Lane]) -> None:
+    """Each unit's self-check judged before anything moves, so one the critic would refuse once
+    the lane landed, a required surface missing above all, stops the landing while the builder's
+    worktree still holds the change and the hand-in to repair."""
+    for lane in lanes_:
+        for unit in lane.units:
+            if why := _self_check_refusal(root_top, lane, unit):
+                raise LandError(f"{unit}'s self-check in {lane.top / HAND_IN} would be refused "
+                                f"once landed: {why}. Nothing was committed: correct the "
+                                f"hand-in in the worktree and land again", 2)
+
+
 def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lane]:
     """Each named worktree resolved, its units assigned, and every refusal made before anything
     moves: a worktree named twice, one with nothing to land, and for several, a unit whose
     hand-in is in none or more than one of them, a worktree after the first holding commits
-    ahead of the root's branch, or a file two of them stage differently."""
+    ahead of the root's branch, or a file two of them stage differently; then, for every one, a
+    unit whose handed-in self-check the critic would refuse (`_refuse_self_checks`)."""
     lanes_: list[_Lane] = []
+    root_top = Path(root)
     for path in worktrees:
         root_top, top, branch, target = _resolve(root, path)
         for seen in lanes_:
@@ -599,6 +666,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
     _refuse_commits_ahead(lanes_, 2)
     if not several:
         lanes_[0].units = list(units)
+        _refuse_self_checks(root_top, lanes_)
         return lanes_
     for unit in units:
         owners = [lane for lane in lanes_
@@ -614,6 +682,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
             raise LandError(f"{lane.top} carries the hand-in of none of the units named "
                             f"({', '.join(units)}). Nothing was landed.", 2)
     _refuse_overlap(lanes_, 2)
+    _refuse_self_checks(root_top, lanes_)
     return lanes_
 
 
@@ -827,14 +896,20 @@ def _script(root: Path, script: str, *args: str,
                         f"so nothing after it ran") from None
 
 
-def _brief_of(root: Path, unit: str, verdict: Path | None = None) -> tuple[str, str]:
-    """The fingerprint and tier of the QA brief `lane land` wrote for `unit`. The fingerprint is
-    hashed from the saved text as `critic.py record --brief-file` hashes a first-round brief; the
-    tier is the one `critic.py brief` noted beside that fingerprint when it printed the brief.
-    When `verdict` is the file a `critic.py brief --rejoinder` issued for `unit`, its note gives
-    the fingerprint and tier instead: that brief, not the saved one, is what the reviewer read.
-    A rejoinder noted before the latest plain note of the saved brief's fingerprint may answer
-    an earlier round, so it is refused. Under `review.author_self_check: block` a unit with no
+def _brief_of(root: Path, unit: str, verdict: Path | None = None,
+              said: str = "") -> tuple[str, str]:
+    """The fingerprint and tier of the brief the verdict `said` (read from `verdict`) answers:
+    by default the QA brief `lane land` wrote for `unit`, whose fingerprint is hashed from the
+    saved text as `critic.py record --brief-file` hashes a first-round brief, and whose tier is
+    the one `critic.py brief` noted beside that fingerprint when it printed the brief. A verdict
+    opening with a `BRIEF:` line names the file a `critic.py brief` issued; the note of the brief
+    that issued it for `unit` gives the fingerprint and tier instead, a second seat's
+    (`--seat engineering`) or a rejoinder's (`--rejoinder`), since that brief, not the saved one,
+    is what the reviewer read, and a header no note of the unit's names is refused. Without the
+    header, a `verdict` at the path a rejoinder brief issued is matched by its path. A brief
+    other than the saved one, noted before the latest plain note of the saved brief's
+    fingerprint, may answer an earlier round, so it is refused. Under
+    `review.author_self_check: block` a unit with no
     current self-check (`critic.self_check_gap`) is refused; under `report` that is a warning;
     `off` asks nothing."""
     import critic  # noqa: PLC0415 - sibling; only accept needs it
@@ -876,7 +951,8 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None) -> tuple[str, 
         notes = ""
     # the brief text repeats from round to round, so the LATEST plain note of the saved
     # fingerprint is taken as the landing that saved it (a later re-brief of that scope too),
-    # and a rejoinder noted before it is refused
+    # and another brief noted before it is refused
+    stem = critic._header_lines(said.replace("\r\n", "\n")).get("BRIEF")  # noqa: SLF001
     landed_at, issued = None, None
     for n, line in enumerate(notes.splitlines()):
         try:
@@ -889,23 +965,34 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None) -> tuple[str, 
             tier = row.get("tier") or tier
             if not row.get("rejoinder"):
                 landed_at = n
-        if (verdict is not None and row.get("rejoinder") and row.get("verdict_file")
-                and Path(str(row["verdict_file"])).resolve() == verdict):
+        if verdict is None or not row.get("verdict_file"):
+            continue
+        if stem:
+            if Path(str(row["verdict_file"])).stem == stem:
+                issued = (n, row)
+        elif row.get("rejoinder") and Path(str(row["verdict_file"])).resolve() == verdict:
             issued = (n, row)
     if not fp or not tier:
         raise LandError(f"{rel} hashes to fingerprint {fp or 'NONE'}, and no note in "
                         f"{critic.BRIEF_NOTES_REL} records the review tier of a brief with that "
                         f"fingerprint, so the verdict would be recorded at no known depth. "
                         f"Re-run `critic.py brief --unit {unit} --seat qa` and save it there", 2)
+    if stem and issued is None:
+        raise LandError(f"{verdict} opens with BRIEF: {stem}, which names no brief noted for "
+                        f"{uid} in {critic.BRIEF_NOTES_REL}, so the brief its reviewer answered "
+                        f"is not known and nothing was recorded: record the verdict file a "
+                        f"`critic.py brief --unit {unit}` issued", 2)
     if issued is None:
         return fp, tier
     n, row = issued
+    kind = "rejoinder brief" if row.get("rejoinder") else "brief"
     again = (f"brief the seat again with `critic.py brief --unit {unit} --seat "
-             f"{row.get('seat') or 'qa'} --rejoinder` and record the file that brief names")
+             f"{row.get('seat') or 'qa'}{' --rejoinder' if row.get('rejoinder') else ''}` and "
+             f"record the file that brief names")
     if landed_at is None or n < landed_at:
-        raise LandError(f"{verdict} was issued by a rejoinder brief written before the landing "
-                        f"that saved {rel} (fingerprint {fp}), so it may answer an earlier round "
-                        f"and nothing was recorded: {again}", 2)
+        raise LandError(f"{verdict} was issued by a {kind} written before the landing that "
+                        f"saved {rel} (fingerprint {fp}), so it may answer an earlier round and "
+                        f"nothing was recorded: {again}", 2)
     if not row.get("fp") or not row.get("tier"):
         raise LandError(f"the note in {critic.BRIEF_NOTES_REL} that issued {verdict} records "
                         f"no fingerprint or no tier, so nothing was recorded: {again}", 2)
@@ -935,9 +1022,9 @@ def _accept(root: Path, unit: str, verdict: Path, reviewer: str, author: str | N
                         f"{' or a '.join(sorted(terminal))}", 2)
     try:
         said = verdict.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         raise LandError(f"the verdict file cannot be read: {exc}", 2) from None
-    fp, tier = _brief_of(root, unit, verdict)
+    fp, tier = _brief_of(root, unit, verdict, said)
     if not author:
         # the author lane land recorded the unit's self-check under, the latest one
         uid = sdlc_md.norm_id(unit)
@@ -1123,36 +1210,70 @@ def _lane_worktree(root_top: Path, unit: str) -> Path:
 KILL_GRACE = 2.0
 
 
-def _kill_group(proc: subprocess.Popen, grace: float = KILL_GRACE) -> None:
+def _kill_group(proc: subprocess.Popen, grace: float | None = None) -> bool:
     """End `proc`'s whole process group and reap `proc`: SIGTERM first, so a `git add` in it
-    removes the `index.lock` it holds, then up to `grace` seconds for the group to empty, then
-    SIGKILL to whatever is left. The group is the lane's own, led by `proc`
-    (`start_new_session`). At a timeout `proc` is still unreaped when the SIGTERM is sent, so the
-    group id is still the lane's; after `proc` has exited and been reaped the group lives on
-    only in what it left running, and POSIX does not reuse a group's id while the group has a
-    member. Where `os.killpg` does not exist, only `proc` is killed."""
+    removes the `index.lock` it holds, then up to `grace` seconds (KILL_GRACE when None) for
+    the group to empty, then SIGKILL to whatever is left; whether that SIGKILL was sent. The
+    SIGKILL is sent from a `finally`, so an interruption of the wait (a Ctrl-C in the grace)
+    still kills a member that ignores SIGTERM before it propagates. The group is the lane's own,
+    led by `proc` (`start_new_session`). At a timeout `proc` is still unreaped when the SIGTERM
+    is sent, so the group id is still the lane's; after `proc` has exited and been reaped the
+    group lives on only in what it left running, and POSIX does not reuse a group's id while
+    the group has a member. Where `os.killpg` does not exist, only `proc` is killed."""
+    grace = KILL_GRACE if grace is None else grace
     if not hasattr(os, "killpg"):
         with contextlib.suppress(OSError):
             proc.kill()
         proc.wait()
-        return
+        return False
     try:
         os.killpg(proc.pid, signal.SIGTERM)
     except OSError:
         proc.wait()
+        return False
+    emptied, killed = False, False
+    try:
+        deadline = time.monotonic() + grace
+        while time.monotonic() < deadline:
+            proc.poll()  # a leader left unreaped would hold its group open for the whole grace
+            try:
+                os.killpg(proc.pid, 0)
+            except OSError:
+                emptied = True
+                break
+            time.sleep(0.01)
+    finally:
+        if not emptied:
+            with contextlib.suppress(OSError):
+                os.killpg(proc.pid, signal.SIGKILL)
+                killed = True
+        proc.wait()
+    return killed
+
+
+def _lock_seen(lock: Path | None) -> tuple[int, int] | None:
+    """The identity of the `index.lock` at `lock` (its inode and modification time), or None
+    when there is none."""
+    try:
+        stat = lock.stat() if lock is not None else None
+    except OSError:
+        return None
+    return (stat.st_ino, stat.st_mtime_ns) if stat is not None else None
+
+
+def _clear_killed_lock(lock: Path | None, before: tuple[int, int] | None) -> None:
+    """After the lane's group was sent SIGKILL, remove an `index.lock` that appeared in the
+    lane's worktree while it ran: a `git add` killed holding it never removes it, and the commit
+    `lane land` makes would refuse it. Every process of the group was sent SIGKILL, so none of
+    them can finish the write the lock is held for; a lock that was there before the lane
+    started (`before`) is someone else's and is left."""
+    now = _lock_seen(lock)
+    if now is None or now == before:
         return
-    deadline = time.monotonic() + grace
-    while time.monotonic() < deadline:
-        proc.poll()  # a leader left unreaped would hold its group open for the whole grace
-        try:
-            os.killpg(proc.pid, 0)
-        except OSError:
-            proc.wait()
-            return
-        time.sleep(0.01)
     with contextlib.suppress(OSError):
-        os.killpg(proc.pid, signal.SIGKILL)
-    proc.wait()
+        lock.unlink()
+        _say(f"WARNING removed {lock}: a git command the lane ran was killed holding it",
+             err=True)
 
 
 #: The watchdog's program. It reads the lane's group id, then one byte more from a pipe whose
@@ -1268,9 +1389,14 @@ def _run_in_group(cmd: list[str], timeout: int, cwd: Path, env: dict,
     (`_kill_group`) before this returns, and on a timeout, or any exit that interrupts the wait,
     the whole group is killed and reaped before the exception propagates: `subprocess.run`
     kills only the CLI, so a child it started ran on and staged work in the worktree after the
-    lane's record said what was staged. A watchdog (`_watchdog`) ends the group the same way if
-    this process dies while the CLI runs. A CLI that cannot be executed is a `LandError` (exit
-    2) naming its path, raised before `on_start` is called."""
+    lane's record said what was staged. A group that had to be sent SIGKILL leaves no
+    `index.lock` that appeared in the worktree while the CLI ran (`_clear_killed_lock`). A
+    watchdog (`_watchdog`) ends the group the same way if this process dies while the CLI runs.
+    A CLI that cannot be executed is a `LandError` (exit 2) naming its path, raised before
+    `on_start` is called."""
+    where = _run_git(cwd, "rev-parse", "--git-path", "index.lock")
+    lock = (cwd / where.stdout.strip()) if not where.returncode and where.stdout.strip() else None
+    before = _lock_seen(lock)
     with _watchdog() as arm:
         try:
             proc = subprocess.Popen(cmd, cwd=str(cwd), stdin=subprocess.DEVNULL,
@@ -1289,9 +1415,11 @@ def _run_in_group(cmd: list[str], timeout: int, cwd: Path, env: dict,
                     on_start()
                 stdout, stderr = proc.communicate(timeout=timeout)
             except BaseException:
-                _kill_group(proc)
+                if _kill_group(proc):
+                    _clear_killed_lock(lock, before)
                 raise
-            _kill_group(proc)
+            if _kill_group(proc):
+                _clear_killed_lock(lock, before)
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 
