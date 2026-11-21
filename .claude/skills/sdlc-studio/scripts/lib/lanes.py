@@ -272,13 +272,15 @@ def _discard_own_artefacts(wt_top: Path, units: list[str]) -> None:
 def _loose(wt_top: Path) -> dict[str, str]:
     """Each path in the worktree that no commit of the lane would carry, as {path: "unstaged"
     or "untracked"}: a change to a tracked file left out of the index, or a file git does not
-    track and does not ignore, from `git status`. Each path is decoded as the filesystem names
-    it (`os.fsdecode`), so a path that is not UTF-8 is named rather than stopping the land.
-    A rename or copy, staged or made in the work tree, names its source after its target, and
-    that source is never read as an entry of its own. Only a rename made in the work tree
-    leaves its source deleted and unstaged, so only there is the source named too: a copy's
-    source is listed on its own wherever it changed, and a staged rename's source is deleted
-    in the index, which the commit carries."""
+    track and does not ignore, from `git status`. Each path is decoded from the filesystem
+    encoding with its surrogate escapes (`os.fsdecode`), so a path that is not UTF-8 is named
+    rather than stopping the land. A rename or copy, staged or made in the work tree, names its
+    source after its target, and that source is never read as an entry of its own. Only a
+    rename made in the work tree stands for its source's unstaged deletion, so only there is
+    the source named too. A copy's source that changed in the work tree has an entry of its
+    own, unless it was deleted there and git reports one of the paths added there as its
+    rename, whose entry names it; and a staged rename stands for its source's deletion in the
+    index, which the commit carries."""
     out: dict[str, str] = {}
     listing = _raw(wt_top, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout
     parts, n = [os.fsdecode(raw) for raw in listing.split(b"\0") if raw], 0

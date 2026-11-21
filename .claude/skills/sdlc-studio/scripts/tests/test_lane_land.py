@@ -429,8 +429,11 @@ class LaneLandTests(_LaneFixture):
 
     def test_a_name_that_is_not_utf8_is_named_rather_than_stopping_the_land(self) -> None:
         """BG1470 AC2 for an untracked file whose name holds the byte 0xff: the refusal names it
-        as the filesystem spells it, before any hook. MUTANT: the path decoded as strict UTF-8
-        (the land stops on a UnicodeDecodeError traceback, exit 1)."""
+        before any hook. `os.fsdecode` reads the byte as a surrogate escape, which stderr's
+        backslashreplace handler writes out, so the refusal reads `src/stray-\\udcff.py
+        (untracked)`; the pattern checks that the name is there, not how its byte is spelt.
+        MUTANT: the path decoded as strict UTF-8 (the land stops on a UnicodeDecodeError
+        traceback, exit 1)."""
         self._stage("src/a.py", "A = 2\n")
         self._hand_in()
         try:
@@ -518,11 +521,11 @@ class LaneLandTests(_LaneFixture):
 
     def test_a_copy_names_its_source_only_where_it_changed(self) -> None:
         """Where `status.renames` finds copies, `git status` names a copy's source after it in
-        either column and lists that source again on its own wherever it changed: a staged copy
-        leaves nothing loose, and a copy in the work tree is loose beside its edited source, with
-        no path misread from the source's name. MUTANTS: the source skipped only after a copy in
-        the work-tree column (`/b.py` named), or only after one in the index column (`/a.py`
-        named)."""
+        either column, and lists a source that was edited, as both sources here are, again on its
+        own: a staged copy leaves nothing loose, and a copy in the work tree is loose beside its
+        edited source, with no path misread from the source's name. MUTANTS: the source skipped
+        only after a copy in the work-tree column (`/b.py` named), or only after one in the index
+        column (`/a.py` named)."""
         gitutil.git(["config", "status.renames", "copies"], self.root)
         self._stage("src/b.py", "B = 2\n")
         self._stage("src/b5.py", "B = 1\n")
