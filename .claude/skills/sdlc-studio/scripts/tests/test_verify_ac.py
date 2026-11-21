@@ -432,9 +432,16 @@ class HardeningTests(unittest.TestCase):
             run = Path(d) / "run"
             run.mkdir()
 
-            def verdict(cmd: str) -> bool:
+            real_run = verify_ac._run_in_group
+
+            def under_bash(cmd, timeout, cwd):
+                return real_run(["bash", "-c", cmd], timeout, cwd)
+
+            def verdict(cmd: str, bash: bool = False) -> bool:
                 with unittest.mock.patch.object(verify_ac.sdlc_md, "loaded_skill_dir",
-                                                return_value=skill):
+                                                return_value=skill), \
+                     unittest.mock.patch.object(verify_ac, "_run_in_group",
+                                                under_bash if bash else real_run):
                     return verify_ac.run_verifier(cmd, timeout=10, cwd=run).ok
 
             # One argument, bare or inside double quotes.
@@ -458,6 +465,16 @@ class HardeningTests(unittest.TestCase):
             self.assertFalse(verdict('shell test -f "<skill>/scripts/missing.py"'))
             # Single quotes keep it literal, so a line can still search for the placeholder.
             self.assertTrue(verdict("shell test '<skill>' = \"<\"skill\">\""))
+            # A backslash inside single quotes is literal and escapes nothing, so the closing
+            # quote after it still closes the string and the placeholder after it is bare.
+            self.assertTrue(verdict("shell test 'a\\' = \"a\\\\\" && "
+                                    "test -f <skill>/scripts/verify_ac.py"))
+            # ANSI-C quoting inside a command substitution, a fresh context even inside double
+            # quotes, keeps its escaped quote from closing it, so every quote after it pairs as
+            # the shell pairs it and the placeholder at the end is bare. Run under bash, because
+            # a POSIX `sh` need not know `$'...'` at all.
+            self.assertTrue(verdict("shell test \"$(echo $'a\\'b')\" = \"a'b\" && "
+                                    "test -f <skill>/scripts/verify_ac.py", bash=True))
             # ANSI-C quoting, `$'...'`, keeps it literal too, and its escaped quote does not
             # close the string, so a placeholder after it is bare. Read from the expansion,
             # because a POSIX `sh` need not know `$'...'` at all.
@@ -1068,6 +1085,8 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
              "        pass\n\n\n"
              "def test_top_level():\n"
              "    pass\n\n\n"
+             "def test_real():\n"
+             "    pass\n\n\n"
              "class Shared:\n"
              "    def test_shared(self):\n"
              "        pass\n\n\n"
@@ -1090,11 +1109,19 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
         (root / "node_modules" / "x").mkdir(parents=True)
         (root / "node_modules" / "x" / "test_nm.py").write_text(
             "class E:\n    def test_x(self):\n        pass\n", encoding="utf-8")
-        # Two files of one name, each defining a different test, one carrying doctests.
+        # Two files of one name, each defining a different test. One carries doctests on the
+        # module, a class and a method, and one on a nested function pytest never reaches. The
+        # other's module docstring shows a prompt only mid-line, which is no example, and one
+        # class of its own has a tab-indented doctest.
         for pkg, body in (("a", '"""Helpers.\n\n>>> 1 + 1\n2\n"""\n\n\n'
-                                'class T:\n    """>>> True\n    True\n    """\n\n'
-                                "    def test_a(self):\n        pass\n"),
-                          ("b", "class T:\n    def test_b(self):\n        pass\n")):
+                                'class T:\n    """Class.\n\n    >>> True\n    True\n    """\n\n'
+                                "    def test_a(self):\n        pass\n\n"
+                                '    def doc(self):\n        """>>> 2\n        2\n        """\n\n\n'
+                                'def helper():\n    def inner():\n'
+                                '        """>>> 3\n        3\n        """\n'),
+                          ("b", '"""Mentions >>> mid-line only."""\n\n\n'
+                                "class T:\n    def test_b(self):\n        pass\n\n\n"
+                                'class U:\n    """Second.\n\t>>> 1\n\t1\n\t"""\n')):
             (root / "pkg" / pkg).mkdir(parents=True)
             (root / "pkg" / pkg / "test_utils.py").write_text(body, encoding="utf-8")
         specs = root / "sdlc-studio" / "test-specs"
@@ -1120,13 +1147,23 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0007 | AC2 | in neither | test_utils.py::T::test_c | Pass |\n"
                 "| US0008 | AC3 | deps only | test_nm.py::E::test_x | Pass |\n"
                 "| US0009 | AC4 | prose stop | see pkg/tests/test_real.py::test_gone. | Pass |\n"
-                "| US0010 | AC5 | doctest, file gone | test_gone_doc.py::test_gone_doc.T | Pass |\n")
+                "| US0010 | AC5 | doctest, file gone | test_gone_doc.py::test_gone_doc.T | Pass |\n"
+                # Ids pytest's doctest collection refuses as not found, though the file exists.
+                "| US0011 | AC1 | no module doctest | pkg/b/test_utils.py::test_utils | Pass |\n"
+                "| US0011 | AC2 | object gone | pkg/a/test_utils.py::test_utils.Deleted | Pass |\n"
+                "| US0011 | AC3 | no module part | pkg/a/test_utils.py::T.doc | Pass |\n"
+                "| US0011 | AC4 | no file stem | pkg/a/test_utils.py::a.T | Pass |\n"
+                "| US0011 | AC5 | wrong package | pkg/a/test_utils.py::b.test_utils.T | Pass |\n"
+                "| US0012 | AC1 | no example | pkg/b/test_utils.py::test_utils.T | Pass |\n"
+                "| US0012 | AC2 | method, no example | pkg/a/test_utils.py::test_utils.T.test_a | Pass |\n"
+                "| US0012 | AC3 | nested function | pkg/a/test_utils.py::test_utils.helper.inner | Pass |\n"
+                "| US0012 | AC4 | doctest and test | pkg/a/test_utils.py::test_utils.T::test_a | Pass |\n")
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             rc, out = self._ts_check(root, self._project(root, rows))
             self.assertEqual(rc, 1, out)
             self.assertNotIn("ts-check: 0 finding(s)", out)
-            self.assertIn("ts-check: 9 finding(s)", out)
+            self.assertIn("ts-check: 18 finding(s)", out)
             lines = out.splitlines()
             for story, ac, name in (("US0002", "AC4", "DeletedTests"),
                                     ("US0003", "AC2", "test_gone"),
@@ -1140,6 +1177,18 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 hit = [ln for ln in lines if story in ln]
                 self.assertEqual(len(hit), 1, f"no single finding names row {story}:\n{out}")
                 self.assertTrue(hit[0].lstrip().startswith(f"{ac}:"), hit[0])
+                self.assertIn(name, hit[0])
+            for story, ac, name in (("US0011", "AC1", "b/test_utils.py::test_utils`"),
+                                    ("US0011", "AC2", "a/test_utils.py::test_utils.Deleted`"),
+                                    ("US0011", "AC3", "a/test_utils.py::T.doc`"),
+                                    ("US0011", "AC4", "a/test_utils.py::a.T`"),
+                                    ("US0011", "AC5", "a/test_utils.py::b.test_utils.T`"),
+                                    ("US0012", "AC1", "b/test_utils.py::test_utils.T`"),
+                                    ("US0012", "AC2", "a/test_utils.py::test_utils.T.test_a`"),
+                                    ("US0012", "AC3", "a/test_utils.py::test_utils.helper.inner`"),
+                                    ("US0012", "AC4", "a/test_utils.py::test_utils.T::test_a`")):
+                hit = [ln for ln in lines if story in ln and ln.lstrip().startswith(f"{ac}:")]
+                self.assertEqual(len(hit), 1, f"no single finding names {story} {ac}:\n{out}")
                 self.assertIn(name, hit[0])
             self.assertNotIn("US0001", out, "a resolvable row was reported")
 
@@ -1156,6 +1205,13 @@ class TsCheckSelectorResolutionTests(unittest.TestCase):
                 "| US0003 | AC3 | class doctest | pkg/a/test_utils.py::test_utils.T | Pass |\n"
                 "| US0003 | AC4 | module doctest | pkg/a/test_utils.py::test_utils | Pass |\n"
                 "| US0003 | AC5 | package doctest | pkg/a/test_utils.py::a.test_utils.T | Pass |\n"
+                "| US0005 | AC1 | method doctest | pkg/a/test_utils.py::test_utils.T.doc | Pass |\n"
+                "| US0005 | AC2 | rootdir doctest | pkg/a/test_utils.py::pkg.a.test_utils | Pass |\n"
+                # Of two files so named, the one with the doctest resolves it.
+                "| US0005 | AC3 | first of two | test_utils.py::test_utils.T | Pass |\n"
+                "| US0005 | AC5 | second of two | test_utils.py::test_utils.U | Pass |\n"
+                # A test named after its own file is a test, not a doctest.
+                "| US0005 | AC4 | file-named test | test_real.py::test_real | Pass |\n"
                 # An explicit path resolves wherever it leads, though the walk skips the tree.
                 "| US0004 | AC1 | nested by path | "
                 ".claude/worktrees/other/pkg/tests/test_elsewhere.py::ElsewhereTests::test_x | Pass |\n"

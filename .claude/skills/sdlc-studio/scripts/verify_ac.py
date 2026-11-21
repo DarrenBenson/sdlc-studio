@@ -4068,7 +4068,8 @@ class _TestTree:
         """`(node id, why)` for each node id in `cell` that nothing in the tree defines.
 
         pytest's doctest form, `file.py::module.name` or a module's own `file.py::module`, names
-        a docstring rather than a test definition, so only its file is resolved."""
+        a docstring rather than a test definition, so it resolves when a file it names holds that
+        doctest; a name that is no such doctest is resolved as a test."""
         out = []
         for m in _NODE_ID_RE.finditer(cell or ""):
             found = self.files(m.group(1))
@@ -4076,7 +4077,7 @@ class _TestTree:
                 out.append((m.group(0), f"no file {m.group(1)} in the tree"))
                 continue
             names = m.group(2).split("::")[1:]
-            if "." in names[0] or names == [Path(m.group(1)).stem]:
+            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found):
                 continue
             whys = [_names_defined(self._parse(f), names) for f in found]
             if all(whys):
@@ -4104,6 +4105,35 @@ class _TestTree:
                        if module else {})
             self._parsed[path] = (rel, module, classes, why)
         return self._parsed[path]
+
+
+# A docstring line that opens, after any indent, with the `>>>` prompt that starts an example.
+_DOCTEST_PROMPT = re.compile(r"^[ \t]*>>>", re.M)
+
+
+def _doctest_defined(parsed: tuple, name: str) -> bool:
+    """True when `name` has the form of a doctest id pytest's `--doctest-modules` gives, and the
+    parsed file holds that doctest.
+
+    The name opens with a module name: the file's stem, alone or after the last one or more of
+    the directories on its path from the root. pytest's import modes name a module in these
+    forms, which one depending on the packages around the file and the rootdir; that choice is
+    not read here, so any of them resolves. After it comes the qualified name of the class,
+    function or method whose docstring holds a `>>>` example, or nothing for the module's own
+    docstring. pytest looks for doctests on the module, its classes and what they define,
+    never inside a function."""
+    rel, module = parsed[0], parsed[1]
+    parts, dirs = name.split("."), Path(rel).parent.parts
+    for k, part in enumerate(parts):
+        if part != Path(rel).stem or tuple(parts[:k]) != dirs[len(dirs) - k:]:
+            continue
+        node = module
+        for qual in parts[k + 1:]:
+            scope = node.body if isinstance(node, (ast.Module, ast.ClassDef)) else []
+            node = next((n for n in scope if isinstance(n, _TEST_DEFS) and n.name == qual), None)
+        if node is not None and _DOCTEST_PROMPT.search(ast.get_docstring(node, clean=False) or ""):
+            return True
+    return False
 
 
 def _names_defined(parsed: tuple, names: list[str]) -> str | None:

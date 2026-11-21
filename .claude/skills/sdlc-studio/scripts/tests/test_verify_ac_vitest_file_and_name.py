@@ -86,6 +86,12 @@ class VitestFileAndNameTests(unittest.TestCase):
                          ("vitest", ["vitest", "run", FILE, "-t", "n", "--", "--reporter=dot"]))
         self.assertEqual(verify_ac._build_command(f"jest {FILE} --ci -t name -- extra"),
                          ("jest", ["jest", FILE, "--ci", "-t", "name", "--", "extra"]))
+        # The cut is at the first `--`, so a line passing a `--` of its own through to what the
+        # runner starts still has its name in front of every `--`.
+        self.assertEqual(verify_ac._build_command(f"jest {FILE} -t name -- --ci -- extra"),
+                         ("jest", ["jest", FILE, "-t", "name", "--", "--ci", "--", "extra"]))
+        self.assertEqual(verify_ac._build_command(f'vitest {FILE} -t "n" -- a -- b'),
+                         ("vitest", ["vitest", "run", FILE, "-t", "n", "--", "a", "--", "b"]))
         # The `=` form keeps a name that holds an `=` of its own whole.
         self.assertEqual(verify_ac._build_command(f'jest {FILE} "--testNamePattern=a=b"'),
                          ("jest", ["jest", FILE, "-t", "a=b"]))
