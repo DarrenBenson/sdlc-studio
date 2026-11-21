@@ -2224,11 +2224,12 @@ def record_forecast(repo_root: Path | str, data: dict) -> dict:
 # unreadable or unknown mode is not an escape either - it falls back to enforce.
 BREAKDOWN_MODES = ("enforce", "judgement")
 
-# A CR at or above this many declared files, or sized at the split ceiling, is doing enough work
-# to warrant stories: only a story carries executable `Verify:` lines, so an un-decomposed CR's
-# Done is gated on prose. Advisory - "where the work warrants" is a judgement the report can only
-# name.
+# A CR at or above this many declared files, sized at the split ceiling, or declared one of
+# `DECOMPOSE_SIZES`, is doing enough work to warrant stories: only a story carries executable
+# `Verify:` lines, so an un-decomposed CR's Done is gated on prose. Advisory - "where the work
+# warrants" is a judgement the report can only name.
 DECOMPOSE_FILE_THRESHOLD = 5
+DECOMPOSE_SIZES = ("L", "XL")
 
 
 def breakdown_mode(repo_root: Path | str) -> str:
@@ -2529,9 +2530,14 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
             groomed.append(it["id"])
         if it["type"] == "cr" and sdlc_md.norm_id(it["id"]) not in cited:
             big = points is not None and points >= ceiling
+            # The top of the T-shirt scale is the signal by itself: no point total is invented
+            # from it, and Size S and M are never listed on their size alone.
+            tshirt = _declared_tshirt(text)
+            large = tshirt in DECOMPOSE_SIZES
             wide = len(declared) >= DECOMPOSE_FILE_THRESHOLD
-            if big or wide:
-                why = (f"{points} points" if big else f"touches {len(declared)} files")
+            if big or large or wide:
+                why = (f"{points} points" if big else f"declared Size {tshirt}" if large
+                       else f"touches {len(declared)} files")
                 decompose.append({"id": it["id"], "why": why})
     mode = breakdown_mode(root)
     return {"mode": mode, "blocking": mode != "judgement",
@@ -6245,9 +6251,13 @@ def _carried_rulings(root: Path, state: dict, retro_id: str | None) -> tuple:
     return best[1], retro_mod.carried_issues(sdlc_md.read_text_safe(best[2]), root=root), ""
 
 
-def unanswered_units(root, state, retro_id=None) -> dict:
+def unanswered_units(root, state, retro_id=None, read_root=None) -> dict:
     """The batch units this run cannot end over: `{"unanswered": [{"unit", "status", "why",
     "filed"}], "rulings_from": <retro id or None>}`.
+
+    `read_root` is the tree the seal's bar is asked of when `root` is a copy holding only
+    `sdlc-studio/` (the close's dry run): that bar reads a unit's Affects files and git history,
+    which the copy does not hold. Everything else is read from `root`.
 
     ONE predicate, read by the close's checklist step and by `stop`, so the two can never name
     different sets. It walks the live batch and every id a recorded drop took out of it that
@@ -6340,7 +6350,7 @@ def unanswered_units(root, state, retro_id=None) -> dict:
         # after this close. Any other kind (a CR, say) is never moved by `sign`, so it awaits the
         # signature only at a Review status, as it always did - otherwise the close would pass a
         # unit the signature then leaves where it stood.
-        awaits_signature = awaits_only_signature(root, uid, kind, status)
+        awaits_signature = awaits_only_signature(Path(read_root or root), uid, kind, status)
         if not awaits_signature and critic.is_awaiting_signoff(status):
             if row or critic.sprint_covers_independently(
                     root, uid, critic.sprint_review_for(root, uid)):
@@ -6465,7 +6475,7 @@ def _close_checklist(root, retro, state, read_root=None):
     # not a gate of its own, and NO checklist waiver reaches it: a waiver never expires, so one
     # standing waiver of the known-issues row would release every later run's unfinished units.
     try:
-        ua = unanswered_units(root, state, retro)
+        ua = unanswered_units(root, state, retro, read_root=read_root)
     except Exception as exc:  # noqa: BLE001 - a hold that cannot be computed must not pass
         return (False, f"known-issues: the unanswered-unit hold could not be computed: "
                        f"{type(exc).__name__}: {exc}",
@@ -8281,8 +8291,16 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
     # verdict the invocation supplies is recorded before the chain.
     pre = close_preflight(root, retro_id, record_cost=False, goal_verdict=goal_verdict,
                           writes_anchor=True)
+    # A row that declares itself non-blocking is SHOWN, labelled as the close's own report
+    # labels it, and never counted as a refusal: the close proceeds over it, so a preview that
+    # stopped on it would send the operator to clear something the close never asks for.
+    held = held_blockers(pre["blockers"])
     for blocker in pre["blockers"]:
-        note(blocker["stage"], "refuse", blocker.get("detail", ""), blocker.get("remedy", ""))
+        if held_blockers([blocker]):
+            note(blocker["stage"], "refuse", blocker.get("detail", ""), blocker.get("remedy", ""))
+        else:
+            note(_blocker_label(blocker), "advisory", blocker.get("detail", ""),
+                 blocker.get("remedy", ""))
     if pre["ready"]:
         note("prerequisites", "ok", "every prerequisite the preflight reads is met")
 
@@ -8325,7 +8343,7 @@ def close_dry_run(root, retro_id: str | None = None, goal_verdict: str | None = 
             run_state.record_goal_verdict(scratch, goal_verdict, "supplied to the dry run")
         state = run_state.read(scratch) or {}
         rid = retro_id or _dry_run_retro(scratch, state, note)
-        gate_refused = any(b["stage"] == "gate" for b in pre["blockers"])
+        gate_refused = any(b["stage"] == "gate" for b in held)
         # Did the preflight ACTUALLY reach the gate? It has early returns that come back on a
         # run-state fault without ever calling `run_gate`, and "no gate blocker" cannot tell
         # that from a clean pass. Reporting `ok` there stated a fact about the most expensive
@@ -8446,21 +8464,23 @@ def _dry_run_result(steps: list[dict], scratch) -> dict:
 
 def dry_run_report(result: dict) -> str:
     """The dry run as an operator reads it: every step, its verdict, and what to do."""
-    icon = {"ok": "ok  ", "refuse": "STOP", "unevaluated": "??  "}
+    icon = {"ok": "ok  ", "refuse": "STOP", "unevaluated": "??  ", "advisory": "note"}
     lines = [f"close --dry-run: nothing was written. {len(_CLOSE_CHAIN)} chain step(s) previewed."]
     for step in result["steps"]:
         # The CONTINUATION lines, not just the first. `_close_checklist` builds a multi-line block
         # naming every outstanding item, and truncating at the first newline threw exactly the
         # part written to name the cause away - a refusal that says "1 item unanswered" and not
         # WHICH one sends the reader back to run the command again to find out. Indented under
-        # their step so the shape still reads as one verdict per line.
+        # their step so the shape still reads as one verdict per line. No line is CUT either: a
+        # list-shaped refusal names every unit on one line, and a cut there hid what held all
+        # but the first.
         body = (step["detail"] or step["status"]).splitlines() or [""]
-        lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: {body[0][:160]}")
-        lines.extend(f"       {ln[:160]}" for ln in body[1:] if ln.strip())
+        lines.append(f"  {icon.get(step['status'], '?')} {step['step']}: {body[0]}")
+        lines.extend(f"       {ln}" for ln in body[1:] if ln.strip())
         if step["remedy"]:
             remedy = step["remedy"].splitlines()
-            lines.append(f"       -> {remedy[0][:160]}")
-            lines.extend(f"          {ln[:160]}" for ln in remedy[1:] if ln.strip())
+            lines.append(f"       -> {remedy[0]}")
+            lines.extend(f"          {ln}" for ln in remedy[1:] if ln.strip())
     if result["clean"]:
         lines.append("dry run CLEAN - every step was evaluated and none refused.")
     else:
@@ -11331,6 +11351,15 @@ def tree_moved_since_close(root, state: dict) -> list[str] | None:
                   and not p.startswith(records))
 
 
+def _uncommitted_declared_refusal(root, state: dict, later: str) -> str:
+    """Why `sign`, judging `state` against its committed close, refuses an uncommitted change to
+    a file its batch declares; "" when there is none, or while `later`, another run open here,
+    is the one whose work the working tree holds. A commit on top of the close is a change the
+    page need not describe; an edit to the batch's own files that nothing has committed is one
+    the signature would seal unseen (`_refuse_batch_repair`, the close's own check)."""
+    return "" if later else _refuse_batch_repair(root, state, "sign")
+
+
 def _later_run_here(live: dict, state: dict, take_up: bool) -> str:
     """The id of another run this checkout holds open while `state`, a run awaiting its
     signature, is taken up from its tracked record to be signed; "" when there is none. That
@@ -11438,8 +11467,8 @@ def cmd_sign(args: argparse.Namespace) -> int:
     # tree, the waiting run is judged against its committed close instead (D0524). While HEAD
     # is that commit, or the close is not committed, with no later run open, the whole-tree
     # check stands.
-    commit, why, refusal = _committed_close(root, state, report_id,
-                                            _later_run_here(live, state, take_up))
+    later = _later_run_here(live, state, take_up)
+    commit, why, refusal = _committed_close(root, state, report_id, later)
     if refusal:
         print(f"sign REFUSED: {refusal}", file=sys.stderr)
         return 2
@@ -11447,6 +11476,9 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if commit:
         print(f"sign: {why}, so {state.get('run_id')} is judged against {commit[:12]}, the "
               f"commit that filed its close, not the working tree", file=sys.stderr)
+        if refusal := _uncommitted_declared_refusal(root, state, later):
+            print(refusal, file=sys.stderr)
+            return 2
     elif moved:
         print(f"sign REFUSED: {len(moved)} file(s) changed since the close, so "
               f"{report_id} no longer describes this tree: {', '.join(moved)}. Re-run the "
@@ -11457,7 +11489,7 @@ def cmd_sign(args: argparse.Namespace) -> int:
               file=sys.stderr)
     # THE PAGE IS JUDGED BEFORE THE SEAL IS WRITTEN, by `sprint_report check`'s own reading: an
     # unchanged tree says nothing of the run state the page is derived from.
-    stale = _page_no_longer_matches(root, report_id)
+    stale = _page_no_longer_matches(root, report_id, commit)
     if stale:
         print(f"sign REFUSED: {report_id} no longer matches what it re-derives to, so it is not "
               f"sealed - {stale}", file=sys.stderr)
@@ -11625,16 +11657,58 @@ def _apply_strikes(root, ids: list, principal: str, reason: str) -> None:
         {"id": i, "principal": principal, "date": today, "reason": reason} for i in ids]})
 
 
-def _page_no_longer_matches(root, report_id: str) -> str:
+@contextlib.contextmanager
+def _tree_of(root, commit: str):
+    """The tree to re-derive a page from: `root` itself with no `commit`, else `commit` checked
+    out detached in a scratch worktree of the same repository, removed on exit, so its history
+    is the repository's and nothing in `root` is touched. `root` again, said on stderr, when git
+    cannot check the commit out: the working tree then judges, the stricter reading."""
+    import shutil  # noqa: PLC0415 - local; only this path makes a scratch tree
+    import tempfile  # noqa: PLC0415
+    if not commit:
+        yield Path(root)
+        return
+    scratch = Path(tempfile.mkdtemp(prefix="sign_close_tree_"))
+    tree = scratch / "tree"
+
+    def git(*argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(root), *argv], capture_output=True, text=True,
+                              timeout=120)
+
+    try:
+        try:
+            made = git("worktree", "add", "--detach", "--quiet", str(tree), commit)
+        except (OSError, subprocess.SubprocessError) as exc:
+            made = subprocess.CompletedProcess([], 1, "", str(exc))
+        if made.returncode != 0:
+            print(f"sign: {commit[:12]} could not be checked out to re-derive the page from "
+                  f"({made.stderr.strip() or 'git refused'}), so it is re-derived from the "
+                  f"working tree", file=sys.stderr)
+            yield Path(root)
+            return
+        yield tree
+    finally:
+        with contextlib.suppress(OSError, subprocess.SubprocessError):
+            if tree.exists():
+                git("worktree", "remove", "--force", str(tree))
+            git("worktree", "prune")
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def _page_no_longer_matches(root, report_id: str, commit: str = "") -> str:
     """Why the filed page fails its own check, naming each figure that moved; "" when it holds.
 
     `sprint_report.revalidate` is the check's reading, so sign refuses exactly the page `check`
-    would call INVALIDATED or INVALID, and nothing else. A page that cannot be re-derived here
-    (none filed, another schema, a shallow clone) or that predates tracked records is not
-    judged, said on stderr, and signed on the report alone, as before."""
+    would call INVALIDATED or INVALID, and nothing else. With `commit`, the committed close sign
+    judges the run against (`_committed_close`), the page is re-derived from that commit's tree
+    (`_tree_of`), as the tree check is taken from it: a ruling or any other change committed on
+    top of the close is a later change, not one the page has to describe. A page that cannot be
+    re-derived here (none filed, another schema, a shallow clone) or that predates tracked
+    records is not judged, said on stderr, and signed on the report alone, as before."""
     import sprint_report  # noqa: PLC0415
     try:
-        state = sprint_report.revalidate(root, report_id)
+        with _tree_of(root, commit) as tree:
+            state = sprint_report.revalidate(tree, report_id)
     except (sprint_report.ReportError, OSError) as exc:
         print(f"sign: {report_id} could not be re-derived ({exc}) - signing on the report alone",
               file=sys.stderr)
@@ -11763,8 +11837,36 @@ def prd_outcomes(root: Path | str) -> dict[str, str]:
 
 def _end_goals(text: str) -> list[tuple[str, str]]:
     """`[(number, text)]` from a card's `## End Goals` section (a Negative card's `End Goals
-    (stated to exclude)` too), numbered as on the card, read by the one End goal reader."""
-    return [(g.number, g.text) for g in persona_goals.end_goals(text)]
+    (stated to exclude)` too), numbered as on the card, each goal's text whole however the card
+    wraps it (`_whole_end_goals`)."""
+    return [(g.number, g.text) for g in _whole_end_goals(text)]
+
+
+_LIST_ITEM_RE = re.compile(r"^\s*[-*+]\s")
+
+
+def _whole_end_goals(text: str) -> list:
+    """`persona_goals.end_goals` over the card with each End goal's wrapped lines joined onto its
+    numbered line, so no reader is handed the first line of a goal as the whole of it.
+
+    A continuation is a line under a numbered goal, indented or not, up to a blank line, a
+    heading, the next numbered goal or a list item, such as the goal's own nested `Verify` or
+    `Applies-to` line; joined with one space. HTML comments and fenced code are dropped first,
+    as the reader drops them."""
+    lines: list[str] = []
+    inside = joining = False
+    for line in persona_goals._visible_lines(text):
+        if persona_goals._HEADING_RE.match(line):
+            inside, joining = bool(persona_goals._SECTION_RE.match(line)), False
+        elif inside and persona_goals._GOAL_RE.match(line):
+            joining = True
+        elif inside and joining and line.strip() and not _LIST_ITEM_RE.match(line):
+            lines[-1] = f"{lines[-1].rstrip()} {line.strip()}"
+            continue
+        else:
+            joining = False
+        lines.append(line)
+    return persona_goals.end_goals("\n".join(lines))
 
 
 def persona_cards(root: Path | str) -> list[dict]:
@@ -11788,7 +11890,7 @@ def _persona_card_entries(root: Path | str) -> list[tuple[Path, dict]]:
         text = sdlc_md.read_text_safe(p)
         m = re.search(r"^#\s+(.+?)\s*$", text, re.M)
         if m and "{{" not in m.group(1):   # an unfilled template card names nobody
-            goals = persona_goals.end_goals(text)
+            goals = _whole_end_goals(text)
             cards.append((p, {"name": m.group(1), "role": _persona_cast_role(text),
                               "end_goals": [(g.number, g.text) for g in goals],
                               "goals": goals}))

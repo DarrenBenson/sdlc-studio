@@ -11128,14 +11128,20 @@ class CloseDryRunTests(unittest.TestCase):
                            "cannot tell 'every one' from 'the first one'")
         result = sprint.close_dry_run(root, retro_id)
         stages = [s["step"] for s in result["blockers"]]
-        # EVERY prerequisite the preflight found, by count and not merely by presence - a
-        # report that kept the first of each stage would still name the stages.
-        self.assertEqual([b["stage"] for b in pre["blockers"]], stages[:len(pre["blockers"])],
+        # EVERY prerequisite the preflight found that holds the close, by count and not merely
+        # by presence - a report that kept the first of each stage would still name the stages.
+        # A row that says it does not hold the close is previewed as a note, not a refusal.
+        held = sprint.held_blockers(pre["blockers"])
+        self.assertTrue(held, "the fixture must produce a prerequisite gap that holds the close")
+        self.assertEqual([b["stage"] for b in held], stages[:len(held)],
                          "the dry run dropped prerequisite refusals the preflight had found")
+        advisory = [s["step"] for s in result["steps"] if s["status"] == "advisory"]
+        self.assertEqual([sprint._blocker_label(b) for b in pre["blockers"] if b not in held],
+                         advisory, "a non-blocking preflight row went missing from the preview")
         self.assertIn("retro-validate", stages,
                       "the undecided finding is a CONTENT gap, and it is reported in the same "
                       "pass as the prerequisites above rather than on the next attempt")
-        self.assertGreater(len(result["blockers"]), len(pre["blockers"]),
+        self.assertGreater(len(result["blockers"]), len(held),
                            "the chain steps add refusals of their own; the pass covers both")
 
     def test_retro_content_defects_are_reported_in_the_same_pass(self) -> None:
