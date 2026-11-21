@@ -85,13 +85,7 @@ Delivered 20 units, 58 points: 11 stories (39 points) and 9 bugs (19 points), th
 
 **0 of 20 unit(s) measured; 20 of 20 forecast at plan time.**
 
-**Priced cost: 61,608,375 priced input-equivalent tokens**, 1,062,213 per point over 58 delivered points. Read once per message from the main thread and every subagent transcript. Estimated US dollars: $166.95, $2.88 per point, covering 100.0% of the priced tokens; price table effective 2026-11-12. Each component is its count times its weight.
-
-- input: 5,184 x1
-- output: 2,138,535 x5
-- cache write 5m: 8,421,453 x1.25
-- cache write 1h: 670,801 x2
-- cache read: 390,420,977 x0.1
+**Priced cost: not stated.** the token actual already recorded was reused, not re-captured, so no component was read again; the row keeps the Priced/pt it was recorded with
 
 **Sprint tokens/point: 193,724** (11,235,973 tokens over 58 delivered points, harness-tracked). The token count is deterministic (supply it with `accuracy --tokens N`) - not UNMEASURED. A descriptive velocity, never a target.
 
