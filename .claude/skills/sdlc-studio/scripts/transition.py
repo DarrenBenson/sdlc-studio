@@ -460,34 +460,39 @@ def _rfc_override_reason(text: str) -> str:
 _NEVER_READY = ("Draft", "Proposed")
 
 
-def _unready_items(root: Path, text: str) -> list[str]:
-    """The Definition of Ready items `sprint plan` refuses this story for, or [] when it meets
-    them: a declared `Affects` that is not a typo, and `Points` on the scale.
+def _unready_items(root: Path, text: str) -> tuple[list[str], list[str]]:
+    """`(enforced, downgraded)`: the Definition of Ready items `sprint plan` refuses this story
+    for, and the ones it misses that the project downgraded to human judgement. Both are []
+    when it meets them: a declared `Affects` that is not a typo, and `Points` on the scale.
 
-    Asked of a Draft or Proposed story moving straight to Done, so a story closed outside a
-    sprint cannot skip the readiness a planned one is refused without. The predicates are the
-    grooming gate's own (`sdlc_md.affects_files`, `file_finding.fictional_affects`,
-    `sdlc_md.read_points`), and the project's `definition-of-ready.md` decides which of the two
-    enforce, as it does for the plan. Two of the plan's checks are left out on purpose: the
-    criteria check, because the Done gate already EXECUTES the criteria, and the split ceiling,
-    because once a unit is built the answer to "too big" can no longer be "split it"."""
+    Asked of a Draft or Proposed story moving straight to Done, and of no other move: a story
+    set to Ready first is not asked here, and the Ready gate does not ask these items, so Draft
+    to Ready to Done still reaches Done without them. The predicates are the grooming gate's
+    own (`sdlc_md.affects_files`, `file_finding.fictional_affects`, `sdlc_md.read_points`), and
+    the project's `definition-of-ready.md` decides which of the two enforce, as it does for the
+    plan: a check its Story section carries no `[check:]` tag for is downgraded, and a missed
+    item under it is returned in `downgraded` for the caller to report, never dropped. Two of
+    the plan's checks are left out on purpose: the criteria check, because the Done gate
+    already EXECUTES the criteria, and the split ceiling, because once a unit is built the
+    answer to "too big" can no longer be "split it"."""
     import file_finding  # noqa: PLC0415 - the one resolvable-Affects seam the plan also uses
     dor = sdlc_md.dor_dod_level_checks(root, "ready", "story")
-    items: list[str] = []
+    missed: list[tuple[str, str]] = []
     declared = sdlc_md.affects_files(text)
-    if dor is None or "grooming.affects" in dor:
-        if not declared:
-            items.append("no `Affects` names the files it changes")
-        else:
-            unresolvable = file_finding.unresolvable_affects(root, declared)
-            typos = file_finding.fictional_affects(root, declared)
-            if typos and len(unresolvable) == len(declared):
-                items.append(f"`Affects` names a path that does not exist while its filename "
-                             f"does: {', '.join(typos)}")
-    if (dor is None or "grooming.points" in dor) and sdlc_md.read_points(text) is None:
+    if not declared:
+        missed.append(("grooming.affects", "no `Affects` names the files it changes"))
+    else:
+        unresolvable = file_finding.unresolvable_affects(root, declared)
+        typos = file_finding.fictional_affects(root, declared)
+        if typos and len(unresolvable) == len(declared):
+            missed.append(("grooming.affects", f"`Affects` names a path that does not exist "
+                                               f"while its filename does: {', '.join(typos)}"))
+    if sdlc_md.read_points(text) is None:
         scale = ", ".join(str(p) for p in sdlc_md.POINTS_SCALE)
-        items.append(f"no `Points` on the scale ({scale})")
-    return items
+        missed.append(("grooming.points", f"no `Points` on the scale ({scale})"))
+    enforced = [item for check, item in missed if dor is None or check in dor]
+    downgraded = [item for check, item in missed if dor is not None and check not in dor]
+    return enforced, downgraded
 
 
 def _never_ready_gate(root: Path, text: str, from_canon: str | None) -> tuple[str | None, str | None]:
@@ -495,24 +500,31 @@ def _never_ready_gate(root: Path, text: str, from_canon: str | None) -> tuple[st
 
     A recorded `> **Decision-Override:** <reason>` lets the move through and the reason is
     reported back, the same sanctioned skip the RFC accept gate takes. `sprint.breakdown:
-    judgement`, the plan's own recorded opt-out, turns the refusal into a warning here too."""
+    judgement`, the plan's own recorded opt-out, turns the refusal into a warning here too. An
+    item the project's `definition-of-ready.md` downgraded is let through and reported, as
+    `sprint plan` reports the downgrade, so the file never turns the check off silently."""
     if from_canon not in _NEVER_READY:
         return None, None
-    items = _unready_items(root, text)
+    items, downgraded = _unready_items(root, text)
+    downgrade = (f"Definition of Ready item(s) downgraded to human judgement by "
+                 f"definition-of-ready.md (no `[check:]` tag), so not refused: "
+                 f"{'; '.join(downgraded)}" if downgraded else None)
     if not items:
-        return None, None
+        return None, downgrade
     listed = "; ".join(items)
     reason = _rfc_override_reason(text)
     if reason:
-        return None, (f"Definition of Ready not met ({listed}) - decision-override "
-                      f"recorded: {reason}")
-    import sprint  # noqa: PLC0415 - heavy; only this path needs the plan's mode reader
-    if sprint.breakdown_mode(root) == "judgement":
-        return None, (f"Definition of Ready not met ({listed}) - reported, not refused, under "
-                      f"`sprint.breakdown: judgement`")
-    return (f"it is {from_canon} and was never Ready: it misses the Definition of Ready "
-            f"`sprint plan` applies - {listed}. Meet each item, or record "
-            f"`> **Decision-Override:** <reason>` on the story. Override with --force"), None
+        warn = f"Definition of Ready not met ({listed}) - decision-override recorded: {reason}"
+    else:
+        import sprint  # noqa: PLC0415 - heavy; only this path needs the plan's mode reader
+        if sprint.breakdown_mode(root) != "judgement":
+            return (f"it is {from_canon} and was never Ready: it misses the Definition of Ready "
+                    f"`sprint plan` applies - {listed}. Meet each item, or record "
+                    f"`> **Decision-Override:** <reason>` on the story. Override with "
+                    f"--force"), None
+        warn = (f"Definition of Ready not met ({listed}) - reported, not refused, under "
+                f"`sprint.breakdown: judgement`")
+    return None, "; ".join(w for w in (warn, downgrade) if w)
 
 
 def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
@@ -1283,8 +1295,8 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
     sdlc_md.atomic_write(path, new_text)  # truth-file stamp: atomic so a crash never truncates it
     reconcile.apply_type(type_, root)  # sync the index row + counts
     # index_synced is the TRUTH after the sync, not "apply did something": an archived
-    # row (apply only edits the live index) or a target status with no summary row both
-    # leave residual drift, which we must report honestly rather than claim success.
+    # row no writer can place (a header-less table) or a target status with no summary row
+    # both leave residual drift, which we must report honestly rather than claim success.
     norm = sdlc_md.norm_id(result["id"])
     residual = [d for d in reconcile.detect_type(type_, root)["drift"]
                 if (d.get("id") and sdlc_md.norm_id(d["id"]) == norm) or d["kind"] == "count-mismatch"]

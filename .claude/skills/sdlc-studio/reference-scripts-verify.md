@@ -180,7 +180,8 @@ checkbox/dependency/PRD-feature and CR-cascade drift that needs judgement.
 Full workflow: `reference-reconcile.md`.
 
 Reconcile does **not** archive. Index archival is `archive.py` alone (one layout, one
-writer); reconcile only reads the archive sub-indexes into the census.
+writer); reconcile reads the archive sub-indexes into the census and, where a unit has no
+live row, rewrites the Status cell of its archived row, never moving or removing a row.
 
 ### `status.py` (read-only)
 

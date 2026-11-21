@@ -3098,8 +3098,9 @@ def _rewrite_archived_rows(root: Path, type_: str, fixes: dict, live_ids, vocab:
     no other. A live row always wins, even one the live writer could not place: rewriting the
     archive beneath it would change a row the census never reads and still leave the drift.
     Only the Status cell changes - rows are never added, moved or removed, so the layout stays
-    the one `archive.py` wrote. A header-less archived row cannot be pinned, so it stays
-    unapplied and is reported, never claimed."""
+    the one `archive.py` wrote; a hand-aligned table is re-padded around the new value, and
+    the file keeps or lacks its final newline as it did. A header-less archived row cannot be
+    pinned, so it stays unapplied and is reported, never claimed."""
     archive_dir = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "archive"
     wanted = {k: v for k, v in fixes.items() if k not in live_ids}
     if not wanted or not archive_dir.is_dir():

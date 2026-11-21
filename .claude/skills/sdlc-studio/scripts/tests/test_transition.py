@@ -4097,8 +4097,8 @@ def _ready_story_repo(root: Path, status: str = "Draft", affects: str | None = "
 
 
 class DraftToDoneReadyTests(unittest.TestCase):
-    """A story never Ready may not be closed Done: the Definition of Ready `sprint plan` applies
-    is asked at the transition too, so a story closed outside a sprint cannot skip it.
+    """A Draft or Proposed story may not be closed straight to Done: the Definition of Ready
+    `sprint plan` applies is asked at that move too (a story set to Ready first is not asked).
 
     Every fixture carries a GREEN verify report, so a refusal here is the readiness gate and no
     other: the control in each test is the same story with the item met, which goes through.
@@ -4173,6 +4173,98 @@ class DraftToDoneReadyTests(unittest.TestCase):
                 code, out = _cli(root, "set", "--id", "US0001", "--status", closure)
                 self.assertEqual(code, 0, f"{closure} from Draft was refused: {out}")
                 self.assertEqual(self._status(root), closure)
+                self.assertNotIn("Definition of Ready", out)
+
+    def test_judgement_mode_reports_the_items_instead_of_refusing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects=None, points=None)
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, f"judgement mode still refused: {out}")
+            self.assertEqual(self._status(root), "Done")
+            self.assertIn("warning:", out)
+            self.assertIn("sprint.breakdown: judgement", out)
+            for item in ("no `Affects`", "no `Points`"):
+                self.assertIn(item, out, f"the unmet item is not reported: {out}")
+
+    def test_the_project_definition_of_ready_decides_which_check_enforces(self) -> None:
+        """A Story section tagged with one check enforces that check alone; the other is the
+        project's downgrade to human judgement, which `set` reports and never refuses on."""
+        sections = {
+            "points only": ("[check: grooming.points]", ["no `Points`"], ["no `Affects`"]),
+            "affects only": ("[check: grooming.affects]", ["no `Affects`"], ["no `Points`"]),
+            "both": ("[check: grooming.affects] [check: grooming.points]",
+                     ["no `Affects`", "no `Points`"], []),
+        }
+        for case, (tags, named, dropped) in sections.items():
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as d:
+                root = _ready_story_repo(Path(d), affects=None, points=None)
+                (root / "sdlc-studio" / "definition-of-ready.md").write_text(
+                    f"# Definition of Ready\n\n## Story\n\n- [ ] groomed {tags}\n",
+                    encoding="utf-8")
+                code, out = _cli(root, "requirements", "--id", "US0001", "--status", "Done")
+                self.assertEqual(code, 0, out)
+                self.assertIn("1 unmet requirement", out)  # one gate, its items listed
+                for item in named:
+                    self.assertIn(item, out, f"an enforced check went unasked: {out}")
+                for item in dropped:
+                    self.assertNotIn(item, out, f"a check the project dropped was asked: {out}")
+        with tempfile.TemporaryDirectory() as d:
+            # Both reports in one move: the enforced item reported under judgement mode, and the
+            # dropped one reported as the project's downgrade beside it, neither lost.
+            root = _ready_story_repo(Path(d), affects=None, points=None)
+            (root / "sdlc-studio" / "definition-of-ready.md").write_text(
+                "# Definition of Ready\n\n## Story\n\n- [ ] groomed [check: grooming.points]\n",
+                encoding="utf-8")
+            (root / "sdlc-studio" / ".config.yaml").write_text(
+                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, out)
+            self.assertIn("sprint.breakdown: judgement", out)
+            self.assertIn("human judgement", out)
+            self.assertIn("no `Affects`", out)
+            self.assertIn("no `Points`", out)
+
+    def test_an_untagged_definition_of_ready_reports_its_downgrade(self) -> None:
+        """A Story section with no check tags downgrades both checks to human judgement: the
+        move goes through, and `set` says which items it let through and why, never silently."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects=None, points=None)
+            (root / "sdlc-studio" / "definition-of-ready.md").write_text(
+                "# Definition of Ready\n\n## Story\n\n- [ ] a human has groomed it\n",
+                encoding="utf-8")
+            code, out = _cli(root, "requirements", "--id", "US0001", "--status", "Done")
+            self.assertIn("no unmet requirements", out)
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, f"a downgraded check still refused: {out}")
+            self.assertEqual(self._status(root), "Done")
+            self.assertIn("warning:", out)
+            self.assertIn("definition-of-ready.md", out)
+            self.assertIn("human judgement", out)
+            for item in ("no `Affects`", "no `Points`"):
+                self.assertIn(item, out, f"the downgraded item is not reported: {out}")
+        with tempfile.TemporaryDirectory() as d:
+            # The control: a story meeting both items under the same file has nothing to report.
+            root = _ready_story_repo(Path(d))
+            (root / "sdlc-studio" / "definition-of-ready.md").write_text(
+                "# Definition of Ready\n\n## Story\n\n- [ ] a human has groomed it\n",
+                encoding="utf-8")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, out)
+            self.assertNotIn("human judgement", out)
+
+    def test_only_an_affects_of_typos_alone_is_refused(self) -> None:
+        """The plan's typo rule: refused only when EVERY declared path is unresolvable and one
+        is a typo for a file that exists elsewhere. One typo beside a resolvable path, and a
+        greenfield path whose filename exists nowhere, both go through, as `sprint plan` lets
+        them."""
+        for affects in ("lib/thing.py, src/thing.py", "src/new_file.py"):
+            with self.subTest(affects=affects), tempfile.TemporaryDirectory() as d:
+                root = _ready_story_repo(Path(d), affects=affects)
+                code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                self.assertEqual(code, 0, f"{affects!r} was refused: {out}")
+                self.assertEqual(self._status(root), "Done")
                 self.assertNotIn("Definition of Ready", out)
 
 

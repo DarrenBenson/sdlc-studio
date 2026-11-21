@@ -5204,6 +5204,44 @@ class ArchivedRowApplyTests(unittest.TestCase):
             self.assertEqual(self._archive(root).read_bytes(), later,
                              "a row the census does not read was rewritten")
 
+    def test_the_archived_file_keeps_its_final_newline_or_its_lack_of_one(self) -> None:
+        """The sub-index `archive.py` wrote ends in a newline and keeps it; one a hand left
+        without a final newline gains none. Only the Status cell differs, byte for byte."""
+        for ending in ("\n", ""):
+            with self.subTest(ending=repr(ending)), tempfile.TemporaryDirectory() as d:
+                root = self._repo(Path(d))
+                arch = self._archive(root)
+                written = arch.read_bytes()
+                self.assertTrue(written.endswith(b"| Fixed |\n"), "archive.py's shape moved")
+                arch.write_bytes(written[:-1] + ending.encode())
+                before = arch.read_bytes()
+                self._close_by_hand(root)
+                code, out, err = self._apply(root)
+                self.assertEqual(code, 0, out + err)
+                self.assertEqual(arch.read_bytes(),
+                                 before.replace(b"| Medium | Fixed |", b"| Medium | Closed |"))
+
+    def test_a_hand_aligned_archive_table_stays_aligned(self) -> None:
+        """An archive table a hand padded keeps its columns: the rewritten row lines up under
+        the header (markdownlint's MD060) rather than collapsing to one space a cell."""
+        aligned = ("# bug archive - v1.0.0\n\n"
+                   "| ID                          | Title | Severity | Status   |\n"
+                   "| --------------------------- | ----- | -------- | -------- |\n"
+                   "| [BG0001](../../BG0001-b.md) | b     | Medium   | Fixed    |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            arch = self._archive(root)
+            arch.write_text(aligned, encoding="utf-8")
+            transition = _load_sibling("transition")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                code = transition.main(["--root", str(root), "set", "--id", "BG0001",
+                                        "--status", "Closed"])
+            self.assertEqual(code, 0, out.getvalue())
+            self.assertIn("index synced=True", out.getvalue())
+            self.assertEqual(arch.read_text(encoding="utf-8"),
+                             aligned.replace("| Fixed    |", "| Closed   |"))
+
 
 if __name__ == "__main__":
     unittest.main()
