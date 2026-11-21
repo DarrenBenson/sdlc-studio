@@ -807,6 +807,66 @@ _SHELL_DISABLED_MSG = ("shell execution disabled (--no-shell, or the story is st
                        "--allow-external to run this story's shell verifiers")
 
 
+#: The portable name a committed Verify line gives the skill directory. A line is shared, so it
+#: never holds one machine's install path; the path is supplied only when the line runs.
+SKILL_PLACEHOLDER = "<skill>"
+
+
+def _expand_skill_placeholder(command: str, skill_dir: Path | str) -> str:
+    """`command` with every expandable skill placeholder replaced by `skill_dir`, quoted.
+
+    The placeholder behaves as a shell variable would: it expands bare and inside double
+    quotes, and stays literal inside single quotes, so a line can still search for the
+    placeholder itself. Bare, the shell would otherwise read it as an input
+    redirect from a file called `skill`. Each expansion is quoted for where it lands, so a
+    directory holding a space, a quote or a `$` reaches the command as one argument. A command
+    substitution, `$(...)`, opens a fresh context even inside double quotes. Old-style
+    backticks are not tracked, so a line that substitutes the placeholder writes `$(...)`.
+    """
+    bare = shlex.quote(str(skill_dir))
+    in_dq = re.sub(r'([\\$`"])', r"\\\1", str(skill_dir))
+    out: list[str] = []
+    # "code" the top level and "cs" inside `$(` (both read the placeholder bare), "dq" inside
+    # double quotes, "sq" inside single quotes.
+    stack = ["code"]
+    i, n = 0, len(command)
+    while i < n:
+        state, ch = stack[-1], command[i]
+        if state == "sq":
+            if ch == "'":
+                stack.pop()
+            out.append(ch)
+            i += 1
+            continue
+        if command.startswith(SKILL_PLACEHOLDER, i):
+            out.append(in_dq if state == "dq" else bare)
+            i += len(SKILL_PLACEHOLDER)
+            continue
+        if ch == "\\":
+            out.append(command[i:i + 2])
+            i += 2
+            continue
+        if command.startswith("$(", i):
+            stack.append("cs")
+            out.append("$(")
+            i += 2
+            continue
+        if state == "dq":
+            if ch == '"':
+                stack.pop()
+        elif ch == "'":
+            stack.append("sq")
+        elif ch == '"':
+            stack.append("dq")
+        elif ch == "(" and state == "cs":
+            stack.append("cs")
+        elif ch == ")" and state == "cs":
+            stack.pop()
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
 def run_verifier(expression: str, timeout: int, cwd: Path,
                  allow_shell: bool = True, allow_fallback: bool = False) -> VerifierResult:
     """Parse a verifier expression and execute it. `allow_shell=False` blocks the
@@ -828,6 +888,11 @@ def run_verifier(expression: str, timeout: int, cwd: Path,
     # when shell execution is disabled rather than executing untrusted content.
     if isinstance(cmd, str) and not allow_shell:
         return VerifierResult(False, "blocked", 2, "", _SHELL_DISABLED_MSG, 0)
+    if kind == "shell" and isinstance(cmd, str):
+        # Expanded here, at run time only, so the artefact keeps the portable placeholder.
+        cmd = _expand_skill_placeholder(cmd, sdlc_md.loaded_skill_dir())
+    elif kind in _NODE_RUNNERS and isinstance(cmd, list):
+        cmd = _node_runner_argv(cmd, cwd)
 
     try:
         result = _run_in_group(cmd, timeout, cwd)
@@ -2021,6 +2086,72 @@ def _expand_globs(paths: list[str], cwd) -> list[str]:
     return out
 
 
+#: The Node test runners a Verify verb reaches, each taking its test name through `-t`.
+_NODE_RUNNERS = ("jest", "vitest")
+_NAME_FLAGS = ("-t", "--testNamePattern")
+_JS_REGEX_SPECIAL = re.compile(r"[\\^$.*+?()[\]{}|]")
+
+
+def _js_regex_literal(name: str) -> str:
+    """`name` as a JavaScript regex that matches exactly that text: each metacharacter
+    backslash-escaped, which JavaScript's RegExp, with or without its `u` flag, and Python's
+    `re` both read as the character itself."""
+    return _JS_REGEX_SPECIAL.sub(lambda m: "\\" + m.group(0), name)
+
+
+def _node_runner_args(verb: str, tail: str) -> tuple[list[str], str] | None:
+    """`(other arguments, name)` for a jest or vitest tail that names its test with `-t` or
+    `--testNamePattern`, or None for the bare form, a tail that is only a name pattern.
+
+    The other arguments keep their order, so a test file stays the positional argument the
+    runner expects. The name a `-t` carries is a literal test name. A tail shlex cannot split
+    is the bare form, because a bare pattern never needed quoting to be read.
+    """
+    try:
+        args = shlex.split(tail)
+    except ValueError:
+        return None
+    if not any(a in _NAME_FLAGS or a.startswith("--testNamePattern=") for a in args):
+        return None
+    rest: list[str] = []
+    names: list[str] = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in _NAME_FLAGS:
+            if i + 1 >= len(args):
+                raise ValueError(f"{verb}: {a} needs a test name after it")
+            names.append(args[i + 1])
+            i += 2
+            continue
+        if a.startswith("--testNamePattern="):
+            names.append(a.split("=", 1)[1])
+        else:
+            rest.append(a)
+        i += 1
+    if len(names) > 1:
+        raise ValueError(f"{verb}: name the test once; the line gives {len(names)} names")
+    if not names[0]:
+        raise ValueError(f"{verb}: the test name after -t is empty")
+    return rest, names[0]
+
+
+def _node_runner_argv(argv: list[str], cwd) -> list[str]:
+    """How a jest or vitest command is launched: the bare binary when it is on PATH, else the
+    project's own `node_modules/.bin` copy, else `npx --no-install`, which finds a copy further
+    up a workspace and never downloads one mid-verify. With none of them the bare binary runs,
+    and its absence is reported as the missing runner it is."""
+    binary = argv[0]
+    if shutil.which(binary):
+        return argv
+    local = os.path.join(os.path.abspath(str(cwd or ".")), "node_modules", ".bin", binary)
+    if os.path.isfile(local) and os.access(local, os.X_OK):
+        return [local, *argv[1:]]
+    if shutil.which("npx"):
+        return ["npx", "--no-install", *argv]
+    return argv
+
+
 def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[str, list[str] | str]:
     """Translate a verifier expression into a subprocess command.
 
@@ -2043,10 +2174,14 @@ def _build_command(expr: str, allow_fallback: bool = False, cwd=None) -> tuple[s
         args = shlex.split(tail)
         cut = args.index("--") if "--" in args else len(args)
         return "pytest", ["pytest", "-q", "-rfEs", *args[:cut], "--verbosity=-1", *args[cut:]]
-    if head == "jest" and tail:
-        return "jest", ["jest", "-t", tail.strip('"\'')]
-    if head == "vitest" and tail:
-        return "vitest", ["vitest", "run", "-t", tail.strip('"\'')]
+    if head in _NODE_RUNNERS and tail:
+        base = ["vitest", "run"] if head == "vitest" else ["jest"]
+        named = _node_runner_args(head, tail)
+        if named is None:
+            # The bare form: the whole tail is the name pattern, a regex, as it always was.
+            return head, [*base, "-t", tail.strip('"\'')]
+        rest, name = named
+        return head, [*base, *rest, "-t", _js_regex_literal(name)]
     if head == "go" and tail:
         # Format: go <path> -run <node>
         return "go", ["go", "test"] + shlex.split(tail)
@@ -2645,6 +2780,11 @@ def resolve_jest_from_cache(verifier: str, asserts: list[dict]) -> VerifierResul
     """
     head, _, tail = verifier.strip().partition(" ")
     if head.lower() != "jest" or not tail:
+        return None
+    try:
+        if _node_runner_args("jest", tail) is not None:
+            return None  # a file-and-name line: the cache holds no file to restrict it to
+    except ValueError:
         return None
     pat = tail.strip().strip('"\'')
     try:
@@ -3851,13 +3991,139 @@ def _report_failed_acs(report_path: Path | str) -> set[str]:
     return failed
 
 
-def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> list[dict]:
+# A pytest node id in a Test Cases cell: a `.py` file, then `::` and the names inside it. A
+# parametrisation suffix (`[case-1]`) is left off, since it names a case, not a definition.
+_NODE_ID_RE = re.compile(r"(?<![\w./-])((?:[\w.-]+/)*[\w.-]*\w\.py)((?:::[A-Za-z_]\w*)+)")
+# Directories never searched for a named test file: tool caches and dependency trees.
+_TREE_SKIP = {".git", "node_modules", "__pycache__", ".venv", "venv", ".tox", ".mypy_cache",
+              ".pytest_cache", ".ruff_cache"}
+
+
+class _TestTree:
+    """The project's own Python files, for resolving the node ids a test-spec matrix names.
+
+    A node id whose file part holds a `/` is looked up at that path from the root, or failing
+    that as the end of a longer path; a bare file name matches any file of that name. A nested
+    checkout (a directory holding its own `.git`, such as a worktree) is another tree, so what
+    only it defines does not resolve here. The walk is made once, and only when a name needs it.
+    """
+
+    def __init__(self, root: Path) -> None:
+        self.root = Path(root)
+        self._by_name: dict[str, list[Path]] | None = None
+        self._parsed: dict[Path, tuple] = {}   # each file read and parsed once per check
+
+    def _index(self) -> dict[str, list[Path]]:
+        if self._by_name is None:
+            self._by_name = {}
+            for top, dirs, files in os.walk(self.root):
+                dirs[:] = sorted(d for d in dirs if d not in _TREE_SKIP
+                                 and not os.path.exists(os.path.join(top, d, ".git")))
+                for f in files:
+                    if f.endswith(".py"):
+                        self._by_name.setdefault(f, []).append(Path(top) / f)
+        return self._by_name
+
+    def files(self, name: str) -> list[Path]:
+        """The files a node id's file part names."""
+        name = name[2:] if name.startswith("./") else name
+        if "/" in name and (self.root / name).is_file():
+            return [self.root / name]
+        tail = "/" + name
+        return [f for f in self._index().get(Path(name).name, [])
+                if "/" not in name or f.as_posix().endswith(tail)]
+
+    def unresolved(self, cell: str) -> list[tuple[str, str]]:
+        """`(node id, why)` for each node id in `cell` that nothing in the tree defines."""
+        out = []
+        for m in _NODE_ID_RE.finditer(cell or ""):
+            found = self.files(m.group(1))
+            if not found:
+                out.append((m.group(0), f"no file {m.group(1)} in the tree"))
+                continue
+            names = m.group(2).split("::")[1:]
+            whys = [_names_defined(self._parse(f), names) for f in found]
+            if all(whys):
+                more = f" (nor in the {len(whys) - 1} other file(s) so named)" if len(whys) > 1 else ""
+                out.append((m.group(0), whys[0] + more))
+        return out
+
+    def _parse(self, path: Path) -> tuple:
+        """`(display path, module or None, classes by name, why unreadable)` for `path`."""
+        if path not in self._parsed:
+            try:
+                rel = path.relative_to(self.root).as_posix()
+            except ValueError:
+                rel = path.as_posix()
+            text = sdlc_md.read_text_safe(path)
+            module, why = None, ""
+            if not text and path.is_file() and path.stat().st_size:
+                why = f"{rel} is not readable as UTF-8"
+            else:
+                try:
+                    module = ast.parse(text)
+                except (SyntaxError, ValueError):
+                    why = f"{rel} does not parse as Python"
+            classes = ({n.name: n for n in ast.walk(module) if isinstance(n, ast.ClassDef)}
+                       if module else {})
+            self._parsed[path] = (rel, module, classes, why)
+        return self._parsed[path]
+
+
+def _names_defined(parsed: tuple, names: list[str]) -> str | None:
+    """None when the parsed file defines `names` (any classes, then the test), else why not.
+
+    A method may come from a base class: a base the same file defines is searched too, and one
+    imported from elsewhere cannot be read here, so a name it might supply is not reported."""
+    rel, module, classes, why = parsed
+    if module is None:
+        return why
+    owner, scope = None, module.body
+    for i, name in enumerate(names):
+        hit = next((n for n in scope if isinstance(n, _TEST_DEFS) and n.name == name), None)
+        if hit is None and owner is not None:
+            hit = _inherited(owner, name, classes, set())
+        if hit is True:
+            return None
+        if hit is None:
+            kind = "test" if i == len(names) - 1 else "class"
+            return f"no {kind} {name} in " + (f"{names[i - 1]} in {rel}" if i else rel)
+        owner, scope = hit, getattr(hit, "body", [])
+    return None
+
+
+def _inherited(cls, name: str, classes: dict, seen: set):
+    """The definition of `name` that class `cls` inherits from a base this file defines; True
+    when a base the file does not define might supply it; None when no base can."""
+    for base in getattr(cls, "bases", []):
+        bname = base.attr if isinstance(base, ast.Attribute) else getattr(base, "id", None)
+        if bname in (None, "TestCase", "object") or bname in seen:
+            continue
+        seen.add(bname)
+        owner = classes.get(bname)
+        if owner is None:
+            return True
+        hit = (next((n for n in owner.body if isinstance(n, _TEST_DEFS) and n.name == name), None)
+               or _inherited(owner, name, classes, seen))
+        if hit:
+            return hit
+    return None
+
+
+def ts_check(spec_path: Path | str, verify_report: Path | str | None = None,
+             root: Path | str | None = None) -> list[dict]:
     """Validate a test-spec's AC Coverage Matrix is not decorative: every AC row
     must map a Test Case and carry a passing Status, and no placeholders may remain. The
     matrix authored before code is what makes the AC and its test converge by construction.
     When `verify_report` is given, also cross-check: an AC the matrix calls passing but the
     verify-report marks failing is flagged (the matrix cannot claim green over a red runner).
     Returns a list of {ac, issue} findings (empty = the matrix is complete and honest).
+
+    A passing row whose Test Cases cell names a pytest node id (`file.py::Class::test`) is
+    resolved against the tree under `root` (default: the project the spec sits in), and a node
+    id whose file or names nothing there defines is a finding naming the row: a Pass over a
+    test nobody can run is the decorative matrix this check exists to stop. A cell naming no
+    test file is a manual check and is not resolved.
 
     A spec with NO matrix is a finding, not a clean result. Zero rows and zero findings was
     the same output a fully mapped matrix produces, so a spec asserting no coverage was
@@ -3883,6 +4149,7 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
     if not text and p.stat().st_size:
         return [{"ac": "-", "issue": f"spec is unreadable or not valid UTF-8: {p}"}]
     failed_in_report = _report_failed_acs(verify_report) if verify_report else set()
+    tree = _TestTree(Path(root) if root is not None else sdlc_md.discover_root(p.parent))
     issues: list[dict] = []
     matrices = 0   # matrix TABLES found
     acs = 0        # AC rows read out of them
@@ -3917,6 +4184,11 @@ def ts_check(spec_path: Path | str, verify_report: Path | str | None = None) -> 
                 issues.append({"ac": ac, "issue": f"status {st!r} is not passing"})
             elif key in failed_in_report:
                 issues.append({"ac": ac, "issue": "matrix says passing but the verify-report marks it failing"})
+            else:
+                row = f"the {sid} row" if sid else "the row"
+                for node, why in tree.unresolved(tc):
+                    issues.append({"ac": ac, "issue": f"{row} is marked {st} but names `{node}`, "
+                                                      f"which nothing in the tree defines: {why}"})
     if not matrices:
         issues.append({"ac": "-", "issue": _no_matrix_issue(text)})
     elif not acs:
@@ -4089,7 +4361,7 @@ def epic_test_spec_check(repo_root: Path | str, epic_id: str) -> dict:
     if not specs:
         return {"epic": epic_id, "ok": False, "specs": [], "enforced": enforced,
                 "issues": [{"issue": "no test-spec links to this epic (epic-scope TS required)"}]}
-    issues = [{**i, "spec": sp.name} for sp in specs for i in ts_check(sp)]
+    issues = [{**i, "spec": sp.name} for sp in specs for i in ts_check(sp, root=root)]
     return {"epic": epic_id, "ok": not issues, "specs": [s.name for s in specs],
             "issues": issues, "enforced": enforced}
 
@@ -4115,7 +4387,7 @@ def cmd_ts_check(args: argparse.Namespace) -> int:
     spec = under_root(repo_root, args.spec)
     report = under_root(repo_root, args.verify_report) if args.verify_report else None
     try:
-        issues = ts_check(spec, report)
+        issues = ts_check(spec, report, root=repo_root)
     except FileNotFoundError as exc:
         # Exit 2 (a broken invocation), never 1 (a matrix with findings) and never 0. The
         # resolved path is named because that is the only way the caller can see WHICH

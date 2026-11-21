@@ -249,6 +249,14 @@ Supported prefixes: `pytest`, `jest`, `vitest`, `go`, `file`, `grep`,
 `http`, `shell`. Anything unrecognised falls back to `shell`. See
 `reference-verify.md#verify-dsl` for the full table and examples.
 
+`jest` and `vitest` take a test file and a test name:
+`vitest src/cart.test.ts -t "adds (two) items"` runs `vitest run src/cart.test.ts -t <name>`,
+the file kept as its own argument. The name after `-t` (or `--testNamePattern`) is matched
+literally, so a `(` or `.` in a test title needs no escaping. A line with no `-t`, such as
+`jest "login happy path"`, passes its whole tail as the name pattern, a regex, as before. When
+the bare binary is not on PATH, the runner is launched from the project's `node_modules/.bin`,
+or else through `npx --no-install`, which never downloads one.
+
 ## Examples
 
 **Preview verification on one story without writing:**

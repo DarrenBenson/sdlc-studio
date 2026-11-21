@@ -8,9 +8,13 @@
 ## Overview
 
 The epic-scope test specification for EP0011 (executable mutation-check gate). Every story AC
-maps to a planned test case here; the stories' `Verify:` lines point at these exact pytest
-titles so implementation binds tests to this matrix by construction. Doc ACs are verified by
-shell greps (the link/style guards cover mechanics).
+maps to a test case here, and each row names the test or check its story's `Verify:` line runs, so
+implementation binds tests to this matrix by construction. Doc ACs are verified by shell greps
+(the link/style guards cover mechanics).
+
+The gate's mutation lane that US0054 wired was retired by US0921: mutation testing is
+`mutation.py run`, which no gate reads. US0054 AC1, AC2 and AC4 were retired with the lane, so
+their rows record the stories' manual Verify lines rather than gate tests that no longer exist.
 
 ## Scope
 
@@ -21,7 +25,7 @@ shell greps (the link/style guards cover mechanics).
 | [US0051](../stories/US0051-textual-mutation-engine-declared-fault-classes-language-profiles.md) | Textual mutation engine | High |
 | [US0052](../stories/US0052-runner-bridge-and-mutation-report-killed-vs-survived.md) | Runner bridge + mutation report | High |
 | [US0053](../stories/US0053-mutation-cli-lanes-story-files-since-selection-static.md) | CLI lanes, pre-filter, cost ceiling | Medium |
-| [US0054](../stories/US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md) | Gate wiring + docs | Medium |
+| [US0054](../stories/US0054-gate-wiring-and-docs-advisory-mutation-lane-discipline.md) | Gate wiring + docs (gate lane retired by US0921) | Medium |
 
 ### AC Coverage Matrix
 
@@ -34,7 +38,7 @@ shell greps (the link/style guards cover mechanics).
 | US0052 | AC1 | vacuous test survives, load-bearing test kills | test_mutation.py::BridgeTests::test_vacuous_survives_loadbearing_kills | Pass |
 | US0052 | AC2 | report shape + summary counts equal records | test_mutation.py::BridgeTests::test_report_shape_and_counts | Pass |
 | US0052 | AC3 | survivors exit non-zero, named | test_mutation.py::BridgeTests::test_survivor_exits_nonzero | Pass |
-| US0052 | AC4 | runner error reported, never a kill | test_mutation.py::BridgeTests::test_runner_error_not_a_kill | Pass |
+| US0052 | AC4 | runner error reported, never a kill | test_mutation.py::BridgeTests::test_broken_runner_baseline_refuses_never_a_kill, test_mutation.py::MutationSeriesNoEvidenceTests::test_an_all_error_run_records_no_evidence_even_though_it_applied_mutants | Pass |
 | US0053 | AC1 | --files and --since select the declared surface | test_mutation.py::LaneTests::test_files_and_since_select_surface | Pass |
 | US0053 | AC2 | ceiling truncates loudly (truncated count in report) | test_mutation.py::LaneTests::test_ceiling_truncates_loudly | Pass |
 | US0053 | AC3 | prefilter flags assertion-free tests only | test_mutation.py::LaneTests::test_prefilter_flags_assertion_free | Pass |
@@ -42,9 +46,9 @@ shell greps (the link/style guards cover mechanics).
 | US0053 | AC5 | --since includes untracked new files | test_mutation.py::StoryLaneTests::test_since_includes_untracked_files | Pass |
 | US0052 | AC5 | unviable mutants are never counted killed | test_mutation.py::ViabilityTests::test_unviable_python_mutant_not_killed | Pass |
 | US0051 | AC5 | JS/Go profiles enumerate only valid-mutant forms | test_mutation.py::ProfileShapeTests::test_js_block_if_mutates_single_statement_if_skipped | Pass |
-| US0054 | AC4 | a stale report never reads PASS | test_gate.py::MutationLaneTests::test_stale_report_never_reads_pass | Pass |
-| US0054 | AC1 | gate warns on survivors, stays advisory | test_gate.py::MutationLaneTests::test_survivors_warn_advisory | Pass |
-| US0054 | AC2 | absent report reads not-run, never PASS | test_gate.py::MutationLaneTests::test_absent_report_is_not_run | Pass |
+| US0054 | AC4 | (retired) the gate lane read a stale report as never PASS | manual: retired by US0921, the gate's mutation lane was deleted (see story Verify) | Verified |
+| US0054 | AC1 | (retired) the gate lane warned on survivors, advisory | manual: retired by US0921, the gate's mutation lane was deleted (see story Verify) | Verified |
+| US0054 | AC2 | (retired) the gate lane read an absent report as not-run | manual: retired by US0921, the gate's mutation lane was deleted (see story Verify) | Verified |
 | US0054 | AC3 | discipline prose links to the executable gate | shell grep (see story Verify) | Pass |
 
 ## Fixtures
@@ -58,3 +62,4 @@ vacuous); a `.js` file for profile coverage; a git repo fixture for `--since`.
 | --- | --- | --- |
 | 2026-07-04 | sdlc | Created via `new` (deterministic) |
 | 2026-07-04 | claude | Matrix authored at design (shift-left bridge); stories' Verify lines point at these titles |
+| 2026-11-21 | Claude Opus 5.5 | BG1534: US0052 AC4 repointed to the tests its Verify line runs; US0054 AC1, AC2 and AC4 record the manual Verify lines US0921 left when it retired the gate's mutation lane |

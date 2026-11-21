@@ -130,6 +130,13 @@ behavioural assertions that already have test coverage.
 Shell commands run with `cwd` set to `--repo-root` (default: current
 directory). Every verifier has a `--timeout` limit (default 120s).
 
+**Reaching a skill script.** A Verify line is committed and shared, so it never names one
+machine's install path. Write `<skill>` for the skill directory, as in
+`shell test -f <skill>/scripts/verify_ac.py`. Just before a `shell` verifier runs, verify_ac
+puts the directory it was loaded from in its place, quoted, so a path holding a space stays
+one argument; the artefact keeps the placeholder. It expands bare and inside double quotes, as
+a shell variable would, and stays literal inside single quotes.
+
 ## Writing Good Verifiers {#verify-writing-good}
 
 **Keep them deterministic.** A verifier that depends on the wall

@@ -385,6 +385,72 @@ class HardeningTests(unittest.TestCase):
         bad = verify_ac.run_verifier("shell false", timeout=10, cwd=Path("."))
         self.assertFalse(bad.ok)
 
+    # A committed Verify line names the skill by its placeholder, never by one machine's install
+    # path. Unquoted, the shell read the placeholder as an input redirect from a file called
+    # `skill`, so every such check failed before it ran.
+    def test_run_verifier_shell_pass_and_fail_resolves_the_skill_placeholder(self) -> None:
+        skill = sdlc_md.loaded_skill_dir()
+        with tempfile.TemporaryDirectory() as d:   # a run directory holding no `skill` file
+            ok = verify_ac.run_verifier("shell test -f <skill>/scripts/verify_ac.py",
+                                        timeout=10, cwd=Path(d))
+            self.assertTrue(ok.ok, ok.stderr)
+            same = verify_ac.run_verifier(f"shell test <skill> -ef {shlex.quote(str(skill))}",
+                                          timeout=10, cwd=Path(d))
+            self.assertTrue(same.ok, "the placeholder did not resolve to the loaded skill")
+            bad = verify_ac.run_verifier("shell test -f <skill>/scripts/no_such_script.py",
+                                         timeout=10, cwd=Path(d))
+            self.assertFalse(bad.ok)
+            self.assertEqual(bad.stderr, "", "the check failed on a redirect, not on its test")
+
+    def test_the_placeholder_is_never_written_back(self) -> None:
+        skill = str(sdlc_md.loaded_skill_dir())
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            sd = root / "sdlc-studio" / "stories"
+            sd.mkdir(parents=True)
+            story = sd / "US0009-skill.md"
+            story.write_text(
+                "# US0009: skill placeholder\n\n## Acceptance Criteria\n\n"
+                "### AC1: the skill ships verify_ac\n"
+                "- **Given** g\n- **When** w\n- **Then** t\n"
+                "- **Verify:** shell test -f <skill>/scripts/verify_ac.py\n", encoding="utf-8")
+            rc = _quiet_main(["run", "--story", str(story), "--repo-root", str(root),
+                              "--report", str(root / ".local" / "r.json")])
+            self.assertEqual(rc, 0)
+            text = story.read_text(encoding="utf-8")
+            self.assertIn("**Verified:** yes", text)
+            self.assertIn("- **Verify:** shell test -f <skill>/scripts/verify_ac.py\n", text)
+            self.assertNotIn(skill, text, "the install path was written into the artefact")
+
+    def test_a_skill_path_with_a_space_is_quoted(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            skill = Path(d) / "my skill's $HOME `x`"
+            (skill / "scripts").mkdir(parents=True)
+            (skill / "scripts" / "verify_ac.py").write_text("# marker\n", encoding="utf-8")
+            run = Path(d) / "run"
+            run.mkdir()
+
+            def verdict(cmd: str) -> bool:
+                with unittest.mock.patch.object(verify_ac.sdlc_md, "loaded_skill_dir",
+                                                return_value=skill):
+                    return verify_ac.run_verifier(cmd, timeout=10, cwd=run).ok
+
+            # One argument, bare or inside double quotes, as a shell variable would be.
+            self.assertTrue(verdict("shell set -- <skill>/scripts/verify_ac.py; "
+                                    "test $# -eq 1 && test -f \"$1\""))
+            self.assertTrue(verdict("shell test -f <skill>/scripts/verify_ac.py"))
+            self.assertTrue(verdict('shell test -f "<skill>/scripts/verify_ac.py"'))
+            self.assertTrue(verdict('shell test -f "$(echo <skill>)/scripts/verify_ac.py" '
+                                    '&& test -f <skill>/scripts/verify_ac.py'))
+            # An escaped quote opens no quoted string, so what follows it is still bare.
+            self.assertTrue(verdict('shell set -- \\" <skill>/scripts/verify_ac.py; '
+                                    'test $# -eq 2 && test -f "$2"'))
+            # A check that should fail still fails.
+            self.assertFalse(verdict("shell test -f <skill>/scripts/missing.py"))
+            self.assertFalse(verdict('shell test -f "<skill>/scripts/missing.py"'))
+            # Single quotes keep it literal, so a line can still search for the placeholder.
+            self.assertTrue(verdict("shell test '<skill>' = \"<\"skill\">\""))
+
     def test_verify_story_preserves_non_ascii(self) -> None:
         tmp = Path(tempfile.mkdtemp(prefix="verify_ac_unicode_"))
         try:
@@ -965,6 +1031,109 @@ class TsCheckAbsentMatrixTests(unittest.TestCase):
                 issues = verify_ac.ts_check(spec)
             self.assertEqual(len(issues), 1)
             self.assertIn("unreadable", issues[0]["issue"])
+
+
+class TsCheckSelectorResolutionTests(unittest.TestCase):
+    """A Pass row over a test nobody can run is the decorative matrix `ts-check` exists to stop.
+
+    The check read only that the Test Cases cell was filled and the Status a pass word, so a row
+    naming a deleted test class, or a test no file defines, read as clean. A cell naming a
+    pytest node id (`file.py::Class::test`) is now resolved against the tree; a cell naming no
+    test file is a manual check and is not resolved. Driven through the CLI, beside positive
+    controls, so a resolver that refuses everything fails here too.
+    """
+
+    HEADER = ("| Story | AC | Description | Test Cases | Status |\n"
+              "| --- | --- | --- | --- | --- |\n")
+    TESTS = ("import unittest\n\n\n"
+             "class RealTests(unittest.TestCase):\n"
+             "    def test_real(self):\n"
+             "        pass\n\n\n"
+             "def test_top_level():\n"
+             "    pass\n\n\n"
+             "class Shared:\n"
+             "    def test_shared(self):\n"
+             "        pass\n\n\n"
+             "class ChildTests(Shared, unittest.TestCase):\n"
+             "    pass\n\n\n"
+             "class ImportedBaseTests(helpers.BaseTests):\n"
+             "    pass\n")
+
+    def _project(self, root: Path, rows: str) -> Path:
+        tests = root / "pkg" / "tests"
+        tests.mkdir(parents=True)
+        (tests / "test_real.py").write_text(self.TESTS, encoding="utf-8")
+        # A nested checkout is another tree: what it defines is not the project's own.
+        other = root / ".claude" / "worktrees" / "other"
+        (other / "pkg" / "tests").mkdir(parents=True)
+        (other / ".git").write_text("gitdir: /nowhere\n", encoding="utf-8")
+        (other / "pkg" / "tests" / "test_elsewhere.py").write_text(
+            "class ElsewhereTests:\n    def test_x(self):\n        pass\n", encoding="utf-8")
+        specs = root / "sdlc-studio" / "test-specs"
+        specs.mkdir(parents=True)
+        spec = specs / "TS0001-x.md"
+        spec.write_text("# TS0001: x\n\n### AC Coverage Matrix\n\n" + self.HEADER + rows,
+                        encoding="utf-8")
+        return spec
+
+    def _ts_check(self, root: Path, spec: Path) -> tuple[int, str]:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            rc = verify_ac.main(["--root", str(root), "ts-check", "--spec", str(spec)])
+        return rc, out.getvalue()
+
+    def test_a_pass_row_naming_a_missing_test_is_a_finding(self) -> None:
+        rows = ("| US0001 | AC1 | real | test_real.py::RealTests::test_real | Pass |\n"
+                "| US0002 | AC4 | class gone | test_real.py::DeletedTests::test_real | Pass |\n"
+                "| US0003 | AC2 | test gone | pkg/tests/test_real.py::RealTests::test_gone | Pass |\n"
+                "| US0004 | AC3 | file gone | test_absent.py::AbsentTests::test_x | Pass |\n"
+                "| US0005 | AC5 | other tree | test_elsewhere.py::ElsewhereTests::test_x | Pass |\n"
+                "| US0006 | AC1 | wrong dir | wrong/dir/test_real.py::RealTests::test_real | Pass |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rc, out = self._ts_check(root, self._project(root, rows))
+            self.assertEqual(rc, 1, out)
+            self.assertNotIn("ts-check: 0 finding(s)", out)
+            self.assertIn("ts-check: 5 finding(s)", out)
+            lines = out.splitlines()
+            for story, ac, name in (("US0002", "AC4", "DeletedTests"),
+                                    ("US0003", "AC2", "test_gone"),
+                                    ("US0004", "AC3", "test_absent.py"),
+                                    ("US0005", "AC5", "test_elsewhere.py"),
+                                    ("US0006", "AC1", "wrong/dir/test_real.py")):
+                hit = [ln for ln in lines if story in ln]
+                self.assertEqual(len(hit), 1, f"no single finding names row {story}:\n{out}")
+                self.assertTrue(hit[0].lstrip().startswith(f"{ac}:"), hit[0])
+                self.assertIn(name, hit[0])
+            self.assertNotIn("US0001", out, "a resolvable row was reported")
+
+    def test_a_resolvable_row_and_a_manual_row_are_not_findings(self) -> None:
+        rows = ("| US0001 | AC1 | method | test_real.py::RealTests::test_real | Pass |\n"
+                "| US0001 | AC2 | by path | pkg/tests/test_real.py::test_top_level | Pass |\n"
+                "| US0001 | AC3 | param | `test_real.py::RealTests::test_real[case-1]` | Pass |\n"
+                "| US0001 | AC4 | inherited | test_real.py::ChildTests::test_shared | Pass |\n"
+                "| US0001 | AC5 | base unread | test_real.py::ImportedBaseTests::test_any | Pass |\n"
+                "| US0002 | AC1 | manual | manual: read the rendered page | Pass |\n"
+                "| US0002 | AC2 | shell | shell grep (see story Verify) | Pass |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            rc, out = self._ts_check(root, self._project(root, rows))
+            self.assertEqual((rc, out.strip()), (0, "ts-check: 0 finding(s) in TS0001-x.md"))
+
+    def test_an_unreadable_or_broken_test_file_is_a_finding_not_a_crash(self) -> None:
+        rows = ("| US0001 | AC1 | binary | test_binary.py::T::test_t | Pass |\n"
+                "| US0001 | AC2 | broken | test_broken.py::T::test_t | Pass |\n"
+                "| US0001 | AC3 | empty | test_empty.py::T::test_t | Pass |\n")
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            spec = self._project(root, rows)
+            (root / "pkg" / "tests" / "test_binary.py").write_bytes(b"\xff\xfe\x00class T:\n")
+            (root / "pkg" / "tests" / "test_broken.py").write_text("class T(:\n", encoding="utf-8")
+            (root / "pkg" / "tests" / "test_empty.py").write_text("", encoding="utf-8")
+            issues = {i["ac"]: i["issue"] for i in verify_ac.ts_check(spec, root=root)}
+            self.assertIn("UTF-8", issues.get("AC1", ""), issues)
+            self.assertIn("does not parse", issues.get("AC2", ""), issues)
+            self.assertIn("no class T", issues.get("AC3", ""), issues)
 
 
 class ShellExecutionPolicyTests(unittest.TestCase):
