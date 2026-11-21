@@ -1,0 +1,34 @@
+{
+  "unit": "BG1058",
+  "digest": "2ec2c803d9ac4ad9 at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1058-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the seal bar asked of the copy",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "awaits_signature = awaits_only_signature(Path(read_root or root), uid, kind, status)",
+      "new": "awaits_signature = awaits_only_signature(root, uid, kind, status)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the checklist step drops the read root",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "ua = unanswered_units(root, state, retro, read_root=read_root)",
+      "new": "ua = unanswered_units(root, state, retro)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the copy given the Affects file",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py",
+      "old": "            shutil.copytree(root / \"sdlc-studio\", copy / \"sdlc-studio\")\n",
+      "new": "            shutil.copytree(root, copy)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_read_root.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

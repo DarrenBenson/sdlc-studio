@@ -1,0 +1,43 @@
+{
+  "unit": "BG1051",
+  "digest": "965f5b282d569577 at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1051-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the first detail line cut",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "{step['step']}: {body[0]}\")",
+      "new": "{step['step']}: {body[0][:160]}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_no_line_of_a_step_is_cut",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a continuation line cut",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lines.extend(f\"       {ln}\" for ln in body[1:] if ln.strip())",
+      "new": "lines.extend(f\"       {ln[:160]}\" for ln in body[1:] if ln.strip())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_every_unit_of_a_long_refusal_is_printed_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the first remedy line cut",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lines.append(f\"       -> {remedy[0]}\")",
+      "new": "lines.append(f\"       -> {remedy[0][:160]}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_every_unit_of_a_long_refusal_is_printed_whole",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a later remedy line cut",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "lines.extend(f\"          {ln}\" for ln in remedy[1:] if ln.strip())",
+      "new": "lines.extend(f\"          {ln[:160]}\" for ln in remedy[1:] if ln.strip())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_uncut.py::DryRunUncutTests::test_no_line_of_a_step_is_cut",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

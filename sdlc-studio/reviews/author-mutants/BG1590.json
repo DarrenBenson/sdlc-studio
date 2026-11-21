@@ -1,0 +1,43 @@
+{
+  "unit": "BG1590",
+  "digest": "2c7deb5ed3bc893d at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1590-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the page re-derived from the working tree",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    stale = _page_no_longer_matches(root, report_id, commit)\n",
+      "new": "    stale = _page_no_longer_matches(root, report_id)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_ruling_committed_after_the_close_does_not_refuse_the_seal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page check dropped on the committed path",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    stale = _page_no_longer_matches(root, report_id, commit)\n",
+      "new": "    stale = \"\" if commit else _page_no_longer_matches(root, report_id, commit)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_page_the_close_commit_does_not_derive_is_still_refused",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the close commit's tree left checked out",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                git(\"worktree\", \"remove\", \"--force\", str(tree))\n",
+      "new": "                pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_ruling_committed_after_the_close_does_not_refuse_the_seal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the commit's tree never checked out",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            made = git(\"worktree\", \"add\", \"--detach\", \"--quiet\", str(tree), commit)\n",
+      "new": "            made = subprocess.CompletedProcess([], 1, \"\", \"\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_ruling_committed_after_the_close_does_not_refuse_the_seal",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

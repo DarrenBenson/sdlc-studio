@@ -1,0 +1,97 @@
+{
+  "unit": "BG0961",
+  "digest": "62e654e9dacaea66 at a01317169922",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a319f9e262627ae6e/BG0961-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "no expansion at run time",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        cmd = _expand_skill_placeholder(cmd, sdlc_md.loaded_skill_dir())\n",
+      "new": "        cmd = cmd\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_run_verifier_shell_pass_and_fail_resolves_the_skill_placeholder",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "expanded path left unquoted",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    bare = shlex.quote(str(skill_dir))\n",
+      "new": "    bare = str(skill_dir)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "double-quoted context gets the bare quoting",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            out.append(in_dq if state == \"dq\" else bare)\n",
+      "new": "            out.append(bare)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "single quotes no longer keep it literal",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if state == \"sq\":\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "backslash escape not tracked",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if ch == \"\\\\\":\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "command substitution not a fresh context",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if command.startswith(\"$(\", i):\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "command substitution never closes",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        elif ch == \")\" and state == \"cs\":\n            stack.pop()\n",
+      "new": "        elif ch == \")\" and state == \"cs\":\n            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "expansion written back into the artefact (test expects the install path)",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "            self.assertNotIn(skill, text, \"the install path was written into the artefact\")\n",
+      "new": "            self.assertIn(skill, text, \"the install path was written into the artefact\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_the_placeholder_is_never_written_back",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the should-fail check flipped to expect a pass",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "            self.assertFalse(verdict(\"shell test -f <skill>/scripts/missing.py\"))\n",
+      "new": "            self.assertTrue(verdict(\"shell test -f <skill>/scripts/missing.py\"))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_a_skill_path_with_a_space_is_quoted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the failing check expected to fail on a redirect",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "            self.assertEqual(bad.stderr, \"\", \"the check failed on a redirect, not on its test\")\n",
+      "new": "            self.assertIn(\"skill\", bad.stderr, \"the check failed on a redirect, not on its test\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::HardeningTests::test_run_verifier_shell_pass_and_fail_resolves_the_skill_placeholder",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

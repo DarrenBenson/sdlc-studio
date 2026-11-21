@@ -1,0 +1,106 @@
+{
+  "unit": "BG1534",
+  "digest": "5424164a42e931e8 at a01317169922",
+  "report": "sdlc-studio/.local/lane/landed/agent-a319f9e262627ae6e/BG1534-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "node ids never resolved",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "                for node, why in tree.unresolved(tc):\n",
+      "new": "                for node, why in []:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "nested checkouts searched",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "                dirs[:] = sorted(d for d in dirs if d not in _TREE_SKIP\n                                 and not os.path.exists(os.path.join(top, d, \".git\")))\n",
+      "new": "                dirs[:] = sorted(d for d in dirs if d not in _TREE_SKIP)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a path matched on its file name alone",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "                if \"/\" not in name or f.as_posix().endswith(tail)]\n",
+      "new": "                ]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a method looked up at module level",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        owner, scope = hit, getattr(hit, \"body\", [])\n",
+      "new": "        owner, scope = hit, module.body\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "inherited tests not searched",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            hit = _inherited(owner, name, classes, set())\n",
+      "new": "            hit = None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an unread base reported as missing",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if owner is None:\n            return True\n",
+      "new": "        if owner is None:\n            continue\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an undecodable file read as empty",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            if not text and path.is_file() and path.stat().st_size:\n",
+      "new": "            if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_an_unreadable_or_broken_test_file_is_a_finding_not_a_crash",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every node id resolves",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            if all(whys):\n",
+      "new": "            if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "direct path lookup removed",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if \"/\" in name and (self.root / name).is_file():\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "survived",
+      "answer": "equivalent: the index holds every .py file outside the skipped directories, and the suffix match finds the same file the direct lookup does; the two differ only for a path named inside a skipped directory (node_modules, a nested checkout), which the direct lookup honours because the author named it explicitly"
+    },
+    {
+      "mutant": "test: a resolvable row expected as a finding",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "            self.assertNotIn(\"US0001\", out, \"a resolvable row was reported\")\n",
+      "new": "            self.assertIn(\"US0001\", out, \"a resolvable row was reported\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the clean spec expected to report a finding",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "            self.assertEqual((rc, out.strip()), (0, \"ts-check: 0 finding(s) in TS0001-x.md\"))\n",
+      "new": "            self.assertEqual((rc, out.strip()), (1, \"ts-check: 1 finding(s) in TS0001-x.md\"))\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "unit": "BG0954",
+  "digest": "3cf2b370a0dd93bf at 41bdc7b0fe04",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad1bb647a0067e108/BG0954-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every-status-asked",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    if from_canon not in _NEVER_READY:\n        return None, None",
+      "new": "    if False:\n        return None, None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "proposed-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "_NEVER_READY = (\"Draft\", \"Proposed\")",
+      "new": "_NEVER_READY = (\"Draft\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "points-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "and sdlc_md.read_points(text) is None:",
+      "new": "and False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "typo-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "            if typos and len(unresolvable) == len(declared):",
+      "new": "            if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "affects-unchecked",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "        if not declared:\n            items.append(",
+      "new": "        if False:\n            items.append(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "block-downgraded-to-warning",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "        if block:\n            blocks.append(block)\n        if warn:",
+      "new": "        if block:\n            gate_warn = block\n        if warn:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "gate-unwired",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "        block, warn = _never_ready_gate(root, text, from_canon)",
+      "new": "        block, warn = None, None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_requirements_names_the_unmet_ready_item",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "override-reason-unreported",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "recorded: {reason}\")",
+      "new": "recorded\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "override-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "    reason = _rfc_override_reason(text)\n    if reason:\n        return None, (f\"Definition",
+      "new": "    reason = _rfc_override_reason(text)\n    if False:\n        return None, (f\"Definition",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every-terminal-asked",
+      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
+      "old": "            and sdlc_md.is_delivered_terminal(type_, target_canon or \"\")):\n        block, warn = _never_ready_gate",
+      "new": "            and sdlc_md.is_terminal_status(type_, target_canon or \"\")):\n        block, warn = _never_ready_gate",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-points-off-scale",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "points: str | None = \"3\", override",
+      "new": "points: str | None = \"7\", override",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-report-red",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "rp.write_text(json.dumps({\"stories\": {\"US0001-x\": {\"failed\": 0, \"stale\": 0,\n                                                       \"failures\": []}}}), encoding=\"utf-8\")\n    return root",
+      "new": "rp.write_text(json.dumps({\"stories\": {\"US0001-x\": {\"failed\": 1, \"stale\": 0,\n                                                       \"failures\": []}}}), encoding=\"utf-8\")\n    return root",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-case-made-ready",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "\"Points off the scale\": {\"points\": \"7\"},",
+      "new": "\"Points off the scale\": {\"points\": \"5\"},",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-artifact-fixture-unready",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
+      "old": "_READY = {\"affects\": \"src/thing.py\", \"points\": 3}",
+      "new": "_READY = {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::NewTests::test_close_dry_run_still_previews_what_the_gates_allow",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

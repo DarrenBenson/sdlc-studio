@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0983.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0983.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_signoff_verbs.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
 > **Evidence:** BG0962 round-1 QA review, 2026-10-07 (probe P26); reproduced by the author the same day.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -36,3 +36,4 @@ Read coverage and the per-unit verdict from the unit's rows past the run's `REVI
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-07 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: the run-scoped coverage correctly stops counting verdicts recorded before the run opened, so five fixtures that record verdicts first now record them after the run opens |

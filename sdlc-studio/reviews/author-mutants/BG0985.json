@@ -1,0 +1,52 @@
+{
+  "unit": "BG0985",
+  "digest": "b7e474998f7972e8 at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG0985-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every row a refusal again",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if held_blockers([blocker]):\n",
+      "new": "        if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every row advisory",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if held_blockers([blocker]):\n",
+      "new": "        if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_blocking_row_still_refuses",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the advisory row dropped from the preview",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            note(_blocker_label(blocker), \"advisory\", blocker.get(\"detail\", \"\"),\n                 blocker.get(\"remedy\", \"\"))\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the gate step left out over any gate row",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "gate_refused = any(b[\"stage\"] == \"gate\" for b in held)",
+      "new": "gate_refused = any(b[\"stage\"] == \"gate\" for b in pre[\"blockers\"])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the advisory row unlabelled",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "note(_blocker_label(blocker), \"advisory\"",
+      "new": "note(blocker[\"stage\"], \"advisory\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

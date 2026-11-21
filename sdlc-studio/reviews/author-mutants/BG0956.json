@@ -1,0 +1,124 @@
+{
+  "unit": "BG0956",
+  "digest": "b9592a588798eb87 at 41bdc7b0fe04",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad1bb647a0067e108/BG0956-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "archive-pass-unwired-transition",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    applied |= _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)",
+      "new": "    applied |= set()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::ArchivedRowSyncTests::test_closing_an_archived_bug_rewrites_its_archive_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archive-pass-unwired-apply",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    applied |= _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)",
+      "new": "    applied |= set()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_apply_rewrites_a_stale_archived_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "claimed-without-writing",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "            sdlc_md.atomic_write(af, sdlc_md.align_padded_tables(text, original))",
+      "new": "            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::ArchivedRowSyncTests::test_closing_an_archived_bug_rewrites_its_archive_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "live-row-does-not-win",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    wanted = {k: v for k, v in fixes.items() if k not in live_ids}",
+      "new": "    wanted = dict(fixes)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_live_row_wins_and_the_archive_is_untouched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no-live-ids",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "    live_ids = _index_rows_and_summary(original, vocab, aliases)[0].keys()",
+      "new": "    live_ids = ()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_live_row_wins_and_the_archive_is_untouched",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unplaceable-claimed",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if not done:\n            continue\n        applied |= done",
+      "new": "        applied |= set(here)\n        if not done:\n            continue",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_still_reports_unsynced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "census-order-ignored",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "if k in wanted and k not in seen}",
+      "new": "if k in wanted}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_only_the_archived_row_the_census_reads_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "archive-summary-restamped",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "_summary_cell_rewrite(cells, counts, vocab) if summaries else None",
+      "new": "_summary_cell_rewrite(cells, counts, vocab)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_only_the_archived_row_the_census_reads_is_written",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "dry-run-writes",
+      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
+      "old": "        if not dry_run:\n            text = \"\\n\".join(lines) + (\"\\n\" if original.endswith(\"\\n\") else \"\")\n            sdlc_md.atomic_write(af,",
+      "new": "        if True:\n            text = \"\\n\".join(lines) + (\"\\n\" if original.endswith(\"\\n\") else \"\")\n            sdlc_md.atomic_write(af,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_apply_rewrites_a_stale_archived_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-fixture-not-archived",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "    moved = archive.archive(root, \"bug\", \"v1.0.0\")",
+      "new": "    moved = {\"archived\": [\"BG0001\"]}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::ArchivedRowSyncTests::test_closing_an_archived_bug_rewrites_its_archive_row",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-unplaceable-fixture-gets-a-header",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "old": "            arch.write_text(\"# bug archive - v1.0.0\\n\\n\"\n",
+      "new": "            arch.write_text(\"# bug archive - v1.0.0\\n\\n| ID | Title | Severity | Status |\\n| --- | --- | --- | --- |\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_still_reports_unsynced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-honest-sync-fixture-gets-a-header",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "                \"# story archive - r1\\n\\n\"\n",
+      "new": "                \"# story archive - r1\\n\\n| ID | Title | Status |\\n| --- | --- | --- |\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::HonestSyncTests::test_archived_row_reports_not_synced",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "reference-sentence-reverted",
+      "file": ".claude/skills/sdlc-studio/reference-scripts-create.md",
+      "old": "that moves rows; `reconcile` only\nrewrites the Status cell of an archived row.",
+      "new": "(`reconcile` reads the archive,\nnever writes it).",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_apply_rewrites_a_stale_archived_row",
+      "result": "survived",
+      "answer": "No criterion or test reads reference-scripts-create.md; the sentence is prose corrected inside the unit under D0561 and ruled TRUE in BG0956-claims.json against the code the archive tests exercise, so nothing executable can kill its reversion."
+    }
+  ]
+}

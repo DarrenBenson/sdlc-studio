@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, changelog.d/BG1609.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, changelog.d/BG1609.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py
 > **Evidence:** run eighteen, 2026-11-19, US1238: `critic.py brief --unit US1238 --seat engineering` printed the record line with --reviewer 'Dani Okafor (engineering)' and the self-review note; runs sixteen and seventeen recorded only the QA seat on high-risk units
 > **Created:** 2026-11-19
 > **Created-by:** sdlc-studio file
@@ -33,3 +33,4 @@ Choose the second seat as a seat other than the building seat (product when the 
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (qa seat, groom) | Acceptance criteria authored for planning (run twenty-one) |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: two plan-risk fixtures assert the old engineering default for the second seat and now expect product |

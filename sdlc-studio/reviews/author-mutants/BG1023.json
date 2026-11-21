@@ -1,0 +1,124 @@
+{
+  "unit": "BG1023",
+  "digest": "987045401bf1d626 at a01317169922",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a319f9e262627ae6e/BG1023-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "every tail read as the bare form",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if not any(a in _NAME_FLAGS or a.startswith(\"--testNamePattern=\") for a in args):\n",
+      "new": "    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the -t name passed unescaped",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        return head, [*base, *rest, \"-t\", _js_regex_literal(name)]\n",
+      "new": "        return head, [*base, *rest, \"-t\", name]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "parentheses left out of the escape set",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "_JS_REGEX_SPECIAL = re.compile(r\"[\\\\^$.*+?()[\\]{}|]\")\n",
+      "new": "_JS_REGEX_SPECIAL = re.compile(r\"[\\\\^$.*+?[\\]{}|]\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "PATH binary not preferred",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if shutil.which(binary):\n        return argv\n",
+      "new": "    if False:\n        return argv\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "project node_modules/.bin skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if os.path.isfile(local) and os.access(local, os.X_OK):\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "npx fallback skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if shutil.which(\"npx\"):\n        return [\"npx\", \"--no-install\", *argv]\n",
+      "new": "    if False:\n        return [\"npx\", \"--no-install\", *argv]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "npx allowed to download",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        return [\"npx\", \"--no-install\", *argv]\n",
+      "new": "        return [\"npx\", *argv]\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "two -t names accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if len(names) > 1:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an empty -t name accepted",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    if not names[0]:\n",
+      "new": "    if False:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a tail shlex cannot split refused",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        args = shlex.split(tail)\n    except ValueError:\n        return None\n    if not any(a in _NAME_FLAGS",
+      "new": "        args = shlex.split(tail)\n    except ValueError:\n        raise\n    if not any(a in _NAME_FLAGS",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "jest cache answers the file-and-name form",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            return None  # a file-and-name line: the cache holds no file to restrict it to\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: npx expected to run without --no-install",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py",
+      "old": "                self.assertEqual(_argv_seen(path_dir, \"npx\"), [\"--no-install\", verb, *expected])\n",
+      "new": "                self.assertEqual(_argv_seen(path_dir, \"npx\"), [verb, *expected])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the near miss expected to match",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py",
+      "old": "                self.assertIsNone(re.search(pattern, near_miss), pattern)\n",
+      "new": "                self.assertIsNotNone(re.search(pattern, near_miss), pattern)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

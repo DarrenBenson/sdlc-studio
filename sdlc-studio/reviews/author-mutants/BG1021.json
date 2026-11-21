@@ -1,0 +1,43 @@
+{
+  "unit": "BG1021",
+  "digest": "881328451ebaf413 at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1021-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the T-shirt never read",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            large = tshirt in DECOMPOSE_SIZES\n",
+      "new": "            large = False\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only Size L read as large",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "DECOMPOSE_SIZES = (\"L\", \"XL\")",
+      "new": "DECOMPOSE_SIZES = (\"L\",)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "Size M read as large",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "DECOMPOSE_SIZES = (\"L\", \"XL\")",
+      "new": "DECOMPOSE_SIZES = (\"M\", \"L\", \"XL\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every declared size read as large",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            large = tshirt in DECOMPOSE_SIZES\n",
+      "new": "            large = tshirt is not None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_size_l_decompose.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

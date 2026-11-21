@@ -1,0 +1,52 @@
+{
+  "unit": "BG1107",
+  "digest": "9a6e670655f4201b at 74436b8b3190",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1107-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "continuation lines dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            lines[-1] = f\"{lines[-1].rstrip()} {line.strip()}\"\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a nested Verify joined into the goal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "_LIST_ITEM_RE = re.compile(r\"^\\s*[-*+]\\s\")",
+      "new": "_LIST_ITEM_RE = re.compile(r\"^\\s*[*+]\\s\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a blank line no longer ends the goal",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        elif inside and joining and line.strip() and not _LIST_ITEM_RE.match(line):\n",
+      "new": "        elif inside and joining and not _LIST_ITEM_RE.match(line):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a new numbered line joined into the goal above",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        elif inside and persona_goals._GOAL_RE.match(line):\n            joining = True\n",
+      "new": "        elif inside and not joining and persona_goals._GOAL_RE.match(line):\n            joining = True\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "persona_cards reads the cut goals",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            goals = _whole_end_goals(text)\n",
+      "new": "            goals = persona_goals.end_goals(text)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

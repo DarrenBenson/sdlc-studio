@@ -2,8 +2,8 @@
 
 > **Status:** Open
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0987.md
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0987.md, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_preflight_live_gate.py
 > **Evidence:** Found closing a consuming project RUN-01M4APNQ on the installed skill (6.1.0 plus the BG0962 fix from main 922b9d6c), 2026-10-07. The close exited 0 and filed RPT0001; RPT0001.md, RPT0001.json and the .local HTML render contain no goal panel, no defect ruling and no caller-check line.
 > **Created:** 2026-10-07
 > **Created-by:** sdlc-studio file
@@ -41,3 +41,4 @@ Write the goal judgement (panel verdict, defects vs goal, caller-check) into the
 | 2026-10-07 | Claude Opus 5.5 | Filed |
 | 2026-10-07 | Claude Opus 5.5 (triage) | Triaged: reproduced at e2090297 by the code path, not a regression; consuming-project name generalised; a misplaced code span corrected; changelog fragment added |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: the goal judgement gets its own sprint-report section rather than Known-issues rows, so the template, the evidence schema and three report fixtures move with it; re-sized 3 to 5 |
