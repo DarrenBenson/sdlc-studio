@@ -85,7 +85,7 @@ class PlanShowsClassTests(unittest.TestCase):
                          ("US0001", "US0002", "US0003", "BG0004")}
             self.assertTrue(all(unit_line.values()), lines)
             self.assertIn("high", unit_line["US0001"][0])
-            self.assertIn("second review seat: engineering", unit_line["US0001"][0])
+            self.assertIn("second review seat: product", unit_line["US0001"][0])
             self.assertIn("elevated", unit_line["US0002"][0])
             self.assertIn("standard", unit_line["US0003"][0])
             self.assertIn("elevated", unit_line["BG0004"][0])
@@ -98,7 +98,7 @@ class PlanShowsClassTests(unittest.TestCase):
             self.assertEqual({"US0001": "high", "US0002": "elevated", "US0003": "standard",
                               "BG0004": "elevated"},
                              {u: v["class"] for u, v in units.items()})
-            self.assertEqual("engineering", units["US0001"]["second_seat"])
+            self.assertEqual("product", units["US0001"]["second_seat"])
             self.assertIsNone(units["US0003"]["second_seat"])
             self.assertEqual([], plan["risk_classes"]["flags"])
 

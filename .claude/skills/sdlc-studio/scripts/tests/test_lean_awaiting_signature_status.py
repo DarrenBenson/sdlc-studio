@@ -79,8 +79,8 @@ class AwaitingSignatureStatusTests(unittest.TestCase):
         for uid, status in cases:
             with self.subTest(unit=uid, status=status), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
+                state = _state(root, [uid])   # the run opens first: its review is its own
                 _unit(root, uid, status, approved=True)
-                state = _state(root, [uid])
                 self.assertEqual([], sprint.seal_bar_unmet(root, uid),
                                  "the fixture does not meet the seal's bar")
                 held = sprint.unanswered_units(root, state)["unanswered"]
@@ -91,8 +91,8 @@ class AwaitingSignatureStatusTests(unittest.TestCase):
         # and by the report hold, so the close still names the unit `sign` refuses.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _unit(root, "US0101", "Ready", approved=False)
             state = _state(root, ["US0101"])
+            _unit(root, "US0101", "Ready", approved=False)
             held = [h["unit"] for h in sprint.unanswered_units(root, state)["unanswered"]]
             self.assertEqual(["US0101"], held)
             hold = [h for h in sprint._report_holds(root, state)
@@ -102,8 +102,8 @@ class AwaitingSignatureStatusTests(unittest.TestCase):
         # stories and bugs, so the close still holds it rather than pass what the seal leaves.
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _unit(root, "CR0105", "In Progress", approved=True)
             state = _state(root, ["CR0105"])
+            _unit(root, "CR0105", "In Progress", approved=True)
             self.assertEqual([], sprint.seal_bar_unmet(root, "CR0105"))
             self.assertNotIn(sprint.sdlc_md.find_by_id(root, "CR0105")[1],
                              sprint._SIGNOFF_TERMINAL)

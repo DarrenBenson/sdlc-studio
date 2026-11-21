@@ -123,9 +123,11 @@ class SignSealsOnceTests(unittest.TestCase):
         carrying an independent APPROVE, disagreeing with the seal that moves it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
+            # The run opens before its review: a verdict recorded earlier is an earlier
+            # delivery's, and covers nothing in this run.
+            state = _run_state(root, ["US0101", "US0102"])
             for uid in ("US0101", "US0102"):
                 _unit(root, uid)
-            state = _run_state(root, ["US0101", "US0102"])
             # The close and the seal agree: a Review unit whose only owed step is the signature
             # is not a known issue at the close.
             self.assertEqual([], sprint.unanswered_units(root, state)["unanswered"])
@@ -151,9 +153,9 @@ class SignSealsOnceTests(unittest.TestCase):
                                "independent APPROVE")):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
+                state = _run_state(root, ["US0101", "US0102"])
                 _unit(root, "US0101")
                 _unit(root, "US0102", **kw)
-                state = _run_state(root, ["US0101", "US0102"])
                 rc, out, err = _sign(root)
                 self.assertNotEqual(0, rc, out + err)
                 stop = [ln for ln in err.splitlines() if "US0102" in ln]
@@ -217,8 +219,8 @@ class SignSealsOnceTests(unittest.TestCase):
         self.assertFalse(hasattr(sprint, "_signoff_owed"))
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            _unit(root, "US0101")
             state = _run_state(root, ["US0101"])
+            _unit(root, "US0101")
             ck = sprint_report.checklist(root, "RETRO0001", unit_ids=["US0101"])
             titles = " ".join(r["title"].lower() for r in ck["items"])
             self.assertNotIn("sign-off", titles)

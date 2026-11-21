@@ -908,8 +908,16 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     read-time backstop for exactly that, and only the sign-off gate consulted it - so the two
     gates enforced different independence rules, and the weaker one was the one guarding the
     honesty check.
+
+    A delivery verdict is the unit's CURRENT delivery's, as `delivery_rounds` counts it: in an
+    open run holding the unit, only the rows past its `REVIEW_BASE` (none while the run has not
+    reviewed it), so an APPROVE an earlier delivery recorded never covers a unit re-delivered
+    here. Outside such a run, or with a run state that cannot be read, the whole ledger.
     """
-    seen = _live_verdict_rows(repo_root, unit, phase)
+    since = _delivery_base(repo_root, unit) if phase == "delivery" else 0
+    if since is None:
+        return None
+    seen = _live_verdict_rows(repo_root, unit, phase, since)
     latest = seen[-1] if seen else None
     unanswered = _unanswered_rejects(seen)
     # THE LATEST unanswered REJECT, and the tie-break is load-bearing rather than incidental:
@@ -919,8 +927,26 @@ def verdict_for(repo_root: Path | str, unit: str, phase: str = "delivery"):
     return unanswered[-1] if unanswered else latest
 
 
-def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery") -> list[dict]:
+def _delivery_base(repo_root: Path | str, unit: str) -> int | None:
+    """How many of `unit`'s delivery rows precede its current delivery: its `REVIEW_BASE` in the
+    open run holding it, None when that run holds it and has not reviewed it (no row is this
+    delivery's) or records no readable base for it, and 0 outside such a run or when the run
+    state cannot be read."""
+    try:
+        state = run_state.read(repo_root) or {}
+    except (run_state.RunStateError, OSError, ValueError):   # ValueError: bytes not UTF-8
+        return 0
+    if not run_state.batch_holds(state, unit):
+        return 0
+    bases = state.get(run_state.REVIEW_BASE)
+    base = bases.get(sdlc_md.norm_id(unit)) if isinstance(bases, dict) else None
+    return base if isinstance(base, int) else None
+
+
+def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery",
+                       since: int = 0) -> list[dict]:
     """The unit's verdict rows a reader may act on, oldest first - THE supersession rule.
+    `since` skips the unit's first rows, superseded or not, as `delivery_rounds` does.
 
     A superseded row is dropped, except a REJECT whose supersession is not principal-grade
     (`verdict_for` states why). `verdict_for` and `standing_rejects` both read this, so the
@@ -931,8 +957,12 @@ def _live_verdict_rows(repo_root: Path | str, unit: str, phase: str = "delivery"
     """
     target = sdlc_md.norm_id(unit)
     out: list[dict] = []
+    ahead = since
     for v in read_verdicts(repo_root, phase):
         if sdlc_md.norm_id(v["unit"]) != target:
+            continue
+        if ahead > 0:
+            ahead -= 1
             continue
         if v.get("superseded") and ((v.get("verdict") or "").upper() != REJECT
                                     or _is_principal_superseded(repo_root, unit, v)):
@@ -1750,18 +1780,25 @@ def _normalise_priority(value: str) -> str:
 BLOCKING_PRIORITIES = blocking_priorities(None)
 
 
+#: Why `judge_defects_against_goal` ruled a defect blocking: it falsifies a goal clause, or its
+#: priority is one a release cannot carry.
+BASIS_CLAUSE = "clause"
+BASIS_PRIORITY = "priority"
+
+
 def judge_defects_against_goal(defects: list[dict], clauses: list[str],
                                repo_root: Path | str | None = None) -> dict:
-    """Which open defects BLOCK a close and which can be left, judged against the goal.
+    """Which open defects BLOCK the goal claim or a release, and which can be left.
 
     `{blocking, leavable}`. A defect blocks when it falsifies a goal clause - it names one, or
-    an explicit `falsifies` says so - or when its priority is one a release cannot carry.
-    Everything else is LEAVABLE and recorded with its priority and the reasoning, never
-    silently dropped: the decision to ship with a known defect is a decision, and one nobody
-    wrote down is indistinguishable from not having noticed.
+    an explicit `falsifies` says so - with `basis` `clause`, or when its priority is one a
+    release cannot carry, with `basis` `priority`. Everything else is LEAVABLE and recorded with
+    its priority and the reasoning, never silently dropped: the decision to ship with a known
+    defect is a decision, and one nobody wrote down is indistinguishable from not having noticed.
 
     The severity floor exists because a clause argument can be made for almost anything. A
-    defect at P0/P1 blocks whatever the reasoning says.
+    defect at P0/P1 blocks a release whatever the reasoning says. The close reports both bases
+    to the signer and refuses on neither, so neither `why` says the defect blocks the close.
     """
     lowered = [c.strip().lower() for c in (clauses or []) if str(c).strip()]
     floor = blocking_priorities(repo_root)
@@ -1773,11 +1810,12 @@ def judge_defects_against_goal(defects: list[dict], clauses: list[str],
         if clause is None and named:
             clause = named          # names a clause this goal does not carry: still a claim
         if clause:
-            blocking.append({**d, "why": f"falsifies the goal clause: {clause}"})
+            blocking.append({**d, "basis": BASIS_CLAUSE,
+                             "why": f"falsifies the goal clause: {clause}"})
         elif priority in floor:
-            blocking.append({**d, "why": f"priority {priority} - a defect a release cannot "
-                                         f"carry blocks the close whatever the clause "
-                                         f"reasoning says"})
+            blocking.append({**d, "basis": BASIS_PRIORITY,
+                             "why": f"priority {priority} - a release cannot carry it, "
+                                    f"whatever the clause reasoning says"})
         else:
             leavable.append({**d, "why": f"falsifies no goal clause; priority "
                                          f"{priority or 'unstated'} - recorded leavable, not "

@@ -394,7 +394,7 @@ honestly size, so a plan is never false authority over unsized work.
 
 **Acceptance Criteria:**
 
-- [x] A unit is groomed only when it declares the files it will touch (`Affects:`, at least one of them resolving or none a typo), a size (a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`) and, for a story or bug, acceptance criteria that are not absent, the template placeholder or only the text the filer derived, at least one of them carrying a `Verify:` line or a `manual` marker; a pointed unit above the split ceiling (`sprint.points_split_above`, default 8) is refused as oversized and must be split.
+- [x] A unit is groomed only when it declares the files it will touch (`Affects:`, at least one of them resolving or none a typo), a size (a story/bug by `Points:`, a CR/RFC/epic by a T-shirt `Size:`) and, for a story or bug, acceptance criteria that are not absent, the template placeholder or only the text the filer derived, at least one of them carrying a `Verify:` line or a `manual` marker and none carrying a `Verify:` line `verify_ac.py run` cannot parse; a pointed unit above the split ceiling (`sprint.points_split_above`, default 8) is refused as oversized and must be split.
 - [x] With any ungroomed unit in the batch, `sprint plan` exits non-zero and prints NO plan, naming each offending unit, what it lacks, and the command that fixes it.
 - [x] The planner derives shared-file clusters from `Affects:`, so two units touching the same file are never reported as safely parallel.
 - [x] `sprint.breakdown: judgement` makes the lane report instead of block; an absent config BLOCKS and an unknown mode falls back to enforce.
@@ -854,6 +854,7 @@ none.
 | 2026-11-16 | 6.4.0 | Release cut (US1173): the Coverage note and the Feature Inventory baseline read v6.4.0 as cut, plus the 6.5 work on `main` |
 | 2026-11-19 | 6.4.0 | PRD truth repairs (BG1525, BG1526, BG1527, BG1528, BG1162, BG1168, BG1180, BG1553, BG1554, BG1555): section 9 names the gate keys that ship off and the right defaults, the status note, Context, Security and Integration passages say what the code does, the Environment Variables table lists every variable the scripts read, the close-down row describes the hand-wired reminder, one account of the sprint close names every chain step, and the PRD tests check each of these and the Changelog's row for every change |
 | 2026-11-20 | 6.4.0 | PyYAML required (US1299): the tech stack bullet, the Performance requirement and the Third-Party Dependencies section name PyYAML as the one required third-party package, which the installers and the gate's prerequisite check refuse a machine without, and the earlier standard-library wording is gone |
+| 2026-11-21 | 6.4.0 | Unparseable Verify lines (BG0981): the Breakdown gate's first criterion says a groomed story or bug carries no `Verify:` line `verify_ac.py run` cannot parse |
 
 ---
 

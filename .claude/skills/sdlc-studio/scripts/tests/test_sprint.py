@@ -10772,8 +10772,9 @@ class InertMechanismsAreReachedTests(unittest.TestCase):
         joined = "\n".join(sprint.close_goal_judgement(root, json.loads(
             (root / "sdlc-studio" / ".local" / "run-state.json").read_text(encoding="utf-8"))))
         self.assertIn("defects vs goal", joined)
-        self.assertIn("BLOCKING BG0001", joined,
-                      "a P1 blocks whatever the clause reasoning says, and the close must say so")
+        self.assertIn("WOULD BLOCK A RELEASE BG0001", joined,
+                      "a P1 blocks a release whatever the clause reasoning says, and the close "
+                      "must say so")
 
     def test_the_close_reaches_the_caller_check_over_the_batch(self) -> None:
         """AC2. The repo's own check for this defect class, never once run over a batch - which
@@ -17048,7 +17049,9 @@ class PrepareAndSealTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as d:
             root, mod = self._prepared(d), _load()
-            _close_state(root, sprint_goal_verdict={"verdict": "partial", "note": "half"})
+            # Updated, not rewritten: the run's review base, which the fixture's APPROVE fixed,
+            # stands, so the unit stays reviewed in this run.
+            mod.run_state.update(root, sprint_goal_verdict={"verdict": "partial", "note": "half"})
             self._close(root, mod)
             out, err = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):

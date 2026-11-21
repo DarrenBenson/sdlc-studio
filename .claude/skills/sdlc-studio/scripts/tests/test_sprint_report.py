@@ -1871,6 +1871,17 @@ class SprintChecklistReviewRowTests(ChecklistBase):
     """US0575. An under-covered round must not read like a full one on the page the reviewer of
     record signs off from."""
 
+    def setUp(self) -> None:
+        super().setUp()
+        # The run opens before its review: a verdict recorded earlier is an earlier delivery's,
+        # and covers nothing in this run.
+        self._run()
+
+    def _ck(self, **run_fields) -> dict:
+        """The checklist over the run opened in setUp, whose review bases the verdicts fixed."""
+        self.assertEqual({}, run_fields, "this class reads the run setUp opened")
+        return sr.checklist(self.root, "RETRO9100")
+
     def _verdict(self, unit: str, verdict: str, reviewer: str) -> None:
         import critic
         import quiet
@@ -1936,6 +1947,10 @@ class SprintChecklistReviewRowTests(ChecklistBase):
         self.assertNotIn("UNDER-COVERED", row["value"])
 
     def test_a_rejected_unit_is_not_counted_as_covered(self) -> None:
+        # Both rounds are in the run, so the cap is raised past the second: at the default cap
+        # of two a round-2 REJECT carries the unit, which is not what this row is about.
+        (self.root / "sdlc-studio" / ".config.yaml").write_text("review:\n  max_rounds: 3\n",
+                                                                encoding="utf-8")
         self._verdict("US0001", "APPROVE", "reviewer one")
         self._verdict("US0001", "REJECT", "reviewer two")     # the LATEST verdict rejects
         row = self._row(self._ck(), "review-attribution")

@@ -3416,7 +3416,7 @@ def _dora_rows(root: Path, start, end, runs: list[dict], ci_source: str,
 SCHEMA = 2
 #: The front page, in order, and the appendix beneath it.
 FRONT_PAGE = ("goal", "estimates", "delivered", "known_issues", "signoff")
-APPENDIX = ("cost", "dora", "calibration", "rulings", "waivers", "lane_yield", "lessons")
+APPENDIX = ("goal_judgement", "cost", "dora", "calibration", "rulings", "waivers", "lane_yield", "lessons")
 
 
 def _num(value) -> bool:
@@ -4996,6 +4996,7 @@ def build_report(root, retro_id: str, as_of: str | None = None,
                               state.get("started_at"), _iso(f_end), readings["findings"],
                               rulings=_retro_rulings(root, retro_id), batch_rule=findings_rule),
         _signoff_section(state_rel),
+        _goal_judgement_section(root, state, state_rel),
         _cost_section(metered, state_rel, tokens,
                       _dispatch_effort(root, state, state_rel, readings["effort"]
                                        if filed is not None else filed_effort)
@@ -5543,6 +5544,39 @@ def _lane_yield_section(root: Path, state: dict, state_rel: str, start, end) -> 
 #: The run-state key the close records its unmeasurable checklist rows under, for the appendix.
 CLOSE_NOT_MEASURED = "close_not_measured"
 
+#: The run-state key the close records its goal judgement under (`sprint.close_goal_judgement`),
+#: so the page carries what the terminal said and a re-derivation reads the record, not today.
+CLOSE_GOAL_JUDGEMENT = "close_goal_judgement"
+#: Each blocking defect's row is labelled by its basis (`critic.judge_defects_against_goal`).
+BASIS_LABELS = {"clause": "blocks the goal claim", "priority": "would block a release"}
+GOAL_PANEL, DEFECTS_VS_GOAL, CALLER_CHECK = "goal panel", "defects vs goal", "caller-check"
+
+
+def _goal_judgement_section(root: Path, state: dict, state_rel: str) -> dict | None:
+    """The goal judgement the close recorded, one row each: the goal panel's verdict, each open
+    defect ruled blocking (labelled by its basis) with its reason, the count of blocking and
+    leavable defects, and the caller-check. An item the close could not judge says why.
+
+    Absent for a run whose close recorded no judgement, so a page filed before this section
+    existed re-derives unchanged."""
+    judged = state.get(CLOSE_GOAL_JUDGEMENT)
+    if not isinstance(judged, dict):
+        return None
+
+    def row(item: str, ruling: str, detail) -> dict:
+        return {"judged_item": fig("judged_item", item, state_rel),
+                "judged_ruling": fig("judged_ruling", ruling, state_rel),
+                "judged_detail": fig("judged_detail", str(detail or "not recorded"), state_rel)}
+
+    blocking = [d for d in judged.get("blocking") or [] if isinstance(d, dict)]
+    return _section("goal_judgement", "Goal judgement", rows=[
+        row("sprint goal", GOAL_PANEL, judged.get("panel")),
+        *(row(sdlc_md.display_id(root, str(d.get("id") or "")) or "(no id)",
+              BASIS_LABELS.get(str(d.get("basis")), "blocking"), d.get("why"))
+          for d in blocking),
+        row("open defects", DEFECTS_VS_GOAL, judged.get("defects")),
+        row("batch", CALLER_CHECK, judged.get("caller_check"))])
+
 
 def _unmeasured_section(state: dict, state_rel: str) -> dict | None:
     """The checklist rows the close could not measure, each `not measured` with its reason.
@@ -5730,7 +5764,8 @@ def render_context(report: dict, revalidation: dict | None = None) -> tuple[dict
 #: templates so a section can be renamed without editing two files.
 _ROW_LISTS = {"estimates": "estimates", "delivered": "plan_units", "known_issues": "issues",
               "cost": "models", "dora": "dora", "waivers": "waivers", "lessons": "lessons",
-              "lane_yield": "lane_yield", "unmeasured": "unmeasured"}
+              "lane_yield": "lane_yield", "unmeasured": "unmeasured",
+              "goal_judgement": "goal_judgement"}
 
 
 #: The row cells whose text may carry a web address. The Markdown twin prints each address in

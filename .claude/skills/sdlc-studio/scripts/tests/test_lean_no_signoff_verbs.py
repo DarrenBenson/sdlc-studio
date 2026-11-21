@@ -133,8 +133,8 @@ class SignoffVerbsGoneTests(unittest.TestCase):
                                ("QA-Seat", "authoring-session")):
             with self.subTest(principal=principal), tempfile.TemporaryDirectory() as d:
                 root = Path(d)
+                seal._run_state(root, ["US0101"])   # the run opens before its review
                 seal._unit(root, "US0101")
-                seal._run_state(root, ["US0101"])
                 rc, out, err = seal._cli(root, "sign", "--report", "RPT0001",
                                          "--principal", principal)
                 self.assertEqual(2, rc, out + err)
@@ -144,8 +144,8 @@ class SignoffVerbsGoneTests(unittest.TestCase):
                 self.assertIsNone(sprint.run_state.read(root).get("signature"))
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            seal._unit(root, "US0101")
             seal._run_state(root, ["US0101"])
+            seal._unit(root, "US0101")
             rc, out, err = seal._sign(root)
             self.assertEqual(0, rc, out + err)
             self.assertEqual("Done", seal._status(root, "US0101"))

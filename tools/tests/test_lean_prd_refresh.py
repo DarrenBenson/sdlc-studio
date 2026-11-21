@@ -1000,7 +1000,8 @@ _GROOMING_WORDS = {"grooming.affects": r"`Affects:`", "grooming.points": r"\bsiz
 #: the one a summary is most likely to drop, so every statement must name it.
 _AC_SHAPE_WORDS = {"no-criteria": r"\babsent\b", "placeholder": r"\bplaceholder\b",
                    "derived-only": r"\bderived\b",
-                   "no-verifier": r"`Verify:` line or (?:an? )?`manual` marker"}
+                   "no-verifier": r"`Verify:` line or (?:an? )?`manual` marker",
+                   "unparseable-verifier": r"`verify_ac\.py run` cannot parse"}
 #: A network call in a script's own source: a `gh` argv, a git `fetch` argument, or the stdlib
 #: HTTP clients. Keyed by kind so a scan that matches nothing of one kind is caught.
 _NETWORK_RES = {

@@ -2486,9 +2486,16 @@ def breakdown(repo_root: Path | str, batch: list[dict], skip_personas: bool = Fa
         _AC_MISS = {
             **_AC_MISS_RENDERINGS,
         }
+        ac_miss = _AC_MISS[ac_why] if ungroomed_ac else ""
+        if ac_why == "unparseable-verifier":
+            # The runner's own message for each line it refuses, so the author reads at plan
+            # time exactly what `verify_ac.py run` would have said at build time.
+            ac_miss += ": " + "; ".join(
+                f"{ac}: {msg}" for ac, msg in conformance.unparseable_verifiers(
+                    sdlc_md.read_text_safe(it["path"])))
         missing = (([] if declared or not _enforced("grooming.affects") else ["Affects"])
                    + ([] if sized or not _enforced("grooming.points") else [size_field])
-                   + ([_AC_MISS[ac_why]] if ungroomed_ac else []))
+                   + ([ac_miss] if ungroomed_ac else []))
         # All declared paths unresolvable AND at least one of them a TYPO = a fictional Affects.
         # Named so the author can fix the typo. Not applied when Affects is absent (that is the
         # plainer "Affects" miss), and not applied when the basenames exist NOWHERE - a unit whose
@@ -3707,9 +3714,15 @@ FIRST_REVIEW_SEAT = "qa"
 
 def second_review_seat(repo_root: Path | str) -> str:
     """The seat a high-class unit's second independent review takes: the first of the project's
-    review seats, in `review_seats` order, that is not the first review seat."""
+    review seats, in `review_seats` order, that is neither the first review seat nor the seat a
+    lane builds the unit at by default (`critic.BUILD_SEAT`), so the record command the second
+    seat's brief prints never names the author as reviewer. A project whose own seats hold no
+    such seat gets the first shipped seat that is neither."""
+    import critic  # noqa: PLC0415 - deferred sibling; it owns the default building seat
+    import persona_resolve  # noqa: PLC0415 - deferred sibling; the shipped seats
+    taken = (FIRST_REVIEW_SEAT, critic.BUILD_SEAT)
     seats, _shipped = review_seats(repo_root)
-    return next((s for s in seats if s != FIRST_REVIEW_SEAT), "engineering")
+    return next((s for s in [*seats, *persona_resolve.SEATS] if s not in taken))
 
 
 def _norm_goal(goal: str | None) -> str:
@@ -8056,6 +8069,8 @@ _AC_MISS_RENDERINGS: dict[str, str] = {
     "no-verifier": "Acceptance Criteria (authored, but none carries an executable `Verify:` "
                    "line or a `manual` marker - so nothing can check them, and the unit would "
                    "reach a terminal status with no criterion ever run)",
+    "unparseable-verifier": "Acceptance Criteria (a `Verify:` line `verify_ac.py run` refuses "
+                            "as an invalid verifier, so its criterion can never pass)",
 }
 
 
@@ -9622,7 +9637,8 @@ def _close_shortfall(root, state: dict) -> dict:
     return {"undelivered": undelivered, "defects": [d["id"] for d in _open_defects(root)]}
 
 
-def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[str]:
+def close_goal_judgement(root, state: dict, seats: list | None = None,
+                         record: dict | None = None) -> list[str]:
     """The close's goal judgement, as lines to print. BG0385's repair.
 
     RUN-01KYMJEM built `goal_panel`, `judge_defects_against_goal`, both ends of the bookend
@@ -9631,9 +9647,22 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
     that close recorded was assembled by hand and the panel's author-exclusion never fired.
     This is the caller. It reports rather than refuses: the mechanisms inform the operator's
     sign-off, and a reporting lane that can block a close is a lane that gets switched off.
+
+    `record`, when given, is filled with what the sprint report's goal judgement section
+    carries (`sprint_report.CLOSE_GOAL_JUDGEMENT`): `panel`, the panel's line and its per-clause
+    verdicts; `defects`, the count of blocking and leavable defects; `blocking`, each defect
+    ruled blocking as `{id, basis, why}`; `caller_check`, the caller-check's line. Each text is
+    the line printed, or why that item was not judged. Each blocking line is labelled from the
+    defect's basis: one falsifying a goal clause blocks the goal claim, one at a priority floor
+    would block a release.
     """
     import critic  # noqa: PLC0415 - deferred, like the chain's other siblings
+    import sprint_report  # noqa: PLC0415 - the page owns the labels its rows carry
     lines: list[str] = []
+    record = record if record is not None else {}
+    record.update({"panel": "not run - the sprint goal states no clause to judge",
+                   "defects": "none open", "blocking": [],
+                   "caller_check": "not run - the run's batch is empty"})
     goal = (state or {}).get("sprint_goal") or ""
     clauses = run_state.goal_clauses(goal)
     batch = [b.get("id") if isinstance(b, dict) else b for b in ((state or {}).get("batch") or [])]
@@ -9654,6 +9683,7 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
             lines.append("goal panel: NOT RUN - no author is identified on this run, so the "
                          "panel cannot prove it excluded them. A verdict from a panel that "
                          "may contain the author is the thing this judgement exists to refuse")
+            record["panel"] = lines[-1].removeprefix("goal panel: ")
             panel = None
         else:
             seats = [s for s in recorded if not critic.same_identity(s, author)]
@@ -9663,6 +9693,7 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
                                           verdicts=_recorded_clause_verdicts(root, clauses))
             except ValueError as exc:
                 lines.append(f"goal panel: not run - {exc}")
+                record["panel"] = lines[-1].removeprefix("goal panel: ")
                 panel = None
         if panel is None:
             pass
@@ -9673,20 +9704,30 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
                     else ", no seat matched the author")
             lines.append(f"goal panel: {panel['verdict'] or 'UNANSWERED'} over "
                          f"{len(clauses)} clause(s), {len(panel['panel'])} seat(s){note}")
+            shown = [lines[-1].removeprefix("goal panel: ")]
             for row in panel["clauses"]:
                 unanswered = (f" ({len(row['unanswered'])} seat(s) silent)"
                               if row["unanswered"] else "")
                 lines.append(f"    {row['verdict'] or 'UNANSWERED'}{unanswered}: "
                              f"{row['clause'][:100]}")
+                shown.append(f"{row['verdict'] or 'UNANSWERED'}{unanswered}: {row['clause']}")
+            record["panel"] = "; ".join(shown)
 
     # 2. The open defects, judged against those clauses rather than a guessed severity.
     defects = _open_defects(root)
+    if defects and not clauses:
+        record["defects"] = (f"not judged - {len(defects)} open, and the sprint goal states no "
+                             f"clause to judge them against")
     if defects and clauses:
         ruling = critic.judge_defects_against_goal(defects, clauses)
         lines.append(f"defects vs goal: {len(ruling['blocking'])} BLOCKING, "
                      f"{len(ruling['leavable'])} leavable")
+        record["defects"] = lines[-1].removeprefix("defects vs goal: ")
         for d in ruling["blocking"][:8]:
-            lines.append(f"    BLOCKING {d.get('id')}: {d.get('why', '')[:110]}")
+            label = sprint_report.BASIS_LABELS[d["basis"]].upper()
+            lines.append(f"    {label} {d.get('id')}: {d.get('why', '')[:110]}")
+        record["blocking"] = [{"id": d.get("id"), "basis": d["basis"], "why": d.get("why", "")}
+                              for d in ruling["blocking"]]
 
     # 3. Every unit shipping a mechanism nothing calls - the check this repo already owned and
     #    had never run over a batch. The reason BG0385 was found by a question, not a tool.
@@ -9695,9 +9736,11 @@ def close_goal_judgement(root, state: dict, seats: list | None = None) -> list[s
             inert = critic.caller_findings(root, batch)
         except (OSError, ValueError) as exc:
             lines.append(f"caller-check: not run - {exc}")
+            record["caller_check"] = lines[-1].removeprefix("caller-check: ")
         else:
             lines.append(f"caller-check: {len(inert)} unit(s) of {len(batch)} ship a mechanism "
                          f"with no named caller")
+            record["caller_check"] = lines[-1].removeprefix("caller-check: ")
             lines.extend(f"    {line.strip()}" for line in critic.render_caller_findings(inert))
 
     # 4. The bookend: did the plan's prediction hold?
@@ -10833,12 +10876,16 @@ def cmd_close(args: argparse.Namespace) -> int:
                                   shortfall=_close_shortfall(root, state))
         except ValueError as exc:
             print(f"close: the content review was NOT recorded - {exc}", file=sys.stderr)
-    for line in close_goal_judgement(root, state):
+    import sprint_report  # noqa: PLC0415 - deferred sibling, as everywhere else in this module
+    # The judgement is RECORDED as well as printed, before the page is derived: the report the
+    # signer is told to read carries it, and a later re-derivation reads the record, not today.
+    judgement: dict = {}
+    for line in close_goal_judgement(root, state, record=judgement):
         print(f"  {line}")
+    run_state.update(root, **{sprint_report.CLOSE_GOAL_JUDGEMENT: judgement})
     known += _close_forward_port(root, pre)
     # A unit no priced return measured reads NOT MEASURED on the page: each is a gap the close
     # names, so a run whose units went unpriced does not hand over 0 gaps.
-    import sprint_report  # noqa: PLC0415 - deferred sibling, as everywhere else in this module
     try:
         unpriced = sprint_report.unpriced_units(root, run_state.read(root) or state)
     except Exception as exc:  # noqa: BLE001 - advisory: the close outranks its own reading

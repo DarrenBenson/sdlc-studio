@@ -64,8 +64,6 @@ def _project(root: Path) -> dict:
                "- **Verify:** shell true\n")
         report["stories"][f"{uid}-x"] = {"failed": 0, "stale": 0, "failures": [],
                                          "ac_count": 1, "verified_at": "2099-01-01T00:00:00Z"}
-        _live("critic").record_verdict(root, uid, "APPROVE", reviewer=QA, author=BUILDER,
-                                       issues="probed the edges; none blocking")
     _write(root, "sdlc-studio/.local/verify-report.json", json.dumps(report))
     _write(root, "sdlc-studio/retros/RETRO0001-run.md",
            "# RETRO0001: run\n\n> **Date:** 2026-11-15\n> **Batch:** US0101, US0102\n\n"
@@ -76,6 +74,11 @@ def _project(root: Path) -> dict:
              "sprint_goal": "struck learnings stay out",
              "sprint_goal_verdict": {"verdict": "achieved", "note": "they did"}}
     _write(root, "sdlc-studio/.local/run-state.json", json.dumps(state))
+    # Each unit is reviewed once the run is open: a verdict recorded before it is an earlier
+    # delivery's, and covers nothing in this run.
+    for uid in ("US0101", "US0102"):
+        _live("critic").record_verdict(root, uid, "APPROVE", reviewer=QA, author=BUILDER,
+                                       issues="probed the edges; none blocking")
     return state
 
 

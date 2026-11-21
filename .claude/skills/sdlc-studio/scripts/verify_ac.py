@@ -951,6 +951,21 @@ _DSL_VERBS = {"pytest", "jest", "vitest", "go", "file", "grep", "http", "shell",
               "manual", "manually"}
 
 
+def parse_refusal(expression: str) -> str | None:
+    """The message `run_verifier` refuses `expression` with as an invalid verifier, or None for
+    one it accepts: a `manual` marker, `eval`, or anything `_build_command` translates. Parsed as
+    `verify_ac.py run` parses it, with no shell fallback, and nothing is executed, so the grooming
+    gate asks this one parser rather than a second one."""
+    expr = (expression or "").strip()
+    if _is_manual(expr) or expr.lower() == "eval" or expr.lower().startswith("eval "):
+        return None
+    try:
+        _build_command(expr)
+    except ValueError as e:
+        return str(e)
+    return None
+
+
 def lint_verifier(expr: str) -> str | None:
     """Flag a Verify expression that would fall through to `shell` but looks like a
     mis-written runner invocation - the drift that silently fails at verify time

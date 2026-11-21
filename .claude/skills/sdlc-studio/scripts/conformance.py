@@ -293,7 +293,28 @@ def unit_is_ungroomed(type_: str, text: str) -> tuple[bool, str]:
             # everything satisfies them all.
             if not any(str(getattr(b, "verifier", "") or "").strip() for b in blocks):
                 return True, "no-verifier"
+        # THE FIFTH SHAPE: a Verify line the runner cannot parse - an expression wrapped in
+        # backticks, an unknown verb. It carries a verifier, so every leg above passed it, and
+        # `verify_ac.py run` refuses it at build time as an invalid verifier, so the criterion
+        # can never pass. Asked of the runner's own parser (`unparseable_verifiers`).
+        if unparseable_verifiers(text):
+            return True, "unparseable-verifier"
     return False, ""
+
+
+def unparseable_verifiers(text: str) -> list[tuple[str, str]]:
+    """`(criterion id, the runner's message)` for each Verify line in the criteria
+    `verify_ac.py run` judges (`verify_ac.criteria_blocks`) that its parser refuses as an invalid
+    verifier (`verify_ac.parse_refusal`), every line of a criterion, in order. Empty when every
+    line parses, or when the runner's module cannot be imported, the fail-open the verifier leg
+    of `unit_is_ungroomed` already takes."""
+    try:
+        import verify_ac as _va  # noqa: PLC0415 - deferred; the module that executes them
+        blocks = _va.criteria_blocks(text)
+    except Exception:  # noqa: BLE001 - same fail-open as the verifier leg above
+        return []
+    return [(b.ac_id, refusal) for b in blocks for line in b.verifiers
+            if (refusal := _va.parse_refusal(line))]
 
 
 def _ac_signals(text: str) -> tuple[bool, bool, list[str]]:

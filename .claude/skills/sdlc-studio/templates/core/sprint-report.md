@@ -129,6 +129,20 @@ Signing records the principal, the date and this report's fingerprint against {{
 
 ## Appendix
 
+<!-- when: goal_judgement_present -->
+### Goal judgement
+
+What the close judged against the sprint goal: the goal panel's verdict, each open defect ruled
+blocking with its reason, the count of blocking and leavable defects, and the caller-check. The
+close refuses on none of them; they are here for the signer to weigh.
+
+| Item | Ruling | Detail |
+| --- | --- | --- |
+<!-- repeat: goal_judgement -->
+| {{judged_item}} | {{judged_ruling}} | {{judged_detail}} |
+<!-- end -->
+<!-- end -->
+
 ### Tokens by model
 
 <!-- when: cost_measured -->

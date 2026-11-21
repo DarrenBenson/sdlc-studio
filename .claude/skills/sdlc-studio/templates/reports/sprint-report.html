@@ -186,6 +186,19 @@ footer { border-top:1px solid var(--line); padding-top:18px; color:var(--muted);
 <section class="appendix">
   <h2>Appendix</h2>
 
+<!-- when: goal_judgement_present -->
+  <h3>Goal judgement</h3>
+  <p class="lede">What the close judged against the sprint goal: the goal panel's verdict, each open defect ruled blocking with its reason, the count of blocking and leavable defects, and the caller-check. The close refuses on none of them; they are here for the signer to weigh.</p>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Item</th><th scope="col">Ruling</th><th scope="col">Detail</th></tr></thead>
+    <tbody>
+<!-- repeat: goal_judgement -->
+      <tr><th scope="row"><span class="uid">{{judged_item}}</span></th><td><span class="pill">{{judged_ruling}}</span></td><td>{{judged_detail}}</td></tr>
+<!-- end -->
+    </tbody>
+  </table></div>
+<!-- end -->
+
   <h3>Tokens by model</h3>
 <!-- when: cost_measured -->
   <div class="scroll"><table>
