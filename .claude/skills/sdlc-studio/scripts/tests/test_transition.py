@@ -4210,21 +4210,27 @@ class DraftToDoneReadyTests(unittest.TestCase):
                     self.assertIn(item, out, f"an enforced check went unasked: {out}")
                 for item in dropped:
                     self.assertNotIn(item, out, f"a check the project dropped was asked: {out}")
-        with tempfile.TemporaryDirectory() as d:
-            # Both reports in one move: the enforced item reported under judgement mode, and the
-            # dropped one reported as the project's downgrade beside it, neither lost.
-            root = _ready_story_repo(Path(d), affects=None, points=None)
-            (root / "sdlc-studio" / "definition-of-ready.md").write_text(
-                "# Definition of Ready\n\n## Story\n\n- [ ] groomed [check: grooming.points]\n",
-                encoding="utf-8")
-            (root / "sdlc-studio" / ".config.yaml").write_text(
-                "sprint:\n  breakdown: judgement\n", encoding="utf-8")
-            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
-            self.assertEqual(code, 0, out)
-            self.assertIn("sprint.breakdown: judgement", out)
-            self.assertIn("human judgement", out)
-            self.assertIn("no `Affects`", out)
-            self.assertIn("no `Points`", out)
+        reason = "sized by hand after the build"
+        opt_outs = {"judgement mode": ({}, "sprint.breakdown: judgement"),
+                    "recorded override": ({"override": reason}, reason)}
+        for case, (kwargs, said) in opt_outs.items():
+            with self.subTest(opt_out=case), tempfile.TemporaryDirectory() as d:
+                # Both reports in one move: the enforced item reported under each way past the
+                # refusal, and the dropped one reported as the project's downgrade beside it.
+                root = _ready_story_repo(Path(d), affects=None, points=None, **kwargs)
+                (root / "sdlc-studio" / "definition-of-ready.md").write_text(
+                    "# Definition of Ready\n\n## Story\n\n- [ ] groomed [check: grooming.points]\n",
+                    encoding="utf-8")
+                if case == "judgement mode":
+                    (root / "sdlc-studio" / ".config.yaml").write_text(
+                        "sprint:\n  breakdown: judgement\n", encoding="utf-8")
+                code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self._status(root), "Done")
+                self.assertIn(said, out, f"the way past the refusal is not reported: {out}")
+                self.assertIn("human judgement", out, f"the downgrade went unreported: {out}")
+                self.assertIn("no `Affects`", out, f"the downgraded item is not named: {out}")
+                self.assertIn("no `Points`", out, f"the enforced item is not named: {out}")
 
     def test_an_untagged_definition_of_ready_reports_its_downgrade(self) -> None:
         """A Story section with no check tags downgrades both checks to human judgement: the
@@ -4254,11 +4260,20 @@ class DraftToDoneReadyTests(unittest.TestCase):
             self.assertEqual(code, 0, out)
             self.assertNotIn("human judgement", out)
 
-    def test_only_an_affects_of_typos_alone_is_refused(self) -> None:
-        """The plan's typo rule: refused only when EVERY declared path is unresolvable and one
-        is a typo for a file that exists elsewhere. One typo beside a resolvable path, and a
+    def test_a_typo_is_refused_only_when_no_declared_path_resolves(self) -> None:
+        """The plan's typo rule: refused when EVERY declared path is unresolvable and at least
+        one of them is a typo for a file that exists elsewhere, so one typo beside a greenfield
+        path is refused and only the typo is named. One typo beside a resolvable path, and a
         greenfield path whose filename exists nowhere, both go through, as `sprint plan` lets
         them."""
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects="lib/thing.py, src/new_file.py")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertNotEqual(code, 0, f"a typo beside a greenfield path reached Done: {out}")
+            self.assertIn("Definition of Ready", out)
+            self.assertIn("lib/thing.py", out, f"the typo is not named: {out}")
+            self.assertNotIn("src/new_file.py", out, f"the greenfield path was named: {out}")
+            self.assertEqual(self._status(root), "Draft", "a refusal wrote the status")
         for affects in ("lib/thing.py, src/thing.py", "src/new_file.py"):
             with self.subTest(affects=affects), tempfile.TemporaryDirectory() as d:
                 root = _ready_story_repo(Path(d), affects=affects)

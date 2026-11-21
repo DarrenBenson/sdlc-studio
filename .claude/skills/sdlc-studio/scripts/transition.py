@@ -1294,9 +1294,9 @@ def _post_write_sync_and_record(root, type_, path, new_text, result, current, ne
     Reports index_synced honestly against residual drift. Behaviour-preserving extraction."""
     sdlc_md.atomic_write(path, new_text)  # truth-file stamp: atomic so a crash never truncates it
     reconcile.apply_type(type_, root)  # sync the index row + counts
-    # index_synced is the TRUTH after the sync, not "apply did something": an archived
-    # row no writer can place (a header-less table) or a target status with no summary row
-    # both leave residual drift, which we must report honestly rather than claim success.
+    # index_synced is the TRUTH after the sync, not "apply did something": any drift apply
+    # left for this id or in the counts, such as an archived row no writer can place (a
+    # header-less table), is residual, which we must report honestly rather than claim success.
     norm = sdlc_md.norm_id(result["id"])
     residual = [d for d in reconcile.detect_type(type_, root)["drift"]
                 if (d.get("id") and sdlc_md.norm_id(d["id"]) == norm) or d["kind"] == "count-mismatch"]

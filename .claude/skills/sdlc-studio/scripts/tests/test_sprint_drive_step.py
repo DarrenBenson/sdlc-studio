@@ -180,10 +180,11 @@ class SprintDriveStepTests(_StepFixture):
         self.builder("a1", A, "A = 2\n")
         rc, out, err = self.step("a1")
         self.assertEqual(0, rc, out + err)
-        # B's builder leaves a file no commit carries: its landing commits, lands and then
-        # cannot remove the worktree unforced
+        # B's commit hook leaves a file no commit carries, made after the check that refuses a
+        # builder's leftover: its landing commits, lands and then cannot remove the worktree
+        # unforced
         wt = self.builder("b1", B, "B = 2\n")
-        walk._write(wt, "src/loose.py", "x\n")  # noqa: SLF001
+        walk._write(self.late.parent, self.late.name, "x\n")  # noqa: SLF001
         rc, out, err = self.step("b1")
         self.assertEqual(1, rc, out + err)
         self.assertIn(f"DRIVE STOPPED: {B} at land, {drive.REFUSAL}", out)

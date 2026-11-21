@@ -9,9 +9,12 @@ lane is then one command, so the minutes the commit hook takes are paid in no ag
    nothing an earlier landing of the same worktree name left there survives, and removing each
    unit's QA brief, so a brief found after the landing is one this landing wrote;
 2. discard the unstaged edit `verify_ac.py run` leaves in each unit's own story or bug, which no
-   commit of the Affects carries and the root's verify rewrites, and replay the staged change
-   onto the root's branch, still staged, so the hooks judge it on the code it lands on; then
-   commit it in the worktree through the repository's hooks, never a bypass;
+   commit of the Affects carries and the root's verify rewrites, put back what a builder's own
+   `self-check record` left out of the index (the ledger and its mutants file), which step 6
+   records on the root, and replay the staged change onto the root's branch, still staged, so the hooks judge
+   it on the code it lands on; then commit it in the worktree through the repository's hooks,
+   never a bypass. Any other unstaged edit or untracked file outside the hand-in path is
+   refused, each named, before any commit and before any hook runs, and nothing is discarded;
 3. rebase the worktree's branch onto the root's branch, aborting and naming the files on a
    conflict;
 4. fast-forward the root's branch to it;
@@ -237,22 +240,99 @@ def _commit(wt_top: Path, msg: Path, log: Path, target: str, where: str) -> str:
     return _git(wt_top, "rev-parse", "--short", "HEAD").stdout.strip()
 
 
-def _discard_own_artefacts(wt_top: Path, units: list[str]) -> None:
-    """Drop the unstaged edit `verify_ac.py run` makes to each unit's own story or bug in the
-    worktree, so it cannot stop the rebase. That file is outside the Affects the builder staged,
-    so no commit of the lane carries it, and the root's own verify rewrites it after the
-    landing. Only the unstaged part goes: what the builder staged of it is committed as staged,
-    and an unstaged edit to any other file is left for the rebase to refuse."""
-    edited = set(_git(wt_top, "diff", "--name-only", "-z").stdout.split("\0"))
+def _own_artefacts(wt_top: Path, units: list[str]) -> dict[str, str]:
+    """Each unit's own story or bug in the worktree, as {its path from the worktree's top: the
+    unit}; a unit with no file there, or one outside the worktree, has none."""
+    out: dict[str, str] = {}
     for unit in units:
         hit = sdlc_md.find_by_id(wt_top, unit)
         try:
             rel = Path(hit[0]).resolve().relative_to(wt_top).as_posix() if hit else None
         except ValueError:
             rel = None
+        if rel:
+            out[rel] = unit
+    return out
+
+
+def _discard_own_artefacts(wt_top: Path, units: list[str]) -> None:
+    """Drop the unstaged edit `verify_ac.py run` makes to each unit's own story or bug in the
+    worktree, so it cannot stop the rebase. That file is outside the Affects the builder staged,
+    so no commit of the lane carries it, and the root's own verify rewrites it after the
+    landing. Only the unstaged part goes: what the builder staged of it is committed as staged,
+    and an unstaged edit to any other file is refused before the commit (`_refuse_leftovers`)."""
+    edited = set(_git(wt_top, "diff", "--name-only", "-z").stdout.split("\0"))
+    for rel, unit in _own_artefacts(wt_top, units).items():
         if rel in edited and not _git(wt_top, "checkout", "--", rel).returncode:
             _say(f"discarded {rel}: the unstaged edit verify_ac leaves in {unit}'s own "
                  f"artefact, which the root's verify rewrites")
+
+
+def _loose(wt_top: Path) -> dict[str, str]:
+    """Each path in the worktree that no commit of the lane would carry, as {path: "unstaged"
+    or "untracked"}: a change to a tracked file left out of the index, or a file git does not
+    track and does not ignore, from `git status`. Each path is decoded as the filesystem names
+    it (`os.fsdecode`), so a path that is not UTF-8 is named rather than stopping the land."""
+    out: dict[str, str] = {}
+    listing = _raw(wt_top, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout
+    parts, n = [os.fsdecode(raw) for raw in listing.split(b"\0") if raw], 0
+    while n < len(parts):
+        entry, n = parts[n], n + 1
+        index, tree, path = entry[0], entry[1], entry[3:]  # `XY <path>`, as git prints each
+        if index in "RC":
+            n += 1  # a rename or copy names its source next, which is no path of its own
+        if index == "?":
+            out[path] = "untracked"
+        elif tree != " ":
+            out[path] = "unstaged"
+    return out
+
+
+def _record_writes(wt_top: Path, units: list[str]) -> list[str]:
+    """The files `critic.py self-check record` writes for `units`, from the worktree's top: the
+    self-check ledger and each unit's recorded mutants. The land records each self-check on the
+    root from the hand-in, so a builder's own record of it in the worktree is redundant."""
+    import critic  # noqa: PLC0415 - sibling; its own paths name what its record writes
+    paths = [critic.self_checks_path(wt_top),
+             *(critic.author_mutants_path(wt_top, unit) for unit in units)]
+    return [path.relative_to(wt_top).as_posix() for path in paths]
+
+
+def _put_back_record(wt_top: Path, units: list[str], target: str) -> None:
+    """Undo a builder's own `self-check record` in the worktree, left unstaged or untracked
+    beside the staged change: the ledger is restored and a new mutants file removed, so neither
+    stops the rebase or the worktree's removal. A part the builder staged is left as staged."""
+    loose = _loose(wt_top)
+    for rel in _record_writes(wt_top, units):
+        how = loose.get(rel)
+        if how == "unstaged":
+            if _git(wt_top, "checkout", "--", rel).returncode:
+                continue
+        elif how == "untracked":
+            (wt_top / rel).unlink(missing_ok=True)
+        else:
+            continue
+        _say(f"put back {rel}: the builder's own self-check record, which the land records on "
+             f"{target} from the hand-in")
+
+
+def _refuse_leftovers(lanes_: list[_Lane], code: int) -> None:
+    """Refuse, before any commit, a worktree holding a change no commit of the lane carries: an
+    unstaged edit or an untracked file outside the hand-in path, naming each. Exempt are what
+    the commit step clears itself, each unit's own artefact (`_discard_own_artefacts`) and the
+    builder's own self-check record (`_put_back_record`). Nothing is discarded here: a leftover
+    is the builder's to stage or remove."""
+    hand_in = HAND_IN.as_posix() + "/"
+    for lane in lanes_:
+        exempt = {*_own_artefacts(lane.top, lane.units), *_record_writes(lane.top, lane.units)}
+        left = {path: how for path, how in _loose(lane.top).items()
+                if path not in exempt and not path.startswith(hand_in)}
+        if left:
+            named = ", ".join(f"{path} ({how})" for path, how in sorted(left.items()))
+            raise LandError(f"{lane.top} holds unstaged changes or untracked files no commit "
+                            f"of the lane carries: {named}. "
+                            f"Nothing was committed and no hook ran: stage what the unit's "
+                            f"Affects declares, remove the rest, then land again", code)
 
 
 def _carry(wt_top: Path, target: str) -> bool:
@@ -675,7 +755,8 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
     moves: a worktree named twice, one with nothing to land, and for several, a unit whose
     hand-in is in none or more than one of them, a worktree after the first holding commits
     ahead of the root's branch, or a file two of them stage differently; then, for every one, a
-    unit whose handed-in self-check the critic would refuse (`_refuse_self_checks`)."""
+    change left out of the index (`_refuse_leftovers`) and a unit whose handed-in self-check the
+    critic would refuse (`_refuse_self_checks`)."""
     lanes_: list[_Lane] = []
     root_top = Path(root)
     for path in worktrees:
@@ -707,6 +788,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
     _refuse_commits_ahead(lanes_, 2)
     if not several:
         lanes_[0].units = list(units)
+        _refuse_leftovers(lanes_, 2)
         _refuse_self_checks(root_top, lanes_)
         return lanes_
     for unit in units:
@@ -723,6 +805,7 @@ def _preflight(root: Path, worktrees: list[Path], units: list[str]) -> list[_Lan
             raise LandError(f"{lane.top} carries the hand-in of none of the units named "
                             f"({', '.join(units)}). Nothing was landed.", 2)
     _refuse_overlap(lanes_, 2)
+    _refuse_leftovers(lanes_, 2)
     _refuse_self_checks(root_top, lanes_)
     return lanes_
 
@@ -778,6 +861,9 @@ def _steps(root_top: Path, lanes_: list[_Lane], record: dict, author: str | None
     def commit() -> bool:
         for lane in lanes_:
             _discard_own_artefacts(lane.top, lane.units)
+            _put_back_record(lane.top, lane.units, target)
+        # a resume runs no preflight, and a leftover may have been made since it ran
+        _refuse_leftovers(lanes_, 1)
         if len(lanes_) > 1:
             _commit_several(lanes_)
         elif _has_staged(carrier.top):

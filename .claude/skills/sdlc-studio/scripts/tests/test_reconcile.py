@@ -5182,6 +5182,32 @@ class ArchivedRowApplyTests(unittest.TestCase):
             self.assertIn("could not apply bug BG0001", aerr)
             self.assertIn("rewritable layout", aerr)
 
+    def test_an_unplaceable_row_beside_a_placed_one_is_not_claimed(self) -> None:
+        """One sub-index holds a header-less BG0003 row ahead of a headed table holding BG0001,
+        both drifted to Closed with no live row: apply rewrites and counts BG0001 alone, and
+        names BG0003, still Fixed, as unapplied with exit 1, never as a change."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            (root / "sdlc-studio" / "bugs" / "BG0003-d.md").write_text(
+                "# BG0003: d\n\n> **Status:** Closed\n> **Severity:** Medium\n\n"
+                "## Acceptance Criteria\n\n- [x] **AC1** it works\n", encoding="utf-8")
+            arch = self._archive(root)
+            arch.write_text("# bug archive - v1.0.0\n\n"
+                            "| [BG0003](../../BG0003-d.md) | d | Medium | Fixed |\n\n"
+                            "| ID | Title | Severity | Status |\n| --- | --- | --- | --- |\n"
+                            "| [BG0001](../../BG0001-b.md) | b | Medium | Fixed |\n",
+                            encoding="utf-8")
+            self._close_by_hand(root)
+            code, out, err = self._apply(root)
+            self.assertEqual(code, 1, out + err)
+            self.assertIn("set bug BG0001: Fixed -> Closed", out)
+            self.assertNotIn("BG0003", out, f"the unplaceable row was claimed: {out}")
+            self.assertIn("could not apply bug BG0003", err)
+            self.assertIn("rewritable layout", err)
+            self.assertIn("changed 1 row(s), 1 could not be applied", out + err)
+            self.assertIn("| Closed |", self._row(arch, "[BG0001]"))
+            self.assertIn("| Fixed |", self._row(arch, "[BG0003]"))
+
     def test_only_the_archived_row_the_census_reads_is_written(self) -> None:
         """Two sub-indexes hold the id: the census reads the first in sorted order, so that row
         is the one rewritten, and a sub-index's own summary counts are never restamped."""

@@ -334,6 +334,138 @@ class LaneLandTests(_LaneFixture):
         self.assertEqual([], critic.read_self_checks(self.root))
         self.assertFalse((self.root / f"sdlc-studio/.local/briefs/{A}-qa.txt").exists())
 
+    # -- what a builder leaves in its worktree beside the staged change ------------------------
+
+    def _ledger_on_main(self) -> Path:
+        """The self-check ledger committed on main and brought into the worktree, so the row a
+        builder's own `self-check record` appends leaves it modified and unstaged."""
+        ledger = critic.self_checks_path(self.root)
+        _write(self.root, ledger.relative_to(self.root).as_posix(), "# Author self-checks\n")
+        gitutil.git(["add", "--", str(ledger)], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: the self-check ledger"], self.root)
+        gitutil.git(["merge", "-q", "--ff-only", "main"], self.wt)
+        return critic.self_checks_path(self.wt)
+
+    def test_a_self_check_ledger_left_unstaged_does_not_stop_the_land(self) -> None:
+        """BG1470 AC1. The builder recorded its self-check in the worktree, leaving the ledger
+        modified and its mutants file new, neither staged: both are put back, since the land
+        records the self-check on the root, and the lane commits, rebases and fast-forwards in
+        one pass. MUTANTS: the ledger left in place (the rebase after the commit refuses over
+        it); the mutants file left in place (the worktree cannot be removed)."""
+        ledger = self._ledger_on_main()
+        with ledger.open("a", encoding="utf-8") as fh:
+            fh.write("| US0101 | the builder's own row |\n")
+        mutants = critic.author_mutants_path(self.wt, A)
+        _write(self.wt, mutants.relative_to(self.wt).as_posix(), "[]\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertEqual(1, self._hook_runs_in_the_worktree(), out)
+        self.assertNotIn("cannot rebase", out)
+        for rel in (ledger, mutants):
+            self.assertIn(f"put back {rel.relative_to(self.wt).as_posix()}", r.stdout)
+        self.assertEqual(f"feat({A}): a is two", _git(self.root, "log", "-1", "--format=%s"))
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertFalse(self.wt.exists(), "the worktree was not removed")
+        self.assertEqual([A], [row["unit"] for row in critic.read_self_checks(self.root)])
+        self.assertNotIn("the builder's own row",
+                         _git(self.root, "show", f"HEAD:{ledger.relative_to(self.wt).as_posix()}"))
+
+    def test_a_leftover_file_is_refused_before_the_hooks_run(self) -> None:
+        """BG1470 AC2. An untracked file and an unstaged edit outside the hand-in path: the land
+        refuses before the commit, naming both, and neither is discarded. MUTANTS: the leftovers
+        left for the rebase after the hooks to refuse, as it was; the untracked file not looked
+        for; a leftover silently discarded."""
+        main, lane_head = _git(self.root, "rev-parse", "HEAD"), _git(self.wt, "rev-parse", "HEAD")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        _write(self.wt, "src/stray.py", "S = 1\n")
+        _write(self.wt, "src/b.py", "B = 9\n")
+        r = self._land(A)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        for named in ("src/stray.py (untracked)", "src/b.py (unstaged)", str(self.wt)):
+            self.assertIn(named, r.stderr)
+        self.assertEqual(0, self._hook_runs_in_the_worktree(), "the hooks ran before the refusal")
+        self.assertEqual(main, _git(self.root, "rev-parse", "HEAD"))
+        self.assertEqual(lane_head, _git(self.wt, "rev-parse", "HEAD"), "the lane was committed")
+        self.assertEqual("src/a.py", _git(self.wt, "diff", "--cached", "--name-only"))
+        self.assertEqual("S = 1\n", (self.wt / "src/stray.py").read_text(encoding="utf-8"))
+        self.assertEqual("B = 9\n", (self.wt / "src/b.py").read_text(encoding="utf-8"))
+        self.assertEqual([], critic.read_self_checks(self.root))
+
+    def test_a_clean_lane_still_lands(self) -> None:
+        """BG1470 AC3. The staged change, the hand-in and the unstaged verify edit to the unit's
+        own story: it lands as before. MUTANT: the story's verify edit refused rather than
+        discarded; the hand-in's own exemption is `test_a_hand_in_git_can_see_is_no_leftover`."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        story =self.wt / f"sdlc-studio/stories/{A}-lane.md"
+        story.write_text(story.read_text(encoding="utf-8") + "\n<!-- verified -->\n",
+                         encoding="utf-8")
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertIn(f"discarded sdlc-studio/stories/{A}-lane.md", r.stdout)
+        self.assertEqual(f"feat({A}): a is two", _git(self.root, "log", "-1", "--format=%s"))
+        self.assertEqual(["src/a.py"], _git(self.root, "show", "--name-only", "--format=",
+                                            "HEAD").splitlines())
+
+    def test_a_leftover_made_after_a_refused_commit_is_refused_on_the_resume(self) -> None:
+        """BG1470 AC2 on a resume, which runs no preflight: the hook refused the commit, the
+        builder repaired the stage and left a file beside it, and `--resume` refuses it by name
+        before the hook runs again. MUTANT: the commit step's own check dropped (the hook runs a
+        second time and the lane lands with the file still in its worktree)."""
+        self._stage("src/refuse.py", "X = 1\n")
+        self._hand_in()
+        r = self._land(A)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn(REFUSAL, r.stderr)
+        main = _git(self.root, "rev-parse", "HEAD")
+        gitutil.git(["rm", "-q", "-f", "--", "src/refuse.py"], self.wt)
+        self._stage("src/a.py", "A = 2\n")
+        _write(self.wt, "src/stray.py", "S = 1\n")
+        r = subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "land", "--worktree", str(self.wt),
+             "--units", A, "--root", str(self.root), "--resume"],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root),
+            env=self._env(), check=False)
+        self.assertEqual(1, r.returncode, r.stdout + r.stderr)
+        self.assertIn("src/stray.py (untracked)", r.stderr)
+        self.assertEqual(1, self._hook_runs_in_the_worktree(), "the hook ran on the resume")
+        self.assertEqual(main, _git(self.root, "rev-parse", "HEAD"))
+        self.assertEqual("src/a.py", _git(self.wt, "diff", "--cached", "--name-only"))
+        self.assertEqual("S = 1\n", (self.wt / "src/stray.py").read_text(encoding="utf-8"))
+
+    def test_a_staged_rename_is_no_leftover(self) -> None:
+        """`git status` names a staged rename's source after its target: that source is no path
+        of the worktree's own, so only the untracked file beside it is loose. MUTANT: the source
+        read as an entry of its own."""
+        gitutil.git(["mv", "--", "src/b.py", "src/b2.py"], self.wt)
+        _write(self.wt, "src/stray.py", "S = 1\n")
+        self.assertEqual({"src/stray.py": "untracked"}, lanes._loose(self.wt))  # noqa: SLF001
+
+    def test_a_hand_in_git_can_see_is_no_leftover(self) -> None:
+        """BG1470 AC3 where the project ignores nothing, so the hand-in files are untracked in
+        the worktree rather than ignored: the check for leftovers passes over them, and names
+        only the stray file beside them. MUTANT: the hand-in counted as a leftover."""
+        _write(self.root, ".gitignore", "")
+        gitutil.git(["add", "--", ".gitignore"], self.root)
+        gitutil.git(["commit", "-q", "-m", "chore: nothing ignored"], self.root)
+        gitutil.git(["merge", "-q", "--ff-only", "main"], self.wt)
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        self.assertIn(f"{LANE}/commit-msg.txt", lanes._loose(self.wt))  # noqa: SLF001
+        lane = lanes._Lane(BRANCH, self.root / LANE / "landed" / BRANCH, "main",  # noqa: SLF001
+                           top=self.wt, units=[A])
+        lanes._refuse_leftovers([lane], 2)  # noqa: SLF001
+        _write(self.wt, "src/stray.py", "S = 1\n")
+        with self.assertRaises(lanes.LandError) as refused:
+            lanes._refuse_leftovers([lane], 2)  # noqa: SLF001
+        self.assertIn("src/stray.py (untracked)", str(refused.exception))
+        self.assertNotIn(LANE, str(refused.exception))
+
     def test_a_brief_the_critic_refuses_is_named_and_none_is_written(self) -> None:
         """The one stubbed critic: a brief refused after its self-check recorded cannot be
         provoked from a real unit within one landing, so `brief` alone is answered refused."""
@@ -409,9 +541,14 @@ class LaneLandTests(_LaneFixture):
                          "a file from round two's landing survived round three")
 
     def test_a_worktree_holding_an_uncommitted_change_is_left_in_place(self) -> None:
+        """A file no commit carries, made after the land's check for leftovers, which refuses
+        one the builder left (`test_a_leftover_file_is_refused_before_the_hooks_run`): here the
+        commit's own hook leaves it, so the lane lands and its worktree cannot be removed."""
+        hook = Path(self._tmp.name) / "hooks" / "pre-commit"
+        hook.write_text(HOOK.format(log=self.log, refusal=REFUSAL).replace(
+            "exit 0\n", "echo 'S = 1' > src/stray.py\nexit 0\n"), encoding="utf-8")
         self._stage("src/a.py", "A = 2\n")
         self._hand_in()
-        _write(self.wt, "src/stray.py", "S = 1\n")
         r = self._land(A)
         self.assertEqual(1, r.returncode, r.stdout + r.stderr)
         self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
@@ -465,9 +602,11 @@ class LaneLandTests(_LaneFixture):
         self.assertEqual("def test_a():\n    assert 1\n",
                          (self.wt / "tests/test_a.py").read_text(encoding="utf-8"),
                          "an unstaged edit outside the unit's own artefact was discarded")
-        # the replay git refused is undone: the lane holds its own commit and nothing else
-        self.assertEqual([f"feat({A}): a is two"],
-                         _git(self.wt, "log", "--format=%s", "main..HEAD").splitlines())
+        # refused before the commit: no hook ran, and the lane holds its staged change and no
+        # commit of its own
+        self.assertEqual(0, self._hook_runs_in_the_worktree())
+        self.assertEqual([], _git(self.wt, "log", "--format=%s", "main..HEAD").splitlines())
+        self.assertEqual("src/a.py", _git(self.wt, "diff", "--cached", "--name-only"))
 
     def test_a_lane_behind_main_is_judged_on_mains_code(self) -> None:
         self._move_main("tests/test_a.py", "def test_a():\n    assert False\n")

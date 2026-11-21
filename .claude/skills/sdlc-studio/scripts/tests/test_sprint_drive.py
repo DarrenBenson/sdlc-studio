@@ -38,6 +38,9 @@ A, B, C = "US0101", "US0102", "US0103"
 USAGE = Path(__file__).resolve().parent / "fixtures" / "harness_usage" / "claude.json"
 HOOK = """#!/bin/sh
 git rev-parse --show-toplevel >> "{log}"
+if [ -f "{late}" ]; then
+  mkdir -p src && mv "{late}" src/loose.py
+fi
 if [ -f "{refuse}" ]; then
   i=1
   while [ $i -le 60 ]; do echo "stub hook line $i" >&2; i=$((i+1)); done
@@ -131,6 +134,8 @@ class _DriveFixture(unittest.TestCase):
         self.base = base = Path(self._tmp.name).resolve()
         self.root = root = base / "repo"
         self.log, self.refuse = base / "hook.log", base / "refuse"
+        #: moved into the checkout as src/loose.py by the next commit's hook, once
+        self.late = base / "late-loose"
         self.spec_path, self.stub_log = base / "spec.json", base / "stub.log"
         _write(root, ".gitignore", "sdlc-studio/.local/\n")
         for rel in ("src/a.py", "src/b.py", "src/c.py", "src/shared.py"):
@@ -148,7 +153,7 @@ class _DriveFixture(unittest.TestCase):
         gitutil.git(["commit", "-q", "-m", "chore: the fixture"], root)
         sleep = f"sleep {self.HOOK_SLEEP}" if self.HOOK_SLEEP else ""
         _write(base, "hooks/pre-commit", HOOK.format(log=self.log, refuse=self.refuse,
-                                                     sleep=sleep)).chmod(0o755)
+                                                     late=self.late, sleep=sleep)).chmod(0o755)
         gitutil.git(["config", "core.hooksPath", str(base / "hooks")], root)
         _write(base, "bin/claude", STUB.format(python=sys.executable)).chmod(0o755)
         self.home = base / "home"
@@ -297,10 +302,11 @@ class SprintDriveTests(_DriveFixture):
         self.assertEqual(self.STATUS, self.status_at(A, "HEAD"))
 
     def test_a_landing_stopped_after_its_commit_is_resumed_by_the_next_drive(self) -> None:
-        # the build leaves a file no commit carries, so the landing commits, lands and then
-        # cannot remove the worktree unforced
-        self.spec({A: {"files": {"src/a.py": "A = 2\n", f"changelog.d/{A}.md": "x\n"},
-                       "loose": {"src/loose.py": "x\n"}}})
+        # the commit's hook leaves a file no commit carries, so the landing commits, lands and
+        # then cannot remove the worktree unforced; a builder's leftover is refused before the
+        # commit, so the file is made after that check
+        self.spec({A: {"files": {"src/a.py": "A = 2\n", f"changelog.d/{A}.md": "x\n"}}})
+        _write(self.late.parent, self.late.name, "x\n")
         rc, out, err = self.drive()
         self.assertEqual(1, rc, out + err)
         self.assertIn(f"DRIVE STOPPED: {A} at land, {drive.REFUSAL}", out)
