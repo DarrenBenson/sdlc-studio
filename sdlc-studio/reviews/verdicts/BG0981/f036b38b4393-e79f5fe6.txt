@@ -1,0 +1,6 @@
+UNIT: BG0981
+BRIEF: f036b38b4393-e79f5fe6
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-1 "The check's scope, the criteria `verify_ac.py run` judges" CLOSED: `test_only_the_criteria_the_runner_judges_are_asked` holds a backtick-wrapped `file` line under a later heading that `parse_story` reads and `criteria_blocks` does not, and asserts the unit groomed through `sprint.py breakdown`. Round-1 "The fail-open of `unparseable_verifiers`" CLOSED: `test_a_criteria_reader_that_raises_fails_open` makes `criteria_blocks` raise and asserts an empty list, `unit_is_ungroomed` not ungroomed, and the breakdown groomed. My mutants in a throwaway clone, all KILLED: the except narrowed to ImportError, the criteria reader moved outside the try, every block in the file added to the criteria. AC1 to AC3 pass through `verify_ac.py run --id BG0981 --dry-run` (3 of 3), and the author's five mutants replay killed. Claim inventory: the reworded `unparseable_verifiers` docstring ("or its criteria reader raises") TRUE by the test and the mutants, and the test docstring's mutants (6) and (7) TRUE.

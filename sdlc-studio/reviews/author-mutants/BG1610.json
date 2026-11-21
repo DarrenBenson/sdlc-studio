@@ -1,32 +1,59 @@
 {
   "unit": "BG1610",
-  "digest": "702bedea5d75c9d8 at 09cf0766d830",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1610-mutation-edits.json",
+  "digest": "f249a53bf4de8a2b at 7982a8fd8840",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a7d455b2fa7e7c868/BG1610-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the commit run with subprocess.run(timeout=...) again, killing only git",
+      "mutant": "the reviewer's regression: `_bounded` runs the commit with no watchdog",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        done = _bounded([\"git\", \"-C\", str(wt_top), \"commit\", \"-F\", str(msg)], COMMIT_TIMEOUT,\n                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\n",
-      "new": "        done = subprocess.run([\"git\", \"-C\", str(wt_top), \"commit\", \"-F\", str(msg)],\n                              timeout=COMMIT_TIMEOUT, text=True, check=False,\n                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests",
+      "old": "    with _watchdog(grace) as arm:\n        with subprocess.Popen(cmd, text=True, start_new_session=True, **popen) as proc:\n",
+      "new": "    with contextlib.nullcontext(lambda pgid: None) as arm:\n        with subprocess.Popen(cmd, text=True, start_new_session=True, **popen) as proc:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_a_land_stopped_while_the_hook_runs_leaves_neither_running",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "only a timeout ends the group, not a Ctrl-C",
+      "mutant": "the watchdog started but never told the commit's group",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "            out, err = proc.communicate(timeout=timeout)\n        except BaseException:\n",
-      "new": "            out, err = proc.communicate(timeout=timeout)\n        except subprocess.TimeoutExpired:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests",
+      "old": "            try:\n                arm(proc.pid)\n                out, err = proc.communicate(timeout=timeout)\n",
+      "new": "            try:\n                out, err = proc.communicate(timeout=timeout)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_a_land_stopped_while_the_hook_runs_leaves_neither_running",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the hook does not wait on its child, so the commit ends inside the bound",
+      "mutant": "the watchdog given KILL_GRACE whatever grace `_bounded` was handed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    with _watchdog(grace) as arm:\n",
+      "new": "    with _watchdog() as arm:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_watchdog_gives_the_group_the_bound_s_own_grace",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the watchdog program started with KILL_GRACE, the grace it is given dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "                                str(KILL_GRACE if grace is None else grace)],\n",
+      "new": "                                str(KILL_GRACE)],\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_watchdog_gives_the_group_the_bound_s_own_grace",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the reviewer's: `_bounded` ends the group with a grace of 0 (SIGKILL straight after the SIGTERM)",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            except BaseException:\n                _kill_group(proc, grace)\n                raise\n    return subprocess.CompletedProcess(proc.args, proc.returncode, out, err)\n",
+      "new": "            except BaseException:\n                _kill_group(proc, 0)\n                raise\n    return subprocess.CompletedProcess(proc.args, proc.returncode, out, err)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_bound_gives_the_group_kill_grace_before_the_sigkill",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the grace case's hook stops on the SIGTERM at once, so no grace is needed",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py",
-      "old": "echo $! > \"{dir}/child.pid\"\nwait\n",
-      "new": "echo $! > \"{dir}/child.pid\"\nexit 0\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_bound_stops_the_hook_and_its_child_and_commits_nothing",
+      "old": "            f\"trap 'sleep 0.5; echo stopped > \\\"{self.dir}/hook.stopped\\\"; exit 1' TERM\\n\"\n",
+      "new": "            f\"trap 'exit 1' TERM\\n\"\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests::test_the_bound_gives_the_group_kill_grace_before_the_sigkill",
       "result": "killed",
       "answer": ""
     }

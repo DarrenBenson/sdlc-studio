@@ -1,68 +1,131 @@
 {
   "unit": "BG0983",
-  "digest": "d206a3e1357abfbb at ef30c7b14e4d",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a789164808837c07b/BG0983-mutation-edits.json",
+  "digest": "3bdf6d7d6498db6b at 97530826c479",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a43be32746739f226/BG0983-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the whole ledger is read again inside a run",
+      "mutant": "unanswered-from-the-run-alone",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    since = _delivery_base(repo_root, unit) if phase == \"delivery\" else 0\n",
-      "new": "    since = 0\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "old": "    if unanswered:\n        return unanswered[-1]\n    since = _delivery_base(repo_root, unit) if phase == \"delivery\" else 0\n    if since is None:\n        return None\n    # Only a unit an open run holds and has reviewed skips rows; the rest keep the one read.\n    current = _live_verdict_rows(repo_root, unit, phase, since) if since else seen",
+      "new": "    since = _delivery_base(repo_root, unit) if phase == \"delivery\" else 0\n    if since is None:\n        return None\n    seen = _live_verdict_rows(repo_root, unit, phase, since)\n    unanswered = _unanswered_rejects(seen)\n    if unanswered:\n        return unanswered[-1]\n    current = seen",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a unit the run holds and never reviewed reads the whole ledger",
+      "mutant": "no-standing-reject-return",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    return base if isinstance(base, int) else None\n",
-      "new": "    return base if isinstance(base, int) else 0\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "old": "    if unanswered:\n        return unanswered[-1]\n    since =",
+      "new": "    if False:\n        return unanswered[-1]\n    since =",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the rows past the base are dropped too",
+      "mutant": "every-phase-scoped",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "        if ahead > 0:\n            ahead -= 1\n            continue\n",
-      "new": "        if True:\n            continue\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_approve_in_the_run_covers",
+      "old": "    since = _delivery_base(repo_root, unit) if phase == \"delivery\" else 0\n    if since is None:\n        return None\n    # Only",
+      "new": "    since = _delivery_base(repo_root, unit)\n    if since is None:\n        return None\n    # Only",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the run's scoping is applied outside a run",
+      "mutant": "held-unreviewed-reads-whole-ledger",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    if not run_state.batch_holds(state, unit):\n        return 0\n",
-      "new": "    if not run_state.batch_holds(state, unit):\n        return None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_outside_a_run_the_whole_ledger_counts",
+      "old": "    if since is None:\n        return None\n    # Only",
+      "new": "    if since is None:\n        since = 0\n    # Only",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a run state that is not UTF-8 raises out of the verdict reader",
+      "mutant": "no-scoping-past-the-base",
       "file": ".claude/skills/sdlc-studio/scripts/critic.py",
-      "old": "    except (run_state.RunStateError, OSError, ValueError):   # ValueError: bytes not UTF-8\n",
-      "new": "    except run_state.RunStateError:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_outside_a_run_the_whole_ledger_counts",
+      "old": "    current = _live_verdict_rows(repo_root, unit, phase, since) if since else seen",
+      "new": "    current = seen",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "TEST: the fixed base sits before the APPROVE, so the subtest cannot tell",
+      "mutant": "scoping-condition-inverted",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    current = _live_verdict_rows(repo_root, unit, phase, since) if since else seen",
+      "new": "    current = _live_verdict_rows(repo_root, unit, phase, since) if not since else seen",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "scoping-condition-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    current = _live_verdict_rows(repo_root, unit, phase, since) if since else seen",
+      "new": "    current = _live_verdict_rows(repo_root, unit, phase, since)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "survived",
+      "answer": "equivalent: with since 0 `_live_verdict_rows(..., 0)` skips no row and returns the same live rows as `seen`, so the condition only spares a second read of the ledger for a unit no open run holds; the result is identical either way"
+    },
+    {
+      "mutant": "first-row-not-latest",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return current[-1] if current else None",
+      "new": "    return current[0] if current else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skip-only-live-rows",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if ahead > 0:\n            ahead -= 1\n            continue\n        if v.get(\"superseded\") and ((v.get(\"verdict\") or \"\").upper() != REJECT\n                                    or _is_principal_superseded(repo_root, unit, v)):\n            continue\n        out.append(v)",
+      "new": "        if v.get(\"superseded\") and ((v.get(\"verdict\") or \"\").upper() != REJECT\n                                    or _is_principal_superseded(repo_root, unit, v)):\n            continue\n        if ahead > 0:\n            ahead -= 1\n            continue\n        out.append(v)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "skip-boundary-off-by-one",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if ahead > 0:\n            ahead -= 1",
+      "new": "        if ahead > 1:\n            ahead -= 1",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "base-keyed-as-typed",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    base = bases.get(sdlc_md.norm_id(unit)) if isinstance(bases, dict) else None",
+      "new": "    base = bases.get(unit) if isinstance(bases, dict) else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-later-run-approve-by-rev-a",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
-      "old": "{run_state.REVIEW_BASE: {UNIT: 1}}",
-      "new": "{run_state.REVIEW_BASE: {UNIT: 0}}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "old": "        self.assertEqual(0, cap._bug_record(root, \"APPROVE\", \"rev-b\")[0])",
+      "new": "        self.assertEqual(0, cap._bug_record(root, \"APPROVE\", \"rev-a\")[0])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "TEST: the seal fixture reviews before the run opens again",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py",
-      "old": "            state = _run_state(root, [\"US0101\"])\n            _unit(root, \"US0101\")\n            ck = sprint_report.checklist(",
-      "new": "            _unit(root, \"US0101\")\n            state = _run_state(root, [\"US0101\"])\n            ck = sprint_report.checklist(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_report_carries_no_per_unit_signoff",
+      "mutant": "test-batch-row-dated-after-the-licence",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "old": "| APPROVE | 2026-09-01 | {UNIT} | - |",
+      "new": "| APPROVE | 2026-09-27 | {UNIT} | - |",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-no-superseded-row",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "old": "        critic.record_supersession(self.root, UNIT,",
+      "new": "        (lambda *a, **k: None)(self.root, UNIT,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
       "result": "killed",
       "answer": ""
     }

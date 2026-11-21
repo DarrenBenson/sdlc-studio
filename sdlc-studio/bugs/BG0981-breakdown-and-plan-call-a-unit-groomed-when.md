@@ -1,6 +1,6 @@
 # BG0981: breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py, changelog.d/BG0981.md, sdlc-studio/prd.md, tools/tests/test_lean_prd_refresh.py
@@ -29,10 +29,13 @@ Have `conformance.unit_is_ungroomed` ask each Verify line of the parser `verify_
 
 - [ ] **AC1** A unit whose only Verify line `verify_ac` cannot parse (a backtick-wrapped expression, an unknown verb) is reported ungroomed by `sprint.py breakdown`, with `verify_ac`'s own message
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py -k unparseable_verify_is_ungroomed
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** `sprint.py plan --write` refuses such a unit through the same gate, and opens no run
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py -k plan_refuses_unparseable_verify
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC3** A Verify line `verify_ac` accepts (a DSL verb, `shell`, or a `manual` marker) still counts as groomed
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py -k parseable_verify_still_groomed
+  - **Verified:** yes (2026-11-21)
 
 ## Triage
 

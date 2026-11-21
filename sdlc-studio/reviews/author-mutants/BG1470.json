@@ -1,0 +1,106 @@
+{
+  "unit": "BG1470",
+  "digest": "973614df2d2a2c04 at c70b799ef175",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a903dc7ee795b57c3/BG1470-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "a work-tree rename's source not skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if index in \"RC\" or tree in \"RC\":",
+      "new": "if index in \"RC\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_rename_made_in_the_work_tree_is_named_by_its_own_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a work-tree copy's source not skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if index in \"RC\" or tree in \"RC\":",
+      "new": "if index in \"RC\" or tree == \"R\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_copy_names_its_source_only_where_it_changed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a staged copy's source not skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if index in \"RC\" or tree in \"RC\":",
+      "new": "if index == \"R\" or tree in \"RC\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_copy_names_its_source_only_where_it_changed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a staged rename's source not skipped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if index in \"RC\" or tree in \"RC\":",
+      "new": "if index == \"C\" or tree in \"RC\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_staged_rename_is_no_leftover",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a work-tree rename's deleted source not named",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if tree == \"R\":\n                out[source] = \"unstaged\"",
+      "new": "            if False:\n                out[source] = \"unstaged\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_rename_made_in_the_work_tree_is_named_by_its_own_paths",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a work-tree copy's source named from the copy entry too",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "            if tree == \"R\":",
+      "new": "            if tree in \"RC\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_copy_names_its_source_only_where_it_changed",
+      "result": "survived",
+      "answer": "equivalent: git reports a copy in the work tree only from a source changed in the work tree, and then lists that source on its own as unstaged, so naming it again from the copy entry adds nothing. Probe (git 2.56, status.renames=copies): a copy beside its edited source prints ' M b.py| C b4.py|b.py|'; beside its clean source git prints ' A b4.py|', no copy at all."
+    },
+    {
+      "mutant": "a path decoded as strict UTF-8",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "os.fsdecode(raw) for raw in",
+      "new": "raw.decode(\"utf-8\") for raw in",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_name_that_is_not_utf8_is_named_rather_than_stopping_the_land",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only a modification counted as unstaged",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "elif tree != \" \":",
+      "new": "elif tree == \"M\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_an_unstaged_deletion_is_refused_before_the_hooks_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "an untracked file not told from an unstaged edit",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "if index == \"?\":",
+      "new": "if index == \"!\":",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_leftover_file_is_refused_before_the_hooks_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the several-worktree preflight check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _refuse_overlap(lanes_, 2)\n    _refuse_leftovers(lanes_, 2)",
+      "new": "    _refuse_overlap(lanes_, 2)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandSeveralWorktreesTests::test_a_leftover_in_a_later_worktree_is_refused_before_anything_moves",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the one-worktree preflight check dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        lanes_[0].units = list(units)\n        _refuse_leftovers(lanes_, 2)",
+      "new": "        lanes_[0].units = list(units)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_leftover_file_is_refused_before_the_hooks_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

@@ -1,122 +1,68 @@
 {
   "unit": "BG0956",
-  "digest": "f7fa3cbf801cd1e9 at ef61967bb60f",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae45bc71c379e6702/BG0956-mutation-edits.json",
+  "digest": "dbd9f8286c3c8d9d at ed47dfd49318",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad39873b16deb4076/BG0956-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the archive writer skips align_padded_tables (the reviewer's survivor)",
+      "mutant": "the archive writer claims every row it looked for, `applied |= set(here)` (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            sdlc_md.atomic_write(af, sdlc_md.align_padded_tables(text, original))",
-      "new": "            sdlc_md.atomic_write(af, text)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_hand_aligned_archive_table_stays_aligned",
+      "old": "        applied |= done\n",
+      "new": "        applied |= set(here)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the archive writer drops the final newline (the reviewer's survivor)",
+      "mutant": "the archive writer claims no row it rewrote",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            text = \"\\n\".join(lines) + (\"\\n\" if original.endswith(\"\\n\") else \"\")",
-      "new": "            text = \"\\n\".join(lines)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_the_archived_file_keeps_its_final_newline_or_its_lack_of_one",
+      "old": "        applied |= done\n",
+      "new": "        applied |= set()\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the archive writer always adds a final newline",
+      "mutant": "the archive writer claims every row it looked for (the AC4 selector, which holds one id per sub-index)",
       "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            text = \"\\n\".join(lines) + (\"\\n\" if original.endswith(\"\\n\") else \"\")",
-      "new": "            text = \"\\n\".join(lines) + \"\\n\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_the_archived_file_keeps_its_final_newline_or_its_lack_of_one",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "align against no original: every aligned table becomes a candidate",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "            sdlc_md.atomic_write(af, sdlc_md.align_padded_tables(text, original))",
-      "new": "            sdlc_md.atomic_write(af, sdlc_md.align_padded_tables(text, text))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_hand_aligned_archive_table_stays_aligned",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "transition and apply never write the archive (the defect itself)",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "    applied |= _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)",
-      "new": "    pass",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::ArchivedRowSyncTests::test_closing_an_archived_bug_rewrites_its_archive_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "apply never writes the archive",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "    applied |= _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)",
-      "new": "    _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_apply_rewrites_a_stale_archived_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a live row no longer wins: the archive is rewritten beneath it",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "    wanted = {k: v for k, v in fixes.items() if k not in live_ids}",
-      "new": "    wanted = dict(fixes)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_live_row_wins_and_the_archive_is_untouched",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a sub-index's own summary counts restamped",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        _counts, done = _rewrite_index_lines(lines, here, {}, vocab, aliases, summaries=False)",
-      "new": "        _counts, done = _rewrite_index_lines(lines, here, {}, vocab, aliases, summaries=True)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_only_the_archived_row_the_census_reads_is_written",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "every sub-index holding the id is rewritten, not the one the census reads",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        here = {k: wanted[k] for k in arows if k in wanted and k not in seen}",
-      "new": "        here = {k: wanted[k] for k in arows if k in wanted}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_only_the_archived_row_the_census_reads_is_written",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a dry run writes the archive",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        applied |= done\n        if not dry_run:",
-      "new": "        applied |= done\n        if True:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_apply_rewrites_a_stale_archived_row",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "an unplaceable archived row claimed as applied",
-      "file": ".claude/skills/sdlc-studio/scripts/reconcile.py",
-      "old": "        applied |= done\n        if not dry_run:",
-      "new": "        applied |= set(here)\n        if not dry_run:",
+      "old": "        applied |= done\n",
+      "new": "        applied |= set(here)\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_still_reports_unsynced",
       "result": "survived",
-      "answer": "equivalent on every reachable single-id path: the line before it, `if not done: continue`, already skips a sub-index whose wanted row the writer could not place, so `here` and `done` differ only for one sub-index holding two drifted archived ids, one under a header and one header-less. AC4's unplaceable row is pinned by test_an_unplaceable_row_still_reports_unsynced, and the reverse mutant (no archive write at all) is killed above; that two-id shape is outside the REJECT this repair answers"
+      "answer": "Expected: the AC4 test holds one id per sub-index, so set(here) and done are equal there. The same mutant is killed by test_an_unplaceable_row_beside_a_placed_one_is_not_claimed (row one of this list), the pin this repair adds for it."
     },
     {
-      "mutant": "test mutant: the aligned pin expects the compact row, so it must fail on the real code",
+      "mutant": "TEST: apply's exit asserted 0",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
-      "old": "                             aligned.replace(\"| Fixed    |\", \"| Closed   |\"))",
-      "new": "                             aligned.replace(\"| [BG0001](../../BG0001-b.md) | b     | Medium   | Fixed    |\", \"| [BG0001](../../BG0001-b.md) | b | Medium | Closed |\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_a_hand_aligned_archive_table_stays_aligned",
+      "old": "            self.assertEqual(code, 1, out + err)\n            self.assertIn(\"set bug BG0001: Fixed -> Closed\", out)\n            self.assertNotIn(\"BG0003\"",
+      "new": "            self.assertEqual(code, 0, out + err)\n            self.assertIn(\"set bug BG0001: Fixed -> Closed\", out)\n            self.assertNotIn(\"BG0003\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test mutant: the newline pin expects the newline stripped, so it must fail on the real code",
+      "mutant": "TEST: the unplaceable row asserted claimed on stdout",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
-      "old": "                                 before.replace(b\"| Medium | Fixed |\", b\"| Medium | Closed |\"))",
-      "new": "                                 before.replace(b\"| Medium | Fixed |\", b\"| Medium | Closed |\").rstrip(b\"\\n\"))",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_the_archived_file_keeps_its_final_newline_or_its_lack_of_one",
+      "old": "            self.assertNotIn(\"BG0003\", out, f\"the unplaceable row was claimed: {out}\")",
+      "new": "            self.assertIn(\"BG0003\", out, f\"the unplaceable row was claimed: {out}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the unplaceable row asserted rewritten to Closed",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "old": "            self.assertIn(\"| Fixed |\", self._row(arch, \"[BG0003]\"))",
+      "new": "            self.assertIn(\"| Closed |\", self._row(arch, \"[BG0003]\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the header-less row placed after the headed table, so it joins the table",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py",
+      "old": "                            \"| [BG0003](../../BG0003-d.md) | d | Medium | Fixed |\\n\\n\"\n                            \"| ID | Title | Severity | Status |\\n| --- | --- | --- | --- |\\n\"\n                            \"| [BG0001](../../BG0001-b.md) | b | Medium | Fixed |\\n\",",
+      "new": "                            \"| ID | Title | Severity | Status |\\n| --- | --- | --- | --- |\\n\"\n                            \"| [BG0001](../../BG0001-b.md) | b | Medium | Fixed |\\n\"\n                            \"| [BG0003](../../BG0003-d.md) | d | Medium | Fixed |\\n\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::ArchivedRowApplyTests::test_an_unplaceable_row_beside_a_placed_one_is_not_claimed",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 # BG1582: Once HEAD moves past the close commit, sprint sign skips the whole-tree check, so an uncommitted edit to a unit's file seals with no later run open
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_run_open_across_checkouts.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG1582.md, .claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py
@@ -26,6 +26,7 @@ Keep the committed-close judgement, and also refuse an uncommitted change to a f
 
 - [ ] **AC1** Given a run closed and committed, then one empty commit on top and no later run open, and an uncommitted edit to a file a batch unit declares, when `sprint.py sign --report <the run's report> --principal <operator>` runs, then it refuses and names the edited file, and seals nothing. Fails on: sign seals the run with the edit still uncommitted.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests
+  - **Verified:** yes (2026-11-21)
 
 ## Impact
 

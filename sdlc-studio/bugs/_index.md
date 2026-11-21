@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 336 |
+| Open | 330 |
 | In Progress | 0 |
-| Fixed | 1007 |
+| Fixed | 1022 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1684** |
+| **Total** | **1693** |
 
 ## All Bugs
 
@@ -29,9 +29,9 @@
 | [BG0951](BG0951-critic-tier-for-reads-the-raw-difficulty-band.md) | `critic.tier_for` reads the raw difficulty band and skips every critic-role policy `route.pick` applies, so code units get a light review the routing policy says should be medium | Won't Fix | High | 2026-10-06 | 2026-10-06 |
 | [BG0952](BG0952-an-open-questions-item-declaring-none-after-a.md) | An Open Questions item declaring None after a dash is read as unanswered - `_DECLARES_NONE_RE` does not allow a leading dash | Open | Low | 2026-10-06 | 2026-10-06 |
 | [BG0953](BG0953-full-template-story-and-tsd-ship-unrendered-config.md) | Full-template story and TSD ship unrendered {{config.story_quality.*}} placeholders | Open | Low | 2026-10-06 | 2026-10-06 |
-| [BG0954](BG0954-a-draft-story-transitions-straight-to-done-the.md) | A Draft story transitions straight to Done - the Definition of Ready is never required | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0954](BG0954-a-draft-story-transitions-straight-to-done-the.md) | A Draft story transitions straight to Done - the Definition of Ready is never required | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0955](BG0955-test-lean-backlog-sweep-reads-only-the-live.md) | `test_lean_backlog_sweep` reads only the live `_index.md`, so the v6.1 row archive turned main red with 25 false disagreements | Fixed | Medium | 2026-10-06 | 2026-10-06 |
-| [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Open | Medium | 2026-10-06 | 2026-10-06 |
+| [BG0956](BG0956-transition-set-reports-index-synced-but-leaves-archived.md) | transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0957](BG0957-test-epic-index-derived-s-negative-control-needs.md) | `test_epic_index_derived`'s negative control needs a live epic row with a count, so an archive that empties the live epic index turns it red | Open | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0958](BG0958-mutation-py-finds-no-changed-lines-when-git.md) | `mutation.py` finds no changed lines when git's `diff.mnemonicPrefix` is set, so a mutation probe scoped to a unit's changes has nothing to mutate | Fixed | Medium | 2026-10-06 | 2026-10-06 |
 | [BG0959](BG0959-the-engagement-floor-rejects-a-ulid-adopt-after.md) | The engagement floor rejects a ULID adopt_after cutoff and tells you to set a sequential one | Open | Medium | 2026-10-07 | 2026-10-07 |
@@ -56,13 +56,13 @@
 | [BG0978](BG0978-test-pre-push-hook-s-stub-path-symlinks.md) | `test_pre_push_hook`'s stub PATH symlinks python3, which drops a virtualenv's packages, so the push gate cannot pass where pytest lives in a venv | Fixed | Low | 2026-10-07 | 2026-10-07 |
 | [BG0979](BG0979-file-finding-py-misdirects-a-cr-s-author.md) | `file_finding.py` misdirects a CR's author: `--recommendation` is documented as RFC-only though a CR carries it, and the no-verifier warning cites a `sprint plan` refusal that never applies to a CR | Open | Low | 2026-10-07 | 2026-10-07 |
 | [BG0980](BG0980-filing-refuses-a-k-selector-for-a-test.md) | Filing refuses a `-k` selector for a test the fix will add to an existing module without naming the node-id form it would accept, so authors scatter one-test files | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0981](BG0981-breakdown-and-plan-call-a-unit-groomed-when.md) | breakdown and plan call a unit groomed when a Verify line is one verify_ac cannot parse | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0982](BG0982-critic-brief-s-diff-scope-is-the-unit.md) | critic brief's diff scope is the unit's Affects only - files the unit changed but did not declare are invisible to the reviewer | Open | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0983](BG0983-review-coverage-and-verdict-for-read-a-unit.md) | `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0984](BG0984-changing-a-criterion-s-verify-expression-keeps-the.md) | Changing a criterion's Verify expression keeps the old Verified date and evidence when the new one passes | Open | Low | 2026-10-07 | 2026-10-07 |
-| [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0985](BG0985-sprint-close-dry-run-reports-a-non-blocking.md) | sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0986](BG0986-tools-forward-port-sh-deletes-the-changelog-md.md) | `tools/forward-port.sh` deletes the CHANGELOG.md the installer ships into the skill, so `project upgrade` loses its changelog digest after every forward-port | Open | Medium | 2026-10-07 | 2026-10-07 |
-| [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Open | Medium | 2026-10-07 | 2026-10-07 |
+| [BG0987](BG0987-the-close-s-goal-judgement-reaches-only-the.md) | The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it | Fixed | Medium | 2026-10-07 | 2026-10-07 |
 | [BG0988](BG0988-sprint-plan-s-one-run-slot-refusal-tells.md) | sprint plan's one-run-slot refusal tells the operator to finish a close that already finished, when only the signature is owed | Won't Fix | Low | 2026-10-07 | 2026-10-07 |
 | [BG0989](BG0989-a-sprint-close-on-a-second-machine-wipes.md) | A sprint close on a second machine wipes the committed LESSONS-SUMMARY.md: the project lessons log it regenerates from is gitignored, so it exists only on the machine that wrote it | Fixed | High | 2026-10-07 | 2026-10-07 |
 | [BG0990](BG0990-reconcile-s-field-sync-reads-a-joined-metadata.md) | reconcile's field sync reads a '·'-joined metadata run to end of line, writing 'P2 · **Type:** ...' into index cells and dropping the later fields | Fixed | Medium | 2026-10-07 | 2026-10-07 |
@@ -182,7 +182,7 @@
 | [BG1104](BG1104-a-message-only-amend-runs-the-whole-workspace.md) | A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to | Won't Fix | Low | 2026-10-20 | 2026-10-20 |
 | [BG1105](BG1105-agents-md-names-the-local-push-cost-series.md) | AGENTS.md names the local push-cost series as the current push figure, which a clone with a gate host never adds to | Superseded | Low | 2026-10-20 | 2026-10-20 |
 | [BG1106](BG1106-package-lock-json-resolves-smol-toml-1-7.md) | package-lock.json resolves smol-toml 1.7.1 and katex 0.16.47 through markdownlint-cli 0.49.1, inside Dependabot alerts 25 and 24 | Superseded | Low | 2026-10-21 | 2026-10-21 |
-| [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Open | Medium | 2026-10-21 | 2026-10-21 |
+| [BG1107](BG1107-sprint-end-goals-keeps-only-the-first-line.md) | sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1108](BG1108-a-carried-unit-whose-repair-landed-before-the.md) | A carried unit whose repair landed before the new run's base has an empty review diff, so its redelivery review cannot block | Open | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1109](BG1109-the-artefact-gate-s-conformance-and-engagement-floor.md) | The artefact gate's conformance and engagement-floor lanes re-read the verdict ledger, the decisions log and each verifier's collection once per unit | Fixed | Medium | 2026-10-21 | 2026-10-21 |
 | [BG1110](BG1110-backlog-triage-s-duplicate-lens-has-no-way.md) | backlog_triage's duplicate lens has no way to record a pair confirmed distinct, so a triaged pair is re-reported on every run | Open | Low | 2026-10-21 | 2026-10-21 |
@@ -657,7 +657,7 @@
 | [BG1579](BG1579-the-boundary-marker-cap-counts-boundary-only-text.md) | The boundary-marker cap counts @boundary_only text inside fixture strings as marked tests, so BG1519's fixtures pushed it over six | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1580](BG1580-the-v6-1-docs-test-refuses-a-spec.md) | The v6.1 docs test refuses a spec naming a .local file only a git hook reads, so BG1518's TSD row reddened the push | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1581](BG1581-test-a-refused-message-never-reaches-the-unit.md) | test_a_refused_message_never_reaches_the_unit_suites fails by 4 ms on the gate host under the nested unittest run, refusing a push | Open | Medium | 2026-11-18 | 2026-11-18 |
-| [BG1582](BG1582-once-head-moves-past-the-close-commit-sprint.md) | Once HEAD moves past the close commit, sprint sign skips the whole-tree check, so an uncommitted edit to a unit's file seals with no later run open | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1582](BG1582-once-head-moves-past-the-close-commit-sprint.md) | Once HEAD moves past the close commit, sprint sign skips the whole-tree check, so an uncommitted edit to a unit's file seals with no later run open | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1583](BG1583-sprint-sign-names-the-wrong-page-when-the.md) | sprint sign names the wrong page when the later run has also closed, and three of US1290's guards have no test | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1584](BG1584-bg1507-and-bg1520-left-four-checks-with-no.md) | BG1507 and BG1520 left four checks with no test: --includes, includeIf identities, the self-check-author refusal and the retro's owed branches | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1585](BG1585-the-pre-commit-gate-lane-passes-the-whole.md) | The pre-commit gate lane passes the whole reconcile detect JSON through one environment variable, so on a large corpus it dies with Argument list too long and never prints the drift detail | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
@@ -665,7 +665,7 @@
 | [BG1587](BG1587-a-commit-that-adds-a-test-file-never.md) | A commit that adds a test file never selects test_test_census.py, whose guards scan every test file, so a new hand-copied script list is first seen by the full suite at push | Superseded | Low | 2026-11-18 | 2026-11-18 |
 | [BG1588](BG1588-the-hand-copied-list-guard-misses-known-mirrors.md) | The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1589](BG1589-a-run-closed-to-await-the-operator-s.md) | A run closed to await the operator's signature is stamped 'closed running' on reviews/LATEST.md, because the anchor prints the raw outcome the record keeps until sign seals it | Open | Low | 2026-11-18 | 2026-11-18 |
-| [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Open | Medium | 2026-11-18 | 2026-11-18 |
+| [BG1590](BG1590-once-head-has-moved-past-the-close-commit.md) | Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal | Fixed | Medium | 2026-11-18 | 2026-11-18 |
 | [BG1591](BG1591-the-author-self-check-refuses-a-documentation-page.md) | The author self-check refuses a documentation page the unit's Affects declares as a claim surface, so a docs unit's claims in its own page cannot be recorded and the land refuses its self-check | Open | Low | 2026-11-18 | 2026-11-18 |
 | [BG1592](BG1592-us1317-s-enterprise-page-tests-cannot-tell-a.md) | US1317's enterprise-page tests cannot tell a forecast figure from an actual, miss four network-call shapes, plant no failure for the http address check, and pin no link or key outside the controls section | Won't Fix | Low | 2026-11-18 | 2026-11-18 |
 | [BG1593](BG1593-tools-check-links-py-does-not-read-docs.md) | tools/check_links.py does not read docs/enterprise.md, so a broken link or anchor on the page exits 0 | Open | Low | 2026-11-18 | 2026-11-18 |
@@ -685,7 +685,7 @@
 | [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1608](BG1608-goal-review-brief-and-a-first-round-record.md) | goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1609](BG1609-a-high-risk-unit-s-second-review-seat.md) | A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review | Open | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1610](BG1610-lane-land-s-commit-timeout-kills-git-but.md) | lane land's commit timeout kills git but leaves the hooks' test run running orphaned, holding the host's CPU after the land reports nothing committed | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1610](BG1610-lane-land-s-commit-timeout-kills-git-but.md) | lane land's commit timeout kills git but leaves the hooks' test run running orphaned, holding the host's CPU after the land reports nothing committed | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1611](BG1611-gate-py-red-run-s-regression-path-over.md) | gate.py --red-run's regression path over-claims: a failing id that names no file files no bug, and a second red on a different test reuses the first bug without naming that test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1612](BG1612-two-of-gate-py-red-run-s-behaviours.md) | Two of gate.py --red-run's behaviours hold by probe but no test pins them: the sections after a bug's CI Red Runs section, and the refusal of a negative, boolean or fractional rerun limit | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1613](BG1613-ci-wait-timeout-minutes-has-no-reader-the.md) | ci.wait_timeout_minutes has no reader: the trunk guidance's wait fence hardcodes `timeout 30m`, so a project's override changes nothing | Open | Low | 2026-11-19 | 2026-11-19 |
@@ -755,11 +755,20 @@
 | [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Open | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
-| [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1681](BG1681-bg1023-did-not-converge-in-review-round-2.md) | BG1023 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1681](BG1681-bg1023-did-not-converge-in-review-round-2.md) | BG1023 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1682](BG1682-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1683](BG1683-bg0954-did-not-converge-in-review-round-2.md) | BG0954 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1684](BG1684-bg0956-did-not-converge-in-review-round-2.md) | BG0956 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1683](BG1683-bg0954-did-not-converge-in-review-round-2.md) | BG0954 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1684](BG1684-bg0956-did-not-converge-in-review-round-2.md) | BG0956 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1685](BG1685-bg1107-did-not-converge-in-review-round-2.md) | BG1107 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1686](BG1686-bg1399-did-not-converge-in-review-round-2.md) | BG1399 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1687](BG1687-bg1409-did-not-converge-in-review-round-2.md) | BG1409 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1688](BG1688-bg1614-did-not-converge-in-review-round-2.md) | BG1614 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1689](BG1689-bg1624-did-not-converge-in-review-round-2.md) | BG1624 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1690](BG1690-bg1627-did-not-converge-in-review-round-2.md) | BG1627 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1691](BG1691-bg1609-did-not-converge-in-review-round-2.md) | BG1609 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 

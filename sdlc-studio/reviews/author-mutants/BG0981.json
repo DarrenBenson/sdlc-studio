@@ -1,86 +1,50 @@
 {
   "unit": "BG0981",
-  "digest": "3a1e3f1fe4f66ea5 at ef30c7b14e4d",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a789164808837c07b/BG0981-mutation-edits.json",
+  "digest": "6c06bafb9ca54acc at 97530826c479",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a43be32746739f226/BG0981-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the grooming predicate does not ask the runner's parser",
+      "mutant": "every-block-in-the-file-asked",
       "file": ".claude/skills/sdlc-studio/scripts/conformance.py",
-      "old": "        if unparseable_verifiers(text):\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_unparseable_verify_is_ungroomed",
+      "old": "        blocks = _va.criteria_blocks(text)\n    except Exception:  # noqa: BLE001 - same fail-open as the verifier leg above",
+      "new": "        blocks = _va.parse_story(text)\n    except Exception:  # noqa: BLE001 - same fail-open as the verifier leg above",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "plan opens the run anyway",
+      "mutant": "reader-failure-re-raised",
       "file": ".claude/skills/sdlc-studio/scripts/conformance.py",
-      "old": "        if unparseable_verifiers(text):\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_plan_refuses_unparseable_verify",
+      "old": "    except Exception:  # noqa: BLE001 - same fail-open as the verifier leg above\n        return []",
+      "new": "    except Exception:  # noqa: BLE001 - same fail-open as the verifier leg above\n        raise",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the unit is ungroomed under a message of its own",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if ac_why == \"unparseable-verifier\":\n",
-      "new": "        if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_unparseable_verify_is_ungroomed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a manual marker or eval is refused",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if _is_manual(expr) or expr.lower() == \"eval\" or expr.lower().startswith(\"eval \"):\n",
-      "new": "    if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_parseable_verify_still_groomed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "eval is refused",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if _is_manual(expr) or expr.lower() == \"eval\" or expr.lower().startswith(\"eval \"):\n",
-      "new": "    if _is_manual(expr):\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_parseable_verify_still_groomed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "only the first Verify line of a criterion is asked",
+      "mutant": "first-line-only",
       "file": ".claude/skills/sdlc-studio/scripts/conformance.py",
-      "old": "    return [(b.ac_id, refusal) for b in blocks for line in b.verifiers\n",
-      "new": "    return [(b.ac_id, refusal) for b in blocks for line in b.verifiers[:1]\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_unparseable_verify_is_ungroomed",
+      "old": "for b in blocks for line in b.verifiers",
+      "new": "for b in blocks for line in b.verifiers[:1]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the parse allows the runner's shell fallback",
+      "mutant": "unparseable-leg-dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/conformance.py",
+      "old": "        if unparseable_verifiers(text):",
+      "new": "        if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "manual-refused",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        _build_command(expr)\n",
-      "new": "        _build_command(expr, allow_fallback=True)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py::UnparseableVerifyTests::test_unparseable_verify_is_ungroomed",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the PRD's breakdown criterion drops the unparseable case",
-      "file": "sdlc-studio/prd.md",
-      "old": " and none carrying a `Verify:` line `verify_ac.py run` cannot parse;",
-      "new": ";",
-      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_breakdown_rule_names_the_split_ceiling_for_any_pointed_unit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "TEST: the PRD reader knows no words for the new shape",
-      "file": "tools/tests/test_lean_prd_refresh.py",
-      "old": "                   \"unparseable-verifier\": r\"`verify_ac\\.py run` cannot parse\"}",
-      "new": "}",
-      "test": "tools/tests/test_lean_prd_refresh.py::PrdRulesTests::test_the_breakdown_rule_names_the_split_ceiling_for_any_pointed_unit",
+      "old": "    if _is_manual(expr) or expr.lower() == \"eval\"",
+      "new": "    if expr.lower() == \"eval\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_breakdown_unparseable_verify.py",
       "result": "killed",
       "answer": ""
     }

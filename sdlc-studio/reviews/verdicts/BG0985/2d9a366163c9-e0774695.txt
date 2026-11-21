@@ -1,0 +1,6 @@
+UNIT: BG0985
+BRIEF: 2d9a366163c9-e0774695
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-1 finding "the advisory row's `note` icon is unpinned" CLOSED, and "the advisory row's remedy is unpinned" CLOSED. The repair (b8839c73) is test-only: `test_advisory_row_not_a_refusal` now asserts the whole `note gate, reported not blocking: ...` line and the `-> refresh the anchor` line printed directly under it, through `sprint.main(["close", "--dry-run"])`. My mutation pass in a throwaway clone: the `note` icon dropped from the icon map KILLED, the advisory row noted with an empty remedy KILLED, its remedy replaced by its detail KILLED, the `note` icon turned to `ok` KILLED, `gate_refused` read over every pre-flight row in place of the held rows KILLED, the remedy line's indent changed KILLED. The author's seven mutants replay killed. verify_ac dry run 2/2 pass. Claim inventory: the test docstring's new mutants (5) and (6) TRUE by execution, and changelog.d/BG0985.md, unchanged by the repair, still TRUE (a `note` line labelled `reported not blocking`, no STOP, `dry run CLEAN`, exit 0, a blocking or unflagged row still STOP and exit 1). lint-style clean.

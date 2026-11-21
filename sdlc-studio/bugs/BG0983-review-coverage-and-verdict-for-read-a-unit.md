@@ -1,6 +1,6 @@
 # BG0983: `review_coverage` and `verdict_for` read a unit's whole per-unit ledger, so an APPROVE from an earlier delivery covers a re-delivered unit that nobody reviewed in this run
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG0983.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_awaiting_signature_status.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_no_signoff_verbs.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_strike_learning.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py
@@ -26,10 +26,13 @@ Read coverage and the per-unit verdict from the unit's rows past the run's `REVI
 
 - [ ] **AC1** A unit whose only APPROVE predates the open run's `REVIEW_BASE` for it is not covered, and closing-review holds it
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py -k an_earlier_delivery_approve_does_not_cover
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** An APPROVE recorded in the open run still covers the unit
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py -k an_approve_in_the_run_covers
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC3** Outside a run, coverage still reads the whole ledger
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py -k outside_a_run_the_whole_ledger_counts
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

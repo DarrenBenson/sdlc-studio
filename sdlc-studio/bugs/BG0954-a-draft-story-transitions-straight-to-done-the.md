@@ -1,6 +1,6 @@
 # BG0954: A Draft story transitions straight to Done - the Definition of Ready is never required
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG0954.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py

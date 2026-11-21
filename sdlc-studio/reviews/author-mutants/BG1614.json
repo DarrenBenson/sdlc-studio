@@ -1,59 +1,68 @@
 {
   "unit": "BG1614",
-  "digest": "10758bf0acfbf78c at 09cf0766d830",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1614-mutation-edits.json",
+  "digest": "a22fe933b9037e64 at d608c8779053",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5869fc4561811571/BG1614-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the BRIEF header ignored",
+      "mutant": "a saved brief naming no file dated by no note (the round-two regression)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    stem = critic._header_lines(said.replace(\"\\r\\n\", \"\\n\")).get(\"BRIEF\")  # noqa: SLF001\n",
-      "new": "    stem = None\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "old": "            if saved_stem is None:\n                landed_at = n\n",
+      "new": "            pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_no_file_still_takes_a_rejoinder_after_its_landing",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a header naming no noted brief falls back to the saved brief",
+      "mutant": "every saved brief dated by the last note of its fingerprint",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if stem and issued is None:\n",
-      "new": "    if False:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "old": "            if saved_stem is None:\n                landed_at = n\n",
+      "new": "            landed_at = n\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_re_brief_after_the_landing_reads_as_no_landing",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the header's brief taken whenever it was noted",
+      "mutant": "the brief taken when no note names the saved brief's file (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if landed_at is None or n < landed_at:\n",
-      "new": "    if landed_at is None:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "old": "    if landed_at is None:\n        raise LandError(f\"{rel} names the brief file",
+      "new": "    if landed_at is None and False:\n        raise LandError(f\"{rel} names the brief file",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_a_file_no_note_records_is_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the header matched on another unit's notes too",
+      "mutant": "the brief taken when no note names the saved brief's file, guarded as the reviewer wrote",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        if not isinstance(row, dict) or row.get(\"unit\") != uid:\n            continue\n        if row.get(\"fp\") == fp:\n",
-      "new": "        if not isinstance(row, dict):\n            continue\n        if row.get(\"unit\") == uid and row.get(\"fp\") == fp:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
+      "old": "    if n < landed_at:\n",
+      "new": "    if landed_at is not None and n < landed_at:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_a_file_no_note_records_is_refused",
+      "result": "survived",
+      "answer": "equivalent: the line above raises whenever landed_at is None, so the added guard is always true where it stands; the refusal it would bypass is pinned by the reviewer's mutant above, which removes that raise and is killed"
+    },
+    {
+      "mutant": "the refusal of a brief before an undated landing names the landing, not its last note",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        anchor = (f\"the landing that saved {rel} (fingerprint {fp})\" if saved_stem else\n",
+      "new": "        anchor = (f\"the landing that saved {rel} (fingerprint {fp})\" if True else\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_no_file_still_takes_a_rejoinder_after_its_landing",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a verdict file that is not UTF-8 ends in a traceback",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    except (OSError, UnicodeDecodeError) as exc:\n",
-      "new": "    except OSError as exc:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the second seat answers with no BRIEF header",
+      "mutant": "TEST: the saved brief keeps its BRIEF line, so it is dated by the file it issued",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py",
-      "old": "        rc, out, err = self._accept(GREEN, f\"UNIT: {GREEN}\\nBRIEF: {path.stem}\\n{APPROVE}\",\n                                    at=path, reviewer=ENGINEER)\n        self.assertRegex(",
-      "new": "        rc, out, err = self._accept(GREEN, f\"UNIT: {GREEN}\\n{APPROVE}\",\n                                    at=path, reviewer=ENGINEER)\n        self.assertRegex(",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::LaneAcceptSecondSeatBriefTests::test_a_second_seat_verdict_records_against_the_brief_its_header_names",
+      "old": "        self._brief().write_text(older, encoding=\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_no_file_still_takes_a_rejoinder_after_its_landing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the landing's note kept, so the saved brief's file is dated",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py",
+      "old": "        notes.write_text(\"\".join(f\"{ln}\\n\" for ln in kept), encoding=\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept_second_seat_brief.py::SavedBriefDatingTests::test_a_saved_brief_naming_a_file_no_note_records_is_refused",
       "result": "killed",
       "answer": ""
     }

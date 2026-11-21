@@ -1,59 +1,41 @@
 {
   "unit": "BG1107",
-  "digest": "1dfeeaca46821c55 at b8839c73d8b0",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2db3873cb2f33cae/BG1107-mutation-edits.json",
+  "digest": "5029aedebd1a932f at 97530826c479",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a43be32746739f226/BG1107-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "M1 sprint.py: the join no longer stops at a `###` or deeper heading (reviewer's defect)",
+      "mutant": "any-hash-led-line-is-a-heading",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "\n              and not re.match(r\"^#{1,6}\\s\", line)):",
-      "new": "):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_deeper_heading_ends_the_goal_above_it",
+      "old": "              and not re.match(r\"^#{1,6}\\s\", line)):",
+      "new": "              and not re.match(r\"^#\", line)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M2 sprint.py: only a level-3 heading ends the join",
+      "mutant": "heading-check-dropped",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "not re.match(r\"^#{1,6}\\s\", line)",
-      "new": "not re.match(r\"^#{3}\\s\", line)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_deeper_heading_ends_the_goal_above_it",
+      "old": "              and not re.match(r\"^#{1,6}\\s\", line)):",
+      "new": "              and True):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M3 sprint.py: only a level-4-or-deeper heading ends the join",
+      "mutant": "heading-needs-no-space",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "not re.match(r\"^#{1,6}\\s\", line)",
-      "new": "not re.match(r\"^#{4,6}\\s\", line)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_deeper_heading_ends_the_goal_above_it",
+      "old": "              and not re.match(r\"^#{1,6}\\s\", line)):",
+      "new": "              and not re.match(r\"^#{1,6}\", line)):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "M4 sprint.py: a nested list line such as the goal's Verify is joined into the goal",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "line.strip() and not _LIST_ITEM_RE.match(line)\n",
-      "new": "line.strip()\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_wrapped_end_goal_is_returned_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "M5 sprint.py: the continuation lines are dropped, as before the fix",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            lines[-1] = f\"{lines[-1].rstrip()} {line.strip()}\"\n            continue\n",
-      "new": "            continue\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_wrapped_end_goal_is_returned_whole",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "M6 test: the card's `### Detail` written `## Detail`, which closes the section, so goal 2 is no longer read",
+      "mutant": "test-no-hash-led-continuation",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
-      "old": "onto here\\n### Detail\\nmore",
-      "new": "onto here\\n## Detail\\nmore",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py::EndGoalsWrapTests::test_a_deeper_heading_ends_the_goal_above_it",
+      "old": "                \"#123 before the tag is cut\\n### Detail\\nmore\\n\"",
+      "new": "                \"### Detail\\nmore\\n\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py",
       "result": "killed",
       "answer": ""
     }

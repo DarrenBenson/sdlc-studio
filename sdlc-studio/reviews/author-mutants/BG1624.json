@@ -1,50 +1,32 @@
 {
   "unit": "BG1624",
-  "digest": "d2ed73ffc13d74a4 at 09cf0766d830",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1624-mutation-edits.json",
+  "digest": "0b52653fc82a8dad at d608c8779053",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5869fc4561811571/BG1624-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the group sent SIGKILL with no SIGTERM first",
+      "mutant": "the exit path told no lock was there before the run (the reviewer's first mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    try:\n        os.killpg(proc.pid, signal.SIGTERM)\n    except OSError:\n        proc.wait()\n        return False\n",
-      "new": "    try:\n        os.killpg(proc.pid, signal.SIGKILL)\n    except OSError:\n        proc.wait()\n        return False\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests::test_repeated_timed_out_git_add_loops_leave_no_index_lock",
+      "old": "            if _kill_group(proc):\n                _clear_killed_lock(lock, before)\n    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)\n",
+      "new": "            if _kill_group(proc):\n                _clear_killed_lock(lock, None)\n    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests::test_a_lock_there_before_a_lane_that_exits_on_its_own_is_left_in_place",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "no lock removed after a timeout's SIGKILL",
+      "mutant": "the exit path clearing the lock whether or not SIGKILL was sent (the reviewer's second)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "                if _kill_group(proc):\n                    _clear_killed_lock(lock, before)\n                raise\n",
-      "new": "                _kill_group(proc)\n                raise\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests",
+      "old": "            if _kill_group(proc):\n                _clear_killed_lock(lock, before)\n    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)\n",
+      "new": "            _kill_group(proc)\n            _clear_killed_lock(lock, before)\n    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests::test_a_lock_left_by_a_lane_that_exits_with_its_group_empty_is_left",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "any lock found after the SIGKILL removed, one there before the run too",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if now is None or now == before:\n",
-      "new": "    if now is None:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the lock removed whether or not SIGKILL was sent",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    return killed\n\n\ndef _lock_seen",
-      "new": "    return True\n\n\ndef _lock_seen",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the lock-holding child takes no lock",
+      "mutant": "TEST: no lock there before the run, so nothing is left to keep",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py",
-      "old": "    \"if sys.argv[1] == 'lock':\\n\"\n",
-      "new": "    \"if sys.argv[1] == 'none':\\n\"\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests::test_a_lock_held_past_the_grace_is_removed_and_named",
+      "old": "        lock.write_text(\"\", encoding=\"utf-8\")\n        before = lock.stat()\n        out = self._exits_on_its_own(wt, \"exit-deaf\")\n",
+      "new": "        before = None\n        out = self._exits_on_its_own(wt, \"exit-deaf\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py::TimedOutGitAddLeavesNoLockTests::test_a_lock_there_before_a_lane_that_exits_on_its_own_is_left_in_place",
       "result": "killed",
       "answer": ""
     }

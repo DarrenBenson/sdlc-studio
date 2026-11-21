@@ -1,41 +1,41 @@
 {
   "unit": "BG1609",
-  "digest": "c9539ce682c9706b at ef30c7b14e4d",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a789164808837c07b/BG1609-mutation-edits.json",
+  "digest": "bcc612c87869f627 at 97530826c479",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a43be32746739f226/BG1609-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the second seat skips only the first review seat",
+      "mutant": "shipped-seats-searched-first",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    taken = (FIRST_REVIEW_SEAT, critic.BUILD_SEAT)\n",
-      "new": "    taken = (FIRST_REVIEW_SEAT,)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests::test_the_planned_second_seat_is_not_the_building_seat",
+      "old": "[*seats, *persona_resolve.SEATS]",
+      "new": "[*persona_resolve.SEATS, *seats]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the second seat may be the first review seat",
+      "mutant": "building-seat-not-taken",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    taken = (FIRST_REVIEW_SEAT, critic.BUILD_SEAT)\n",
-      "new": "    taken = (critic.BUILD_SEAT,)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests::test_a_project_with_only_qa_and_the_building_seat_gets_a_third",
+      "old": "    taken = (FIRST_REVIEW_SEAT, critic.BUILD_SEAT)",
+      "new": "    taken = (FIRST_REVIEW_SEAT,)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a project with only qa and the building seat gets the building seat back",
+      "mutant": "no-shipped-fallback",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    return next((s for s in [*seats, *persona_resolve.SEATS] if s not in taken))\n",
-      "new": "    return next((s for s in seats if s not in taken), critic.BUILD_SEAT)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests::test_a_project_with_only_qa_and_the_building_seat_gets_a_third",
+      "old": "[*seats, *persona_resolve.SEATS]",
+      "new": "[*seats]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "TEST: the plan fixture expects the old engineering default",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py",
-      "old": "self.assertEqual(\"product\", units[\"US0001\"][\"second_seat\"])",
-      "new": "self.assertEqual(\"engineering\", units[\"US0001\"][\"second_seat\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py::PlanShowsClassTests::test_plan_lists_class_per_unit_and_second_seat",
+      "mutant": "test-project-holds-product-not-security",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "old": "            for role in (\"engineering\", \"qa\", \"security\"):",
+      "new": "            for role in (\"engineering\", \"qa\", \"product\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
       "result": "killed",
       "answer": ""
     }

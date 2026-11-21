@@ -1,50 +1,23 @@
 {
   "unit": "BG1627",
-  "digest": "d0dc6cd70d031d5c at 09cf0766d830",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1627-mutation-edits.json",
+  "digest": "49faef8690fa9703 at d608c8779053",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5869fc4561811571/BG1627-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the brief run with subprocess.run(timeout=...) again, killing only critic.py",
+      "mutant": "_bounded ends its group with KILL_GRACE, not the grace handed (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    return _bounded([sys.executable, str(CRITIC), *args, \"--root\", str(root)], timeout, grace,\n                    cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n",
-      "new": "    return subprocess.run([sys.executable, str(CRITIC), *args, \"--root\", str(root)],\n                          cwd=str(root), capture_output=True, text=True, timeout=timeout,\n                          check=False)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests",
+      "old": "                _kill_group(proc, grace)\n                raise\n",
+      "new": "                _kill_group(proc)\n                raise\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests::test_the_bound_gives_the_group_the_grace_it_was_handed",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the group sent SIGKILL with no SIGTERM first",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    try:\n        os.killpg(proc.pid, signal.SIGTERM)\n    except OSError:\n        proc.wait()\n        return False\n",
-      "new": "    try:\n        os.killpg(proc.pid, signal.SIGKILL)\n    except OSError:\n        proc.wait()\n        return False\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the brief's stop given no grace",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        timeout, grace = critic.BRIEF_TIMEOUT, critic.REPLAY_STOP_GRACE\n",
-      "new": "        timeout, grace = critic.BRIEF_TIMEOUT, 0\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the mutant's test returns at once, so the replay ends inside the bound",
+      "mutant": "TEST: _bounded handed no grace, so KILL_GRACE ends the command",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py",
-      "old": "    time.sleep(120)\n",
-      "new": "    time.sleep(0)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the brief bounded by CRITIC_TIMEOUT, as every other critic call",
-      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "        timeout, grace = critic.BRIEF_TIMEOUT, critic.REPLAY_STOP_GRACE\n",
-      "new": "        timeout, grace = CRITIC_TIMEOUT, critic.REPLAY_STOP_GRACE\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefAuthorMutantsTests",
+      "old": "                base.lanes._bounded([\"sh\", \"-c\", stop], 2, 8, stdout=subprocess.DEVNULL)\n",
+      "new": "                base.lanes._bounded([\"sh\", \"-c\", stop], 2, None, stdout=subprocess.DEVNULL)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py::LandBriefBoundKillsReplayTests::test_the_bound_gives_the_group_the_grace_it_was_handed",
       "result": "killed",
       "answer": ""
     }

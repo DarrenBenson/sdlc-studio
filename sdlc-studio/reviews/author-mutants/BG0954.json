@@ -1,91 +1,55 @@
 {
   "unit": "BG0954",
-  "digest": "da160f19d3d160b2 at ef61967bb60f",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae45bc71c379e6702/BG0954-mutation-edits.json",
+  "digest": "3152b82fed565267 at ed47dfd49318",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad39873b16deb4076/BG0954-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "judgement mode refuses like enforce (the reviewer's survivor)",
+      "mutant": "the typo rule reads every path a typo (the reviewer's mutant at the condition)",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "        if sprint.breakdown_mode(root) != \"judgement\":",
-      "new": "        if True:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_judgement_mode_reports_the_items_instead_of_refusing",
+      "old": "        if typos and len(unresolvable) == len(declared):",
+      "new": "        if typos and len(typos) == len(declared):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_a_typo_is_refused_only_when_no_declared_path_resolves",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the Affects check enforced whatever definition-of-ready.md tags (the reviewer's survivor at the old line 478)",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    enforced = [item for check, item in missed if dor is None or check in dor]",
-      "new": "    enforced = [item for check, item in missed if dor is None or check in dor or check == \"grooming.affects\"]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the Points check enforced whatever definition-of-ready.md tags (the reviewer's survivor at the old line 487)",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    enforced = [item for check, item in missed if dor is None or check in dor]",
-      "new": "    enforced = [item for check, item in missed if dor is None or check in dor or check == \"grooming.points\"]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "definition-of-ready.md ignored: every check enforced",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    enforced = [item for check, item in missed if dor is None or check in dor]",
-      "new": "    enforced = [item for check, item in missed]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_an_untagged_definition_of_ready_reports_its_downgrade",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "typo rule: one typo beside a resolvable path refused (the reviewer's survivor)",
+      "mutant": "the typo rule drops its every-path-unresolvable half",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
       "old": "        if typos and len(unresolvable) == len(declared):",
       "new": "        if typos:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_only_an_affects_of_typos_alone_is_refused",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_a_typo_is_refused_only_when_no_declared_path_resolves",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "typo rule: a greenfield path refused (the reviewer's survivor)",
+      "mutant": "the typo rule drops its at-least-one-typo half",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
       "old": "        if typos and len(unresolvable) == len(declared):",
       "new": "        if len(unresolvable) == len(declared):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_only_an_affects_of_typos_alone_is_refused",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_a_typo_is_refused_only_when_no_declared_path_resolves",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "typo rule removed: an all-typo Affects goes through",
+      "mutant": "the override branch returns its warning at once, without the downgrade (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "        if typos and len(unresolvable) == len(declared):",
-      "new": "        if False:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
+      "old": "        warn = f\"Definition of Ready not met ({listed}) - decision-override recorded: {reason}\"",
+      "new": "        return None, f\"Definition of Ready not met ({listed}) - decision-override recorded: {reason}\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "an untagged definition-of-ready.md turns the gate off silently (the reviewer's finding)",
+      "mutant": "the judgement branch returns its warning at once, without the downgrade",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    downgraded = [item for check, item in missed if dor is not None and check not in dor]",
-      "new": "    downgraded = []",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_an_untagged_definition_of_ready_reports_its_downgrade",
+      "old": "        warn = (f\"Definition of Ready not met ({listed}) - reported, not refused, under \"\n                f\"`sprint.breakdown: judgement`\")",
+      "new": "        return None, (f\"Definition of Ready not met ({listed}) - reported, not refused, under \"\n                f\"`sprint.breakdown: judgement`\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the downgrade computed but not reported when nothing is enforced",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    if not items:\n        return None, downgrade",
-      "new": "    if not items:\n        return None, None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_an_untagged_definition_of_ready_reports_its_downgrade",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the downgrade dropped beside a judgement or override warning",
+      "mutant": "the final report drops the downgrade beside either warning",
       "file": ".claude/skills/sdlc-studio/scripts/transition.py",
       "old": "    return None, \"; \".join(w for w in (warn, downgrade) if w)",
       "new": "    return None, warn",
@@ -94,56 +58,47 @@
       "answer": ""
     },
     {
-      "mutant": "a story already at Ready is asked for readiness again",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    if from_canon not in _NEVER_READY:\n        return None, None\n    items, downgraded",
-      "new": "    if False:\n        return None, None\n    items, downgraded",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_to_done_requires_ready",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "a recorded Decision-Override no longer buys the skip",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    reason = _rfc_override_reason(text)\n    if reason:\n        warn = ",
-      "new": "    reason = _rfc_override_reason(text)\n    if False:\n        warn = ",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the gate fires on every story terminal, not only the delivered one",
-      "file": ".claude/skills/sdlc-studio/scripts/transition.py",
-      "old": "    if (type_ == \"story\" and not force\n            and sdlc_md.is_delivered_terminal(type_, target_canon or \"\")):",
-      "new": "    if (type_ == \"story\" and not force):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_draft_closures_and_a_recorded_override_are_unaffected",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test mutant: the greenfield case expects a typo, so the pin must fail on the real code",
+      "mutant": "TEST: the typo-beside-greenfield refusal asserted as a pass",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
-      "old": "        for affects in (\"lib/thing.py, src/thing.py\", \"src/new_file.py\"):",
-      "new": "        for affects in (\"lib/thing.py, src/thing.py\", \"lib/thing.py\"):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_only_an_affects_of_typos_alone_is_refused",
+      "old": "            self.assertNotEqual(code, 0, f\"a typo beside a greenfield path reached Done: {out}\")",
+      "new": "            self.assertEqual(code, 0, f\"a typo beside a greenfield path reached Done: {out}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_a_typo_is_refused_only_when_no_declared_path_resolves",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test mutant: the untagged section given a points tag, so the downgrade pin must fail on the real code",
+      "mutant": "TEST: the greenfield path asserted named in the refusal",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
-      "old": "            (root / \"sdlc-studio\" / \"definition-of-ready.md\").write_text(\n                \"# Definition of Ready\\n\\n## Story\\n\\n- [ ] a human has groomed it\\n\",\n                encoding=\"utf-8\")\n            code, out = _cli(root, \"requirements\"",
-      "new": "            (root / \"sdlc-studio\" / \"definition-of-ready.md\").write_text(\n                \"# Definition of Ready\\n\\n## Story\\n\\n- [ ] groomed [check: grooming.points]\\n\",\n                encoding=\"utf-8\")\n            code, out = _cli(root, \"requirements\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_an_untagged_definition_of_ready_reports_its_downgrade",
+      "old": "            self.assertNotIn(\"src/new_file.py\", out, f\"the greenfield path was named: {out}\")",
+      "new": "            self.assertIn(\"src/new_file.py\", out, f\"the greenfield path was named: {out}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_a_typo_is_refused_only_when_no_declared_path_resolves",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test mutant: an artifact close fixture loses its Points, so the Draft -> Done gate refuses it",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py",
-      "old": "_READY = {\"affects\": \"src/thing.py\", \"points\": 3}",
-      "new": "_READY = {\"affects\": \"src/thing.py\"}",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_artifact.py::NewTests::test_close_dry_run_still_previews_what_the_gates_allow",
+      "mutant": "TEST: the downgrade asserted absent beside each opt-out",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "                self.assertIn(\"human judgement\", out, f\"the downgrade went unreported: {out}\")",
+      "new": "                self.assertNotIn(\"human judgement\", out, f\"the downgrade went unreported: {out}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the downgraded item asserted absent beside each opt-out",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "                self.assertIn(\"no `Affects`\", out, f\"the downgraded item is not named: {out}\")",
+      "new": "                self.assertNotIn(\"no `Affects`\", out, f\"the downgraded item is not named: {out}\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the override subtest records no override, so it meets the refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py",
+      "old": "                    \"recorded override\": ({\"override\": reason}, reason)}",
+      "new": "                    \"recorded override\": ({}, reason)}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_transition.py::DraftToDoneReadyTests::test_the_project_definition_of_ready_decides_which_check_enforces",
       "result": "killed",
       "answer": ""
     }

@@ -1,6 +1,6 @@
 # BG0985: sprint close --dry-run reports a non-blocking pre-flight row as a STOP refusal and exits 1, so a close that would proceed previews as refused
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, changelog.d/BG0985.md
@@ -26,8 +26,10 @@ In `close_dry_run`, note a pre-flight row with `blocking: False` as an advisory 
 
 - [ ] **AC1** A dry run whose only pre-flight row is non-blocking prints no STOP line, counts no refusal, and exits 0, while still showing the advisory row
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py -k advisory_row_not_a_refusal
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** A blocking pre-flight row still previews as a refusal and exits 1
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py -k blocking_row_still_refuses
+  - **Verified:** yes (2026-11-21)
 
 ## Triage
 

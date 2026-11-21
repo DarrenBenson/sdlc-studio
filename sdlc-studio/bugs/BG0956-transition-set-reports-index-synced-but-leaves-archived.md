@@ -1,6 +1,6 @@
 # BG0956: transition set reports index synced but leaves archived index rows stale, and reconcile apply refuses them
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0956.md, .claude/skills/sdlc-studio/reference-scripts-create.md, .claude/skills/sdlc-studio/reference-scripts-verify.md, .claude/skills/sdlc-studio/reference-outputs.md

@@ -1,0 +1,6 @@
+UNIT: BG1107
+BRIEF: d16d175798e7-cb8722e8
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-2 "The repair's heading test is pinned on one side only" CLOSED: `test_a_deeper_heading_ends_the_goal_above_it` now wraps goal 1 onto `#123 before the tag is cut` and asserts it is joined, beside the `###` and `####` headings that end the goals above them. My mutants in a throwaway clone, all KILLED: any `#`-led line taken for a heading, no space needed after the marks, an optional space, the heading check dropped. The repair is tests only and its sentences hold: the test docstring's mutant (6) TRUE by execution, and AC1 passes through `verify_ac.py run --id BG1107 --dry-run` (1 of 1). Outside what D0570 authorised this round to judge, and so not ruled a finding here: the mutant `re.search(r"#{1,6}\s", line)` for the anchored `re.match` (sprint.py:11915) survives `test_end_goals_wrap.py`, and in isolation a goal wrapping onto `C# to the new runtime` is joined at HEAD and cut under it, because no test holds a continuation line with a `#` and a space inside it.

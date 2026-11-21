@@ -1,6 +1,6 @@
 # BG0987: The close's goal judgement reaches only the terminal, not the sprint report the signer is told to read, and says 'blocks the close' of defects that did not block it
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 5
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG0987.md, .claude/skills/sdlc-studio/templates/core/sprint-report.md, .claude/skills/sdlc-studio/reference-evidence-schema.md, .claude/skills/sdlc-studio/scripts/tests/test_lean_report_known_issues.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_seal_finding_in_batch.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_preflight_live_gate.py, .claude/skills/sdlc-studio/templates/reports/sprint-report.html
@@ -26,8 +26,10 @@ Write the goal judgement (panel verdict, defects vs goal, caller-check) into the
 
 - [ ] **AC1** The sprint report filed by a close contains the goal panel verdict, each defect ruled blocking with its reason, and the caller-check count
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py -k report_carries_goal_judgement
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** `critic.judge_defects_against_goal` tags each blocking defect with a `basis` of `clause` or `priority`, the close's printed line and the report's section are labelled from that basis, and a close whose only blocking defects have basis `priority` exits 0
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py -k blocking_defects_carry_a_structured_basis
+  - **Verified:** yes (2026-11-21)
 
 ## Triage
 

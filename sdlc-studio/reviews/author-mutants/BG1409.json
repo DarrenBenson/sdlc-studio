@@ -1,41 +1,32 @@
 {
   "unit": "BG1409",
-  "digest": "1b776c7b68c91878 at 09cf0766d830",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-afa71c3328634fc71/BG1409-mutation-edits.json",
+  "digest": "5a819fc3d3395eff at d608c8779053",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a5869fc4561811571/BG1409-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the replay rebases with --empty=keep --reapply-cherry-picks again",
+      "mutant": "the replay taken back out whenever the rebase ends off main's head (the reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if _git(wt_top, \"rebase\", target).returncode:\n",
-      "new": "    if _git(wt_top, \"rebase\", \"--empty=keep\", \"--reapply-cherry-picks\", target).returncode:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests",
+      "old": "    if _git(wt_top, \"log\", \"-1\", \"--format=%ae\", \"HEAD\").stdout.strip() == mark:\n",
+      "new": "    if (_git(wt_top, \"rev-parse\", \"HEAD\").stdout.strip()\n            != _git(wt_top, \"rev-parse\", target).stdout.strip()):\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests::test_a_dropped_replay_ending_on_a_builder_commit_lands_that_commit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the replayed change is reset off whatever commit the rebase ended on",
+      "mutant": "the replay taken back out whatever commit the rebase ended on",
       "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
-      "old": "    if _git(wt_top, \"log\", \"-1\", \"--format=%B\", \"HEAD\").stdout.strip() == mark:\n        _git(wt_top, \"reset\", \"--soft\", \"HEAD~1\")\n",
-      "new": "    _git(wt_top, \"reset\", \"--soft\", \"HEAD~1\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests",
+      "old": "    if _git(wt_top, \"log\", \"-1\", \"--format=%ae\", \"HEAD\").stdout.strip() == mark:\n",
+      "new": "    if True:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests::test_a_dropped_replay_ending_on_a_builder_commit_lands_that_commit",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the lane stages no change of its own, so the replay is never exercised",
+      "mutant": "TEST: main does not hold the staged change, so the rebase keeps the scratch commit",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py",
-      "old": "        self._builder_commit_main_holds()\n        self._stage(\"src/a.py\", \"A = 2\\n\")\n",
-      "new": "        self._builder_commit_main_holds()\n        self._stage(\"src/a.py\", \"A = 1\\n\")\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests::test_a_builder_commit_main_holds_lands_no_empty_commit",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the empty-commit probe skips every commit",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py",
-      "old": "        if gitutil.git([\"diff\", \"--quiet\", f\"{sha}^\", sha], root, check=False).returncode == 0:\n",
-      "new": "        if gitutil.git([\"diff\", \"--quiet\", f\"{sha}^\", sha], root, check=False).returncode == 9:\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests",
+      "old": "        moved = self._move_main(\"src/a.py\", \"A = 2\\n\")\n",
+      "new": "        moved = self._move_main(\"src/c.py\", \"C = 2\\n\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py::LandEmptyReplayTests::test_a_dropped_replay_ending_on_a_builder_commit_lands_that_commit",
       "result": "killed",
       "answer": ""
     }

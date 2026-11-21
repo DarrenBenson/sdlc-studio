@@ -1,6 +1,6 @@
 # BG1590: Once HEAD has moved past the close commit, sprint sign judges the tree against that commit but still re-derives the page from the working tree, so a ruling recorded after the close blocks the seal
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sign_respects_carried_units.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/sprint_report.py, changelog.d/BG1590.md, .claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py
@@ -26,8 +26,10 @@ When sign judges against the committed close, re-derive the page from that commi
 
 - [ ] **AC1** Given a run closed awaiting signature and a later commit adding a not-stop-ship row to the retro's Known issues carried table, when `sprint.py sign --report <the run's report> --principal <operator>` runs in a clone, then it judges both the tree and the re-derived page against the close commit and seals, with no 'no longer matches what it re-derives to' refusal. Fails on: sign refuses on `issue_detail[0]` because the page is re-derived from the working tree.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests
+  - **Verified:** yes (2026-11-21)
 - [ ] **AC2** Given the same run where the later commit changes a file the report's page is built from in a way the close did not describe, when `sprint.py sign` runs, then it still refuses on the page that the close commit derives, as a positive control. Fails on: the page check is dropped when sign judges against the close commit.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests
+  - **Verified:** yes (2026-11-21)
 
 ## Impact
 

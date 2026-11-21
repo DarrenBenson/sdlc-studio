@@ -1,6 +1,6 @@
 # BG1610: lane land's commit timeout kills git but leaves the hooks' test run running orphaned, holding the host's CPU after the land reports nothing committed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1610.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py
@@ -26,6 +26,7 @@ Start the commit in its own session (`start_new_session=True`) and, on the timeo
 
 - [ ] **AC1** Given a commit-msg hook stub that spawns a long-lived child and a shrunk `COMMIT_TIMEOUT`, when `sprint.py lane land --worktree <wt> --units <id>` runs and the bound fires, then it reports nothing committed and no hook or child process of the commit is left running, so 'were stopped' is true. Fails on: the hook and its children are reparented to init and keep running after the land exits.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_land_commit_timeout_group.py::LandCommitTimeoutKillsHooksTests
+  - **Verified:** yes (2026-11-21)
 
 ## Revision History
 

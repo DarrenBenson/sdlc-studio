@@ -1,6 +1,6 @@
 # BG1107: sprint._end_goals keeps only the first line of a wrapped End goal, so the goal-review brief and the goal trace show Rowan's goals cut off mid-sentence
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_end_goals_wrap.py, changelog.d/BG1107.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
