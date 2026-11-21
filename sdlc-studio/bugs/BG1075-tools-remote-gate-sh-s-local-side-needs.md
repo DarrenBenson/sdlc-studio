@@ -1,6 +1,6 @@
 # BG1075: tools/remote-gate.sh's local side needs bash 4, so a pusher on stock macOS bash 3.2 has every gate-host push refused
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_push.py, tools/tests/test_remote_gate_bash32.py, changelog.d/BG1075.md
@@ -31,9 +31,14 @@ Keep the local side to bash 3.2: membership by a newline-delimited string, a fix
 
 A contributor on stock macOS cannot use a gate host without installing a newer bash.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. tools/remote-gate.sh is this repository's own gate-host tool; bash 3.2 pushers fail closed and SDLC_GATE_LOCAL=1 runs the gate locally. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

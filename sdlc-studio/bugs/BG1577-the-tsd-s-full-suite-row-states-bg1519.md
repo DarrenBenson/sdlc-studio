@@ -1,6 +1,6 @@
 # BG1577: The TSD's full-suite row states BG1519's count floor but not that a commit whose selection holds only push-deferred tests is exempt
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/tsd.md, tools/tests/test_lean_gate_docs.py, changelog.d/BG1577.md
@@ -32,8 +32,13 @@ Add the exemption to the row and pin it in the doc test.
 
 The test strategy misstates when the floor refuses.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The repo TSD full-suite row omits a boundary-only exemption; it concerns this repository's commit gate only and is not shipped to users. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

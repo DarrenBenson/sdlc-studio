@@ -1,6 +1,6 @@
 # BG1174: The v6.2 notes test exempts the whole no-Breaking paragraph, so a changed-default sentence added inside it passes with no Instead clause
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_lean_release_notes_v62.py, changelog.d/BG1174.md
@@ -33,8 +33,13 @@ Exempt only the no-Breaking sentence itself, and judge the rest of its paragraph
 
 A later edit to the notes can add an unlisted changed default with no replacement, and the test stays green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The v6.2 release-notes test is this repository's release check; a changed-default sentence hidden in a paragraph is caught at release review. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

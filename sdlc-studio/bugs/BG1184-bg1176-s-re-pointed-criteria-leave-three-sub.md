@@ -1,6 +1,6 @@
 # BG1184: BG1176's re-pointed criteria leave three sub-claims unpinned, and two manual Verify lines still send a reviewer to a folded fragment
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/stories/US0201-prd-sections-3-10-11-to-the-shipped.md, sdlc-studio/stories/US0206-tsd-record-the-blocking-80-coverage-gate-and.md, sdlc-studio/bugs/BG1176-eight-done-criteria-went-stale-in-the-6.md, sdlc-studio/bugs/BG1053-us1004-did-not-converge-in-review-round-3.md, sdlc-studio/bugs/BG1056-bg1053-did-not-converge-in-review-round-2.md, changelog.d/BG1184.md
@@ -30,8 +30,13 @@ Add a grep for each unpinned sub-claim, make BG1176 AC2 refuse any version liter
 
 Each criterion can lose part of its claim with its Verify still green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Two manual Verify lines in this repository's own stories cite a folded fragment; no installed skill reads them. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

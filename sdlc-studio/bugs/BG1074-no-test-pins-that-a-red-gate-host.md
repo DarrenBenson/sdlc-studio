@@ -1,6 +1,6 @@
 # BG1074: No test pins that a red gate-host run records its duration, so the hook can stop recording exit 1 with the suite green
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_remote_gate_push.py, changelog.d/BG1074.md
@@ -31,9 +31,14 @@ Assert in the red-host-run case (AC1's) that the host series gains a run.
 
 A red host run could silently stop entering the cost estimate the next push announces.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Pre-push hook records a red host run correctly; only a test of exit 1 duration is missing, in this repository's gate-host machinery. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

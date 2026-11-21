@@ -1,6 +1,6 @@
 # BG1208: BG1122's meter memo leaves the unfinished-line size refresh unpinned, and its changelog's equals-a-whole-read claim holds only for append-only growth
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_meter_incremental_read.py, CHANGELOG.md, changelog.d/BG1208.md
@@ -32,8 +32,13 @@ Pin the size refresh for a grown unfinished line, and scope the changelog senten
 
 A later edit can drop the refresh with the suite green, and the changelog over-states the guarantee.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The meter memo is correct for append-only growth, the only shape a transcript takes; the size-refresh mutant and a changelog sentence are unpinned. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

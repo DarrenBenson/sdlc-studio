@@ -1,6 +1,6 @@
 # BG1144: The commit hook's unittest fallback ignores pytest's serial_only and boundary_only marks, so a push-only test still runs on a commit there
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/commit-msg, .claude/skills/sdlc-studio/scripts/boundary.py, tools/tests/test_boundary_marker.py, .claude/skills/sdlc-studio/scripts/tests/boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_config.py, changelog.d/BG1144.md
@@ -38,8 +38,13 @@ On the fallback path a commit pays for the push-only tests and can be refused by
 
 - From BG1065's review (2026-11-01): scripts/tests/boundary.py:30-35 marks a test only when BOTH conditions hold; the second ('cannot regress ... without some cheaper test also going red', from c3d867ec, BG0579) does not hold for the wall-clock bounds BG0963 marked, since no cheaper test sees a duration regression. Rule which condition governs a duration bound when this unit lands.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Affects only this repository's commit hook fallback when pytest is absent; the pre-push gate runs the push-only test regardless. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1636: Installer tests that run install.sh on PATH=/usr/bin:/bin fail where the system python3 cannot import yaml
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_install_gemini_hint.py, tools/tests/test_install_atomic.py, tools/tests/test_lean_consumer_files_preserved.py
@@ -27,8 +27,13 @@ Give each curated-PATH installer test the python3 wrapper `test_install_copilot_
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Put a python3 stub that raises ImportError on 'import yaml' ahead of /usr/bin on `test_install_gemini_hint.py`'s `BASE_PATH` and run the module: 2 failed.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Give each curated-PATH installer test the python3 wrapper `test_install_copilot_global.py` uses, pointing at the running interpreter, so the test no longer...
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Installer tests on PATH=/usr/bin:/bin fail only where the system python3 lacks yaml; install.sh refusing without PyYAML is intended. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

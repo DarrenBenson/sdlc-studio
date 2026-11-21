@@ -1,6 +1,6 @@
 # BG1646: The PRD changelog-row check reads committed history, so a commit that changes the PRD without a row passes its own hooks
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_prd_refresh.py, .githooks/commit-msg
@@ -27,8 +27,13 @@ Judge the staged change at commit time: in the commit-msg hook, or a pre-commit 
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Stage a change to sdlc-studio/prd.md with a commit subject naming a unit the Changelog table does not name, and commit: the hooks pass.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Judge the staged change at commit time: in the commit-msg hook, or a pre-commit lane that reads the staged prd.md and the message, refuse a PRD change whose...
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The PRD changelog-row check runs in the push gate's history walk, not the commit hooks; a missing row is caught later in this repository. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

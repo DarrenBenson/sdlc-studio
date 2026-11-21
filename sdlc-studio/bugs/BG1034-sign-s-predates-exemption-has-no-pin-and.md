@@ -1,6 +1,6 @@
 # BG1034: Sign's predates exemption has no pin, and BG0944's reopen pin and module selection are weaker than they look
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_s12_pins.py, changelog.d/BG1034.md
@@ -34,9 +34,14 @@ Pin the predates exemption through `sprint sign` with a page that predates track
 
 A later edit can drop sign's predates exemption, or weaken the fixture, with the suite green; the pins it does have reach the code they guard only at push.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Only pins are missing; sign and reopen behave correctly on every path a user reaches. Test-only gap in this repository. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

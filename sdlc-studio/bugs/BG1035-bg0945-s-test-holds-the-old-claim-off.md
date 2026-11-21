@@ -1,6 +1,6 @@
 # BG1035: BG0945's test holds the old claim off by one literal phrase, and the untracked first-ruling branch is unstated and unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_bg0940_fragment_matches_sign.py, changelog.d/BG0940.md, changelog.d/BG1035.md
@@ -30,9 +30,14 @@ Judge the note's claim about signing by meaning (no sentence says the page is si
 
 A release note can drift back to over-claiming with the test green, and a project's first late ruling is sealed over without the note saying so.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. BG0945's fragment is right; one literal assertNotIn and an unpinned first-ruling branch are missing tests only. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

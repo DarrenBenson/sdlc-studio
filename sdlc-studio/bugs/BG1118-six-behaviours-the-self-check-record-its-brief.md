@@ -1,6 +1,6 @@
 # BG1118: Six behaviours the self-check record, its brief gate and the author section state are pinned by no test (US1087, US1088, US1089 reviews)
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_gate_cases.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_refusal.py, changelog.d/BG1118.md
@@ -41,6 +41,10 @@ Add the three cases in a new module beside tests/`test_critic_self_check_refusal
 
 Each stated behaviour can regress with the suite green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Six self-check behaviours are right but pinned by no test; mutants survived. Test-only residue of three approved units. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
@@ -50,3 +54,4 @@ Each stated behaviour can regress with the suite green.
 | 2026-10-22 | sdlc | AC4 from US1088's round-2 QA review: an uncovered FIRST fragment is unpinned |
 | 2026-10-22 | sdlc | AC5 and AC6 from US1087's round-2 QA review: the repair's new rule line and the scoped surface list are unpinned |
 | 2026-10-22 | sdlc-studio | Retitled: was 'Four behaviours US1088 and US1089 state for the self-check record and gate are pinned by no test: a restored diff admitted by an older row, the record matched to its own unit, the setting read case-insensitively, and an uncovered first fragment refused' |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

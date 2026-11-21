@@ -1,6 +1,6 @@
 # BG1295: No test pins `lane accept`'s `off` and unrecognised `review.author_self_check` branches, so asking for the self-check gap under `off`, or reading a mistyped mode as off, survives every lane accept test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py, changelog.d/BG1295.md
@@ -29,8 +29,13 @@ Add two tests to `test_lane_accept.py`: under `off`, a stale self-check is neith
 - [ ] **AC2** Given the same unit with the mode mistyped as `blok` after the landing, when `sprint lane accept` runs, then it exits 2, records no verdict, leaves the unit's status as it was and says the mode is refused rather than read as off. Fails on: an unrecognised mode read as `off`, moving the unit to Done.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_unrecognised_mode_is_refused_not_read_as_off
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. lane accept handles off and unrecognised modes correctly at HEAD; the two branch tests are simply missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

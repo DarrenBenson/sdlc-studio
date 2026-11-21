@@ -1,6 +1,6 @@
 # BG1270: The always-loaded instruction cuts leave their restored rules and their budget gate unpinned, and a keep-indicator description escapes the 600-char cap
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** AGENTS.md, CONTRIBUTING.md, tools/check_budgets.py, tools/tests/test_agents_md_budget.py, tools/tests/test_check_budgets.py, .claude/skills/sdlc-studio/scripts/tests/test_agent_instructions_budget.py, changelog.d/BG1270.md
@@ -33,8 +33,13 @@ Pin each restored or load-bearing sentence by its text in the budget tests; give
 - [ ] **AC4** Given `templates/agent-instructions.md`, when the template pin reads it, then each gate is held by its rule sentence. Fails on: cutting the engagement floor's rule while keeping its opt-out, cutting the CR or RFC to Epic to Story sentence, or rewording 'The CODE leg is not optional' to 'optional', each passing.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_agent_instructions_budget.py::AgentInstructionsBudgetTests::test_each_gate_is_held_by_its_rule_sentence
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Pins for this repository's AGENTS.md cuts and budget gate; the sentences exist today and only a later cut could drop them. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1084: remote-gate doctor's exit codes are documented as 0, 1 and 3, and a missing transport is reported as an unready host
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, changelog.d/US1077.md, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_doctor_exits.py, changelog.d/BG1084.md
@@ -31,8 +31,13 @@ Document exit 2, and report a transport that cannot start (126, 127) as a transp
 
 A caller reading the exit code, or a person reading the verdict, is sent to fix the wrong machine.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Doctor exit-code docs omit 2 and a missing ssh command reads as not ready; only this repository's gate-host maintainer sees it, and it fails closed. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

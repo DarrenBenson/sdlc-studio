@@ -1,6 +1,6 @@
 # BG1085: remote-gate doctor prints the local clone's Python install route for a gap on the gate host
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, tools/gate_prereqs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_doctor_route.py, changelog.d/BG1085.md, tools/tests/test_gate_prereqs.py
@@ -31,8 +31,13 @@ Give the host its own route: install the named distributions by name, and put a 
 
 A person following the doctor's advice on the host is left with a command that fails or does nothing for the gate.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Host doctor names requirements-dev.txt for a gap on the gate host; advice for this repository's own host, which the maintainer reads past. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

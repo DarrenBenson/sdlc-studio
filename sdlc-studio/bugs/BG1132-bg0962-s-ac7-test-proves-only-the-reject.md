@@ -1,6 +1,6 @@
 # BG1132: BG0962's AC7 test proves only the REJECT half of 'the frozen verdict decides' when the per-unit ledger cannot be read
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_closing_review_per_unit_verdicts.py, changelog.d/BG1132.md
@@ -31,8 +31,13 @@ Add a frozen-APPROVE case to AC7's test asserting the checklist reads `ran`.
 
 A regression that holds every unit whose per-unit ledger is unreadable would pass.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The frozen-verdict rule works for REJECT; the APPROVE half with an unreadable ledger lacks a test. A test gap only. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-26 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

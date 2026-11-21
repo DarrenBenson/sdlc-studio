@@ -1,6 +1,6 @@
 # BG1431: Two release-notes tests take 120 s to over 300 s under load, past verify_ac's default per-verifier timeout, so BG1420's and BG1425's recorded runs fail on time unless given --timeout
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v63.py, changelog.d/BG1431.md
@@ -27,8 +27,13 @@ Make the frozen-notes test build a minimal fixture instead of filing into a full
 - [ ] **AC1** Given a loaded host, when FrozenNotesTests::`test_filing_a_finding_reddens_no_test` runs, then it finishes in under 60 s. Fails on: a run over the default per-verifier timeout.
   - **Verify:** pytest tools/tests/test_lean_release_notes.py::FrozenNotesTests::test_filing_a_finding_reddens_no_test
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Two release-notes tests exceed the default verifier timeout only under heavy load; --timeout 590 passes on an idle host. This repository's own gate. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

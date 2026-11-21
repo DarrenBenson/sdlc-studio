@@ -1,6 +1,6 @@
 # BG1588: The hand-copied-list guard misses _KNOWN_MIRRORS growing and exempts a whole file on one marker, and BG1586's AC2 cannot tell a marker with no reason
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_test_census.py, sdlc-studio/bugs/BG1586-us1313-s-test-lists-the-gate-scripts-by.md, changelog.d/BG1588.md
@@ -31,8 +31,13 @@ Pin the baseline to a literal size or digest; exempt only the literal next to th
 
 The guard can be widened, or sidestepped inside a declared file, with its tests still green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The mirror-guard has three weak spots found at review; no hand-copied list is currently wrong. Tests only. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

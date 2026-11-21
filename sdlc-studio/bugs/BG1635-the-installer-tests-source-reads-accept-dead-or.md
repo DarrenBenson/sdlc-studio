@@ -1,6 +1,6 @@
 # BG1635: The installer tests' source reads accept dead or inverted install.ps1 guards
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** tools/tests/test_install_uninstall_guard.py, tools/tests/test_install_atomic.py, tools/tests/test_install_requires_pyyaml.py
@@ -27,8 +27,13 @@ Assert each guard's whole condition and that the skip body holds no Copy-Item or
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a throwaway copy, change install.ps1:260's guard to end '-gt 0 -and $false' and run tools/tests/`test_install_uninstall_guard.py` on a host without pwsh...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Assert each guard's whole condition and that the skip body holds no Copy-Item or Remove-Item.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. install.ps1 guards are correct; only the pwsh-less regex tests would accept a dead guard. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

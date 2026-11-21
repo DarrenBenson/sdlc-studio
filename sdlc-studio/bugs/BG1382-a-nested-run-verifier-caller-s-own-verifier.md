@@ -1,6 +1,6 @@
 # BG1382: A nested run_verifier caller's own verifier can outlive it, because both levels wait the same one second grace and Ctrl-C leaks the inner verifier
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Supersedes:** BG1418
 > **Severity:** Low
 > **Points:** 1
@@ -28,8 +28,13 @@ Give the outer level a grace longer than the inner one, and have the signal hand
 - [ ] **AC1** Given a verifier that runs a nested `run_verifier` caller whose own verifier ignores SIGTERM, when the outer verifier times out or receives SIGINT, then no process of the inner group is alive once the outer call returns. Fails on: the inner group alive after the outer returns.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_timeout_reaps.py::NestedVerifierReapTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Needs a verifier that is itself a run_verifier caller and ignores SIGTERM; no shipped verifier does, and the leak is a stray process. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1575: BG0660's unscoped-boundary guard flags a --run-tests call that runs no other lane, and is satisfied by an --only that call ignores
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/gate.py, changelog.d/BG1575.md
@@ -32,8 +32,13 @@ Treat --run-tests as scoping in the guard, and either make gate.py refuse --only
 
 Tests carry flags that do nothing to satisfy a guard, and a reader takes them as meaningful.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. A test guard in this repository refuses a --run-tests call that pays no other lane; the author scopes the call, so the cost is one rewording. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

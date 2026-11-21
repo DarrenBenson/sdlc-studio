@@ -1,6 +1,6 @@
 # BG1253: lib/lanes.py clears only 7 of the 11 repo-locating git variables before it runs a lane
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, tools/tests/test_skill_tests_env.py, changelog.d/BG1253.md
@@ -27,8 +27,13 @@ Clear the full repo-locating set in `lib/lanes.py`, or derive it from the shared
 - [ ] **AC1** Given an environment with every variable of `REPO_LOCATING` set, when `lib/lanes.py` builds a lane's child environment, then none of them remains, and the module's `SCRUB_SITES` entry no longer begins PARTIAL. Fails on: `GIT_INDEX_VERSION`, `GIT_NAMESPACE`, `GIT_CEILING_DIRECTORIES` or `GIT_DISCOVERY_ACROSS_FILESYSTEM` reaching the lane.
   - **Verify:** pytest tools/tests/test_skill_tests_env.py::ScrubListsAgreeTests::test_the_lane_runner_scrub_clears_every_repo_locating_variable
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. lanes.py misses four exotic git variables such as GIT_NAMESPACE; no hook or install sets them, so no real run meets it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

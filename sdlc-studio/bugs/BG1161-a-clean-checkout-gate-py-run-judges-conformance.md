@@ -1,6 +1,6 @@
 # BG1161: A clean-checkout gate.py run judges conformance over the whole workspace and reads OVER the standard budget every time
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate_budget.py, changelog.d/BG1161.md, .claude/skills/sdlc-studio/scripts/tests/test_gate.py
@@ -36,8 +36,13 @@ CI's gate cost line is permanently OVER, so a real ratchet would not be noticed 
 
 - From BG1065's review (2026-11-01): `gate.py --release` with no boundary runs a different lane set (whole-workspace conformance and validate plus the verify lane) yet is compared with and recorded as the standard baseline (it printed '88% faster than the 0.6s baseline' and overwrote gate-cost.json on a fixture), from the same `if record and not scoped` branch BG1065 fixed for boundaries. Fold it into this unit.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. A clean-checkout gate run reports OVER budget; the result is correct and only this repository's CI timing display is affected. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

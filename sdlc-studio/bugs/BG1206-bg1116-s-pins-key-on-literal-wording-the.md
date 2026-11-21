@@ -1,6 +1,6 @@
 # BG1206: BG1116's pins key on literal wording: the boundary-habit test refuses only gate.py, and the per-commit and AGENTS.md checks pass reworded regressions
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_agentic_lessons_full_suite.py, changelog.d/BG1206.md
@@ -32,8 +32,13 @@ Refuse any route to the skill's own gate in the habit, and match the per-commit 
 
 A later edit can send consuming projects back to a gate that runs none of their tests, with the suite green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The pins key on literal wording in this repository's lesson tests; the shipped habit text is right and no user meets a regression. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

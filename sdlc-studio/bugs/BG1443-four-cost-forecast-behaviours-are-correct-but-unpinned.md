@@ -1,6 +1,6 @@
 # BG1443: Four cost-forecast behaviours are correct but unpinned, the Minutes row's reason reads 'not forecast: not measured', and US1151's criteria name a command that never renders the rows
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/run_state.py, .claude/skills/sdlc-studio/scripts/tests/test_cost_forecast_pins.py, changelog.d/BG1443.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_run_state.py
@@ -29,8 +29,13 @@ Pin the four behaviours; give the Minutes row a reason naming what is missing; c
 - [ ] **AC2** Given a run with no minutes rate, when the page renders, then the Minutes row's reason names what is missing. Fails on: 'not measured' alone.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_forecast_pins.py::MinutesReasonTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Four forecast behaviours are correct and unpinned; the Minutes reason and criteria wording are preferences, not false statements. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1585: The pre-commit gate lane passes the whole reconcile detect JSON through one environment variable, so on a large corpus it dies with Argument list too long and never prints the drift detail
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .githooks/pre-commit, tools/tests/test_lean_precommit_parallel.py, changelog.d/BG1585.md
@@ -32,8 +32,13 @@ Pipe the JSON to the reader on stdin (or have reconcile detect print the drift l
 
 A blocked commit no longer names its drift, so the author has to run reconcile detect by hand and read through hundreds of advisory lines to find it.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. pre-commit passes 143 KB of drift JSON through one environment variable, so the detail is lost; the gate still refuses and reconcile detect prints it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

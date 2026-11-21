@@ -1,6 +1,6 @@
 # BG1485: A shell Verify line run with -s still reads all-skipped and no-tests shapes from its whole output, and a partial-skip test's docstring still says the release gate counts the skips
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py, .claude/skills/sdlc-studio/scripts/tests/test_partial_skip_release_gate_count.py, changelog.d/BG1485.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -31,8 +31,13 @@ Apply the closing-summary read to a shell line whose command runs pytest, and co
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_quiet_flag_skip_read.py::AllSkippedReadUnderSTests::test_a_shell_line_whose_run_is_all_skipped_is_still_caught
 - [ ] **AC3** Given the module docstring of `test_partial_skip_release_gate_count.py`, when it is read, then it says `verify_ac` prints and records the partial-skip count and does not say the release gate counts it. Fails on: the overclaim BG1479 removed from BG1395's fragment standing in the docstring.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Needs a shell Verify line running pytest with -s whose test prints a skipped summary; no real install does this. The rest is a repo test docstring. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

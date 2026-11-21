@@ -1,6 +1,6 @@
 # BG1243: US1124's cost anatomy leaves four rules unpinned: the per-component maximum, the CLI harness fallback and two role assignments
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py, changelog.d/BG1243.md
@@ -31,8 +31,13 @@ Add a fixture whose shared message splits its components the other way (main lar
 - [ ] **AC3** Given a unit whose first verdict names as author an agent that was not the first returned, and a reviewer a lane also returned, when the roles are assigned, then the named author is the builder and the reviewer reads as reviewer. Fails on: the first returned agent taken as builder, or a lane-returned role kept over the reviewer's.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_cost_anatomy.py::CostAnatomyTests::test_the_builder_is_the_named_author_and_a_reviewer_overrides_a_lane_return
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Cost anatomy is correct by execution; four rules lack tests, and no user-visible claim is false. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

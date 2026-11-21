@@ -1,6 +1,6 @@
 # BG1194: remote-gate.sh's release route does not send SDLC_GATE_BOUNDARY, so a value set in the shell changes the local release gate but not the host's
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_release.py, sdlc-studio/trd.md, sdlc-studio/tsd.md, changelog.d/BG1194.md
@@ -32,8 +32,13 @@ Send `SDLC_GATE_BOUNDARY` on the release route with the same refusal-by-name as 
 
 The release route's promise that the host reads what the local shell has is broken for one setting.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Release route omits SDLC_GATE_BOUNDARY from the gate host; only a maintainer exporting it for a release push differs, and the host gate still runs. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

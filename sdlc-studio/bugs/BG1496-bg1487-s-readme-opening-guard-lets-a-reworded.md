@@ -1,6 +1,6 @@
 # BG1496: BG1487's README-opening guard lets a reworded approval claim through, though its docstring says it never would
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_readme_front_door.py, changelog.d/BG1496.md
@@ -29,8 +29,13 @@ Pin the opening's signing sentence to what sprint sign enforces (one named princ
 - [ ] **AC2** Given the README as shipped, when the guard runs, then it passes only while the opening says one named principal signs each run over its report and that each unit is reviewed by a context that did not write it, and the test's docstring lists exactly the mutations the test applies. Fails on: the signing or independence clause cut or weakened with the guard still green, or a docstring that claims a refusal no assertion makes.
   - **Verify:** pytest tools/tests/test_readme_front_door.py::ReadmeFrontDoorTests::test_the_opening_claims_independent_review_and_one_signature_per_run
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The README opening guard passes a reworded approval claim; the README itself is accurate. A stricter test is the only gap. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

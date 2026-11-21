@@ -1,6 +1,6 @@
 # BG1645: Two more verify_ac lint tests judge the live help/ directory, so a non-markdown file there turns them red
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -27,8 +27,13 @@ Judge both tests against a temporary root holding a markdown-only help/, as Mark
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a throwaway copy, add help/x.json and run pytest .claude/skills/sdlc-studio/scripts/tests/`test_verify_ac.py` -k '`prose_directory` or `missing_operand`'...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Judge both tests against a temporary root holding a markdown-only help/, as MarkdownEvidenceLintTests now does.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Two lint tests read the live help/ directory, so a stray non-markdown file there turns them red. Test fixture gap, with no shipped effect. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

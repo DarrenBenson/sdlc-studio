@@ -1,6 +1,6 @@
 # BG1620: The verbatim repair brief loses the first-line indentation of a REJECT finding written over several lines, and its newest-landing choice and superseded filter have no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py, changelog.d/BG1620.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py
@@ -28,8 +28,13 @@ Quote each finding's lines unchanged and pin it with a multi-line fixture; test 
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Record a REJECT whose blocking finding spans two indented lines, then run `sprint.py lane brief --units <id>`: the first line of the quoted finding is...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Quote each finding's lines unchanged and pin it with a multi-line fixture; test the newest-landing choice and the superseded filter.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Affects only the indentation of the first line of a quoted finding in a repair brief; no user sees a wrong fact. Missing tests are the remainder. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

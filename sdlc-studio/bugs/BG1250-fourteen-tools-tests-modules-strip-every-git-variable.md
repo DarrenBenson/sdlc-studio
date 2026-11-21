@@ -1,6 +1,6 @@
 # BG1250: Fourteen `tools/tests` modules strip every `GIT_*` variable from a child's environment, dropping the conftest's `maintenance.auto` pin and reopening the BG0711 teardown race
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** tools/tests/conftest.py, tools/tests/test_bench_headless.py, tools/tests/test_check_budgets.py, tools/tests/test_corpus_verify_env.py, tools/tests/test_lean_docs_v61.py, tools/tests/test_lean_docs_v63.py, tools/tests/test_lean_gate_docs.py, tools/tests/test_lean_one_runner.py, tools/tests/test_lean_push.py, tools/tests/test_lean_release_cut_v62.py, tools/tests/test_lean_release_cut_v63.py, tools/tests/test_lean_release_notes.py, tools/tests/test_lean_release_notes_v61.py, tools/tests/test_lean_upgrade_page_docs.py, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_runs.py, tools/tests/test_run_suite_remote.py, tools/tests/test_skill_tests_env.py, tools/tests/test_git_env_keeps_maintenance_pin.py, changelog.d/BG1250.md
@@ -29,8 +29,13 @@ Add one helper to `tools/tests/conftest.py` that drops the repository-locating v
 - [ ] **AC2** Given the modules under `tools/tests`, when the guard sweeps them, then none holds a bare `startswith("GIT_")` environment filter, and a filter planted in a temporary directory is named by the same sweep. Fails on: a module keeping its own filter, or a sweep that passes the planted one.
   - **Verify:** pytest tools/tests/test_git_env_keeps_maintenance_pin.py::GitEnvKeepsMaintenancePinTests::test_no_module_filters_every_git_variable
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Test helpers drop GIT_CONFIG variables and the maintenance.auto pin; it affects only this repository's own test children, which still pass. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

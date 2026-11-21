@@ -1,6 +1,6 @@
 # BG1415: No test pins the line number verify_ac's lint prints
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_section_boundary.py, .claude/skills/sdlc-studio/scripts/tests/test_lint_line_number.py, changelog.d/BG1415.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -27,8 +27,13 @@ Add the pin.
 - [ ] **AC1** Given a lint failure, when printed, then the line number is the right one. Fails on: a wrong line.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lint_line_number.py::LintLineNumberTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Lint prints the correct line number; only a pin test is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

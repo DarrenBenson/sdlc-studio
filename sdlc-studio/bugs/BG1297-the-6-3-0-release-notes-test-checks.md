@@ -1,6 +1,6 @@
 # BG1297: The 6.3.0 release-notes test checks the CLI against expectations typed into the test, not against the notes, so a notes sentence naming a wrong flag, trailer or verb still passes
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_release_notes_v63.py, changelog.d/BG1297.md
@@ -31,8 +31,13 @@ Read each claimed flag, verb, trailer and harness name from the notes and check 
 - [ ] **AC3** Given the notes as released, when the same reader runs over them, then it reports no problem, and it takes the notes text as an argument so a later release's notes test can call it. Fails on: a reader so strict the true notes fail, or one bound to the 6.3.0 file alone.
   - **Verify:** pytest tools/tests/test_lean_release_notes_v63.py::ReleaseNotesTests::test_the_released_notes_pass_the_claim_reader
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Release-notes test checks the CLI against typed expectations; the 6.3.0 notes are right, only the test is weaker than claimed. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-08 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

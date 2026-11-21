@@ -1,6 +1,6 @@
 # BG1182: `test_agents_md_full_suite_rule`'s `_problems` docstring says it lists every way the text falls short of AC1, but it checks more than AC1 and stops early
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_agents_md_full_suite_rule.py, changelog.d/BG1182.md
@@ -31,8 +31,13 @@ Reword the docstring to say what the function checks: AC1 plus the key and path 
 
 A reader of the test trusts a docstring that over-states its scope.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. A docstring in a repo test overstates what its helper checks; the helper behaves correctly and no user of the installed skill reads it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-02 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

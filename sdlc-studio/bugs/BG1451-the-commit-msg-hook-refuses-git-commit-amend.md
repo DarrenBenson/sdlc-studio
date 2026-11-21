@@ -1,6 +1,6 @@
 # BG1451: The commit-msg hook refuses git commit --amend on a lane commit because it attributes only the newly staged files
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/commit-msg, tools/tests/test_commit_msg_amend.py, changelog.d/BG1451.md, .claude/skills/sdlc-studio/scripts/engagement_floor.py
@@ -27,8 +27,13 @@ On an amend, attribute the whole resulting commit's files (HEAD's plus the stage
 - [ ] **AC1** Given an amend of a two-unit lane commit adding one unit's file, when the hook runs, then both Refs trailers are accepted. Fails on: the other unit's trailer refused.
   - **Verify:** pytest tools/tests/test_commit_msg_amend.py::CommitMsgAmendTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. commit-msg refuses git commit --amend on a lane commit in this repository; soft-reset and recommit is a working routine. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run twelve orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

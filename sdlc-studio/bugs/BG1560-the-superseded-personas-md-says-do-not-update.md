@@ -1,6 +1,6 @@
 # BG1560: The superseded personas.md says do not update it, has been edited on three later dates and keeps a false date
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/personas.md, sdlc-studio/personas/index.md, sdlc-studio/personas/rowan-achterberg-skill-maintainer.md, tools/tests/test_persona_coherence.py, changelog.d/BG1560.md
@@ -35,8 +35,13 @@ Freeze the file for real. Move any post-June operating detail that the skill mai
 - [ ] **AC3** Given a fixture flat personas file carrying the legacy banner with a persona section added below it, when the same check runs, then the section is reported; a fixture holding the banner and pointer alone passes. Fails on: a frozen claim that can drift again unnoticed.
   - **Verify:** pytest tools/tests/test_persona_coherence.py::LegacyAppendixTests::test_a_persona_section_under_the_banner_is_reported
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is what is left of a fix already shipped. personas.md is a superseded flat file whose banner is stale; the registry already says it is unmaintained and nothing reads it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

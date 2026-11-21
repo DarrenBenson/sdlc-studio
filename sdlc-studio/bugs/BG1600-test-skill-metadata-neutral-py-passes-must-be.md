@@ -1,6 +1,6 @@
 # BG1600: test_skill_metadata_neutral.py passes 'must be installed' and 'exclusive to' requirement wordings, cannot tell a fallback from its denial, and leaves four helper branches unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_skill_metadata_neutral.py, tools/tests/test_harness_neutral_docs.py, docs/why-sdlc-studio.md, changelog.d/BG1600.md
@@ -34,8 +34,13 @@ Add must, depends on, prerequisite, exclusive and mandatory to the requirement w
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Add 'Claude Code must be installed.' to SKILL.md's compatibility line in an export and run tools/tests/`test_skill_metadata_neutral.py`: it passes.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Add must, depends on, prerequisite, exclusive and mandatory to the requirement words; refuse a denied fallback; check 'by default' in the llms.txt summary...
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. These are gaps in this repository's metadata-neutrality tests; the shipped wording itself is correct and no user is affected. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-18 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

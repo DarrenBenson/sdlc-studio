@@ -1,6 +1,6 @@
 # BG1321: Trevor Hale's Scenario check misses a capitalised offer and a negation outside its word list, so changelog.d/US1147.md claims more than the AC7 test holds
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_persona_coherence.py, changelog.d/BG1321.md
@@ -34,8 +34,13 @@ Match the wants case-insensitively in the outside check, and require the declini
 
 - 2026-11-12 (RUN-01M77177, qa-seat-US1147-r1 round 3): AC7's verifier still passes a capitalised 'Sync' sentence and negations its word list misses ('Nobody declines', 'seldom declines'). Reported against this bug at review, not blocking US1147.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Scenario check misses a capitalised offer; the persona text is correct and only a test and its changelog claim over-reach. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1192: US1113 AC3's one-at-a-time pin lets a concurrent serial pool through under load, because its three 0.5 s probes must start within 0.5 s of each other
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_verify_lane_workers.py, changelog.d/BG1192.md
@@ -33,8 +33,13 @@ Have each probe hold a shared marker (a lock file or a counter file) for its who
 
 A later edit that runs `serial_only` verifiers concurrently can pass the push gate on a loaded host.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The shipped serial-only behaviour is right; one repository test relies on 0.5 s probe overlap and is merely weaker under load. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-03 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

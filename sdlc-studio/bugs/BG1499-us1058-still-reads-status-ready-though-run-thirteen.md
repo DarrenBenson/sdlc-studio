@@ -1,6 +1,6 @@
 # BG1499: US1058 still reads Status Ready though run thirteen carried it at the review cap and BG1460 delivered it, and the PRD row naming it says Complete
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, sdlc-studio/stories/US1058-persona-memory-py-keeps-each-persona-s-evidenced.md, changelog.d/BG1499.md
@@ -30,8 +30,13 @@ Move a story carried at the review cap to a terminal status that names the carry
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py::CarriedStoryLeftOpenTests::test_a_story_whose_carrier_is_open_or_that_is_settled_is_not_flagged
 - [ ] **AC3** Given this repository's US1058, when its header is read after the fix, then its Status is terminal and names BG1460 as the unit that delivered it, moved with `transition.py`, and the PRD row that names it agrees. Fails on: US1058 left at Ready, or settled by a hand edit.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is what is left of a fix already shipped. US1058 now reads Superseded, so the stale Ready status the bug reported is already corrected; the missing detector is a nice-to-have. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

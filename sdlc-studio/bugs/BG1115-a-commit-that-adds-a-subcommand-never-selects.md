@@ -1,6 +1,6 @@
 # BG1115: A commit that adds a subcommand never selects test_cli_grammar.py, which reaches every script through surface.enumerate_scripts, so a grammar defect is first seen by the full suite at push
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Supersedes:** BG1299, BG1587
 > **Severity:** Low
 > **Points:** 3
@@ -42,9 +42,14 @@ Let a census header name a glob (`# test-census-subject: .claude/skills/sdlc-stu
 
 A grammar defect in a new subcommand passes the commit hook and costs a red full-suite run at push before it is found.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. A commit adding a subcommand does not select test_cli_grammar.py at commit; the full-suite push gate catches it, so only the early signal is lost. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-22 | Claude Opus 5.5 | Filed |
 | 2026-10-22 | sdlc | Second instance from US1090's build: `test_lean_commit_lanes.py` reads AGENTS.md with no census subject; AC3 and its Affects added |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

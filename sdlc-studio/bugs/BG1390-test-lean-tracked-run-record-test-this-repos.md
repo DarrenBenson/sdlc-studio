@@ -1,6 +1,6 @@
 # BG1390: test_lean_tracked_run_record test_this_repos_signed_reports_check_in_a_clean_clone fails in a harness worktree
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_tracked_run_record.py, .claude/skills/sdlc-studio/scripts/tests/test_signed_reports_clean_clone_in_worktree.py, changelog.d/BG1390.md
@@ -27,8 +27,13 @@ Clone from `git rev-parse --git-common-dir` or skip.
 - [ ] **AC1** Given a harness worktree, when the clean-clone test runs, then it clones the repository's common git dir or skips with a stated reason. Fails on: git clone exiting 128.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_signed_reports_clean_clone_in_worktree.py::SignedReportsCleanCloneInWorktreeTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The test clones the worktree path and fails only inside a harness worktree; it passes in the main checkout where the gate runs. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

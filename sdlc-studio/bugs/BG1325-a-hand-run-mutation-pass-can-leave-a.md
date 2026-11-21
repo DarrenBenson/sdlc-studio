@@ -1,6 +1,6 @@
 # BG1325: A hand-run mutation pass can leave a stale `.pyc` that Python reuses after the source is restored, so a later test run, the commit hook's among them, judges the mutant rather than the code
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1325.md
@@ -32,8 +32,13 @@ Have the mutation guidance and any shipped mutation runner set PYTHONDONTWRITEBY
 - [ ] **AC3** Given a unit's author self-check as `critic.py brief` prints it, when its mutation pass is read, then it tells the author to run each mutant with `PYTHONDONTWRITEBYTECODE=1`. Fails on: guidance that lets a hand-run mutant leave bytecode behind.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic.py::BriefTests::test_the_mutation_pass_names_the_bytecode_guard
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Only a hand-run mutation pass in this repository leaves stale bytecode; it hit twice in run nine and a clean pycache clears it. No installed user runs that pass. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

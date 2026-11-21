@@ -1,6 +1,6 @@
 # BG1563: The action-pin guard passes a workflow step that uses a mutable docker image tag
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/check_action_pins.sh, tools/tests/test_check_action_pins.py, changelog.d/BG1563.md
@@ -34,8 +34,13 @@ Collect every `uses:` value, not only those containing an at sign. Skip local re
 - [ ] **AC3** Given a reusable workflow or repository Action referenced with no at sign and no leading dot and slash, when the guard runs, then it is reported, while the existing SHA-pinned, tag, branch and short-SHA cases behave as before. Fails on: a `uses:` value escaping collection because it holds no at sign.
   - **Verify:** pytest tools/tests/test_check_action_pins.py::ActionPinTests::test_ref_without_an_at_sign_flagged
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The action-pin guard ignores docker image tags; no workflow in this repository uses one, and it guards only our own CI. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

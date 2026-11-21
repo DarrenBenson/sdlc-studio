@@ -1,6 +1,6 @@
 # BG1603: tools/lint-style.sh scans gitignored scratch files, so an untracked note under .local/ blocks a commit that does not touch it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/lint-style.sh, tools/test_lint_style.py, changelog.d/BG1603.md
@@ -28,8 +28,13 @@ Scan the files git tracks or stages (`git ls-files -co --exclude-standard -- '*.
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Write a file .local/scratch/x.md containing one of the words the jargon check bans, stage any tracked change, and commit: the pre-commit style lane fails on the untracked, ignored...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Scan the files git tracks or stages (`git ls-files -co --exclude-standard -- '*.md'`) rather than the whole working tree, so an ignored path is never read.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. lint-style.sh reads gitignored .local/ scratch in this repository; moving or removing the scratch note unblocks the commit. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1377: The hooks' replay of a refusal's stderr is not pinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .githooks/pre-commit, .githooks/commit-msg, tools/tests/test_quiet_hooks.py, changelog.d/BG1377.md
@@ -27,8 +27,13 @@ Add the pin.
 - [ ] **AC1** Given the case the review named, a test fails when it is broken. Fails on: the surviving mutant.
   - **Verify:** pytest tools/tests/test_quiet_hooks.py::QuietHookTests::test_a_refusal_replays_its_stderr
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The hooks do replay stderr on refusal; only a named pin for lines 189 and 105 is missing. Test gap in repository hooks. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

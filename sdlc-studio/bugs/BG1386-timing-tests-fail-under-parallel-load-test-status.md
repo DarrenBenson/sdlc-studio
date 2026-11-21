@@ -1,6 +1,6 @@
 # BG1386: Timing tests fail under parallel load: test_status GatherPerformanceTests read 4.9 s against a 3 s limit and a verify_ac criterion failed once at load 8.6
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/status.py, .claude/skills/sdlc-studio/scripts/tests/test_status.py, .claude/skills/sdlc-studio/scripts/tests/test_gather_performance_load.py, changelog.d/BG1386.md
@@ -27,8 +27,13 @@ Measure CPU time or operation counts, or scale the limit by load.
 - [ ] **AC1** Given a machine under parallel-lane load, when the status gather performance test runs, then it judges work done rather than wall-clock seconds. Fails on: a pass or fail that depends on machine load.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gather_performance_load.py::GatherPerformanceLoadTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. A wall-clock 3 s assertion flaked under parallel lanes in this repository's own suite; a rerun passes and installed users never run it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

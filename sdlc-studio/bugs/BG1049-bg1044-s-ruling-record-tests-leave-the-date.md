@@ -1,6 +1,6 @@
 # BG1049: BG1044's ruling-record tests leave the date, the note's once-only rule, the heading anchor and the case boundary unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/decisions.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, changelog.d/BG1044.md, changelog.d/BG1049.md
@@ -31,9 +31,14 @@ Assert recorded == today and the reviewer's prefix; record two rulings into one 
 - [ ] **AC3** Given a verdict row quoting the Supersessions heading and no section yet, when a ruling is recorded, then the section heading is written; and a superseded decision whose Status reads 'Accepted' does not authorise a round
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_record_past_the_cap.py::RecordPastTheCapTests::test_the_heading_search_is_anchored_and_a_superseded_accepted_is_refused
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. BG1044's ruling records work; the date, once-only note and heading anchor lack positive pins. Test gaps only. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-14 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

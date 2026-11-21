@@ -1,6 +1,6 @@
 # BG1133: Three VELOCITY Priced/pt behaviours US1092 states are pinned by no test: the Source guard, an earlier row keeping its recorded figure, and rows with no Source named in the rate's basis
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/retro.py, .claude/skills/sdlc-studio/scripts/tests/test_velocity_priced_cell_rules.py, changelog.d/BG1133.md, .claude/skills/sdlc-studio/scripts/tests/test_retro.py
@@ -35,8 +35,13 @@ One test per behaviour in a new module, with fixtures: a per-unit batch Source b
 
 Three stated behaviours of the VELOCITY row can regress with the suite green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. US1092's Priced/pt rules behave as stated; three of them are pinned by no test. Test gap only. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-26 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

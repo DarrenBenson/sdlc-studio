@@ -1,6 +1,6 @@
 # BG1081: remote-gate doctor sources gate-env.sh from its temporary directory, where the gate sources it from the host's home
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/remote-gate.sh, tools/tests/test_remote_gate_doctor.py, tools/tests/test_remote_gate_doctor_env.py, changelog.d/BG1081.md
@@ -31,8 +31,13 @@ Source gate-env.sh from $HOME, as `cmd_remote` does, and import the checker by a
 
 The doctor and the gate can disagree about one host.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Needs a gate-env.sh using a relative path or changing directory; the host's file does neither, and only this repository's gate host is affected. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

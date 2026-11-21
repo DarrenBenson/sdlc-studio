@@ -1,6 +1,6 @@
 # BG1141: The gate-host docs test's docstrings claim more than it samples: values of SDLC_GATE_LOCAL other than 1, and keys read as `git -C <dir> config`
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Supersedes:** BG1129
 > **Severity:** Low
 > **Points:** 1
@@ -38,9 +38,14 @@ Add near-miss cases (`true`, `01`) to the `SDLC_GATE_LOCAL` rows, and let the ke
 
 Low: no script reads a key in the -C form today, and the hook compares the literal string 1. Two sentences in a test docstring are false, and a reader would trust them (LC-018).
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Docstring over-claims which SDLC_GATE_LOCAL values the test samples; the hook behaves correctly, and only test breadth is short. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-31 | claude | Filed |
 | 2026-11-14 | Claude Opus 5.5 (backlog triage, D0473) | Supersedes BG1129, closed at the backlog triage as a duplicate; its criteria are carried here as AC3 |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

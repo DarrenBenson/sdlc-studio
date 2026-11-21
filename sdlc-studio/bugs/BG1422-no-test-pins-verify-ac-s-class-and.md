@@ -1,6 +1,6 @@
 # BG1422: No test pins verify_ac's class and module skip-mark check on the decorator's name
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py, changelog.d/BG1422.md, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py
@@ -27,8 +27,13 @@ Add a fixture class with a lookalike decorator and assert it is not named.
 - [ ] **AC1** Given a class carrying a non-skip decorator whose argument matches a skipped test's reason, when `verify_ac` names the skip, then it does not name that class. Fails on: the class named.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_verify_ac_partial_skip.py::SkipMarkDecoratorNameTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Decorator-name check exists and works; only a lookalike-decorator test is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

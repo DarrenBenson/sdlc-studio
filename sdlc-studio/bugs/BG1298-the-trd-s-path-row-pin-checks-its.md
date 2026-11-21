@@ -1,6 +1,6 @@
 # BG1298: The TRD's path-row pin checks its depth rule in one direction only, so loosening `_matches` to accept the directory itself or a deeper file leaves the suite green
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py, changelog.d/BG1298.md
@@ -29,8 +29,13 @@ Make the directory-alone fixture write with `write_text` to the directory's own 
 - [ ] **AC2** Given a fixture module that writes a file one level deeper than a file span names, when the path-row pin judges it, then the write is not that span's, while a write at the span's own depth still is. Fails on: `_matches` loosened from `==` to `>=` in its file-span branch with the module still green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_lean_v61_review_residue.py::LocalPathRowPinTests::test_a_file_one_level_deeper_is_not_a_file_spans
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The path-row depth rule is correct today; two loosening mutants survive only because this repository's pin tests one direction. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-09 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

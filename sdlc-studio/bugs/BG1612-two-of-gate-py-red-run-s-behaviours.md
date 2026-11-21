@@ -1,6 +1,6 @@
 # BG1612: Two of gate.py --red-run's behaviours hold by probe but no test pins them: the sections after a bug's CI Red Runs section, and the refusal of a negative, boolean or fractional rerun limit
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_ci_red_run_policy.py, changelog.d/BG1612.md
@@ -28,8 +28,13 @@ Add a fixture whose CI Red Runs section is followed by another section, and a te
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Delete `if sep:` and its line in gate.py's red-run recorder, or drop the `limit < 0` guard in `_rerun_limit`, then run `test_ci_red_run_policy.py`: every test...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Add a fixture whose CI Red Runs section is followed by another section, and a test per refused limit value, each asserting nothing is recorded.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Both gate.py behaviours hold by probe; only mutants of them survive the suite. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-19 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

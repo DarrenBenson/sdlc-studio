@@ -1,6 +1,6 @@
 # BG1410: BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint_report.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, .claude/skills/sdlc-studio/scripts/tests/test_unpriced_units_pin.py, changelog.d/BG1410.md
@@ -27,8 +27,13 @@ Restore the assertion and word the lane land message.
 - [ ] **AC1** Given a clean run, when the page prints, then the empty known-issues sentence is asserted. Fails on: the sentence removed with the suite green.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_unpriced_units_pin.py::UnpricedUnitsPinTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Behaviour is right; a dropped assertion, an untested filter and a lane land warning naming --tokens, which is a wording preference. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

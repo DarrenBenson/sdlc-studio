@@ -1,6 +1,6 @@
 # BG1040: gate_prereqs prints the SDLC_COVERAGE_PYTHON route without reading that interpreter, reads markers without evaluating them, and skips -r lines silently
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/gate_prereqs.py, tools/tests/test_gate_prereqs_followup.py, changelog.d/US1003.md, changelog.d/BG1040.md, tools/tests/test_gate_prereqs.py
@@ -34,9 +34,14 @@ Read the override's route from the override (run the same probe as `install_rout
 
 Low: each case is uncommon, and the shipped requirements-dev.txt has neither markers nor -r lines; the advice is wrong rather than the gate.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Prints a pip route for an SDLC_COVERAGE_PYTHON override that lacks pip, or skips -r lines; contributor-only advice, an edge no real install meets. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

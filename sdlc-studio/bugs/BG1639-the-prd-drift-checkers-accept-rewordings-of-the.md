@@ -1,6 +1,6 @@
 # BG1639: The PRD drift checkers accept rewordings of the claims they exist to refuse
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_prd_refresh.py, changelog.d/BG1525.md, changelog.d/BG1553.md
@@ -31,8 +31,13 @@ Judge each claim by the paragraph's meaning against the shipped value (read from
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a throwaway copy of sdlc-studio/prd.md, reword the Feature Flags exception to 'The sole exception is `two_backlog.enforce`' and run...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Judge each claim by the paragraph's meaning against the shipped value (read from config-defaults.yaml or the code) rather than by fixed phrasings, anchor the...
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Gaps in this repository's own PRD drift checkers, accepting rewordings; the shipped skill is unaffected and the PRD is reviewed by hand. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

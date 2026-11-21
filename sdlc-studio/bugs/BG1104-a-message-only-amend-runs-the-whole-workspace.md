@@ -1,6 +1,6 @@
 # BG1104: A message-only amend runs the whole-workspace gate at commit, because the hook's gate lane reads an empty staged diff as no diff to scope to
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/pre-commit, .claude/skills/sdlc-studio/scripts/gate.py, .claude/skills/sdlc-studio/scripts/tests/test_gate.py, tools/tests/test_pre_commit_amend_scope.py, changelog.d/BG1104.md
@@ -33,9 +33,14 @@ Have the hook pass the commit's own staged change set to the gate lane, so an em
 
 Each message-only amend costs one to eleven minutes for no new judgement. That pushes authors towards `--no-verify` or towards leaving a message uncorrected, such as one missing its `Refs:` trailers.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. A message-only amend runs the whole-workspace gate; it is slower but correct, and only this repository's commit hook does it. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-20 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

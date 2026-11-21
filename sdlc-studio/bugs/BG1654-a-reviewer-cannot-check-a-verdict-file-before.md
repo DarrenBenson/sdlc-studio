@@ -1,6 +1,6 @@
 # BG1654: A reviewer cannot check a verdict file before hand-back: critic.py record refuses an odd backtick count only when the operator records it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -29,8 +29,13 @@ Add critic.py record --dry-run (or a verdict check subcommand) running every val
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Write a verdict whose ISSUES field holds one unclosed backtick span and hand it back; critic.py record --from-verdict refuses it.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Add critic.py record --dry-run (or a verdict check subcommand) running every value check record runs, and have the reviewer contract run it before hand-back.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is what is left of a fix already shipped. The refusal is right and only its timing was late; the operator re-records the verdict. A dry-run mode is a feature, not a defect. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

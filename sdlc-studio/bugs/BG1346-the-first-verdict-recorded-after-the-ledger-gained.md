@@ -1,6 +1,6 @@
 # BG1346: The first verdict recorded after the ledger gained its Source column pads every row, and the commit-msg hook credits that change to every unit the subject names
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py, changelog.d/BG1346.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -27,8 +27,13 @@ Migrate the ledger in a dedicated step, or teach `engagement_floor` to ignore ce
 - [ ] **AC1** Given a ledger of eight-cell rows, when the first nine-cell record is written, then the padding is applied as one migration the hook attributes to no delivery unit. Fails on: every padded row read as an added row.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py::LedgerMigrationTests::test_padding_is_a_migration_not_an_addition
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is what is left of a fix already shipped. The one-off Source-column padding happened once on the existing ledger, already worked round with a single-id commit. The migration cannot recur on this ledger. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-12 | Claude Opus 5.5 (run ten orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

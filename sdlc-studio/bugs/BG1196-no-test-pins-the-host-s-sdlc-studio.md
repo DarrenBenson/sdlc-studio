@@ -1,6 +1,6 @@
 # BG1196: No test pins the host's SDLC_STUDIO_BOUNDARY_SUITE=1 export for remote-gate.sh's push and suite jobs
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_remote_gate_push.py, tools/tests/test_run_suite_remote.py, changelog.d/BG1196.md
@@ -32,8 +32,13 @@ Have the stub host record the environment its gate receives on a push and a suit
 
 A later edit can drop the switch from the host's push gate, so boundary-only tests stop running there, with the suite green.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Host exports SDLC_STUDIO_BOUNDARY_SUITE=1 correctly; only a test asserting it is missing in this repository's tooling. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

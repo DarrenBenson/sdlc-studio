@@ -1,6 +1,6 @@
 # BG1392: prices and token_meters have untested edges: `_rates()` falls back to an empty table, `_list`'s long-context pop, a true threshold read as 1, and `book()` splits labelled lower bound
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/prices.py, .claude/skills/sdlc-studio/scripts/lib/token_meters.py, .claude/skills/sdlc-studio/scripts/tests/test_prices.py, .claude/skills/sdlc-studio/scripts/tests/test_price_edge.py, changelog.d/BG1392.md, .claude/skills/sdlc-studio/scripts/tests/test_token_meters.py
@@ -27,8 +27,13 @@ Reject boolean thresholds and add the three tests.
 - [ ] **AC1** Given an unreadable price table, a replaced long-context entry and a boolean threshold, when prices load, then each is handled as stated and pinned. Fails on: any of the three left unpinned or a boolean read as 1.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_price_edge.py::PriceEdgeTests
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The boolean threshold is now rejected; only the three edge tests are missing and the behaviour is right on every path a user reaches. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-13 | Claude Opus 5.5 (run eleven orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

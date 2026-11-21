@@ -1,6 +1,6 @@
 # BG1203: US0991 AC3's Verify line cannot fail on the close's main-thread prose, which only a sibling test pins
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/stories/US0991-the-close-and-the-report-state-each-reading-s.md, changelog.d/BG1203.md
@@ -32,8 +32,13 @@ Add the retro test as a second Verify line on US0991 AC3.
 
 The transition gate can pass a regression the push suite would catch later.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The close's prose is correct; a sibling test pins it, only a second Verify line on US0991 AC3 is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

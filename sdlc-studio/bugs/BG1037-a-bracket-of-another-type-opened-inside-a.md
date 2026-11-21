@@ -1,6 +1,6 @@
 # BG1037: A bracket of another type opened inside a pair is not literal, so a ';' the pair encloses is still split, and BG1032's note over-claims inside code spans
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_verdict_bracket_types.py, changelog.d/BG1032.md, changelog.d/BG1037.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -32,8 +32,13 @@ Pop to the nearest opener of the matching type, treating any opener above it as 
 
 A reviewer's well-formed evidence with a stray bracket is refused and has to be re-emitted; a release note says slightly more than the code does.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Needs a stray bracket of another type opened inside a pair in a reviewer's verdict; real verdicts do not nest like that, and the BG1032 note over-claim is wording. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

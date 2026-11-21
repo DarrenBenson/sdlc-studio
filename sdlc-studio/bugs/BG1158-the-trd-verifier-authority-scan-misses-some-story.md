@@ -1,6 +1,6 @@
 # BG1158: The TRD verifier-authority scan misses some story-only rewordings and fails true sentences about a story-only run
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_trd_refresh.py, changelog.d/BG1158.md
@@ -36,8 +36,13 @@ Refuse the set being anything but the authority by reading the verb (or add cann
 
 Two false greens and a false red in a doc check other units must satisfy; the false red pushes authors to reword true sentences.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. TRD verifier-authority scan misses some rewordings; the TRD is correct today, only the test's vocabulary coverage is short. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

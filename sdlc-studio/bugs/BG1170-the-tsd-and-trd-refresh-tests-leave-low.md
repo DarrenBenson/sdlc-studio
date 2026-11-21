@@ -1,6 +1,6 @@
 # BG1170: The TSD and TRD refresh tests leave low residual gaps their round-2 and BG1166 reviews named
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_lean_tsd_refresh.py, tools/tests/test_lean_trd_refresh.py, changelog.d/BG1170.md
@@ -33,8 +33,13 @@ Widen the percentage and count patterns. Read every `line_coverage` key form acr
 
 A future stale figure, mode or count in the TSD, or a dropped template guard, could pass these tests.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Residual pattern gaps in this repository's own TSD/TRD refresh tests; shipped pages are right, no user gains from widening them. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

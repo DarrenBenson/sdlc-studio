@@ -1,6 +1,6 @@
 # BG1674: No test pins card-not-utf8's severity split (a warning for persona cards, an error for seat cards) or the exit code validate.py seats gives for it
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/validate.py, .claude/skills/sdlc-studio/scripts/tests/test_validate.py
@@ -27,8 +27,13 @@ Pin both severities and validate.py seats' exit code on a seat card holding a 0x
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: Change the seat-card card-not-utf8 severity in validate.py from error to warning and run the persona and validate test modules: all pass.
 - [ ] **AC3** The proposed fix lands, pinned by a test: Pin both severities and validate.py seats' exit code on a seat card holding a 0xff byte, beside a persona card that only warns.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. The card-not-utf8 severity split works; only a test pinning it is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

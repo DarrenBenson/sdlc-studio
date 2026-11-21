@@ -1,6 +1,6 @@
 # BG1275: Two statements from run eight's last repairs claim more than the code or its tests show
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/engagement_floor.py, .claude/skills/sdlc-studio/scripts/tests/test_confinement.py, .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py
@@ -29,8 +29,13 @@ Narrow the docstring to the shapes it holds for, and either add a test that `--w
 - [ ] **AC2** Given a fixture repository and a commit message, when `engagement_floor.py` runs with `--write-trailers`, then the message file is the only file whose content changes, as the allowlist reason in `test_confinement.py` says. Fails on: any other file written, or the reason citing a pin that does not exist.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_engagement_floor.py::CommitMsgCheckTests::test_write_trailers_writes_only_the_message_file
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Docstring and allowlist-reason wording in repo tests; the code behaves correctly and only a further pin is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-06 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

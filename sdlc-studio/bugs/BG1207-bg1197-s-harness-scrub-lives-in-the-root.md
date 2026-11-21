@@ -1,6 +1,6 @@
 # BG1207: BG1197's harness scrub lives in the root conftest, so unittest runs (skill-tests.sh, the hook's unittest fallback) still read the harness from the environment
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/loader.py, sdlc-studio/tsd.md, changelog.d/BG1207.md
@@ -32,8 +32,13 @@ Apply the same scrub from the shared test loader the unittest path imports, buil
 
 A contributor working from Cursor gets a red result from the unittest route.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Cursor-agent scrub lives in the pytest conftest only; unittest runs under Cursor fail in this repository, and pytest is the supported route. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

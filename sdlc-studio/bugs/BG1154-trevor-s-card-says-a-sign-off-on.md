@@ -1,6 +1,6 @@
 # BG1154: Trevor's card says a sign-off on each unit is declined, though sprint.py sign writes a per-unit sign-off row under the one signature
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/personas/trevor-hale-enterprise-pm.md, tools/tests/test_persona_coherence.py
@@ -32,8 +32,13 @@ Say 'a separate sign-off act on each unit', so the sentence is about the human a
 
 A persona card, which reviewers and seats read as fact, contradicts the shipped sign step on one reading.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is a wording preference, not a false statement. Trevor's card means a separate sign-off act; a wording preference in a persona card that no installed skill behaviour depends on. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

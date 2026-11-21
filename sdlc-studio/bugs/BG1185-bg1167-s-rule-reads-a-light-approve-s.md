@@ -1,6 +1,6 @@
 # BG1185: BG1167's rule reads a light APPROVE's scope from git history, so three narrow orderings still count a unit whose own Affects widened as covered
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/conformance.py, .claude/skills/sdlc-studio/scripts/tests/test_conformance.py, changelog.d/BG1167.md, changelog.d/BG1185.md, .claude/skills/sdlc-studio/scripts/tests/test_critic.py
@@ -31,8 +31,13 @@ Record the unit's declared Affects in the delivery row at `critic.py record` tim
 
 In each ordering, a unit whose own scope grew after a light review is counted as reviewed deeply enough.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Three narrow fail-open orderings of light APPROVE rows more than two days apart, found only by probing; the review process here does not produce them in practice. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-03 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

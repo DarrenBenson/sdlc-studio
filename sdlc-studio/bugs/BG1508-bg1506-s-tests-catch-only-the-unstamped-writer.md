@@ -1,6 +1,6 @@
 # BG1508: BG1506's tests catch only the unstamped writer's stale patch: pointing the at_close or at_sign patch back at the load-time module leaves its criteria green
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_evidence_schema_stamp.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_report.py, changelog.d/BG1508.md
@@ -33,8 +33,13 @@ Add a forced-swap case that fails when either `at_close` or `at_sign` patches th
 
 A later edit can reintroduce the stale-module patch on the close or sign step without any criterion going red.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. BG1506 behaves correctly; two reverted patches leave its criteria green. Only tighter tests are missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

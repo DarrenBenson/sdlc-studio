@@ -1,6 +1,6 @@
 # BG1043: The prerequisite check and the gate read pytest-xdist two different ways
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/gate_prereqs.py, tools/gate_timing.py, tools/tests/test_gate_prereqs.py, tools/tests/test_push_first_estimate.py, changelog.d/BG1043.md
@@ -27,9 +27,14 @@ Read xdist one way everywhere, by what the gate does: `gate_prereqs` reports pyt
 - [ ] **AC1** Given an interpreter carrying pytest-xdist's metadata but no importable xdist module, when the prerequisite check runs, then it names pytest-xdist missing and the cost line says the suite runs serially, as gate.py runs it
   - **Verify:** pytest tools/tests/test_gate_prereqs.py::XdistReadingTests::test_metadata_without_a_module_reads_as_missing
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. gate_prereqs and gate.py read pytest-xdist differently only when the distribution is present but unimportable; no real install meets that. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | sdlc-studio | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

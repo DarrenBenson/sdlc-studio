@@ -1,6 +1,6 @@
 # BG1456: The escaped-bug Fixed gate's scaffold stripping is untested and matches the scaffold by exact string, and test_file_finding's selector reader test fails outside a git checkout
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_escape_gate_scaffold.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1456.md, .claude/skills/sdlc-studio/scripts/tests/test_transition.py
@@ -28,8 +28,13 @@ Pin the stripping; match the scaffold after normalising whitespace; make the sel
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_escape_gate_scaffold.py::EscapeGateScaffoldTests
 - [ ] **AC2** Given a tree with no .git, when the selector reader test runs, then it passes or skips with its reason. Fails on: a bare failure.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Fixed gate works; missing scaffold-stripping test, a re-wrapped scaffold is a far edge, and the failing selector test only affects a git-less archive of this repo. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | Claude Opus 5.5 (run thirteen orchestrator) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

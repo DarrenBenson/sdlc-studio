@@ -1,6 +1,6 @@
 # BG1083: enable-hooks.sh's tolerance of an unready or unreachable gate host has no test
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_remote_gate_doctor.py, tools/tests/test_enable_hooks_gate_host.py, changelog.d/BG1083.md
@@ -31,8 +31,13 @@ Drive enable-hooks.sh against an unready and an unreachable host and assert it s
 
 A later edit can make setup stop half-way on any clone whose host is down.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. enable-hooks.sh tolerates an unready host today; only a test of that tolerance is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

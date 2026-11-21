@@ -1,6 +1,6 @@
 # BG1481: test_support_page lets four planted SUPPORT.md defects through: a gh skills install line, an install command in prose, and Stack Overflow or IRC named in prose
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_support_page.py, tools/check_links.py, tools/tests/test_check_links.py, changelog.d/BG1481.md
@@ -31,8 +31,13 @@ Assert SUPPORT.md names no install command anywhere (code block or prose) and no
 - [ ] **AC3** Given a root doc with a relative link to a .py or .yml file that does not exist, and one to such a file that does, when `check_root_docs` runs, then the first is reported as file missing and the second is not. Fails on: only Markdown link targets being checked.
   - **Verify:** pytest tools/tests/test_check_links.py::RootDocsTests::test_a_missing_non_markdown_link_is_reported
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. SUPPORT.md itself is right; four planted defects survive test_support_page.py. Only a test is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

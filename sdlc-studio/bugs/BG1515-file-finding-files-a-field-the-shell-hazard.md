@@ -1,6 +1,6 @@
 # BG1515: file_finding files a field the shell-hazard sweep refuses, so the refusal arrives at the push gate's full suite instead of at filing
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/file_finding.py, .claude/skills/sdlc-studio/scripts/tests/test_file_finding.py, changelog.d/BG1515.md
@@ -36,8 +36,13 @@ Run the same shell-hazard detector over each field at filing and refuse, naming 
 
 One push-gate cycle per hazardous phrase in a filed finding.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. The shell-hazard sweep is this repository's test; file_finding warns on stderr and the push gate refuses later. Costs one slow round, with no installed effect. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1149: RFC0048's resolved D6 still states a 120s per-commit gate budget against a 99s baseline, while the config has declared 480s against 400s since 2026-09-20
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/rfcs/RFC0048-make-the-test-suite-cost-effective-without-lowering.md, changelog.d/BG1149.md
@@ -33,8 +33,13 @@ Give RFC0048 a revision row and point D6 at the config block, so the decision of
 
 A reader of the RFC acts on a budget four times too tight.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is what is left of a fix already shipped. RFC0048 is this repository's resolved decision record; the config holds the current figure and nothing user-facing reads the RFC. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

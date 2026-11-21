@@ -1,6 +1,6 @@
 # BG1156: test_persona_coherence's span recogniser skips some `script.py verb` shapes, and its mixed-unit probe cannot tell first-listed Primary from first-path owner
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** tools/tests/test_persona_coherence.py, changelog.d/US1081.md, changelog.d/BG1156.md
@@ -34,8 +34,13 @@ Widen `SCRIPT_VERB` to read the script and the verb after any interpreter, path 
 
 Two test-claim sentences claim more than the tests check, and one cross-check relies on another module to catch a routing regression.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Persona coherence test recogniser skips some script-verb shapes; the card text is right, only a test widening is missing. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

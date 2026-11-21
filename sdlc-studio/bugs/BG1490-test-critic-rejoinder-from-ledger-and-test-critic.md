@@ -1,6 +1,6 @@
 # BG1490: test_critic_rejoinder_from_ledger and test_critic_verdict_file_binding fail when run inside an agent session, because the harness session id reaches the verdict's source field
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/gitutil.py, .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_rejoinder_from_ledger.py, .claude/skills/sdlc-studio/scripts/tests/test_critic_verdict_file_binding.py, changelog.d/BG1490.md
@@ -31,8 +31,13 @@ Scrub the harness session variables the verdict recorder reads in the tests' sha
 - [ ] **AC3** Given harness session variables in the ambient environment, when `gitutil.git_env` builds a child environment, then none of the variables the verdict recorder reads is in it, and a variable the caller passes as an extra is still there. Fails on: a scrub that misses a variable the recorder reads, or one that drops a value a provenance test set on purpose.
   - **Verify:** pytest .claude/skills/sdlc-studio/scripts/tests/test_gitutil.py::HarnessSessionScrubTests::test_the_session_variables_are_dropped_and_an_explicit_extra_is_kept
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it affects only this repository's own CI, hooks or tools, nothing a consuming project installs. Two repository tests expect provenance unknown and differ only when run inside an agent session, where recording the session id is correct behaviour. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-16 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

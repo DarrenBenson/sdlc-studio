@@ -1,6 +1,6 @@
 # BG1092: The TSD says the commit-msg hook falls back to skill-tests.sh only without pytest; it also does when the handover carries no selectors
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** sdlc-studio/tsd.md, tools/tests/test_tsd_noise_ratchet_place.py, changelog.d/BG1092.md
@@ -31,9 +31,14 @@ Say both conditions: no pytest, or no selection.
 
 A reader is told the ratchet never runs at commit where pytest is installed, when it does on a full-run commit.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it is a wording preference, not a false statement. The TSD of this repository describes the hook fallback as no-pytest only; the omitted second condition is a minor accuracy gap in an internal doc. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1643: The TRD checks left by run nineteen's TRD repairs accept rewordings and leave three claims unpinned
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** sdlc-studio/trd.md, tools/tests/test_lean_trd_refresh.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, tools/tests/test_trd_coverage_soft_dependency.py
@@ -35,8 +35,13 @@ Pin the worktree path the TRD names, judge the read-only list by meaning rather 
 - [ ] **AC2** Following the recorded steps no longer reproduces the defect: In a throwaway copy, reword the read-only helper list in sdlc-studio/trd.md (for example 'these helpers only read') to list critic brief again, and run...
 - [ ] **AC3** The proposed fix lands, pinned by a test: Pin the worktree path the TRD names, judge the read-only list by meaning rather than one phrasing, name --skip-git-repo-check, reword the exfiltration row's...
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Run nineteen's TRD repairs hold; their checks accept rewordings and leave claims unpinned. Non-blocking test gaps. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-20 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

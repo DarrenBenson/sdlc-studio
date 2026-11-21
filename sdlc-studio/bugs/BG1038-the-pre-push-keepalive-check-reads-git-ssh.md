@@ -1,6 +1,6 @@
 # BG1038: The pre-push keepalive check reads GIT_SSH above core.sshCommand, the reverse of git's order, and asks ssh -G without the configured command's own options
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** .githooks/pre-push, tools/tests/test_pre_push_keepalive_order.py, changelog.d/BG1038.md
@@ -32,8 +32,13 @@ Read `GIT_SSH_COMMAND`, then core.sshCommand, and only then `GIT_SSH`; run `ssh 
 
 Low: in two uncommon configurations the advice is printed when not needed, or withheld when needed; a release note and a comment say more than the code does.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Needs GIT_SSH set beside core.sshCommand on this repository's gate-host pre-push hook; no installed skill meets it and the keepalive only warns. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-13 | Claude Opus 5.5 (triage) | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

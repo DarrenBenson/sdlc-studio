@@ -1,6 +1,6 @@
 # BG1222: The hand-copied-list census runs only at the push gate and matches any three quoted .py names, fixture names included
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 2
 > **Affects:** tools/tests/test_test_census.py, changelog.d/BG1222.md
@@ -32,8 +32,13 @@ Match only names of shipped scripts (from the owner hookutil reads), and give th
 
 Every fixture list of three file names fails the push gate after its commit passed.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Census test matches any three quoted .py names and runs only at the push gate; it is correct on the real tree, a test-precision gap. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-04 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

@@ -1,6 +1,6 @@
 # BG1094: A lesson that is only punctuation gets an empty heading title since BG1061
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/lessons.py, .claude/skills/sdlc-studio/scripts/tests/test_lessons_heading_empty.py, changelog.d/BG1094.md, .claude/skills/sdlc-studio/scripts/tests/test_lessons.py
@@ -31,8 +31,13 @@ Fall back to the unstripped text when the strip leaves nothing.
 
 A punctuation-only lesson produces a heading the markdown lane refuses.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because it needs a condition no real install meets. Degenerate author error: a lesson bullet that is only punctuation ('?' or '...'). No real lesson reads that way, and the retro template's placeholder is not affected. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-19 | Claude Opus 5.5 | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |

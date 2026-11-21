@@ -1,6 +1,6 @@
 # BG1143: doc_freshness's baseline leg has no pin for checking every Coverage line, nor for skipping the revision history
 
-> **Status:** Open
+> **Status:** Won't Fix
 > **Severity:** Low
 > **Points:** 1
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_doc_freshness.py, changelog.d/BG1143.md
@@ -35,8 +35,13 @@ Add two baseline-leg tests that mirror the count leg's: a second stale Coverage 
 
 Low: the code is right today. Two docstring promises ('every baseline doc currently states', 'one record per occurrence') rest on no test for the baseline leg.
 
+## Resolution
+
+Won't Fix under D0564: the operator approved the product seat's proposal (D0562) because only a test or pin is missing on behaviour that is right on every path a user reaches. Behaviour is right at HEAD on both baseline paths; only two tests are missing from doc_freshness. The qa re-check at 81e02369 found the defect still present (D0563), so this closes it as not worth its cost, not as fixed.
+
 ## Revision History
 
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-01 | claude | Filed |
+| 2026-11-21 | Claude Opus 5.5 (product seat, delegate under D0545) | Won't Fix under D0564: the operator approved the product seat's list (D0562); reason in Resolution |
