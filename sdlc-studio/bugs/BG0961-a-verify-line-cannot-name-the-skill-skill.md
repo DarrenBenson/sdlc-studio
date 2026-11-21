@@ -1,6 +1,6 @@
 # BG0961: A Verify line cannot name the skill: <skill> is a shell redirect, not a path
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, .claude/skills/sdlc-studio/reference-verify.md, changelog.d/BG0961.md

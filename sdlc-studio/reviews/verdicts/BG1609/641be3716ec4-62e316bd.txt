@@ -1,0 +1,6 @@
+UNIT: BG1609
+BRIEF: 641be3716ec4-62e316bd
+VERDICT: REJECT
+ISSUES: [new] The new precedence of a project's own seat over the shipped fallback (`[*seats, *persona_resolve.SEATS]`, sprint.py:3725) is pinned by no test. Both tests reach product, so the mutant `[*persona_resolve.SEATS, *seats]` survives `test_second_seat_differs_from_builder.py`, `test_plan_risk_flag.py` and `test_second_seat.py` (14 passed). In isolation, on a project whose own seats are engineering, qa and security, HEAD returns security, as the docstring and changelog say, and the mutant returns product, a seat the project does not hold; [pre-existing] The order of a project's own seats was unpinned at the base as well: the mutant `return "engineering"` survives `test_plan_risk_flag.py` and `test_second_seat.py` at ef61967b\; no open bug covers it
+BLOCKING: The new precedence of a project's own seat over the shipped fallback
+RULINGS: Claim inventory: the changelog and the `second_review_seat` docstring are TRUE by execution. AC1 passes through `verify_ac.py run --id BG1609 --dry-run` (1 of 1), the test's control still sees the self-review note at the building seat, and the author's four recorded mutants replay killed. No help page, reference or PRD row names engineering as the second seat, so no sentence elsewhere was made false.

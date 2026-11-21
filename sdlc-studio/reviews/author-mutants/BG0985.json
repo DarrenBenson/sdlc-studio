@@ -1,49 +1,67 @@
 {
   "unit": "BG0985",
-  "digest": "b7e474998f7972e8 at 74436b8b3190",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG0985-mutation-edits.json",
+  "digest": "3b6f98b3c9ce79f5 at b8839c73d8b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2db3873cb2f33cae/BG0985-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "every row a refusal again",
+      "mutant": "M1 sprint.py: the advisory row's `note` icon dropped from the preview's icon map (reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if held_blockers([blocker]):\n",
-      "new": "        if True:\n",
+      "old": "\"unevaluated\": \"??  \", \"advisory\": \"note\"}",
+      "new": "\"unevaluated\": \"??  \"}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every row advisory",
+      "mutant": "M2 sprint.py: the advisory row noted with an empty remedy (reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if held_blockers([blocker]):\n",
-      "new": "        if False:\n",
+      "old": "note(_blocker_label(blocker), \"advisory\", blocker.get(\"detail\", \"\"),\n                 blocker.get(\"remedy\", \"\"))",
+      "new": "note(_blocker_label(blocker), \"advisory\", blocker.get(\"detail\", \"\"), \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 sprint.py: every pre-flight row previews as a refusal again",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if held_blockers([blocker]):",
+      "new": "if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 sprint.py: every pre-flight row previews as advisory, so a blocking row passes",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if held_blockers([blocker]):",
+      "new": "if False:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_blocking_row_still_refuses",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the advisory row dropped from the preview",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            note(_blocker_label(blocker), \"advisory\", blocker.get(\"detail\", \"\"),\n                 blocker.get(\"remedy\", \"\"))\n",
-      "new": "            pass\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the gate step left out over any gate row",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "gate_refused = any(b[\"stage\"] == \"gate\" for b in held)",
-      "new": "gate_refused = any(b[\"stage\"] == \"gate\" for b in pre[\"blockers\"])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the advisory row unlabelled",
+      "mutant": "M5 sprint.py: the advisory row labelled with its bare stage, not `reported not blocking`",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "note(_blocker_label(blocker), \"advisory\"",
       "new": "note(blocker[\"stage\"], \"advisory\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 test: the advisory fixture carries no remedy, so the remedy assertion has nothing to read",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py",
+      "old": "\"remedy\": \"refresh the anchor\",",
+      "new": "\"remedy\": \"\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M7 test: the advisory fixture flagged blocking, so the row is a refusal",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py",
+      "old": "\"remedy\": \"refresh the anchor\",\n                            \"blocking\": False}",
+      "new": "\"remedy\": \"refresh the anchor\",\n                            \"blocking\": True}",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_dry_run_nonblocking.py::CloseDryRunNonBlockingTests::test_advisory_row_not_a_refusal",
       "result": "killed",
       "answer": ""

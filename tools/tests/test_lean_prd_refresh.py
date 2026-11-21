@@ -1723,15 +1723,16 @@ class PrdRulesTests(unittest.TestCase):
         self.assertEqual([], grooming_problems(self.prd))
 
     def test_a_held_criterion_names_the_bug_its_words_describe(self):
-        """BG1162 AC3. Mutants: the Verify AC criterion Held by BG1023 reassigned to BG0959, and
-        the floor's criterion reassigned to BG1063; each must be named, the tree as it is not."""
+        """BG1162 AC3. Mutants: the Verify AC criterion Held by BG1063 reassigned to BG0959, and
+        the floor's criterion reassigned to BG1063; each must be named, the tree as it is not.
+        (The first mutant moved from BG1023's criterion when BG1023 was fixed in run twenty-one.)"""
         self.assertEqual([], holder_problems(self.prd))
-        verify = "Held by BG1023: the vitest"
+        verify = "Held by BG1063: no code reads the key"
         self.assertIn(verify, self.prd)
-        moved = holder_problems(self.mutate(verify, "Held by BG0959: the vitest"))
+        moved = holder_problems(self.mutate(verify, "Held by BG0959: no code reads the key"))
         self.assertEqual(1, len(moved), moved)
-        self.assertIn("criterion 1 names BG0959 as its holder", moved[0])
-        self.assertIn("match BG1023 better", moved[0])
+        self.assertIn("criterion 3 names BG0959 as its holder", moved[0])
+        self.assertIn("match BG1063 better", moved[0])
         floor = holder_problems(self.mutate(f"Held by {FLOOR_BUG}", "Held by BG1063"))
         self.assertEqual(1, len(floor), floor)
         self.assertIn("names BG1063 as its holder", floor[0])

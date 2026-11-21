@@ -1,104 +1,41 @@
 {
   "unit": "BG1023",
-  "digest": "1d6ec836a904d608 at 67d57b454cf6",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0f2c83304e6e682f/BG1023-mutation-edits.json",
+  "digest": "8305183fc9776df8 at f03ef4b45a93",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4940fbe067909548/BG1023-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "reviewer: -t <name> appended after a -- in the tail",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        return head, [*base, *rest[:cut], \"-t\", _js_regex_literal(name), *rest[cut:]]",
-      "new": "        return head, [*base, *rest, \"-t\", _js_regex_literal(name)]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: the os.access X_OK guard dropped",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if os.path.isfile(local) and os.access(local, os.X_OK):",
-      "new": "    if os.path.isfile(local):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: the last fallback runs npx --no-install anyway",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if shutil.which(\"npx\"):\n        return [\"npx\", \"--no-install\", *argv]\n    return argv",
-      "new": "    return [\"npx\", \"--no-install\", *argv]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: the except ValueError in the jest batch cache removed",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    try:\n        if _node_runner_args(\"jest\", tail) is not None:\n            return None  # a file-and-name line: the cache holds no file to restrict it to\n    except ValueError:\n        return None",
-      "new": "    if _node_runner_args(\"jest\", tail) is not None:\n        return None",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: the pipe dropped from _JS_REGEX_SPECIAL",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "_JS_REGEX_SPECIAL = re.compile(r\"[\\\\^$.*+?()[\\]{}|]\")",
-      "new": "_JS_REGEX_SPECIAL = re.compile(r\"[\\\\^$.*+?()[\\]{}]\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: --testNamePattern= split with no maxsplit",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            names.append(a.split(\"=\", 1)[1])",
-      "new": "            names.append(a.split(\"=\")[1])",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the name goes after the first argument always",
+      "mutant": "cut at the last --",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
       "old": "        cut = rest.index(\"--\") if \"--\" in rest else len(rest)",
-      "new": "        cut = 1",
+      "new": "        cut = len(rest) - 1 - rest[::-1].index(\"--\") if \"--\" in rest else len(rest)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the bare binary on PATH is passed over",
+      "mutant": "no cut, the name after every --",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    if shutil.which(binary):\n        return argv",
-      "new": "    if False:\n        return argv",
+      "old": "        cut = rest.index(\"--\") if \"--\" in rest else len(rest)",
+      "new": "        cut = len(rest)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the name reaches -t unescaped",
+      "mutant": "cut after the first --",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "    return _JS_REGEX_SPECIAL.sub(lambda m: \"\\\\\" + m.group(0), name)",
-      "new": "    return name",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "test: the -- expectation flipped to the old order",
-      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py",
-      "old": "                         (\"jest\", [\"jest\", FILE, \"-t\", \"name\", \"--\", \"--ci\"]))",
-      "new": "                         (\"jest\", [\"jest\", FILE, \"--\", \"--ci\", \"-t\", \"name\"]))",
+      "old": "        cut = rest.index(\"--\") if \"--\" in rest else len(rest)",
+      "new": "        cut = rest.index(\"--\") + 1 if \"--\" in rest else len(rest)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the near miss for the pipe expected to match",
+      "mutant": "test: the two-marker pin expects the last-cut argv",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py",
-      "old": "                self.assertIsNone(re.search(pipe, \"renders y\"), pipe)",
-      "new": "                self.assertIsNotNone(re.search(pipe, \"renders y\"), pipe)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_a_metacharacter_in_the_name_is_literal_or_warned",
+      "old": "(\"jest\", [\"jest\", FILE, \"-t\", \"name\", \"--\", \"--ci\", \"--\", \"extra\"]))",
+      "new": "(\"jest\", [\"jest\", FILE, \"--\", \"--ci\", \"-t\", \"name\", \"--\", \"extra\"]))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac_vitest_file_and_name.py::VitestFileAndNameTests::test_file_and_name_are_separate_arguments",
       "result": "killed",
       "answer": ""
     }

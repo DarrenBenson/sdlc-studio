@@ -1,28 +1,37 @@
 {
   "unit": "BG1590",
-  "digest": "2c7deb5ed3bc893d at 74436b8b3190",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1590-mutation-edits.json",
+  "digest": "aefe15be397342ba at b8839c73d8b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2db3873cb2f33cae/BG1590-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the page re-derived from the working tree",
+      "mutant": "M1 sprint.py: a bare `git worktree prune` restored after the scratch is removed (reviewer's finding a)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    stale = _page_no_longer_matches(root, report_id, commit)\n",
-      "new": "    stale = _page_no_longer_matches(root, report_id)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_ruling_committed_after_the_close_does_not_refuse_the_seal",
+      "old": "                git(\"worktree\", \"remove\", \"--force\", str(tree))\n        shutil.rmtree(scratch, ignore_errors=True)\n",
+      "new": "                git(\"worktree\", \"remove\", \"--force\", str(tree))\n            git(\"worktree\", \"prune\")\n        shutil.rmtree(scratch, ignore_errors=True)\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_the_scratch_worktree_is_the_only_thing_sign_touches",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the page check dropped on the committed path",
+      "mutant": "M2 sprint.py: the repository's hooks run for the scratch worktree (reviewer's finding b)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    stale = _page_no_longer_matches(root, report_id, commit)\n",
-      "new": "    stale = \"\" if commit else _page_no_longer_matches(root, report_id, commit)\n",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_page_the_close_commit_does_not_derive_is_still_refused",
+      "old": "[\"git\", \"-C\", str(root), \"-c\", f\"core.hooksPath={os.devnull}\",\n                               *argv]",
+      "new": "[\"git\", \"-C\", str(root),\n                               *argv]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_the_scratch_worktree_is_the_only_thing_sign_touches",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the close commit's tree left checked out",
+      "mutant": "M3 sprint.py: a commit that cannot be checked out raises OSError in place of yielding root (reviewer's mutant)",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                  f\"working tree\", file=sys.stderr)\n            yield Path(root)\n            return\n",
+      "new": "                  f\"working tree\", file=sys.stderr)\n            raise OSError(\"no scratch tree\")\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_close_commit_that_cannot_be_checked_out_judges_the_working_tree",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M4 sprint.py: the scratch worktree is left checked out after sign",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "                git(\"worktree\", \"remove\", \"--force\", str(tree))\n",
       "new": "                pass\n",
@@ -31,11 +40,20 @@
       "answer": ""
     },
     {
-      "mutant": "the commit's tree never checked out",
+      "mutant": "M5 sprint.py: the page re-derived from the working tree, as before",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            made = git(\"worktree\", \"add\", \"--detach\", \"--quiet\", str(tree), commit)\n",
-      "new": "            made = subprocess.CompletedProcess([], 1, \"\", \"\")\n",
+      "old": "with _tree_of(root, commit) as tree:",
+      "new": "with _tree_of(root, \"\") as tree:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_ruling_committed_after_the_close_does_not_refuse_the_seal",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M6 test: the fallback test leaves the repository able to add a worktree, so nothing falls back",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py",
+      "old": "        (clone / \".git\" / \"worktrees\").write_text(\"not a directory\\n\", encoding=\"utf-8\")\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_ruling_after_close.py::SignJudgesPageFromCloseCommitTests::test_a_close_commit_that_cannot_be_checked_out_judges_the_working_tree",
       "result": "killed",
       "answer": ""
     }

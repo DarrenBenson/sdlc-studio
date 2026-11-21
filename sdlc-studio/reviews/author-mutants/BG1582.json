@@ -1,40 +1,58 @@
 {
   "unit": "BG1582",
-  "digest": "0b78a22adb71a84d at 74436b8b3190",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4910cfa9737c4d0b/BG1582-mutation-edits.json",
+  "digest": "8942ffb7cb0e91e3 at b8839c73d8b0",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2db3873cb2f33cae/BG1582-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "the committed path skips the declared-file check",
+      "mutant": "M1 sprint.py: `sign` passes no later run to the check, so it runs while a later run is open (reviewer's mutant)",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "        if refusal := _uncommitted_declared_refusal(root, state, later):\n",
-      "new": "        if False:\n",
+      "old": "_uncommitted_declared_refusal(root, state, later):",
+      "new": "_uncommitted_declared_refusal(root, state, \"\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_a_later_run_open_here_is_not_held_to_the_waiting_batch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M2 sprint.py: the helper ignores the later run and always checks",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "return \"\" if later else _refuse_batch_repair(root, state, \"sign\")",
+      "new": "return _refuse_batch_repair(root, state, \"sign\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_a_later_run_open_here_is_not_held_to_the_waiting_batch",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "M3 sprint.py: the committed-close path skips the declared-file check, as before",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "if refusal := _uncommitted_declared_refusal(root, state, later):",
+      "new": "if refusal := \"\":",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_an_uncommitted_edit_to_a_declared_file_is_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the check runs and sign seals anyway",
+      "mutant": "M4 sprint.py: the check runs and sign seals anyway",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "            print(refusal, file=sys.stderr)\n            return 2\n    elif moved:",
-      "new": "            print(refusal, file=sys.stderr)\n    elif moved:",
+      "old": "        if refusal := _uncommitted_declared_refusal(root, state, later):\n            print(refusal, file=sys.stderr)\n            return 2\n",
+      "new": "        if refusal := _uncommitted_declared_refusal(root, state, later):\n            print(refusal, file=sys.stderr)\n",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_an_uncommitted_edit_to_a_declared_file_is_refused",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "every uncommitted file refused",
+      "mutant": "M5 sprint.py: every uncommitted file refuses, declared or not",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    return \"\" if later else _refuse_batch_repair(root, state, \"sign\")\n",
-      "new": "    return \"\" if later else (\"sign REFUSED: \" + \" \".join(sorted(_changed_paths(root))) if _changed_paths(root) else \"\")\n",
+      "old": "return \"\" if later else _refuse_batch_repair(root, state, \"sign\")",
+      "new": "return \"\" if later else (\"sign REFUSED: dirty\" if tree_moved_since_close(root, state) else \"\")",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_the_committed_close_still_signs_over_undeclared_scratch",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the check made while a later run is open",
-      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
-      "old": "    return \"\" if later else _refuse_batch_repair(root, state, \"sign\")\n",
-      "new": "    return _refuse_batch_repair(root, state, \"sign\")\n",
+      "mutant": "M6 test: the later-run test's control edits an undeclared file, so the control proves nothing",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py",
+      "old": "        (self.root / \"src\" / \"widget.py\").write_text(\"x = 2\\n\", encoding=\"utf-8\")\n        rc, out, err = signing._sign(self.root, REPORT)\n        self.assertEqual(2, rc, out + err)\n        self.assertIn(\"US0101: src/widget.py\"",
+      "new": "        (self.root / \"README.md\").write_text(\"x = 2\\n\", encoding=\"utf-8\")\n        rc, out, err = signing._sign(self.root, REPORT)\n        self.assertEqual(2, rc, out + err)\n        self.assertIn(\"US0101: src/widget.py\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_sign_uncommitted_edit_after_close.py::SignRefusesUncommittedEditAfterCloseTests::test_a_later_run_open_here_is_not_held_to_the_waiting_batch",
       "result": "killed",
       "answer": ""

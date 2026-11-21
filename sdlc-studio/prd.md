@@ -260,7 +260,7 @@ per-request epic decomposition cite their governing RFC or CR instead.
 | Test automation | Generate executable tests | Complete | High | help/test-automation.md | EP0004 |
 | Test environment | Containerised test env setup | Complete | Low | help/test-env.md | EP0004 |
 | Reconcile | Census-based drift detection + auto-fix; `--verify` | Complete | High | reference-reconcile.md, scripts/reconcile.py | EP0005 |
-| Verify AC | Executable AC verifier DSL; its vitest and jest verbs cannot select a test while BG1023 is open | Partial | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
+| Verify AC | Executable AC verifier DSL; its vitest and jest verbs select a test by file and name | Partial | High | reference-verify.md, scripts/verify_ac.py | EP0005 |
 | Review | Unified PRD/TRD/TSD/Persona + CODE review, cadence | Complete | High | reference-review.md, scripts/review_prep.py | EP0005 |
 | Status / Hint | Pipeline dashboard + single next step | Complete | High | help/status.md, scripts/status.py | EP0005 |
 | Project orchestration | `project plan` / `project implement`, dependency order | Complete | High | reference-project.md | EP0007 |
@@ -363,7 +363,7 @@ against the running code so "Done" means verified, not asserted.
 
 **Acceptance Criteria:**
 
-- [ ] Parses the `- **Verify:**` lines of a story's or a bug's criteria (`sdlc_md.EXECUTES_VERIFIERS`) into executable checks. Held by BG1023: the vitest and jest verbs fold the whole tail into `-t`, so they cannot select a test.
+- [x] Parses the `- **Verify:**` lines of a story's or a bug's criteria (`sdlc_md.EXECUTES_VERIFIERS`) into executable checks; the vitest and jest verbs select a test by file and by name, the name filter placed before any `--`.
 - [x] Runs each check; reports `Verified: yes/no` per AC with pass/fail/manual counts.
 - [ ] Supports a verify gate (`require_ac_verification`) that aborts the completion cascade on failure. Held by BG1063: no code reads the key, and the live Done gate is `quality.done_requires_verified`.
 - [x] Writes a machine-readable report to `.local/verify-report.json`.
@@ -855,6 +855,7 @@ none.
 | 2026-11-19 | 6.4.0 | PRD truth repairs (BG1525, BG1526, BG1527, BG1528, BG1162, BG1168, BG1180, BG1553, BG1554, BG1555): section 9 names the gate keys that ship off and the right defaults, the status note, Context, Security and Integration passages say what the code does, the Environment Variables table lists every variable the scripts read, the close-down row describes the hand-wired reminder, one account of the sprint close names every chain step, and the PRD tests check each of these and the Changelog's row for every change |
 | 2026-11-20 | 6.4.0 | PyYAML required (US1299): the tech stack bullet, the Performance requirement and the Third-Party Dependencies section name PyYAML as the one required third-party package, which the installers and the gate's prerequisite check refuse a machine without, and the earlier standard-library wording is gone |
 | 2026-11-21 | 6.4.0 | Unparseable Verify lines (BG0981): the Breakdown gate's first criterion says a groomed story or bug carries no `Verify:` line `verify_ac.py run` cannot parse |
+| 2026-11-21 | 6.4.0 | Verify AC (BG1023): the vitest and jest verbs select a test by file and name, so the parse criterion is ticked and the row no longer names BG1023 as holding it; the feature stays Partial, held by BG1063 |
 
 ---
 

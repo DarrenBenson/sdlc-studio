@@ -1,112 +1,166 @@
 {
   "unit": "BG1534",
-  "digest": "30244e87ae217020 at 67d57b454cf6",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a0f2c83304e6e682f/BG1534-mutation-edits.json",
+  "digest": "a87f497acd498058 at f03ef4b45a93",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a4940fbe067909548/BG1534-mutation-edits.json",
   "mutants": [
     {
-      "mutant": "reviewer: if all(whys) turned to if any(whys)",
+      "mutant": "round-2 skip restored: any dotted or stem name by its file",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            if all(whys):",
-      "new": "            if any(whys):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: only the first file of a shared name is parsed",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            whys = [_names_defined(self._parse(f), names) for f in found]",
-      "new": "            whys = [_names_defined(self._parse(f), names) for f in found[:1]]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: the direct path lookup removed",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "        if \"/\" in name and (self.root / name).is_file():\n            return [self.root / name]\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "reviewer: a doctest node id read as a test (doctest skip removed)",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            if \".\" in names[0] or names == [Path(m.group(1)).stem]:\n                continue\n",
-      "new": "",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the module doctest form read as a test",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            if \".\" in names[0] or names == [Path(m.group(1)).stem]:",
-      "new": "            if \".\" in names[0]:",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the node id regex stops at the first dot again",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "((?:::[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)+)\")",
-      "new": "((?:::[A-Za-z_]\\w*)+)\")",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "the node id regex swallows a trailing full stop",
-      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "((?:::[A-Za-z_]\\w*(?:\\.[A-Za-z_]\\w*)*)+)\")",
-      "new": "((?:::[A-Za-z_][\\w.]*)+)\")",
+      "old": "            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found):",
+      "new": "            if \".\" in names[0] or names == [Path(m.group(1)).stem]:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "a doctest id is skipped before its file is looked up",
+      "mutant": "doctest read past a second ::",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "            found = self.files(m.group(1))\n            if not found:",
-      "new": "            found = self.files(m.group(1))\n            if \".\" in m.group(2):\n                continue\n            if not found:",
+      "old": "            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found):",
+      "new": "            if any(_doctest_defined(self._parse(f), names[0]) for f in found):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "the other-files count off by one",
+      "mutant": "every file so named must hold the doctest",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "more = f\" (nor in the {len(whys) - 1} other file(s) so named)\"",
-      "new": "more = f\" (nor in the {len(whys)} other file(s) so named)\"",
+      "old": "            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found):",
+      "new": "            if len(names) == 1 and all(_doctest_defined(self._parse(f), names[0]) for f in found):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only the first file so named is read",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found):",
+      "new": "            if len(names) == 1 and any(_doctest_defined(self._parse(f), names[0]) for f in found[:1]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no file stem required",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if part != Path(rel).stem or tuple(parts[:k]) != dirs[len(dirs) - k:]:",
+      "new": "        if tuple(parts[:k]) != dirs[len(dirs) - k:]:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "nested checkouts walked",
+      "mutant": "no directory match required",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "                                 and not os.path.exists(os.path.join(top, d, \".git\")))",
-      "new": "                                 )",
+      "old": "        if part != Path(rel).stem or tuple(parts[:k]) != dirs[len(dirs) - k:]:",
+      "new": "        if part != Path(rel).stem:",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "node_modules walked",
+      "mutant": "directory slice taken from the end",
       "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
-      "old": "_TREE_SKIP = {\".git\", \"node_modules\", \"__pycache__\",",
-      "new": "_TREE_SKIP = {\".git\", \"__pycache__\",",
+      "old": "        if part != Path(rel).stem or tuple(parts[:k]) != dirs[len(dirs) - k:]:",
+      "new": "        if part != Path(rel).stem or tuple(parts[:k]) != dirs[-k:]:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only the bare stem tried",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "    for k, part in enumerate(parts):",
+      "new": "    for k, part in enumerate(parts[:1]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "descends into functions",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            scope = node.body if isinstance(node, (ast.Module, ast.ClassDef)) else []",
+      "new": "            scope = getattr(node, \"body\", [])",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test: the second file of the shared name renamed",
+      "mutant": "descends into the module only",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "            scope = node.body if isinstance(node, (ast.Module, ast.ClassDef)) else []",
+      "new": "            scope = node.body if isinstance(node, (ast.Module,)) else []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a docstring with no example counts",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if node is not None and _DOCTEST_PROMPT.search(ast.get_docstring(node, clean=False) or \"\"):",
+      "new": "        if node is not None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prompt anywhere in a line",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "_DOCTEST_PROMPT = re.compile(r\"^[ \\t]*>>>\", re.M)",
+      "new": "_DOCTEST_PROMPT = re.compile(r\">>>\", re.M)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prompt only unindented",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "_DOCTEST_PROMPT = re.compile(r\"^[ \\t]*>>>\", re.M)",
+      "new": "_DOCTEST_PROMPT = re.compile(r\"^>>>\", re.M)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prompt indented by spaces only",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "_DOCTEST_PROMPT = re.compile(r\"^[ \\t]*>>>\", re.M)",
+      "new": "_DOCTEST_PROMPT = re.compile(r\"^[ ]*>>>\", re.M)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "prompt only on the docstring's first line",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "_DOCTEST_PROMPT = re.compile(r\"^[ \\t]*>>>\", re.M)",
+      "new": "_DOCTEST_PROMPT = re.compile(r\"^[ \\t]*>>>\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "docstring read cleaned",
+      "file": ".claude/skills/sdlc-studio/scripts/verify_ac.py",
+      "old": "        if node is not None and _DOCTEST_PROMPT.search(ast.get_docstring(node, clean=False) or \"\"):",
+      "new": "        if node is not None and _DOCTEST_PROMPT.search(ast.get_docstring(node, clean=True) or \"\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
+      "result": "survived",
+      "answer": "Equivalent for every docstring indented with spaces and tabs: cleaning expands tabs, strips the first line's leading whitespace and the common indent of the rest, so a line a space or tab indent and a >>> open still opens with >>> after it. The readings differ only where another whitespace character, such as a vertical tab, opens the line; doctest finds no example there, and the uncleaned reading kept here agrees with it."
+    },
+    {
+      "mutant": "test: the no-example file gains a module example, so its stem row must now resolve",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
-      "old": "            (root / \"pkg\" / pkg / \"test_utils.py\").write_text(body, encoding=\"utf-8\")",
-      "new": "            (root / \"pkg\" / pkg / f\"test_utils{pkg}.py\").write_text(body, encoding=\"utf-8\")",
+      "old": "(\"b\", '\"\"\"Mentions >>> mid-line only.\"\"\"\\n\\n\\n'",
+      "new": "(\"b\", '\"\"\"Mentions\\n>>> 1\\n1\\n\"\"\"\\n\\n\\n'",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_pass_row_naming_a_missing_test_is_a_finding",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test: the second-of-two row names the first file, which has no U",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py",
+      "old": "| US0005 | AC5 | second of two | test_utils.py::test_utils.U | Pass |",
+      "new": "| US0005 | AC5 | second of two | pkg/a/test_utils.py::test_utils.U | Pass |",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py::TsCheckSelectorResolutionTests::test_a_resolvable_row_and_a_manual_row_are_not_findings",
       "result": "killed",
       "answer": ""

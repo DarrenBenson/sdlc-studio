@@ -1,0 +1,6 @@
+UNIT: BG1023
+BRIEF: 9649c84c3619-614476cf
+VERDICT: APPROVE
+ISSUES: none
+BLOCKING: none
+RULINGS: Round-2 "The repair's cut at the first `--` (verify_ac.py:2195, added in 67d57b45) is unpinned against the last" CLOSED: cutting at the last `--` is killed by test_file_and_name_are_separate_arguments. Each of the two new cases kills it alone: with the jest `-t name -- --ci -- extra` case deleted the vitest `-- a -- b` case still kills it, and the reverse also holds. With both deleted the mutant survives, so the pin is the new cases and not an older one. Cutting after the first `--` and not cutting at all are killed too (reviewer mutants in a throwaway clone, matching the author's replayed list). Round 3 changes only the test and the fragment for this unit: f03ef4b4 touches verify_ac.py only in `_TestTree` (hunks from line 4068). Claim inventory: the fragment's "The name goes in front of the first `--` on the line, where the runner still reads `-t` as the name filter" is TRUE by `_build_command` probes (`jest a.test.ts --ci -- -- -t n` builds `[..., '--ci', '-t', 'n', '--', '--']`). The commit body's two argv claims are TRUE by the test. AC1 and AC2 pass under `verify_ac.py run --id BG1023 --dry-run` (pass=2), and the whole of test_verify_ac_vitest_file_and_name.py passes (2 tests, 18 subtests).
