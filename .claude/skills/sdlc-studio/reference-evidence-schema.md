@@ -123,7 +123,7 @@ code span is the only value the key takes.
 | `premium_usd` | rule mark | `per-request-dollars` | Premium requests are priced per request. |
 | `usd_prices` | rule mark | `per-model-prices-and-delegated-dollars` | Each priced model's prices are listed and the delegated totals priced. |
 | `cost_forecast` | rule mark | `forecast-actual-ratio` | The Priced cost, Priced per point, Dollar cost, Dollars per point and Wall-clock span rows state the plan's forecast and actual over forecast, or why none was made. |
-| `dispatch_effort` | rule mark | `per-role-from-plan` | The cost section states the effort each unit's builder and reviewer were dispatched at; a builder a headless lane ran with no effort flag is stated as configured and not applied. |
+| `dispatch_effort` | rule mark | `per-role-from-plan` | The cost section states the effort each unit's builder and reviewer were dispatched at; a builder a headless lane ran with no effort flag under a stamp other than `inherit` is stated as configured and not applied. |
 | `fingerprint` | always | a hex digest | The digest of the page's figure set, which a signature is over. |
 
 ### Report section shape
@@ -214,7 +214,7 @@ The keys of each section's `figures` object.
 | `cost` | `tokens_total` | The run's token total. |
 | `cost` | `token_coverage` | The sessions the total covers, and any it could not. |
 | `cost` | `token_shape` | What the meter was read from. |
-| `cost` | `effort_builder` | The effort the builders were dispatched at, from the plan the run record names: each value with its unit count, lowest first, or `NOT MEASURED` with why. A unit a headless lane (`sprint.py lane run`) built is counted apart as configured and not applied, with why: its command carries no effort flag, so it ran at its harness's own default. |
+| `cost` | `effort_builder` | The effort the builders were dispatched at, from the plan the run record names: each value with its unit count, lowest first, or `NOT MEASURED` with why. A unit a headless lane (`sprint.py lane run`) built under a stamp other than `inherit` is counted apart after the rest, lowest first too, as configured and not applied, with why and the harness named: its command carries no effort flag, so it ran at its harness's own default. |
 | `cost` | `effort_reviewer` | The effort the reviewers were dispatched at, read and counted the same way. |
 | `cost_roles` | `roles_session` | The session the spend by role was read from, and its subagent transcripts. |
 | `cost_roles` | `roles_total` | The agents, calls and priced tokens over every role. |

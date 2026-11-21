@@ -840,7 +840,9 @@ class HeadlessEffortTests(_LaneCase):
     def test_the_lane_row_records_the_effort_the_command_carried(self) -> None:
         """MUTANTS: the record copies the plan's stamp whatever the command carried, as the
         report read it; an effort flag passed to a harness no flag table names; a harness the
-        table names given the flag but a record saying none."""
+        table names given the flag but a record saying none; the run's "effort: not applied"
+        line left out, or printed for a lane whose command carried the effort or asked for
+        none."""
         self._stamp("low")
         for harness, (binary, _fixture, _flags, _model) in HARNESSES.items():
             with self.subTest(harness=harness):
@@ -853,6 +855,7 @@ class HeadlessEffortTests(_LaneCase):
                 self.assertEqual("low", record["effort_stamped"])
                 self.assertIn(harness, record["effort_reason"])
                 self.assertIn("no effort flag", record["effort_reason"])
+                self.assertIn(f"\n  effort: not applied - {record['effort_reason']}\n", out)
         # the flag and the record together: a harness the table names carries both
         with unittest.mock.patch.dict(lanes.HEADLESS_EFFORT_FLAGS, {"claude": "--effort"}):
             rc, out, record = self._fresh_run("claude")
@@ -861,6 +864,7 @@ class HeadlessEffortTests(_LaneCase):
         self.assertEqual("low", argv[argv.index("--effort") + 1])
         self.assertEqual(("low", "low", None), tuple(record[k] for k in (
             "effort", "effort_stamped", "effort_reason")))
+        self.assertNotIn("effort:", out)
         # inherit, the session's own effort, asks the command for nothing to carry
         self._stamp("inherit")
         rc, out, record = self._fresh_run("claude")
@@ -868,6 +872,7 @@ class HeadlessEffortTests(_LaneCase):
         self.assertNotIn("--effort", self._called("claude")["argv"])
         self.assertEqual((None, "inherit", None), tuple(record[k] for k in (
             "effort", "effort_stamped", "effort_reason")))
+        self.assertNotIn("effort:", out)
 
 
 if __name__ == "__main__":

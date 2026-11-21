@@ -276,8 +276,15 @@ class SelfCheckRecordTests(unittest.TestCase):
     def test_a_page_in_the_unit_s_affects_is_a_claim_surface(self) -> None:
         """BG1512 AC3. A docs-only unit's claims live in the page it writes, so a claim naming
         that page by its path is recorded; a page outside its Affects, and a code file inside
-        them, are still refused, each named with the surfaces accepted. MUTANTS: pages not
-        accepted at all; any path accepted; any file the Affects declares accepted."""
+        them, are still refused, each named with the surfaces accepted. An `.mdx` page, the
+        website's, is a page too, and a page's suffix is read in any case. MUTANTS: pages not
+        accepted at all; any path accepted; any file the Affects declares accepted; `.md` alone
+        taken for a page; the suffix compared with its case; a changelog fragment, a required
+        surface, listed again among the optional pages, so the lane brief names it twice."""
+        self.assertEqual((["commit message", "changelog.d/US0102.md"],
+                          [*critic.CLAIM_SURFACES, "docs/guide.md"]),
+                         critic.claim_surfaces(["src/widget.py", "changelog.d/US0102.md",
+                                                "docs/guide.md"]))
         claims = [*_covered("changelog.d/US0102.md"), _claim("docs/guide.md")]
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -285,6 +292,17 @@ class SelfCheckRecordTests(unittest.TestCase):
             r = _record(root, "US0102", claims, [])
             self.assertEqual(0, r.returncode, r.stderr)
             self.assertEqual(["US0102"], [row["unit"] for row in critic.read_self_checks(root)])
+        for label, page in {"an .mdx page": "docs/commands.mdx",
+                            "a suffix in capitals": "docs/README.MD",
+                            "an .mdx suffix in capitals": "docs/Commands.MDX"}.items():
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, "US0102", f"{page}, changelog.d/US0102.md")
+                r = _record(root, "US0102", [*_covered("changelog.d/US0102.md"), _claim(page)],
+                            [])
+                self.assertEqual(0, r.returncode, r.stderr)
+                self.assertEqual(["US0102"],
+                                 [row["unit"] for row in critic.read_self_checks(root)])
         for label, (affects, surface) in {
                 "a page outside the Affects": ("docs/guide.md, changelog.d/US0102.md",
                                                "docs/other.md"),
@@ -310,6 +328,49 @@ class SelfCheckRecordTests(unittest.TestCase):
             self._refused(root, r, "'page prose'", "'TRUE in substance'", "'SURVIVED'",
                           "TRUE, FALSE, UNVERIFIABLE", "killed, survived",
                           "commit message; changelog.d/US0101.md; Resolutions")
+
+    def test_a_ruling_is_read_in_any_case(self) -> None:
+        """BG1512 AC1's ruling check keeps the case the record always read a ruling in. MUTANT:
+        the ruling compared word for word, so `true` and `Unverifiable` are refused as outside
+        the vocabulary; the control: `false` is still read as FALSE and refused as one."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0101", CODE_AND_TEST)
+            claims = [_claim("commit message", "true"), _claim("changelog.d/US0101.md", "True"),
+                      _claim("docstrings", "Unverifiable")]
+            r = _record(root, "US0101", claims, KILLED)
+            self.assertEqual(0, r.returncode, r.stderr)
+            self.assertEqual(["US0101"], [row["unit"] for row in critic.read_self_checks(root)])
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _project(root, "US0101", CODE_AND_TEST)
+            r = _record(root, "US0101", [*_covered(), _claim("comments", "false", "w caches")],
+                        KILLED)
+            self._refused(root, r, "w caches", "is ruled FALSE")
+            self.assertNotIn("has the ruling", r.stderr)
+
+    def test_an_absent_ruling_or_result_is_named_by_the_check_for_it(self) -> None:
+        """BG1512 AC1: an absent or blank ruling or result is no value outside the vocabulary,
+        so the vocabulary check leaves it to the check that names it, as unruled or as a result
+        of none. MUTANTS: the absent result's guard dropped, or its blank not stripped, so the
+        vocabulary check names it first as the result ''; the same for a ruling."""
+        survivor = {"mutant": "w raises", "test": "tests/test_widget.py::test_w"}
+        for label, result in {"no result": None, "a blank result": "   "}.items():
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, "US0101", CODE_AND_TEST)
+                mutant = {**survivor, **({} if result is None else {"result": result})}
+                r = _record(root, "US0101", _covered(), [mutant])
+                self._refused(root, r, "mutant 1 ('w raises') has result 'none'")
+                self.assertNotIn("has the result", r.stderr)
+        for label, ruling in {"no ruling": None, "a blank ruling": "  "}.items():
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                _project(root, "US0101", CODE_AND_TEST)
+                r = _record(root, "US0101", [*_covered(), _claim("docstrings", ruling, "w is pure")],
+                            KILLED)
+                self._refused(root, r, "claim not ruled", "w is pure")
+                self.assertNotIn("has the ruling", r.stderr)
 
     def test_the_record_binds_the_affects_content(self) -> None:
         """AC4. Mutants: the digest computed over the Affects PATHS (or their sizes) rather than

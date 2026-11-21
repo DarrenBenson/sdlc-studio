@@ -4536,9 +4536,13 @@ def _effort_counts(rows: list[dict], role: str) -> str:
 def _builder_effort(rows: list[dict], headless: dict[str, list[str]]) -> str:
     """The builders' effort over the plan's rows (`_effort_counts`), with each unit a headless
     lane built under a command that carried no effort flag (`lanes.effort_not_applied`) counted
-    apart as configured and not applied, and why: it ran at its harness's own default, so the
-    plan's stamp is never reported as the effort it was dispatched at. A unit stamped `inherit`
-    asked for nothing to apply and is counted as it was stamped."""
+    apart as configured and not applied, after the rest, each stamp with its count, lowest
+    effort first as `_effort_counts` orders them, and why, naming the harnesses: it ran at its
+    harness's own default, so the plan's stamp is never reported as the effort it was
+    dispatched at. A unit stamped `inherit`, or not stamped, asked for nothing to apply and is
+    counted as it was stamped."""
+    import sprint  # noqa: PLC0415 - deferred sibling, as in `_effort_counts`
+
     def stamp(r: dict) -> str | None:
         effort = r.get("effort")
         return effort.get("builder") if isinstance(effort, dict) else None
@@ -4550,9 +4554,10 @@ def _builder_effort(rows: list[dict], headless: dict[str, list[str]]) -> str:
     ran = sorted({h for r in apart for h in headless[sdlc_md.norm_id(str(r.get("id")))]})
     kept = [r for r in rows if r not in apart]
     by_stamp = Counter(str(stamp(r)) for r in apart)
+    rank = {v: i for i, v in enumerate(sprint.EFFORT_VALUES)}
     parts = ([_effort_counts(kept, "builder")] if kept else []) + [
-        f"{v} configured and not applied ({n} unit{'' if n == 1 else 's'})"
-        for v, n in sorted(by_stamp.items())]
+        f"{v} configured and not applied ({by_stamp[v]} unit{'' if by_stamp[v] == 1 else 's'})"
+        for v in sorted(by_stamp, key=lambda v: (rank.get(v, len(rank)), v))]
     return (", ".join(parts) + f": built headless by `sprint lane run` ({', '.join(ran)}), whose "
             f"command carries no effort flag, so each ran at its harness's own default")
 
@@ -4561,12 +4566,12 @@ def _dispatch_effort(root: Path, state: dict, state_rel: str, replay: dict | Non
     """The effort each unit's builder and reviewer were dispatched at, one cost figure per role,
     from the plan the run record names by its digest (`run_state.PLAN_DIGEST`), never from
     `routing.effort` at report time: the setting can change after the plan. A unit a headless
-    lane built is stated as configured and not applied where its command carried no effort flag
-    (`_builder_effort`). Cited to the run
-    record alone, since the plan sits under `.local/`, which no other clone holds. NOT MEASURED
-    when the record names no plan, the plan on disk is not the one it names, or no row carries a
-    stamp. A filed page's figures are replayed (`_page_readings`, and `revalidate` for an
-    unsigned page): the next run's plan overwrites the file this one read."""
+    lane built under a stamp other than `inherit` is stated as configured and not applied where
+    its command carried no effort flag (`_builder_effort`). Cited to the run record alone, since
+    the plan sits under `.local/`, which no other clone holds. NOT MEASURED when the record
+    names no plan, the plan on disk is not the one it names, or no row carries a stamp. A filed
+    page's figures are replayed (`_page_readings`, and `revalidate` for an unsigned page): the
+    next run's plan overwrites the file this one read."""
     if replay:
         return replay
     source, named = state_rel, state.get(run_state.PLAN_DIGEST)

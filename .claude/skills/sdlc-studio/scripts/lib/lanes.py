@@ -417,9 +417,12 @@ DOCGEN_TIMEOUT = 600
 
 
 def _generated_verbs(staged: list[str]) -> list[str]:
-    """The `docgen.py` verbs that regenerate a page among the `staged` paths: `surface` for the
-    command surface page, `references` for the reference index and `reading-guides` for any
-    reference page, the checks the pre-commit hook runs over the same paths."""
+    """The `docgen.py` verbs that regenerate a page among the `staged` paths, in that order:
+    `surface` for the command surface page, `references` for the reference index and
+    `reading-guides` for any reference page at the top of the skill directory, the surface page
+    among them. They are chosen by the generated page the lane staged, not by the sources the
+    pre-commit hook's drift checks are chosen by (a script, a reference page or a `help/`
+    file): a lane that staged a script and no surface page gets no `surface` run here."""
     verbs = []
     if SKILL_DIR + "reference-scripts-surface.md" in staged:
         verbs.append("surface")
@@ -1389,7 +1392,8 @@ def _run_git(cwd: Path, *args: str) -> subprocess.CompletedProcess:
 
 #: Each harness whose headless command takes a reasoning-effort flag, and the flag. None does in
 #: the headless form `headless_command` builds, so a headless lane runs at its harness's own
-#: default whatever effort `sprint plan` stamped, and its record says the stamp was not applied.
+#: default whatever effort `sprint plan` stamped, and its record says a stamp other than
+#: `inherit`, which asks for nothing, was not applied.
 HEADLESS_EFFORT_FLAGS: dict[str, str] = {}
 #: The plan `sprint plan --write` stamps each unit's `effort: {builder, reviewer}` on.
 PLAN = Path("sdlc-studio") / ".local" / "sprint-plan.json"
@@ -1835,7 +1839,8 @@ def effort_not_applied(root: Path | str, run_id: str | None) -> dict[str, list[s
     """Each unit a headless lane ran in `run_id` whose command carried no effort flag, with the
     harnesses that ran it so: a lane record of the run whose `effort` is empty. A record written
     before the field was kept carried none either, since no headless command took the flag
-    then. A record that cannot be read as UTF-8 JSON, or is another run's, is passed over."""
+    then. A record that cannot be read as UTF-8 JSON, or is another run's, is passed over, and a
+    run with no id counts none: a record naming no run is no run's."""
     out: dict[str, list[str]] = {}
     if not run_id:
         return out

@@ -5,8 +5,9 @@ worktree-isolated agent's command check refuses, so its brief says to build it i
 checkout. `lane run` always runs its CLI in a worktree, so it now refuses such a unit before the
 CLI starts, naming the main checkout, and the field is read exactly: `no home` is not `home`.
 
-Every case drives `sprint.py lane run` through `sprint.main` against `test_lane_run`'s throwaway
-repository, under its confined PATH of fake CLIs; no real harness CLI is ever called.
+Every lane run case drives `sprint.py lane run` through `sprint.main` against `test_lane_run`'s
+throwaway repository, under its confined PATH of fake CLIs; no real harness CLI is ever called.
+The shape list reads each value through `lane_home_isolated` itself, the reader `lane run` uses.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -54,11 +55,25 @@ class HomeIsolationLaneRunTests(base._LaneCase):
         self.assertNotEqual(self.root.resolve(),
                             Path(self._called("claude")["cwd"]).resolve())
 
+    def test_a_value_opening_with_home_is_not_home(self) -> None:
+        """MUTANT: the value's first word read, so `home only` refuses the run as home."""
+        self._isolation("home only")
+        rc, out = self._run("claude")
+        self.assertEqual(0, rc, out)
+        self.assertNotIn("main checkout", out)
+        self.assertEqual(1, len(self._records()))
+        self.assertNotEqual(self.root.resolve(),
+                            Path(self._called("claude")["cwd"]).resolve())
+
     def test_the_field_is_read_exactly(self) -> None:
         """The value itself decides: `home` in any case or in backticks is home; a sentence
-        that holds the word is not."""
+        that holds the word is not, wherever the word stands in it. MUTANTS: the first word
+        read, so a value opening with `home` and saying more is home; the value compared with
+        its case, its backticks or the spaces inside them."""
         for value, home in (("home", True), ("Home", True), ("`home`", True),
-                            ("no home", False), ("not home", False), ("homework", False),
+                            ("` home `", True), ("no home", False), ("not home", False),
+                            ("homework", False), ("home only", False),
+                            ("home (its tests set HOME)", False), ("home worktree", False),
                             ("home, then worktree", False), ("worktree", False), ("", False)):
             with self.subTest(value=value):
                 text = f"# {UNIT}: x\n\n> **Isolation:** {value}\n"

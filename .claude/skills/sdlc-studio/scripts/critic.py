@@ -3026,9 +3026,10 @@ def claim_surfaces(affects: list[str]) -> tuple[list[str], list[str]]:
 def vocabulary_refusals(named: dict, claims: list[dict], mutants: list[dict]) -> list[str]:
     """Every value a claims and mutants file holds outside what the record accepts, each with
     the values it accepts: a claim's surface outside `named` (keyed by `_surface_key`), a
-    ruling outside `CLAIM_RULINGS` and a mutant's result outside `MUTANT_RESULTS`, word for
-    word. An absent ruling or result is left to the checks that name it, as unruled or as
-    missing; [] when every value given is one the record accepts."""
+    ruling outside `CLAIM_RULINGS`, read in any case as the record reads it, and a mutant's
+    result outside `MUTANT_RESULTS`, word for word. An absent or blank ruling or result is left
+    to the checks that name it, a ruling as unruled and a result as `none`; [] when every value
+    given is one the record accepts."""
     out = []
     for n, entry in enumerate(claims, 1):
         surface = entry.get("surface")

@@ -103,7 +103,7 @@ links here rather than listing its own.
    (`persona_resolve.py resolve --seat engineering --render build`; see
    `reference-agent-prompt-template.md#seat-framing` - the stance never overrides the contract), or
    a fresh session per unit where the harness has no subagents. A parallel wave launches its first
-   agent alone and the rest after it has started, so they start on a warm shared prefix. Spawn each builder and its reviewer at the effort the lane brief names (`routing.effort`, [reference-config.md](reference-config.md#routing)). A headless lane (`sprint.py lane run`) cannot apply it: its command carries no effort flag, so the builder runs at its harness's own default, the lane record keeps the stamp beside `effort: null` and why, and the report states that unit's effort as configured and not applied.
+   agent alone and the rest after it has started, so they start on a warm shared prefix. Spawn each builder and its reviewer at the effort the lane brief names (`routing.effort`, [reference-config.md](reference-config.md#routing)). A headless lane (`sprint.py lane run`) cannot apply it: its command carries no effort flag, so the builder runs at its harness's own default, and for a stamp other than `inherit` the lane record keeps the stamp beside `effort: null` and why, and the report states that unit's effort as configured and not applied.
    `sprint.py lane brief` hands the worker the unit's criteria, its Affects, its files' history, the
    build-phase lessons, the author self-check and the commands that record it and commit the unit;
    the orchestrator waits on the worker's completion notification rather than polling;

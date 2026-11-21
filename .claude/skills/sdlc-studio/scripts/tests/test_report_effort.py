@@ -28,6 +28,7 @@ import test_evidence_annex_report as annex  # noqa: E402 - the annex read as a c
 import test_lean_report as lean  # noqa: E402 - the sealed fixture run the report is built over
 
 sr = lean.sr
+from lib import lanes  # noqa: E402 - the lane records the effort figure reads
 UNITS = ("US0001", "US0002", "US0004", "US0005")
 PLAN_REL = "sdlc-studio/.local/sprint-plan.json"
 KEYS = ("effort_builder", "effort_reviewer")
@@ -223,6 +224,57 @@ class ReportEffortTests(unittest.TestCase):
         for rendered in (md, html):
             self.assertIn(f"builder {value}; reviewer medium (4 units)", rendered)
             self.assertNotIn("builder low (4 units)", rendered)
+
+    def test_a_run_built_wholly_headless_lists_each_stamp_lowest_first(self) -> None:
+        """BG1539 AC1, every unit built headless, each under its own stamp. MUTANTS: the
+        not-applied counts in the order of their names (high before low) or reversed; a stamp
+        `sprint plan` never writes counted before the ones it does, or two such stamps in the
+        order their rows came rather than by name; the harnesses left out; the in-session
+        counts kept when no unit was built in session, opening the value with ", "; the
+        harnesses named in the order their rows came rather than by name."""
+        self.plan({"US0001": _effort("high", "medium"), "US0002": _effort("low", "medium"),
+                   "US0004": _effort("max", "medium"), "US0005": _effort("medium", "medium"),
+                   "US0006": _effort("xhigh", "medium"), "US0007": _effort("ultra", "medium"),
+                   "US0003": _effort("turbo", "medium")})
+        # the plan's first row ran under codex, so the harnesses read in row order would not be
+        # in the order of their names
+        self.headless("US0001", None, harness="codex")
+        for uid in ("US0002", "US0003", "US0004", "US0005", "US0006", "US0007"):
+            self.headless(uid, None)
+        page, md, _html = self.built()
+        value = self.cost(page)["effort_builder"]["value"]
+        apart = ", ".join(f"{v} configured and not applied (1 unit)"
+                          for v in ("low", "medium", "high", "xhigh", "max", "turbo", "ultra"))
+        self.assertEqual(f"{apart}: built headless by `sprint lane run` (claude, codex), whose "
+                         f"command carries no effort flag, so each ran at its harness's own "
+                         f"default", value)
+        self.assertIn(f"builder {value}; reviewer medium (7 units)", md)
+
+    def test_a_headless_unit_asking_for_no_effort_is_counted_as_stamped(self) -> None:
+        """BG1539 AC1's exemption: a headless unit stamped `inherit` asked its command to carry
+        nothing, and one with no stamp asked for nothing, so each is counted as it was stamped,
+        never as configured and not applied. MUTANTS: the `inherit` exemption dropped (reads
+        "inherit configured and not applied"); a unit with no stamp counted apart (reads "None
+        configured and not applied"), or its absent stamp read as a mapping."""
+        self.plan({"US0001": _effort("inherit", "medium"), "US0002": None,
+                   "US0004": _effort("low", "medium"), "US0005": _effort("low", "medium")})
+        self.headless("US0001", None)
+        self.headless("US0002", None, harness="codex")
+        page, md, _html = self.built()
+        value = self.cost(page)["effort_builder"]["value"]
+        self.assertEqual("inherit (1 unit), low (2 units), not stamped (1 unit)", value)
+        self.assertNotIn("not applied", md)
+
+    def test_a_record_of_no_run_is_never_counted_as_not_applied(self) -> None:
+        """MUTANT: `effort_not_applied`'s guard on a run with no id dropped, so a run record
+        naming none counts every lane record that names none either, its own or not."""
+        for run_id in (None, ""):
+            self.headless(f"US000{1 if run_id is None else 2}", None, run_id=run_id)
+        self.headless("US0004", None, harness="codex")
+        for run_id in (None, ""):
+            with self.subTest(run_id=run_id):
+                self.assertEqual({}, lanes.effort_not_applied(self.root, run_id))
+        self.assertEqual({"US0004": ["codex"]}, lanes.effort_not_applied(self.root, lean.RUN))
 
     def test_an_in_session_unit_still_reads_as_dispatched(self) -> None:
         """BG1539 AC3. MUTANTS: every unit read as not applied once any lane ran headless; a

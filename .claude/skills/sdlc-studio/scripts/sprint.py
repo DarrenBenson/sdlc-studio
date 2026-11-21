@@ -3393,7 +3393,7 @@ def lane_home_isolated(text: str) -> bool:
     """True when the unit's header declares `> **Isolation:** home`: its tests set a temporary
     HOME, so its lane is the main checkout rather than a worktree. The value is read exactly,
     in any case and with or without backticks: any other value, a sentence holding the word
-    (`no home`) included, or none, leaves it a worktree lane."""
+    wherever it stands (`no home`, `home only`) included, or none, leaves it a worktree lane."""
     raw = sdlc_md.extract_field(text, LANE_ISOLATION_FIELD) or ""
     return raw.strip().strip("`").strip().lower() == LANE_HOME
 
