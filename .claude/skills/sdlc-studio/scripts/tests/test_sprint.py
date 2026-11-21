@@ -17772,6 +17772,71 @@ class UnspecifiedCriterionNamedAtPlanTests(unittest.TestCase):
             self.assertEqual(0, rc, out)
             self.assertNotIn("no Verify line", out, "a fully specified unit was named")
 
+    def _cli_apart(self, root: Path, *argv: str) -> tuple[int, str, str]:
+        """`_cli`, with stdout and stderr kept apart, so a JSON stdout can be parsed whole."""
+        out, err = io.StringIO(), io.StringIO()
+        with _no_transcript_store(root), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(err):
+            rc = _load().main([*argv, "--root", str(root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def test_a_json_plan_names_a_criterion_with_no_verify_line(self) -> None:
+        """The JSON plan carries each unit's criteria with no Verify line in its own field, and
+        names them on stderr, so its stdout stays one JSON document. MUTANTS: the JSON branch
+        returning before the criteria are read, as it did, so neither stream names BG0002; the
+        field holding every unit, a fully specified one included."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            (root / "w.txt").write_text("BG0001\nBG0002\n", encoding="utf-8")
+            rc, out, err = self._cli_apart(root, "plan", "--worklist", str(root / "w.txt"),
+                                           "--no-fetch", "--format", "json")
+            self.assertEqual(0, rc, out + err)
+            plan = json.loads(out)
+            self.assertEqual({"BG0002": ["AC2 (it says so)"]}, plan["unspecified_criteria"])
+            named = [ln for ln in err.splitlines() if "no Verify line" in ln]
+            self.assertEqual(1, len(named), err)
+            self.assertIn("BG0002", named[0])
+            self.assertIn("AC2 (it says so)", named[0])
+            rc, out, err = self._cli_apart(root, "plan", "--worklist", str(root / "w.txt"),
+                                           "--no-fetch")
+            self.assertEqual(0, rc, out + err)
+            self.assertIn("BG0002: AC2 (it says so) has no Verify line", out, "text: stdout")
+            self.assertNotIn("no Verify line", err)
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            rc, out, err = self._cli_apart(root, "plan", "--worklist", str(root / "w.txt"),
+                                           "--no-fetch", "--format", "json")
+            self.assertEqual(0, rc, out + err)
+            self.assertEqual({}, json.loads(out)["unspecified_criteria"])
+            self.assertNotIn("no Verify line", err, "a fully specified batch was named")
+            self.assertNotIn("Unspecified criteria", err, "a header over no criteria")
+
+    def test_a_json_batch_add_names_the_criterion_on_stderr_alone(self) -> None:
+        """`batch add --format json` names the criterion on stderr and leaves stdout one JSON
+        document, and a text `batch add` names it on stdout. MUTANTS: the line printed to stdout
+        whatever the format, a second document after the first, so stdout no longer parses; the
+        line printed to stderr whatever the format."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._repo(root)
+            (root / "w.txt").write_text("BG0001\n", encoding="utf-8")
+            rc, out, err = self._cli_apart(root, "plan", "--worklist", str(root / "w.txt"),
+                                           "--write", "--no-fetch")
+            self.assertEqual(0, rc, out + err)
+            rc, out, err = self._cli_apart(root, "batch", "add", "BG0003", "--reason", "t",
+                                           "--format", "json")
+            self.assertEqual(0, rc, out + err)
+            self.assertIsInstance(json.loads(out), dict)
+            self.assertNotIn("no Verify line", out)
+            named = [ln for ln in err.splitlines() if "no Verify line" in ln]
+            self.assertEqual(1, len(named), err)
+            self.assertIn("BG0003", named[0])
+            self.assertIn("AC2 (it says so)", named[0])
+            rc, out, err = self._cli_apart(root, "batch", "add", "BG0002", "--reason", "t")
+            self.assertEqual(0, rc, out + err)
+            self.assertIn("BG0002: AC2 (it says so) has no Verify line", out, "text: stdout")
+            self.assertNotIn("no Verify line", err)
+
 
 if __name__ == "__main__":
     unittest.main()

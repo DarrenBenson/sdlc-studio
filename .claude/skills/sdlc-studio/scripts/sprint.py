@@ -4684,15 +4684,24 @@ def _unspecified_line(uid: str, missing: list[str]) -> str:
             f"give it one before the unit is built")
 
 
-def _render_unspecified_criteria(data: dict, repo_root) -> None:
-    """The batch's criteria with no Verify line, named per unit when the plan is printed, so the
-    gap is met before a lane builds the unit rather than at `lane accept` after it."""
-    lines = [_unspecified_line(it["id"], missing) for it in data.get("batch") or []
-             if isinstance(it, dict) and it.get("id")
-             and (missing := _unspecified_criteria(repo_root, it["id"]))]
-    if lines:
-        print("  Unspecified criteria, each named below (advisory - nothing is refused here):")
-        print("\n".join(lines))
+def _unspecified_by_unit(data: dict, repo_root) -> dict[str, list[str]]:
+    """Each batch unit of the plan `data` that holds a criterion with no Verify line, with
+    those criteria (`_unspecified_criteria`); a fully specified unit is left out."""
+    return {it["id"]: missing for it in data.get("batch") or []
+            if isinstance(it, dict) and it.get("id")
+            and (missing := _unspecified_criteria(repo_root, it["id"]))}
+
+
+def _render_unspecified_criteria(unspecified: dict[str, list[str]], out=None) -> None:
+    """The batch's criteria with no Verify line (`_unspecified_by_unit`), named per unit when
+    the plan is printed, so the gap is met before a lane builds the unit rather than at `lane
+    accept` after it. `out` is stdout unless given: the JSON plan names them on stderr, so the
+    advisory adds nothing to the JSON it prints."""
+    if unspecified:
+        print("  Unspecified criteria, each named below (advisory - nothing is refused here):",
+              file=out)
+        print("\n".join(_unspecified_line(uid, missing) for uid, missing in unspecified.items()),
+              file=out)
 
 
 def _render_registry_advisories(data: dict) -> None:
@@ -5310,9 +5319,13 @@ def _render_capacity(data: dict) -> None:
 
 
 def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, epics) -> None:
-    """Render a built plan to stdout: JSON, or the human batch header + provenance + waves."""
+    """Render a built plan to stdout: JSON, or the human batch header + provenance + waves.
+    The JSON carries `unspecified_criteria`, each unit holding a criterion with no Verify line
+    with those criteria ({} when there is none), and names them on stderr as well."""
+    unspecified = _unspecified_by_unit(data, args.root)
     if args.format == "json":
-        print(json.dumps(data, indent=2))
+        print(json.dumps({**data, "unspecified_criteria": unspecified}, indent=2))
+        _render_unspecified_criteria(unspecified, sys.stderr)
         return
     scope = f", epics {', '.join(sorted(epics))}" if epics else ""
     src = f"worklist {worklist}" if worklist else " + ".join(f"{k}s {s}" for k, s in queries)
@@ -5327,7 +5340,7 @@ def _render_plan(args: argparse.Namespace, data: dict, queries: list, worklist, 
     _render_clusters(data)
     _render_affects_advisories(data, args.root)
     _render_registry_advisories(data)
-    _render_unspecified_criteria(data, args.root)
+    _render_unspecified_criteria(unspecified)
     _render_triage(data)
     _render_decompose(data)
     _render_downgrades(data)
@@ -9408,16 +9421,22 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
     `--tokens` is given. An agent with no readable transcript is warned about, naming the id and
     the directory searched, and the return records no priced cost.
 
-    A return of one unit naming `--agent` and no `--tokens`, whose unit `lane land` already
-    priced from that same transcript as its share of a lane split by points, keeps the land's
-    record rather than re-pricing the unit with the whole transcript (`_lane_landed_share`).
+    A return of one unit naming `--agent` and no `--tokens`, whose unit already holds its share
+    of a lane split by points read from that same transcript (`_lane_landed_share`: written by
+    `lane land`, or by an earlier return of several units), keeps that share rather than
+    re-pricing the unit with the whole transcript. The `--minutes` and `--model` the return
+    supplies are recorded on the kept share; what it does not supply stays as the share holds it.
 
-    `args.land` is `lane land`'s own pricing (`_lane_land_price`): the minutes, when none are
-    given, are the transcript's span from its first to its last message time
-    (`_lane_transcript_minutes`), split by points as the tokens are, and no earlier record is
-    kept in place of the reading."""
+    Otherwise, with the `--agent` transcript read and no `--minutes`, the minutes are the
+    transcript's span from its first to its last message time (`_lane_transcript_minutes`),
+    split by points as the tokens are, so a return pricing the transcript again records the
+    minutes its land did. A transcript that spans nothing records none; the land, where no
+    `--minutes` can be given, says why, and a return says nothing, as before it read the span.
+    `args.land` is `lane land`'s own pricing (`_lane_land_price`), which keeps no earlier record
+    in place of its reading."""
     tokens, minutes = getattr(args, "tokens", None), getattr(args, "minutes", None)
     agent, land = getattr(args, "agent", None), bool(getattr(args, "land", False))
+    model = getattr(args, "model", None)
     if tokens is None and minutes is None and agent is None:
         return
     if tokens is None and agent is None:
@@ -9442,14 +9461,25 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
             print(f"WARNING --agent {agent} was not priced: {reading['reason']}, so "
                   f"{whose} no priced cost", file=sys.stderr)
             reading = None
+    shares = None
     if reading is not None and tokens is None and len(results) == 1 and not land:
         kept = _lane_landed_share(root, results[0]["unit"], reading)
-        if kept is not None:
+        if kept is not None and minutes is None and model is None:
             results[0]["agent_total"] = kept
             return
-    if land and reading is not None and minutes is None:
+        if kept is not None:
+            # the share kept, recorded again with what this return supplies beside it
+            said = [f"{minutes:g} minutes" if minutes is not None else "",
+                    f"model {model}" if model is not None else ""]
+            print(f"{results[0]['unit']}: this return's {' and '.join(w for w in said if w)} go "
+                  f"on the kept split")
+            minutes = minutes if minutes is not None else kept.get("minutes")
+            model = model if model is not None else kept.get("model")
+            shares = [(kept["tokens"], _lane_kept_reading(kept), minutes,
+                       kept[run_state.APPORTIONED])]
+    if shares is None and reading is not None and minutes is None:
         minutes, why = _lane_transcript_minutes(Path(reading["source"]))
-        if minutes is None:
+        if minutes is None and land:
             print(f"WARNING no minutes were recorded beside the tokens: {why}", file=sys.stderr)
     if tokens is None and reading is None:
         if minutes is not None:
@@ -9457,7 +9487,7 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
                   "beside them", file=sys.stderr)
         return
     whole = tokens if tokens is not None else reading["tokens"]
-    shares = _lane_shares(whole, reading, minutes, weights)
+    shares = shares or _lane_shares(whole, reading, minutes, weights)
     if shares is None:
         print(f"WARNING {flag} was not recorded: its {whole:,} tokens are too few to split "
               f"between {len(results)} units by their {sum(weights)} points", file=sys.stderr)
@@ -9472,7 +9502,7 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
                 note=f"sprint lane return ({res['outcome']})", unit=res["unit"], minutes=mins,
                 reading=read, provenance=(run_state.SUPPLIED if tokens is not None
                                           else run_state.READ_FROM_TRANSCRIPT),
-                apportioned=mark, model=getattr(args, "model", None))),
+                apportioned=mark, model=model)),
             unreadable,
             f"{res['unit']}'s builder total could not be recorded (the run state is unreadable), "
             f"so its tokens and minutes will not reach the page")
@@ -9493,10 +9523,11 @@ def _lane_agent_totals(root: Path, args: argparse.Namespace, results: list[dict]
 
 
 def _lane_transcript_minutes(path: Path) -> tuple[float | None, str]:
-    """The minutes a builder's transcript spans, from its first to its last message time, or
-    (None, why): a file that cannot be read as UTF-8, a line that is not JSON, and a record with
-    no `timestamp` or one `sdlc_md.parse_iso8601` cannot read are passed over, and a transcript
-    with fewer than two readable times, or whose times do not move, spans nothing to measure."""
+    """The minutes a builder's transcript spans, from its first to its last message time, as
+    (minutes, ""), or (None, why) for a file that cannot be read as UTF-8 or at all, and for a
+    transcript with fewer than two readable times, or whose times do not move, which spans
+    nothing to measure. A line that is not JSON, a line that is not an object, and a record with
+    no `timestamp` or one `sdlc_md.parse_iso8601` cannot read are passed over."""
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeDecodeError) as exc:
@@ -9516,16 +9547,27 @@ def _lane_transcript_minutes(path: Path) -> tuple[float | None, str]:
     return (max(times) - min(times)).total_seconds() / 60, ""
 
 
+def _lane_kept_reading(kept: dict) -> dict:
+    """The reading a kept share (`_lane_landed_share`) was recorded with, rebuilt from the
+    record: its priced cost, components, per-model split and transcript, so recording the share
+    again writes the same figures in its place."""
+    split = kept.get(run_state.BY_MODEL)
+    return {"priced": kept.get("priced"), "components": dict(kept.get("components") or {}),
+            "source": kept.get("transcript"), **({run_state.BY_MODEL: split} if split else {})}
+
+
 def _lane_landed_share(root: Path, unit: str, reading: dict) -> dict | None:
-    """The delegated record `lane land` wrote for `unit` from the transcript `reading` names as
-    the unit's share of a lane split by points, or None when it wrote none: the record a return
-    naming the same builder keeps rather than re-pricing the unit with the whole transcript,
-    which would charge every unit of the lane the builder's whole total. A transcript that has
-    grown since the land split it is warned about, and the land's share is still the one kept."""
+    """The latest delegated record already written for `unit` from the transcript `reading`
+    names as the unit's share of a lane split by points, or None when there is none. `lane
+    land` writes one for each unit of a lane of several, and so does a return of several units
+    naming the builder: either is the record a return of the one unit naming the same builder
+    keeps rather than re-pricing the unit with the whole transcript, which would charge every
+    unit of the lane the builder's whole total. A transcript that has grown since it was split
+    is warned about, and the share already recorded is still the one kept."""
     uid = sdlc_md.norm_id(unit)
     state = _lane_run_state("landed_share", lambda: run_state.read(root), {},
-                            f"the run state could not be read, so whether {unit}'s landing "
-                            f"already priced it from the same transcript is UNKNOWN")
+                            f"the run state could not be read, so whether {unit}'s share was "
+                            f"already recorded from the same transcript is UNKNOWN")
     kept = next((r for r in reversed(state.get(run_state.DELEGATED) or [])
                  if isinstance(r, dict) and r.get("unit") == uid
                  and r.get("transcript") == reading.get("source")
@@ -9533,20 +9575,22 @@ def _lane_landed_share(root: Path, unit: str, reading: dict) -> dict | None:
     if kept is None:
         return None
     part = kept[run_state.APPORTIONED]
-    print(f"{unit}: kept the split its landing recorded from {reading['source']}: "
+    print(f"{unit}: kept the split already recorded from {reading['source']}: "
           f"{kept.get('tokens'):,} tokens, {part.get('points')} of {part.get('of')} points of "
           f"{part.get('tokens'):,}; the whole transcript is not charged to it again")
     if part.get("tokens") != reading.get("tokens"):
         print(f"WARNING {unit}'s builder transcript now reads {reading.get('tokens'):,} tokens, "
-              f"not the {part.get('tokens'):,} its landing split between "
-              f"{part.get('units')} units, so the share kept is the landing's", file=sys.stderr)
+              f"not the {part.get('tokens'):,} split between {part.get('units')} units when "
+              f"its share was recorded, so the share kept is the one recorded then",
+              file=sys.stderr)
     return kept
 
 
 def _lane_land_price(root: Path, units: list[str], agent: str) -> dict[str, tuple[bool, str]]:
     """`lane land`'s pricing: the landed units' returns priced from builder `agent`'s own
     transcript through `_lane_agent_totals`, the record `lane return --agent` writes, so a later
-    return reading the same transcript for the unit replaces it rather than counting it twice.
+    return reading the same transcript for the unit replaces it, or keeps it where it is the
+    unit's share of a split (`_lane_landed_share`), rather than counting it twice.
     Each unit answers (priced, what was said), the warnings `_lane_agent_totals` printed carried
     in what was said rather than printed beside it. Several units share one transcript, so each
     is priced with its share of it, split between them by their Points, and with its share of
@@ -10134,34 +10178,41 @@ def _lane_reviewer_cell(root, unit: str | None, reviewer: str | None) -> tuple:
 def _lane_carried_reviewer(root, unit: str | None, reviewer: str | None,
                            cell: str | None) -> tuple:
     """The reviewer `lane accept` records a carried unit's verdict under, as (value, None), or
-    (None, refusal). A unit carried at the review cap (`critic.carried_by`) reaches Done only on
-    an APPROVE from a reviewer whose REJECT it carried, and the later run that delivers it again
-    counts its rounds afresh, so `critic.py record` would take a verdict under any id there and
-    an APPROVE under another one would be stranded. With no `--reviewer` the value defaults to
-    the latest of those reviewers, as recorded; a `--reviewer` whose value, or whose Reviewer
-    cell (`_lane_reviewer_cell`), names none of them is refused, naming them. A unit never
-    carried, or one no unanswered REJECT stands against, passes `reviewer` as given."""
+    (None, refusal), or (None, None) when the carry has no say. A unit carried at the review cap
+    (`critic.carried_by`) reaches Done only on an APPROVE from a reviewer whose REJECT it
+    carried, paired with that REJECT by its whole recorded id (`critic._unanswered_rejects`),
+    and the later run that delivers it again counts its rounds afresh, so `critic.py record`
+    would take a verdict under any id there and an APPROVE under another one would be stranded.
+    The value is the id one of those REJECTs was recorded under, exactly as recorded, bare or
+    with its seat group: with no `--reviewer`, the reviewer of the latest of them; otherwise the
+    one the `--reviewer` value, or its Reviewer cell (`_lane_reviewer_cell`), names. A
+    `--reviewer` naming none of them is refused, naming them, latest first. A unit never
+    carried, or one no unanswered REJECT stands against, has (None, None), and its verdict is
+    recorded under the Reviewer cell as for any other unit."""
     import critic  # noqa: PLC0415 - deferred sibling, as elsewhere in this module
     bug = critic.carried_by(root, unit) if unit else None
     if not bug:
-        return reviewer, None
+        return None, None
     rows = critic._unanswered_rejects(critic._live_verdict_rows(root, unit))  # noqa: SLF001
-    owed = list(dict.fromkeys(str(r.get("reviewer") or "").strip() for r in rows
+    # latest first, so the default is the reviewer whose REJECT was recorded last
+    owed = list(dict.fromkeys(str(r.get("reviewer") or "").strip() for r in reversed(rows)
                               if str(r.get("reviewer") or "").strip()))
     if not owed:
-        return reviewer, None
+        return None, None
     if not reviewer or not reviewer.strip():
         print(f"{unit} was carried at the review cap ({bug} holds the findings): --reviewer "
-              f"defaults to {owed[-1]}, whose REJECT it carried", file=sys.stderr)
-        return owed[-1], None
-    if any(critic.same_identity(w, given) for w in owed for given in (reviewer, cell) if given):
-        return reviewer, None
+              f"defaults to {owed[0]}, whose REJECT it carried", file=sys.stderr)
+        return owed[0], None
+    named = next((w for w in owed for given in (reviewer, cell)
+                  if given and critic.same_identity(w, given)), None)
+    if named:
+        return named, None
     return None, (f"sprint lane accept refused: {unit} was carried at the review cap ({bug} "
                   f"holds the findings) and reaches Done only on an APPROVE from the reviewer "
                   f"whose REJECT it carried, so a verdict under --reviewer {reviewer.strip()!r} "
                   f"would be stranded and nothing was recorded. Name "
                   f"{' or '.join(repr(w) for w in owed)}, or leave --reviewer off to record "
-                  f"under {owed[-1]!r}.")
+                  f"under {owed[0]!r}.")
 
 
 def _lane_unspecified_refusal(root, unit: str | None, verdict) -> str | None:
@@ -10251,9 +10302,9 @@ def cmd_lane(args: argparse.Namespace) -> int:
         carried, refused = _lane_carried_reviewer(args.root, unit, given, reviewer)
         if refused:
             refusal = refusal or refused
-        elif carried != given and not refusal:
-            # a carried unit's default reviewer, given the seat group a --reviewer value gets
-            reviewer, refusal = _lane_reviewer_cell(args.root, unit, carried)
+        elif carried:
+            # the id the carried REJECT was recorded under, as recorded, so the APPROVE answers it
+            reviewer, refusal = carried, None
         # The author is read once, here, and handed on, so the self-review check and the row
         # `lanes.accept` records judge the same pair.
         author = _lane_author(args.root, unit, getattr(args, "author", None))
@@ -14716,7 +14767,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "delegated total tagged to the unit; optional")
     ln.add_argument("--minutes", type=_lane_positive_minutes, default=None, metavar="M",
                     help="(return, accept) the builder agent's own reported minutes, recorded with "
-                         "--tokens; optional")
+                         "--tokens or --agent; with --agent and none given, the span of its "
+                         "transcript from its first to its last message time; optional")
     ln.add_argument("--agent", default=None, metavar="ID",
                     help="(return, accept) the builder agent's id: its transcript agent-ID.jsonl in this "
                          "session's subagents directory is read once per message and its priced "

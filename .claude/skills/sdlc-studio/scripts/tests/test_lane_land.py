@@ -22,6 +22,7 @@ import sys
 import tempfile
 import unittest
 import unittest.mock
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -879,9 +880,10 @@ class _PricedFixture(_LaneFixture):
 class LandPricesTheBuilderTests(_PricedFixture):
     """BG1330. `lane land` read the builder's id off its `agent-<id>` worktree only as the
     self-check's author and recorded no return, so a unit no one returned by hand with `lane
-    return --agent` read NOT MEASURED. Each case lands through `sprint.py lane land` with HOME,
-    CLAUDE_CONFIG_DIR and XDG_DATA_HOME on a temporary harness store, never the operator's, and
-    prices against the fixture store's own weight table (`test_meter_reads_true`)."""
+    return --agent` read NOT MEASURED. Each case but one lands through `sprint.py lane land`,
+    the one splitting a lane by `lane return` alone, with HOME, CLAUDE_CONFIG_DIR and
+    XDG_DATA_HOME on a temporary harness store, never the operator's, and prices against the
+    fixture store's own weight table (`test_meter_reads_true`)."""
 
     def test_a_landed_unit_is_priced_from_its_builders_transcript(self) -> None:
         self._builder_says(BUILD_1, BUILD_2)
@@ -1004,6 +1006,144 @@ class LandPricesTheBuilderTests(_PricedFixture):
         self.assertEqual((meter._tokens(parts), meter._priced(parts), None),
                          (recs[0]["tokens"], recs[0]["priced"], recs[0].get(run_state.APPORTIONED)))
         self.assertNotIn("kept the split", done.stdout + done.stderr)
+
+    def _land_two(self, *, timed: bool = False) -> dict[str, dict]:
+        """A two-unit lane of 2 points each landed from this builder's one transcript, split by
+        points; `timed`, its two messages written 20 minutes apart, so each share holds 10 of
+        them. Each unit's landed record."""
+        if timed:
+            start = datetime(2026, 11, 20, 9, 0, tzinfo=timezone.utc)
+            meter._Transcripts._append(self.builder, [
+                *self.tx._records("msg_t0", BUILD_1, start, str(self.wt)),
+                *self.tx._records("msg_t1", BUILD_2, start + timedelta(minutes=20),
+                                  str(self.wt))])
+        else:
+            self._builder_says(BUILD_1, BUILD_2)
+        for rel, body in (("src/a.py", "A = 2\n"), (f"changelog.d/{A}.md", "a is two\n"),
+                          ("src/b.py", "B = 2\n"), (f"changelog.d/{B}.md", "b is two\n")):
+            self._stage(rel, body)
+        self._hand_in(units=(A, B), message=f"feat({A}): a and b are two")
+        r = self._land(A, B)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        landed = {unit: self._returns(unit) for unit in (A, B)}
+        for unit, recs in landed.items():
+            self.assertEqual(1, len(recs), f"{unit}: {r.stdout + r.stderr}")
+        return {unit: recs[0] for unit, recs in landed.items()}
+
+    def _return(self, *args: str) -> subprocess.CompletedProcess:
+        """`sprint.py lane return` with `args`, through its entry point."""
+        return subprocess.run(
+            [sys.executable, "-B", str(SPRINT), "lane", "return", *args, "--root",
+             str(self.root)], capture_output=True, text=True, timeout=600, cwd=str(self.root),
+            env=self._env(), check=False)
+
+    def test_an_accept_keeping_the_split_records_its_minutes_and_model(self) -> None:
+        """The land read no minutes (its transcript carries no message times); the accept that
+        keeps the split records the --minutes and --model it supplies on the kept share, whose
+        tokens and split are unchanged, and says so; a return naming only --model records the
+        model alone and leaves the share without minutes. MUTANTS: the kept split returned as
+        it stands, as it was, so both flags are dropped without a word; the line naming an empty
+        flag; the per-model split lost when the share is recorded again."""
+        landed = self._land_two()
+        self.assertNotIn("minutes", landed[A])
+        done = self._accept(A, "--agent", self.AGENT, "--minutes", "30", "--model", "claude-x")
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        self.assertIn("kept the split", done.stdout)
+        self.assertIn(f"{A}: this return's 30 minutes and model claude-x go on the kept split",
+                      done.stdout)
+        recs = self._returns(A)
+        self.assertEqual(1, len(recs), done.stdout + done.stderr)
+        self.assertEqual((landed[A]["tokens"], landed[A]["priced"], 30.0, "claude-x",
+                          landed[A][run_state.APPORTIONED]),
+                         (recs[0]["tokens"], recs[0]["priced"], recs[0].get("minutes"),
+                          recs[0].get("model"), recs[0].get(run_state.APPORTIONED)))
+        self.assertIsNotNone(landed[A].get(run_state.BY_MODEL), "premise: a per-model split")
+        for key in ("components", run_state.BY_MODEL, "transcript", "agent", "provenance"):
+            with self.subTest(key=key):
+                self.assertEqual(landed[A].get(key), recs[0].get(key))
+        self.assertEqual([landed[B]], self._returns(B), "the other unit's share moved")
+        back = self._return("--units", B, "--agent", self.AGENT, "--model", "claude-y")
+        self.assertIn(f"{B}: this return's model claude-y go on the kept split", back.stdout)
+        recs = self._returns(B)
+        self.assertEqual((1, landed[B]["tokens"], None, "claude-y"),
+                         (len(recs), recs[0]["tokens"], recs[0].get("minutes"),
+                          recs[0].get("model")), back.stdout + back.stderr)
+
+    def test_a_kept_split_keeps_the_minutes_and_model_a_return_does_not_supply(self) -> None:
+        """An accept naming only --model keeps the minutes the land split, and a later return
+        naming only --minutes keeps that model. MUTANTS: the kept share's minutes dropped when
+        none are given; its model dropped when none is given."""
+        landed = self._land_two(timed=True)
+        self.assertAlmostEqual(10.0, landed[A]["minutes"], delta=1 / 60)
+        done = self._accept(A, "--agent", self.AGENT, "--model", "claude-x")
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        rec = self._returns(A)[0]
+        self.assertEqual((landed[A]["minutes"], "claude-x", landed[A]["tokens"]),
+                         (rec.get("minutes"), rec.get("model"), rec["tokens"]))
+        back = self._return("--units", A, "--agent", self.AGENT, "--minutes", "4")
+        rec = self._returns(A)[0]
+        self.assertEqual((4.0, "claude-x", landed[A]["tokens"]),
+                         (rec.get("minutes"), rec.get("model"), rec["tokens"]),
+                         back.stdout + back.stderr)
+
+    def test_an_accept_naming_another_agent_prices_from_that_agents_transcript(self) -> None:
+        """Only a record read from the same transcript is kept: an accept naming another agent
+        prices the unit from that agent's own transcript, whole. MUTANT: the transcript match
+        dropped, so the land's share from the first builder is kept and the second agent's
+        transcript never read."""
+        other = "0a0b0c0d0e0f"
+        landed = self._land_two()
+        self._builder_says(BUILD_2, agent=other)
+        done = self._accept(A, "--agent", other)
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        self.assertNotIn("kept the split", done.stdout + done.stderr)
+        theirs = [r for r in self._returns(A)
+                  if r.get("transcript") == str(self.tx.subagents / f"agent-{other}.jsonl")]
+        self.assertEqual(1, len(theirs), done.stdout + done.stderr)
+        self.assertEqual((meter._tokens(meter._sum(BUILD_2)), None),
+                         (theirs[0]["tokens"], theirs[0].get(run_state.APPORTIONED)))
+        self.assertIn(landed[A], self._returns(A), "the land's share was replaced")
+
+    def test_an_accept_naming_tokens_records_them_over_the_split(self) -> None:
+        """An accept naming the builder and its own --tokens records those tokens, not the
+        land's share. MUTANT: the kept split taken whatever --tokens says, so the total the
+        operator gave is dropped."""
+        self._land_two()
+        done = self._accept(A, "--agent", self.AGENT, "--tokens", "12345")
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        self.assertNotIn("kept the split", done.stdout + done.stderr)
+        recs = self._returns(A)
+        self.assertEqual(1, len(recs), done.stdout + done.stderr)
+        self.assertEqual((12345, run_state.SUPPLIED), (recs[0]["tokens"], recs[0]["provenance"]))
+
+    def test_a_grown_transcript_is_warned_about_and_the_split_kept(self) -> None:
+        """The builder's transcript grew after the land split it: the accept keeps the land's
+        share and warns, naming both totals. MUTANT: the warning dropped, so a figure the page
+        will not show is passed over in silence."""
+        landed = self._land_two()
+        before = meter._tokens(meter._sum(BUILD_1, BUILD_2))
+        meter._Transcripts._append(self.builder, self.tx._records("msg_grown", BUILD_2, None,
+                                                                  str(self.wt)))
+        after = meter._tokens(meter._sum(BUILD_1, BUILD_2, BUILD_2))
+        done = self._accept(A, "--agent", self.AGENT)
+        self.assertEqual(0, done.returncode, done.stdout + done.stderr)
+        self.assertIn(f"WARNING {A}'s builder transcript now reads {after:,} tokens, not the "
+                      f"{before:,} split between 2 units when its share was recorded",
+                      done.stderr)
+        self.assertEqual([landed[A]], self._returns(A))
+
+    def test_a_split_a_return_of_several_units_wrote_is_kept_too(self) -> None:
+        """A split is kept whoever wrote it: with no land, a return of both units splits the
+        transcript, and a later return of one unit naming the same builder keeps its share,
+        saying it was already recorded rather than that a landing recorded it."""
+        self._builder_says(BUILD_1, BUILD_2)
+        first = self._return("--units", A, B, "--agent", self.AGENT)
+        share = self._returns(A)
+        self.assertEqual(1, len(share), first.stdout + first.stderr)
+        again = self._return("--units", A, "--agent", self.AGENT)
+        self.assertEqual(share, self._returns(A), again.stdout + again.stderr)
+        self.assertIn(f"{A}: kept the split already recorded from {self.builder}", again.stdout)
+        self.assertNotIn("landing", again.stdout)
 
 
 
