@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 2
-> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1470.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py
+> **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1470.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive.py, .claude/skills/sdlc-studio/scripts/tests/test_sprint_drive_step.py
 > **Evidence:** Run thirteen, the US1067/US1068 repair land, 2026-11-15 (scratch land-closefix.txt): committed d59d4519, then the rebase was refused.
 > **Created:** 2026-11-15
 > **Created-by:** sdlc-studio file
@@ -39,3 +39,4 @@ Before the commit, have lane land check for unstaged or untracked changes in the
 | --- | --- | --- |
 | 2026-11-15 | sdlc-studio | Filed |
 | 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: its preflight now refuses the stopped-after-commit fixture's blocking file up front, so that test creates the file after the preflight |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: its AC2 also changes the drive-step twin of the stopped-after-commit test, which now writes its late file after the preflight |

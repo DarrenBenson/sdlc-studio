@@ -1,0 +1,70 @@
+{
+  "unit": "BG0983",
+  "digest": "d206a3e1357abfbb at ef30c7b14e4d",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a789164808837c07b/BG0983-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the whole ledger is read again inside a run",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    since = _delivery_base(repo_root, unit) if phase == \"delivery\" else 0\n",
+      "new": "    since = 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit the run holds and never reviewed reads the whole ledger",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    return base if isinstance(base, int) else None\n",
+      "new": "    return base if isinstance(base, int) else 0\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the rows past the base are dropped too",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if ahead > 0:\n            ahead -= 1\n            continue\n",
+      "new": "        if True:\n            continue\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_approve_in_the_run_covers",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the run's scoping is applied outside a run",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    if not run_state.batch_holds(state, unit):\n        return 0\n",
+      "new": "    if not run_state.batch_holds(state, unit):\n        return None\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_outside_a_run_the_whole_ledger_counts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a run state that is not UTF-8 raises out of the verdict reader",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    except (run_state.RunStateError, OSError, ValueError):   # ValueError: bytes not UTF-8\n",
+      "new": "    except run_state.RunStateError:\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_outside_a_run_the_whole_ledger_counts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the fixed base sits before the APPROVE, so the subtest cannot tell",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py",
+      "old": "{run_state.REVIEW_BASE: {UNIT: 1}}",
+      "new": "{run_state.REVIEW_BASE: {UNIT: 0}}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_coverage_scoped_to_the_run.py::CoverageScopedToTheRunTests::test_an_earlier_delivery_approve_does_not_cover",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "TEST: the seal fixture reviews before the run opens again",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py",
+      "old": "            state = _run_state(root, [\"US0101\"])\n            _unit(root, \"US0101\")\n            ck = sprint_report.checklist(",
+      "new": "            _unit(root, \"US0101\")\n            state = _run_state(root, [\"US0101\"])\n            ck = sprint_report.checklist(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lean_sign_seals_once.py::SignSealsOnceTests::test_the_report_carries_no_per_unit_signoff",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

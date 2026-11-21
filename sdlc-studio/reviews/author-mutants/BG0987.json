@@ -1,0 +1,115 @@
+{
+  "unit": "BG0987",
+  "digest": "9aca0100be9d6593 at ef30c7b14e4d",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a789164808837c07b/BG0987-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the judgement is printed and not recorded",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    run_state.update(root, **{sprint_report.CLOSE_GOAL_JUDGEMENT: judgement})\n",
+      "new": "    pass\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the panel is left off the page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        row(\"sprint goal\", GOAL_PANEL, judged.get(\"panel\")),\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the blocking defects are left off the page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    blocking = [d for d in judged.get(\"blocking\") or [] if isinstance(d, dict)]\n",
+      "new": "    blocking = []\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the defect count is left off the page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        row(\"open defects\", DEFECTS_VS_GOAL, judged.get(\"defects\")),\n",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the caller-check is left off the page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "        row(\"batch\", CALLER_CHECK, judged.get(\"caller_check\"))])\n",
+      "new": "        ])\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the basis labels are swapped",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "BASIS_LABELS = {\"clause\": \"blocks the goal claim\", \"priority\": \"would block a release\"}",
+      "new": "BASIS_LABELS = {\"clause\": \"would block a release\", \"priority\": \"blocks the goal claim\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_blocking_defects_carry_a_structured_basis",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a priority-floor defect is tagged clause",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "            blocking.append({**d, \"basis\": BASIS_PRIORITY,\n",
+      "new": "            blocking.append({**d, \"basis\": BASIS_CLAUSE,\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_blocking_defects_carry_a_structured_basis",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a priority-floor defect says it blocks the close again",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "\"why\": f\"priority {priority} - a release cannot carry it, \"",
+      "new": "\"why\": f\"priority {priority} - it blocks the close, \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_blocking_defects_carry_a_structured_basis",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the close refuses on a blocking defect",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    run_state.update(root, **{sprint_report.CLOSE_GOAL_JUDGEMENT: judgement})\n",
+      "new": "    run_state.update(root, **{sprint_report.CLOSE_GOAL_JUDGEMENT: judgement})\n    if judgement['blocking']:\n        return 1\n",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_blocking_defects_carry_a_structured_basis",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the section's rows render under the Known issues list",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "              \"goal_judgement\": \"goal_judgement\"}",
+      "new": "              \"goal_judgement\": \"issues\"}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the HTML page leaves the section out",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<!-- when: goal_judgement_present -->",
+      "new": "<!-- when: goal_judgement_never -->",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the HTML page drops the ruling cell",
+      "file": ".claude/skills/sdlc-studio/templates/reports/sprint-report.html",
+      "old": "<td><span class=\"pill\">{{judged_ruling}}</span></td>",
+      "new": "",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_close_goal_judgement_in_report.py::CloseGoalJudgementInReportTests::test_report_carries_goal_judgement",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

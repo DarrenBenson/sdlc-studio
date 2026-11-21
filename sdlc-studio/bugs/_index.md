@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 333 |
+| Open | 338 |
 | In Progress | 0 |
 | Fixed | 1005 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1679** |
+| **Total** | **1684** |
 
 ## All Bugs
 
@@ -755,6 +755,11 @@
 | [BG1677](BG1677-lane-land-s-sibling-script-timeout-stops-only.md) | lane land's sibling-script timeout stops only the script, leaving its child processes running | Open | Low | 2026-11-21 | 2026-11-21 |
 | [BG1678](BG1678-this-repo-s-rfcs-need-migrating-to-bg1569.md) | This repo's RFCs need migrating to BG1569's Delivered status, and the 20 with no change requests need a status ruling | Open | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1679](BG1679-transition-py-moves-a-story-from-draft-to.md) | transition.py moves a story from Draft to Ready without checking its Definition of Ready, so Draft to Ready to Done skips the gate BG0954 adds | Open | Low | 2026-11-21 | 2026-11-21 |
+| [BG1680](BG1680-bg0961-did-not-converge-in-review-round-2.md) | BG0961 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1681](BG1681-bg1023-did-not-converge-in-review-round-2.md) | BG1023 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1682](BG1682-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1683](BG1683-bg0954-did-not-converge-in-review-round-2.md) | BG0954 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1684](BG1684-bg0956-did-not-converge-in-review-round-2.md) | BG0956 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 
