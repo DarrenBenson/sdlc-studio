@@ -13,7 +13,9 @@ MUTANTS, each of which a test here fails on: (1) the second seat skips only the 
 seat, so it is engineering again; (2) the second seat is the first review seat, qa; (3) a project
 whose own seats are only qa and the building seat gets the building seat back; (4) the shipped
 seats are searched before the project's own, so a project whose own seats are engineering, qa
-and security gets product, a seat it does not hold.
+and security gets product, a seat it does not hold; (5) the project's own seats are walked in
+reverse, so a project whose own candidates are architecture and security gets security, the last
+in `review_seats` order rather than the first.
 """
 # test-census-subject: .claude/skills/sdlc-studio/scripts/sprint.py
 from __future__ import annotations
@@ -147,6 +149,21 @@ class SecondSeatNotBuilderTests(unittest.TestCase):
                              sprint.review_seats(root))
             self.assertEqual("security", sprint.second_review_seat(root),
                              "the second seat is a shipped seat the project does not hold")
+
+    def test_the_first_candidate_in_review_seats_order_is_taken(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            seats = root / "sdlc-studio" / "personas" / "seats"
+            seats.mkdir(parents=True)
+            for role in ("security", "qa", "engineering", "architecture"):
+                (seats / f"{role}.md").write_text(f"<!-- role: {role} -->\n# {role} seat\n",
+                                                  encoding="utf-8")
+            # Two of the project's own seats are candidates, architecture and security; neither
+            # is a shipped seat, so the shipped fallback cannot supply either by accident.
+            self.assertEqual((["architecture", "engineering", "qa", "security"], False),
+                             sprint.review_seats(root))
+            self.assertEqual("architecture", sprint.second_review_seat(root),
+                             "the second seat is not the first candidate in review_seats order")
 
 
 if __name__ == "__main__":
