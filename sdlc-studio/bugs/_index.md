@@ -1,19 +1,19 @@
 # Bug Index
 
-**Last Updated:** 2026-11-20
+**Last Updated:** 2026-11-21
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| Open | 333 |
+| Open | 334 |
 | In Progress | 0 |
 | Fixed | 1001 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1675** |
+| **Total** | **1676** |
 
 ## All Bugs
 
@@ -751,6 +751,7 @@
 | [BG1673](BG1673-verdict-polarity-reads-a-seat-s-partial-as.md) | verdict_polarity reads a seat's 'partial' as unclear, so a goal clause every seat answered partial reads UNANSWERED at the close | Open | Low | 2026-11-20 | 2026-11-20 |
 | [BG1674](BG1674-no-test-pins-card-not-utf8-s-severity.md) | No test pins card-not-utf8's severity split (a warning for persona cards, an error for seat cards) or the exit code validate.py seats gives for it | Won't Fix | Low | 2026-11-20 | 2026-11-20 |
 | [BG1675](BG1675-the-goal-trace-reads-a-persona-card-that.md) | The goal trace reads a persona card that is not UTF-8 as empty, so a goal naming that persona is briefed as naming nobody and its card-not-utf8 hold never refuses the goal review | Open | Low | 2026-11-20 | 2026-11-20 |
+| [BG1676](BG1676-reconcile-stops-on-an-index-that-is-not.md) | reconcile stops on an index that is not UTF-8 without naming the file or how to fix it | Open | Low | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 

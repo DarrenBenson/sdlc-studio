@@ -3,8 +3,8 @@
 > **Status:** Open
 > **Supersedes:** BG1020
 > **Severity:** Medium
-> **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md, changelog.d/BG1569.md
+> **Points:** 5
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/reference-rfc.md, .claude/skills/sdlc-studio/help/rfc.md, changelog.d/BG1569.md, .claude/skills/sdlc-studio/scripts/lib/sdlc_md.py, .claude/skills/sdlc-studio/reference-outputs.md, .claude/skills/sdlc-studio/reference-schema.md, .claude/skills/sdlc-studio/templates/core/rfc.md, .claude/skills/sdlc-studio/templates/indexes/rfc.md, .claude/skills/sdlc-studio/scripts/tests/test_status_vocab_doc.py
 > **Evidence:** accepting RFC0065 and RFC0066 on 2026-11-17; the refusal transition.py printed, against reference-rfc.md section accept steps 3 and 4
 > **Created:** 2026-11-17
 > **Created-by:** sdlc-studio file
@@ -41,3 +41,4 @@ Decide which is right and make the two agree: either Accepted is the decided sta
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-11-17 | sdlc-studio | Filed |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: D0513's Delivered status lives in the RFC vocabulary and terminal set (lib/sdlc_md.py) and the status tables and templates that state it; re-sized 3 to 5 for the vocabulary change |

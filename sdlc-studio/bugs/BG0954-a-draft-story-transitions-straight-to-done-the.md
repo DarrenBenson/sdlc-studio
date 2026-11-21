@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG0954.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, changelog.d/BG0954.md, .claude/skills/sdlc-studio/scripts/tests/test_artifact.py
 > **Evidence:** Reproduced 2026-10-06 in a scratch project with skill 6.1.0+12 (aa19a2e3); a consuming project's US0230 Draft -> Done the same day
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -51,3 +51,4 @@ In transition(), refuse a story moving from Draft (or Proposed) to a delivered t
 | 2026-10-06 | sdlc-studio | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: tool-derived criteria replaced; scoped to the DoR checks `sprint plan` already runs, from Draft or Proposed only |
 | 2026-10-21 | Claude Opus 5.5 | Triage, 2026-10-21 (D0387, D0388): kept and groomed - fields, criteria or notes corrected on the triage's evidence; see the Triage section where present |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: its gate correctly turns two artifact.new close fixtures red (a Draft story with no Affects or Points closed to Done); the fixtures gain the fields |

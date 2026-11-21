@@ -3,7 +3,7 @@
 > **Status:** Open
 > **Severity:** Medium
 > **Points:** 3
-> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0956.md
+> **Affects:** .claude/skills/sdlc-studio/scripts/transition.py, .claude/skills/sdlc-studio/scripts/reconcile.py, .claude/skills/sdlc-studio/scripts/tests/test_transition.py, .claude/skills/sdlc-studio/scripts/tests/test_reconcile.py, changelog.d/BG0956.md, .claude/skills/sdlc-studio/reference-scripts-create.md
 > **Evidence:** a consuming project, 2026-10-06: 94-bug close batch; 31 archive rows hand-synced afterwards
 > **Created:** 2026-10-06
 > **Created-by:** sdlc-studio file
@@ -48,3 +48,4 @@ Teach the index row writer used by transition and reconcile apply to locate a un
 | --- | --- | --- |
 | 2026-10-06 | sdlc-studio | Filed |
 | 2026-10-06 | Claude Opus 5.5 (triage) | Groomed: reproduced against HEAD; the synced=True claim did not reproduce and is recorded as such; tool-derived criteria replaced with four executable ones; changelog fragment added to Affects |
+| 2026-11-21 | Claude Opus 5.5 (run twenty-one orchestrator) | Affects widened in-run: the fix makes reference-scripts-create.md's 'reconcile reads the archive, never writes it' false, so the page is corrected inside the unit (D0561) |
