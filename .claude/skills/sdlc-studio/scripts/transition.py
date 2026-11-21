@@ -456,6 +456,65 @@ def _rfc_override_reason(text: str) -> str:
     return ""
 
 
+#: The story statuses held before anything has asked the Definition of Ready of the story.
+_NEVER_READY = ("Draft", "Proposed")
+
+
+def _unready_items(root: Path, text: str) -> list[str]:
+    """The Definition of Ready items `sprint plan` refuses this story for, or [] when it meets
+    them: a declared `Affects` that is not a typo, and `Points` on the scale.
+
+    Asked of a Draft or Proposed story moving straight to Done, so a story closed outside a
+    sprint cannot skip the readiness a planned one is refused without. The predicates are the
+    grooming gate's own (`sdlc_md.affects_files`, `file_finding.fictional_affects`,
+    `sdlc_md.read_points`), and the project's `definition-of-ready.md` decides which of the two
+    enforce, as it does for the plan. Two of the plan's checks are left out on purpose: the
+    criteria check, because the Done gate already EXECUTES the criteria, and the split ceiling,
+    because once a unit is built the answer to "too big" can no longer be "split it"."""
+    import file_finding  # noqa: PLC0415 - the one resolvable-Affects seam the plan also uses
+    dor = sdlc_md.dor_dod_level_checks(root, "ready", "story")
+    items: list[str] = []
+    declared = sdlc_md.affects_files(text)
+    if dor is None or "grooming.affects" in dor:
+        if not declared:
+            items.append("no `Affects` names the files it changes")
+        else:
+            unresolvable = file_finding.unresolvable_affects(root, declared)
+            typos = file_finding.fictional_affects(root, declared)
+            if typos and len(unresolvable) == len(declared):
+                items.append(f"`Affects` names a path that does not exist while its filename "
+                             f"does: {', '.join(typos)}")
+    if (dor is None or "grooming.points" in dor) and sdlc_md.read_points(text) is None:
+        scale = ", ".join(str(p) for p in sdlc_md.POINTS_SCALE)
+        items.append(f"no `Points` on the scale ({scale})")
+    return items
+
+
+def _never_ready_gate(root: Path, text: str, from_canon: str | None) -> tuple[str | None, str | None]:
+    """(block, warning) for a story leaving Draft or Proposed for Done, or (None, None).
+
+    A recorded `> **Decision-Override:** <reason>` lets the move through and the reason is
+    reported back, the same sanctioned skip the RFC accept gate takes. `sprint.breakdown:
+    judgement`, the plan's own recorded opt-out, turns the refusal into a warning here too."""
+    if from_canon not in _NEVER_READY:
+        return None, None
+    items = _unready_items(root, text)
+    if not items:
+        return None, None
+    listed = "; ".join(items)
+    reason = _rfc_override_reason(text)
+    if reason:
+        return None, (f"Definition of Ready not met ({listed}) - decision-override "
+                      f"recorded: {reason}")
+    import sprint  # noqa: PLC0415 - heavy; only this path needs the plan's mode reader
+    if sprint.breakdown_mode(root) == "judgement":
+        return None, (f"Definition of Ready not met ({listed}) - reported, not refused, under "
+                      f"`sprint.breakdown: judgement`")
+    return (f"it is {from_canon} and was never Ready: it misses the Definition of Ready "
+            f"`sprint plan` applies - {listed}. Meet each item, or record "
+            f"`> **Decision-Override:** <reason>` on the story. Override with --force"), None
+
+
 def _request_terminal_gate(root: Path, type_: str, artifact_id: str,
                            target_canon: str | None) -> str | None:
     """A DISCOVERY item (CR/RFC/Issue) may not reach its SUCCESSFUL terminal by assertion (G2). A
@@ -1081,6 +1140,17 @@ def _pre_write_gates(root, artifact_id, new_status, type_, path, text,
             else:
                 verify_warn = f"AC-verify advisory (quality.done_requires_verified=false): {block}"
                 gate_warn = f"{gate_warn}; {verify_warn}" if gate_warn else verify_warn
+    # THE DEFINITION OF READY, at the second way into Done. `sprint plan` refuses an ungroomed
+    # story, but a story closed outside a sprint never met that gate: Draft -> Done went
+    # through on green criteria alone. Only a DELIVERED terminal is asked; Won't Implement,
+    # Deferred and Superseded close a story nobody built, so they owe no readiness.
+    if (type_ == "story" and not force
+            and sdlc_md.is_delivered_terminal(type_, target_canon or "")):
+        block, warn = _never_ready_gate(root, text, from_canon)
+        if block:
+            blocks.append(block)
+        if warn:
+            gate_warn = f"{gate_warn}; {warn}" if gate_warn else warn
     # The tier gate fires on any entry to an implementation status, dry-run included (an
     # honest preflight surfaces the refusal a real run would hit) and force included (the
     # remedy is promotion, not a waiver). Epics are gated too: an epic's planning template

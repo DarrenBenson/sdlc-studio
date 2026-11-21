@@ -756,12 +756,16 @@ class HonestSyncTests(unittest.TestCase):
                 encoding="utf-8")  # empty active table - the row lives in archive
             ad = sd / "archive" / "r1"
             ad.mkdir(parents=True)
+            # Header-less, so no writer can pin its Status column. An archived row in the
+            # layout `archive.py` writes IS rewritten now (ArchivedRowSyncTests); this one is
+            # still read by the census and still cannot be written, so the flag stays honest.
             (ad / "story.md").write_text(
-                "# story archive - r1\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+                "# story archive - r1\n\n"
                 "| [US0001](../../US0001-x.md) | s | Ready |\n", encoding="utf-8")
             res = tr.transition(root, "US0001", "Done")
             self.assertFalse(res["index_synced"])      # archive row not synced - honest
             self.assertIsNotNone(res["warning"])
+            self.assertIn("| Ready |", (ad / "story.md").read_text(encoding="utf-8"))
 
     def test_status_without_summary_row_now_syncs_by_insertion(self) -> None:
         # Formerly pinned index_synced=False: the writer could not ADD a
@@ -4058,6 +4062,170 @@ class SealedRunRefusesWritesTests(unittest.TestCase):
             self.assertIn("> **Status:** In Progress", control.read_text(encoding="utf-8"))
             self.assertNotIn(self.RUN_ID, cerr, f"a unit outside the batch was told about the "
                                                 f"seal: {cerr!r}")
+
+
+def _ready_story_repo(root: Path, status: str = "Draft", affects: str | None = "src/thing.py",
+                      points: str | None = "3", override: str | None = None) -> Path:
+    """A story whose executable criterion is GREEN, so only readiness can stand in its way.
+
+    `affects` / `points` set to None leave the field out, which is the unmet item; a value is
+    written as the author would write it. `src/thing.py` exists, so the default `Affects`
+    resolves on disk the way `sprint plan` asks it to.
+    """
+    sd = root / "sdlc-studio" / "stories"
+    sd.mkdir(parents=True, exist_ok=True)
+    (root / "src").mkdir(exist_ok=True)
+    (root / "src" / "thing.py").write_text("x = 1\n", encoding="utf-8")
+    head = f"# US0001: s\n\n> **Status:** {status}\n"
+    if affects is not None:
+        head += f"> **Affects:** {affects}\n"
+    if points is not None:
+        head += f"> **Points:** {points}\n"
+    if override is not None:
+        head += f"> **Decision-Override:** {override}\n"
+    (sd / "US0001-x.md").write_text(
+        head + "\n## Acceptance Criteria\n\n### AC1\n- **Verify:** shell true\n", encoding="utf-8")
+    (sd / "_index.md").write_text(
+        "# Stories\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n"
+        f"| {status} | 1 |\n| Done | 0 |\n\n## All\n\n| ID | Title | Status |\n| --- | --- | --- |\n"
+        f"| [US0001](US0001-x.md) | s | {status} |\n", encoding="utf-8")
+    rp = root / "sdlc-studio" / ".local" / "verify-report.json"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    rp.write_text(json.dumps({"stories": {"US0001-x": {"failed": 0, "stale": 0,
+                                                       "failures": []}}}), encoding="utf-8")
+    return root
+
+
+class DraftToDoneReadyTests(unittest.TestCase):
+    """A story never Ready may not be closed Done: the Definition of Ready `sprint plan` applies
+    is asked at the transition too, so a story closed outside a sprint cannot skip it.
+
+    Every fixture carries a GREEN verify report, so a refusal here is the readiness gate and no
+    other: the control in each test is the same story with the item met, which goes through.
+    """
+
+    def _status(self, root: Path) -> str:
+        return sdlc_md.extract_field(_read(root, "stories", "US0001-x.md"), "Status")
+
+    def test_draft_to_done_requires_ready(self) -> None:
+        unmet = {
+            "Affects": {"affects": None},
+            "Points": {"points": None},
+            "Points off the scale": {"points": "7"},
+            "Affects typo": {"affects": "lib/thing.py"},
+        }
+        for start in ("Draft", "Proposed"):
+            for case, kwargs in unmet.items():
+                with self.subTest(start=start, case=case), tempfile.TemporaryDirectory() as d:
+                    root = _ready_story_repo(Path(d), status=start, **kwargs)
+                    code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                    self.assertNotEqual(code, 0, f"{case} unmet, still closed Done: {out}")
+                    self.assertIn("Definition of Ready", out)
+                    named = "lib/thing.py" if case == "Affects typo" else case.split()[0]
+                    self.assertIn(named, out, f"the unmet item is not named: {out}")
+                    self.assertEqual(self._status(root), start, "a refusal wrote the status")
+            with self.subTest(start=start, case="met"), tempfile.TemporaryDirectory() as d:
+                root = _ready_story_repo(Path(d), status=start)
+                code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+                self.assertEqual(code, 0, f"a ready story was refused: {out}")
+                self.assertEqual(self._status(root), "Done")
+                self.assertNotIn("Definition of Ready", out)
+        # Scope: a story that already passed through Ready is not asked again here.
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), status="Ready", affects=None, points=None)
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, f"a Ready story was asked for readiness again: {out}")
+            self.assertEqual(self._status(root), "Done")
+
+    def test_requirements_names_the_unmet_ready_item(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects=None)
+            code, out = _cli(root, "requirements", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, out)
+            self.assertIn("1 unmet requirement", out)
+            self.assertIn("Definition of Ready", out)
+            self.assertIn("Affects", out)
+            self.assertNotIn("no unmet requirements", out)
+            self.assertEqual(self._status(root), "Draft", "requirements wrote the status")
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d))
+            code, out = _cli(root, "requirements", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, out)
+            self.assertIn("no unmet requirements", out)
+
+    def test_draft_closures_and_a_recorded_override_are_unaffected(self) -> None:
+        reason = "built and verified under the 2026-10-06 ruling before it was sized"
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects=None, points=None, override=reason)
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertEqual(code, 0, f"a recorded override did not let the move through: {out}")
+            self.assertEqual(self._status(root), "Done")
+            self.assertIn(reason, out, "the override was used but not reported")
+            self.assertIn("Definition of Ready", out)
+        with tempfile.TemporaryDirectory() as d:
+            root = _ready_story_repo(Path(d), affects=None, points=None, override="   ")
+            code, out = _cli(root, "set", "--id", "US0001", "--status", "Done")
+            self.assertNotEqual(code, 0, f"a blank override bought the skip: {out}")
+            self.assertEqual(self._status(root), "Draft")
+        for closure in ("Won't Implement", "Superseded"):
+            with self.subTest(closure=closure), tempfile.TemporaryDirectory() as d:
+                root = _ready_story_repo(Path(d), affects=None, points=None)
+                code, out = _cli(root, "set", "--id", "US0001", "--status", closure)
+                self.assertEqual(code, 0, f"{closure} from Draft was refused: {out}")
+                self.assertEqual(self._status(root), closure)
+                self.assertNotIn("Definition of Ready", out)
+
+
+_BUG_INDEX = (
+    "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n| Fixed | 1 |\n"
+    "| Closed | 0 |\n| **Total** | **2** |\n\n## All Bugs\n\n"
+    "| ID | Title | Severity | Status |\n| --- | --- | --- | --- |\n"
+    "| [BG0001](BG0001-b.md) | b | Medium | Fixed |\n"
+    "| [BG0002](BG0002-c.md) | c | Medium | Open |\n")
+
+
+def _archived_bug_repo(root: Path) -> Path:
+    """BG0001 Fixed and BG0002 Open, then `archive.py` moves BG0001's row into
+    `archive/v1.0.0/bug.md`: the row is the shape the product writes, not a hand-made one."""
+    bd = root / "sdlc-studio" / "bugs"
+    bd.mkdir(parents=True, exist_ok=True)
+    for bid, slug, status in (("BG0001", "b", "Fixed"), ("BG0002", "c", "Open")):
+        (bd / f"{bid}-{slug}.md").write_text(
+            f"# {bid}: {slug}\n\n> **Status:** {status}\n> **Severity:** Medium\n\n"
+            "## Acceptance Criteria\n\n- [x] **AC1** it works\n", encoding="utf-8")
+    (bd / "_index.md").write_text(_BUG_INDEX, encoding="utf-8")
+    archive = _load("archive", "archive.py")
+    moved = archive.archive(root, "bug", "v1.0.0")
+    assert moved["archived"] == ["BG0001"], moved
+    return root
+
+
+class ArchivedRowSyncTests(unittest.TestCase):
+    """A transition rewrites the row the census reads, wherever `archive.py` put it, and says
+    `index synced=True` only when that row and the summary counts agree with the file."""
+
+    def test_closing_an_archived_bug_rewrites_its_archive_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = _archived_bug_repo(Path(d))
+            arch = root / "sdlc-studio" / "bugs" / "archive" / "v1.0.0" / "bug.md"
+            self.assertFalse(any(ln.startswith("| [BG0001]") for ln in
+                                 _read(root, "bugs", "_index.md").splitlines()),
+                             "the fixture did not archive the row")
+            code, out = _cli(root, "set", "--id", "BG0001", "--status", "Closed")
+            self.assertEqual(code, 0, out)
+            self.assertIn("index synced=True", out)
+            row = next(ln for ln in arch.read_text(encoding="utf-8").splitlines()
+                       if "BG0001" in ln)
+            self.assertIn("| Closed |", row, f"the archived row was not rewritten: {row}")
+            self.assertNotIn("Fixed", row)
+            live = _read(root, "bugs", "_index.md")
+            self.assertIn("| Closed | 1 |", live)
+            self.assertIn("| Fixed | 0 |", live)
+            self.assertIn("| Open | 1 |", live)
+            drift = rc.detect_type("bug", root)["drift"]
+            self.assertEqual([x for x in drift if x.get("id") and
+                              sdlc_md.norm_id(x["id"]) == "BG0001"
+                              or x["kind"] == "count-mismatch"], [], drift)
 
 
 if __name__ == "__main__":

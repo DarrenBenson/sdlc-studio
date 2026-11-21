@@ -2760,12 +2760,14 @@ def _data_row_rewrite(cells: list, status_col: int | None, id_col: int | None,
 
 
 def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list,
-                         aliases: tuple = ()) -> tuple[bool, set]:
+                         aliases: tuple = (), summaries: bool = True) -> tuple[bool, set]:
     """Rewrite drifted data-row Status cells (per `fixes`) and summary counts in
     `lines`, in place. Returns (whether any summary count changed, the set of norm-ids whose
     Status cell was actually rewritten). A planned fix whose row the writer declines to touch
     (off-schema/header-less) is absent from that set, so the caller can report it as unapplied
-    rather than as a landed change."""
+    rather than as a landed change. `summaries=False` leaves every summary count as it is: an
+    archive sub-index is rewritten for its rows only, and the global counts are the live
+    index's to carry."""
     counts_updated = False
     applied: set = set()
     status_col = id_col = None
@@ -2809,7 +2811,7 @@ def _rewrite_index_lines(lines: list, fixes: dict, counts: dict, vocab: list,
             in_summary, status_col, id_col = False, None, None
             continue
         if in_summary and len(cells) == 2:        # summary count row
-            new_line = _summary_cell_rewrite(cells, counts, vocab)
+            new_line = _summary_cell_rewrite(cells, counts, vocab) if summaries else None
             if new_line is not None:
                 lines[i] = new_line
                 counts_updated = True
@@ -3086,6 +3088,42 @@ def _seed_missing_index(root: Path, type_: str, result: dict, dry_run: bool) -> 
     return True
 
 
+def _rewrite_archived_rows(root: Path, type_: str, fixes: dict, live_ids, vocab: list,
+                           aliases: tuple, dry_run: bool) -> set:
+    """Rewrite the Status cell of each fixed row the census reads from an `archive/` sub-index.
+    Returns the norm-ids whose archived row was rewritten (or would be, on a dry run).
+
+    The census (`_merge_archive_rows`) reads an archived row only for an id with NO live row,
+    and from the first sub-index in sorted order that holds it; this writes exactly that row and
+    no other. A live row always wins, even one the live writer could not place: rewriting the
+    archive beneath it would change a row the census never reads and still leave the drift.
+    Only the Status cell changes - rows are never added, moved or removed, so the layout stays
+    the one `archive.py` wrote. A header-less archived row cannot be pinned, so it stays
+    unapplied and is reported, never claimed."""
+    archive_dir = root / sdlc_md.ARTIFACT_TYPES[type_][0] / "archive"
+    wanted = {k: v for k, v in fixes.items() if k not in live_ids}
+    if not wanted or not archive_dir.is_dir():
+        return set()
+    applied: set = set()
+    seen: set = set()
+    for af in sorted(archive_dir.rglob("*.md")):
+        original = sdlc_md.read_text_safe(af)
+        arows, _ = _index_rows_and_summary(original, vocab, aliases)
+        here = {k: wanted[k] for k in arows if k in wanted and k not in seen}
+        seen.update(arows)
+        if not here:
+            continue
+        lines = original.splitlines()
+        _counts, done = _rewrite_index_lines(lines, here, {}, vocab, aliases, summaries=False)
+        if not done:
+            continue
+        applied |= done
+        if not dry_run:
+            text = "\n".join(lines) + ("\n" if original.endswith("\n") else "")
+            sdlc_md.atomic_write(af, sdlc_md.align_padded_tables(text, original))
+    return applied
+
+
 def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
                prune_orphans: bool = False) -> dict:
     """Apply the mechanical index fixes for one type: rewrite each drifted data
@@ -3158,6 +3196,10 @@ def apply_type(type_: str, repo_root: Path, dry_run: bool = False,
 
     result["counts_updated"], applied = _rewrite_index_lines(
         lines, fixes, counts, vocab, aliases)
+    # A fix whose row the census reads from an archive sub-index is written THERE; left to the
+    # live pass alone, every transition of an archived unit made drift only a hand edit cleared.
+    live_ids = _index_rows_and_summary(original, vocab, aliases)[0].keys()
+    applied |= _rewrite_archived_rows(root, type_, fixes, live_ids, vocab, aliases, dry_run)
     if to_append:
         result["appended"] = _insert_missing_data_rows(
             lines, hdr, to_append, type_, root, aliases)
@@ -3858,7 +3900,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
                 continue
             # Never silent: a phantom row apply did not remove is still a phantom.
             remedy = ("restore the file, or edit the archive sub-index (archive.py is the "
-                      "one archive writer - reconcile will not rewrite its files)"
+                      "one archive writer - reconcile rewrites a Status cell there, never "
+                      "removes a row)"
                       if "/archive/" in dr["index"] else
                       "restore the file, or remove the row with "
                       "`reconcile apply --prune-orphans`")

@@ -212,8 +212,8 @@ metadata field (e.g. `Affects`) in place - the stamp verb; no more hand edits.
 
 ### `archive.py`
 
-Index archival for large boards - **the one archive writer** (`reconcile` reads the archive,
-never writes it). `archive --type <t> --release <r>` moves a
+Index archival for large boards - **the one archive writer** that moves rows; `reconcile` only
+rewrites the Status cell of an archived row. `archive --type <t> --release <r>` moves a
 type's terminal master-table rows into `<type>/archive/{release}/{type}.md` and leaves a
 bullet pointer in the live index - rows move, artifact files stay. `parse_index` unions
 the archive sub-indexes so the census stays correct. Explicit, idempotent per release.

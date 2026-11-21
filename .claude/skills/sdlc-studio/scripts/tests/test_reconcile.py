@@ -5057,5 +5057,153 @@ class SpawnedColumnHeaderTests(unittest.TestCase):
                       "silently exempt")
 
 
+def _load_sibling(name: str):
+    """A sibling script, loaded once beside the `reconcile` module this file already holds."""
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, SCRIPT_PATH.parent / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_ARCHIVE_BUG_INDEX = (
+    "# Bugs\n\n## Summary\n\n| Status | Count |\n| --- | --- |\n| Open | 1 |\n| Fixed | 1 |\n"
+    "| Closed | 0 |\n| **Total** | **2** |\n\n## All Bugs\n\n"
+    "| ID | Title | Severity | Status |\n| --- | --- | --- | --- |\n"
+    "| [BG0001](BG0001-b.md) | b | Medium | Fixed |\n"
+    "| [BG0002](BG0002-c.md) | c | Medium | Open |\n")
+
+
+class ArchivedRowApplyTests(unittest.TestCase):
+    """`reconcile apply` rewrites a stale row in an archive sub-index, where the census reads
+    it, and leaves the archive alone wherever the live row is the one the census reads."""
+
+    def _repo(self, root: Path) -> Path:
+        """BG0001 Fixed and BG0002 Open; `archive.py` moves BG0001's row into
+        `archive/v1.0.0/bug.md`, so the row is the shape the product writes."""
+        bd = root / "sdlc-studio" / "bugs"
+        bd.mkdir(parents=True, exist_ok=True)
+        for bid, slug, status in (("BG0001", "b", "Fixed"), ("BG0002", "c", "Open")):
+            (bd / f"{bid}-{slug}.md").write_text(
+                f"# {bid}: {slug}\n\n> **Status:** {status}\n> **Severity:** Medium\n\n"
+                "## Acceptance Criteria\n\n- [x] **AC1** it works\n", encoding="utf-8")
+        (bd / "_index.md").write_text(_ARCHIVE_BUG_INDEX, encoding="utf-8")
+        moved = _load_sibling("archive").archive(root, "bug", "v1.0.0")
+        self.assertEqual(moved["archived"], ["BG0001"], moved)
+        return root
+
+    def _close_by_hand(self, root: Path) -> None:
+        f = root / "sdlc-studio" / "bugs" / "BG0001-b.md"
+        f.write_text(f.read_text(encoding="utf-8").replace("Status:** Fixed", "Status:** Closed"),
+                     encoding="utf-8")
+
+    def _archive(self, root: Path) -> Path:
+        return root / "sdlc-studio" / "bugs" / "archive" / "v1.0.0" / "bug.md"
+
+    def _apply(self, root: Path) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = reconcile.main(["apply", "--scope", "bugs", "--root", str(root)])
+        return code, out.getvalue(), err.getvalue()
+
+    def _row(self, path: Path, rid: str) -> str:
+        return next(ln for ln in path.read_text(encoding="utf-8").splitlines() if rid in ln)
+
+    def _drift_for(self, root: Path, rid: str) -> list:
+        return [x for x in reconcile.detect_type("bug", root)["drift"]
+                if (x.get("id") and sdlc_md.norm_id(x["id"]) == rid)
+                or x["kind"] == "count-mismatch"]
+
+    def test_apply_rewrites_a_stale_archived_row(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            self._close_by_hand(root)
+            self.assertTrue(self._drift_for(root, "BG0001"), "the fixture is not out of step")
+            before = self._archive(root).read_bytes()
+            dry = io.StringIO()
+            with contextlib.redirect_stdout(dry), contextlib.redirect_stderr(dry):
+                reconcile.main(["apply", "--dry-run", "--scope", "bugs", "--root", str(root)])
+            self.assertIn("WOULD set bug BG0001: Fixed -> Closed", dry.getvalue())
+            self.assertEqual(self._archive(root).read_bytes(), before, "a dry run wrote")
+            code, out, err = self._apply(root)
+            self.assertEqual(code, 0, out + err)
+            self.assertNotIn("rewritable layout", err)
+            self.assertIn("set bug BG0001: Fixed -> Closed", out)
+            self.assertNotIn("changed 0 row(s)", out)
+            self.assertIn("| Closed |", self._row(self._archive(root), "BG0001"))
+            self.assertEqual(self._drift_for(root, "BG0001"), [])
+
+    def test_a_live_row_wins_and_the_archive_is_untouched(self) -> None:
+        live_row = "| [BG0001](BG0001-b.md) | b | Medium | {} |\n"
+        for live_status in ("Fixed", "Closed"):
+            with self.subTest(live=live_status), tempfile.TemporaryDirectory() as d:
+                root = self._repo(Path(d))
+                index = root / "sdlc-studio" / "bugs" / "_index.md"
+                text = index.read_text(encoding="utf-8")
+                anchor = "| [BG0002](BG0002-c.md) | c | Medium | Open |\n"
+                index.write_text(text.replace(anchor, live_row.format(live_status) + anchor),
+                                 encoding="utf-8")
+                self._close_by_hand(root)
+                before = self._archive(root).read_bytes()
+                code, out, err = self._apply(root)
+                self.assertEqual(code, 0, out + err)
+                self.assertEqual(self._archive(root).read_bytes(), before,
+                                 "the archived row was rewritten beneath a live one")
+                self.assertIn("| Closed |", self._row(index, "BG0001"))
+                self.assertIn("| Fixed |", self._row(self._archive(root), "BG0001"))
+                if live_status == "Fixed":
+                    self.assertIn("set bug BG0001: Fixed -> Closed", out)
+                else:
+                    self.assertNotIn("BG0001", out, "an in-step live row was reported changed")
+                self.assertEqual([x for x in self._drift_for(root, "BG0001")
+                                  if x["kind"] != "count-mismatch"], [])
+
+    def test_an_unplaceable_row_still_reports_unsynced(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            # The same row with its table header gone: the census still reads it by its
+            # status token, and no writer can pin the column it would rewrite.
+            arch = self._archive(root)
+            arch.write_text("# bug archive - v1.0.0\n\n"
+                            "| [BG0001](../../BG0001-b.md) | b | Medium | Fixed |\n",
+                            encoding="utf-8")
+            transition = _load_sibling("transition")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+                code = transition.main(["--root", str(root), "set", "--id", "BG0001",
+                                        "--status", "Closed"])
+            self.assertEqual(code, 0, out.getvalue())
+            self.assertIn("index synced=False", out.getvalue())
+            self.assertIn("| Fixed |", self._row(arch, "BG0001"))
+            code, aout, aerr = self._apply(root)
+            self.assertNotEqual(code, 0, aout + aerr)
+            self.assertIn("could not apply bug BG0001", aerr)
+            self.assertIn("rewritable layout", aerr)
+
+    def test_only_the_archived_row_the_census_reads_is_written(self) -> None:
+        """Two sub-indexes hold the id: the census reads the first in sorted order, so that row
+        is the one rewritten, and a sub-index's own summary counts are never restamped."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(Path(d))
+            early = self._archive(root).parent.parent / "v0.9.0" / "bug.md"
+            early.parent.mkdir(parents=True)
+            early.write_text("# bug archive - v0.9.0\n\n| Status | Count |\n| --- | --- |\n"
+                             "| Fixed | 1 |\n\n| ID | Title | Severity | Status |\n"
+                             "| --- | --- | --- | --- |\n"
+                             "| [BG0001](../../BG0001-b.md) | b | Medium | Fixed |\n",
+                             encoding="utf-8")
+            later = self._archive(root).read_bytes()
+            self._close_by_hand(root)
+            code, out, err = self._apply(root)
+            self.assertEqual(code, 0, out + err)
+            self.assertIn("| Closed |", self._row(early, "[BG0001]"))
+            self.assertIn("| Fixed | 1 |", early.read_text(encoding="utf-8"),
+                          "an archive sub-index's own summary was restamped")
+            self.assertEqual(self._archive(root).read_bytes(), later,
+                             "a row the census does not read was rewritten")
+
+
 if __name__ == "__main__":
     unittest.main()

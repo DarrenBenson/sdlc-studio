@@ -63,6 +63,10 @@ GROOM_REQUEST_CLI = ["--affects", "src/thing.py", "--size", "M"]
 _GROOM_PATHS = ("src/thing.py", "src/a.py", "src/b.py", "src/gate.py")
 
 
+# A minted story is Draft, and Draft -> Done asks the Definition of Ready `sprint plan` applies:
+# a close fixture that wants a clean gate ladder gives its story a resolvable Affects and Points.
+_READY = {"affects": "src/thing.py", "points": 3}
+
 def _affect(root: Path, rel: str) -> None:
     p = root / rel
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -406,7 +410,7 @@ class NewTests(unittest.TestCase):
             repo = Path(d)
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
-            r = artifact.new(repo, "story", "to keep open", {"epic": "EP0001"})
+            r = artifact.new(repo, "story", "to keep open", {"epic": "EP0001", **_READY})
             self._drop_executable_acs(r["path"])
             before = Path(r["path"]).read_text()
             import telemetry
@@ -455,7 +459,7 @@ class NewTests(unittest.TestCase):
             repo = Path(d)
             _index(repo, "story", "| ID | Title | Status | Epic | Created | Updated |")
             _epic(repo)
-            r = artifact.new(repo, "story", "no executable acs", {"epic": "EP0001"})
+            r = artifact.new(repo, "story", "no executable acs", {"epic": "EP0001", **_READY})
             self._drop_executable_acs(r["path"])
             res = artifact.close(repo, r["id"], dry_run=True)
             self.assertTrue(res["dry_run"])
