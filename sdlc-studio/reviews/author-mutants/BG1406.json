@@ -1,0 +1,25 @@
+{
+  "unit": "BG1406",
+  "digest": "794c4c9d480162ff at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1406-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the headless run builds a home-isolated unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                                              if b.get(\"home_isolated\")]):",
+      "new": "                                              if False]):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests::test_a_home_isolated_unit_is_refused_before_the_cli_runs",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the field read as containing home",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return raw.strip().strip(\"`\").strip().lower() == LANE_HOME",
+      "new": "    return LANE_HOME in raw.lower()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_home_isolation_lane_run.py::HomeIsolationLaneRunTests::test_the_field_is_read_exactly",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

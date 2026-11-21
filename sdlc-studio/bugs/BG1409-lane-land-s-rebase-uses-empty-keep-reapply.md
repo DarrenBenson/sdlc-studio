@@ -1,6 +1,6 @@
 # BG1409: lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_land_empty_replay.py, changelog.d/BG1409.md

@@ -1,0 +1,34 @@
+# BG1694: test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load
+
+> **Status:** Open
+> **Severity:** Low
+> **Points:** 1
+> **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_kill_grace_interrupt.py, changelog.d/BG1694.md
+> **Evidence:** .local/run21/land-RBG1470b.log: FAILED test_kill_grace_interrupt.py::KillGraceInterruptTests::test_an_interrupted_grace_sigkills_the_group_and_propagates, ValueError at line 66; test_kill_grace_interrupt.py:29-31 (DEAF writes with open().write), :64-66 (_child reads at once). Introduced by 09cf0766.
+> **Created:** 2026-11-21
+> **Created-by:** sdlc-studio file
+> **Raised-by:** sdlc-studio; agent; v1
+> **Raised-in-batch:** none open - raised outside a delivery batch, 2026-11-21T20:14:11Z
+
+## Summary
+
+`KillGraceInterruptTests._child` reads child.pid with int(`read_text())` as soon as the fake CLI has marked its SIGTERM. The deaf child writes that file with open(path, 'w').write(pid), which creates it empty first, and under load the child may not have started or written by then: the read gets '' and the case fails with ValueError: invalid literal for int() with base 10: ''. It refused a run twenty-one landing (BG1470, prose only) in the commit hook at load 7.7, where the same tree passed the full suite on the gate host.
+
+## Steps to Reproduce
+
+1. Load the workstation (load above the core count). 2. Commit any change that selects `test_kill_grace_interrupt.py`, or run it in a loop. 3. `test_an_interrupted_grace_sigkills_the_group_and_propagates` fails now and then at `test_kill_grace_interrupt.py`:66 with ValueError on an empty pid file.
+
+## Proposed Fix
+
+In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an integer before reading it, and have the deaf child write it atomically (write a temporary name, then os.replace).
+
+## Acceptance Criteria
+
+- [ ] **AC1** The behaviour described is corrected: `KillGraceInterruptTests._child` reads child.pid with int(`read_text())` as soon as the fake CLI has marked its SIGTERM.
+- [ ] **AC2** The proposed fix lands, pinned by a test: In `_child`, wait (with `_wait_for` and a bound) until child.pid holds an integer before reading it, and have the deaf child write it atomically (write a...
+
+## Revision History
+
+| Date | Author | Change |
+| --- | --- | --- |
+| 2026-11-21 | sdlc-studio | Filed |

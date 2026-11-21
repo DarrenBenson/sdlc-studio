@@ -1,6 +1,6 @@
 # BG1609: A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/sprint.py, .claude/skills/sdlc-studio/scripts/critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat.py, changelog.d/BG1609.md, .claude/skills/sdlc-studio/scripts/tests/test_sprint.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py, .claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py, .claude/skills/sdlc-studio/scripts/tests/test_plan_risk_flag.py

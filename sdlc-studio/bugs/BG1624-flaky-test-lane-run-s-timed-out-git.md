@@ -1,6 +1,6 @@
 # BG1624: Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/tests/test_lane_run.py, .claude/skills/sdlc-studio/scripts/lib/lanes.py, changelog.d/BG1624.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_timeout_index_lock.py

@@ -1,0 +1,70 @@
+{
+  "unit": "BG1512",
+  "digest": "6eb3fac46a7de988 at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1512-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "only the first refused value named",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        raise ValueError(\"; \".join(bad))",
+      "new": "        raise ValueError(bad[0])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_every_refused_value_is_named_with_the_values_accepted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a result compared by its case",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        if result and result not in MUTANT_RESULTS:",
+      "new": "        if result and result.lower() not in MUTANT_RESULTS:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_every_refused_value_is_named_with_the_values_accepted",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no page accepted as a surface",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "    pages = [a for a in affects\n             if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]",
+      "new": "    pages = []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "any file the Affects declares accepted as a surface",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "             if a.lower().endswith(CLAIM_PAGE_SUFFIXES) and a not in fragments]",
+      "new": "             if a not in fragments]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_critic_self_check_record.py::SelfCheckRecordTests::test_a_page_in_the_unit_s_affects_is_a_claim_surface",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the land judges the hand-in only the first refusal deep",
+      "file": ".claude/skills/sdlc-studio/scripts/critic.py",
+      "old": "        raise ValueError(\"; \".join(bad))",
+      "new": "        raise ValueError(bad[0])",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_hand_in_the_record_would_refuse_stops_the_land_before_the_commit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief's rulings retyped, not read from the record",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "             f\"{'; '.join([*required, *optional])}; ruling: {', '.join(critic.CLAIM_RULINGS)}, \"",
+      "new": "             f\"{'; '.join([*required, *optional])}; ruling: TRUE, FALSE, UNVERIFIABLE, \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_lists_the_surfaces_rulings_and_results_the_record_accepts",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the brief lists no Affects page",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    required, optional = critic.claim_surfaces(affects)\n    lines = [f\"Then, for {uid}",
+      "new": "    required, optional = critic.claim_surfaces(affects)\n    optional = list(critic.CLAIM_SURFACES)\n    lines = [f\"Then, for {uid}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_builder_brief.py::BuilderBriefTests::test_the_brief_lists_the_surfaces_rulings_and_results_the_record_accepts",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

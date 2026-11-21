@@ -1,14 +1,32 @@
 {
   "unit": "BG1609",
-  "digest": "bcc612c87869f627 at 97530826c479",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a43be32746739f226/BG1609-mutation-edits.json",
+  "digest": "55cc78cf022fbece at ef108745050d",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a6a34dc80a5726f22/BG1609-mutation-edits.json",
   "mutants": [
+    {
+      "mutant": "own-seats-walked-in-reverse",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "[*seats, *persona_resolve.SEATS]",
+      "new": "[*reversed(seats), *persona_resolve.SEATS]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whole-candidate-list-walked-in-reverse",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "[*seats, *persona_resolve.SEATS]",
+      "new": "[*reversed([*seats, *persona_resolve.SEATS])]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
+      "result": "killed",
+      "answer": ""
+    },
     {
       "mutant": "shipped-seats-searched-first",
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "[*seats, *persona_resolve.SEATS]",
       "new": "[*persona_resolve.SEATS, *seats]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
       "result": "killed",
       "answer": ""
     },
@@ -17,7 +35,7 @@
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "    taken = (FIRST_REVIEW_SEAT, critic.BUILD_SEAT)",
       "new": "    taken = (FIRST_REVIEW_SEAT,)",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
       "result": "killed",
       "answer": ""
     },
@@ -26,16 +44,25 @@
       "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
       "old": "[*seats, *persona_resolve.SEATS]",
       "new": "[*seats]",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "test-project-holds-product-not-security",
+      "mutant": "test-order-fixture-holds-one-candidate",
       "file": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
-      "old": "            for role in (\"engineering\", \"qa\", \"security\"):",
-      "new": "            for role in (\"engineering\", \"qa\", \"product\"):",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "old": "            for role in (\"security\", \"qa\", \"engineering\", \"architecture\"):",
+      "new": "            for role in (\"qa\", \"engineering\", \"architecture\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "test-order-expects-the-last-candidate",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py",
+      "old": "            self.assertEqual(\"architecture\", sprint.second_review_seat(root),",
+      "new": "            self.assertEqual(\"security\", sprint.second_review_seat(root),",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_second_seat_differs_from_builder.py::SecondSeatNotBuilderTests",
       "result": "killed",
       "answer": ""
     }

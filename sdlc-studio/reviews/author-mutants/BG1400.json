@@ -1,0 +1,25 @@
+{
+  "unit": "BG1400",
+  "digest": "a6cfbf00caee11ed at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1400-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "another reviewer is taken for a carried unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        if refused:\n            refusal = refusal or refused",
+      "new": "        if False:\n            refusal = refusal or refused",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_another_reviewer_is_refused_naming_the_one_who_rejected",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "no default reviewer for a carried unit",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        elif carried != given and not refusal:",
+      "new": "        elif False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_carried_reviewer_id.py::CarriedReviewerIdTests::test_no_reviewer_defaults_to_the_one_who_rejected",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

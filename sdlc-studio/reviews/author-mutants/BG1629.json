@@ -1,0 +1,34 @@
+{
+  "unit": "BG1629",
+  "digest": "1a3dcdb3ace2612b at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1629-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the land reads no minutes from the transcript",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if land and reading is not None and minutes is None:",
+      "new": "    if False and land and reading is not None and minutes is None:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_repaired_unit_reads_both_builders_minutes",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the span read in hours, not minutes",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    return (max(times) - min(times)).total_seconds() / 60, \"\"",
+      "new": "    return (max(times) - min(times)).total_seconds() / 3600, \"\"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_lane_of_two_units_splits_its_minutes_by_points",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a transcript with no span records no warning",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "            print(f\"WARNING no minutes were recorded beside the tokens: {why}\", file=sys.stderr)",
+      "new": "            pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_delegated_minutes.py::LaneLandRecordsMinutesTests::test_a_transcript_with_no_times_records_tokens_and_says_so",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

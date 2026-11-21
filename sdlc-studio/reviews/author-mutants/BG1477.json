@@ -1,0 +1,25 @@
+{
+  "unit": "BG1477",
+  "digest": "6cee2d80bec35093 at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1477-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the accept never keeps the land's split",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        kept = _lane_landed_share(root, results[0][\"unit\"], reading)",
+      "new": "        kept = None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_naming_the_builder_keeps_the_lands_split",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a unit the land did not price is kept unpriced",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "        kept = _lane_landed_share(root, results[0][\"unit\"], reading)",
+      "new": "        kept = _lane_landed_share(root, results[0][\"unit\"], reading) or dict(reading)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LandPricesTheBuilderTests::test_an_accept_still_prices_a_unit_the_land_did_not",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

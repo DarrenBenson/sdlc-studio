@@ -1,6 +1,6 @@
 # BG1399: lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, .claude/skills/sdlc-studio/scripts/tests/test_self_check_before_commit.py, changelog.d/BG1399.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_resume.py, .claude/skills/sdlc-studio/scripts/tests/test_lean_lane_brief_repair_scope.py

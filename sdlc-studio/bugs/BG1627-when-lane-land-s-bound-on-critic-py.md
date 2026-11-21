@@ -1,6 +1,6 @@
 # BG1627: When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 2
 > **Affects:** .claude/skills/sdlc-studio/scripts/lib/lanes.py, .claude/skills/sdlc-studio/scripts/tests/test_lane_land.py, changelog.d/BG1627.md, .claude/skills/sdlc-studio/scripts/tests/test_lane_land_brief_bound_group.py, .claude/skills/sdlc-studio/scripts/tests/test_critic.py

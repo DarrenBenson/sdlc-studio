@@ -1,0 +1,34 @@
+{
+  "unit": "BG1491",
+  "digest": "07ba6431d3a8add9 at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1491-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the APPROVE on an unspecified criterion is taken",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "                   or _lane_unspecified_refusal(args.root, unit, getattr(args, \"verdict\", None)))",
+      "new": "                   or None)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every verdict refused on an unspecified criterion, a REJECT too",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    if str(said or \"\").strip().upper() != critic.APPROVE:",
+      "new": "    if False:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_accept.py::LaneAcceptTests::test_an_approve_on_a_criterion_with_no_verify_line_moves_nothing",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the plan names no unspecified criterion",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint.py",
+      "old": "    _render_unspecified_criteria(data, args.root)",
+      "new": "    pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_sprint.py::UnspecifiedCriterionNamedAtPlanTests::test_batch_add_and_plan_name_a_criterion_with_no_verify_line",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

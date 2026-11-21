@@ -1,0 +1,79 @@
+{
+  "unit": "BG1448",
+  "digest": "f27ee8ddd28eb2ee at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1448-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the replay's conflict undone and the commit run anyway",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        _git(wt_top, \"reset\", \"--soft\", head)\n        named = \", \".join(conflicts)",
+      "new": "        _git(wt_top, \"reset\", \"--soft\", head)\n        return True\n        named = \", \".join(conflicts)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_is_refused_before_the_hooks_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the refusal worded so sprint drive reads no conflicting file",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"files: {named}. The lane stays staged in {wt_top} on its old base: \"",
+      "new": "f\"files {named}: the lane stays staged in {wt_top} on its old base: \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_conflict_is_refused_before_the_hooks_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every replay refused",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    replay = _git(wt_top, \"rebase\", target)\n    if replay.returncode:",
+      "new": "    replay = _git(wt_top, \"rebase\", target)\n    if True:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_a_replay_that_applies_still_commits_through_the_hooks",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page left as the replay merged it",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    _regenerate(wt_top)\n    return True",
+      "new": "    return True",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests::test_the_second_lands_with_the_page_regenerated_over_both",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the page regenerated but not staged again",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        _git(wt_top, \"add\", \"--\", *again)",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests::test_the_second_lands_with_the_page_regenerated_over_both",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a page the lane did not stage left rewritten in the worktree",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        _git(wt_top, \"checkout\", \"--\", *put_back)",
+      "new": "        pass",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests::test_the_second_lands_with_the_page_regenerated_over_both",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "every page a run rewrites committed",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    if again := [p for p in rewritten if p in staged]:",
+      "new": "    if again := rewritten:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandSurfaceRegenTests::test_the_second_lands_with_the_page_regenerated_over_both",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the replay-conflict refusal saying no hook ran, as it did before the resolution",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "f\"commit, failed, so the rebase was undone: nothing was committed, so \"\n                        f\"the commit's hooks never ran, and {target} is as it was. Conflicting \"",
+      "new": "f\"commit, failed, so the rebase was undone: nothing was committed, no \"\n                        f\"hook ran and {target} is as it was. Conflicting \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land_replay.py::LaneLandReplayTests::test_the_refusal_claims_only_the_commits_hooks_did_not_run",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

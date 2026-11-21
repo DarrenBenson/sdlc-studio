@@ -1,0 +1,52 @@
+{
+  "unit": "BG1539",
+  "digest": "7b4e00a12e1cb10c at b1d2369353ed",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ad252b3fa7778bc97/BG1539-mutation-edits.json",
+  "mutants": [
+    {
+      "mutant": "the record copies the plan's stamp",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        \"effort\": carried, \"effort_stamped\": stamp, \"effort_reason\": not_applied,",
+      "new": "        \"effort\": stamp, \"effort_stamped\": stamp, \"effort_reason\": not_applied,",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the command never carries the flag the table names",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "    cmd += effort_carried(harness, effort)[0]",
+      "new": "    cmd += []",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_run.py::HeadlessEffortTests::test_the_lane_row_records_the_effort_the_command_carried",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "the report reads no lane record",
+      "file": ".claude/skills/sdlc-studio/scripts/sprint_report.py",
+      "old": "    headless = lanes.effort_not_applied(root, state.get(\"run_id\"))",
+      "new": "    headless = {}",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "another run's lane record counted",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id or rec.get(\"effort\"):",
+      "new": "        if not isinstance(rec, dict) or rec.get(\"effort\"):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_a_headless_unit_is_never_reported_dispatched_at_an_effort_not_passed",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "a command that carried the effort counted as not applied",
+      "file": ".claude/skills/sdlc-studio/scripts/lib/lanes.py",
+      "old": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id or rec.get(\"effort\"):",
+      "new": "        if not isinstance(rec, dict) or rec.get(\"run_id\") != run_id:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_report_effort.py::ReportEffortTests::test_an_in_session_unit_still_reads_as_dispatched",
+      "result": "killed",
+      "answer": ""
+    }
+  ]
+}

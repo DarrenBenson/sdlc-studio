@@ -1,7 +1,7 @@
 {
   "unit": "BG1470",
-  "digest": "973614df2d2a2c04 at c70b799ef175",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a903dc7ee795b57c3/BG1470-mutation-edits.json",
+  "digest": "e44c5d14076b49dd at cd58d123954e",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a82426fc3d3c6618c/BG1470-mutation-edits.json",
   "mutants": [
     {
       "mutant": "a work-tree rename's source not skipped",
@@ -55,7 +55,7 @@
       "new": "            if tree in \"RC\":",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lane_land.py::LaneLandTests::test_a_copy_names_its_source_only_where_it_changed",
       "result": "survived",
-      "answer": "equivalent: git reports a copy in the work tree only from a source changed in the work tree, and then lists that source on its own as unstaged, so naming it again from the copy entry adds nothing. Probe (git 2.56, status.renames=copies): a copy beside its edited source prints ' M b.py| C b4.py|b.py|'; beside its clean source git prints ' A b4.py|', no copy at all."
+      "answer": "equivalent: in the work-tree column git reports a copy only from a source changed in the work tree. An edited source has an entry of its own, so it is named anyway; a deleted one is paired by git with one of the paths added there as its rename, whose entry names it without the mutant too. Probe (status.renames=copies, through lane land): beside an edited source git prints ' M src/b.py| C src/b4.py|src/b.py' and the refusal names src/b.py and src/b4.py; beside a clean source ' A src/b4.py', no copy; with src/b.py deleted and two copies added with git add -N, ' C src/c1.py|src/b.py| R src/c2.py|src/b.py', and the refusal names src/b.py (unstaged), src/c1.py (unstaged), src/c2.py (unstaged), the same set the mutant gives."
     },
     {
       "mutant": "a path decoded as strict UTF-8",

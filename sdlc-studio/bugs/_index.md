@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 330 |
+| Open | 317 |
 | In Progress | 0 |
-| Fixed | 1022 |
+| Fixed | 1036 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1693** |
+| **Total** | **1694** |
 
 ## All Bugs
 
@@ -474,7 +474,7 @@
 | [BG1396](BG1396-a-verify-line-with-its-own-q-makes.md) | A Verify line with its own -q makes pytest run at -qq with no summary, so a partial skip is stamped pass, and -s and an unpinned _PYTEST_SKIP_NODE add edge cases | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1397](BG1397-sprint-lane-return-agent-refuses-a-multi-unit.md) | sprint lane return --agent refuses a multi-unit lane, so a multi-unit lane's builder is never priced per unit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1398](BG1398-the-tool-call-budget-in-a-multi-unit.md) | The tool-call budget in a multi-unit lane brief is printed once per unit and nothing states the lane's total | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1399](BG1399-lane-land-commits-and-lands-the-code-then.md) | lane land commits and lands the code, then refuses a self-check missing a required surface, when the builder can no longer be resumed | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1400](BG1400-lane-accept-takes-reviewer-as-free-text-so.md) | lane accept takes --reviewer as free text, so a carried unit's re-review under the wrong id strands an APPROVE that only an operator supersession retires | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1401](BG1401-bg1190-s-unpinned-reap-and-bg1262-bg1261-s.md) | BG1190's unpinned reap and BG1262/BG1261's watchdog SIGKILL after its grace are covered by no test | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1402](BG1402-the-bg1333-integration-rule-counts-as-present-if.md) | The BG1333 integration rule counts as present if 'Integrate continuously' appears anywhere in AGENTS.md, so a sentence negating it passes | Open | Low | 2026-11-13 | 2026-11-13 |
@@ -484,7 +484,7 @@
 | [BG1406](BG1406-lane-run-accepts-a-home-isolated-unit-and.md) | lane run accepts a home-isolated unit and hands its worktree builder the main-checkout brief, and 'Isolation: no home' reads as home | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1407](BG1407-a-builder-s-mutation-probe-in-a-scratch.md) | A builder's mutation probe in a scratch copy of the tests runs without the repo-root conftest.py, so without HOME confinement | Open | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1408](BG1408-sprint-lane-land-s-hook-refusal-text-and.md) | sprint lane land's hook-refusal text and module docstring say the worktree and main are as they were, which is untrue after the replay, and _discard_own_artefacts is untested | Open | Low | 2026-11-13 | 2026-11-13 |
-| [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Open | Medium | 2026-11-13 | 2026-11-13 |
+| [BG1409](BG1409-lane-land-s-rebase-uses-empty-keep-reapply.md) | lane land's rebase uses --empty=keep --reapply-cherry-picks, so a commit a builder made that main already holds becomes an empty commit | Fixed | Medium | 2026-11-13 | 2026-11-13 |
 | [BG1410](BG1410-bg1330-s-re-pointed-clean-run-test-lost.md) | BG1330's re-pointed clean-run test lost its known-issues assertion, unpriced_units' filter is untested, and lane land with no run open names lane return's --tokens flag | Won't Fix | Low | 2026-11-13 | 2026-11-13 |
 | [BG1411](BG1411-the-unpriced-gap-remedy-lane-return-units-id.md) | The unpriced-gap remedy 'lane return --units <id> --agent A' cannot work after the close | Open | Low | 2026-11-13 | 2026-11-13 |
 | [BG1412](BG1412-templates-agents-sdlc-builder-md-and-its-pinned.md) | templates/agents/sdlc-builder.md and its pinned .claude/agents copy still tell a builder to run verify_ac without --dry-run | Open | Low | 2026-11-13 | 2026-11-13 |
@@ -545,7 +545,7 @@
 | [BG1467](BG1467-a-review-cap-carry-bug-copies-the-carried.md) | A review-cap carry bug copies the carried unit's Affects verbatim, so it declares the unit's changelog fragment, not its own | Open | Low | 2026-11-15 | 2026-11-15 |
 | [BG1468](BG1468-main-is-red-personas-memory-validity-days-is.md) | Main is red: personas.memory.validity_days is documented but absent from config-defaults.yaml, and persona_memory.py has an unregistered or-empty guard | Fixed | High | 2026-11-15 | 2026-11-15 |
 | [BG1469](BG1469-persona-memory-py-s-fields-file-on-propose.md) | persona_memory.py's --fields-file on propose and approve has no test, so a mutant ignoring the document passes | Fixed | Low | 2026-11-15 | 2026-11-15 |
-| [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Open | Medium | 2026-11-15 | 2026-11-15 |
+| [BG1470](BG1470-lane-land-runs-the-full-commit-hooks-then.md) | lane land runs the full commit hooks, then refuses the rebase over an unstaged author-self-checks.md the builder's self-check left in the worktree | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1471](BG1471-persona-memory-py-set-fields-writes-a-reason.md) | persona_memory.py set_fields writes a reason holding a line break and a field line, so approve --reject or strike can forge a learning's State | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1472](BG1472-five-branches-of-the-close-s-learning-review.md) | Five branches of the close's learning review and the sign's strike are right by execution but no test fails without them | Fixed | Medium | 2026-11-15 | 2026-11-15 |
 | [BG1473](BG1473-a-damaged-tracked-run-record-reads-on-the.md) | A damaged tracked run record reads on the brief as awaits its run's signature, not as damaged | Open | Low | 2026-11-15 | 2026-11-15 |
@@ -684,12 +684,12 @@
 | [BG1606](BG1606-the-close-s-caller-check-reads-a-static.md) | The close's caller-check reads a static site's page and component changes as mechanisms no caller consumes | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1607](BG1607-sprint-sign-rewrites-retro0001-s-accuracy-block-and.md) | sprint sign rewrites RETRO0001's accuracy block and velocity row when the run state names no scaffolded retro, ignoring --retro | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1608](BG1608-goal-review-brief-and-a-first-round-record.md) | goal-review brief and a first-round record accept a goal over the 20-word limit that sprint plan and an amendment refuse | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1609](BG1609-a-high-risk-unit-s-second-review-seat.md) | A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1609](BG1609-a-high-risk-unit-s-second-review-seat.md) | A high-risk unit's second review seat defaults to engineering, the seat that built it, so the engineering brief's printed record command is a self-review | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1610](BG1610-lane-land-s-commit-timeout-kills-git-but.md) | lane land's commit timeout kills git but leaves the hooks' test run running orphaned, holding the host's CPU after the land reports nothing committed | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1611](BG1611-gate-py-red-run-s-regression-path-over.md) | gate.py --red-run's regression path over-claims: a failing id that names no file files no bug, and a second red on a different test reuses the first bug without naming that test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1612](BG1612-two-of-gate-py-red-run-s-behaviours.md) | Two of gate.py --red-run's behaviours hold by probe but no test pins them: the sections after a bug's CI Red Runs section, and the refusal of a negative, boolean or fractional rerun limit | Won't Fix | Low | 2026-11-19 | 2026-11-19 |
 | [BG1613](BG1613-ci-wait-timeout-minutes-has-no-reader-the.md) | ci.wait_timeout_minutes has no reader: the trunk guidance's wait fence hardcodes `timeout 30m`, so a project's override changes nothing | Open | Low | 2026-11-19 | 2026-11-19 |
-| [BG1614](BG1614-lane-accept-records-a-second-seat-s-verdict.md) | lane accept records a second seat's verdict against the unit's saved qa brief, not the brief the verdict file names | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1614](BG1614-lane-accept-records-a-second-seat-s-verdict.md) | lane accept records a second seat's verdict against the unit's saved qa brief, not the brief the verdict file names | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1615](BG1615-mutation-py-run-edits-counts-an-edit-that.md) | mutation.py run --edits counts an edit that does not compile as killed and exits 0, and silently ignores --format and --max-mutations | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1616](BG1616-lane-land-s-several-worktree-landing-moves-a.md) | lane land's several-worktree landing moves a body line shaped like a trailer into the trailers, and three of its refusals have no test | Open | Low | 2026-11-19 | 2026-11-19 |
 | [BG1617](BG1617-lane-land-resume-compares-unit-ids-as-raw.md) | lane land --resume compares unit ids as raw strings, a landing stopped at rebase records no commit, and two refusals have no test | Open | Low | 2026-11-19 | 2026-11-19 |
@@ -699,10 +699,10 @@
 | [BG1621](BG1621-the-trd-s-table-of-committed-records-does.md) | The TRD's table of committed records does not list the author mutant lists that critic.py self-check record now keeps under sdlc-studio/reviews/author-mutants/ | Fixed | Low | 2026-11-19 | 2026-11-19 |
 | [BG1622](BG1622-two-test-sprint-plan-tests-leak-the-plan.md) | Two test_sprint plan tests leak the plan's new unmetered warning, so a passing full run prints 106 diagnostic lines and the push gate refuses it | Fixed | High | 2026-11-19 | 2026-11-19 |
 | [BG1623](BG1623-sprint-drive-and-drive-step-an-oversized-brief.md) | sprint drive and drive step: an oversized brief exits 2 after work ran, a refused paperwork commit re-runs to exit 0, any agent id is accepted as the reviewer, and several guards have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1624](BG1624-flaky-test-lane-run-s-timed-out-git.md) | Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1624](BG1624-flaky-test-lane-run-s-timed-out-git.md) | Flaky: test_lane_run's timed-out git add test can find index.lock left behind on the gate host | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1625](BG1625-the-recorded-runner-report-and-the-replayed-mutants.md) | The recorded runner report and the replayed mutants: a -k 'a or b' selector prints bogus ids, a malformed kept list crashes the brief, a failed list write is reported as nothing written, and several checks have no test | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1626](BG1626-drive-step-names-lane-accept-as-the-resume.md) | drive step names lane accept as the resume of a warning stop at accept, which lane accept refuses because the verdict is already recorded | Open | Medium | 2026-11-19 | 2026-11-19 |
-| [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Open | Medium | 2026-11-19 | 2026-11-19 |
+| [BG1627](BG1627-when-lane-land-s-bound-on-critic-py.md) | When lane land's bound on critic.py brief fires, critic is killed and the mutation runner its replay started is left running | Fixed | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1628](BG1628-critic-py-record-escapes-a-verdict-s-underscores.md) | critic.py record escapes a verdict's underscores but not its asterisks, so a ledger row reads a glob such as `name_*` or `other_*` as emphasis and markdownlint (MD037) refuses the commit | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1629](BG1629-lane-land-prices-a-landed-lane-s-tokens.md) | lane land prices a landed lane's tokens from the agent transcript but records no minutes, so every unit with a repair round reads minutes NOT MEASURED in the report | Open | Medium | 2026-11-19 | 2026-11-19 |
 | [BG1630](BG1630-lessons-add-global-writes-only-the-lesson-section.md) | lessons add --global writes only the Lesson section and ships the template's other sections as placeholders | Open | Low | 2026-11-19 | 2026-11-19 |
@@ -761,14 +761,15 @@
 | [BG1683](BG1683-bg0954-did-not-converge-in-review-round-2.md) | BG0954 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1684](BG1684-bg0956-did-not-converge-in-review-round-2.md) | BG0956 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1685](BG1685-bg1107-did-not-converge-in-review-round-2.md) | BG1107 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1686](BG1686-bg1399-did-not-converge-in-review-round-2.md) | BG1399 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1687](BG1687-bg1409-did-not-converge-in-review-round-2.md) | BG1409 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1688](BG1688-bg1614-did-not-converge-in-review-round-2.md) | BG1614 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1689](BG1689-bg1624-did-not-converge-in-review-round-2.md) | BG1624 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1690](BG1690-bg1627-did-not-converge-in-review-round-2.md) | BG1627 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
-| [BG1691](BG1691-bg1609-did-not-converge-in-review-round-2.md) | BG1609 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1686](BG1686-bg1399-did-not-converge-in-review-round-2.md) | BG1399 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1687](BG1687-bg1409-did-not-converge-in-review-round-2.md) | BG1409 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1688](BG1688-bg1614-did-not-converge-in-review-round-2.md) | BG1614 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1689](BG1689-bg1624-did-not-converge-in-review-round-2.md) | BG1624 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1690](BG1690-bg1627-did-not-converge-in-review-round-2.md) | BG1627 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1691](BG1691-bg1609-did-not-converge-in-review-round-2.md) | BG1609 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
 | [BG1692](BG1692-the-close-s-goal-judgement-never-rules-a.md) | The close's goal judgement never rules a defect on the clause basis: _open_defects never reads Falsifies | Open | Low | 2026-11-21 | 2026-11-21 |
-| [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1693](BG1693-bg1470-did-not-converge-in-review-round-2.md) | BG1470 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-21 | 2026-11-21 |
+| [BG1694](BG1694-test-kill-grace-interrupt-reads-the-deaf-child.md) | test_kill_grace_interrupt reads the deaf child's pid file before the child has written it, so it fails under load | Open | Low | 2026-11-21 | 2026-11-21 |
 
 ## Archived Releases
 
