@@ -45,7 +45,8 @@ refusal reaches each unit's repair brief.
 
 Before step 1, each unit's self-check its hand-in carries is judged as step 6 would record it,
 by the critic's own `check_self_check`, against the unit's Affects as the landing leaves them on
-the root: the lane's own copy where its change edits them, the root's otherwise. One it would
+the root: the staged copy of whichever worktree of the landing changes them, the unit's own or
+another's, and the root's where none does. One it would
 refuse, a required surface missing above all, stops the landing with exit 2 and nothing moved:
 the worktree, its staged change and the root's branch are as they were, so the builder repairs
 the hand-in in place.
@@ -694,37 +695,48 @@ def _read_record(path: Path) -> dict | None:
     return None
 
 
-def _landed_affects_in(root_top: Path, lane: _Lane, unit: str, scratch: Path) -> Path:
+def _landed_affects_in(root_top: Path, lanes_: list[_Lane], unit: str, scratch: Path) -> Path:
     """The checkout holding the copy of `unit`'s own file whose Affects the landing records
-    the self-check against: the root, which step 6 reads once the lane has landed, unless the
-    lane's change carries a different Affects there (an edit to the line, or the file added or
-    removed) than the copy it branched from, when what it stages is written under `scratch`
-    (empty for a file it removes, which reads as no artefact, as no file would) and `scratch`
-    is that checkout. A file both changed the line of is a replay conflict, so nothing lands. A
-    lane holding no copy of the file is judged on the root's."""
-    hit = sdlc_md.find_by_id(lane.top, unit)
-    if not hit:
-        return root_top
-    rel = Path(hit[0]).relative_to(lane.top).as_posix()
-    base = _git(lane.top, "merge-base", lane.target, "HEAD").stdout.strip()
-    staged, was = (_raw(lane.top, "show", f"{at}:{rel}") for at in ("", base))
-    declared = [None if done.returncode else
-                sdlc_md.affects_files(done.stdout.decode("utf-8", "replace"))
-                for done in (staged, was)]
-    if declared[0] == declared[1]:
-        return root_top
-    (scratch / rel).parent.mkdir(parents=True, exist_ok=True)
-    (scratch / rel).write_bytes(staged.stdout)
-    return scratch
+    the self-check against: the root, which step 6 reads once the landing is done, unless a
+    worktree of the landing, the unit's own or another, carries a different Affects there (an
+    edit to the line, or the file added or removed) than the copy it branched from. Then that
+    worktree's staged copy, read from its index and never its checkout, is written under
+    `scratch`, and `scratch` is that checkout; for a file the worktree removes the copy written
+    is empty, which reads as no artefact (one needs its text), so `scratch` holds no artefact
+    with the unit's id, as the root will not once it lands. A worktree holding no copy of the
+    file is asked about the path the root's copy is at, and passed over when the root holds none
+    either. A file whose Affects line two worktrees stage differently is refused as an overlap,
+    and one a worktree and the root's branch both changed is a replay conflict, so nothing
+    lands."""
+    for lane in lanes_:
+        top = lane.top
+        hit = sdlc_md.find_by_id(top, unit)
+        if not hit:
+            top, hit = root_top, sdlc_md.find_by_id(root_top, unit)
+        if not hit:
+            continue
+        rel = Path(hit[0]).relative_to(top).as_posix()
+        base = _git(lane.top, "merge-base", lane.target, "HEAD").stdout.strip()
+        staged, was = (_raw(lane.top, "show", f"{at}:{rel}") for at in ("", base))
+        declared = [None if done.returncode else
+                    sdlc_md.affects_files(done.stdout.decode("utf-8", "replace"))
+                    for done in (staged, was)]
+        if declared[0] == declared[1]:
+            continue
+        (scratch / rel).parent.mkdir(parents=True, exist_ok=True)
+        (scratch / rel).write_bytes(staged.stdout)
+        return scratch
+    return root_top
 
 
-def _self_check_refusal(root_top: Path, lane: _Lane, unit: str) -> str | None:
+def _self_check_refusal(root_top: Path, lanes_: list[_Lane], lane: _Lane,
+                        unit: str) -> str | None:
     """The cause `critic.py self-check record` would refuse `unit`'s self-check for, as `lane`'s
     hand-in carries it, or None. The claims file, mutants file and runner report are read and
     judged as `_record_and_brief` hands them to the critic, by the critic's own readers and
-    `check_self_check`, against the unit's Affects as the landing leaves them on the root
-    (`_landed_affects_in`). A hand-in missing the files a record needs (no claims file, or
-    neither a mutants file nor a runner report) is not judged here: the self-check step names
+    `check_self_check`, against the unit's Affects as the landing of `lanes_` leaves them on
+    the root (`_landed_affects_in`). A hand-in missing the files a record needs (no claims file,
+    or neither a mutants file nor a runner report) is not judged here: the self-check step names
     it once the lane has landed, as it always has."""
     import tempfile  # noqa: PLC0415 - only a lane carrying its own Affects edit needs one
     hand_in = lane.top / HAND_IN
@@ -738,7 +750,7 @@ def _self_check_refusal(root_top: Path, lane: _Lane, unit: str) -> str | None:
             said = critic._entries(str(claims), "claims")  # noqa: SLF001
             by_hand = critic._entries(str(mutants), "mutants") if mutants.is_file() else []  # noqa: SLF001
             listed = critic.mutants_from_report(report, unit) if report.is_file() else []
-            scope = _landed_affects_in(root_top, lane, unit, Path(scratch))
+            scope = _landed_affects_in(root_top, lanes_, unit, Path(scratch))
             critic.check_self_check(scope, unit, said, [*listed, *by_hand])
         except (OSError, ValueError) as exc:
             return str(exc)
@@ -751,7 +763,7 @@ def _refuse_self_checks(root_top: Path, lanes_: list[_Lane]) -> None:
     worktree still holds the change and the hand-in to repair."""
     for lane in lanes_:
         for unit in lane.units:
-            if why := _self_check_refusal(root_top, lane, unit):
+            if why := _self_check_refusal(root_top, lanes_, lane, unit):
                 raise LandError(f"{unit}'s self-check in {lane.top / HAND_IN} would be refused "
                                 f"once landed: {why}. Nothing was committed: correct the "
                                 f"hand-in in the worktree and land again", 2)
@@ -1043,7 +1055,11 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     header, a `verdict` at the path a rejoinder brief issued is matched by its path. A brief
     noted before the landing that saved the brief, whose note is the one that issued the file
     the saved brief names, may answer an earlier round, so it is refused; a brief noted at or
-    after it, a re-brief of the same scope among them, answers this round. Under
+    after it, a re-brief of the same scope among them, answers this round. A saved brief that
+    names no file, as one saved before verdict files does, is dated by the last note of its
+    fingerprint, as it was then, so a re-brief of its scope is taken for its landing. One that
+    names a file no note records cannot be dated, so a verdict its header or a rejoinder's path
+    ties to a noted brief is refused, naming the brief to save again. Under
     `review.author_self_check: block` a unit with no
     current self-check (`critic.self_check_gap`) is refused; under `report` that is a warning;
     `off` asks nothing."""
@@ -1087,7 +1103,8 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
         notes = ""
     # the brief text repeats from round to round, and a re-brief of the scope notes the same
     # fingerprint, so the landing that saved the brief is told by the file it issued, which the
-    # saved brief names last; a brief noted before that note is refused
+    # saved brief names last; a brief noted before that note is refused. A saved brief naming
+    # no file is dated by the last note of its fingerprint instead
     stem = critic._header_lines(said.replace("\r\n", "\n")).get("BRIEF")  # noqa: SLF001
     saved_stem = (re.findall(r"^BRIEF: (\S+)[ \t]*$", saved, re.M) or [None])[-1]
     landed_at, issued = None, None
@@ -1100,6 +1117,8 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
             continue
         if row.get("fp") == fp:
             tier = row.get("tier") or tier
+            if saved_stem is None:
+                landed_at = n
         if verdict is None or not row.get("verdict_file"):
             continue
         if Path(str(row["verdict_file"])).stem == saved_stem:
@@ -1126,10 +1145,18 @@ def _brief_of(root: Path, unit: str, verdict: Path | None = None,
     again = (f"brief the seat again with `critic.py brief --unit {unit} --seat "
              f"{row.get('seat') or 'qa'}{' --rejoinder' if row.get('rejoinder') else ''}` and "
              f"record the file that brief names")
-    if landed_at is None or n < landed_at:
-        raise LandError(f"{verdict} was issued by a {kind} written before the landing that "
-                        f"saved {rel} (fingerprint {fp}), so it may answer an earlier round and "
-                        f"nothing was recorded: {again}", 2)
+    if landed_at is None:
+        raise LandError(f"{rel} names the brief file {saved_stem}, which no note in "
+                        f"{critic.BRIEF_NOTES_REL} records, so the landing that saved it cannot "
+                        f"be placed before or after the brief that issued {verdict} and nothing "
+                        f"was recorded: run `critic.py brief --unit {unit} --seat qa` and save "
+                        f"its output at {rel}, then {again}", 2)
+    if n < landed_at:
+        anchor = (f"the landing that saved {rel} (fingerprint {fp})" if saved_stem else
+                  f"the last brief noted with {rel}'s fingerprint {fp}, taken as its landing "
+                  f"since it names no file it issued")
+        raise LandError(f"{verdict} was issued by a {kind} written before {anchor}, so it may "
+                        f"answer an earlier round and nothing was recorded: {again}", 2)
     if not row.get("fp") or not row.get("tier"):
         raise LandError(f"the note in {critic.BRIEF_NOTES_REL} that issued {verdict} records "
                         f"no fingerprint or no tier, so nothing was recorded: {again}", 2)

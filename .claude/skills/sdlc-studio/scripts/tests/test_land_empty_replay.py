@@ -84,6 +84,30 @@ class LandEmptyReplayTests(base._LaneFixture):
         self.assertEqual(head, base._git(self.root, "rev-parse", "HEAD"))
         self.assertEqual([], _empty_commits(self.root), "an empty commit landed on main")
 
+    def test_a_dropped_replay_ending_on_a_builder_commit_lands_that_commit(self) -> None:
+        """MUTANT: the replay taken back out whenever the rebase ends off main's head (`HEAD !=
+        target`, not the scratch commit's author). Main holds the staged change, so the rebase
+        drops the scratch commit and ends on the builder's own commit, which main lacks: that
+        commit lands as the builder made it, and nothing is staged again or committed."""
+        base._write(self.wt, "src/b.py", "B = 3\n")
+        gitutil.git(["add", "--", "src/b.py"], self.wt)
+        gitutil.git(["commit", "-q", "-m", "fix: b is three, in the lane"], self.wt)
+        moved = self._move_main("src/a.py", "A = 2\n")
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in()
+        before = self._hook_runs_in_the_worktree()  # the builder's own commit ran the hook
+        r = self._land(A)
+        out = r.stdout + r.stderr
+        self.assertEqual(0, r.returncode, out)
+        self.assertIn("the staged change is already on main", out)
+        self.assertEqual(before, self._hook_runs_in_the_worktree(), "a second commit was made")
+        self.assertEqual(["fix: b is three, in the lane", "chore: main moves src/a.py"],
+                         base._git(self.root, "log", "-2", "--format=%s").splitlines())
+        self.assertEqual(moved, base._git(self.root, "rev-parse", "HEAD^"))
+        self.assertEqual("B = 3\n", (self.root / "src/b.py").read_text(encoding="utf-8"))
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+        self.assertEqual([], _empty_commits(self.root), "an empty commit landed on main")
+
     def test_a_builder_commit_main_holds_in_a_different_commit_is_dropped(self) -> None:
         """MUTANT: the replay rebases with `--empty=keep` (main took the builder's change in a
         commit carrying another change too, so git's cherry-pick detection does not drop it: the

@@ -6,7 +6,9 @@ A high-risk unit takes two independent seats. `sprint lane land` saves the unit'
 naming the file that brief issued. `lane accept` recorded that verdict against the saved qa
 brief, ignoring the header. Now it records it against the brief the header names, and refuses a
 header that names no brief noted for the unit, or one noted before the landing that saved the
-QA brief, which a later re-brief of the same scope is not.
+QA brief, which a later re-brief of the same scope is not. A saved brief naming no file it
+issued, as one saved before verdict files does, is dated by the last note of its
+fingerprint, and one naming a file no note records refuses a verdict tied to another brief.
 
 The cases run on `test_lane_accept`'s throwaway repository, with a component map that puts the
 unit's Affects in the top risk class: `sprint.py lane land` lands each round for real, and
@@ -178,6 +180,95 @@ class LaneAcceptSecondSeatBriefTests(unittest.TestCase):
         self.assertEqual(rc, 2, out.getvalue() + err.getvalue())
         self.assertIn("the verdict file cannot be read", err.getvalue())
         self.assertEqual(self._rows(GREEN), rows, "a verdict was recorded")
+
+
+class SavedBriefDatingTests(unittest.TestCase):
+    """The landing a saved QA brief is dated by when no note names a file it issued: one that
+    names none, saved before verdict files, is dated by the last note of its fingerprint, and one
+    naming a file no note records cannot be dated. A class of its own, beside the criterion's, so
+    the criterion's selector stays inside the verifier's bound, on that class's fixture."""
+
+    setUp = LaneAcceptSecondSeatBriefTests.setUp
+    tearDown = LaneAcceptSecondSeatBriefTests.tearDown
+    _accept = LaneAcceptSecondSeatBriefTests._accept
+    _rows = LaneAcceptSecondSeatBriefTests._rows
+    _land_round = LaneAcceptSecondSeatBriefTests._land_round
+    _brief = LaneAcceptSecondSeatBriefTests._brief
+    _landed_fp = LaneAcceptSecondSeatBriefTests._landed_fp
+    _seat_brief = LaneAcceptSecondSeatBriefTests._seat_brief
+
+    _rejoinder = base.LaneAcceptTests._rejoinder
+    _round_one_rejected = base.LaneAcceptTests._round_one_rejected
+
+    def _saved_stem(self) -> str:
+        return re.findall(r"^BRIEF: (\S+)$", self._brief().read_text(encoding="utf-8"),
+                          re.M)[-1]
+
+    def test_a_saved_brief_naming_no_file_still_takes_a_rejoinder_after_its_landing(self):
+        """MUTANT: a saved brief with no `BRIEF:` line, as a landing before verdict files left
+        one, dated by no note (every rejoinder verdict is refused, the remedy too). As before
+        verdict files, the last note of its fingerprint dates its landing: a rejoinder briefed
+        before it is refused and one briefed after it is recorded."""
+        _, prior = self._round_one_rejected()
+        early, _, _ = self._rejoinder(prior)
+        landed = self._land_round("A = 3\n", f"fix({GREEN}): a is three")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        older = critic.strip_verdict_file(self._brief().read_text(encoding="utf-8"))
+        self._brief().write_text(older, encoding="utf-8")
+        self.assertNotRegex(older, r"(?m)^BRIEF: ")
+        self.assertEqual(critic.brief_fingerprint(older), saved)
+        rows = self._rows(GREEN)
+        rc, out, err = self._accept(GREEN, APPROVE, at=early)
+        self.assertEqual((rc, self._rows(GREEN)), (2, rows), out + err)
+        self.assertIn(f"{early} was issued by a rejoinder brief written before the last brief "
+                      f"noted with sdlc-studio/.local/briefs/{GREEN}-qa.txt's fingerprint "
+                      f"{saved}, taken as its landing since it names no file it issued", err)
+        path, fp, tier = self._rejoinder(prior, "--tier", "full")
+        rc, out, err = self._accept(GREEN, APPROVE, at=path)
+        self.assertIn(f"{GREEN}: APPROVE recorded, round 2, against brief {fp} at the {tier} "
+                      f"tier", out, err)
+        self.assertEqual(self._rows(GREEN)[-1][1:6:4], ["APPROVE", fp])
+
+    def test_a_saved_brief_naming_a_file_no_note_records_is_refused(self) -> None:
+        """MUTANT: the issuing brief taken when no note names the file the saved brief issued
+        (`landed_at is not None and n < landed_at`), so which round it answers is a guess. The
+        landing's note is lost and a qa re-brief noted the saved brief's fingerprint since: the
+        refusal says so, not that the seat's brief came before the landing, and the remedy it
+        names records the verdict."""
+        landed = self._land_round("A = 2\n", f"feat({GREEN}): a is two")
+        self.assertEqual(landed.returncode, 0, landed.stdout + landed.stderr)
+        saved = self._landed_fp(landed)
+        stem, notes = self._saved_stem(), self.root / critic.BRIEF_NOTES_REL
+        kept = [ln for ln in notes.read_text(encoding="utf-8").splitlines()
+                if f"{stem}.txt" not in ln]
+        self.assertLess(len(kept), len(notes.read_text(encoding="utf-8").splitlines()))
+        notes.write_text("".join(f"{ln}\n" for ln in kept), encoding="utf-8")
+        self.assertEqual(self._seat_brief(seat="qa")[1], saved, "the re-brief is of another scope")
+        path, _, _ = self._seat_brief()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path, reviewer=ENGINEER)
+        self.assertEqual(rc, 2, out + err)
+        self.assertFalse(critic.verdicts_path(self.root).exists(), "a verdict was recorded")
+        rel = f"sdlc-studio/.local/briefs/{GREEN}-qa.txt"
+        self.assertIn(f"{rel} names the brief file {stem}, which no note in "
+                      f"{critic.BRIEF_NOTES_REL} records, so the landing that saved it cannot "
+                      f"be placed before or after the brief that issued {path}", err)
+        self.assertNotIn("written before", err)
+        self.assertIn(f"run `critic.py brief --unit {GREEN} --seat qa` and save its output at "
+                      f"{rel}, then brief the seat again with `critic.py brief --unit {GREEN} "
+                      f"--seat engineering`", err)
+        # positive control: the remedy it names
+        done = subprocess.run(
+            [sys.executable, "-B", str(SCRIPTS / "critic.py"), "brief", "--unit", GREEN, "--seat",
+             "qa", "--root", str(self.root)], capture_output=True, text=True, timeout=300,
+            cwd=str(self.root), env=gitutil.git_env(), check=False)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self._brief().write_text(done.stdout, encoding="utf-8")
+        path, fp, _ = self._seat_brief()
+        rc, out, err = self._accept(GREEN, f"UNIT: {GREEN}\nBRIEF: {path.stem}\n{APPROVE}",
+                                    at=path, reviewer=ENGINEER)
+        self.assertIn(f"against brief {fp}", out, err)
 
 
 if __name__ == "__main__":

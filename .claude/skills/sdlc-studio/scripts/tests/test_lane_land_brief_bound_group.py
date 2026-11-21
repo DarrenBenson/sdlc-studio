@@ -138,6 +138,21 @@ class LandBriefBoundKillsReplayTests(base._LaneFixture):
                           ("self-check", base.lanes.CRITIC_TIMEOUT, None)], seen)
         self.assertGreater(base.critic.REPLAY_STOP_GRACE, base.lanes.KILL_GRACE)
 
+    def test_the_bound_gives_the_group_the_grace_it_was_handed(self) -> None:
+        """MUTANT: `_bounded` ends its group at the bound with KILL_GRACE, not the grace it was
+        handed (`_kill_group(proc)`). The command stops cleanly one second after its SIGTERM:
+        handed eight, it is given the time to; KILL_GRACE, shrunk here to 0.3 s so the case is
+        quick, would end it by SIGKILL first."""
+        where = Path(self._tmp.name)
+        ready, stopped = where / "ready", where / "stopped"
+        stop = (f"trap 'sleep 1; : > {stopped}; exit 0' TERM; : > {ready}; "
+                "while :; do sleep 0.05; done")
+        with unittest.mock.patch.object(base.lanes, "KILL_GRACE", 0.3):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                base.lanes._bounded(["sh", "-c", stop], 2, 8, stdout=subprocess.DEVNULL)
+        self.assertTrue(ready.exists(), "the command never set its SIGTERM trap")
+        self.assertTrue(stopped.exists(), "the command was killed inside the grace it was handed")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,14 +35,19 @@ RUNS = 4
 #:   leave - take the worktree's `index.lock` itself, as a git of its own that crashed would
 #:           leave it, then wait to be stopped, ending on the SIGTERM, so no SIGKILL is sent;
 #:   exit - start the lock-taking child of `lock`, then exit 0 without waiting on it, so the
-#:          lane ends on its own and its group, still holding the child, is sent SIGKILL.
+#:          lane ends on its own and its group, still holding the child, is sent SIGKILL;
+#:   exit-deaf - the same, with the child of `deaf`, which takes no lock;
+#:   drop - take the worktree's `index.lock` itself and exit 0 at once, so the lane ends on
+#:          its own with nothing left in its group, and no SIGKILL is sent.
 FAKE = r'''#!{python}
 import os, signal, subprocess, sys, time
 mode = os.environ["LOCK_FAKE"]
-if mode == "leave":
+if mode in ("leave", "drop"):
     lock = subprocess.run(["git", "rev-parse", "--git-path", "index.lock"], capture_output=True,
                           text=True, check=True).stdout.strip()
     open(lock, "x").close()
+    if mode == "drop":
+        sys.exit(0)
     time.sleep(60)
 if mode == "loop":
     grow = os.path.join("src", "grow.txt")
@@ -63,7 +68,7 @@ child = subprocess.Popen([sys.executable, "-c",
     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 while not os.path.exists(ready):
     time.sleep(0.01)
-if mode == "exit":
+if mode in ("exit", "exit-deaf"):
     sys.exit(0)
 child.wait()
 '''
@@ -132,6 +137,36 @@ class TimedOutGitAddLeavesNoLockTests(base._LaneCase):
         self.assertTrue(lock.exists(), "a lock taken before the lane ran was removed")
         self.assertEqual((before.st_ino, before.st_mtime_ns),
                          (lock.stat().st_ino, lock.stat().st_mtime_ns))
+        self.assertNotIn("removed", out)
+
+    def _exits_on_its_own(self, wt: Path, mode: str) -> str:
+        with unittest.mock.patch.dict(os.environ, {"LOCK_FAKE": mode}):
+            rc, out = self._run("codex", "--worktree", str(wt), "--timeout", "60")
+        self.assertNotEqual(lanes.TIMED_OUT, self._record().get("unmetered"), out)
+        return out
+
+    def test_a_lock_there_before_a_lane_that_exits_on_its_own_is_left_in_place(self) -> None:
+        """MUTANT: the exit path's clearing told no lock was there before the run (`before`
+        dropped to None there, so a lock the lane never took goes). The CLI exits leaving a
+        child that ignores SIGTERM and takes no lock, so its group is sent SIGKILL."""
+        wt = self._worktree()
+        lock = self._lock(wt)
+        lock.write_text("", encoding="utf-8")
+        before = lock.stat()
+        out = self._exits_on_its_own(wt, "exit-deaf")
+        self.assertTrue((self.log / "ready").exists(), "the deaf child never started")
+        self.assertTrue(lock.exists(), "a lock taken before the lane ran was removed")
+        self.assertEqual((before.st_ino, before.st_mtime_ns),
+                         (lock.stat().st_ino, lock.stat().st_mtime_ns))
+        self.assertNotIn("removed", out)
+
+    def test_a_lock_left_by_a_lane_that_exits_with_its_group_empty_is_left(self) -> None:
+        """MUTANT: the exit path clearing the lock whether or not SIGKILL was sent. The CLI
+        takes the lock and exits with nothing left in its group, so no SIGKILL is sent and the
+        lock it left is not one a SIGKILL left."""
+        wt = self._worktree()
+        out = self._exits_on_its_own(wt, "drop")
+        self.assertTrue(self._lock(wt).exists(), "a lock no SIGKILL left was removed")
         self.assertNotIn("removed", out)
 
     def test_a_lock_left_by_a_lane_that_ends_on_sigterm_is_left_in_place(self) -> None:

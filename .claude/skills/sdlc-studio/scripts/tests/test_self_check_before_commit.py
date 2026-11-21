@@ -249,6 +249,41 @@ class SelfCheckLandedAffectsTests(base._LaneFixture):
         self.assertEqual(0, r.returncode, r.stdout + r.stderr)
         self.assertEqual([unit], [row["unit"] for row in base.critic.read_self_checks(self.root)])
 
+    def test_the_lane_s_staged_copy_is_judged_not_its_checkout(self) -> None:
+        """MUTANT: the worktree's checkout judged in place of what it stages. The lane stages
+        A's Affects widened to tests/test_c.py and leaves the old line unstaged in its
+        checkout: the staged copy is the one that lands, so the mutant on tests/test_c.py is
+        recorded, and the landed copy declares it."""
+        self._lane()
+        self._stage("tests/test_c.py", "def test_c():\n    assert True\n")
+        self._restage_story(f"src/a.py, tests/test_a.py, tests/test_c.py, changelog.d/{A}.md")
+        base._story(self.wt, A, f"src/a.py, tests/test_a.py, changelog.d/{A}.md")
+        self.assertIn(f"sdlc-studio/stories/{A}-lane.md",
+                      base._git(self.wt, "diff", "--name-only"), "the old line is not unstaged")
+        self._mutant_on("tests/test_c.py::test_c")
+        self._landed(self._land(A))
+        self.assertIn("tests/test_c.py", (self.root / f"sdlc-studio/stories/{A}-lane.md")
+                      .read_text(encoding="utf-8"))
+
+    def test_a_lane_removing_its_unit_s_file_is_refused_before_the_commit(self) -> None:
+        """MUTANT: a worktree holding no copy of the unit's file judged on the root's copy
+        (the lane `git rm`s it, so once landed the root holds no artefact with A's id: it
+        landed, removed its worktree and only then named the refused self-check)."""
+        main = base._git(self.root, "rev-parse", "HEAD")
+        self._lane()
+        gitutil.git(["rm", "-q", "--", f"sdlc-studio/stories/{A}-lane.md"], self.wt)
+        r = self._land(A)
+        self.assertEqual(2, r.returncode, r.stdout + r.stderr)
+        self.assertIn(f"{A}'s self-check", r.stderr)
+        self.assertIn(f"no artefact with id '{A}'", r.stderr)
+        self.assertNotIn("self-check REFUSED", r.stderr)
+        self.assertEqual(0, self._hook_runs_in_the_worktree())
+        self.assertEqual(main, base._git(self.root, "rev-parse", "HEAD"), "main moved")
+        self.assertTrue(self.wt.is_dir(), "the worktree was removed")
+        self.assertEqual(["sdlc-studio/stories/US0101-lane.md", "src/a.py"],
+                         sorted(base._git(self.wt, "diff", "--cached", "--name-only").split()))
+        self.assertEqual([], base.critic.read_self_checks(self.root))
+
     # -- which hand-ins are judged before the commit --------------------------------------
 
     def test_a_claims_file_and_the_runner_report_alone_are_judged(self) -> None:
@@ -310,6 +345,64 @@ class SelfCheckBeforeCommitSeveralTests(base._LaneFixture):
         self.assertEqual("src/a.py", base._git(self.wt, "diff", "--cached", "--name-only"))
         self.assertEqual("src/b.py", base._git(self.wt2, "diff", "--cached", "--name-only"))
         self.assertEqual([], base.critic.read_self_checks(self.root))
+
+    def test_a_unit_whose_affects_another_worktree_widens_is_judged_on_that_copy(self) -> None:
+        """MUTANT: only the unit's own worktree read for its Affects. US0102's worktree stages
+        A's file with tests/test_c.py added to its Affects, and A's mutant names that file: the
+        landing leaves that copy on main, so both land and both self-checks are recorded."""
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in(units=(A,))
+        base._write(self.wt, f"{LANE}/{A}-mutants.json", json.dumps(
+            [{"mutant": "a stays one", "test": "tests/test_c.py::test_c", "result": "killed"}]))
+        first, self.wt = self.wt, self.wt2
+        try:
+            self._stage("src/b.py", "B = 2\n")
+            self._stage("tests/test_c.py", "def test_c():\n    assert True\n")
+            base._story(self.wt, A, f"src/a.py, tests/test_a.py, tests/test_c.py, "
+                                    f"changelog.d/{A}.md")
+            gitutil.git(["add", "--", f"sdlc-studio/stories/{A}-lane.md"], self.wt)
+            self._hand_in(units=(B,), message=f"feat({B}): b is two")
+        finally:
+            self.wt = first
+        r = subprocess.run(
+            [sys.executable, "-B", str(base.SPRINT), "lane", "land", "--worktree", str(self.wt),
+             "--worktree", str(self.wt2), "--units", A, B, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual([A, B], sorted(row["unit"]
+                                        for row in base.critic.read_self_checks(self.root)))
+        self.assertIn("tests/test_c.py", (self.root / f"sdlc-studio/stories/{A}-lane.md")
+                      .read_text(encoding="utf-8"))
+        self.assertEqual("A = 2\n", (self.root / "src/a.py").read_text(encoding="utf-8"))
+
+    def test_a_unit_filed_only_in_a_later_worktree_is_judged_on_that_copy(self) -> None:
+        """MUTANT: a worktree holding no copy of the unit's file, on a root holding none, ends
+        the search on the root. US0103 is filed only in US0102's worktree, staged, while the
+        first worktree carries its hand-in: the landing leaves that copy on main."""
+        unit = "US0103"
+        self._stage("src/a.py", "A = 2\n")
+        self._hand_in(units=(A,))
+        base._write(self.wt, f"{LANE}/{unit}-claims.json", json.dumps(
+            [*NO_FRAGMENT, {"surface": f"changelog.d/{unit}.md", "claim": "c", "ruling": "TRUE"}]))
+        base._write(self.wt, f"{LANE}/{unit}-mutants.json", "[]")
+        first, self.wt = self.wt, self.wt2
+        try:
+            self._stage("src/b.py", "B = 2\n")
+            base._story(self.wt, unit, f"src/c.py, changelog.d/{unit}.md")
+            gitutil.git(["add", "--", f"sdlc-studio/stories/{unit}-lane.md"], self.wt)
+            self._hand_in(units=(B,), message=f"feat({B}): b is two")
+        finally:
+            self.wt = first
+        r = subprocess.run(
+            [sys.executable, "-B", str(base.SPRINT), "lane", "land", "--worktree", str(self.wt),
+             "--worktree", str(self.wt2), "--units", A, unit, B, "--root", str(self.root)],
+            capture_output=True, text=True, timeout=600, cwd=str(self.root), env=self._env(),
+            check=False)
+        self.assertEqual(0, r.returncode, r.stdout + r.stderr)
+        self.assertEqual([A, B, unit], sorted(row["unit"]
+                                              for row in base.critic.read_self_checks(self.root)))
+        self.assertTrue((self.root / f"sdlc-studio/stories/{unit}-lane.md").is_file())
 
 
 if __name__ == "__main__":
