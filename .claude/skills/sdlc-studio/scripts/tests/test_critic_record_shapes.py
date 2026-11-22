@@ -8,8 +8,9 @@ Three frictions from run six, each costing a hand-fix or an agent resume:
   with prose after the word and no colon (`TRUE in substance`) is still refused.
 - `record` had no dry run, so a reviewer could not check a verdict before handing it back.
   `record --dry-run` runs every check `record` makes and writes nothing.
-- the verdict ledger escaped underscores and not asterisks, so a verdict naming `test_lean_`*
-  tripped markdownlint (MD037). A bare asterisk outside a code span is now escaped too.
+- the verdict ledger escaped underscores and not asterisks, so a verdict naming two globs,
+  each like `test_lean_`*, tripped markdownlint (MD037). A bare asterisk outside a code span is
+  now escaped too.
 
 Each case drives `critic.py` through its entry point in a throwaway project.
 """
@@ -240,18 +241,25 @@ class RecordDryRunTests(unittest.TestCase):
 
 
 class LedgerAsteriskTests(unittest.TestCase):
-    """AC1, part three: `a_`*`_b` puts a bare asterisk between two code spans; two of them in
-    one row pair into emphasis (MD037) unless each is escaped. The escape and the read-back are
-    checked with no linter, so the mutant dies wherever the suite runs; markdownlint itself is
-    run where it can be found, and its test says so by name where it cannot."""
+    """AC1, part three: a finding names a glob as a code span with a bare asterisk after it.
+    AC1's own example, `a_`*`_b`, puts the asterisk between two code spans, and a row holding
+    two such passes markdownlint even unescaped. The bug's shape, two globs in one row each
+    followed by an asterisk and a space (`test_lean_`* and `test_ac_`*), is read by markdownlint
+    as emphasis with a space inside its markers, so the row is refused (MD037) unless each
+    asterisk is escaped. The escape and the read-back are checked with no linter, so the mutant
+    dies wherever the suite runs;
+    markdownlint itself is run where it can be found, on a ledger holding both rows, and its
+    test says so by name where it cannot."""
 
     ISSUES = "[new] `a_`*`_b` and `test_lean_`*`_x` both match"
+    GLOBS = "[new] `test_lean_`* and `test_ac_`* name the same tests"
 
-    def _ledger(self, root: Path) -> Path:
+    def _ledger(self, root: Path, *issues: str) -> Path:
         _project(root)
-        r = _cli(root, "record", "--unit", "US0101", "--verdict", "reject", "--reviewer",
-                 "qa-seat", "--author", "eng-seat", "--issues", self.ISSUES)
-        self.assertEqual(0, r.returncode, r.stderr)
+        for text in issues:
+            r = _cli(root, "record", "--unit", "US0101", "--verdict", "reject", "--reviewer",
+                     "qa-seat", "--author", "eng-seat", "--issues", text)
+            self.assertEqual(0, r.returncode, r.stderr)
         return critic.verdicts_path(root)
 
     def test_each_asterisk_between_spans_is_escaped_and_reads_back_bare(self) -> None:
@@ -259,7 +267,7 @@ class LedgerAsteriskTests(unittest.TestCase):
         escaped and none bare, and the finding reads back as the reviewer wrote it."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            text = self._ledger(root).read_text(encoding="utf-8")
+            text = self._ledger(root, self.ISSUES).read_text(encoding="utf-8")
             row = next(ln for ln in text.splitlines() if "both match" in ln)
             self.assertIn("`a_`\\*`_b` and `test_lean_`\\*`_x` both match", row)
             self.assertNotIn("`*`", row, "an asterisk between two code spans was left bare")
@@ -268,14 +276,19 @@ class LedgerAsteriskTests(unittest.TestCase):
                              [f["text"] for f in got])
 
     def test_the_row_passes_markdownlint(self) -> None:
-        """The ledger with that row passes the repository's own markdownlint configuration."""
+        """Mutant: the asterisk left bare. A ledger holding AC1's row and a row in the bug's
+        shape passes the repository's own markdownlint configuration; left bare, the bug's row
+        is refused (MD037)."""
         mdl = _markdownlint()
         if mdl is None:
             self.skipTest("markdownlint was found neither on PATH nor in node_modules/.bin of "
                           "this checkout or its main worktree, so the lint half of AC1 part "
                           "three is unchecked here (run `npm install`)")
         with tempfile.TemporaryDirectory() as d:
-            ledger = self._ledger(Path(d))
+            ledger = self._ledger(Path(d), self.ISSUES, self.GLOBS)
+            text = ledger.read_text(encoding="utf-8")
+            self.assertIn("both match", text)
+            self.assertIn("name the same tests", text)
             lint = subprocess.run([mdl, "--config", str(REPO / ".markdownlint.json"),
                                    str(ledger)], capture_output=True, text=True, check=False,
                                   timeout=300)
