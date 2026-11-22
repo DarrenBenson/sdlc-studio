@@ -1,7 +1,7 @@
 {
   "unit": "BG1483",
-  "digest": "62b4a032eca62521 at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1483-mutation-edits.json",
+  "digest": "884516f62f8beb27 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1483-mutation-edits.json",
   "mutants": [
     {
       "mutant": "close passes no retro",
@@ -114,9 +114,36 @@
     {
       "mutant": "close line silent on repeats",
       "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "        parts.append(f\"{len(res['repeats'])} repeat(s) cited by the run's bugs or retro: \"",
-      "new": "        parts.append(f\"",
+      "old": "    if res.get(\"repeats\"):\n        parts.append(",
+      "new": "    if False:\n        parts.append(",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "still-open bugs only",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "    placed = set(filed or ())",
+      "new": "    placed = set(_open or ())",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_bug_filed_in_the_run_citing_a_class_is_a_hit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "guard ignores a Try item's hit",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        if any(h.get(\"run\") == run for h in row.get(\"hits\") or ()):",
+      "new": "        if any(h.get(\"run\") == run and not str(h.get(\"source\", \"\")).startswith(\"retro:\") for h in row.get(\"hits\") or ()):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_class_the_run_already_hit_gains_no_second_hit",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "greedy comment strip",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "        text = re.sub(r\"<!--.*?-->\", \"\",",
+      "new": "        text = re.sub(r\"<!--.*-->\", \"\",",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::RunRepeatHitTests::test_a_stop_or_keep_item_citing_a_class_is_a_hit",
       "result": "killed",
       "answer": ""
     }

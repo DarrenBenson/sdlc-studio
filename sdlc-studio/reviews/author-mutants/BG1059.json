@@ -1,7 +1,7 @@
 {
   "unit": "BG1059",
-  "digest": "045f92e719c8149a at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1059-mutation-edits.json",
+  "digest": "ead0c03c7038ded6 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1059-mutation-edits.json",
   "mutants": [
     {
       "mutant": "three-line branch skips the comparison",
@@ -90,6 +90,33 @@
       "old": "            f\"{', '.join(omitted)} - a unit that joined",
       "new": "            f\"- a unit that joined",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doc test reads item 4, not 5",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "old": "found = re.search(r\"(?ms)^5\\. ",
+      "new": "found = re.search(r\"(?ms)^4\\. ",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py::BatchCheckDocumentedTests::test_the_close_gate_list_names_the_batch_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doc test reads another catalogue entry",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "old": "if line.startswith(\"- `retro.py` - \"))",
+      "new": "if line.startswith(\"- `lessons.py` - \"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py::BatchCheckDocumentedTests::test_the_catalogue_names_the_batch_check",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "doc test reads another help row",
+      "file": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py",
+      "old": "if line.startswith(\"| `/sdlc-studio retro validate` |\"))",
+      "new": "if line.startswith(\"| `/sdlc-studio retro extract` |\"))",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_batch_matches_run.py::BatchCheckDocumentedTests::test_the_help_page_names_the_batch_check",
       "result": "killed",
       "answer": ""
     }

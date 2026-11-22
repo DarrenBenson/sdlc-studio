@@ -6,14 +6,14 @@
 
 | Status | Count |
 | --- | --- |
-| Open | 314 |
+| Open | 313 |
 | In Progress | 0 |
-| Fixed | 1052 |
+| Fixed | 1054 |
 | Verified | 0 |
 | Closed | 87 |
 | Won't Fix | 196 |
 | Superseded | 58 |
-| **Total** | **1707** |
+| **Total** | **1708** |
 
 ## All Bugs
 
@@ -609,7 +609,7 @@
 | [BG1531](BG1531-the-trd-lists-critic-brief-gate-and-review.md) | The TRD lists critic brief, gate and review_prep as read-only helpers although each one writes | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1532](BG1532-the-trd-atomic-write-guarantee-for-shared-files.md) | The TRD atomic-write guarantee for shared files is false for the signed report, story files and others | Open | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1533](BG1533-adr-001-and-adr-005-cite-validate-py.md) | ADR-001 and ADR-005 cite validate.py instructions as enforcement, but it is advisory and nothing runs it | Fixed | Medium | 2026-11-17 | 2026-11-17 |
-| [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Open | Medium | 2026-11-17 | 2026-11-17 |
+| [BG1534](BG1534-ts0002-marks-four-matrix-rows-pass-against-tests.md) | TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1535](BG1535-two-shipped-templates-define-the-served-cast-differently.md) | Two shipped templates define the Served cast differently, and consult stakeholders reads a folder this repo lacks | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1536](BG1536-the-persona-index-that-init-seeds-is-mostly.md) | The persona index that init seeds is mostly dead: unfilled placeholders, unread sections and a broken link | Fixed | Medium | 2026-11-17 | 2026-11-17 |
 | [BG1537](BG1537-validate-personas-passes-an-unfilled-copy-of-the.md) | validate personas passes an unfilled copy of the persona template, and status then reports personas present | Open | Medium | 2026-11-17 | 2026-11-17 |
@@ -778,11 +778,12 @@
 | [BG1700](BG1700-critic-py-show-takes-over-five-minutes-on.md) | critic.py show takes over five minutes on a repository with a long verdict ledger, so test_cli_grammar's real-tree control times out at 120 seconds under load | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1701](BG1701-a-reviewer-s-verdict-files-move-the-author.md) | A reviewer's verdict files move the author's self-check digest, so a unit declaring sdlc-studio/reviews/ is read as stale after its first review | Open | Low | 2026-11-22 | 2026-11-22 |
 | [BG1702](BG1702-critic-py-brief-rejoinder-checks-practices-against-text.md) | critic.py brief --rejoinder checks practices against text that still quotes the prior verdict, so a prior verdict naming a practice satisfies the practices check | Open | Low | 2026-11-22 | 2026-11-22 |
-| [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1703](BG1703-bg1534-did-not-converge-in-review-round-2.md) | BG1534 did not converge in review: round 2 REJECT findings | Fixed | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1704](BG1704-bg0999-did-not-converge-in-review-round-2.md) | BG0999 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1705](BG1705-bg1108-did-not-converge-in-review-round-2.md) | BG1108 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1706](BG1706-bg1120-did-not-converge-in-review-round-2.md) | BG1120 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
 | [BG1707](BG1707-bg1475-did-not-converge-in-review-round-2.md) | BG1475 did not converge in review: round 2 REJECT findings | Open | Medium | 2026-11-22 | 2026-11-22 |
+| [BG1708](BG1708-verify-ac-py-ts-check-reports-two-test.md) | verify_ac.py ts-check reports two test ids pytest collects: a file under a dotted directory in importlib form, and a def whose decorator gives it a docstring with an example | Open | Low | 2026-11-22 | 2026-11-22 |
 
 ## Archived Releases
 

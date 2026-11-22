@@ -1,7 +1,7 @@
 {
   "unit": "BG1463",
-  "digest": "e9f2fa4caca73156 at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1463-mutation-edits.json",
+  "digest": "a3a32851624941aa at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1463-mutation-edits.json",
   "mutants": [
     {
       "mutant": "charged bug also uncharged",
@@ -72,6 +72,24 @@
       "old": "    days = sorted(day for day in (_day(r.get(\"date\")) for r in seated) if day)",
       "new": "    days = sorted(_day(r.get(\"date\")) for r in seated)",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "latest dated approval read",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    if days and days[0] > created:",
+      "new": "    if days and days[-1] > created:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_post_dates_reason_reads_the_earliest_dated_approval",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "seat taken from every live row",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    seated = [r for r in approvals if critic.recorded_seat(r.get(\"reviewer\") or \"\")]",
+      "new": "    seated = [r for r in unit_rows if critic.recorded_seat(r.get(\"reviewer\") or \"\")]",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_an_escaped_via_unit_whose_approval_names_no_seat_is_named_uncharged",
       "result": "killed",
       "answer": ""
     }

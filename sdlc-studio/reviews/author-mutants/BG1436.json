@@ -1,7 +1,7 @@
 {
   "unit": "BG1436",
-  "digest": "6c68ba58dae24587 at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1436-mutation-edits.json",
+  "digest": "86ae4afc771f02f6 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1436-mutation-edits.json",
   "mutants": [
     {
       "mutant": "no window stamped",
@@ -17,15 +17,6 @@
       "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
       "old": "        if (row.get(\"state\") == \"active\" and not row.get(\"quiet_from\")",
       "new": "        if (row.get(\"state\") == \"active\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
-      "result": "killed",
-      "answer": ""
-    },
-    {
-      "mutant": "any class stamped, run or not",
-      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "                and not names_a_run(row.get(\"recorded_run\"))):",
-      "new": "                ):",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
       "result": "killed",
       "answer": ""
@@ -58,20 +49,74 @@
       "answer": ""
     },
     {
-      "mutant": "any label names a run",
+      "mutant": "close line silent on the stamp",
       "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "    return str(value or \"\").startswith(\"RUN-\")",
-      "new": "    return bool(value)",
+      "old": "    if res.get(\"quiet_from\"):\n        parts.append(",
+      "new": "    if False:\n        parts.append(",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
       "result": "killed",
       "answer": ""
     },
     {
-      "mutant": "close line silent on the stamp",
+      "mutant": "any label not a run stamped, the seed's included",
       "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
-      "old": "        parts.append(f\"recorded with no run, quiet window from this run: \"",
-      "new": "        parts.append(f\"",
-      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py",
+      "old": "    return not label or sdlc_md.norm_id(sdlc_md.stem_record_id(label) or \"\").startswith(\"RETRO\")",
+      "new": "    return not label.startswith(\"RUN-\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_the_bundled_seed_is_not_stamped_and_its_quiet_classes_retire",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "blank label not stamped",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "    return not label or sdlc_md.norm_id(",
+      "new": "    return False or sdlc_md.norm_id(",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_a_class_added_with_no_run_open_survives_the_next_close",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "retro id not stamped",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "(sdlc_md.stem_record_id(label) or \"\").startswith(\"RETRO\")",
+      "new": "(sdlc_md.stem_record_id(label) or \"\").startswith(\"RUN\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_a_class_extracted_with_no_run_open_survives_the_next_close",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "retro id read in one key schema only",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "sdlc_md.norm_id(sdlc_md.stem_record_id(label) or \"\")",
+      "new": "(sdlc_md.stem_record_id(label) or \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_only_a_blank_label_or_a_retro_id_is_recorded_with_no_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "whitespace label not blank",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "    label = str(value or \"\").strip()",
+      "new": "    label = str(value or \"\")",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_only_a_blank_label_or_a_retro_id_is_recorded_with_no_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "None label read as text",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "    label = str(value or \"\").strip()",
+      "new": "    label = str(value).strip()",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_only_a_blank_label_or_a_retro_id_is_recorded_with_no_run",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "stamp predicate inverted at the close",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "                and recorded_with_no_run(row.get(\"recorded_run\"))):",
+      "new": "                and not recorded_with_no_run(row.get(\"recorded_run\"))):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lesson_no_run_retire.py::NoRunRetireTests::test_the_bundled_seed_is_not_stamped_and_its_quiet_classes_retire",
       "result": "killed",
       "answer": ""
     }

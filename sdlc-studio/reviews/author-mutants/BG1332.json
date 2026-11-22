@@ -1,7 +1,7 @@
 {
   "unit": "BG1332",
-  "digest": "c1c3c01d237fe56c at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1332-mutation-edits.json",
+  "digest": "3f48e2a7d9b84e23 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1332-mutation-edits.json",
   "mutants": [
     {
       "mutant": "another run's stamp kept",
@@ -126,6 +126,42 @@
       "old": "kept = f\"; {len(res['present'])} already in the table\" if res[\"present\"] else \"\"",
       "new": "kept = \"\"",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "first repeated section written",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    head = heads[-1] if heads else None",
+      "new": "    head = heads[0] if heads else None",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_retro_holding_the_section_twice_is_written_where_the_close_reads",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "unopenable retro not converted",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    except (OSError, UnicodeDecodeError) as exc:",
+      "new": "    except (UnicodeDecodeError,) as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_retro_that_cannot_be_read_raises_value_error_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "undecodable retro not converted",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    except (OSError, UnicodeDecodeError) as exc:",
+      "new": "    except (OSError,) as exc:",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_retro_that_cannot_be_read_raises_value_error_naming_it",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "read error message names no retro",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "raise ValueError(f\"{path} cannot be read ({exc}), so its table can be neither checked \"",
+      "new": "raise ValueError(f\"the retro cannot be read ({exc}), so its table can be neither checked \"",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro.py::KnownIssuesWriteTests::test_a_retro_that_cannot_be_read_raises_value_error_naming_it",
       "result": "killed",
       "answer": ""
     }

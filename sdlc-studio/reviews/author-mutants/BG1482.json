@@ -1,7 +1,7 @@
 {
   "unit": "BG1482",
-  "digest": "21d6ea4b4b94870c at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1482-mutation-edits.json",
+  "digest": "5b90e7484bd9a679 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1482-mutation-edits.json",
   "mutants": [
     {
       "mutant": "build capped too",
@@ -27,6 +27,15 @@
       "old": "rows if phase == \"build\" else rows[:INJECT_MAX]",
       "new": "rows if phase != \"plan\" else rows[:INJECT_MAX]",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::QuietBuildClassTests",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "build capped at INJECT_MAX + 1",
+      "file": ".claude/skills/sdlc-studio/scripts/lessons.py",
+      "old": "\"lessons\": rows if phase == \"build\" else rows[:INJECT_MAX],",
+      "new": "\"lessons\": rows[:INJECT_MAX + 1] if phase == \"build\" else rows[:INJECT_MAX],",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_lessons.py::QuietBuildClassTests::test_no_live_build_class_falls_out_of_the_lane_brief",
       "result": "killed",
       "answer": ""
     }

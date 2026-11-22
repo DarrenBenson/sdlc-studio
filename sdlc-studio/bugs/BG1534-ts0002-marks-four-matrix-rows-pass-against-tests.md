@@ -1,6 +1,6 @@
 # BG1534: TS0002 marks four matrix rows Pass against tests that no longer exist, and ts-check reports no finding
 
-> **Status:** Open
+> **Status:** Fixed
 > **Severity:** Medium
 > **Points:** 3
 > **Affects:** .claude/skills/sdlc-studio/scripts/verify_ac.py, .claude/skills/sdlc-studio/scripts/tests/test_verify_ac.py, sdlc-studio/test-specs/TS0002-mutation-check-gate-test-spec.md, changelog.d/BG1534.md

@@ -1,7 +1,7 @@
 {
   "unit": "BG1465",
-  "digest": "292abce340219385 at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1465-mutation-edits.json",
+  "digest": "98f806804c3dfc26 at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1465-mutation-edits.json",
   "mutants": [
     {
       "mutant": "looked up per bug",
@@ -45,6 +45,24 @@
       "old": "affects[uid] = set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0]))) \\\n                if hit else set()",
       "new": "affects[uid] = set(sdlc_md.affects_files(sdlc_md.read_text_safe(hit[0])))",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "lookups outside the corpus cache",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    with sdlc_md.corpus_cache():\n        return _seat_misses_cached(root, retro_path)",
+      "new": "    if True:\n        return _seat_misses_cached(root, retro_path)",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_the_tree_is_walked_once_however_many_units_the_window_cites",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "only a unit with Affects remembered",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "        if uid not in affects:",
+      "new": "        if not affects.get(uid):",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_retro_seat_misses.py::SeatMissTests::test_each_cited_unit_is_resolved_once_per_call",
       "result": "killed",
       "answer": ""
     }

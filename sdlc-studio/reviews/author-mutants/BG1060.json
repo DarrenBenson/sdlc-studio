@@ -1,7 +1,7 @@
 {
   "unit": "BG1060",
-  "digest": "00a727ab3d47a27d at 4d46f94e7b20",
-  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-ae2b0baeffbbdbd00/BG1060-mutation-edits.json",
+  "digest": "13d23c828693087d at 1736835cd317",
+  "report": "/home/darren/code/DarrenBenson/sdlc-studio/sdlc-studio/.local/lane/landed/agent-a2184b4694ed5f39a/BG1060-mutation-edits.json",
   "mutants": [
     {
       "mutant": "no guard: the log is started",
@@ -54,6 +54,15 @@
       "old": "f\"lists {len(listed)} lesson(s), so a log",
       "new": "f\"lists some lesson(s), so a log",
       "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py",
+      "result": "killed",
+      "answer": ""
+    },
+    {
+      "mutant": "OSError arm dropped",
+      "file": ".claude/skills/sdlc-studio/scripts/retro.py",
+      "old": "    except (OSError, ValueError) as exc:   # UnicodeDecodeError is a ValueError",
+      "new": "    except (ValueError,) as exc:   # UnicodeDecodeError is a ValueError",
+      "test": ".claude/skills/sdlc-studio/scripts/tests/test_extract_needs_the_log.py::ExtractNeedsTheLogTests::test_a_digest_that_cannot_be_opened_refuses_by_name",
       "result": "killed",
       "answer": ""
     }
