@@ -53,16 +53,18 @@ _HISTORY_TIMEOUT = 600
 
 def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
     """The last commit time (ISO-8601) of each path in `rels` (POSIX, relative to repo_root)
-    that HEAD tracks, read with two git processes whatever the number of paths.
+    that HEAD tracks, read with three git processes whatever the number of paths.
 
-    `git ls-tree` names the paths HEAD tracks, and one `git log --name-only` walks the history
+    `git rev-parse --show-prefix` names repo_root's folder in the repository (empty at its
+    top), `git ls-tree` the paths HEAD tracks, and one `git log --name-only` walks the history
     newest first, under the parent folders of those paths, keeping for each the time of the
     first commit in that walk whose change names it. By `-c` a merge names each path whose
     content differs from every parent's, as a conflict's resolution does, so its time is taken
-    where `git log -1 -- <path>` takes it; by `--relative` the walk names paths from `repo_root`,
-    as `ls-tree` does, when that is a folder of the repository. A path HEAD does not track is
-    absent from the result, as is every path when git is unavailable or fails; with no path
-    tracked, no history is walked.
+    where `git log -1 -- <path>` takes it. The walk names every path from the repository top,
+    a merge's as well as an ordinary commit's (`--relative` does not reach a merge's), so that
+    folder is dropped from each before it is matched against the paths `ls-tree` names from
+    repo_root. A path HEAD does not track is absent from the result, as is every path when
+    git is unavailable or its listing or walk fails; with no path tracked, no history is walked.
     """
     def run(*args: str) -> str | None:
         try:
@@ -72,19 +74,21 @@ def _git_commit_times(repo_root: Path, rels: set[str]) -> dict[str, str]:
             return None
         return r.stdout if r.returncode == 0 else None
 
+    prefix = (run("rev-parse", "--show-prefix") or "").rstrip("\n")
     folders = sorted({Path(rel).parent.as_posix() for rel in rels})
     listed = run("ls-tree", "-r", "--name-only", "HEAD", "--", *folders)
     tracked = set((listed or "").splitlines()) & rels
     if not tracked:
         return {}
-    walked = run("log", "-c", "--relative", "--name-only", "--format=%x00%cI", "--", *folders)
+    walked = run("log", "-c", "--name-only", "--format=%x00%cI", "--", *folders)
     times: dict[str, str] = {}
     when = ""
     for line in (walked or "").splitlines():
+        rel = line.removeprefix(prefix)
         if line.startswith("\0"):
             when = line[1:].strip()
-        elif line in tracked and line not in times:
-            times[line] = when
+        elif rel in tracked and rel not in times:
+            times[rel] = when
     return times
 
 
